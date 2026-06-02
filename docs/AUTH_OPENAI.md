@@ -1,4 +1,4 @@
-# OpenAI / ChatGPT Auth Design
+# OpenAI / OAuth Connector Auth Design
 
 ## 重要限制
 
@@ -41,6 +41,25 @@ protocol AuthProvider {
     func signOut() async throws
 }
 ```
+
+## OAuth connector core
+
+`OAuthConnectorAuthorizationService` is the shared authorization layer for integrations that expose `OAuthConnectorMetadata` in `IntegrationRegistry`.
+
+Current scope:
+
+- builds provider authorization URLs from registry metadata, client id, redirect URI, scopes, state, and PKCE requirements;
+- validates redirect callbacks with `code`, `state`, and `error` handling;
+- stores `OAuthTokenSet` values in `CredentialStore` under `CredentialKey.oauthTokenSet(providerKey:)`;
+- supports non-PKCE connectors that require backend token exchange, such as GitHub app flows.
+
+Out of scope for this core:
+
+- exchanging authorization codes for provider tokens;
+- refreshing tokens;
+- calling provider APIs.
+
+Those pieces stay provider-specific or backend-owned because Google, Microsoft, GitHub, Notion, and future connectors have different app registration, client secret, consent review, and token exchange requirements.
 
 ## 安全要求
 

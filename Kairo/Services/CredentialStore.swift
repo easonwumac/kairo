@@ -27,4 +27,14 @@ public actor InMemoryCredentialStore: CredentialStore {
 public enum CredentialKey {
     public static let openAIAPIKey = "openai.api_key"
     public static let chatGPTOAuthTokenSet = "chatgpt.oauth_token_set"
+
+    public static func oauthTokenSet(providerKey: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
+        let sanitized = providerKey
+            .lowercased()
+            .unicodeScalars
+            .map { allowed.contains($0) ? Character($0) : "-" }
+        let key = String(sanitized).trimmingCharacters(in: CharacterSet(charactersIn: "-_"))
+        return "oauth.\(key.isEmpty ? "provider" : key).token_set"
+    }
 }

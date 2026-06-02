@@ -768,6 +768,67 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(query["audience"], "chatgpt")
     }
 
+    func testOAuthConnectorAuthorizationServiceBuildsPKCEAuthorizationURLFromRegistryMetadata() async throws {
+        let google = try XCTUnwrap(IntegrationRegistry().integration(for: "gmail-google-workspace")?.oauth)
+        let service = OAuthConnectorAuthorizationService(
+            metadata: google,
+            clientID: "ios-client-id",
+            redirectURI: "kairo://oauth/google/callback",
+            credentialStore: InMemoryCredentialStore()
+        )
+
+        let session = try await service.makeAuthorizationSession(state: "state-123", codeVerifier: "verifier-123")
+        let components = try XCTUnwrap(URLComponents(url: session.authorizationURL, resolvingAgainstBaseURL: false))
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+
+        XCTAssertEqual(session.providerKey, "google")
+        XCTAssertEqual(query["response_type"], "code")
+        XCTAssertEqual(query["client_id"], "ios-client-id")
+        XCTAssertEqual(query["redirect_uri"], "kairo://oauth/google/callback")
+        XCTAssertEqual(query["scope"], "openid email profile https://www.googleapis.com/auth/gmail.readonly")
+        XCTAssertEqual(query["state"], "state-123")
+        XCTAssertEqual(query["code_challenge_method"], "S256")
+        XCTAssertNotEqual(query["code_challenge"], "verifier-123")
+    }
+
+    func testOAuthConnectorAuthorizationServiceHandlesNonPKCEConnectorsAndStoresNamespacedTokens() async throws {
+        let github = try XCTUnwrap(IntegrationRegistry().integration(for: "github")?.oauth)
+        let credentials = InMemoryCredentialStore()
+        let service = OAuthConnectorAuthorizationService(
+            metadata: github,
+            clientID: "github-client-id",
+            redirectURI: "kairo://oauth/github/callback",
+            credentialStore: credentials
+        )
+
+        let session = try await service.makeAuthorizationSession(state: "github-state", codeVerifier: "ignored-verifier")
+        let components = try XCTUnwrap(URLComponents(url: session.authorizationURL, resolvingAgainstBaseURL: false))
+        let queryNames = Set((components.queryItems ?? []).map(\.name))
+
+        XCTAssertEqual(session.providerKey, "github")
+        XCTAssertFalse(queryNames.contains("code_challenge"))
+        XCTAssertFalse(queryNames.contains("code_challenge_method"))
+        let authorizationCode = try await service.validateCallback(
+            URL(string: "kairo://oauth/github/callback?code=abc&state=github-state")!,
+            expectedState: "github-state"
+        )
+        XCTAssertEqual(authorizationCode, "abc")
+
+        let tokens = OAuthTokenSet(accessToken: "github-access", refreshToken: "github-refresh", scopes: ["repo"])
+        try await service.storeTokens(tokens)
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "github"))
+        let loaded = try await service.loadTokens()
+
+        XCTAssertNotNil(storedRaw)
+        XCTAssertEqual(loaded, tokens)
+
+        try await service.signOut()
+        let tokensAfterSignOut = try await service.loadTokens()
+        XCTAssertNil(tokensAfterSignOut)
+    }
+
     func testJSONFileChatHistoryStorePersistsAndSoftDeletesThreads() async throws {
         let fileURL = temporaryFileURL(named: "chat-history.json")
         let thread = ChatThread(
