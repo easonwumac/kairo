@@ -73,6 +73,7 @@
 - Live app environment-backed Skill Manager state。
 - Signed manifest JSON import in Access。
 - Skill version downgrade protection。
+- Skill update preview：installed version、incoming version、changelog、confirm before replace。
 - Skill Manager UI：install / disable / enable / remove / inspect permissions。
 - 使用者可新增自訂 skill manifest。
 - Skill marketplace website：搜尋、分類、權限、風險、版本與下載。

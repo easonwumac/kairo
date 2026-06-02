@@ -231,6 +231,63 @@ public enum AgentSkillInstallError: Error, Equatable, Sendable {
     case versionDowngrade(skillID: String, installedVersion: String, incomingVersion: String)
 }
 
+public enum AgentSkillInstallationChange: String, Codable, Equatable, Sendable {
+    case install
+    case reinstall
+    case update
+    case downgradeBlocked
+}
+
+public struct AgentSkillInstallPreview: Codable, Equatable, Sendable {
+    public var manifest: AgentSkillManifest
+    public var skillID: String
+    public var displayName: String
+    public var installedVersion: String?
+    public var incomingVersion: String
+    public var packageVersion: String
+    public var changelog: [String]
+    public var installationChange: AgentSkillInstallationChange
+
+    public init(
+        manifest: AgentSkillManifest,
+        installedSkill: AgentSkill?
+    ) {
+        self.manifest = manifest
+        self.skillID = manifest.skill.id
+        self.displayName = manifest.skill.displayName
+        self.installedVersion = installedSkill?.version
+        self.incomingVersion = manifest.skill.version
+        self.packageVersion = manifest.packageVersion
+        self.changelog = manifest.changelog
+
+        if let installedSkill {
+            switch AgentSkillVersionComparator.compare(manifest.skill.version, installedSkill.version) {
+            case .orderedAscending:
+                self.installationChange = .downgradeBlocked
+            case .orderedSame:
+                self.installationChange = .reinstall
+            case .orderedDescending:
+                self.installationChange = .update
+            }
+        } else {
+            self.installationChange = .install
+        }
+    }
+
+    public var summary: String {
+        switch installationChange {
+        case .install:
+            return "Install \(displayName) \(incomingVersion)."
+        case .reinstall:
+            return "Reinstall \(displayName) \(incomingVersion)."
+        case .update:
+            return "Update \(displayName) from \(installedVersion ?? "unknown") to \(incomingVersion)."
+        case .downgradeBlocked:
+            return "Blocked downgrade for \(displayName) from \(installedVersion ?? "unknown") to \(incomingVersion)."
+        }
+    }
+}
+
 public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Sendable {
     public var id: String { keyID }
     public var keyID: String
@@ -265,6 +322,7 @@ private struct AgentSkillManifestSigningPayload: Codable, Equatable, Sendable {
     public var packageVersion: String
     public var checksumAlgorithm: AgentSkillManifestChecksumAlgorithm
     public var checksum: String
+    public var changelog: [String]
 }
 
 public struct AgentSkillManifest: Codable, Equatable, Sendable {
@@ -273,19 +331,51 @@ public struct AgentSkillManifest: Codable, Equatable, Sendable {
     public var checksumAlgorithm: AgentSkillManifestChecksumAlgorithm
     public var checksum: String
     public var signature: AgentSkillManifestSignature?
+    public var changelog: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case skill
+        case packageVersion
+        case checksumAlgorithm
+        case checksum
+        case signature
+        case changelog
+    }
 
     public init(
         skill: AgentSkill,
         packageVersion: String,
         checksumAlgorithm: AgentSkillManifestChecksumAlgorithm = .sha256,
         checksum: String,
-        signature: AgentSkillManifestSignature?
+        signature: AgentSkillManifestSignature?,
+        changelog: [String] = []
     ) {
         self.skill = skill
         self.packageVersion = packageVersion
         self.checksumAlgorithm = checksumAlgorithm
         self.checksum = checksum
         self.signature = signature
+        self.changelog = changelog
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.skill = try container.decode(AgentSkill.self, forKey: .skill)
+        self.packageVersion = try container.decode(String.self, forKey: .packageVersion)
+        self.checksumAlgorithm = try container.decode(AgentSkillManifestChecksumAlgorithm.self, forKey: .checksumAlgorithm)
+        self.checksum = try container.decode(String.self, forKey: .checksum)
+        self.signature = try container.decodeIfPresent(AgentSkillManifestSignature.self, forKey: .signature)
+        self.changelog = try container.decodeIfPresent([String].self, forKey: .changelog) ?? []
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(skill, forKey: .skill)
+        try container.encode(packageVersion, forKey: .packageVersion)
+        try container.encode(checksumAlgorithm, forKey: .checksumAlgorithm)
+        try container.encode(checksum, forKey: .checksum)
+        try container.encodeIfPresent(signature, forKey: .signature)
+        try container.encode(changelog, forKey: .changelog)
     }
 
     public var installableSkill: AgentSkill {
@@ -336,7 +426,8 @@ public struct AgentSkillManifest: Codable, Equatable, Sendable {
             skill: skill,
             packageVersion: packageVersion,
             checksumAlgorithm: checksumAlgorithm,
-            checksum: checksum
+            checksum: checksum,
+            changelog: changelog
         ))
     }
 
@@ -384,13 +475,15 @@ public struct AgentSkillManifest: Codable, Equatable, Sendable {
         skill: AgentSkill,
         packageVersion: String,
         keyID: String,
-        signingKey: P256.Signing.PrivateKey
+        signingKey: P256.Signing.PrivateKey,
+        changelog: [String] = []
     ) throws -> AgentSkillManifest {
         var manifest = AgentSkillManifest(
             skill: skill,
             packageVersion: packageVersion,
             checksum: try sha256Hex(for: skill),
-            signature: nil
+            signature: nil,
+            changelog: changelog
         )
         let signature = try signingKey.signature(for: manifest.signingPayloadData())
         manifest.signature = AgentSkillManifestSignature(
@@ -512,15 +605,22 @@ public struct AgentSkillManagerService: Sendable {
 
     @discardableResult
     public func install(manifest: AgentSkillManifest) async throws -> AgentSkill {
-        if let trustStore {
-            try manifest.validateForInstall(trustStore: trustStore)
-        } else {
-            try manifest.validateForInstall()
-        }
+        try validateManifestForInstall(manifest)
         let skill = manifest.installableSkill
         try await validateVersionTransition(for: skill)
         try await store.upsert(skill)
         return skill
+    }
+
+    public func previewInstall(manifest: AgentSkillManifest) async throws -> AgentSkillInstallPreview {
+        try validateManifestForInstall(manifest)
+        let installedSkill = try await catalog().skill(id: manifest.skill.id)
+        return AgentSkillInstallPreview(manifest: manifest, installedSkill: installedSkill)
+    }
+
+    public func previewInstall(jsonString: String) async throws -> AgentSkillInstallPreview {
+        let manifest = try AgentSkillManifest.decodeJSONString(jsonString)
+        return try await previewInstall(manifest: manifest)
     }
 
     @discardableResult
@@ -541,6 +641,14 @@ public struct AgentSkillManagerService: Sendable {
 
     public func removeSkill(id: String) async throws {
         try await store.removeSkill(id: id)
+    }
+
+    private func validateManifestForInstall(_ manifest: AgentSkillManifest) throws {
+        if let trustStore {
+            try manifest.validateForInstall(trustStore: trustStore)
+        } else {
+            try manifest.validateForInstall()
+        }
     }
 
     private func updateStatus(id: String, to status: AgentSkillInstallationStatus) async throws -> AgentSkill? {

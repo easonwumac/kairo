@@ -5,6 +5,7 @@ public struct PermissionHubView: View {
     @State private var homeKitPreviewMessage: String?
     @State private var skillManagerMessage: String?
     @State private var manifestImportText = ""
+    @State private var manifestInstallPreview: AgentSkillInstallPreview?
     @State private var skillCatalog: AgentSkillCatalog
 
     private let registry = CapabilityRegistry()
@@ -99,16 +100,65 @@ public struct PermissionHubView: View {
 
             Button {
                 Task {
-                    await importManifestText()
+                    await previewManifestText()
                 }
             } label: {
-                Label("Import Manifest", systemImage: "square.and.arrow.down.on.square")
+                Label("Preview Manifest", systemImage: "doc.text.magnifyingglass")
             }
             .disabled(manifestImportText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .accessibilityIdentifier("access.skills.manifest-import.button")
+
+            if let manifestInstallPreview {
+                manifestPreview(manifestInstallPreview)
+            }
         }
         .padding(.vertical, 4)
         .accessibilityIdentifier("access.skills.manifest-import")
+    }
+
+    @ViewBuilder
+    private func manifestPreview(_ manifestInstallPreview: AgentSkillInstallPreview) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(manifestInstallPreview.summary)
+                .font(.caption)
+                .fontWeight(.medium)
+
+            Text(manifestPreviewVersionSummary(manifestInstallPreview))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            if manifestInstallPreview.changelog.isEmpty {
+                Text("No changelog provided.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(manifestInstallPreview.changelog, id: \.self) { item in
+                    Text("- \(item)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Button {
+                Task {
+                    await confirmManifestInstall()
+                }
+            } label: {
+                Label("Confirm Install", systemImage: "checkmark.circle")
+            }
+            .font(.caption)
+            .disabled(manifestInstallPreview.installationChange == .downgradeBlocked)
+            .accessibilityIdentifier("access.skills.manifest-preview.confirm")
+        }
+        .accessibilityIdentifier("access.skills.manifest-preview")
+    }
+
+    private func manifestPreviewVersionSummary(_ manifestInstallPreview: AgentSkillInstallPreview) -> String {
+        if let installedVersion = manifestInstallPreview.installedVersion {
+            return "Installed \(installedVersion) -> Incoming \(manifestInstallPreview.incomingVersion)"
+        }
+
+        return "Incoming \(manifestInstallPreview.incomingVersion)"
     }
 
     @ViewBuilder
@@ -179,10 +229,43 @@ public struct PermissionHubView: View {
     }
 
     @MainActor
-    private func importManifestText() async {
+    private func previewManifestText() async {
         let trimmedManifest = manifestImportText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedManifest.isEmpty else {
             skillManagerMessage = "Manifest JSON is empty."
+            manifestInstallPreview = nil
+            return
+        }
+        guard let skillManagerService else {
+            skillManagerMessage = "Manifest import requires live Skill Manager."
+            manifestInstallPreview = nil
+            return
+        }
+
+        do {
+            let preview = try await skillManagerService.previewInstall(jsonString: manifestImportText)
+            manifestInstallPreview = preview
+            skillManagerMessage = preview.summary
+        } catch AgentSkillManifestImportError.invalidJSON {
+            skillManagerMessage = "Manifest JSON is invalid."
+            manifestInstallPreview = nil
+        } catch AgentSkillManifestValidationError.invalidSignature {
+            skillManagerMessage = "Manifest signature is invalid."
+            manifestInstallPreview = nil
+        } catch {
+            skillManagerMessage = "Unable to import manifest."
+            manifestInstallPreview = nil
+        }
+    }
+
+    @MainActor
+    private func confirmManifestInstall() async {
+        guard let manifestInstallPreview else {
+            skillManagerMessage = "Preview a manifest before installing."
+            return
+        }
+        guard manifestInstallPreview.installationChange != .downgradeBlocked else {
+            skillManagerMessage = manifestInstallPreview.summary
             return
         }
         guard let skillManagerService else {
@@ -191,12 +274,13 @@ public struct PermissionHubView: View {
         }
 
         do {
-            let installed = try await skillManagerService.installManifest(jsonString: manifestImportText)
+            let installed = try await skillManagerService.install(manifest: manifestInstallPreview.manifest)
             skillCatalog = try await skillManagerService.catalog()
             manifestImportText = ""
+            self.manifestInstallPreview = nil
             skillManagerMessage = "\(installed.displayName) installed from signed manifest."
-        } catch AgentSkillManifestImportError.invalidJSON {
-            skillManagerMessage = "Manifest JSON is invalid."
+        } catch AgentSkillInstallError.versionDowngrade(_, let installedVersion, let incomingVersion) {
+            skillManagerMessage = "Blocked downgrade from \(installedVersion) to \(incomingVersion)."
         } catch AgentSkillManifestValidationError.invalidSignature {
             skillManagerMessage = "Manifest signature is invalid."
         } catch {

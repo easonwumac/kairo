@@ -550,6 +550,70 @@ final class KairoCoreTests: XCTestCase {
         }
     }
 
+    func testAgentSkillManagerBuildsSignedManifestUpdatePreviewWithChangelog() async throws {
+        let storeURL = temporaryFileURL(named: "preview-agent-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let signingKey = P256.Signing.PrivateKey()
+        let trustStore = AgentSkillManifestTrustStore(trustedKeys: [
+            AgentSkillTrustedPublicKey(
+                keyID: "kairo-marketplace-2026",
+                algorithm: .p256SHA256,
+                publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
+            )
+        ])
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default, trustStore: trustStore)
+        _ = try await service.install(manifest: signedWeatherSkillManifest(version: "2.0.0", signingKey: signingKey))
+        let updateManifest = try signedWeatherSkillManifest(
+            version: "2.1.0",
+            signingKey: signingKey,
+            changelog: [
+                "Adds storm alerts.",
+                "Improves hourly summary."
+            ]
+        )
+
+        let preview = try await service.previewInstall(manifest: updateManifest)
+
+        XCTAssertEqual(preview.skillID, "marketplace-weather-briefing")
+        XCTAssertEqual(preview.displayName, "Weather Briefing")
+        XCTAssertEqual(preview.installedVersion, "2.0.0")
+        XCTAssertEqual(preview.incomingVersion, "2.1.0")
+        XCTAssertEqual(preview.packageVersion, "2026.6")
+        XCTAssertEqual(preview.changelog, [
+            "Adds storm alerts.",
+            "Improves hourly summary."
+        ])
+        XCTAssertEqual(preview.installationChange, .update)
+        XCTAssertEqual(preview.summary, "Update Weather Briefing from 2.0.0 to 2.1.0.")
+    }
+
+    func testAgentSkillManagerBuildsDowngradeBlockedPreviewFromManifestJSONString() async throws {
+        let storeURL = temporaryFileURL(named: "preview-downgrade-agent-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let signingKey = P256.Signing.PrivateKey()
+        let trustStore = AgentSkillManifestTrustStore(trustedKeys: [
+            AgentSkillTrustedPublicKey(
+                keyID: "kairo-marketplace-2026",
+                algorithm: .p256SHA256,
+                publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
+            )
+        ])
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default, trustStore: trustStore)
+        _ = try await service.install(manifest: signedWeatherSkillManifest(version: "3.0.0", signingKey: signingKey))
+        let downgradeManifestJSON = try AgentSkillManifest.encodeJSONString(signedWeatherSkillManifest(
+            version: "2.9.0",
+            signingKey: signingKey,
+            changelog: ["Attempts to downgrade the installed skill."]
+        ))
+
+        let preview = try await service.previewInstall(jsonString: downgradeManifestJSON)
+
+        XCTAssertEqual(preview.installedVersion, "3.0.0")
+        XCTAssertEqual(preview.incomingVersion, "2.9.0")
+        XCTAssertEqual(preview.installationChange, .downgradeBlocked)
+        XCTAssertEqual(preview.summary, "Blocked downgrade for Weather Briefing from 3.0.0 to 2.9.0.")
+    }
+
     func testFileBackedAgentSkillManagerPersistsInstallDisableEnableAndRemoveLifecycle() async throws {
         let storeURL = temporaryFileURL(named: "agent-skills.json")
         let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
@@ -739,7 +803,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import.text""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import.button""#))
-        XCTAssertTrue(permissionHubView.contains("try await skillManagerService.installManifest(jsonString: manifestImportText)"))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-preview""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-preview.confirm""#))
+        XCTAssertTrue(permissionHubView.contains("try await skillManagerService.previewInstall(jsonString: manifestImportText)"))
+        XCTAssertTrue(permissionHubView.contains("try await skillManagerService.install(manifest: manifestInstallPreview.manifest)"))
         XCTAssertTrue(permissionHubView.contains("HomeKit Control Demos"))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demos""#))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demo.\(recipe.id)""#))
@@ -1690,7 +1757,8 @@ final class KairoCoreTests: XCTestCase {
 
     private func signedWeatherSkillManifest(
         version: String,
-        signingKey: P256.Signing.PrivateKey
+        signingKey: P256.Signing.PrivateKey,
+        changelog: [String] = []
     ) throws -> AgentSkillManifest {
         var skill = AgentSkill.marketplaceTemplate(
             id: "marketplace-weather-briefing",
@@ -1704,7 +1772,8 @@ final class KairoCoreTests: XCTestCase {
             skill: skill,
             packageVersion: "2026.6",
             keyID: "kairo-marketplace-2026",
-            signingKey: signingKey
+            signingKey: signingKey,
+            changelog: changelog
         )
     }
 
