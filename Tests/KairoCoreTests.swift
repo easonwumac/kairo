@@ -335,6 +335,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(paths.sharedFilesDirectory.lastPathComponent, "SharedFiles")
         XCTAssertEqual(paths.localModelsDirectory.lastPathComponent, "LocalModels")
         XCTAssertEqual(paths.localModelInstallRegistryURL.lastPathComponent, "install-registry.json")
+        XCTAssertEqual(paths.localModelSettingsURL.lastPathComponent, "settings.json")
         XCTAssertFalse(paths.usesAppGroup)
     }
 
@@ -411,6 +412,106 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(persisted?.installedSizeBytes, record.installedSizeBytes)
         XCTAssertEqual(persisted?.sha256, record.sha256)
         XCTAssertEqual(installedRecords.map(\.modelID), [record.modelID])
+    }
+
+    func testFileBackedLocalModelSettingsStorePersistsSelectedModelAndPreference() async throws {
+        let fileURL = temporaryFileURL(named: "local-model-settings.json")
+        let firstStore = try await FileBackedLocalModelSettingsStore(fileURL: fileURL)
+        let initialSettings = await firstStore.settings()
+        XCTAssertNil(initialSettings.selectedModelID)
+        XCTAssertEqual(initialSettings.preference, .automatic)
+
+        try await firstStore.save(LocalModelSettings(
+            selectedModelID: "qwen-small",
+            preference: .preferLocal
+        ))
+
+        let secondStore = try await FileBackedLocalModelSettingsStore(fileURL: fileURL)
+        let persisted = await secondStore.settings()
+        XCTAssertEqual(persisted.selectedModelID, "qwen-small")
+        XCTAssertEqual(persisted.preference, .preferLocal)
+    }
+
+    func testLocalModelSettingsServiceSelectsInstalledModelAndBuildsRoutingContext() async throws {
+        let settingsURL = temporaryFileURL(named: "local-model-settings.json")
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen-small.gguf")
+        let catalog = LocalModelCatalog(
+            signingKeyID: "test-key",
+            signature: "test-signature",
+            minimumSafetyPolicyVersion: "2026.1",
+            models: [
+                makeLocalModelManifest(id: "qwen-small", safetyPolicyVersion: "2026.2"),
+                makeLocalModelManifest(id: "old-policy", safetyPolicyVersion: "2025.9")
+            ]
+        )
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen-small",
+            version: "1.0",
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: 1024,
+            sha256: "abc123"
+        ))
+        let store = try await FileBackedLocalModelSettingsStore(fileURL: settingsURL)
+        let service = LocalModelSettingsService(catalog: catalog, installRegistry: registry, settingsStore: store)
+
+        try await service.setPreference(.preferLocal)
+        try await service.selectModel(id: "qwen-small", minimumSafetyPolicyVersion: "2026.1")
+
+        let status = await service.status(minimumSafetyPolicyVersion: "2026.1")
+        XCTAssertEqual(status.selectedModelID, "qwen-small")
+        XCTAssertEqual(status.selectedModel?.id, "qwen-small")
+        XCTAssertEqual(status.installedRecord?.fileURL, modelURL)
+        XCTAssertEqual(status.installedModels.map(\.modelID), ["qwen-small"])
+        XCTAssertEqual(status.availableModels.map(\.id), ["qwen-small"])
+
+        let context = await service.routingContext(
+            taskClass: .summarization,
+            networkAvailable: false,
+            minimumSafetyPolicyVersion: "2026.1"
+        )
+        XCTAssertEqual(context.preference, .preferLocal)
+        XCTAssertFalse(context.networkAvailable)
+        XCTAssertEqual(context.taskClass, .summarization)
+        XCTAssertTrue(context.localModelInstalled)
+        XCTAssertEqual(context.localContextWindow, 2048)
+    }
+
+    func testLocalModelSettingsServiceRejectsUninstalledOrUnavailableSelections() async throws {
+        let settingsURL = temporaryFileURL(named: "local-model-settings.json")
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let catalog = LocalModelCatalog(
+            signingKeyID: "test-key",
+            signature: "test-signature",
+            minimumSafetyPolicyVersion: "2026.1",
+            models: [
+                makeLocalModelManifest(id: "qwen-small", safetyPolicyVersion: "2026.2"),
+                makeLocalModelManifest(id: "deprecated", safetyPolicyVersion: "2026.2", deprecated: true)
+            ]
+        )
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let store = try await FileBackedLocalModelSettingsStore(fileURL: settingsURL)
+        let service = LocalModelSettingsService(catalog: catalog, installRegistry: registry, settingsStore: store)
+
+        do {
+            try await service.selectModel(id: "qwen-small", minimumSafetyPolicyVersion: "2026.1")
+            XCTFail("Expected uninstalled model selection to fail")
+        } catch let error as LocalModelSelectionError {
+            XCTAssertEqual(error, .modelNotInstalled("qwen-small"))
+        }
+
+        do {
+            try await service.selectModel(id: "deprecated", minimumSafetyPolicyVersion: "2026.1")
+            XCTFail("Expected unavailable model selection to fail")
+        } catch let error as LocalModelSelectionError {
+            XCTAssertEqual(error, .modelUnavailable("deprecated"))
+        }
+
+        let status = await service.status(minimumSafetyPolicyVersion: "2026.1")
+        XCTAssertNil(status.selectedModelID)
+        XCTAssertFalse(status.localModelInstalled)
     }
 
     func testVerifiedLocalModelDownloaderInstallsModelAndUpdatesRegistry() async throws {

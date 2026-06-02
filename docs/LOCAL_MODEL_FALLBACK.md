@@ -66,7 +66,7 @@ protocol AIProvider {
 
 ## MVP 策略
 
-第一階段保留 mock/local placeholder，不急著塞模型權重。Kairo core 已具備 catalog、install registry、provider routing，以及 verified downloader scaffold；下一步是接上使用者可見的下載 UI 與實機 runtime proof of concept。
+第一階段保留 mock/local placeholder，不急著塞模型權重。Kairo core 已具備 catalog、install registry、selected-model settings、provider routing，以及 verified downloader scaffold；下一步是接上使用者可見的下載 UI 與實機 runtime proof of concept。
 
 ## Download pipeline
 
@@ -80,11 +80,21 @@ protocol AIProvider {
 
 The downloader is intentionally UI-agnostic so the app can later expose a model download screen with progress, cancellation, license text, size disclosure, and delete controls.
 
+## Model selection
+
+`LocalModelSettingsService` owns the selected local model and route preference:
+
+- persists `selectedModelID` and `ProviderRoutePreference` in `KairoPaths.localModelSettingsURL`;
+- refuses to select deprecated, old-safety-policy, or uninstalled models;
+- returns a `LocalModelSettingsStatus` snapshot for Settings / model-library UI;
+- builds a `ProviderRoutingContext` so chat can route privacy/offline eligible prompts to the selected installed model.
+
 建議順序：
 
 1. 先做 `LocalFallbackProvider` protocol shell。
 2. 用 rule-based fallback 模擬本機模型能力。
 3. 用 verified downloader 安裝使用者明確選擇的模型。
-4. 選定 Core ML / llama.cpp / MLX Swift 等 runtime。
-5. 測 Qwen 0.6B～0.8B quantized 在 iPhone 上的速度與 RAM。
-6. 只把 fallback 用於短任務，不拿來做長規劃。
+4. 讓使用者指定已安裝模型與 route preference。
+5. 選定 Core ML / llama.cpp / MLX Swift 等 runtime。
+6. 測 Qwen 0.6B～0.8B quantized 在 iPhone 上的速度與 RAM。
+7. 只把 fallback 用於短任務，不拿來做長規劃。

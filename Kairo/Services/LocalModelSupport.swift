@@ -398,6 +398,197 @@ public actor FileBackedLocalModelInstallRegistry {
     }
 }
 
+public struct LocalModelSettings: Codable, Equatable, Sendable {
+    public var selectedModelID: String?
+    public var preference: ProviderRoutePreference
+
+    public init(selectedModelID: String? = nil, preference: ProviderRoutePreference = .automatic) {
+        self.selectedModelID = selectedModelID
+        self.preference = preference
+    }
+}
+
+public struct LocalModelSettingsStatus: Equatable, Sendable {
+    public var selectedModelID: String?
+    public var selectedModel: LocalModelManifest?
+    public var installedRecord: LocalModelInstallRecord?
+    public var preference: ProviderRoutePreference
+    public var availableModels: [LocalModelManifest]
+    public var installedModels: [LocalModelInstallRecord]
+
+    public init(
+        selectedModelID: String?,
+        selectedModel: LocalModelManifest?,
+        installedRecord: LocalModelInstallRecord?,
+        preference: ProviderRoutePreference,
+        availableModels: [LocalModelManifest],
+        installedModels: [LocalModelInstallRecord]
+    ) {
+        self.selectedModelID = selectedModelID
+        self.selectedModel = selectedModel
+        self.installedRecord = installedRecord
+        self.preference = preference
+        self.availableModels = availableModels
+        self.installedModels = installedModels
+    }
+
+    public var localModelInstalled: Bool {
+        selectedModel != nil && installedRecord?.status == .installed
+    }
+}
+
+public enum LocalModelSelectionError: Error, Equatable {
+    case modelUnavailable(String)
+    case modelNotInstalled(String)
+}
+
+public actor FileBackedLocalModelSettingsStore {
+    private let fileURL: URL
+    private let encoder: JSONEncoder
+    private let decoder: JSONDecoder
+    private var currentSettings: LocalModelSettings = LocalModelSettings()
+
+    public init(fileURL: URL) async throws {
+        self.fileURL = fileURL
+        self.encoder = JSONEncoder()
+        self.decoder = JSONDecoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try await loadFromDisk()
+    }
+
+    public func settings() -> LocalModelSettings {
+        currentSettings
+    }
+
+    public func save(_ settings: LocalModelSettings) throws {
+        currentSettings = settings
+        try persist()
+    }
+
+    private func loadFromDisk() async throws {
+        let directory = fileURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            currentSettings = LocalModelSettings()
+            return
+        }
+
+        let data = try Data(contentsOf: fileURL)
+        guard !data.isEmpty else {
+            currentSettings = LocalModelSettings()
+            return
+        }
+
+        currentSettings = try decoder.decode(LocalModelSettings.self, from: data)
+    }
+
+    private func persist() throws {
+        let directory = fileURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let data = try encoder.encode(currentSettings)
+        let temporaryURL = fileURL.appendingPathExtension("tmp")
+        try data.write(to: temporaryURL, options: [.atomic])
+
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            _ = try FileManager.default.replaceItemAt(fileURL, withItemAt: temporaryURL)
+        } else {
+            try FileManager.default.moveItem(at: temporaryURL, to: fileURL)
+        }
+    }
+}
+
+public actor LocalModelSettingsService {
+    private let catalog: LocalModelCatalog
+    private let installRegistry: FileBackedLocalModelInstallRegistry
+    private let settingsStore: FileBackedLocalModelSettingsStore
+
+    public init(
+        catalog: LocalModelCatalog,
+        installRegistry: FileBackedLocalModelInstallRegistry,
+        settingsStore: FileBackedLocalModelSettingsStore
+    ) {
+        self.catalog = catalog
+        self.installRegistry = installRegistry
+        self.settingsStore = settingsStore
+    }
+
+    public func status(minimumSafetyPolicyVersion: String = "2026.1") async -> LocalModelSettingsStatus {
+        let settings = await settingsStore.settings()
+        let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: minimumSafetyPolicyVersion)
+        let availableIDs = Set(availableModels.map(\.id))
+        let installedModels = await installRegistry.installedRecords()
+            .filter { availableIDs.contains($0.modelID) }
+        let selectedModel = settings.selectedModelID.flatMap { selectedID in
+            availableModels.first { $0.id == selectedID }
+        }
+        let installedRecord = settings.selectedModelID.flatMap { selectedID in
+            installedModels.first { $0.modelID == selectedID }
+        }
+
+        return LocalModelSettingsStatus(
+            selectedModelID: settings.selectedModelID,
+            selectedModel: selectedModel,
+            installedRecord: installedRecord,
+            preference: settings.preference,
+            availableModels: availableModels,
+            installedModels: installedModels
+        )
+    }
+
+    public func selectModel(id: String, minimumSafetyPolicyVersion: String = "2026.1") async throws {
+        let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: minimumSafetyPolicyVersion)
+        guard availableModels.contains(where: { $0.id == id }) else {
+            throw LocalModelSelectionError.modelUnavailable(id)
+        }
+        guard await installRegistry.record(for: id)?.status == .installed else {
+            throw LocalModelSelectionError.modelNotInstalled(id)
+        }
+
+        var settings = await settingsStore.settings()
+        settings.selectedModelID = id
+        try await settingsStore.save(settings)
+    }
+
+    public func clearSelectedModel() async throws {
+        var settings = await settingsStore.settings()
+        settings.selectedModelID = nil
+        try await settingsStore.save(settings)
+    }
+
+    public func setPreference(_ preference: ProviderRoutePreference) async throws {
+        var settings = await settingsStore.settings()
+        settings.preference = preference
+        try await settingsStore.save(settings)
+    }
+
+    public func routingContext(
+        taskClass: ProviderTaskClass = .simpleQuestionAnswer,
+        networkAvailable: Bool = true,
+        privacyModeEnabled: Bool = false,
+        offlineModeEnabled: Bool = false,
+        requiresToolUse: Bool = false,
+        requiresCurrentInfo: Bool = false,
+        contextTokenEstimate: Int = 0,
+        minimumSafetyPolicyVersion: String = "2026.1"
+    ) async -> ProviderRoutingContext {
+        let modelStatus = await status(minimumSafetyPolicyVersion: minimumSafetyPolicyVersion)
+        return ProviderRoutingContext(
+            preference: modelStatus.preference,
+            networkAvailable: networkAvailable,
+            privacyModeEnabled: privacyModeEnabled,
+            offlineModeEnabled: offlineModeEnabled,
+            taskClass: taskClass,
+            requiresToolUse: requiresToolUse,
+            requiresCurrentInfo: requiresCurrentInfo,
+            contextTokenEstimate: contextTokenEstimate,
+            localModelInstalled: modelStatus.localModelInstalled,
+            localContextWindow: modelStatus.selectedModel?.contextWindow ?? 2048
+        )
+    }
+}
+
 public struct LocalFallbackProvider: AIProvider {
     public var installedModelID: String?
 

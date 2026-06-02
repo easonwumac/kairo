@@ -140,6 +140,10 @@ public struct KairoPaths: Sendable {
         localModelsDirectory.appendingPathComponent("install-registry.json")
     }
 
+    public var localModelSettingsURL: URL {
+        localModelsDirectory.appendingPathComponent("settings.json")
+    }
+
     public static func defaultAppGroupContainerURL(for identifier: String) -> URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: identifier)
     }
