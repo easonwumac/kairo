@@ -1,0 +1,44 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+DerivedData/
+build/
+*.xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Secrets / local config
+.env
+.env.*
+*.local
+*.secret
+Secrets.plist
+GoogleService-Info.plist
+*.p8
+*.cer
+*.mobileprovision
+*.provisionprofile
+
+# Logs
+*.log
+logs/
+
+# Kairo local app data
+memory-store.json
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+Application Support/

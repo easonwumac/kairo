@@ -1,0 +1,66 @@
+# Roadmap
+
+## Phase 0：專案骨架
+
+- 建 repo。
+- 建 docs。
+- 建 Swift source scaffold。
+- 定義 capability matrix。
+- 定義 memory schema。
+- 定義 safety policy。
+- 定義 OpenAI provider abstraction。
+
+## Phase 1：本機 Agent MVP
+
+- SwiftUI App shell。
+- Chat screen。
+- Memory Center。
+- SwiftData/Core Data persistence。
+- Keychain credential store。
+- Local search。
+- OpenAI API key 模式。
+
+## Phase 2：iOS 入口
+
+- Share Extension。
+- App Intents。
+- Shortcuts actions。
+- UserNotifications。
+- EventKit reminders/calendar。
+- Files / Photos picker。
+
+## Phase 3：安全與權限中心
+
+- Permission Hub。
+- Capability Catalog。
+- Action Preview。
+- Confirmation flow。
+- Audit Log。
+- Memory delete/export。
+
+## Phase 4：外部服務
+
+優先選一個：
+
+- Google Calendar + Gmail
+- 或 Microsoft 365
+
+加上 OAuth、sync、briefing、draft reply。
+
+## Phase 5：雲端與同步
+
+- Kairo account。
+- Sign in with Apple。
+- Optional CloudKit sync 或自建 backend。
+- pgvector / object storage。
+- APNs。
+- Rate limit / billing。
+
+## Phase 6：進階 Agent
+
+- Local embeddings。
+- Sensitive data classifier。
+- More App Intents。
+- Widget。
+- Shortcuts recipes。
+- Local model experiments。
