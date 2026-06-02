@@ -91,6 +91,16 @@ Select Photo
 - Extension / Intent runtime 有時間限制，長任務交給主 App 或後端。
 - Shortcuts 是使用者顯式配置的自動化，因此比背景 daemon 更符合 iOS 生態。
 
+## Integration registry alignment
+
+`IntegrationRegistry` keeps Shortcuts/App Intents metadata beside URL-scheme and OAuth connector metadata so the model can distinguish three very different paths:
+
+1. **Shortcuts/App Intents**：使用者明確設定或觸發，自動化步驟由 Shortcuts 執行。
+2. **URL schemes / universal links**：只能開啟使用者可見的 handoff，不能隱藏操作或讀取對方 App 資料。
+3. **OAuth connectors**：只透過官方 API 與授權 scopes 存取資料；寫入外部帳號仍需 preview + confirmation。
+
+This registry should power UI explanations, prompt context, App Store review notes, and connector setup screens.
+
 ## 後續實作方向
 
 - 擴充 `Kairo/Intents/KairoIntents.swift`。

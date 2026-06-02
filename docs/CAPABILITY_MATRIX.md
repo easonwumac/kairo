@@ -14,6 +14,9 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 | 通知 | UserNotifications | 是 | 是 | 是 | 中 |
 | App Intents | AppIntents | 使用者觸發 | Shortcuts 決定 | 是 | 低 |
 | Siri / Shortcuts | App Intents | 使用者設定 | 有限 | 是 | 低 |
+| URL schemes / Universal Links | `openURL` / links | 使用者可見 | 否 | 是 | 僅 handoff，不能隱藏控制 |
+| OAuth connectors | 官方 API + OAuth | 是 | 有限 / 後端輔助 | 後續 | Token / scope 安全 |
+| BGTaskScheduler | BGAppRefreshTask / BGProcessingTask | 系統與使用者設定 | 有限、非即時 | 是 | 不可宣稱 daemon |
 | Contacts | Contacts.framework | 是 | 否 | 後續 | 隱私高 |
 | Location | CoreLocation | 是 | 特定模式 | 後續 | 隱私高 |
 | Health | HealthKit | 是 + entitlement | 有限 | 不預設 | 隱私高 |
@@ -34,3 +37,6 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 3. 如果是高隱私資料，例如 contacts、location、health、email，預設不啟用。
 4. 所有外部 action 需要 risk tier。
 5. 所有高風險 action 必須 preview + confirm。
+6. URL scheme / universal link 只能作為使用者可見 handoff，不能宣稱能讀取或控制對方 App UI。
+7. OAuth connector 只能存取使用者授權 scope 內的官方 API；敏感 scopes 需要審核、token 安全與撤銷流程。
+8. 背景工作只能使用 BGTaskScheduler 的有限刷新/處理模型；不得宣稱常駐、即時或精準排程。

@@ -39,6 +39,8 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - OpenAI provider abstraction, credential store, Keychain-backed credential store, and OAuth/PKCE scaffold.
 - Local-model catalog/install registry and provider-routing scaffold.
 - Capability registry, sandbox action catalog, safety policy engine, action preview UI, and sandbox action executor.
+- Popular app integration registry covering App Intents, Shortcuts, URL schemes/universal links, Share Extension handoff, and OAuth connector metadata.
+- BGTaskScheduler-compatible background task policy for bounded app refresh/processing work without daemon overclaims.
 - Share Extension ingestion queue for text, URLs, files, and images.
 - App Intents scaffold for asking, saving, and searching.
 - Privacy manifest, purpose-string notes, capability matrix, App Store readiness docs, and unit tests.
@@ -81,9 +83,10 @@ The package is intentionally dependency-free. The iOS app target is described in
 
 1. App target hardening: entitlements, App Group, Share Extension UI, widgets.
 2. Memory and chat persistence migration to SwiftData/Core Data for production apps.
-3. Real provider integrations: OpenAI Responses API, official OAuth connectors, and optional backend proxy.
+3. Real provider integrations: OpenAI Responses API, official OAuth connectors, optional backend proxy, and provider-specific app review/security requirements.
 4. Tool execution: EventKit writes, local notifications, URL/deep-link handoff, Shortcuts/App Intents, documents/photos import.
-5. Local model fallback: signed model catalog, download UI, device gating, safety policy versioning.
+5. Bounded background work: BGAppRefreshTask/BGProcessingTask registration, checkpointing, expiration handling, and user-visible rescheduling.
+6. Local model fallback: signed model catalog, download UI, device gating, safety policy versioning.
 6. App Store readiness: privacy nutrition labels, review notes, permission prompts, deletion/export flows.
 
 ## Documentation

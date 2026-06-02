@@ -17,6 +17,8 @@
 │ - Memory Retriever                   │
 │ - Safety Policy Engine               │
 │ - Capability Registry                │
+│ - Integration Registry               │
+│ - Background Task Policy             │
 │ - Audit Logger                       │
 └────────────────┬────────────────────┘
                  │
@@ -29,6 +31,8 @@
 │ - CredentialStore                    │
 │ - NotificationService                │
 │ - CalendarReminderService            │
+│ - IntegrationRegistry                │
+│ - BackgroundTaskPolicy               │
 └────────────────┬────────────────────┘
                  │
 ┌────────────────▼────────────────────┐
@@ -62,6 +66,27 @@
 - `Intents`：App Intents / Shortcuts。
 - `Extensions`：Share Extension。
 - `Shared`：可在 app/extension 共用的型別。
+
+## Integration registry
+
+`IntegrationRegistry` is metadata, not a permission bypass. It records supported and planned surfaces for popular apps:
+
+- App Intents / Shortcuts for user-configured automation.
+- URL schemes and universal links for visible handoff only.
+- Share Extension and document picker intake for user-selected content.
+- OAuth connector metadata for official APIs, scopes, token-exchange expectations, and data boundaries.
+
+The agent prompt context includes this registry so model plans can choose safe handoff/API paths and produce `unsupportedSandboxAction` when a user asks for private cross-app access.
+
+## Background task policy
+
+`BackgroundTaskPolicy` describes BGTaskScheduler-compatible work:
+
+- `com.kairo.app.refresh` maps to bounded `BGAppRefreshTaskRequest` style work such as importing queued shared items.
+- `com.kairo.app.processing.local-model` maps to user-approved bounded model maintenance.
+- `com.kairo.app.processing.connectors` maps to OAuth connector sync checkpoints.
+
+Kairo must not claim always-on background execution. iOS chooses launch timing, may skip launches, and can expire work. Every task needs checkpointing, expiration handling, and user-visible recovery/rescheduling.
 
 ## Persistence
 
