@@ -36,12 +36,19 @@ public struct IntegrationRegistry: Sendable {
             category: .appleSystem,
             surfaces: [.appIntents, .shortcuts],
             requiredCapabilities: [.appIntents],
-            appIntentIdentifiers: ["AskKairoIntent", "SaveKairoMemoryIntent", "SearchKairoMemoryIntent"],
+            appIntentIdentifiers: [
+                "AskKairoIntent",
+                "SaveKairoMemoryIntent",
+                "SearchKairoMemoryIntent",
+                "SummarizeWithKairoIntent",
+                "ExtractKairoTasksIntent"
+            ],
             shortcutTemplates: [
                 ShortcutTemplate(identifier: "daily-briefing", title: "Daily Briefing", inputSummary: "Date, calendar context, shared text, or shortcut variables", outputSummary: "Briefing text and suggested next actions"),
-                ShortcutTemplate(identifier: "save-shared-text", title: "Save Shared Text", inputSummary: "Shortcut input text or URL", outputSummary: "Memory identifier and extracted tasks")
+                ShortcutTemplate(identifier: "save-shared-text", title: "Save Shared Text", inputSummary: "Shortcut input text or URL", outputSummary: "Memory identifier and extracted tasks"),
+                ShortcutTemplate(identifier: "extract-task-drafts", title: "Extract Task Drafts", inputSummary: "Shortcut input text, OCR text, note, or email body", outputSummary: "Task titles and reminder drafts for downstream Shortcuts actions")
             ],
-            sandboxNotes: "Shortcuts must be configured or launched by the user. Kairo can provide App Intents and structured outputs, but it must not silently drive other apps.",
+            sandboxNotes: "Shortcuts must be configured or launched by the user. Kairo provides App Intents with structured JSON outputs for downstream Shortcut nodes, but it must not silently drive other apps.",
             status: .available
         ),
         AppIntegration(

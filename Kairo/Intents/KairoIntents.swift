@@ -12,10 +12,17 @@ public struct AskKairoIntent: AppIntent {
 
     public init() {}
 
-    public func perform() async throws -> some IntentResult & ProvidesDialog {
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
         let agent = AgentCore()
         let response = try await agent.respond(to: question)
-        return .result(dialog: IntentDialog(stringLiteral: response.message))
+        let output = ShortcutNodeOutput(
+            kind: .ask,
+            displayText: response.message,
+            fields: ["answer": response.message],
+            proposedActions: response.proposedActions
+        )
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: response.message))
     }
 }
 
@@ -29,17 +36,14 @@ public struct SaveToKairoMemoryIntent: AppIntent {
 
     public init() {}
 
-    public func perform() async throws -> some IntentResult & ProvidesDialog {
-        // TODO: 正式 App target 應改用 App Group shared JSONFileMemoryStore，讓 Shortcut / Share Extension / 主 App 共用 memory queue。
-        let store = InMemoryMemoryStore()
-        let memory = MemoryRecord(
-            title: String(text.prefix(40)),
-            summary: String(text.prefix(160)),
-            content: text,
-            source: .appIntent
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(
+            .saveMemory,
+            input: ShortcutNodeInput(text: text, sourceName: "Save to Kairo Memory")
         )
-        try await store.save(memory)
-        return .result(dialog: "Saved to Kairo memory: \(memory.title)")
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
     }
 }
 
@@ -53,9 +57,47 @@ public struct SearchKairoMemoryIntent: AppIntent {
 
     public init() {}
 
-    public func perform() async throws -> some IntentResult & ProvidesDialog {
-        // TODO: 正式 App target 應查詢 shared memory store。
-        return .result(dialog: "Search requested: \(query)")
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(.searchMemory, input: ShortcutNodeInput(query: query))
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct SummarizeWithKairoIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Summarize with Kairo"
+    public static var description = IntentDescription("Summarize text passed from Shortcuts without executing external actions.")
+
+    @Parameter(title: "Text")
+    public var text: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(.summarize, input: ShortcutNodeInput(text: text, sourceName: "Summarize with Kairo"))
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct ExtractKairoTasksIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Extract Kairo Tasks"
+    public static var description = IntentDescription("Extract task drafts from Shortcut input and return structured output for downstream actions.")
+
+    @Parameter(title: "Text")
+    public var text: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(.extractTasks, input: ShortcutNodeInput(text: text, sourceName: "Extract Kairo Tasks"))
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
     }
 }
 #endif

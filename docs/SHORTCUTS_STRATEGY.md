@@ -91,6 +91,23 @@ Select Photo
 - Extension / Intent runtime 有時間限制，長任務交給主 App 或後端。
 - Shortcuts 是使用者顯式配置的自動化，因此比背景 daemon 更符合 iOS 生態。
 
+## Implemented node contract
+
+`ShortcutNodeRuntime` is the shared core used by App Intents and tests. It treats each Shortcut action as a small node:
+
+- input: text, optional query, source name, user variables, and result limit.
+- output: display text, typed fields, optional memory id, memory matches, extracted task drafts, reminder drafts, and proposed actions.
+- transport: App Intents return the encoded `ShortcutNodeOutput` JSON string so downstream Shortcut steps can pass the result into another Kairo node or parse fields with Shortcuts dictionary actions.
+- safety: task extraction and reminder creation only produce drafts; they do not write EventKit data unless a later confirmed action does so.
+
+Current nodes:
+
+1. `Ask Kairo` returns an answer payload.
+2. `Save to Kairo Memory` stores text in the App Group memory store and returns `memoryID` plus extracted task drafts.
+3. `Search Kairo Memory` returns matching memory metadata.
+4. `Summarize with Kairo` returns a bounded text summary.
+5. `Extract Kairo Tasks` returns task and reminder drafts without executing writes.
+
 ## Integration registry alignment
 
 `IntegrationRegistry` keeps Shortcuts/App Intents metadata beside URL-scheme and OAuth connector metadata so the model can distinguish three very different paths:
@@ -103,7 +120,6 @@ This registry should power UI explanations, prompt context, App Store review not
 
 ## 後續實作方向
 
-- 擴充 `Kairo/Intents/KairoIntents.swift`。
-- 建 shared app group store，讓 App Intent / Share Extension / 主 App 共用 memory queue。
-- 將 intent output 設計為可被 Shortcuts 下一步使用的型別。
+- 加入 `Create Daily Briefing` 與 `Create Reminder Draft` App Intents。
+- 把 JSON output 升級成 App Intents custom value/entity output when the generated Xcode target can verify it on device.
 - 提供一組官方 Shortcut templates。
