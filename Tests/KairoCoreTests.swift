@@ -523,6 +523,33 @@ final class KairoCoreTests: XCTestCase {
         }
     }
 
+    func testAgentSkillManagerRejectsDowngradeAndAllowsSameOrNewerSignedManifestVersions() async throws {
+        let storeURL = temporaryFileURL(named: "versioned-agent-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let signingKey = P256.Signing.PrivateKey()
+        let trustStore = AgentSkillManifestTrustStore(trustedKeys: [
+            AgentSkillTrustedPublicKey(
+                keyID: "kairo-marketplace-2026",
+                algorithm: .p256SHA256,
+                publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
+            )
+        ])
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default, trustStore: trustStore)
+
+        let installed = try await service.install(manifest: signedWeatherSkillManifest(version: "2.0.0", signingKey: signingKey))
+        XCTAssertEqual(installed.version, "2.0.0")
+
+        let reinstalled = try await service.install(manifest: signedWeatherSkillManifest(version: "2.0", signingKey: signingKey))
+        XCTAssertEqual(reinstalled.version, "2.0")
+
+        let upgraded = try await service.install(manifest: signedWeatherSkillManifest(version: "2.1.0", signingKey: signingKey))
+        XCTAssertEqual(upgraded.version, "2.1.0")
+
+        await XCTAssertThrowsErrorAsync(try await service.install(manifest: signedWeatherSkillManifest(version: "2.0.9", signingKey: signingKey))) { error in
+            XCTAssertEqual(error as? AgentSkillInstallError, .versionDowngrade(skillID: "marketplace-weather-briefing", installedVersion: "2.1.0", incomingVersion: "2.0.9"))
+        }
+    }
+
     func testFileBackedAgentSkillManagerPersistsInstallDisableEnableAndRemoveLifecycle() async throws {
         let storeURL = temporaryFileURL(named: "agent-skills.json")
         let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
@@ -1659,6 +1686,26 @@ final class KairoCoreTests: XCTestCase {
         } catch {
             errorHandler(error)
         }
+    }
+
+    private func signedWeatherSkillManifest(
+        version: String,
+        signingKey: P256.Signing.PrivateKey
+    ) throws -> AgentSkillManifest {
+        var skill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/weather-briefing.json")!
+        )
+        skill.version = version
+        return try AgentSkillManifest.signedForTesting(
+            skill: skill,
+            packageVersion: "2026.6",
+            keyID: "kairo-marketplace-2026",
+            signingKey: signingKey
+        )
     }
 
     private func makeLocalModelManifest(

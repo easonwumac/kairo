@@ -227,6 +227,10 @@ public enum AgentSkillManifestImportError: Error, Equatable, Sendable {
     case invalidJSON
 }
 
+public enum AgentSkillInstallError: Error, Equatable, Sendable {
+    case versionDowngrade(skillID: String, installedVersion: String, incomingVersion: String)
+}
+
 public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Sendable {
     public var id: String { keyID }
     public var keyID: String
@@ -514,6 +518,7 @@ public struct AgentSkillManagerService: Sendable {
             try manifest.validateForInstall()
         }
         let skill = manifest.installableSkill
+        try await validateVersionTransition(for: skill)
         try await store.upsert(skill)
         return skill
     }
@@ -547,6 +552,20 @@ public struct AgentSkillManagerService: Sendable {
         return skill
     }
 
+    private func validateVersionTransition(for incomingSkill: AgentSkill) async throws {
+        guard let existingSkill = try await catalog().skill(id: incomingSkill.id) else {
+            return
+        }
+
+        if AgentSkillVersionComparator.compare(incomingSkill.version, existingSkill.version) == .orderedAscending {
+            throw AgentSkillInstallError.versionDowngrade(
+                skillID: incomingSkill.id,
+                installedVersion: existingSkill.version,
+                incomingVersion: incomingSkill.version
+            )
+        }
+    }
+
     private func merge(base: [AgentSkill], overrides: [AgentSkill]) -> [AgentSkill] {
         var mergedByID = Dictionary(uniqueKeysWithValues: base.map { ($0.id, $0) })
         for skill in overrides {
@@ -557,6 +576,41 @@ public struct AgentSkillManagerService: Sendable {
         let baseSkills = baseIDs.compactMap { mergedByID.removeValue(forKey: $0) }
         let extraSkills = mergedByID.values.sorted { $0.id < $1.id }
         return baseSkills + extraSkills
+    }
+}
+
+private enum AgentSkillVersionComparator {
+    static func compare(_ lhs: String, _ rhs: String) -> ComparisonResult {
+        let leftComponents = components(lhs)
+        let rightComponents = components(rhs)
+        let count = max(leftComponents.count, rightComponents.count)
+
+        for index in 0..<count {
+            let leftValue = index < leftComponents.count ? leftComponents[index] : 0
+            let rightValue = index < rightComponents.count ? rightComponents[index] : 0
+
+            if leftValue < rightValue {
+                return .orderedAscending
+            }
+            if leftValue > rightValue {
+                return .orderedDescending
+            }
+        }
+
+        return .orderedSame
+    }
+
+    private static func components(_ version: String) -> [Int] {
+        let parts = version.split { character in
+            character == "." || character == "-" || character == "_"
+        }
+        let values = parts.map { part -> Int in
+            let numericPrefix = part.prefix { character in
+                character.isNumber
+            }
+            return Int(numericPrefix) ?? 0
+        }
+        return values.isEmpty ? [0] : values
     }
 }
 

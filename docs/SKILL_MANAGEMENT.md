@@ -7,7 +7,7 @@ Kairo 的核心方向是把可操作能力包成可管理的 skills，並讓 mod
 - `AgentSkill` describes one managed tool package.
 - `AgentSkillCatalog.default` exposes built-in installed skills such as HomeKit scene/accessory demos and Shortcut Daily Briefing.
 - `AgentSkillManifest` validates downloadable marketplace manifests with required signature metadata, a SHA-256 checksum over the skill payload, and optional P-256 public-key verification through `AgentSkillManifestTrustStore`.
-- `AgentSkillManagerService` plus `FileBackedAgentSkillStore` provide install, disable, enable, remove, and reload behavior for marketplace/user-created skills.
+- `AgentSkillManagerService` plus `FileBackedAgentSkillStore` provide install, disable, enable, remove, reload, and version downgrade protection for marketplace/user-created skills.
 - `AgentSkillManagerService.installManifest(jsonString:)` decodes signed JSON manifests, validates them, and persists the installed skill.
 - `CapabilityPromptContextBuilder` includes installed skills/tools so the model can propose named, supported tool packages.
 - Access shows a Skill Manager section backed by the app environment when available, with signed manifest import plus installed, available, and disabled skill states with install/disable/enable/remove affordances.
@@ -38,7 +38,7 @@ The eventual management website should provide:
 
 ## Near-term implementation order
 
-1. Add manifest update/version conflict handling.
+1. Add explicit update UI that shows installed version, incoming version, and changelog before replacing a skill.
 2. Make Shortcut demos and HomeKit controls first-class persisted skills.
 3. Build a small static marketplace page backed by signed JSON manifests.
-4. Add UI/e2e coverage for signed import, disable, remove, and prompt-context availability.
+4. Add UI/e2e coverage for signed import, update, disable, remove, and prompt-context availability.
