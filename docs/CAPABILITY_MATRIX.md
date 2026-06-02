@@ -10,7 +10,7 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 | 文件選取 | UIDocumentPicker | 使用者主動 | 否 | 是 | 低 |
 | 圖片選取 | PhotosPicker | 使用者主動/Photos 權限 | 否 | 是 | 中 |
 | 行事曆 | EventKit | 是 | 有限 | 是 | 中 |
-| 提醒事項 | EventKit | 是 | 有限 | 是 | 中 |
+| 提醒事項 | EventKit | 是 | 有限 | 是 | 中；Chat action 需 preview + confirm |
 | 通知 | UserNotifications | 是 | 是 | 是 | 中；Chat action 需 preview + confirm |
 | App Intents | AppIntents | 使用者觸發 | Shortcuts 決定 | 是 | 低 |
 | Siri / Shortcuts | App Intents | 使用者設定 | 有限 | 是 | 低 |
@@ -44,3 +44,4 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 9. HomeKit action 只能透過 HomeKit entitlement、使用者家庭授權、action preview 與 explicit confirmation 執行；目前 core 已有 typed request / executor injection scaffold，尚未啟用實機 entitlement。
 10. Kairo Recipes 是 app 內部 workflows；可以由 Kairo 儲存、preview、run、enable/disable，但不得 silent create/edit Apple Shortcuts。
 11. Local notifications 只能透過 `UserNotifications` 和 runtime permission 排程；Chat 內的通知 action 必須先顯示 action preview，使用者按 Confirm 後才可執行。
+12. Reminder writes 只能透過 EventKit Reminders 和 runtime permission；Shortcut/recipe 節點預設只產生 drafts，Chat 內的 reminder action 必須先預覽再由使用者 Confirm。

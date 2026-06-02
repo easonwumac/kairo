@@ -333,6 +333,11 @@ public protocol NotificationScheduling: Sendable {
     func schedule(_ draft: NotificationDraft) async throws -> String
 }
 
+public protocol ReminderScheduling: Sendable {
+    func requestAccess() async throws -> Bool
+    func createReminder(from draft: ReminderDraft) async throws -> String
+}
+
 public struct UnavailableNotificationScheduler: NotificationScheduling {
     public init() {}
 
@@ -362,6 +367,55 @@ public struct AllowingNotificationScheduler: NotificationScheduling {
 }
 
 public enum NotificationSchedulingError: Error, Equatable {
+    case unavailable
+    case authorizationDenied
+}
+
+public struct UnavailableReminderScheduler: ReminderScheduling {
+    public init() {}
+
+    public func requestAccess() async throws -> Bool {
+        false
+    }
+
+    public func createReminder(from draft: ReminderDraft) async throws -> String {
+        throw ReminderSchedulingError.unavailable
+    }
+}
+
+public struct AllowingReminderScheduler: ReminderScheduling {
+    private let identifier: String
+
+    public init(identifier: String = "reminder-id") {
+        self.identifier = identifier
+    }
+
+    public func requestAccess() async throws -> Bool {
+        true
+    }
+
+    public func createReminder(from draft: ReminderDraft) async throws -> String {
+        identifier
+    }
+}
+
+public struct EventKitReminderScheduler: ReminderScheduling {
+    private let eventKitService: EventKitService
+
+    public init(eventKitService: EventKitService = EventKitService()) {
+        self.eventKitService = eventKitService
+    }
+
+    public func requestAccess() async throws -> Bool {
+        try await eventKitService.requestReminderAccess()
+    }
+
+    public func createReminder(from draft: ReminderDraft) async throws -> String {
+        try await eventKitService.createReminder(from: draft)
+    }
+}
+
+public enum ReminderSchedulingError: Error, Equatable {
     case unavailable
     case authorizationDenied
 }
@@ -404,6 +458,7 @@ public actor SandboxActionExecutor: ActionExecutor {
     private let memoryStore: MemoryStore
     private let safetyPolicyEngine: SafetyPolicyEngine
     private let eventKitService: EventKitService
+    private let reminderScheduler: any ReminderScheduling
     private let urlOpener: any URLOpener
     private let notificationScheduler: any NotificationScheduling
     private let homeControlService: any HomeControlService
@@ -412,6 +467,7 @@ public actor SandboxActionExecutor: ActionExecutor {
         memoryStore: MemoryStore,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         eventKitService: EventKitService = EventKitService(),
+        reminderScheduler: (any ReminderScheduling)? = nil,
         urlOpener: any URLOpener = NoOpURLOpener(),
         notificationScheduler: any NotificationScheduling = UnavailableNotificationScheduler(),
         homeControlService: any HomeControlService = UnavailableHomeControlService()
@@ -419,6 +475,7 @@ public actor SandboxActionExecutor: ActionExecutor {
         self.memoryStore = memoryStore
         self.safetyPolicyEngine = safetyPolicyEngine
         self.eventKitService = eventKitService
+        self.reminderScheduler = reminderScheduler ?? EventKitReminderScheduler(eventKitService: eventKitService)
         self.urlOpener = urlOpener
         self.notificationScheduler = notificationScheduler
         self.homeControlService = homeControlService
@@ -439,7 +496,10 @@ public actor SandboxActionExecutor: ActionExecutor {
             try await memoryStore.save(memory)
             return ActionExecutionResult(completed: true, message: "Saved memory.", createdIdentifier: memory.id.uuidString)
         case (.createReminderDraft, .reminder(let draft)):
-            let identifier = try await eventKitService.createReminder(from: draft)
+            guard try await reminderScheduler.requestAccess() else {
+                return ActionExecutionResult(completed: false, message: "Reminder permission was not granted.")
+            }
+            let identifier = try await reminderScheduler.createReminder(from: draft)
             return ActionExecutionResult(completed: true, message: "Created reminder.", createdIdentifier: identifier)
         case (.createCalendarDraft, .calendarEvent(let draft)):
             let identifier = try await eventKitService.createCalendarEvent(from: draft)

@@ -213,6 +213,30 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertNil(draft.deliveryDate)
     }
 
+    func testAgentToolInvocationPlannerSuggestsReminderActionWithConfirmation() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "建立提醒事項：下班前整理 Kairo model list"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-create-reminder" })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.skillKind, .custom)
+        XCTAssertEqual(candidate.requiredCapabilities, [.reminders])
+        XCTAssertEqual(candidate.riskTier, .tier2LowRiskWrite)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertTrue(candidate.handoffSummary.contains("EventKit"))
+        XCTAssertEqual(action.kind, .createReminderDraft)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case let .reminder(draft) = action.payload else {
+            return XCTFail("Expected reminder payload.")
+        }
+        XCTAssertTrue(draft.title.contains("下班前整理"))
+        XCTAssertEqual(draft.notes, "Drafted from a Kairo chat request.")
+        XCTAssertNil(draft.dueDate)
+        XCTAssertFalse(plan.candidates.contains { $0.id == "action-send-notification" })
+    }
+
     func testAgentToolInvocationPlannerRefusesToolUseWhenDisabled() {
         let planner = AgentToolInvocationPlanner(skillCatalog: .default)
 
@@ -286,6 +310,23 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-send-notification" })
     }
 
+    func testAgentCoreAddsDeterministicReminderPreviewAction() async throws {
+        let agent = AgentCore(
+            memoryStore: InMemoryMemoryStore(),
+            aiProvider: MockAIProvider(),
+            skillCatalog: .default,
+            integrationRegistry: IntegrationRegistry()
+        )
+
+        let response = try await agent.respond(to: "Create a reminder to review the Shortcut node outputs")
+
+        let action = try XCTUnwrap(response.proposedActions.first { $0.kind == .createReminderDraft })
+        XCTAssertEqual(action.title, "Create Reminder")
+        XCTAssertEqual(action.riskTier, .tier2LowRiskWrite)
+        XCTAssertTrue(action.requiresConfirmation)
+        XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-create-reminder" })
+    }
+
 #if canImport(SwiftUI)
     @MainActor
     func testChatViewModelConfirmsNotificationActionThroughInjectedExecutor() async throws {
@@ -311,6 +352,33 @@ final class KairoCoreTests: XCTestCase {
         let executedActions = await executor.executedActions
         let confirmations = await executor.confirmations
         XCTAssertEqual(executedActions.map(\.kind), [.sendNotification])
+        XCTAssertEqual(confirmations, [true])
+    }
+
+    @MainActor
+    func testChatViewModelConfirmsReminderActionThroughInjectedExecutor() async throws {
+        let executor = MockActionExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: executor
+        )
+
+        await viewModel.send("建立提醒事項：下班前整理 Kairo model list")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createReminderDraft })
+
+        viewModel.previewAction(action)
+        XCTAssertEqual(viewModel.pendingAction?.kind, .createReminderDraft)
+
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertTrue(viewModel.actionResultMessage?.contains("Created reminder.") == true)
+        let executedActions = await executor.executedActions
+        let confirmations = await executor.confirmations
+        XCTAssertEqual(executedActions.map(\.kind), [.createReminderDraft])
         XCTAssertEqual(confirmations, [true])
     }
 #endif
@@ -618,6 +686,26 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(result.createdIdentifier, "notification-id")
         let scheduledTitles = await scheduler.scheduledDrafts.map(\.title)
         XCTAssertEqual(scheduledTitles, ["Kairo"])
+    }
+
+    func testSandboxActionExecutorCreatesReminderThroughInjectedScheduler() async throws {
+        let scheduler = MockReminderScheduler(granted: true)
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), reminderScheduler: scheduler)
+        let action = AgentAction(
+            kind: .createReminderDraft,
+            title: "Create Reminder",
+            rationale: "User confirmed Kairo may write an EventKit reminder.",
+            payload: .reminder(ReminderDraft(title: "Review Shortcut node outputs", notes: "From Kairo chat", dueDate: nil)),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(result.message, "Created reminder.")
+        XCTAssertEqual(result.createdIdentifier, "reminder-id")
+        let createdTitles = await scheduler.createdDrafts.map(\.title)
+        XCTAssertEqual(createdTitles, ["Review Shortcut node outputs"])
     }
 
     func testSandboxActionCatalogIncludesHomeKitControlWithRuntimePermission() {
@@ -1612,6 +1700,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-tool-preview",
             "chat-shortcut-tool-candidate",
             "chat-notification-confirmation",
+            "chat-reminder-confirmation",
             "memory-manual-save",
             "automations-recipe-center",
             "automations-shortcut-templates",
@@ -1634,6 +1723,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(notificationScenarioIdentifiers.contains("chat.action-preview"))
         XCTAssertTrue(notificationScenarioIdentifiers.contains("chat.action.confirm"))
         XCTAssertTrue(notificationScenarioIdentifiers.contains("chat.action-result"))
+        let reminderScenarioIdentifiers = catalog.scenario(id: "chat-reminder-confirmation")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(reminderScenarioIdentifiers.contains("chat.proposed-action.createReminderDraft"))
+        XCTAssertTrue(reminderScenarioIdentifiers.contains("chat.action-preview"))
+        XCTAssertTrue(reminderScenarioIdentifiers.contains("chat.action.confirm"))
+        XCTAssertTrue(reminderScenarioIdentifiers.contains("chat.action-result"))
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.text") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.save") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.list") == true)
@@ -1733,6 +1827,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains(#"findButton(labeled: "Confirm""#))
         XCTAssertTrue(actionPreviewView.contains(#""chat.action.confirm""#))
         XCTAssertTrue(smokeTest.contains(#""chat.action-result""#))
+        XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmReminderAction"))
+        XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.createReminderDraft""#))
+        XCTAssertTrue(smokeTest.contains("Created reminder."))
         XCTAssertTrue(smokeTest.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
         XCTAssertTrue(smokeTest.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
         XCTAssertTrue(smokeTest.contains(#""root.tab.automations""#))
@@ -3156,6 +3253,24 @@ private actor MockNotificationScheduler: NotificationScheduling {
     }
 }
 
+private actor MockReminderScheduler: ReminderScheduling {
+    private(set) var createdDrafts: [ReminderDraft] = []
+    private let granted: Bool
+
+    init(granted: Bool) {
+        self.granted = granted
+    }
+
+    func requestAccess() async throws -> Bool {
+        granted
+    }
+
+    func createReminder(from draft: ReminderDraft) async throws -> String {
+        createdDrafts.append(draft)
+        return "reminder-id"
+    }
+}
+
 private actor MockActionExecutor: ActionExecutor {
     private(set) var executedActions: [AgentAction] = []
     private(set) var confirmations: [Bool] = []
@@ -3163,7 +3278,12 @@ private actor MockActionExecutor: ActionExecutor {
     func execute(_ action: AgentAction, confirmed: Bool) async throws -> ActionExecutionResult {
         executedActions.append(action)
         confirmations.append(confirmed)
-        return ActionExecutionResult(completed: true, message: "Scheduled notification.", createdIdentifier: "notification-id")
+        switch action.kind {
+        case .createReminderDraft:
+            return ActionExecutionResult(completed: true, message: "Created reminder.", createdIdentifier: "reminder-id")
+        default:
+            return ActionExecutionResult(completed: true, message: "Scheduled notification.", createdIdentifier: "notification-id")
+        }
     }
 }
 

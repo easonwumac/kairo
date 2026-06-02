@@ -102,6 +102,27 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "chat-reminder-confirmation",
+            title: "Chat Reminder Confirmation",
+            userGoal: "Ask Kairo to create an EventKit reminder, preview the action, and confirm it through a visible user-controlled flow.",
+            requiredAccessibilityIdentifiers: [
+                "chat.composer.text",
+                "chat.composer.send",
+                "chat.message.assistant",
+                "chat.proposed-actions",
+                "chat.proposed-action.createReminderDraft",
+                "chat.action-preview",
+                "chat.action.confirm",
+                "chat.action-result"
+            ],
+            assertions: [
+                "A reminder request creates an assistant response.",
+                "The response exposes a createReminderDraft action preview.",
+                "The preview is shown before EventKit execution.",
+                "The reminder is created only after visible confirmation."
+            ]
+        ),
+        UITestScenario(
             id: "memory-manual-save",
             title: "Memory Manual Save",
             userGoal: "Open Memory, save a user-provided memory, and verify it appears in the list.",

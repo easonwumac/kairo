@@ -108,6 +108,9 @@ public struct AgentToolInvocationPlanner: Sendable {
         candidates.append(contentsOf: integrationRegistry.oauthConnectors.compactMap { integration in
             candidate(for: integration, normalizedText: normalizedText)
         })
+        if let reminderCandidate = reminderActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+            candidates.append(reminderCandidate)
+        }
         if let notificationCandidate = notificationActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(notificationCandidate)
         }
@@ -257,6 +260,9 @@ public struct AgentToolInvocationPlanner: Sendable {
     }
 
     private func notificationActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard !isReminderWriteRequest(normalizedText) else {
+            return nil
+        }
         guard containsAny(normalizedText, [
             "notify me",
             "notification",
@@ -294,6 +300,84 @@ public struct AgentToolInvocationPlanner: Sendable {
             handoffSummary: "Use UserNotifications for a local notification after runtime permission and visible confirmation.",
             action: action
         )
+    }
+
+    private func reminderActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard isReminderWriteRequest(normalizedText) else {
+            return nil
+        }
+
+        let draft = ReminderDraft(
+            title: reminderTitle(from: userText),
+            notes: "Drafted from a Kairo chat request.",
+            dueDate: nil
+        )
+        let action = AgentAction(
+            kind: .createReminderDraft,
+            title: "Create Reminder",
+            rationale: "User asked Kairo to create a reminder through the public EventKit Reminders API.",
+            payload: .reminder(draft),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        return AgentToolInvocationCandidate(
+            id: "action-create-reminder",
+            title: "Create Reminder",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.reminders],
+            riskTier: .tier2LowRiskWrite,
+            requiresConfirmation: true,
+            handoffSummary: "Use EventKit Reminders after runtime permission and visible confirmation.",
+            action: action
+        )
+    }
+
+    private func isReminderWriteRequest(_ normalizedText: String) -> Bool {
+        containsAny(normalizedText, [
+            "create a reminder",
+            "create reminder",
+            "add a reminder",
+            "add reminder",
+            "reminder to",
+            "task reminder",
+            "提醒事項",
+            "建立提醒",
+            "新增提醒",
+            "加入提醒",
+            "建立待辦",
+            "新增待辦",
+            "加入待辦"
+        ])
+    }
+
+    private func reminderTitle(from userText: String) -> String {
+        var title = userText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefixes = [
+            "Create a reminder to",
+            "Create reminder to",
+            "Add a reminder to",
+            "Add reminder to",
+            "Reminder:",
+            "Todo:",
+            "TODO:",
+            "建立提醒事項：",
+            "建立提醒事項:",
+            "建立提醒：",
+            "建立提醒:",
+            "新增提醒事項：",
+            "新增提醒事項:",
+            "待辦：",
+            "待辦:"
+        ]
+
+        for prefix in prefixes where title.lowercased().hasPrefix(prefix.lowercased()) {
+            title.removeFirst(prefix.count)
+            title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            break
+        }
+
+        return title.isEmpty ? "Kairo reminder" : title
     }
 
     private func notificationBody(from userText: String) -> String {
