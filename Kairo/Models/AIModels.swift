@@ -28,10 +28,16 @@ public struct AICompletionRequest: Codable, Equatable, Sendable {
 public struct AICompletionResponse: Codable, Equatable, Sendable {
     public var message: String
     public var proposedActions: [AgentAction]
+    public var toolCandidates: [AgentToolInvocationCandidate]
 
-    public init(message: String, proposedActions: [AgentAction] = []) {
+    public init(
+        message: String,
+        proposedActions: [AgentAction] = [],
+        toolCandidates: [AgentToolInvocationCandidate] = []
+    ) {
         self.message = message
         self.proposedActions = proposedActions
+        self.toolCandidates = toolCandidates
     }
 }
 

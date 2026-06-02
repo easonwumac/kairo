@@ -7,7 +7,7 @@ This repo is source-first. `project.yml` describes an XcodeGen path for creating
 - `KairoApp`: main SwiftUI app.
 - `KairoShareExtension`: receives user-shared content and writes pending ingestion items.
 - `KairoCoreTests`: unit tests for core logic.
-- `KairoUITests`: XCUITest smoke coverage for launch, chat send, chat tool preview, settings, HomeKit preview, and Skill Manager refresh/install/disable/enable flows.
+- `KairoUITests`: XCUITest smoke coverage for launch, chat send, chat HomeKit action preview, chat Shortcut tool candidate preview, settings, HomeKit preview, and Skill Manager refresh/install/disable/enable flows.
 
 ## Required Apple Developer setup
 

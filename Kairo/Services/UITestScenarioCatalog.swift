@@ -63,6 +63,23 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "chat-shortcut-tool-candidate",
+            title: "Chat Shortcut Tool Candidate",
+            userGoal: "Ask for task extraction and verify Kairo surfaces an installed Shortcut skill candidate without silently running Apple Shortcuts.",
+            requiredAccessibilityIdentifiers: [
+                "chat.composer.text",
+                "chat.composer.send",
+                "chat.message.assistant",
+                "chat.tool-candidates",
+                "chat.tool-candidate.shortcut-save-shared-text"
+            ],
+            assertions: [
+                "A task-extraction request creates an assistant response.",
+                "The response exposes a managed tool candidate strip.",
+                "The Shortcut skill candidate is visible as a handoff/setup path, not an executed Shortcut."
+            ]
+        ),
+        UITestScenario(
             id: "settings-api-key-status",
             title: "Settings Credential Status",
             userGoal: "Open Settings and verify API key plus OAuth connector status is visible without exposing secret values.",

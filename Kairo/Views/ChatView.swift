@@ -101,6 +101,10 @@ public struct ChatView: View {
                                     ProposedActionsStrip(actions: message.proposedActions)
                                         .padding(.horizontal)
                                 }
+                                if !message.toolCandidates.isEmpty {
+                                    ToolCandidatesStrip(candidates: message.toolCandidates)
+                                        .padding(.horizontal)
+                                }
                             }
                             .id(message.id)
                         }
@@ -272,6 +276,50 @@ private struct ProposedActionsStrip: View {
             }
         }
         .accessibilityIdentifier("chat.proposed-actions")
+    }
+}
+
+private struct ToolCandidatesStrip: View {
+    let candidates: [AgentToolInvocationCandidate]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(candidates) { candidate in
+                    HStack(spacing: 6) {
+                        Image(systemName: iconName(for: candidate.skillKind))
+                        Text(candidate.title)
+                            .lineLimit(1)
+                        Text(candidate.skillKind.settingsTitle)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.caption)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(Color.accentColor.opacity(0.10), in: Capsule())
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Tool candidate: \(candidate.title), \(candidate.skillKind.settingsTitle)")
+                    .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id)")
+                }
+            }
+        }
+        .accessibilityIdentifier("chat.tool-candidates")
+    }
+
+    private func iconName(for kind: AgentSkillKind) -> String {
+        switch kind {
+        case .homeKitControl:
+            return "house"
+        case .shortcutWorkflow:
+            return "square.stack.3d.up"
+        case .oauthConnector:
+            return "person.crop.circle.badge.checkmark"
+        case .localModel:
+            return "cpu"
+        case .custom:
+            return "wrench.and.screwdriver"
+        }
     }
 }
 

@@ -69,7 +69,7 @@
 
 - 把可操作能力封裝成 `AgentSkill`。
 - 讓 model prompt context 明確看到 installed skills/tools。
-- `AgentToolInvocationPlanner` 將 user request 映射到 installed skill/OAuth connector preview candidates，action-backed skills 仍走 confirmation-gated safety policy。
+- `AgentToolInvocationPlanner` 將 user request 映射到 installed skill/OAuth connector preview candidates；chat 會顯示 Shortcut/OAuth tool candidates，action-backed skills 仍走 confirmation-gated safety policy。
 - Skill manifest：signature metadata、SHA-256 checksum、public-key verification、file-backed lifecycle。
 - Live app environment-backed Skill Manager state。
 - Signed manifest JSON import in Access。
@@ -77,7 +77,7 @@
 - Skill update preview：installed version、incoming version、changelog、confirm before replace。
 - Skill Manager UI：install / disable / enable / remove / inspect permissions。
 - 官方 Shortcut demo recipes 與 HomeKit controls 已映射為 built-in skills，並可透過 file-backed manager 持久化狀態。
-- `--ui-testing` deterministic Skill Manager：static marketplace refresh/install preview、disable/enable、chat tool preview、HomeKit preview e2e source coverage。
+- `--ui-testing` deterministic Skill Manager：static marketplace refresh/install preview、disable/enable、chat action preview、chat Shortcut tool candidate、HomeKit preview e2e source coverage。
 - 使用者可新增自訂 skill manifest。
 - Skill marketplace website：搜尋、分類、權限、風險、版本與下載。
 - 獨立 `kairo-skills` GitHub repo：專門放可更新 skill catalog、manifest、GitHub Pages。

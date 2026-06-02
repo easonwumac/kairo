@@ -59,7 +59,11 @@ public actor AgentCore {
             safetyPolicyEngine.evaluate(action).allowed
         }
 
-        return AICompletionResponse(message: response.message, proposedActions: safeActions)
+        return AICompletionResponse(
+            message: response.message,
+            proposedActions: safeActions,
+            toolCandidates: toolPlan.candidates
+        )
     }
 
     public func remember(_ content: String, title: String? = nil, source: MemorySource = .manual) async throws -> MemoryRecord {

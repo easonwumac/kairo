@@ -13,6 +13,7 @@ Kairo 的核心方向是把可操作能力包成可管理的 skills，並讓 mod
 - `AgentSkillMarketplaceCatalogService.defaultStandaloneRepository` fetches the published standalone `skills.json` catalog, maps entries into downloadable marketplace skills, and downloads signed manifests for preview.
 - `CapabilityPromptContextBuilder` includes installed skills/tools so the model can propose named, supported tool packages.
 - `AgentToolInvocationPlanner` is the deterministic preview layer between natural-language requests and managed tools. It suggests only installed skills and official OAuth connector metadata, returns Shortcut/OAuth candidates as visible handoffs, and exposes action-backed skills such as HomeKit as `AgentAction` previews that still pass through `SafetyPolicyEngine`.
+- Chat responses persist and render `toolCandidates` separately from executable `proposedActions`, so users can inspect installed Shortcut/OAuth skill matches without Kairo silently running Apple Shortcuts or account actions.
 - Access shows a Skill Manager section backed by the app environment when available, with marketplace refresh, marketplace install preview, signed manifest preview/import, built-in Shortcut demo skills, and installed, available, and disabled skill states with install/disable/enable/remove affordances.
 - `KairoEnvironment.uiTesting(resetPersistentState:)` gives XCUITest a deterministic file-backed Skill Manager and static marketplace responses for refresh, install preview, confirm install, disable/enable, and HomeKit preview flows.
 - HomeKit skills still require entitlement, Home authorization, action preview, and explicit confirmation before execution.
@@ -45,6 +46,6 @@ The management website provides:
 
 ## Near-term implementation order
 
-1. Expand UI/e2e interaction coverage to signed text import, update, remove, and prompt-context availability. Chat now has HomeKit tool-preview e2e coverage.
+1. Expand UI/e2e interaction coverage to signed text import, update, remove, and prompt-context availability. Chat now has HomeKit action-preview and Shortcut tool-candidate e2e coverage.
 2. Add production trust-store key rotation/revocation metadata.
 3. Add compatibility gates for iOS version, entitlements, OAuth scopes, and local model requirements.

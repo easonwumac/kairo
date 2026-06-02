@@ -211,6 +211,42 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(action.requiresConfirmation)
     }
 
+    func testAgentCoreReturnsShortcutToolCandidateWithoutActionExecution() async throws {
+        let agent = AgentCore(
+            memoryStore: InMemoryMemoryStore(),
+            aiProvider: MockAIProvider(),
+            skillCatalog: .default,
+            integrationRegistry: IntegrationRegistry()
+        )
+
+        let response = try await agent.respond(to: "Turn this shared text into todo tasks")
+
+        let candidate = try XCTUnwrap(response.toolCandidates.first { $0.skillID == "shortcut-save-shared-text" })
+        XCTAssertEqual(candidate.skillKind, .shortcutWorkflow)
+        XCTAssertEqual(candidate.shortcutRecipeID, "save-shared-text")
+        XCTAssertTrue(candidate.handoffSummary.contains("Kairo does not install Apple Shortcuts silently"))
+        XCTAssertTrue(response.proposedActions.isEmpty)
+    }
+
+    func testChatMessageDecodesMissingToolCandidatesAsEmptyForOldHistory() throws {
+        let json = """
+        {
+          "id": "11111111-1111-4111-8111-111111111111",
+          "role": "assistant",
+          "text": "Old assistant message",
+          "createdAt": 0,
+          "proposedActions": [],
+          "attachments": [],
+          "status": "sent"
+        }
+        """
+
+        let message = try JSONDecoder().decode(ChatMessage.self, from: Data(json.utf8))
+
+        XCTAssertEqual(message.text, "Old assistant message")
+        XCTAssertTrue(message.toolCandidates.isEmpty)
+    }
+
     func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {
         let registry = IntegrationRegistry()
 
@@ -1300,6 +1336,7 @@ final class KairoCoreTests: XCTestCase {
             "launch-tabs",
             "chat-send",
             "chat-tool-preview",
+            "chat-shortcut-tool-candidate",
             "settings-api-key-status",
             "access-homekit-demos"
         ])
@@ -1309,6 +1346,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-tool-preview")?.requiredAccessibilityIdentifiers.contains("chat.proposed-actions") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-tool-preview")?.requiredAccessibilityIdentifiers.contains("chat.proposed-action.controlHome") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidates") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidate.shortcut-save-shared-text") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)

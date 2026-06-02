@@ -59,6 +59,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
     public var text: String
     public var createdAt: Date
     public var proposedActions: [AgentAction]
+    public var toolCandidates: [AgentToolInvocationCandidate]
     public var attachments: [ChatAttachment]
     public var status: ChatMessageStatus
 
@@ -68,6 +69,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         text: String,
         createdAt: Date = Date(),
         proposedActions: [AgentAction] = [],
+        toolCandidates: [AgentToolInvocationCandidate] = [],
         attachments: [ChatAttachment] = [],
         status: ChatMessageStatus = .sent
     ) {
@@ -76,8 +78,32 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.text = text
         self.createdAt = createdAt
         self.proposedActions = proposedActions
+        self.toolCandidates = toolCandidates
         self.attachments = attachments
         self.status = status
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case role
+        case text
+        case createdAt
+        case proposedActions
+        case toolCandidates
+        case attachments
+        case status
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.role = try container.decode(ChatRole.self, forKey: .role)
+        self.text = try container.decode(String.self, forKey: .text)
+        self.createdAt = try container.decode(Date.self, forKey: .createdAt)
+        self.proposedActions = try container.decodeIfPresent([AgentAction].self, forKey: .proposedActions) ?? []
+        self.toolCandidates = try container.decodeIfPresent([AgentToolInvocationCandidate].self, forKey: .toolCandidates) ?? []
+        self.attachments = try container.decodeIfPresent([ChatAttachment].self, forKey: .attachments) ?? []
+        self.status = try container.decodeIfPresent(ChatMessageStatus.self, forKey: .status) ?? .sent
     }
 }
 
