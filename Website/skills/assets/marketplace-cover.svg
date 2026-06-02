@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-label="Kairo skill marketplace cover">
+  <rect width="960" height="600" fill="#f7f8f6"/>
+  <rect x="52" y="54" width="856" height="492" rx="8" fill="#ffffff" stroke="#d8dedb"/>
+  <rect x="92" y="94" width="260" height="126" rx="8" fill="#17211f"/>
+  <rect x="392" y="94" width="238" height="126" rx="8" fill="#10766b"/>
+  <rect x="670" y="94" width="198" height="126" rx="8" fill="#c6533f"/>
+  <rect x="92" y="272" width="250" height="188" rx="8" fill="#ffffff" stroke="#d8dedb"/>
+  <rect x="382" y="272" width="250" height="188" rx="8" fill="#ffffff" stroke="#d8dedb"/>
+  <rect x="672" y="272" width="196" height="188" rx="8" fill="#ffffff" stroke="#d8dedb"/>
+  <circle cx="143" cy="143" r="28" fill="#f2b84b"/>
+  <rect x="184" y="124" width="210" height="16" rx="8" fill="#ffffff" opacity=".8"/>
+  <rect x="184" y="154" width="144" height="16" rx="8" fill="#ffffff" opacity=".5"/>
+  <path d="M438 166c36-58 86-58 122 0 16-24 42-28 66-9" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round"/>
+  <path d="M716 171h92m-46-46v92" stroke="#ffffff" stroke-width="18" stroke-linecap="round"/>
+  <rect x="124" y="310" width="118" height="14" rx="7" fill="#17211f"/>
+  <rect x="124" y="342" width="174" height="10" rx="5" fill="#8a9691"/>
+  <rect x="124" y="372" width="132" height="10" rx="5" fill="#8a9691"/>
+  <rect x="124" y="414" width="82" height="24" rx="8" fill="#10766b"/>
+  <rect x="414" y="310" width="122" height="14" rx="7" fill="#17211f"/>
+  <rect x="414" y="342" width="170" height="10" rx="5" fill="#8a9691"/>
+  <rect x="414" y="372" width="112" height="10" rx="5" fill="#8a9691"/>
+  <rect x="414" y="414" width="82" height="24" rx="8" fill="#c6533f"/>
+  <rect x="704" y="310" width="98" height="14" rx="7" fill="#17211f"/>
+  <rect x="704" y="342" width="128" height="10" rx="5" fill="#8a9691"/>
+  <rect x="704" y="372" width="86" height="10" rx="5" fill="#8a9691"/>
+  <rect x="704" y="414" width="82" height="24" rx="8" fill="#287a45"/>
+</svg>
+

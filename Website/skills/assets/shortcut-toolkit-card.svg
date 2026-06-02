@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="Shortcut Daily Briefing Kit artwork">
+  <rect width="800" height="500" fill="#f7f8f6"/>
+  <rect x="64" y="70" width="668" height="360" rx="8" fill="#ffffff" stroke="#d8dedb"/>
+  <rect x="120" y="126" width="164" height="84" rx="8" fill="#17211f"/>
+  <rect x="346" y="126" width="164" height="84" rx="8" fill="#10766b"/>
+  <rect x="572" y="126" width="110" height="84" rx="8" fill="#c6533f"/>
+  <path d="M284 168h62m164 0h62" stroke="#8a9691" stroke-width="14" stroke-linecap="round"/>
+  <rect x="148" y="158" width="76" height="14" rx="7" fill="#ffffff"/>
+  <rect x="374" y="158" width="76" height="14" rx="7" fill="#ffffff"/>
+  <path d="M620 147v42m-21-21h42" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+  <rect x="120" y="270" width="176" height="18" rx="9" fill="#17211f"/>
+  <rect x="120" y="312" width="420" height="12" rx="6" fill="#8a9691"/>
+  <rect x="120" y="344" width="312" height="12" rx="6" fill="#8a9691"/>
+</svg>
+

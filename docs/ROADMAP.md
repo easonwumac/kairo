@@ -77,4 +77,5 @@
 - Skill Manager UI：install / disable / enable / remove / inspect permissions。
 - 使用者可新增自訂 skill manifest。
 - Skill marketplace website：搜尋、分類、權限、風險、版本與下載。
+- 獨立 `kairo-skills` GitHub repo：專門放可更新 skill catalog、manifest、GitHub Pages。
 - Trust-store key rotation/revocation、checksum、compatibility gates。

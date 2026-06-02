@@ -1,0 +1,30 @@
+{
+  "changelog": [
+    "Adds storm alerts.",
+    "Improves hourly summary.",
+    "Documents approved provider API boundaries."
+  ],
+  "checksum": "61a08accb69bac02b2ae9efba1acd7bcd62917a75f087154485bd405d19ddf5c",
+  "checksumAlgorithm": "sha256",
+  "packageVersion": "2026.6",
+  "signature": {
+    "algorithm": "ed25519",
+    "keyID": "kairo-marketplace-2026",
+    "value": "static-demo-signature"
+  },
+  "skill": {
+    "author": "Kairo Marketplace",
+    "displayName": "Weather Briefing",
+    "downloadURL": "https://raw.githubusercontent.com/easonwumac/kairo-skills/main/manifests/weather-briefing.json",
+    "id": "marketplace-weather-briefing",
+    "installationStatus": "available",
+    "kind": "custom",
+    "requiredCapabilities": [
+      "externalConnectors"
+    ],
+    "source": "marketplace",
+    "summary": "Summarizes weather through an approved provider API.",
+    "version": "2.1.0"
+  }
+}
+

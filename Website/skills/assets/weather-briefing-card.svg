@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="Weather Briefing skill artwork">
+  <rect width="800" height="500" fill="#f7f8f6"/>
+  <rect x="54" y="58" width="692" height="384" rx="8" fill="#ffffff" stroke="#d8dedb"/>
+  <circle cx="186" cy="172" r="58" fill="#f2b84b"/>
+  <path d="M268 230c44-78 112-78 156 0 24-34 60-40 94-18 36 24 40 76 8 104H254c-44 0-66-54-34-88 16-17 34-22 48-18z" fill="#10766b"/>
+  <path d="M320 330l-22 42m74-42l-22 42m74-42l-22 42" stroke="#2c84b8" stroke-width="16" stroke-linecap="round"/>
+  <rect x="532" y="124" width="110" height="18" rx="9" fill="#17211f"/>
+  <rect x="532" y="164" width="160" height="12" rx="6" fill="#8a9691"/>
+  <rect x="532" y="194" width="132" height="12" rx="6" fill="#8a9691"/>
+  <rect x="532" y="246" width="118" height="34" rx="8" fill="#c6533f"/>
+</svg>
+

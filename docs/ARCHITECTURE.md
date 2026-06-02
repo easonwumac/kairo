@@ -68,6 +68,8 @@
 
 The Access Skill Manager is the first app-facing surface for installed, available, and disabled skills. In live app wiring, `KairoEnvironment` creates a `FileBackedAgentSkillStore` at `KairoPaths.agentSkillStoreURL` and injects `AgentSkillManagerService` into `PermissionHubView`; preview mode still falls back to a local sample catalog. Access includes a signed manifest JSON preview control and a separate confirm install action for the previewed manifest. It is intentionally metadata-first: showing skills, capabilities, source, installation state, and confirmation requirements does not bypass iOS permissions. Downloadable marketplace skills still need production key rotation/revocation metadata and compatibility gates before production distribution.
 
+`Website/skills` is the static marketplace seed. It contains `skills.json`, card artwork, and signed manifest examples that can be published as an independent GitHub Pages repository for live skill updates, while this app repo keeps reference tests for the expected catalog and manifest shape.
+
 ## Modules
 
 - `Models`：Memory、Action、Permission、Audit、AI request/response。

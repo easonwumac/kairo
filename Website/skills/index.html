@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kairo Skill Marketplace</title>
+  <meta name="description" content="Downloadable Kairo skills with permissions, risk tier, changelog, and signed manifest links.">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17211f;
+      --muted: #5a6662;
+      --line: #d8dedb;
+      --paper: #f7f8f6;
+      --panel: #ffffff;
+      --teal: #10766b;
+      --coral: #c6533f;
+      --yellow: #f2b84b;
+      --green: #287a45;
+      --shadow: 0 18px 50px rgba(23, 33, 31, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+    }
+
+    .mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--ink);
+      color: #ffffff;
+      font-weight: 900;
+    }
+
+    .repo {
+      color: var(--teal);
+      font-size: 0.94rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    main {
+      padding: 32px 0 42px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+      gap: 24px;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2.4rem, 6vw, 4.9rem);
+      line-height: 0.96;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      max-width: 680px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .hero-art {
+      width: 100%;
+      min-height: 260px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      object-fit: cover;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      margin: 20px 0 18px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 14px;
+      background: #ffffff;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .source {
+      align-self: end;
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 14px;
+      color: var(--ink);
+      background: #ffffff;
+      font-weight: 750;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 10px 32px rgba(23, 33, 31, 0.08);
+    }
+
+    .card img {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card-body {
+      padding: 16px;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.1rem;
+      letter-spacing: 0;
+    }
+
+    .summary {
+      min-height: 72px;
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.45;
+    }
+
+    .meta {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+      font-size: 0.86rem;
+    }
+
+    .meta div {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 10px;
+    }
+
+    .meta dt {
+      color: var(--muted);
+      font-weight: 760;
+    }
+
+    .meta dd {
+      margin: 0;
+      color: var(--ink);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: #edf4f2;
+      color: var(--teal);
+      font-size: 0.78rem;
+      font-weight: 760;
+    }
+
+    .changelog {
+      margin: 14px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 16px;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 38px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      padding: 0 12px;
+      background: var(--ink);
+      color: #ffffff;
+      font-size: 0.88rem;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .button.secondary {
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--ink);
+    }
+
+    .empty {
+      display: none;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--muted);
+    }
+
+    @media (max-width: 860px) {
+      .hero,
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .source {
+        justify-self: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap top">
+      <div class="brand"><span class="mark">K</span>Kairo Skill Marketplace</div>
+      <a class="repo" href="https://github.com/easonwumac/kairo-skills">Standalone skills repo</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero" aria-labelledby="page-title">
+      <div>
+        <h1 id="page-title">Kairo Skill Marketplace</h1>
+        <p class="lede">A static catalog for downloadable skills that can live in its own GitHub repository. Each entry exposes the permissions, risk tier, version, changelog, artwork, and signed manifest needed by Access Skill Manager.</p>
+      </div>
+      <img class="hero-art" src="assets/marketplace-cover.svg" alt="Skill card artwork">
+    </section>
+
+    <section class="toolbar" aria-label="Marketplace filters">
+      <label for="skill-search">
+        Search skills
+        <input id="skill-search" type="search" placeholder="Search by name, permission, risk, or category" autocomplete="off">
+      </label>
+      <a class="source" href="skills.json">skills.json</a>
+    </section>
+
+    <section class="grid" data-skill-grid aria-live="polite"></section>
+    <p class="empty" data-empty>No matching skills.</p>
+  </main>
+
+  <template id="skill-card">
+    <article class="card">
+      <img data-art alt="Skill card artwork">
+      <div class="card-body">
+        <h2 data-title></h2>
+        <p class="summary" data-summary></p>
+        <dl class="meta">
+          <div><dt>Version</dt><dd data-version></dd></div>
+          <div><dt>Author</dt><dd data-author></dd></div>
+          <div><dt>Permissions</dt><dd class="chips" data-permissions></dd></div>
+          <div><dt>Risk</dt><dd data-risk></dd></div>
+          <div><dt>Surface</dt><dd data-surface></dd></div>
+        </dl>
+        <strong>Changelog</strong>
+        <ul class="changelog" data-changelog></ul>
+      </div>
+      <div class="actions">
+        <a class="button" data-manifest>Manifest</a>
+        <a class="button secondary" data-copy>Copy URL</a>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    const grid = document.querySelector("[data-skill-grid]");
+    const empty = document.querySelector("[data-empty]");
+    const search = document.querySelector("#skill-search");
+    const template = document.querySelector("#skill-card");
+    let skills = [];
+
+    function text(value) {
+      return String(value || "");
+    }
+
+    function render(list) {
+      grid.innerHTML = "";
+      empty.style.display = list.length ? "none" : "block";
+
+      for (const skill of list) {
+        const card = template.content.cloneNode(true);
+        card.querySelector("[data-art]").src = skill.screenshots[0];
+        card.querySelector("[data-title]").textContent = skill.displayName;
+        card.querySelector("[data-summary]").textContent = skill.summary;
+        card.querySelector("[data-version]").textContent = skill.version;
+        card.querySelector("[data-author]").textContent = skill.author;
+        card.querySelector("[data-risk]").textContent = skill.riskTier;
+        card.querySelector("[data-surface]").textContent = skill.installSurface;
+
+        const permissionList = card.querySelector("[data-permissions]");
+        for (const permission of skill.permissions) {
+          const chip = document.createElement("span");
+          chip.className = "chip";
+          chip.textContent = permission;
+          permissionList.append(chip);
+        }
+
+        const changelog = card.querySelector("[data-changelog]");
+        for (const item of skill.changelog) {
+          const li = document.createElement("li");
+          li.textContent = item;
+          changelog.append(li);
+        }
+
+        const manifestLink = card.querySelector("[data-manifest]");
+        manifestLink.href = skill.manifestURL;
+        manifestLink.dataset.manifestURL = skill.manifestURL;
+        card.querySelector("[data-copy]").href = skill.manifestURL;
+
+        grid.append(card);
+      }
+    }
+
+    function filterSkills() {
+      const query = search.value.trim().toLowerCase();
+      if (!query) {
+        render(skills);
+        return;
+      }
+
+      render(skills.filter((skill) => [
+        skill.displayName,
+        skill.summary,
+        skill.category,
+        skill.riskTier,
+        skill.kind,
+        skill.manifestURL,
+        ...skill.permissions,
+        ...skill.changelog
+      ].map(text).join(" ").toLowerCase().includes(query)));
+    }
+
+    fetch("skills.json")
+      .then((response) => response.json())
+      .then((index) => {
+        skills = index.skills;
+        render(skills);
+      });
+
+    search.addEventListener("input", filterSkills);
+  </script>
+</body>
+</html>
+

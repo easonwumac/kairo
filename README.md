@@ -40,6 +40,7 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - Local-model catalog, verified downloader, install registry, selected-model settings, Settings model management UI, and provider-routing scaffold.
 - Capability registry, sandbox action catalog, safety policy engine, action preview UI, and sandbox action executor.
 - Agent skill catalog, manifest signature metadata, SHA-256 checksum validation, public-key trust-store verification, signed manifest JSON import, update preview with changelog, version downgrade protection, file-backed skill install lifecycle, environment-backed Access Skill Manager UI, so installed tools can be shown to the model and managed by the user.
+- Static skill marketplace seed under `Website/skills`, designed to be published as an independent GitHub repo for updated downloadable skills.
 - Popular app integration registry covering App Intents, Shortcuts, URL schemes/universal links, Share Extension handoff, and OAuth connector metadata.
 - BGTaskScheduler-compatible background task policy for bounded app refresh/processing work without daemon overclaims.
 - Share Extension ingestion queue for text, URLs, files, and images.
@@ -80,6 +81,7 @@ kairo/
 │   ├── Services/                   # Stores, providers, permissions, actions
 │   └── Views/                      # SwiftUI screens and components
 ├── Tests/                          # Swift Package tests
+├── Website/                        # Static marketplace seed for standalone skill repo hosting
 ├── docs/                           # Product, architecture, safety, release docs
 ├── Package.swift
 └── project.yml                     # XcodeGen project scaffold

@@ -1,0 +1,30 @@
+{
+  "changelog": [
+    "Adds scene and accessory metadata.",
+    "Requires visible confirmation before execution.",
+    "Documents Home authorization boundaries."
+  ],
+  "checksum": "6b9f11686db0b343e2fed3d285d54bc70af20a599445bdcbc82ba6ddb1f41e84",
+  "checksumAlgorithm": "sha256",
+  "packageVersion": "2026.6",
+  "signature": {
+    "algorithm": "ed25519",
+    "keyID": "kairo-marketplace-2026",
+    "value": "static-demo-signature"
+  },
+  "skill": {
+    "author": "Kairo Marketplace",
+    "displayName": "HomeKit Scene Guard",
+    "downloadURL": "https://raw.githubusercontent.com/easonwumac/kairo-skills/main/manifests/homekit-scene-guard.json",
+    "id": "marketplace-homekit-scene-guard",
+    "installationStatus": "available",
+    "kind": "homeKitControl",
+    "requiredCapabilities": [
+      "homeKit"
+    ],
+    "source": "marketplace",
+    "summary": "Wraps confirmed HomeKit scene and accessory controls with risk labels and visible approval.",
+    "version": "1.1.0"
+  }
+}
+

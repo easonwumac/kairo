@@ -653,6 +653,89 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertNil(removedCatalog.skill(id: "marketplace-weather-briefing"))
     }
 
+    func testSkillMarketplaceWebsitePublishesSearchableStaticSite() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let html = try String(
+            contentsOf: root.appendingPathComponent("Website/skills/index.html"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(html.contains("Kairo Skill Marketplace"))
+        XCTAssertTrue(html.contains(#"id="skill-search""#))
+        XCTAssertTrue(html.contains(#"data-skill-grid"#))
+        XCTAssertTrue(html.contains("skills.json"))
+        XCTAssertTrue(html.contains("Permissions"))
+        XCTAssertTrue(html.contains("Risk"))
+        XCTAssertTrue(html.contains("Changelog"))
+        XCTAssertTrue(html.contains("manifestURL"))
+        XCTAssertTrue(html.contains("Skill card artwork"))
+    }
+
+    func testSkillMarketplaceIndexListsDownloadableSkillsWithSafetyMetadata() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let data = try Data(contentsOf: root.appendingPathComponent("Website/skills/skills.json"))
+        let index = try JSONDecoder().decode(SkillMarketplaceIndex.self, from: data)
+
+        XCTAssertEqual(index.marketplaceVersion, "2026.6")
+        XCTAssertEqual(index.sourceRepository, "https://github.com/easonwumac/kairo-skills")
+        XCTAssertGreaterThanOrEqual(index.skills.count, 3)
+        XCTAssertTrue(index.skills.allSatisfy { !$0.permissions.isEmpty })
+        XCTAssertTrue(index.skills.allSatisfy { !$0.changelog.isEmpty })
+        XCTAssertTrue(index.skills.allSatisfy { !$0.screenshots.isEmpty })
+        XCTAssertTrue(index.skills.allSatisfy { !$0.riskTier.isEmpty })
+
+        let weatherSkill = try XCTUnwrap(index.skills.first { $0.id == "marketplace-weather-briefing" })
+        XCTAssertEqual(weatherSkill.displayName, "Weather Briefing")
+        XCTAssertEqual(weatherSkill.version, "2.1.0")
+        XCTAssertEqual(weatherSkill.author, "Kairo Marketplace")
+        XCTAssertEqual(weatherSkill.manifestURL, "manifests/weather-briefing.json")
+        XCTAssertEqual(weatherSkill.installSurface, "Access Skill Manager")
+        XCTAssertTrue(weatherSkill.permissions.contains("externalConnectors"))
+        XCTAssertTrue(weatherSkill.changelog.contains("Adds storm alerts."))
+    }
+
+    func testSkillMarketplaceManifestIsImportableBySkillManager() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let data = try Data(contentsOf: root.appendingPathComponent("Website/skills/skills.json"))
+        let index = try JSONDecoder().decode(SkillMarketplaceIndex.self, from: data)
+
+        for entry in index.skills {
+            let manifestJSON = try String(
+                contentsOf: root.appendingPathComponent("Website/skills/\(entry.manifestURL)"),
+                encoding: .utf8
+            )
+            let manifest = try AgentSkillManifest.decodeJSONString(manifestJSON)
+
+            XCTAssertEqual(manifest.skill.id, entry.id)
+            XCTAssertEqual(manifest.skill.version, entry.version)
+            XCTAssertEqual(manifest.packageVersion, index.marketplaceVersion)
+            XCTAssertEqual(manifest.signature?.keyID, "kairo-marketplace-2026")
+            XCTAssertNoThrow(try manifest.validateForInstall())
+            XCTAssertEqual(manifest.installableSkill.source, .marketplace)
+            XCTAssertEqual(manifest.installableSkill.installationStatus, .installed)
+        }
+
+        let manifestJSON = try String(
+            contentsOf: root.appendingPathComponent("Website/skills/manifests/weather-briefing.json"),
+            encoding: .utf8
+        )
+
+        let manifest = try AgentSkillManifest.decodeJSONString(manifestJSON)
+
+        XCTAssertEqual(manifest.skill.id, "marketplace-weather-briefing")
+        XCTAssertEqual(manifest.skill.version, "2.1.0")
+        XCTAssertEqual(manifest.packageVersion, "2026.6")
+        XCTAssertEqual(manifest.signature?.keyID, "kairo-marketplace-2026")
+        XCTAssertEqual(manifest.changelog, [
+            "Adds storm alerts.",
+            "Improves hourly summary.",
+            "Documents approved provider API boundaries."
+        ])
+        XCTAssertNoThrow(try manifest.validateForInstall())
+        XCTAssertEqual(manifest.installableSkill.source, .marketplace)
+        XCTAssertEqual(manifest.installableSkill.installationStatus, .installed)
+    }
+
     func testSandboxActionExecutorRequiresConfirmationBeforeHomeKitControl() async throws {
         let service = MockHomeControlService(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), homeControlService: service)
@@ -1753,6 +1836,25 @@ final class KairoCoreTests: XCTestCase {
         } catch {
             errorHandler(error)
         }
+    }
+
+    private struct SkillMarketplaceIndex: Decodable {
+        var marketplaceVersion: String
+        var sourceRepository: String
+        var skills: [SkillMarketplaceEntry]
+    }
+
+    private struct SkillMarketplaceEntry: Decodable {
+        var id: String
+        var displayName: String
+        var version: String
+        var author: String
+        var permissions: [String]
+        var riskTier: String
+        var manifestURL: String
+        var installSurface: String
+        var changelog: [String]
+        var screenshots: [String]
     }
 
     private func signedWeatherSkillManifest(

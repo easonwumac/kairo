@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="HomeKit Scene Guard artwork">
+  <rect width="800" height="500" fill="#f7f8f6"/>
+  <rect x="70" y="84" width="660" height="338" rx="8" fill="#ffffff" stroke="#d8dedb"/>
+  <path d="M176 232l224-126 224 126v176H176z" fill="#17211f"/>
+  <path d="M250 408V276h118v132" fill="#f2b84b"/>
+  <rect x="456" y="276" width="86" height="72" rx="8" fill="#10766b"/>
+  <path d="M206 208l194-110 194 110" fill="none" stroke="#c6533f" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="602" cy="154" r="44" fill="#287a45"/>
+  <path d="M582 154l16 16 28-34" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
