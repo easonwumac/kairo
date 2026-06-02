@@ -78,3 +78,7 @@ Kairo 的核心風險是「記憶 + 行動」。所以安全設計必須是一�
 - 結果
 
 Audit log 不應保存完整敏感 payload，除非使用者明確允許。
+
+## Tool Preview Boundary
+
+Kairo may map user requests to installed skills or OAuth connector metadata before a model response is shown, but this is only a preview layer. Disabled skills are ignored, local/no-tool routing returns no tool candidates, Shortcut/OAuth matches remain visible handoffs, and action-backed skills still pass through `SafetyPolicyEngine` before any proposed action appears in chat.

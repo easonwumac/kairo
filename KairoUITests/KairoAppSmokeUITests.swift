@@ -70,6 +70,22 @@ final class KairoAppSmokeUITests: XCTestCase {
         openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: true)
     }
 
+    func testChatShowsHomeKitToolPreviewAction() throws {
+        assertPrimaryTabsExist()
+        tapTab(identifier: "root.tab.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+        let composer = anyElement("chat.composer.text")
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        composer.tap()
+        composer.typeText("Turn on the desk lamp")
+        anyElement("chat.composer.send").tap()
+
+        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
+        XCTAssertTrue(findElement("chat.proposed-actions", direction: .down).exists)
+        XCTAssertTrue(findElement("chat.proposed-action.controlHome", direction: .down).exists)
+        XCTAssertTrue(findStaticText(containing: "Control Home", direction: .down).exists)
+    }
+
     private func assertPrimaryTabsExist() {
         XCTAssertTrue(tabButton(identifier: "root.tab.chat", label: "Chat").waitForExistence(timeout: 5))
         XCTAssertTrue(tabButton(identifier: "root.tab.memory", label: "Memory").exists)

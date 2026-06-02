@@ -5,10 +5,14 @@ public actor AgentCore {
     private let aiProvider: AIProvider
     private let safetyPolicyEngine: SafetyPolicyEngine
     private let capabilityRegistry: CapabilityRegistry
+    private let skillCatalog: AgentSkillCatalog
+    private let integrationRegistry: IntegrationRegistry
 
     public init(
         memoryStore: MemoryStore = InMemoryMemoryStore(),
         aiProvider: AIProvider = MockAIProvider(),
+        skillCatalog: AgentSkillCatalog = .default,
+        integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry()
     ) {
@@ -16,6 +20,8 @@ public actor AgentCore {
         self.aiProvider = aiProvider
         self.safetyPolicyEngine = safetyPolicyEngine
         self.capabilityRegistry = capabilityRegistry
+        self.skillCatalog = skillCatalog
+        self.integrationRegistry = integrationRegistry
     }
 
     public func respond(to message: String, attachments: [ChatAttachment] = []) async throws -> AICompletionResponse {
@@ -25,8 +31,15 @@ public actor AgentCore {
             .map(\.key)
         let toolContext = CapabilityPromptContextBuilder(
             capabilityRegistry: capabilityRegistry,
-            actionCatalog: SandboxActionCatalog()
+            actionCatalog: SandboxActionCatalog(),
+            integrationRegistry: integrationRegistry,
+            skillCatalog: skillCatalog
         ).build()
+        let toolPlan = AgentToolInvocationPlanner(
+            skillCatalog: skillCatalog,
+            integrationRegistry: integrationRegistry,
+            safetyPolicyEngine: safetyPolicyEngine
+        ).plan(for: AgentToolInvocationRequest(userText: message))
 
         let request = AICompletionRequest(
             systemPrompt: Self.systemPrompt,
@@ -38,7 +51,11 @@ public actor AgentCore {
         )
 
         let response = try await aiProvider.complete(request)
-        let safeActions = response.proposedActions.filter { action in
+        let proposedActions = Self.mergeActionPreviews(
+            modelActions: response.proposedActions,
+            toolActions: toolPlan.proposedActions
+        )
+        let safeActions = proposedActions.filter { action in
             safetyPolicyEngine.evaluate(action).allowed
         }
 
@@ -64,4 +81,19 @@ public actor AgentCore {
     若使用者要求 iOS sandbox 或目前整合不允許的事，請用 unsupportedSandboxAction 清楚說明限制與安全替代方案，不要假裝已完成。
     對高風險操作，你必須先產生預覽並要求使用者確認。
     """
+
+    private static func mergeActionPreviews(
+        modelActions: [AgentAction],
+        toolActions: [AgentAction]
+    ) -> [AgentAction] {
+        var merged = modelActions
+
+        for action in toolActions where !merged.contains(where: { existing in
+            existing.kind == action.kind && existing.payload == action.payload
+        }) {
+            merged.append(action)
+        }
+
+        return merged
+    }
 }

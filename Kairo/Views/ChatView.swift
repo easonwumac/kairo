@@ -264,11 +264,14 @@ private struct ProposedActionsStrip: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)
                         .background(Color.primary.opacity(0.06), in: Capsule())
+                        .accessibilityElement(children: .combine)
                         .accessibilityLabel("Action preview: \(descriptor.displayName), \(descriptor.supportStatus.displayName)")
+                        .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
                     }
                 }
             }
         }
+        .accessibilityIdentifier("chat.proposed-actions")
     }
 }
 

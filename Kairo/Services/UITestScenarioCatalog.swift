@@ -46,6 +46,23 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "chat-tool-preview",
+            title: "Chat Tool Preview",
+            userGoal: "Ask for a HomeKit skill action and verify Kairo shows a visible confirmation preview instead of silently executing it.",
+            requiredAccessibilityIdentifiers: [
+                "chat.composer.text",
+                "chat.composer.send",
+                "chat.message.assistant",
+                "chat.proposed-actions",
+                "chat.proposed-action.controlHome"
+            ],
+            assertions: [
+                "A HomeKit request creates an assistant response.",
+                "The response exposes a proposed action strip.",
+                "The HomeKit action preview is visible and remains confirmation-gated."
+            ]
+        ),
+        UITestScenario(
             id: "settings-api-key-status",
             title: "Settings Credential Status",
             userGoal: "Open Settings and verify API key plus OAuth connector status is visible without exposing secret values.",

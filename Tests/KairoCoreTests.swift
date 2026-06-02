@@ -120,6 +120,97 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("requiresConfirmation=true"))
     }
 
+    func testAgentToolInvocationPlannerSuggestsInstalledShortcutSkillForTaskExtraction() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "把這段內容變成待辦 todo"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == "shortcut-save-shared-text" })
+
+        XCTAssertEqual(candidate.source, .installedSkill)
+        XCTAssertEqual(candidate.skillKind, .shortcutWorkflow)
+        XCTAssertEqual(candidate.shortcutRecipeID, "save-shared-text")
+        XCTAssertEqual(candidate.riskTier, .tier1Draft)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertTrue(candidate.handoffSummary.contains("Kairo does not install Apple Shortcuts silently"))
+        XCTAssertTrue(plan.proposedActions.isEmpty)
+    }
+
+    func testAgentToolInvocationPlannerSuggestsHomeKitActionWithConfirmation() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Turn on the desk lamp"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == "homekit-desk-lamp" })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .installedSkill)
+        XCTAssertEqual(candidate.skillKind, .homeKitControl)
+        XCTAssertEqual(candidate.riskTier, .tier3HighRiskExternal)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertEqual(action.kind, .controlHome)
+        XCTAssertEqual(action.payload, .homeControl(HomeControlRequest(
+            homeName: "Home",
+            roomName: "Office",
+            targetName: "Desk Lamp",
+            command: .setPower,
+            value: .bool(true)
+        )))
+        XCTAssertEqual(plan.proposedActions, [action])
+    }
+
+    func testAgentToolInvocationPlannerSuggestsOAuthConnectorWithoutPrivateAppClaims() throws {
+        let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry())
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Read Gmail and draft a reply"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.integrationKey == "gmail-google-workspace" })
+
+        XCTAssertEqual(candidate.source, .integrationRegistry)
+        XCTAssertEqual(candidate.skillKind, .oauthConnector)
+        XCTAssertEqual(candidate.riskTier, .tier3HighRiskExternal)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertTrue(candidate.handoffSummary.contains("official OAuth/API"))
+        XCTAssertTrue(candidate.handoffSummary.contains("private app data is unavailable"))
+        XCTAssertNil(candidate.action)
+    }
+
+    func testAgentToolInvocationPlannerRefusesToolUseWhenDisabled() {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(
+            userText: "Use HomeKit to open the garage",
+            allowsToolUse: false
+        ))
+
+        XCTAssertTrue(plan.candidates.isEmpty)
+        XCTAssertEqual(plan.proposedActions, [])
+        XCTAssertTrue(plan.unsupportedMessage?.contains("Local model fallback cannot use tools") == true)
+    }
+
+    func testAgentToolInvocationPlannerIgnoresDisabledSkills() {
+        let disabledCatalog = AgentSkillCatalog.default.updatingStatus(id: "homekit-desk-lamp", to: .disabled)
+        let planner = AgentToolInvocationPlanner(skillCatalog: disabledCatalog)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Turn on the desk lamp"))
+
+        XCTAssertFalse(plan.candidates.contains { $0.skillID == "homekit-desk-lamp" })
+        XCTAssertTrue(plan.proposedActions.isEmpty)
+    }
+
+    func testAgentCoreAddsDeterministicHomeKitPreviewAction() async throws {
+        let agent = AgentCore(
+            memoryStore: InMemoryMemoryStore(),
+            aiProvider: MockAIProvider(),
+            skillCatalog: .default,
+            integrationRegistry: IntegrationRegistry()
+        )
+
+        let response = try await agent.respond(to: "Turn on the desk lamp")
+
+        let action = try XCTUnwrap(response.proposedActions.first { $0.kind == .controlHome })
+        XCTAssertEqual(action.title, "Turn On Desk Lamp")
+        XCTAssertEqual(action.riskTier, .tier3HighRiskExternal)
+        XCTAssertTrue(action.requiresConfirmation)
+    }
+
     func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {
         let registry = IntegrationRegistry()
 
@@ -1208,6 +1299,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(catalog.scenarios.map(\.id), [
             "launch-tabs",
             "chat-send",
+            "chat-tool-preview",
             "settings-api-key-status",
             "access-homekit-demos"
         ])
@@ -1215,6 +1307,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.history.thread") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.new") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-tool-preview")?.requiredAccessibilityIdentifiers.contains("chat.proposed-actions") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-tool-preview")?.requiredAccessibilityIdentifiers.contains("chat.proposed-action.controlHome") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
