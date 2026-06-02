@@ -83,6 +83,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Skill marketplace website shows permissions, risk tier, version, author, and changelog before install.
 - [x] Standalone skill update repository exists for catalog and manifest updates.
 - [x] Production app settings fetch the standalone skill update repository catalog.
+- [x] Marketplace skill Install downloads the signed manifest and shows the preview before confirmation.
 - [ ] Marketplace trust store supports production key rotation and revocation metadata.
 - [ ] User-created skills require explicit capability selection and confirmation policy.
 - [ ] Skill install/update/remove flows are covered by UI/e2e tests.

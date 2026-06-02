@@ -334,13 +334,32 @@ public struct PermissionHubView: View {
 
     @MainActor
     private func installSkill(_ skill: AgentSkill) async {
-        guard skillManagerService != nil else {
+        guard let skillManagerService else {
             skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .installed)
             skillManagerMessage = "\(skill.displayName) installed."
             return
         }
 
-        skillManagerMessage = "\(skill.displayName) requires a signed manifest import before install."
+        guard let marketplaceCatalogService, skill.downloadURL != nil else {
+            skillManagerMessage = "\(skill.displayName) requires a signed manifest import before install."
+            return
+        }
+
+        do {
+            let manifest = try await marketplaceCatalogService.fetchManifest(for: skill)
+            let preview = try await skillManagerService.previewInstall(manifest: manifest)
+            manifestInstallPreview = preview
+            skillManagerMessage = preview.summary
+        } catch AgentSkillManifestImportError.invalidJSON {
+            skillManagerMessage = "Manifest JSON is invalid."
+            manifestInstallPreview = nil
+        } catch AgentSkillManifestValidationError.invalidSignature {
+            skillManagerMessage = "Manifest signature is invalid."
+            manifestInstallPreview = nil
+        } catch {
+            skillManagerMessage = "Unable to preview \(skill.displayName)."
+            manifestInstallPreview = nil
+        }
     }
 
     @MainActor

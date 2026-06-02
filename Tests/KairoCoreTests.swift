@@ -806,6 +806,31 @@ final class KairoCoreTests: XCTestCase {
         )
     }
 
+    func testAgentSkillMarketplaceCatalogServiceFetchesManifestForDownloadableSkill() async throws {
+        let skill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json")!
+        )
+        let manifest = try AgentSkillManifest.signedForTesting(skill: skill, packageVersion: "2026.6")
+        let manifestJSON = try AgentSkillManifest.encodeJSONString(manifest)
+        let httpClient = MockHTTPClient(statusCode: 200, body: manifestJSON)
+        let service = AgentSkillMarketplaceCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-skills/skills.json")!,
+            httpClient: httpClient
+        )
+
+        let fetchedManifest = try await service.fetchManifest(for: skill)
+        let request = try await httpClient.lastRequest()
+
+        XCTAssertEqual(request.url?.absoluteString, "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json")
+        XCTAssertEqual(fetchedManifest.skill.id, "marketplace-weather-briefing")
+        XCTAssertEqual(fetchedManifest.packageVersion, "2026.6")
+        XCTAssertNoThrow(try fetchedManifest.validateForInstall())
+    }
+
     func testAgentSkillCatalogMergesRemoteMarketplaceWithoutReplacingInstalledSkills() {
         var installedWeather = AgentSkill.marketplaceTemplate(
             id: "marketplace-weather-briefing",
@@ -995,6 +1020,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains(#""access.skills.marketplace-refresh""#))
         XCTAssertTrue(permissionHubView.contains("try await marketplaceCatalogService.fetchCatalog()"))
         XCTAssertTrue(permissionHubView.contains("skillCatalog.mergingMarketplaceCatalog(remoteCatalog.catalog)"))
+        XCTAssertTrue(permissionHubView.contains("try await marketplaceCatalogService.fetchManifest(for: skill)"))
+        XCTAssertTrue(permissionHubView.contains("try await skillManagerService.previewInstall(manifest: manifest)"))
         XCTAssertTrue(permissionHubView.contains("HomeKit Control Demos"))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demos""#))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demo.\(recipe.id)""#))

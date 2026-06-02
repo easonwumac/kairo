@@ -345,6 +345,28 @@ public struct AgentSkillMarketplaceCatalogService: Sendable {
         )
     }
 
+    public func fetchManifest(for skill: AgentSkill) async throws -> AgentSkillManifest {
+        guard let downloadURL = skill.downloadURL else {
+            throw AgentSkillMarketplaceCatalogError.invalidManifestURL(
+                skillID: skill.id,
+                manifestURL: ""
+            )
+        }
+
+        let request = URLRequest(url: downloadURL)
+        let (data, response) = try await httpClient.data(for: request)
+        guard (200..<300).contains(response.statusCode) else {
+            let bodyPreview = String(data: data.prefix(300), encoding: .utf8) ?? ""
+            throw HTTPClientError.unacceptableStatusCode(response.statusCode, bodyPreview)
+        }
+
+        do {
+            return try JSONDecoder().decode(AgentSkillManifest.self, from: data)
+        } catch {
+            throw AgentSkillManifestImportError.invalidJSON
+        }
+    }
+
     private func skill(from entry: AgentSkillMarketplaceIndexEntry) throws -> AgentSkill {
         let requiredCapabilities = try entry.permissions.map { permission in
             guard let capability = CapabilityKey(rawValue: permission) else {
