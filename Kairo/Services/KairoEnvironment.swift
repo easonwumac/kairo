@@ -24,6 +24,7 @@ public struct KairoEnvironment: Sendable {
     public let shareIngestionQueue: ShareIngestionQueue
     public let permissionService: PermissionService
     public let auditLogger: AuditLogger
+    public let oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore?
     public let agentSkillManagerService: AgentSkillManagerService?
     public let agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService?
     public let localModelCatalog: LocalModelCatalog
@@ -40,6 +41,7 @@ public struct KairoEnvironment: Sendable {
         shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
         permissionService: PermissionService = StubPermissionService(),
         auditLogger: AuditLogger = InMemoryAuditLogger(),
+        oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         agentSkillManagerService: AgentSkillManagerService? = nil,
         agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil,
         localModelCatalog: LocalModelCatalog = .kairoDefault,
@@ -55,6 +57,7 @@ public struct KairoEnvironment: Sendable {
         self.shareIngestionQueue = shareIngestionQueue
         self.permissionService = permissionService
         self.auditLogger = auditLogger
+        self.oauthConnectorCallbackStore = oauthConnectorCallbackStore
         self.agentSkillManagerService = agentSkillManagerService
         self.agentSkillMarketplaceCatalogService = agentSkillMarketplaceCatalogService
         self.localModelCatalog = localModelCatalog
@@ -123,6 +126,11 @@ public struct KairoEnvironment: Sendable {
             resultStore: localModelBenchmarkStore
         )
         let credentialStore = InMemoryCredentialStore()
+        let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(
+            fileURL: rootDirectory
+                .appendingPathComponent("OAuth", isDirectory: true)
+                .appendingPathComponent("callback-previews.json")
+        )
 
         return KairoEnvironment(
             memoryStore: InMemoryMemoryStore(),
@@ -134,6 +142,7 @@ public struct KairoEnvironment: Sendable {
             shareIngestionQueue: InMemoryShareIngestionQueue(),
             permissionService: StubPermissionService(),
             auditLogger: InMemoryAuditLogger(),
+            oauthConnectorCallbackStore: oauthCallbackStore,
             agentSkillManagerService: skillManagerService,
             agentSkillMarketplaceCatalogService: marketplaceCatalogService,
             localModelCatalogService: localModelCatalogService,
@@ -241,6 +250,7 @@ public struct KairoEnvironment: Sendable {
         let aiProvider = OpenAIProvider(credentialStore: credentialStore)
         let agentSkillMarketplaceCatalogService = AgentSkillMarketplaceCatalogService.defaultStandaloneRepository
         let localModelCatalogService = LocalModelCatalogService.defaultStandaloneRepository
+        let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(fileURL: paths.oauthConnectorCallbackPreviewsURL)
 
         return KairoEnvironment(
             memoryStore: memoryStore,
@@ -250,6 +260,7 @@ public struct KairoEnvironment: Sendable {
             shareIngestionQueue: shareIngestionQueue,
             permissionService: SystemPermissionService(),
             auditLogger: InMemoryAuditLogger(),
+            oauthConnectorCallbackStore: oauthCallbackStore,
             agentSkillManagerService: agentSkillManagerService,
             agentSkillMarketplaceCatalogService: agentSkillMarketplaceCatalogService,
             localModelCatalog: localModelCatalog,
@@ -334,6 +345,12 @@ public struct KairoPaths: Sendable {
 
     public var agentSkillStoreURL: URL {
         agentSkillsDirectory.appendingPathComponent("agent-skills.json")
+    }
+
+    public var oauthConnectorCallbackPreviewsURL: URL {
+        applicationSupportDirectory
+            .appendingPathComponent("OAuth", isDirectory: true)
+            .appendingPathComponent("callback-previews.json")
     }
 
     public static func defaultAppGroupContainerURL(for identifier: String) -> URL? {

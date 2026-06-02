@@ -93,15 +93,18 @@ public actor OAuthConnectorLoginCenter {
     private let registry: IntegrationRegistry
     private let credentialStore: CredentialStore
     private let clientConfigurations: [String: OAuthConnectorClientConfiguration]
+    private let callbackStore: FileBackedOAuthConnectorCallbackStore?
 
     public init(
         registry: IntegrationRegistry = IntegrationRegistry(),
         credentialStore: CredentialStore,
-        clientConfigurations: [String: OAuthConnectorClientConfiguration] = [:]
+        clientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
+        callbackStore: FileBackedOAuthConnectorCallbackStore? = nil
     ) {
         self.registry = registry
         self.credentialStore = credentialStore
         self.clientConfigurations = clientConfigurations
+        self.callbackStore = callbackStore
     }
 
     public func loginOptions() async throws -> [OAuthConnectorLoginOption] {
@@ -165,6 +168,47 @@ public actor OAuthConnectorLoginCenter {
             scopes: configuration.scopes
         )
         return try await service.makeAuthorizationSession(state: state, codeVerifier: codeVerifier)
+    }
+
+    public func previewCallback(_ callbackURL: URL) async throws -> OAuthConnectorCallbackPreview {
+        guard let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
+              components.scheme == "kairo",
+              components.host == "oauth" else {
+            throw OAuthConnectorCallbackPreviewError.invalidCallbackURL
+        }
+
+        let pathComponents = components.path
+            .split(separator: "/")
+            .map(String.init)
+        guard pathComponents.count == 2,
+              pathComponents[1] == "callback" else {
+            throw OAuthConnectorCallbackPreviewError.unsupportedCallbackURL
+        }
+
+        let providerKey = pathComponents[0]
+        guard let integration = registry.oauthConnectors.first(where: { $0.oauth?.providerKey == providerKey }),
+              let metadata = integration.oauth else {
+            throw OAuthConnectorCallbackPreviewError.unknownProvider(providerKey)
+        }
+
+        let items = components.queryItems ?? []
+        if let error = items.first(where: { $0.name == "error" })?.value {
+            throw OAuthConnectorCallbackPreviewError.authorizationFailed(error)
+        }
+        guard let code = items.first(where: { $0.name == "code" })?.value,
+              !code.isEmpty else {
+            throw OAuthConnectorCallbackPreviewError.missingCode
+        }
+
+        let preview = OAuthConnectorCallbackPreview(
+            providerKey: metadata.providerKey,
+            integrationKey: integration.key,
+            state: items.first(where: { $0.name == "state" })?.value,
+            authorizationCodeLength: code.count,
+            requiresBackendTokenExchange: metadata.requiresBackendTokenExchange
+        )
+        try await callbackStore?.save(preview)
+        return preview
     }
 
     private enum TokenState {

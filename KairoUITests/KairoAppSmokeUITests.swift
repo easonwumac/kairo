@@ -166,6 +166,25 @@ final class KairoAppSmokeUITests: XCTestCase {
         )
     }
 
+    func testSettingsPreviewsOAuthCallbackWithoutLeakingCode() throws {
+        assertPrimaryTabsExist()
+        tapTab(identifier: "root.tab.settings", label: "Settings")
+
+        let callbackField = findElement("settings.oauth.callback-url", direction: .down, maxSwipes: 4)
+        XCTAssertTrue(callbackField.exists)
+        callbackField.tap()
+        callbackField.typeText("kairo://oauth/google/callback?code=sample-sensitive-code&state=ui-state")
+
+        let previewButton = findButton("settings.oauth.preview-callback", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(previewButton.exists)
+        previewButton.tap()
+
+        XCTAssertTrue(findElement("settings.oauth.callback-message", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "authorization code received", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "backend token exchange", direction: .both, maxSwipes: 1).exists)
+        XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "sample-sensitive-code")).firstMatch.exists)
+    }
+
     func testMemoryTabCanSaveManualMemory() throws {
         assertPrimaryTabsExist()
         tapTab(identifier: "root.tab.memory", label: "Memory")

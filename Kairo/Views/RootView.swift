@@ -34,6 +34,7 @@ public struct RootView: View {
             SettingsView(
                 settingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
                 credentialStore: environment.credentialStore,
+                oauthCallbackStore: environment.oauthConnectorCallbackStore,
                 localModelCatalog: environment.localModelCatalog,
                 localModelCatalogService: environment.localModelCatalogService,
                 localModelSettingsService: environment.localModelSettingsService,
@@ -44,6 +45,17 @@ public struct RootView: View {
                     Label("Settings", systemImage: "gear")
                         .accessibilityIdentifier("root.tab.settings")
                 }
+        }
+        .onOpenURL { url in
+            guard let oauthCallbackStore = environment.oauthConnectorCallbackStore else { return }
+            Task {
+                _ = try? await OAuthConnectorLoginCenter(
+                    registry: IntegrationRegistry(),
+                    credentialStore: environment.credentialStore,
+                    callbackStore: oauthCallbackStore
+                )
+                .previewCallback(url)
+            }
         }
     }
 }

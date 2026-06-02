@@ -9,6 +9,8 @@ public struct SettingsView: View {
     @State private var statusMessage: String?
     @State private var connectorOptions: [OAuthConnectorLoginOption] = []
     @State private var connectorStatusMessage: String?
+    @State private var oauthCallbackURLText: String = ""
+    @State private var oauthCallbackPreviewMessage: String?
     @State private var localModelCatalog: LocalModelCatalog
     @State private var localModelStatus: LocalModelSettingsStatus
     @State private var localModelStatusMessage: String?
@@ -17,6 +19,7 @@ public struct SettingsView: View {
     private let settingsService: OpenAISettingsService
     private let credentialStore: any CredentialStore
     private let oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
+    private let oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
     private let localModelCatalogService: LocalModelCatalogService?
     private let localModelSettingsService: LocalModelSettingsService?
     private let localModelDownloader: (any LocalModelDownloader)?
@@ -25,6 +28,7 @@ public struct SettingsView: View {
     public init(
         credentialStore: any CredentialStore = InMemoryCredentialStore(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
+        oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         localModelCatalog: LocalModelCatalog = .kairoDefault,
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
@@ -34,6 +38,7 @@ public struct SettingsView: View {
         self.settingsService = OpenAISettingsService(credentialStore: credentialStore)
         self.credentialStore = credentialStore
         self.oauthClientConfigurations = oauthClientConfigurations
+        self.oauthCallbackStore = oauthCallbackStore
         self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
@@ -46,6 +51,7 @@ public struct SettingsView: View {
         settingsService: OpenAISettingsService,
         credentialStore: any CredentialStore,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
+        oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         localModelCatalog: LocalModelCatalog = .kairoDefault,
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
@@ -55,6 +61,7 @@ public struct SettingsView: View {
         self.settingsService = settingsService
         self.credentialStore = credentialStore
         self.oauthClientConfigurations = oauthClientConfigurations
+        self.oauthCallbackStore = oauthCallbackStore
         self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
@@ -106,6 +113,8 @@ public struct SettingsView: View {
                     ForEach(connectorOptions) { option in
                         connectorRow(option)
                     }
+
+                    oauthCallbackPreviewControls()
                 }
                 .accessibilityIdentifier("settings.oauth.connectors")
 
@@ -207,6 +216,34 @@ public struct SettingsView: View {
         .padding(.vertical, 4)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.oauth.\(option.providerKey).row")
+    }
+
+    @ViewBuilder
+    private func oauthCallbackPreviewControls() -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("OAuth Callback Preview")
+                .font(.subheadline)
+                .fontWeight(.medium)
+
+            TextField("kairo://oauth/google/callback?code=...&state=...", text: $oauthCallbackURLText)
+                .autocorrectionDisabled()
+                .accessibilityIdentifier("settings.oauth.callback-url")
+
+            Button("Preview Callback") {
+                previewOAuthCallback()
+            }
+            .disabled(oauthCallbackURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityIdentifier("settings.oauth.preview-callback")
+
+            if let oauthCallbackPreviewMessage {
+                Text(oauthCallbackPreviewMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("settings.oauth.callback-message")
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
     }
 
     @ViewBuilder
@@ -429,6 +466,30 @@ public struct SettingsView: View {
             } catch {
                 await MainActor.run {
                     connectorStatusMessage = "授權啟動失敗：\(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func previewOAuthCallback() {
+        Task {
+            let trimmed = oauthCallbackURLText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let url = URL(string: trimmed) else {
+                await MainActor.run {
+                    oauthCallbackPreviewMessage = "OAuth callback URL 格式不正確。"
+                }
+                return
+            }
+
+            do {
+                let preview = try await connectorLoginCenter().previewCallback(url)
+                await MainActor.run {
+                    oauthCallbackPreviewMessage = preview.settingsStatusText
+                }
+                await reloadConnectorOptions()
+            } catch {
+                await MainActor.run {
+                    oauthCallbackPreviewMessage = "OAuth callback preview 失敗：\(error.localizedDescription)"
                 }
             }
         }
@@ -690,7 +751,8 @@ public struct SettingsView: View {
         OAuthConnectorLoginCenter(
             registry: IntegrationRegistry(),
             credentialStore: credentialStore,
-            clientConfigurations: oauthClientConfigurations
+            clientConfigurations: oauthClientConfigurations,
+            callbackStore: oauthCallbackStore
         )
     }
 

@@ -1174,6 +1174,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).detail""#))
         XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).backend-exchange""#))
         XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).authorize""#))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.callback-url""#))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.preview-callback""#))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.callback-message""#))
+        XCTAssertTrue(settingsView.contains("previewOAuthCallback"))
     }
 
     func testSettingsViewDefinesShortcutDemoSectionAccessibilityIdentifiers() throws {
@@ -1430,6 +1434,7 @@ final class KairoCoreTests: XCTestCase {
     func testXcodeProjectDefinesKairoUITestTargetAndSmokeTestFile() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let projectYAML = try String(contentsOf: root.appendingPathComponent("project.yml"), encoding: .utf8)
+        let appInfoPlist = try String(contentsOf: root.appendingPathComponent("Config/KairoApp-Info.plist"), encoding: .utf8)
         let smokeTestURL = root.appendingPathComponent("KairoUITests/KairoAppSmokeUITests.swift")
         let smokeTest = try String(contentsOf: smokeTestURL, encoding: .utf8)
 
@@ -1437,12 +1442,20 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(projectYAML.contains("type: bundle.ui-testing"))
         XCTAssertTrue(projectYAML.contains("GENERATE_INFOPLIST_FILE"))
         XCTAssertTrue(projectYAML.contains("target: KairoApp"))
+        XCTAssertTrue(appInfoPlist.contains("<key>CFBundleURLTypes</key>"))
+        XCTAssertTrue(appInfoPlist.contains("<string>kairo</string>"))
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
         XCTAssertTrue(smokeTest.contains("testSettingsLocalModelCatalogListsDownloadableModels"))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsQwenBenchmarkFlowRequiresDownload"))
         XCTAssertTrue(smokeTest.contains(#""settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run""#))
         XCTAssertTrue(smokeTest.contains("請先下載 Qwen3.5 0.8B Q4_K_M 後再跑 benchmark。"))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsOAuthConnectorReadinessAndBoundaries"))
+        XCTAssertTrue(smokeTest.contains("testSettingsPreviewsOAuthCallbackWithoutLeakingCode"))
+        XCTAssertTrue(smokeTest.contains(#""settings.oauth.callback-url""#))
+        XCTAssertTrue(smokeTest.contains(#""settings.oauth.preview-callback""#))
+        XCTAssertTrue(smokeTest.contains(#""settings.oauth.callback-message""#))
+        XCTAssertTrue(smokeTest.contains("sample-sensitive-code"))
+        XCTAssertTrue(smokeTest.contains("authorization code received"))
         XCTAssertTrue(smokeTest.contains(#"providerKey: "google""#))
         XCTAssertTrue(smokeTest.contains("Gmail / Google Workspace"))
         XCTAssertTrue(smokeTest.contains(#"providerKey: "chatgpt""#))
@@ -2355,6 +2368,36 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(query["scope"], "openid email")
         XCTAssertEqual(query["state"], "state-123")
         XCTAssertEqual(query["code_challenge_method"], "S256")
+    }
+
+    func testOAuthConnectorCallbackPreviewRedactsAuthorizationCodeAndPersistsStatus() async throws {
+        let fileURL = temporaryFileURL(named: "oauth-callbacks.json")
+        let store = try await FileBackedOAuthConnectorCallbackStore(fileURL: fileURL)
+        let center = OAuthConnectorLoginCenter(
+            registry: IntegrationRegistry(),
+            credentialStore: InMemoryCredentialStore(),
+            callbackStore: store
+        )
+
+        let preview = try await center.previewCallback(
+            URL(string: "kairo://oauth/google/callback?code=sample-sensitive-code&state=state-123")!
+        )
+
+        XCTAssertEqual(preview.providerKey, "google")
+        XCTAssertEqual(preview.integrationKey, "gmail-google-workspace")
+        XCTAssertEqual(preview.state, "state-123")
+        XCTAssertEqual(preview.authorizationCodeLength, "sample-sensitive-code".count)
+        XCTAssertTrue(preview.requiresBackendTokenExchange)
+        XCTAssertTrue(preview.settingsStatusText.contains("google"))
+        XCTAssertTrue(preview.settingsStatusText.contains("backend token exchange"))
+        XCTAssertFalse(preview.settingsStatusText.contains("sample-sensitive-code"))
+
+        let latest = await store.latestPreview(for: "google")
+        XCTAssertEqual(latest, preview)
+
+        let storedJSON = try String(contentsOf: fileURL, encoding: .utf8)
+        XCTAssertFalse(storedJSON.contains("sample-sensitive-code"))
+        XCTAssertTrue(storedJSON.contains(#""authorizationCodeLength":21"#))
     }
 
     func testOAuthConnectorAuthorizationServiceHandlesNonPKCEConnectorsAndStoresNamespacedTokens() async throws {

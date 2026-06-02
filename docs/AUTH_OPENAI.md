@@ -50,6 +50,7 @@ Current scope:
 
 - builds provider authorization URLs from registry metadata, client id, redirect URI, scopes, state, and PKCE requirements;
 - validates redirect callbacks with `code`, `state`, and `error` handling;
+- previews `kairo://oauth/{provider}/callback` URLs through `OAuthConnectorLoginCenter.previewCallback`, stores provider/state/code-length metadata, and does not persist the raw authorization code;
 - stores `OAuthTokenSet` values in `CredentialStore` under `CredentialKey.oauthTokenSet(providerKey:)`;
 - supports non-PKCE connectors that require backend token exchange, such as GitHub app flows.
 
@@ -58,9 +59,10 @@ Current scope:
 - lists OAuth connectors in registry order;
 - reports `connected`, `readyToAuthorize`, `needsClientConfiguration`, or `needsReauthorization`;
 - exposes granted scopes from stored token sets without leaking token values;
-- creates authorization sessions from per-provider iOS client configuration.
+- creates authorization sessions from per-provider iOS client configuration;
+- records redacted callback previews in the shared app storage path so Settings can show callback status without exposing code/token values.
 
-`SettingsView` surfaces these login options as a status list. It can open an authorization URL only when the app has a provider client configuration; otherwise it labels the connector as needing iOS OAuth client setup.
+`SettingsView` surfaces these login options as a status list. It can open an authorization URL only when the app has a provider client configuration; otherwise it labels the connector as needing iOS OAuth client setup. Settings also includes an OAuth callback preview field for validating callback routing during setup; it shows only redacted status and never displays the raw authorization code.
 
 Out of scope for this core:
 
