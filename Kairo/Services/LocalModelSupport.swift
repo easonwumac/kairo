@@ -203,10 +203,15 @@ public extension LocalModelCatalog {
             .qwen25TinyInstruct,
             .llama32OneBInstruct,
             .deepSeekR1DistillQwenTiny,
+            .h2oDanube2Chat,
+            .openELM11BInstruct,
+            .falconH1TinyInstruct,
             .smolLM2NanoInstruct,
             .smolLM2MicroInstruct,
             .smolLM2TinyInstruct,
             .tinyLlamaChat,
+            .gemma3OneBIt,
+            .gemma2TwoBIt,
             .gemma4E2BIt
         ]
     )
@@ -392,6 +397,52 @@ public extension LocalModelManifest {
         sha256: "41aa31689f2cbdcc5172e370db2ab7a10e17a9427520602437bd16d8d127d105"
     )
 
+    static let h2oDanube2Chat = ggufManifest(
+        id: "h2o-danube2-1-8b-chat-q4-k-m",
+        displayName: "H2O Danube2 1.8B Chat Q4_K_M",
+        family: "H2O Danube2",
+        parameterCount: "1.8B",
+        fileSizeBytes: 1_112_145_056,
+        installedSizeBytes: 1_700 * 1024 * 1024,
+        contextWindow: 8_192,
+        tokenizerID: "h2o-danube2-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/h2oai/h2o-danube2-1.8b-chat-GGUF/resolve/main/h2o-danube2-1.8b-chat-Q4_K_M.gguf",
+        sha256: "6a303ee6b94a961aa43e48eb11629e933c4438fae5e6db336318a5d33fe57d79"
+    )
+
+    static let openELM11BInstruct = ggufManifest(
+        id: "openelm-1-1b-instruct-q4-k-m",
+        displayName: "OpenELM 1.1B Instruct Q4_K_M",
+        family: "OpenELM",
+        parameterCount: "1.1B",
+        fileSizeBytes: 678_056_320,
+        installedSizeBytes: 1_100 * 1024 * 1024,
+        contextWindow: 2_048,
+        tokenizerID: "openelm-tokenizer",
+        licenseName: "Apple Sample Code License",
+        licenseURL: "https://huggingface.co/straino/OpenELM-1_1B-Instruct-Q4_K_M-GGUF/blob/main/LICENSE",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/straino/OpenELM-1_1B-Instruct-Q4_K_M-GGUF/resolve/main/openelm-1_1b-instruct-q4_k_m.gguf",
+        sha256: "c687a192d7e914d42cd35f4832327068f2a4a5ec53e01dff853d814bfb5e3328"
+    )
+
+    static let falconH1TinyInstruct = ggufManifest(
+        id: "falcon-h1-1-5b-instruct-q4-k-m",
+        displayName: "Falcon-H1 1.5B Instruct Q4_K_M",
+        family: "Falcon-H1",
+        parameterCount: "1.5B",
+        fileSizeBytes: 944_786_656,
+        installedSizeBytes: 1_500 * 1024 * 1024,
+        contextWindow: 131_072,
+        tokenizerID: "falcon-h1-tokenizer",
+        licenseName: "Falcon LLM License",
+        licenseURL: "https://falconllm.tii.ae/falcon-terms-and-conditions.html",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/tiiuae/Falcon-H1-1.5B-Instruct-GGUF/resolve/main/Falcon-H1-1.5B-Instruct-Q4_K_M.gguf",
+        sha256: "8b51aa2aa34a0373fd0cd64c02eb91d1bc1da681c09e955ad769d4a9b2d8385f"
+    )
+
     static let smolLM2NanoInstruct = ggufManifest(
         id: "smollm2-135m-instruct-q4-k-m",
         displayName: "SmolLM2 135M Instruct Q4_K_M",
@@ -446,6 +497,38 @@ public extension LocalModelManifest {
         minRAMGB: 4,
         downloadURL: "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
         sha256: "9fecc3b3cd76bba89d504f29b616eedf7da85b96540e490ca5824d3f7d2776a0"
+    )
+
+    static let gemma3OneBIt = ggufManifest(
+        id: "gemma3-1b-it-q4-k-m",
+        displayName: "Gemma 3 1B IT Q4_K_M",
+        family: "Gemma 3",
+        parameterCount: "1B",
+        fileSizeBytes: 806_058_240,
+        installedSizeBytes: 1_200 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "gemma3-tokenizer",
+        licenseName: "Gemma Terms of Use",
+        licenseURL: "https://ai.google.dev/gemma/terms",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf",
+        sha256: "8ccc5cd1f1b3602548715ae25a66ed73fd5dc68a210412eea643eb20eb75a135"
+    )
+
+    static let gemma2TwoBIt = ggufManifest(
+        id: "gemma2-2b-it-q4-k-m",
+        displayName: "Gemma 2 2B IT Q4_K_M",
+        family: "Gemma 2",
+        parameterCount: "2B",
+        fileSizeBytes: 1_495_095_008,
+        installedSizeBytes: 2_200 * 1024 * 1024,
+        contextWindow: 8_192,
+        tokenizerID: "gemma2-tokenizer",
+        licenseName: "Gemma Terms of Use",
+        licenseURL: "https://ai.google.dev/gemma/terms",
+        minRAMGB: 5,
+        downloadURL: "https://huggingface.co/second-state/Gemma-2b-it-GGUF/resolve/main/gemma-2b-it-Q4_K_M.gguf",
+        sha256: "4d736aa91fa06bb4d72a9e9017ad4e5c6a8fc16fb01b748c9b8332293c855402"
     )
 
     static let gemma4E2BIt = ggufManifest(

@@ -17,10 +17,15 @@ final class KairoAppSmokeUITests: XCTestCase {
         ("qwen2-5-1-5b-instruct-q4-k-m", "Qwen2.5 1.5B Instruct Q4_K_M"),
         ("llama3-2-1b-instruct-q4-k-m", "Llama 3.2 1B Instruct Q4_K_M"),
         ("deepseek-r1-distill-qwen-1-5b-q4-k-m", "DeepSeek R1 Distill Qwen 1.5B Q4_K_M"),
+        ("h2o-danube2-1-8b-chat-q4-k-m", "H2O Danube2 1.8B Chat Q4_K_M"),
+        ("openelm-1-1b-instruct-q4-k-m", "OpenELM 1.1B Instruct Q4_K_M"),
+        ("falcon-h1-1-5b-instruct-q4-k-m", "Falcon-H1 1.5B Instruct Q4_K_M"),
         ("smollm2-135m-instruct-q4-k-m", "SmolLM2 135M Instruct Q4_K_M"),
         ("smollm2-360m-instruct-q4-k-m", "SmolLM2 360M Instruct Q4_K_M"),
         ("smollm2-1-7b-instruct-q4-k-m", "SmolLM2 1.7B Instruct Q4_K_M"),
         ("tinyllama-1-1b-chat-q4-k-m", "TinyLlama 1.1B Chat Q4_K_M"),
+        ("gemma3-1b-it-q4-k-m", "Gemma 3 1B IT Q4_K_M"),
+        ("gemma2-2b-it-q4-k-m", "Gemma 2 2B IT Q4_K_M"),
         ("gemma4-e2b-it-q4-k-m", "Gemma 4 E2B IT Q4_K_M")
     ]
     private let localModelDownloadIdentifiers = [
@@ -32,10 +37,15 @@ final class KairoAppSmokeUITests: XCTestCase {
         "settings.models.qwen2-5-1-5b-instruct-q4-k-m.download",
         "settings.models.llama3-2-1b-instruct-q4-k-m.download",
         "settings.models.deepseek-r1-distill-qwen-1-5b-q4-k-m.download",
+        "settings.models.h2o-danube2-1-8b-chat-q4-k-m.download",
+        "settings.models.openelm-1-1b-instruct-q4-k-m.download",
+        "settings.models.falcon-h1-1-5b-instruct-q4-k-m.download",
         "settings.models.smollm2-135m-instruct-q4-k-m.download",
         "settings.models.smollm2-360m-instruct-q4-k-m.download",
         "settings.models.smollm2-1-7b-instruct-q4-k-m.download",
         "settings.models.tinyllama-1-1b-chat-q4-k-m.download",
+        "settings.models.gemma3-1b-it-q4-k-m.download",
+        "settings.models.gemma2-2b-it-q4-k-m.download",
         "settings.models.gemma4-e2b-it-q4-k-m.download"
     ]
 
@@ -144,14 +154,16 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(refreshCatalogButton.exists)
         refreshCatalogButton.tap()
         XCTAssertTrue(findStaticText(containing: "已刷新 model catalog", direction: .down).exists)
+        scrollTowardTop(maxSwipes: 8)
+        XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
         let localModelsToVerify = verifyAllLocalModels
-            ? localModelExpectations
-            : Array(localModelExpectations.prefix(3))
-        for (index, localModel) in localModelsToVerify.enumerated() {
+            ? localModelExpectations.sorted { $0.0 < $1.0 }
+            : Array(localModelExpectations.prefix(3).sorted { $0.0 < $1.0 })
+        for localModel in localModelsToVerify {
             verifyDownloadableLocalModel(
                 id: localModel.0,
                 displayName: localModel.1,
-                downloadIdentifier: localModelDownloadIdentifiers[index]
+                downloadIdentifier: "settings.models.\(localModel.0).download"
             )
         }
         XCTAssertTrue(findStaticText(containing: "可下載", direction: .both).exists)
@@ -161,8 +173,8 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     private func verifyDownloadableLocalModel(id: String, displayName: String, downloadIdentifier: String) {
         XCTAssertFalse(displayName.isEmpty)
-        XCTAssertTrue(findElement("settings.models.\(id).name", direction: .both).exists)
-        XCTAssertTrue(findButton(downloadIdentifier, direction: .both).exists)
+        XCTAssertTrue(findElement("settings.models.\(id).name", direction: .down, maxSwipes: 6).exists)
+        XCTAssertTrue(findButton(downloadIdentifier, direction: .down, maxSwipes: 2).exists)
     }
 
     private func tapTab(identifier: String, label: String) {
@@ -245,14 +257,14 @@ final class KairoAppSmokeUITests: XCTestCase {
         direction: SearchDirection,
         maxSwipes: Int
     ) -> XCUIElement {
-        if element.waitForExistence(timeout: 1) {
+        if element.waitForExistence(timeout: 0.3) {
             return element
         }
 
         if direction == .down || direction == .both {
             for _ in 0..<maxSwipes {
                 scrollDown()
-                if element.waitForExistence(timeout: 1) {
+                if element.waitForExistence(timeout: 0.3) {
                     return element
                 }
             }
@@ -261,7 +273,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         if direction == .up || direction == .both {
             for _ in 0..<maxSwipes {
                 scrollUp()
-                if element.waitForExistence(timeout: 1) {
+                if element.waitForExistence(timeout: 0.3) {
                     return element
                 }
             }

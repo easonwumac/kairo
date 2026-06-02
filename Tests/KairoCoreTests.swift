@@ -1271,10 +1271,15 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("Qwen2.5 1.5B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Llama 3.2 1B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("DeepSeek R1 Distill Qwen 1.5B Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("H2O Danube2 1.8B Chat Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("OpenELM 1.1B Instruct Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("Falcon-H1 1.5B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("SmolLM2 135M Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("SmolLM2 360M Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("SmolLM2 1.7B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("TinyLlama 1.1B Chat Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("Gemma 3 1B IT Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("Gemma 2 2B IT Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Gemma 4 E2B IT Q4_K_M"))
         for modelID in LocalModelCatalog.kairoDefault.models.map(\.id) {
             XCTAssertTrue(smokeTest.contains(#""settings.models.\#(modelID).download""#), modelID)
@@ -1330,10 +1335,15 @@ final class KairoCoreTests: XCTestCase {
             "qwen2-5-1-5b-instruct-q4-k-m",
             "llama3-2-1b-instruct-q4-k-m",
             "deepseek-r1-distill-qwen-1-5b-q4-k-m",
+            "h2o-danube2-1-8b-chat-q4-k-m",
+            "openelm-1-1b-instruct-q4-k-m",
+            "falcon-h1-1-5b-instruct-q4-k-m",
             "smollm2-135m-instruct-q4-k-m",
             "smollm2-360m-instruct-q4-k-m",
             "smollm2-1-7b-instruct-q4-k-m",
             "tinyllama-1-1b-chat-q4-k-m",
+            "gemma3-1b-it-q4-k-m",
+            "gemma2-2b-it-q4-k-m",
             "gemma4-e2b-it-q4-k-m"
         ])
         XCTAssertEqual(availableModels.map(\.displayName), [
@@ -1345,10 +1355,15 @@ final class KairoCoreTests: XCTestCase {
             "Qwen2.5 1.5B Instruct Q4_K_M",
             "Llama 3.2 1B Instruct Q4_K_M",
             "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
+            "H2O Danube2 1.8B Chat Q4_K_M",
+            "OpenELM 1.1B Instruct Q4_K_M",
+            "Falcon-H1 1.5B Instruct Q4_K_M",
             "SmolLM2 135M Instruct Q4_K_M",
             "SmolLM2 360M Instruct Q4_K_M",
             "SmolLM2 1.7B Instruct Q4_K_M",
             "TinyLlama 1.1B Chat Q4_K_M",
+            "Gemma 3 1B IT Q4_K_M",
+            "Gemma 2 2B IT Q4_K_M",
             "Gemma 4 E2B IT Q4_K_M"
         ])
 
