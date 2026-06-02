@@ -103,6 +103,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("saveMemory"))
         XCTAssertTrue(context.contains("createReminderDraft"))
         XCTAssertTrue(context.contains("createContactDraft"))
+        XCTAssertTrue(context.contains("composeEmailDraft"))
         XCTAssertTrue(context.contains("unsupportedSandboxAction"))
         XCTAssertTrue(context.contains("require visible user confirmation"))
         XCTAssertTrue(context.contains("Integration registry"))
@@ -289,6 +290,31 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(draft.notes, "Drafted from a Kairo chat request.")
     }
 
+    func testAgentToolInvocationPlannerSuggestsEmailDraftHandoffWithConfirmation() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(
+            userText: "Draft an email to alex@example.com subject Kairo update body Please review the roadmap."
+        ))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-compose-email-draft" })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.skillKind, .custom)
+        XCTAssertEqual(candidate.requiredCapabilities, [.mail])
+        XCTAssertEqual(candidate.riskTier, .tier1Draft)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertTrue(candidate.handoffSummary.contains("mailto"))
+        XCTAssertEqual(action.kind, .composeEmailDraft)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case let .email(draft) = action.payload else {
+            return XCTFail("Expected email payload.")
+        }
+        XCTAssertEqual(draft.to, ["alex@example.com"])
+        XCTAssertEqual(draft.subject, "Kairo update")
+        XCTAssertEqual(draft.body, "Please review the roadmap.")
+    }
+
     func testAgentToolInvocationPlannerRefusesToolUseWhenDisabled() {
         let planner = AgentToolInvocationPlanner(skillCatalog: .default)
 
@@ -413,6 +439,23 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-create-contact" })
     }
 
+    func testAgentCoreAddsDeterministicEmailDraftPreviewAction() async throws {
+        let agent = AgentCore(
+            memoryStore: InMemoryMemoryStore(),
+            aiProvider: MockAIProvider(),
+            skillCatalog: .default,
+            integrationRegistry: IntegrationRegistry()
+        )
+
+        let response = try await agent.respond(to: "Draft an email to alex@example.com subject Kairo update body Please review the roadmap.")
+
+        let action = try XCTUnwrap(response.proposedActions.first { $0.kind == .composeEmailDraft })
+        XCTAssertEqual(action.title, "Compose Email Draft")
+        XCTAssertEqual(action.riskTier, .tier1Draft)
+        XCTAssertTrue(action.requiresConfirmation)
+        XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-compose-email-draft" })
+    }
+
 #if canImport(SwiftUI)
     @MainActor
     func testChatViewModelConfirmsNotificationActionThroughInjectedExecutor() async throws {
@@ -519,6 +562,33 @@ final class KairoCoreTests: XCTestCase {
         let executedActions = await executor.executedActions
         let confirmations = await executor.confirmations
         XCTAssertEqual(executedActions.map(\.kind), [.createContactDraft])
+        XCTAssertEqual(confirmations, [true])
+    }
+
+    @MainActor
+    func testChatViewModelConfirmsEmailDraftHandoffThroughInjectedExecutor() async throws {
+        let executor = MockActionExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: executor
+        )
+
+        await viewModel.send("Draft an email to alex@example.com subject Kairo update body Please review the roadmap.")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .composeEmailDraft })
+
+        viewModel.previewAction(action)
+        XCTAssertEqual(viewModel.pendingAction?.kind, .composeEmailDraft)
+
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertTrue(viewModel.actionResultMessage?.contains("Prepared email draft handoff.") == true)
+        let executedActions = await executor.executedActions
+        let confirmations = await executor.confirmations
+        XCTAssertEqual(executedActions.map(\.kind), [.composeEmailDraft])
         XCTAssertEqual(confirmations, [true])
     }
 #endif
@@ -807,6 +877,34 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(result.requiresExternalUI)
         let openedURLs = await opener.openedURLs
         XCTAssertEqual(openedURLs, [handoffURL])
+    }
+
+    func testSandboxActionExecutorOpensEmailDraftHandoffThroughInjectedOpener() async throws {
+        let opener = MockURLOpener()
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), urlOpener: opener)
+        let action = AgentAction(
+            kind: .composeEmailDraft,
+            title: "Compose Email Draft",
+            rationale: "User confirmed Kairo may prepare a visible email draft handoff.",
+            payload: .email(EmailDraft(
+                to: ["alex@example.com"],
+                subject: "Kairo update",
+                body: "Please review the roadmap."
+            )),
+            riskTier: .tier1Draft
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertTrue(result.requiresExternalUI)
+        XCTAssertEqual(result.message, "Prepared email draft handoff.")
+        let openedURLs = await opener.openedURLs
+        let openedURL = try XCTUnwrap(openedURLs.first)
+        XCTAssertEqual(openedURL.scheme, "mailto")
+        XCTAssertTrue(openedURL.absoluteString.contains("alex@example.com"))
+        XCTAssertTrue(openedURL.absoluteString.contains("subject=Kairo%20update"))
+        XCTAssertTrue(openedURL.absoluteString.contains("body=Please%20review%20the%20roadmap."))
     }
 
     func testSandboxActionExecutorSchedulesNotificationThroughInjectedScheduler() async throws {
@@ -1947,6 +2045,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-reminder-confirmation",
             "chat-calendar-confirmation",
             "chat-contact-confirmation",
+            "chat-email-draft-confirmation",
             "memory-manual-save",
             "automations-recipe-center",
             "automations-shortcut-templates",
@@ -1984,6 +2083,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(contactScenarioIdentifiers.contains("chat.action-preview"))
         XCTAssertTrue(contactScenarioIdentifiers.contains("chat.action.confirm"))
         XCTAssertTrue(contactScenarioIdentifiers.contains("chat.action-result"))
+        let emailScenarioIdentifiers = catalog.scenario(id: "chat-email-draft-confirmation")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(emailScenarioIdentifiers.contains("chat.proposed-action.composeEmailDraft"))
+        XCTAssertTrue(emailScenarioIdentifiers.contains("chat.action-preview"))
+        XCTAssertTrue(emailScenarioIdentifiers.contains("chat.action.confirm"))
+        XCTAssertTrue(emailScenarioIdentifiers.contains("chat.action-result"))
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.text") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.save") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.list") == true)
@@ -2095,6 +2199,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmContactAction"))
         XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.createContactDraft""#))
         XCTAssertTrue(smokeTest.contains("Created contact."))
+        XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmEmailDraftHandoff"))
+        XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.composeEmailDraft""#))
+        XCTAssertTrue(smokeTest.contains("Prepared email draft handoff."))
         XCTAssertTrue(smokeTest.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
         XCTAssertTrue(smokeTest.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
         XCTAssertTrue(smokeTest.contains(#""root.tab.automations""#))
@@ -3588,6 +3695,8 @@ private actor MockActionExecutor: ActionExecutor {
         switch action.kind {
         case .createContactDraft:
             return ActionExecutionResult(completed: true, message: "Created contact.", createdIdentifier: "contact-id")
+        case .composeEmailDraft:
+            return ActionExecutionResult(completed: true, message: "Prepared email draft handoff.", requiresExternalUI: true)
         case .createCalendarDraft:
             return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: "calendar-event-id")
         case .createReminderDraft:

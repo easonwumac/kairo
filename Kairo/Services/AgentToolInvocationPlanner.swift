@@ -108,6 +108,9 @@ public struct AgentToolInvocationPlanner: Sendable {
         candidates.append(contentsOf: integrationRegistry.oauthConnectors.compactMap { integration in
             candidate(for: integration, normalizedText: normalizedText)
         })
+        if let emailCandidate = emailActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+            candidates.append(emailCandidate)
+        }
         if let contactCandidate = contactActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(contactCandidate)
         }
@@ -275,6 +278,9 @@ public struct AgentToolInvocationPlanner: Sendable {
         guard !isContactWriteRequest(normalizedText) else {
             return nil
         }
+        guard !isEmailDraftRequest(normalizedText) else {
+            return nil
+        }
         guard containsAny(normalizedText, [
             "notify me",
             "notification",
@@ -310,6 +316,33 @@ public struct AgentToolInvocationPlanner: Sendable {
             riskTier: .tier2LowRiskWrite,
             requiresConfirmation: true,
             handoffSummary: "Use UserNotifications for a local notification after runtime permission and visible confirmation.",
+            action: action
+        )
+    }
+
+    private func emailActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard isEmailDraftRequest(normalizedText) else {
+            return nil
+        }
+
+        let draft = emailDraft(from: userText)
+        let action = AgentAction(
+            kind: .composeEmailDraft,
+            title: "Compose Email Draft",
+            rationale: "User asked Kairo to prepare a visible email draft handoff without sending mail automatically.",
+            payload: .email(draft),
+            riskTier: .tier1Draft
+        )
+
+        return AgentToolInvocationCandidate(
+            id: "action-compose-email-draft",
+            title: "Compose Email Draft",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.mail],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Use a visible mailto handoff for a user-reviewed email draft; Kairo cannot read Apple Mail or send silently.",
             action: action
         )
     }
@@ -442,6 +475,27 @@ public struct AgentToolInvocationPlanner: Sendable {
         ])
     }
 
+    private func isEmailDraftRequest(_ normalizedText: String) -> Bool {
+        containsAny(normalizedText, [
+            "draft an email",
+            "draft email",
+            "compose an email",
+            "compose email",
+            "write an email",
+            "write email",
+            "email draft",
+            "草擬 email",
+            "撰寫 email",
+            "寫 email",
+            "草擬郵件",
+            "撰寫郵件",
+            "寫郵件",
+            "草拟邮件",
+            "撰写邮件",
+            "写邮件"
+        ])
+    }
+
     private func isContactWriteRequest(_ normalizedText: String) -> Bool {
         containsAny(normalizedText, [
             "create a contact",
@@ -517,6 +571,59 @@ public struct AgentToolInvocationPlanner: Sendable {
         }
 
         return title.isEmpty ? "Kairo reminder" : title
+    }
+
+    private func emailDraft(from userText: String) -> EmailDraft {
+        var content = userText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefixes = [
+            "Draft an email",
+            "Draft email",
+            "Compose an email",
+            "Compose email",
+            "Write an email",
+            "Write email",
+            "草擬 email",
+            "撰寫 email",
+            "寫 email",
+            "草擬郵件",
+            "撰寫郵件",
+            "寫郵件",
+            "草拟邮件",
+            "撰写邮件",
+            "写邮件"
+        ]
+
+        for prefix in prefixes where content.lowercased().hasPrefix(prefix.lowercased()) {
+            content.removeFirst(prefix.count)
+            content = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            if content.first == ":" || content.first == "：" {
+                content.removeFirst()
+                content = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            break
+        }
+
+        let recipients = content
+            .split(whereSeparator: \.isWhitespace)
+            .map { String($0).trimmingCharacters(in: .contactTokenBoundary) }
+            .filter(isEmailToken)
+
+        let subject = section(
+            in: content,
+            after: ["subject ", "subject:", "subject：", "主旨 ", "主旨:", "主旨：", "標題 ", "標題:", "標題："],
+            until: [" body ", " body:", " body：", "內容 ", "內容:", "內容：", "內文 ", "內文:", "內文："]
+        ) ?? "Kairo email draft"
+        let body = section(
+            in: content,
+            after: ["body ", "body:", "body：", "內容 ", "內容:", "內容：", "內文 ", "內文:", "內文："],
+            until: []
+        ) ?? "Drafted from a Kairo chat request."
+
+        return EmailDraft(
+            to: Array(Set(recipients)).sorted(),
+            subject: subject,
+            body: body
+        )
     }
 
     private func contactDraft(from userText: String) -> ContactDraft {
@@ -595,6 +702,29 @@ public struct AgentToolInvocationPlanner: Sendable {
         let scalars = token.unicodeScalars
         let digitCount = scalars.filter { CharacterSet.decimalDigits.contains($0) }.count
         return digitCount >= 3 && scalars.allSatisfy { allowed.contains($0) }
+    }
+
+    private func section(in text: String, after startMarkers: [String], until endMarkers: [String]) -> String? {
+        guard let startRange = firstRange(of: startMarkers, in: text) else {
+            return nil
+        }
+        let afterStart = String(text[startRange.upperBound...])
+        let endRange = firstRange(of: endMarkers, in: afterStart)
+        let raw: String
+        if let endRange {
+            raw = String(afterStart[..<endRange.lowerBound])
+        } else {
+            raw = afterStart
+        }
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? nil : value
+    }
+
+    private func firstRange(of markers: [String], in text: String) -> Range<String.Index>? {
+        markers
+            .compactMap { text.range(of: $0, options: [.caseInsensitive]) }
+            .sorted { $0.lowerBound < $1.lowerBound }
+            .first
     }
 
     private func notificationBody(from userText: String) -> String {

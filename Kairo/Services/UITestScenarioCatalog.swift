@@ -166,6 +166,28 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "chat-email-draft-confirmation",
+            title: "Chat Email Draft Handoff Confirmation",
+            userGoal: "Ask Kairo to compose an email draft, preview it, and confirm a visible mailto handoff without sending mail automatically.",
+            requiredAccessibilityIdentifiers: [
+                "chat.composer.text",
+                "chat.composer.send",
+                "chat.message.assistant",
+                "chat.proposed-actions",
+                "chat.proposed-action.composeEmailDraft",
+                "chat.action-preview",
+                "chat.action.confirm",
+                "chat.action-result"
+            ],
+            assertions: [
+                "An email draft request creates an assistant response.",
+                "The response exposes a composeEmailDraft action preview.",
+                "The preview shows recipient, subject, and body before any handoff.",
+                "Kairo opens only a user-visible mailto draft handoff after confirmation.",
+                "The flow does not read Apple Mail or send email silently."
+            ]
+        ),
+        UITestScenario(
             id: "memory-manual-save",
             title: "Memory Manual Save",
             userGoal: "Open Memory, save a user-provided memory, and verify it appears in the list.",

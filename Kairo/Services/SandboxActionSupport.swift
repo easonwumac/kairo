@@ -137,6 +137,15 @@ public struct SandboxActionCatalog: Sendable {
             supportStatus: .scaffolded
         ),
         SandboxActionDescriptor(
+            kind: .composeEmailDraft,
+            displayName: "Compose Email Draft",
+            description: "透過 mailto 建立使用者可見的 Email 草稿 handoff，不會自動寄出。",
+            capability: .mail,
+            permissionRequirement: .userInitiated,
+            riskTier: .tier1Draft,
+            supportStatus: .scaffolded
+        ),
+        SandboxActionDescriptor(
             kind: .sendNotification,
             displayName: "Send Notification",
             description: "在通知權限允許後發送本機提醒。",
@@ -326,6 +335,14 @@ public struct NoOpURLOpener: URLOpener {
 
     public func open(_ url: URL) async -> Bool {
         false
+    }
+}
+
+public struct AllowingURLOpener: URLOpener {
+    public init() {}
+
+    public func open(_ url: URL) async -> Bool {
+        true
     }
 }
 
@@ -687,6 +704,16 @@ public actor SandboxActionExecutor: ActionExecutor {
                 message: opened ? "Opened URL." : "Open URL is available only when the app supplies a UI opener.",
                 requiresExternalUI: true
             )
+        case (.composeEmailDraft, .email(let draft)):
+            guard let url = Self.mailtoURL(for: draft) else {
+                return ActionExecutionResult(completed: false, message: "Unsupported or invalid email draft.")
+            }
+            let opened = await urlOpener.open(url)
+            return ActionExecutionResult(
+                completed: opened,
+                message: opened ? "Prepared email draft handoff." : "Email draft handoff is available only when the app supplies a UI opener.",
+                requiresExternalUI: true
+            )
         case (.sendNotification, .notification(let draft)):
             guard try await notificationScheduler.requestAuthorization() else {
                 return ActionExecutionResult(completed: false, message: "Notification permission was not granted.")
@@ -707,6 +734,27 @@ public actor SandboxActionExecutor: ActionExecutor {
         default:
             return ActionExecutionResult(completed: false, message: "Unsupported action payload for \(action.kind.rawValue).")
         }
+    }
+
+    private static func mailtoURL(for draft: EmailDraft) -> URL? {
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = draft.to.joined(separator: ",")
+        var queryItems: [URLQueryItem] = []
+        if !draft.cc.isEmpty {
+            queryItems.append(URLQueryItem(name: "cc", value: draft.cc.joined(separator: ",")))
+        }
+        if !draft.bcc.isEmpty {
+            queryItems.append(URLQueryItem(name: "bcc", value: draft.bcc.joined(separator: ",")))
+        }
+        if !draft.subject.isEmpty {
+            queryItems.append(URLQueryItem(name: "subject", value: draft.subject))
+        }
+        if !draft.body.isEmpty {
+            queryItems.append(URLQueryItem(name: "body", value: draft.body))
+        }
+        components.queryItems = queryItems.isEmpty ? nil : queryItems
+        return components.url
     }
 
     private static func isSupportedUserVisibleURL(_ url: URL) -> Bool {

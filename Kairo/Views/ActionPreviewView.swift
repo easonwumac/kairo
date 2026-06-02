@@ -86,6 +86,19 @@ public struct ActionPreviewView: View {
                 }
                 if let notes = draft.notes { Text(notes).font(.caption) }
             }
+        case .email(let draft):
+            VStack(alignment: .leading, spacing: 4) {
+                Text(draft.subject.isEmpty ? "Email Draft" : draft.subject).font(.headline)
+                if !draft.to.isEmpty {
+                    Text("To: \(draft.to.joined(separator: ", "))").font(.caption)
+                }
+                if !draft.cc.isEmpty {
+                    Text("Cc: \(draft.cc.joined(separator: ", "))").font(.caption)
+                }
+                if !draft.body.isEmpty {
+                    Text(draft.body).font(.caption)
+                }
+            }
         case .notification(let draft):
             VStack(alignment: .leading, spacing: 4) {
                 Text(draft.title).font(.headline)

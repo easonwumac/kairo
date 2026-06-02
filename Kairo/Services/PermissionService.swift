@@ -19,7 +19,7 @@ public struct StubPermissionService: PermissionService {
 
     public func status(for capability: CapabilityKey) async -> CapabilityStatus {
         switch capability {
-        case .chat, .memory, .shareExtension, .appIntents, .integrationRegistry, .backgroundTasks, .documents, .photos:
+        case .chat, .memory, .shareExtension, .appIntents, .integrationRegistry, .backgroundTasks, .documents, .photos, .mail:
             return .available
         case .homeKit:
             return .unknown
@@ -42,7 +42,7 @@ public struct SystemPermissionService: PermissionService {
 
     public func status(for capability: CapabilityKey) async -> CapabilityStatus {
         switch capability {
-        case .chat, .memory, .shareExtension, .appIntents, .integrationRegistry, .backgroundTasks, .documents, .photos:
+        case .chat, .memory, .shareExtension, .appIntents, .integrationRegistry, .backgroundTasks, .documents, .photos, .mail:
             return .available
         case .calendar:
             return calendarStatus()

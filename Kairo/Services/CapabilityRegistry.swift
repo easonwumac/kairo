@@ -89,6 +89,14 @@ public struct CapabilityRegistry: Sendable {
             isMVP: false
         ),
         Capability(
+            key: .mail,
+            displayName: "Mail Draft Handoff",
+            description: "透過 mailto 產生使用者可見的 Email 草稿 handoff；不讀取 Mail 資料庫、不靜默寄信。",
+            permission: .userInitiated,
+            status: .available,
+            isMVP: true
+        ),
+        Capability(
             key: .photos,
             displayName: "Photos",
             description: "處理使用者選取的圖片或截圖。",

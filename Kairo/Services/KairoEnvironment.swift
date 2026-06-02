@@ -167,6 +167,7 @@ public struct KairoEnvironment: Sendable {
                 reminderScheduler: AllowingReminderScheduler(identifier: "ui-testing-reminder-id"),
                 calendarScheduler: AllowingCalendarScheduler(identifier: "ui-testing-calendar-event-id"),
                 contactScheduler: AllowingContactScheduler(identifier: "ui-testing-contact-id"),
+                urlOpener: AllowingURLOpener(),
                 notificationScheduler: AllowingNotificationScheduler(identifier: "ui-testing-notification-id")
             )
         )

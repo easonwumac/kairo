@@ -16,6 +16,7 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 | Siri / Shortcuts | App Intents | 使用者設定 | 有限 | 是 | 低 |
 | Kairo Recipes | App internal store + App Intents bridge | 使用者建立/啟用 | App 內有限 | 是 | Tier 2+ 需確認；不是 Apple Shortcuts |
 | URL schemes / Universal Links | `openURL` / links | 使用者可見 | 否 | 是 | 僅 handoff，不能隱藏控制 |
+| Email draft handoff | `mailto:` URL handoff | 使用者確認 | 否 | 是 | 只建立可見草稿；不讀 Mail DB；不靜默寄信 |
 | OAuth connectors | 官方 API + OAuth | 是 | 有限 / 後端輔助 | 後續 | Token / scope 安全 |
 | BGTaskScheduler | BGAppRefreshTask / BGProcessingTask | 系統與使用者設定 | 有限、非即時 | 是 | 不可宣稱 daemon |
 | Contacts | Contacts.framework | 是 | 否 | 後續 | 隱私高；Chat action 需 preview + confirm；不讀取/匯出聯絡人資料庫 |
@@ -47,3 +48,4 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 12. Reminder writes 只能透過 EventKit Reminders 和 runtime permission；Shortcut/recipe 節點預設只產生 drafts，Chat 內的 reminder action 必須先預覽再由使用者 Confirm。
 13. Calendar writes 只能透過 EventKit Calendar 和 runtime permission；Shortcut/recipe 節點預設只產生 calendar drafts，Chat 內的 calendar action 必須先預覽再由使用者 Confirm。
 14. Contacts writes 只能在使用者明確要求建立/新增聯絡人時，透過 Contacts.framework runtime permission、action preview 與 Confirm 執行；此階段不讀取、搜尋、同步或匯出通訊錄。
+15. Email draft handoff 只能在使用者明確要求草擬/撰寫 email 時產生 `mailto:` 草稿 handoff；Kairo 不讀 Apple Mail DB、不抓取 mailbox、不靜默寄信。

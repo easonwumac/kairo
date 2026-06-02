@@ -33,6 +33,7 @@ public enum AgentActionKind: String, Codable, CaseIterable, Sendable {
     case createReminderDraft
     case createCalendarDraft
     case createContactDraft
+    case composeEmailDraft
     case sendNotification
     case openURL
     case controlHome
@@ -45,6 +46,7 @@ public enum AgentActionPayload: Codable, Equatable, Sendable {
     case reminder(ReminderDraft)
     case calendarEvent(CalendarEventDraft)
     case contact(ContactDraft)
+    case email(EmailDraft)
     case notification(NotificationDraft)
     case url(String)
     case homeControl(HomeControlRequest)
@@ -91,6 +93,28 @@ public struct ContactDraft: Codable, Equatable, Sendable {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
             .joined(separator: " ")
+    }
+}
+
+public struct EmailDraft: Codable, Equatable, Sendable {
+    public var to: [String]
+    public var cc: [String]
+    public var bcc: [String]
+    public var subject: String
+    public var body: String
+
+    public init(
+        to: [String] = [],
+        cc: [String] = [],
+        bcc: [String] = [],
+        subject: String,
+        body: String
+    ) {
+        self.to = to
+        self.cc = cc
+        self.bcc = bcc
+        self.subject = subject
+        self.body = body
     }
 }
 

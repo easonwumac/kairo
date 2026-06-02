@@ -410,6 +410,33 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findStaticText(containing: "Created contact.", direction: .both, maxSwipes: 1).exists)
     }
 
+    func testChatCanPreviewAndConfirmEmailDraftHandoff() throws {
+        assertPrimaryTabsExist()
+        tapTab(identifier: "root.tab.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+        let composer = anyElement("chat.composer.text")
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        composer.tap()
+        composer.typeText("Draft an email to alex@example.com subject Kairo update body Please review the roadmap.")
+        anyElement("chat.composer.send").tap()
+
+        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
+        let emailAction = findButton("chat.proposed-action.composeEmailDraft", direction: .down)
+        XCTAssertTrue(emailAction.exists)
+        emailAction.tap()
+
+        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Compose Email Draft", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "alex@example.com", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Kairo update", direction: .both, maxSwipes: 1).exists)
+        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(confirm.exists)
+        confirm.tap()
+
+        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Prepared email draft handoff.", direction: .both, maxSwipes: 1).exists)
+    }
+
     private func assertPrimaryTabsExist() {
         XCTAssertTrue(tabButton(identifier: "root.tab.chat", label: "Chat").waitForExistence(timeout: 5))
         XCTAssertTrue(tabButton(identifier: "root.tab.memory", label: "Memory").exists)
