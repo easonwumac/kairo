@@ -117,6 +117,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("shortcut-daily-briefing"))
         XCTAssertTrue(context.contains("shortcut-save-shared-text"))
         XCTAssertTrue(context.contains("shortcut-screenshot-to-reminders"))
+        XCTAssertTrue(context.contains("shortcut-reply-draft-from-shared-text"))
+        XCTAssertTrue(context.contains("shortcut-meeting-prep-brief"))
         XCTAssertTrue(context.contains("requiresConfirmation=true"))
     }
 
@@ -133,6 +135,22 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(candidate.requiresConfirmation)
         XCTAssertTrue(candidate.handoffSummary.contains("Kairo does not install Apple Shortcuts silently"))
         XCTAssertTrue(plan.proposedActions.isEmpty)
+    }
+
+    func testAgentToolInvocationPlannerSuggestsReplyDraftAndMeetingPrepShortcutSkills() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let replyPlan = planner.plan(for: AgentToolInvocationRequest(userText: "幫我回覆這封信，語氣簡短一點"))
+        let replyCandidate = try XCTUnwrap(replyPlan.candidates.first { $0.skillID == "shortcut-reply-draft-from-shared-text" })
+        XCTAssertEqual(replyCandidate.shortcutRecipeID, "reply-draft-from-shared-text")
+        XCTAssertEqual(replyCandidate.riskTier, .tier1Draft)
+        XCTAssertTrue(replyCandidate.requiresConfirmation)
+
+        let meetingPlan = planner.plan(for: AgentToolInvocationRequest(userText: "Prepare me for the customer meeting from memory notes"))
+        let meetingCandidate = try XCTUnwrap(meetingPlan.candidates.first { $0.skillID == "shortcut-meeting-prep-brief" })
+        XCTAssertEqual(meetingCandidate.shortcutRecipeID, "meeting-prep-brief")
+        XCTAssertEqual(meetingCandidate.riskTier, .tier1Draft)
+        XCTAssertTrue(meetingCandidate.handoffSummary.contains("Shortcuts handoff"))
     }
 
     func testAgentToolInvocationPlannerSuggestsHomeKitActionWithConfirmation() throws {
@@ -587,6 +605,8 @@ final class KairoCoreTests: XCTestCase {
             "shortcut-daily-briefing",
             "shortcut-save-shared-text",
             "shortcut-screenshot-to-reminders",
+            "shortcut-reply-draft-from-shared-text",
+            "shortcut-meeting-prep-brief",
             "shortcut-generic-node-runner"
         ])
         XCTAssertEqual(homeKitSkill.kind, .homeKitControl)
@@ -1596,6 +1616,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.button") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-screenshot-to-reminders") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-reply-draft-from-shared-text") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-meeting-prep-brief") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-generic-node-runner") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text.disable") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text.enable") == true)
@@ -1654,7 +1676,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("Daily Briefing"))
         XCTAssertTrue(smokeTest.contains("Save Shared Text"))
         XCTAssertTrue(smokeTest.contains("Screenshot to Reminders"))
+        XCTAssertTrue(smokeTest.contains("Reply Draft from Shared Text"))
+        XCTAssertTrue(smokeTest.contains("Meeting Prep Brief"))
         XCTAssertTrue(smokeTest.contains("Generic Node Runner"))
+        XCTAssertTrue(smokeTest.contains("2 steps: summarize -> draftReply"))
+        XCTAssertTrue(smokeTest.contains("3 steps: searchMemory -> summarize -> extractTasks"))
         XCTAssertTrue(smokeTest.contains("Input: nodeKind, inputJSON"))
         XCTAssertTrue(smokeTest.contains("Output: outputJSON, displayText, fields.taskCount, tasks"))
         XCTAssertTrue(smokeTest.contains("Input: text, sourceName, variables"))
@@ -1706,6 +1732,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("access.skills.manifest-import.button"))
         XCTAssertTrue(smokeTest.contains("access.skill.shortcut-save-shared-text"))
         XCTAssertTrue(smokeTest.contains("access.skill.shortcut-screenshot-to-reminders"))
+        XCTAssertTrue(smokeTest.contains("access.skill.shortcut-reply-draft-from-shared-text"))
+        XCTAssertTrue(smokeTest.contains("access.skill.shortcut-meeting-prep-brief"))
         XCTAssertTrue(smokeTest.contains("access.skill.shortcut-generic-node-runner"))
         XCTAssertTrue(smokeTest.contains("verifySkillManagerInteractionFlow()"))
         XCTAssertTrue(smokeTest.contains(#""access.skill.shortcut-save-shared-text.disable""#))

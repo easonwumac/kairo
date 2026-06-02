@@ -11,6 +11,7 @@ Kairo 不應嘗試繞過 iOS sandbox，而是成為 Shortcuts 裡的 AI brain：
 - 摘要內容。
 - 抽出任務。
 - 產生 drafts。
+- 產生 reply drafts。
 - 決定下一步建議。
 - 把結構化結果交給 Shortcuts 後續動作。
 
@@ -124,6 +125,36 @@ Node contract:
 - input: OCR text from a user-selected screenshot
 - output: `fields.taskCount`, `fields.reminderDraftCount`, reminder drafts that still require confirmation before any write
 
+### Reply Draft from Shared Text
+
+```text
+Share Sheet / Shortcut Input
+→ Summarize with Kairo
+→ Draft Reply with Kairo
+→ Review Manually
+```
+
+Node contract:
+
+- nodes: `summarize` → `draftReply`
+- input: email, message, or support text explicitly selected by the user
+- output: `fields.replyDraft`, `fields.replyDraftTone`, and display text; no send action is executed automatically
+
+### Meeting Prep Brief
+
+```text
+Manual Shortcut / meeting title
+→ Search Kairo Memory
+→ Summarize with Kairo
+→ Extract Prep Tasks
+```
+
+Node contract:
+
+- nodes: `searchMemory` → `summarize` → `extractTasks`
+- input: meeting title, customer name, memory query, or pasted notes
+- output: memory match count, prep summary, task drafts, and reminder drafts; no EventKit write occurs without a later confirmed action
+
 ## 設計原則
 
 - App Intents 要小而穩定，不要做太多隱藏副作用。
@@ -153,12 +184,13 @@ Current nodes:
 4. `Summarize with Kairo` returns a bounded text summary.
 5. `Extract Kairo Tasks` returns task and reminder drafts without executing writes.
 6. `Create Reminder Draft` returns reminder drafts without EventKit writes.
-7. `Create Daily Briefing` returns briefing text and suggested task drafts.
-8. `Run Kairo Shortcut Node` runs a supported node kind from JSON input and returns structured JSON output.
-9. `Run Kairo Recipe` runs an enabled internal recipe by id and returns structured JSON output.
-10. `Suggest Kairo Recipe` saves a disabled recipe draft for Kairo Automations review.
-11. `List Kairo Recipes` lists enabled recipe ids/titles.
-12. `Run Kairo Daily Briefing` seeds and runs the internal Daily Briefing recipe.
+7. `Draft Reply` returns reply draft text without sending email, chat, or SMS.
+8. `Create Daily Briefing` returns briefing text and suggested task drafts.
+9. `Run Kairo Shortcut Node` runs a supported node kind from JSON input and returns structured JSON output.
+10. `Run Kairo Recipe` runs an enabled internal recipe by id and returns structured JSON output.
+11. `Suggest Kairo Recipe` saves a disabled recipe draft for Kairo Automations review.
+12. `List Kairo Recipes` lists enabled recipe ids/titles.
+13. `Run Kairo Daily Briefing` seeds and runs the internal Daily Briefing recipe.
 
 Implemented App Intent types:
 

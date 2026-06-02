@@ -61,6 +61,8 @@ public struct IntegrationRegistry: Sendable {
                 ShortcutTemplate(identifier: "daily-briefing", title: "Daily Briefing", inputSummary: "Date, calendar context, shared text, or shortcut variables", outputSummary: "Briefing text and suggested next actions"),
                 ShortcutTemplate(identifier: "save-shared-text", title: "Save Shared Text", inputSummary: "Shortcut input text or URL", outputSummary: "Memory identifier and extracted tasks"),
                 ShortcutTemplate(identifier: "screenshot-to-reminders", title: "Screenshot to Reminders", inputSummary: "OCR text from a user-selected screenshot", outputSummary: "Task titles and reminder drafts for downstream Shortcuts actions"),
+                ShortcutTemplate(identifier: "reply-draft-from-shared-text", title: "Reply Draft from Shared Text", inputSummary: "Email or chat text explicitly shared by the user", outputSummary: "Reply draft text for manual review before sending"),
+                ShortcutTemplate(identifier: "meeting-prep-brief", title: "Meeting Prep Brief", inputSummary: "Meeting title, customer name, memory query, or meeting notes", outputSummary: "Meeting prep brief and task drafts"),
                 ShortcutTemplate(identifier: "generic-node-runner", title: "Generic Node Runner", inputSummary: "Node kind plus ShortcutNodeInput JSON", outputSummary: "ShortcutNodeOutput JSON for downstream Shortcut steps")
             ] + ShortcutTemplateRegistry.default.templates,
             sandboxNotes: "Shortcuts must be configured or launched by the user. Kairo provides App Intents with structured JSON outputs for downstream Shortcut nodes, but it must not silently drive other apps.",

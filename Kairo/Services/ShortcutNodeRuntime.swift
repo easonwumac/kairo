@@ -7,6 +7,7 @@ public enum ShortcutNodeKind: String, Codable, CaseIterable, Sendable {
     case summarize
     case extractTasks
     case createReminderDraft
+    case draftReply
     case dailyBriefing
 }
 
@@ -126,6 +127,8 @@ public actor ShortcutNodeRuntime {
             return try extractTasks(input)
         case .createReminderDraft:
             return try createReminderDrafts(input)
+        case .draftReply:
+            return try draftReply(input)
         case .summarize:
             return try summarize(input)
         case .dailyBriefing:
@@ -209,6 +212,29 @@ public actor ShortcutNodeRuntime {
             displayText: "Prepared \(reminderDrafts.count) reminder drafts.",
             fields: fields,
             reminderDrafts: reminderDrafts
+        )
+    }
+
+    private func draftReply(_ input: ShortcutNodeInput) throws -> ShortcutNodeOutput {
+        let text = try validatedText(input.text)
+        let tone = input.variables["tone"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+            .nilIfEmpty ?? "polite"
+        let context = deterministicSummary(for: text)
+        let replyDraft = """
+        Thanks for the context. Kairo can help with this: \(context)
+
+        I will review the details and follow up with the next step. No message has been sent automatically.
+        """
+
+        var fields = baseFields(for: input)
+        fields["replyDraftTone"] = tone
+        fields["replyDraft"] = replyDraft
+        fields["chainText"] = replyDraft
+
+        return ShortcutNodeOutput(
+            kind: .draftReply,
+            displayText: "Draft reply ready. Review before sending.",
+            fields: fields
         )
     }
 
@@ -309,5 +335,11 @@ public actor ShortcutNodeRuntime {
                 guard !title.isEmpty else { return nil }
                 return ShortcutTaskDraft(title: title, notes: "Extracted from Shortcut input.")
             }
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
     }
 }

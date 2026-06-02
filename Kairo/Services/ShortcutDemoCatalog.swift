@@ -158,6 +158,138 @@ public struct ShortcutDemoCatalog: Codable, Equatable, Sendable {
             ]
         ),
         ShortcutDemoRecipe(
+            id: "reply-draft-from-shared-text",
+            title: "Reply Draft from Shared Text",
+            summary: "Turn explicitly shared email or chat text into a draft reply without sending anything automatically.",
+            triggerSummary: "Share Sheet from Mail, Messages-compatible exports, Safari, or any app that shares text.",
+            setupNotes: [
+                "Pass shared text to Summarize with Kairo.",
+                "Pass the previous Kairo output to Draft Reply and review the returned text before sending manually."
+            ],
+            steps: [
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Summarize with Kairo",
+                    nodeKind: .summarize,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["text"],
+                        optionalFields: ["sourceName", "variables"],
+                        description: "Email, chat, or support request text explicitly selected by the user."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["displayText", "fields.summary", "fields.chainText"],
+                        description: "Concise context passed into the reply drafting node."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: """
+                        Customer email:
+                        Can Kairo turn a screenshot into reminders and keep the Shortcut output structured?
+                        """,
+                        sourceName: "Shared Email",
+                        variables: ["shortcutRecipeID": "reply-draft-from-shared-text"]
+                    )
+                ),
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Draft Reply with Kairo",
+                    nodeKind: .draftReply,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["text"],
+                        optionalFields: ["previousStepOutput", "variables"],
+                        description: "Previous Kairo summary or explicit Shortcut input text."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["fields.replyDraft"],
+                        optionalFields: ["fields.replyDraftTone", "displayText"],
+                        description: "Reply draft text only. The Shortcut must still ask the user before sending."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: "",
+                        sourceName: "Shared Email",
+                        variables: [
+                            "shortcutRecipeID": "reply-draft-from-shared-text",
+                            "kairoInputSource": "previousStepOutput",
+                            "tone": "concise"
+                        ]
+                    )
+                )
+            ]
+        ),
+        ShortcutDemoRecipe(
+            id: "meeting-prep-brief",
+            title: "Meeting Prep Brief",
+            summary: "Search Kairo memory for meeting context, summarize it, and extract prep tasks as drafts.",
+            triggerSummary: "Manual Shortcut, calendar-adjacent personal Shortcut, or Action Button flow before a meeting.",
+            setupNotes: [
+                "Pass the meeting title or customer name as the memory query.",
+                "Use the returned brief and task drafts in visible Shortcut steps; do not write calendars or reminders without confirmation."
+            ],
+            steps: [
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Search Kairo Memory",
+                    nodeKind: .searchMemory,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["query"],
+                        optionalFields: ["limit"],
+                        description: "Meeting title, customer name, or topic provided by the user."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["fields.matchCount"],
+                        optionalFields: ["memoryMatches"],
+                        description: "Matching Kairo memory summaries for the prep brief."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: "",
+                        query: "Kairo launch review",
+                        sourceName: "Meeting Shortcut",
+                        variables: ["shortcutRecipeID": "meeting-prep-brief"],
+                        limit: 5
+                    )
+                ),
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Summarize with Kairo",
+                    nodeKind: .summarize,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["text"],
+                        optionalFields: ["sourceName", "variables", "previousStepOutput"],
+                        description: "Memory search output or meeting notes."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["displayText", "fields.summary", "fields.chainText"],
+                        description: "Meeting prep brief returned as structured Shortcut output."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: "",
+                        sourceName: "Meeting Shortcut",
+                        variables: [
+                            "shortcutRecipeID": "meeting-prep-brief",
+                            "kairoInputSource": "previousStepOutput"
+                        ]
+                    )
+                ),
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Extract Prep Tasks",
+                    nodeKind: .extractTasks,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["text"],
+                        optionalFields: ["previousStepOutput", "variables"],
+                        description: "Meeting brief or notes that may contain action items."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["fields.taskCount"],
+                        optionalFields: ["tasks", "reminderDrafts"],
+                        description: "Task drafts only; no EventKit write occurs in this demo."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: "",
+                        sourceName: "Meeting Shortcut",
+                        variables: [
+                            "shortcutRecipeID": "meeting-prep-brief",
+                            "kairoInputSource": "previousStepOutput"
+                        ]
+                    )
+                )
+            ]
+        ),
+        ShortcutDemoRecipe(
             id: "generic-node-runner",
             title: "Generic Node Runner",
             summary: "Use one Shortcut action as a reusable Kairo node by passing node kind and JSON input.",
@@ -264,9 +396,18 @@ public struct ShortcutDemoRecipe: Codable, Equatable, Identifiable, Sendable {
     }
 
     public var settingsSampleInputPreview: String {
-        steps.first?.sampleInput.text
+        guard let input = steps.first?.sampleInput else {
+            return ""
+        }
+
+        let text = input.text
             .replacingOccurrences(of: "\n", with: " ")
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty {
+            return text
+        }
+
+        return input.query?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
     private func uniqueFields(_ fields: (ShortcutDemoStep) -> [String]) -> [String] {

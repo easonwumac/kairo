@@ -100,6 +100,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findElement("settings.shortcuts.demos", direction: .down).exists)
         verifyShortcutDemoContract(
+            id: "daily-briefing",
             titleText: "Daily Briefing",
             stepText: "1 step: dailyBriefing",
             inputText: "Input: text, sourceName, variables",
@@ -107,6 +108,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             sampleText: "Today's agenda"
         )
         verifyShortcutDemoContract(
+            id: "save-shared-text",
             titleText: "Save Shared Text",
             stepText: "2 steps: saveMemory -> extractTasks",
             inputText: "Input: text, sourceName, variables",
@@ -114,6 +116,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             sampleText: "User research note"
         )
         verifyShortcutDemoContract(
+            id: "screenshot-to-reminders",
             titleText: "Screenshot to Reminders",
             stepText: "2 steps: extractTasks -> createReminderDraft",
             inputText: "Input: text, sourceName, variables",
@@ -121,6 +124,23 @@ final class KairoAppSmokeUITests: XCTestCase {
             sampleText: "Screenshot OCR"
         )
         verifyShortcutDemoContract(
+            id: "reply-draft-from-shared-text",
+            titleText: "Reply Draft from Shared Text",
+            stepText: "2 steps: summarize -> draftReply",
+            inputText: "Input: text, sourceName, variables, previousStepOutput",
+            outputText: "Output: displayText, fields.summary, fields.chainText, fields.replyDraft",
+            sampleText: "Customer email"
+        )
+        verifyShortcutDemoContract(
+            id: "meeting-prep-brief",
+            titleText: "Meeting Prep Brief",
+            stepText: "3 steps: searchMemory -> summarize -> extractTasks",
+            inputText: "Input: query, limit, text, sourceName, variables, previousStepOutput",
+            outputText: "Output: fields.matchCount, memoryMatches, displayText, fields.summary",
+            sampleText: "Kairo launch review"
+        )
+        verifyShortcutDemoContract(
+            id: "generic-node-runner",
             titleText: "Generic Node Runner",
             stepText: "2 steps: summarize -> extractTasks",
             inputText: "Input: nodeKind, inputJSON",
@@ -318,6 +338,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findButton("access.skill.homekit-evening-scene.manage", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-save-shared-text", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-screenshot-to-reminders", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skill.shortcut-reply-draft-from-shared-text", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skill.shortcut-meeting-prep-brief", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-generic-node-runner", direction: .down).exists)
         XCTAssertTrue(findElement("access.homekit.demos", direction: .down).exists)
         XCTAssertTrue(findElement("access.homekit.demo.evening-scene", direction: .down).exists)
@@ -400,17 +422,24 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     private func verifyShortcutDemoContract(
+        id: String,
         titleText: String,
         stepText: String,
         inputText: String,
         outputText: String,
         sampleText: String
     ) {
-        XCTAssertTrue(findStaticText(containing: titleText, direction: .both, maxSwipes: 8).exists)
-        XCTAssertTrue(findStaticText(containing: stepText, direction: .both, maxSwipes: 2).exists)
-        XCTAssertTrue(findStaticText(containing: inputText, direction: .both, maxSwipes: 2).exists)
-        XCTAssertTrue(findStaticText(containing: outputText, direction: .both, maxSwipes: 2).exists)
-        XCTAssertTrue(findStaticText(containing: sampleText, direction: .both, maxSwipes: 2).exists)
+        XCTAssertTrue(findStaticText(containing: titleText, direction: .both, maxSwipes: 10).exists)
+        assertShortcutDemoField(id: id, suffix: "steps", contains: stepText)
+        assertShortcutDemoField(id: id, suffix: "input", contains: inputText)
+        assertShortcutDemoField(id: id, suffix: "output", contains: outputText)
+        assertShortcutDemoField(id: id, suffix: "sample", contains: sampleText)
+    }
+
+    private func assertShortcutDemoField(id: String, suffix: String, contains expectedText: String) {
+        let element = findElement("settings.shortcuts.demo.\(id).\(suffix)", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(element.exists)
+        XCTAssertTrue(element.label.contains(expectedText))
     }
 
     private func verifyOAuthConnector(

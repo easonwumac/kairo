@@ -213,6 +213,10 @@ public struct AgentToolInvocationPlanner: Sendable {
             return containsAny(normalizedText, ["todo", "task", "tasks", "reminder", "share", "shared text", "text", "待辦", "提醒", "分享", "內容"])
         case "screenshot-to-reminders":
             return containsAny(normalizedText, ["screenshot", "ocr", "image", "photo", "reminder", "截圖", "圖片", "照片", "提醒"])
+        case "reply-draft-from-shared-text":
+            return containsAny(normalizedText, ["reply", "draft reply", "respond", "email reply", "message reply", "回覆", "回信", "覆信", "草稿"])
+        case "meeting-prep-brief":
+            return containsAny(normalizedText, ["meeting", "meeting prep", "prepare meeting", "customer meeting", "calendar", "會議", "開會", "會前", "準備"])
         default:
             return matchesGenericSkill(skill, normalizedText: normalizedText)
         }
