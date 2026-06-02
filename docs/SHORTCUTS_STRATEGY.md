@@ -48,14 +48,27 @@ Kairo 不應嘗試繞過 iOS sandbox，而是成為 Shortcuts 裡的 AI brain：
 
 ## Shortcuts Recipes
 
+`ShortcutDemoCatalog.default` is the code-backed source of truth for official demo recipes. Each recipe contains:
+
+- trigger summary;
+- ordered Kairo node steps;
+- input/output contract fields;
+- sample `ShortcutNodeInput` JSON for imported Shortcut examples or future UI previews.
+
 ### Daily Briefing
 
 ```text
 At 8:30 AM
-→ Ask Kairo: Create Daily Briefing
+→ Create Daily Briefing with Kairo
 → Show Result
 → Optional: Send Notification
 ```
+
+Node contract:
+
+- node: `dailyBriefing`
+- input: `text`
+- output: `displayText`, `fields.briefing`, `fields.taskCount`, optional task drafts
 
 ### Save Any Shared Text
 
@@ -66,13 +79,11 @@ Share Sheet / Shortcut Input
 → Show Confirmation
 ```
 
-### Meeting Prep
+Node contract:
 
-```text
-Get Upcoming Calendar Events
-→ Ask Kairo: Prepare meeting brief using memory
-→ Show Result
-```
+- nodes: `saveMemory` → `extractTasks`
+- input: shared text / URL content from the user
+- output: `memoryID`, `fields.taskCount`, task drafts, reminder drafts
 
 ### Screenshot to Tasks
 
@@ -82,6 +93,12 @@ Select Photo
 → Extract Tasks with Kairo
 → Create Reminder Drafts
 ```
+
+Node contract:
+
+- nodes: `extractTasks` → `createReminderDraft`
+- input: OCR text from a user-selected screenshot
+- output: `fields.taskCount`, `fields.reminderDraftCount`, reminder drafts that still require confirmation before any write
 
 ## 設計原則
 
@@ -107,6 +124,8 @@ Current nodes:
 3. `Search Kairo Memory` returns matching memory metadata.
 4. `Summarize with Kairo` returns a bounded text summary.
 5. `Extract Kairo Tasks` returns task and reminder drafts without executing writes.
+6. `Create Reminder Draft` returns reminder drafts without EventKit writes.
+7. `Create Daily Briefing` returns briefing text and suggested task drafts.
 
 ## Integration registry alignment
 
@@ -122,4 +141,4 @@ This registry should power UI explanations, prompt context, App Store review not
 
 - 加入 `Create Daily Briefing` 與 `Create Reminder Draft` App Intents。
 - 把 JSON output 升級成 App Intents custom value/entity output when the generated Xcode target can verify it on device.
-- 提供一組官方 Shortcut templates。
+- 將 `ShortcutDemoCatalog` 接到 Settings / onboarding UI，並輸出可匯入的 Shortcuts 範例。

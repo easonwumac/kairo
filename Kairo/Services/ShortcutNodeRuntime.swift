@@ -30,6 +30,13 @@ public struct ShortcutNodeInput: Codable, Equatable, Sendable {
         self.variables = variables
         self.limit = limit
     }
+
+    public func encodedJSONString() throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let data = try encoder.encode(self)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
 }
 
 public struct ShortcutTaskDraft: Codable, Equatable, Sendable {

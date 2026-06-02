@@ -3,6 +3,52 @@ import Foundation
 @testable import KairoCore
 
 final class KairoShortcutNodeTests: XCTestCase {
+    func testShortcutDemoCatalogContainsPracticalRecipesWithNodeContracts() throws {
+        let catalog = ShortcutDemoCatalog.default
+
+        XCTAssertGreaterThanOrEqual(catalog.recipes.count, 3)
+        XCTAssertEqual(catalog.recipe(id: "daily-briefing")?.steps.map(\.nodeKind), [.dailyBriefing])
+        XCTAssertEqual(catalog.recipe(id: "save-shared-text")?.steps.map(\.nodeKind), [.saveMemory, .extractTasks])
+        XCTAssertEqual(catalog.recipe(id: "screenshot-to-reminders")?.steps.map(\.nodeKind), [.extractTasks, .createReminderDraft])
+
+        for recipe in catalog.recipes {
+            XCTAssertFalse(recipe.id.isEmpty)
+            XCTAssertFalse(recipe.title.isEmpty)
+            XCTAssertFalse(recipe.triggerSummary.isEmpty)
+            XCTAssertFalse(recipe.steps.isEmpty)
+
+            for step in recipe.steps {
+                XCTAssertFalse(step.inputContract.requiredFields.isEmpty)
+                XCTAssertFalse(step.outputContract.fields.isEmpty)
+                XCTAssertFalse(step.shortcutActionTitle.isEmpty)
+            }
+        }
+    }
+
+    func testShortcutDemoCatalogExportsSampleInputsForShortcutNodes() throws {
+        let catalog = ShortcutDemoCatalog.default
+        let saveSharedText = try XCTUnwrap(catalog.recipe(id: "save-shared-text"))
+        let firstStep = try XCTUnwrap(saveSharedText.steps.first)
+
+        XCTAssertEqual(firstStep.nodeKind, .saveMemory)
+        XCTAssertEqual(firstStep.sampleInput.sourceName, "Share Sheet")
+        XCTAssertTrue(firstStep.sampleInput.text.contains("TODO:"))
+        XCTAssertEqual(firstStep.sampleInput.variables["shortcutRecipeID"], "save-shared-text")
+
+        let encoded = try firstStep.sampleInput.encodedJSONString()
+        XCTAssertTrue(encoded.contains(#""sourceName":"Share Sheet""#))
+        XCTAssertTrue(encoded.contains(#""shortcutRecipeID":"save-shared-text""#))
+    }
+
+    func testAppleShortcutsIntegrationTemplatesMirrorDemoCatalog() throws {
+        let registry = IntegrationRegistry()
+        let shortcuts = try XCTUnwrap(registry.integration(for: "apple-shortcuts"))
+        let templateIDs = Set(shortcuts.shortcutTemplates.map(\.identifier))
+        let demoIDs = Set(ShortcutDemoCatalog.default.recipes.map(\.id))
+
+        XCTAssertTrue(templateIDs.isSuperset(of: demoIDs))
+    }
+
     func testShortcutSaveMemoryNodeSavesTextAndReturnsStructuredOutput() async throws {
         let store = InMemoryMemoryStore()
         let runtime = ShortcutNodeRuntime(memoryStore: store)
