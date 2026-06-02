@@ -25,10 +25,17 @@ public struct ChatThread: Identifiable, Codable, Equatable, Sendable {
     }
 
     public var lastMessagePreview: String {
-        guard let text = messages.last?.text.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
+        guard let message = messages.last else {
             return "No messages yet"
         }
-        return String(text.prefix(80))
+        let text = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty {
+            return String(text.prefix(80))
+        }
+        guard !message.attachments.isEmpty else {
+            return "No messages yet"
+        }
+        return "Attachments: " + message.attachments.map(\.displayName).joined(separator: ", ")
     }
 
     public mutating func append(_ message: ChatMessage, now: Date = Date()) {
@@ -52,6 +59,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
     public var text: String
     public var createdAt: Date
     public var proposedActions: [AgentAction]
+    public var attachments: [ChatAttachment]
     public var status: ChatMessageStatus
 
     public init(
@@ -60,6 +68,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         text: String,
         createdAt: Date = Date(),
         proposedActions: [AgentAction] = [],
+        attachments: [ChatAttachment] = [],
         status: ChatMessageStatus = .sent
     ) {
         self.id = id
@@ -67,6 +76,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.text = text
         self.createdAt = createdAt
         self.proposedActions = proposedActions
+        self.attachments = attachments
         self.status = status
     }
 }

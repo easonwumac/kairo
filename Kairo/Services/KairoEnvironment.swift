@@ -5,6 +5,7 @@ public struct KairoEnvironment: Sendable {
     public let credentialStore: CredentialStore
     public let aiProvider: AIProvider
     public let chatHistoryStore: ChatHistoryStore
+    public let shareIngestionQueue: ShareIngestionQueue
     public let permissionService: PermissionService
     public let auditLogger: AuditLogger
 
@@ -13,6 +14,7 @@ public struct KairoEnvironment: Sendable {
         credentialStore: CredentialStore,
         aiProvider: AIProvider,
         chatHistoryStore: ChatHistoryStore = InMemoryChatHistoryStore(),
+        shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
         permissionService: PermissionService = StubPermissionService(),
         auditLogger: AuditLogger = InMemoryAuditLogger()
     ) {
@@ -20,6 +22,7 @@ public struct KairoEnvironment: Sendable {
         self.credentialStore = credentialStore
         self.aiProvider = aiProvider
         self.chatHistoryStore = chatHistoryStore
+        self.shareIngestionQueue = shareIngestionQueue
         self.permissionService = permissionService
         self.auditLogger = auditLogger
     }
@@ -33,6 +36,7 @@ public struct KairoEnvironment: Sendable {
             chatHistoryStore: InMemoryChatHistoryStore(seed: [ChatThread(messages: [
                 ChatMessage(role: .assistant, text: "我是 Kairo。我會記住你選擇交給我的內容，並只操作 iOS sandbox 與公開 API 允許的能力。")
             ])]),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
             permissionService: StubPermissionService(),
             auditLogger: InMemoryAuditLogger()
         )
@@ -42,6 +46,7 @@ public struct KairoEnvironment: Sendable {
         let paths = KairoPaths(appName: appName)
         let memoryStore = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
         let chatHistoryStore = try await JSONFileChatHistoryStore(fileURL: paths.chatHistoryStoreURL)
+        let shareIngestionQueue = try await JSONFileShareIngestionQueue(fileURL: paths.shareIngestionQueueURL)
         let credentialStore = KeychainCredentialStore()
         let aiProvider = OpenAIProvider(credentialStore: credentialStore)
 
@@ -50,6 +55,7 @@ public struct KairoEnvironment: Sendable {
             credentialStore: credentialStore,
             aiProvider: aiProvider,
             chatHistoryStore: chatHistoryStore,
+            shareIngestionQueue: shareIngestionQueue,
             permissionService: SystemPermissionService(),
             auditLogger: InMemoryAuditLogger()
         )
@@ -75,6 +81,10 @@ public struct KairoPaths: Sendable {
 
     public var chatHistoryStoreURL: URL {
         applicationSupportDirectory.appendingPathComponent("chat-history.json")
+    }
+
+    public var shareIngestionQueueURL: URL {
+        applicationSupportDirectory.appendingPathComponent("share-ingestion-queue.json")
     }
 
     public var localModelsDirectory: URL {

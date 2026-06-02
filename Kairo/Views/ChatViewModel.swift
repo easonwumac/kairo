@@ -7,17 +7,21 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var threads: [ChatThread] = []
     @Published public private(set) var currentThread: ChatThread
     @Published public private(set) var isLoading: Bool = false
+    @Published public private(set) var pendingAttachments: [ChatAttachment] = []
     @Published public var composerText: String = ""
     @Published public var errorMessage: String?
 
     private let historyStore: ChatHistoryStore
+    private let shareIngestionQueue: ShareIngestionQueue
     private let agent: AgentCore
 
     public init(
         historyStore: ChatHistoryStore = InMemoryChatHistoryStore(),
+        shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
         agent: AgentCore = AgentCore()
     ) {
         self.historyStore = historyStore
+        self.shareIngestionQueue = shareIngestionQueue
         self.agent = agent
         self.currentThread = ChatThread(messages: [Self.welcomeMessage])
     }
@@ -25,6 +29,7 @@ public final class ChatViewModel: ObservableObject {
     public convenience init(environment: KairoEnvironment) {
         self.init(
             historyStore: environment.chatHistoryStore,
+            shareIngestionQueue: environment.shareIngestionQueue,
             agent: AgentCore(memoryStore: environment.memoryStore, aiProvider: environment.aiProvider)
         )
     }
@@ -46,6 +51,7 @@ public final class ChatViewModel: ObservableObject {
     public func startNewThread() {
         currentThread = ChatThread(messages: [Self.welcomeMessage])
         composerText = ""
+        pendingAttachments = []
         errorMessage = nil
     }
 
@@ -68,22 +74,50 @@ public final class ChatViewModel: ObservableObject {
         }
     }
 
-    public func sendComposerMessage() async {
-        let text = composerText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isLoading else { return }
-        composerText = ""
-        await send(text)
+    public func importPendingShares() async {
+        do {
+            let items = try await shareIngestionQueue.pendingItems(limit: 10)
+            guard !items.isEmpty else { return }
+            let importedAttachments = items.flatMap(\.attachments)
+            pendingAttachments.append(contentsOf: importedAttachments)
+            if composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                composerText = items.first?.suggestedPrompt ?? "Review the shared content."
+            }
+            for item in items {
+                try await shareIngestionQueue.markImported(id: item.id)
+            }
+            errorMessage = nil
+        } catch {
+            errorMessage = "無法匯入分享內容：\(error.localizedDescription)"
+        }
     }
 
-    public func send(_ text: String) async {
-        let userMessage = ChatMessage(role: .user, text: text)
+    public func addAttachment(_ attachment: ChatAttachment) {
+        pendingAttachments.append(attachment)
+    }
+
+    public func removeAttachment(id: UUID) {
+        pendingAttachments.removeAll { $0.id == id }
+    }
+
+    public func sendComposerMessage() async {
+        let text = composerText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (!text.isEmpty || !pendingAttachments.isEmpty), !isLoading else { return }
+        let attachments = pendingAttachments
+        composerText = ""
+        pendingAttachments = []
+        await send(text.isEmpty ? "Review the attached content." : text, attachments: attachments)
+    }
+
+    public func send(_ text: String, attachments: [ChatAttachment] = []) async {
+        let userMessage = ChatMessage(role: .user, text: text, attachments: attachments)
         currentThread.append(userMessage, now: userMessage.createdAt)
         await persistCurrentThread()
 
         isLoading = true
         errorMessage = nil
         do {
-            let response = try await agent.respond(to: text)
+            let response = try await agent.respond(to: text, attachments: attachments)
             let assistantMessage = ChatMessage(
                 role: .assistant,
                 text: response.message,

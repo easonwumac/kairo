@@ -5,17 +5,23 @@ public struct AICompletionRequest: Codable, Equatable, Sendable {
     public var userPrompt: String
     public var memoryContext: [MemoryRecord]
     public var allowedCapabilities: [CapabilityKey]
+    public var attachmentContext: [ChatAttachment]
+    public var toolContext: String?
 
     public init(
         systemPrompt: String,
         userPrompt: String,
         memoryContext: [MemoryRecord] = [],
-        allowedCapabilities: [CapabilityKey] = []
+        allowedCapabilities: [CapabilityKey] = [],
+        attachmentContext: [ChatAttachment] = [],
+        toolContext: String? = nil
     ) {
         self.systemPrompt = systemPrompt
         self.userPrompt = userPrompt
         self.memoryContext = memoryContext
         self.allowedCapabilities = allowedCapabilities
+        self.attachmentContext = attachmentContext
+        self.toolContext = toolContext
     }
 }
 

@@ -1,17 +1,15 @@
-# Share Extension Notes
+# Kairo Share Extension
 
-這個資料夾預留給 Xcode Share Extension target。
+This directory is the source-first scaffold for the `KairoShareExtension` target declared in `project.yml`.
 
-建議 flow：
+The extension should collect user-shared text, URLs, files, PDFs, and images, copy security-scoped file data into the App Group container when necessary, and enqueue a `ShareIngestionItem` using `JSONFileShareIngestionQueue`.
 
-1. 接收 `NSExtensionItem`。
-2. 支援 plain text、URL、PDF/file URL、image。
-3. 顯示簡短 UI：
-   - Save to Memory
-   - Summarize
-   - Extract Tasks
-   - Ask About This
-4. 將內容寫入 App Group container。
-5. 長工作交給主 App 或後端，不要在 extension 內做重模型推理。
+The main app imports pending queue items on Chat launch and turns them into chat attachments so the user can review, edit the prompt, and send only after confirmation.
 
-注意：Share Extension 執行時間和記憶體有限，必須快速完成。
+Production wiring checklist:
+
+1. Configure an App Group shared by `KairoApp` and `KairoShareExtension`.
+2. Point `KairoPaths` to the App Group container when running in extension/app targets.
+3. Use `NSItemProvider` type checks for `public.text`, `public.url`, images, PDFs, and generic files.
+4. Copy shared files into the shared container instead of retaining temporary provider URLs.
+5. Never execute agent actions from the extension; only enqueue and return control to the user.

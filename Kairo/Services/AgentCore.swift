@@ -18,17 +18,23 @@ public actor AgentCore {
         self.capabilityRegistry = capabilityRegistry
     }
 
-    public func respond(to message: String) async throws -> AICompletionResponse {
+    public func respond(to message: String, attachments: [ChatAttachment] = []) async throws -> AICompletionResponse {
         let memories = try await memoryStore.search(query: message, limit: 8)
         let allowedCapabilities = capabilityRegistry.capabilities
             .filter { $0.status == .available || $0.status == .unknown }
             .map(\.key)
+        let toolContext = CapabilityPromptContextBuilder(
+            capabilityRegistry: capabilityRegistry,
+            actionCatalog: SandboxActionCatalog()
+        ).build()
 
         let request = AICompletionRequest(
             systemPrompt: Self.systemPrompt,
             userPrompt: message,
             memoryContext: memories,
-            allowedCapabilities: allowedCapabilities
+            allowedCapabilities: allowedCapabilities,
+            attachmentContext: attachments,
+            toolContext: toolContext
         )
 
         let response = try await aiProvider.complete(request)

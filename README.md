@@ -1,112 +1,102 @@
 # Kairo
 
-Kairo 是一個有記憶的 iPhone Agent：它會記住使用者選擇交給它的內容，透過 iOS 公開 API、權限授權、App Intents、Shortcuts、Share Extension、通知、行事曆/提醒事項、文件/照片選取器與外部服務 API，執行 iOS 允許的操作。
+![Kairo hero](Assets/kairo-hero.svg)
 
-> 產品原則：**能取得合法授權與 sandbox 允許的能力，就做；不能被 iOS 公開 API 支援的跨 App 監控/控制，就不假裝可以做。**
+Kairo is an open-source Swift/SwiftUI iOS agent scaffold for building a **universal, sandbox-compliant iPhone assistant**. It combines chat, long-term memory, Share Extension ingestion, App Intents/Shortcuts, permission-aware tools, audit logs, OpenAI-compatible cloud models, and local-model fallback planning without pretending iOS apps can bypass sandbox rules.
 
-## 一句話
+> Product principle: if a capability is allowed by user consent, iOS public APIs, App Intents, Shortcuts, extensions, or official third-party APIs, Kairo should make it useful. If iOS does not allow it, Kairo must explain the boundary and offer a safe alternative.
 
-一個手機級 AI Agent，擁有可編輯的長期記憶，能理解使用者分享的內容，並在使用者確認後操作 iOS 支援的功能與外部服務。
+## What Kairo is
 
-## MVP 能力
+Kairo is a source-first iOS agent reference implementation for developers who want to ship an App Store-safe assistant that can:
 
-- Chat 介面：和 Agent 對話、查詢記憶、規劃任務。
-- Memory Center：新增、搜尋、編輯、刪除、匯出記憶。
-- Share Extension：從其他 App 分享文字、URL、PDF、圖片、截圖到 Kairo。
-- App Intents / Shortcuts：讓使用者用 Siri 或捷徑觸發 Agent 動作。
-- iOS permissions hub：集中管理 Contacts、Calendar、Reminders、Photos、Documents、Notifications、Location 等授權狀態。
-- Action Preview：所有高風險操作先產生草稿，使用者確認後才執行。
-- Audit Log：記錄 Agent 使用了哪些資料、建議了什麼、做了什麼。
-- OpenAI / ChatGPT auth abstraction：支援 OpenAI API key、官方 OAuth/ChatGPT connector 預留；不使用或模擬使用者 ChatGPT 網頁 session。
-- Local model fallback strategy：未來可讓使用者下載小模型，例如 Qwen 0.6B～0.8B 等級模型，作為離線、隱私敏感與雲端失敗時的 fallback。
+- Chat with the user and preserve conversation history.
+- Remember user-approved facts in an editable memory store.
+- Understand files, links, text, and images shared into the app.
+- Preview sandbox-safe actions before execution.
+- Use App Intents and Shortcuts for user-triggered automation.
+- Call official model/provider APIs or route eligible work to a local fallback model.
+- Keep a clear audit trail of what the agent saw, suggested, and did.
 
-## 明確不承諾
+## Sandbox-first scope
 
-Kairo 不會承諾以下不被一般 iOS App Store App 支援的能力：
+Kairo does **not** promise capabilities that normal App Store apps cannot provide:
 
-- 任意讀取其他 App 的私有資料。
-- 偷看螢幕或背景截圖。
-- 任意點擊、輸入、操控其他 App UI。
-- 繞過 iOS permission prompt。
-- 常駐背景 daemon。
-- 未經授權讀取 Messages、Apple Mail、Notes 內部資料庫。
-- 使用 private API 或 jailbreak-only 能力作為產品功能。
-- 模擬 ChatGPT 網頁登入、保存 ChatGPT web cookie、爬取 ChatGPT session。
+- Arbitrary reading of other apps' private data.
+- Background screen watching or screenshots.
+- Unprompted control of other app UIs.
+- Permission bypasses, private APIs, jailbreak-only APIs, or background daemons.
+- Unapproved access to Messages, Mail, Notes, or ChatGPT web sessions/cookies.
 
-## 目前已實作
+Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo pickers, EventKit, UserNotifications, App Intents, Shortcuts, URL opening, OAuth connectors, and explicit user confirmation.
 
-- Swift Package `KairoCore`
-- `AgentCore`
-- `MemoryRecord`
-- `InMemoryMemoryStore`
-- `JSONFileMemoryStore`
-- `CredentialStore`
-- `KeychainCredentialStore`
-- `OpenAIProvider`
-- `ChatGPTOAuthService` scaffold with PKCE authorization URL / callback validation / token storage
-- `CapabilityRegistry`
-- `SafetyPolicyEngine`
-- `AuditLogger`
-- SwiftUI scaffold：Chat、Memory、Access、Settings
-- App Intents scaffold：Ask、Save、Search
-- EventKit service scaffold：Calendar / Reminders
-- Privacy manifest / Info.plist placeholders
-- XcodeGen `project.yml`
-- Unit tests
+## Current implementation
 
-## 專案結構
+- Swift Package product: `KairoCore`.
+- SwiftUI app scaffold: Chat, Memory Center, Access/Permissions, Settings.
+- Persistent chat threads with JSON-backed history store.
+- Memory store protocols plus in-memory and JSON file implementations.
+- OpenAI provider abstraction, credential store, Keychain-backed credential store, and OAuth/PKCE scaffold.
+- Local-model catalog/install registry and provider-routing scaffold.
+- Capability registry, sandbox action catalog, safety policy engine, action preview UI, and sandbox action executor.
+- Share Extension ingestion queue for text, URLs, files, and images.
+- App Intents scaffold for asking, saving, and searching.
+- Privacy manifest, purpose-string notes, capability matrix, App Store readiness docs, and unit tests.
+
+## Repository layout
 
 ```text
 kairo/
-├── README.md
-├── Package.swift
-├── project.yml
-├── docs/
-│   ├── PRD.md
-│   ├── ARCHITECTURE.md
-│   ├── CAPABILITY_MATRIX.md
-│   ├── AUTH_OPENAI.md
-│   ├── SHORTCUTS_STRATEGY.md
-│   ├── LOCAL_MODEL_FALLBACK.md
-│   ├── SAFETY_AND_PRIVACY.md
-│   ├── GITHUB_PUBLISHING.md
-│   └── ROADMAP.md
+├── Assets/                         # Open-source SVG logo/hero assets
+├── Config/                         # Info.plist and purpose-string notes
 ├── Kairo/
-│   ├── App/
-│   ├── Models/
-│   ├── Services/
-│   ├── Views/
-│   ├── Intents/
-│   ├── Extensions/
-│   └── Resources/
-├── Config/
-└── Tests/
+│   ├── App/                        # SwiftUI app entry point
+│   ├── Extensions/ShareExtension/  # Share ingestion scaffold
+│   ├── Intents/                    # App Intents scaffold
+│   ├── Models/                     # Agent, chat, attachment, memory models
+│   ├── Resources/                  # Privacy manifest
+│   ├── Services/                   # Stores, providers, permissions, actions
+│   └── Views/                      # SwiftUI screens and components
+├── Tests/                          # Swift Package tests
+├── docs/                           # Product, architecture, safety, release docs
+├── Package.swift
+└── project.yml                     # XcodeGen project scaffold
 ```
 
-## 開發
+## Quick start
 
 ```bash
 swift test
 ```
 
-建議 iOS 版本：iOS 17+，以 SwiftUI、SwiftData/Core Data、App Intents、Share Extension、EventKit、Keychain 為主。
-
-## GitHub 發布
-
-發布前請先看：
-
-```text
-docs/GITHUB_PUBLISHING.md
-```
-
-基本流程：
+Optional Xcode project generation:
 
 ```bash
-swift test
-rg -n "sk-|OPENAI_API_KEY|apiKey|password|secret|token|refresh_token|access_token" .
-git init
-git branch -M main
-git add .
-git commit -m "Initial Kairo scaffold"
-gh repo create kairo --public --source . --remote origin --push
+xcodegen generate
 ```
+
+The package is intentionally dependency-free. The iOS app target is described in `project.yml`; the core logic stays in `KairoCore` so it can be tested without an iOS simulator.
+
+## Product roadmap
+
+1. App target hardening: entitlements, App Group, Share Extension UI, widgets.
+2. Memory and chat persistence migration to SwiftData/Core Data for production apps.
+3. Real provider integrations: OpenAI Responses API, official OAuth connectors, and optional backend proxy.
+4. Tool execution: EventKit writes, local notifications, URL/deep-link handoff, Shortcuts/App Intents, documents/photos import.
+5. Local model fallback: signed model catalog, download UI, device gating, safety policy versioning.
+6. App Store readiness: privacy nutrition labels, review notes, permission prompts, deletion/export flows.
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Capability matrix](docs/CAPABILITY_MATRIX.md)
+- [Safety and privacy](docs/SAFETY_AND_PRIVACY.md)
+- [OpenAI/auth strategy](docs/AUTH_OPENAI.md)
+- [Local model fallback](docs/LOCAL_MODEL_FALLBACK.md)
+- [Shortcuts strategy](docs/SHORTCUTS_STRATEGY.md)
+- [App Store readiness](docs/AppStore/APP_STORE_READINESS.md)
+- [Roadmap](docs/ROADMAP.md)
+
+## License
+
+MIT. See [LICENSE](LICENSE).

@@ -30,6 +30,7 @@ public struct ChatView: View {
         }
         .task {
             await viewModel.load()
+            await viewModel.importPendingShares()
         }
     }
 
@@ -71,6 +72,10 @@ public struct ChatView: View {
                         ForEach(viewModel.currentThread.messages) { message in
                             VStack(alignment: .leading, spacing: 8) {
                                 ChatBubble(message: message)
+                                if !message.attachments.isEmpty {
+                                    AttachmentStrip(attachments: message.attachments)
+                                        .padding(.horizontal)
+                                }
                                 if !message.proposedActions.isEmpty {
                                     ProposedActionsStrip(actions: message.proposedActions)
                                         .padding(.horizontal)
@@ -112,6 +117,12 @@ public struct ChatView: View {
                     .padding(.top, 8)
             }
 
+            if !viewModel.pendingAttachments.isEmpty {
+                AttachmentTray(attachments: viewModel.pendingAttachments) { id in
+                    viewModel.removeAttachment(id: id)
+                }
+            }
+
             composer
         }
     }
@@ -132,7 +143,7 @@ public struct ChatView: View {
                 Image(systemName: viewModel.isLoading ? "hourglass" : "arrow.up.circle.fill")
                     .font(.title2)
             }
-            .disabled(viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading)
+            .disabled((viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading)
             .accessibilityLabel("Send")
         }
         .padding()
@@ -147,6 +158,65 @@ public struct ChatView: View {
                 proxy.scrollTo(lastID, anchor: .bottom)
             }
         }
+    }
+}
+
+private struct AttachmentTray: View {
+    let attachments: [ChatAttachment]
+    let remove: (UUID) -> Void
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(attachments) { attachment in
+                    HStack(spacing: 6) {
+                        Image(systemName: iconName(for: attachment.kind))
+                        Text(attachment.displayName)
+                            .lineLimit(1)
+                        Button {
+                            remove(attachment.id)
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Remove attachment")
+                    }
+                    .font(.caption)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(Color.accentColor.opacity(0.12), in: Capsule())
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+        }
+        .background(.regularMaterial)
+    }
+}
+
+private struct AttachmentStrip: View {
+    let attachments: [ChatAttachment]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(attachments) { attachment in
+                Label(attachment.displayName, systemImage: iconName(for: attachment.kind))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+    }
+}
+
+private func iconName(for kind: AttachmentKind) -> String {
+    switch kind {
+    case .text: return "doc.text"
+    case .url: return "link"
+    case .image: return "photo"
+    case .pdf: return "doc.richtext"
+    case .file: return "doc"
+    case .unknown: return "questionmark.square"
     }
 }
 

@@ -81,6 +81,109 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(decision.requiresConfirmation)
     }
 
+    func testSandboxActionCatalogSeparatesSupportedAndUnsupportedActions() {
+        let catalog = SandboxActionCatalog()
+
+        XCTAssertEqual(catalog.descriptor(for: .saveMemory)?.supportStatus, .implemented)
+        XCTAssertEqual(catalog.descriptor(for: .sendNotification)?.supportStatus, .scaffolded)
+        XCTAssertEqual(catalog.descriptor(for: .unsupportedSandboxAction)?.supportStatus, .unsupportedBySandbox)
+        XCTAssertTrue(catalog.supportedDescriptors.contains { $0.kind == .openURL })
+        XCTAssertFalse(catalog.supportedDescriptors.contains { $0.kind == .unsupportedSandboxAction })
+        XCTAssertTrue(catalog.unsupportedDescriptors.contains { $0.kind == .unsupportedSandboxAction })
+    }
+
+    func testCapabilityPromptContextListsToolsAndUnsupportedBoundaries() {
+        let context = CapabilityPromptContextBuilder().build()
+
+        XCTAssertTrue(context.contains("Kairo tool/capability context"))
+        XCTAssertTrue(context.contains("saveMemory"))
+        XCTAssertTrue(context.contains("createReminderDraft"))
+        XCTAssertTrue(context.contains("unsupportedSandboxAction"))
+        XCTAssertTrue(context.contains("require visible user confirmation"))
+        XCTAssertTrue(context.contains("Local model fallback cannot use tools"))
+    }
+
+    func testSandboxActionExecutorSavesConfirmedMemory() async throws {
+        let store = InMemoryMemoryStore()
+        let executor = SandboxActionExecutor(memoryStore: store)
+        let action = AgentAction(
+            kind: .saveMemory,
+            title: "Save memory",
+            rationale: "User asked Kairo to remember this.",
+            payload: .text("Remember that Kairo must not overclaim sandbox access."),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let unconfirmed = try await executor.execute(action, confirmed: false)
+        XCTAssertFalse(unconfirmed.completed)
+
+        let confirmed = try await executor.execute(action, confirmed: true)
+        XCTAssertTrue(confirmed.completed)
+        XCTAssertNotNil(confirmed.createdIdentifier)
+
+        let memories = try await store.search(query: "overclaim", limit: 10)
+        XCTAssertEqual(memories.count, 1)
+    }
+
+    func testSandboxActionExecutorReportsUnsupportedSandboxActionWithoutExecuting() async throws {
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore())
+        let action = AgentAction(
+            kind: .unsupportedSandboxAction,
+            title: "Read another app",
+            rationale: "The user asked for cross-app data access.",
+            payload: .unsupported(UnsupportedActionExplanation(
+                requestedAction: "Read messages from another app",
+                reason: "iOS does not expose another app's private container to Kairo",
+                safeAlternative: "Ask the user to share the content into Kairo"
+            )),
+            riskTier: .tier3HighRiskExternal
+        )
+
+        let result = try await executor.execute(action, confirmed: false)
+
+        XCTAssertFalse(result.completed)
+        XCTAssertTrue(result.message.contains("Unsupported by iOS sandbox"))
+        XCTAssertTrue(result.message.contains("share the content"))
+    }
+
+    func testSandboxActionExecutorOpensURLThroughInjectedOpener() async throws {
+        let opener = MockURLOpener()
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), urlOpener: opener)
+        let action = AgentAction(
+            kind: .openURL,
+            title: "Open website",
+            rationale: "User asked to open a visible URL.",
+            payload: .url("https://example.com"),
+            riskTier: .tier1Draft
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertTrue(result.requiresExternalUI)
+        let openedURLs = await opener.openedURLs
+        XCTAssertEqual(openedURLs, [URL(string: "https://example.com")!])
+    }
+
+    func testSandboxActionExecutorSchedulesNotificationThroughInjectedScheduler() async throws {
+        let scheduler = MockNotificationScheduler(granted: true)
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), notificationScheduler: scheduler)
+        let action = AgentAction(
+            kind: .sendNotification,
+            title: "Notify",
+            rationale: "User asked for a local notification.",
+            payload: .notification(NotificationDraft(title: "Kairo", body: "Time to review")),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(result.createdIdentifier, "notification-id")
+        let scheduledTitles = await scheduler.scheduledDrafts.map(\.title)
+        XCTAssertEqual(scheduledTitles, ["Kairo"])
+    }
+
     func testOpenAISettingsServiceSavesAndDeletesAPIKey() async throws {
         let credentials = InMemoryCredentialStore()
         let service = OpenAISettingsService(credentialStore: credentials)
@@ -388,6 +491,44 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(thread.lastMessagePreview, "Please remember my meeting notes and summarize them later")
     }
 
+    func testChatAttachmentBuildsPromptSummaryAndSharePrompt() {
+        let attachment = ChatAttachment(
+            kind: .pdf,
+            displayName: "Deck.pdf",
+            uniformTypeIdentifier: "com.adobe.pdf",
+            byteCount: 4096,
+            textPreview: "Quarterly plan",
+            source: .shareExtension
+        )
+        let item = ShareIngestionItem(attachments: [attachment])
+
+        XCTAssertTrue(attachment.promptSummary.contains("Deck.pdf"))
+        XCTAssertTrue(attachment.promptSummary.contains("Quarterly plan"))
+        XCTAssertEqual(item.suggestedPrompt, "Review this shared content: Deck.pdf")
+    }
+
+    func testJSONFileShareIngestionQueuePersistsPendingItems() async throws {
+        let fileURL = temporaryFileURL(named: "share-ingestion.json")
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [builder.text("Shared article text", displayName: "Article")],
+            sourceApplication: "Safari",
+            receivedAt: Date(timeIntervalSince1970: 42)
+        )
+
+        let firstQueue = try await JSONFileShareIngestionQueue(fileURL: fileURL)
+        try await firstQueue.enqueue(item)
+
+        let secondQueue = try await JSONFileShareIngestionQueue(fileURL: fileURL)
+        let pending = try await secondQueue.pendingItems(limit: 10)
+        XCTAssertEqual(pending.map(\.id), [item.id])
+        XCTAssertEqual(pending.first?.attachments.first?.textPreview, "Shared article text")
+
+        try await secondQueue.markImported(id: item.id)
+        let afterImport = try await secondQueue.pendingItems(limit: 10)
+        XCTAssertTrue(afterImport.isEmpty)
+    }
+
     func testKairoPathsBuildsApplicationSupportChatHistoryURL() {
         let paths = KairoPaths(appName: "KairoTests")
 
@@ -538,4 +679,36 @@ private actor MockHTTPClient: HTTPClient {
 
 private enum MockHTTPClientError: Error {
     case missingRequest
+}
+
+private actor MockURLOpener: URLOpener {
+    private(set) var openedURLs: [URL] = []
+    private let result: Bool
+
+    init(result: Bool = true) {
+        self.result = result
+    }
+
+    func open(_ url: URL) async -> Bool {
+        openedURLs.append(url)
+        return result
+    }
+}
+
+private actor MockNotificationScheduler: NotificationScheduling {
+    private(set) var scheduledDrafts: [NotificationDraft] = []
+    private let granted: Bool
+
+    init(granted: Bool) {
+        self.granted = granted
+    }
+
+    func requestAuthorization() async throws -> Bool {
+        granted
+    }
+
+    func schedule(_ draft: NotificationDraft) async throws -> String {
+        scheduledDrafts.append(draft)
+        return "notification-id"
+    }
 }
