@@ -34,8 +34,15 @@ public struct IntegrationRegistry: Sendable {
             key: "apple-shortcuts",
             displayName: "Apple Shortcuts",
             category: .appleSystem,
-            surfaces: [.appIntents, .shortcuts],
+            surfaces: [.appIntents, .shortcuts, .urlScheme],
             requiredCapabilities: [.appIntents],
+            urlSchemes: [
+                URLSchemeIntegration(
+                    scheme: "shortcuts",
+                    exampleURL: "shortcuts://run-shortcut?name=Kairo%20Daily%20Briefing&input=text",
+                    notes: "Launch a user-visible Shortcut handoff with encoded Kairo input; the user must create, install, or approve the Shortcut."
+                )
+            ],
             appIntentIdentifiers: [
                 "AskKairoIntent",
                 "SaveToKairoMemoryIntent",

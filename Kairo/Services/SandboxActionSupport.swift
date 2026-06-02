@@ -317,7 +317,7 @@ public actor SandboxActionExecutor: ActionExecutor {
         case (.answer, _):
             return ActionExecutionResult(completed: true, message: "No external action required.")
         case (.openURL, .url(let urlString)):
-            guard let url = URL(string: urlString), ["http", "https", "mailto", "tel"].contains(url.scheme?.lowercased()) else {
+            guard let url = URL(string: urlString), Self.isSupportedUserVisibleURL(url) else {
                 return ActionExecutionResult(completed: false, message: "Unsupported or invalid URL.")
             }
             let opened = await urlOpener.open(url)
@@ -345,6 +345,17 @@ public actor SandboxActionExecutor: ActionExecutor {
             return ActionExecutionResult(completed: false, message: "External API actions require an OAuth connector integration.")
         default:
             return ActionExecutionResult(completed: false, message: "Unsupported action payload for \(action.kind.rawValue).")
+        }
+    }
+
+    private static func isSupportedUserVisibleURL(_ url: URL) -> Bool {
+        switch url.scheme?.lowercased() {
+        case "http", "https", "mailto", "tel":
+            return true
+        case "shortcuts":
+            return url.host?.lowercased() == "run-shortcut"
+        default:
+            return false
         }
     }
 }

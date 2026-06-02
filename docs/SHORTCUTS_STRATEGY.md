@@ -137,6 +137,15 @@ Implemented App Intent types:
 6. `CreateDailyBriefingIntent`
 7. `CreateReminderDraftsIntent`
 
+## User-visible Shortcut handoff
+
+`ShortcutHandoffService` builds `shortcuts://run-shortcut` URLs for workflows the user has created or installed. Kairo encodes `ShortcutNodeInput` as the `text` input and adds two variables:
+
+- `kairoHandoffRequestID`: stable request id for matching a return payload.
+- `kairoCallbackURL`: `kairo://shortcuts/callback?requestID=...`, which a Shortcut can open after it has produced a `ShortcutNodeOutput` JSON string.
+
+This is not silent automation. The handoff opens Shortcuts through visible URL handling, and Kairo only parses a callback when the Shortcut explicitly opens the callback URL with an `output` query item. `SandboxActionExecutor` only allows the `shortcuts://run-shortcut` host for Shortcuts handoffs; other custom URL schemes remain blocked unless added as a separately reviewed integration.
+
 ## Integration registry alignment
 
 `IntegrationRegistry` keeps Shortcuts/App Intents metadata beside URL-scheme and OAuth connector metadata so the model can distinguish three very different paths:

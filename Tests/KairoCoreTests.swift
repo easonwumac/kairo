@@ -228,6 +228,31 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(openedURLs, [URL(string: "https://example.com")!])
     }
 
+    func testSandboxActionExecutorOpensConfirmedShortcutHandoffURLThroughInjectedOpener() async throws {
+        let handoffURL = try ShortcutHandoffService().runShortcutURL(for: ShortcutHandoffRequest(
+            shortcutName: "Kairo Daily Briefing",
+            input: ShortcutNodeInput(text: "Action: Review Shortcut handoff"),
+            callbackBaseURL: URL(string: "kairo://shortcuts/callback")!,
+            requestID: "handoff-123"
+        ))
+        let opener = MockURLOpener()
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), urlOpener: opener)
+        let action = AgentAction(
+            kind: .openURL,
+            title: "Run Shortcut",
+            rationale: "User confirmed a visible Shortcuts handoff.",
+            payload: .url(handoffURL.absoluteString),
+            riskTier: .tier1Draft
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertTrue(result.requiresExternalUI)
+        let openedURLs = await opener.openedURLs
+        XCTAssertEqual(openedURLs, [handoffURL])
+    }
+
     func testSandboxActionExecutorSchedulesNotificationThroughInjectedScheduler() async throws {
         let scheduler = MockNotificationScheduler(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), notificationScheduler: scheduler)

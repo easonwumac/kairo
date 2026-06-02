@@ -83,6 +83,68 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(templateIDs.isSuperset(of: demoIDs))
     }
 
+    func testAppleShortcutsIntegrationDocumentsUserVisibleHandoffURLScheme() throws {
+        let registry = IntegrationRegistry()
+        let shortcuts = try XCTUnwrap(registry.integration(for: "apple-shortcuts"))
+        let scheme = try XCTUnwrap(shortcuts.urlSchemes.first { $0.scheme == "shortcuts" })
+
+        XCTAssertTrue(shortcuts.surfaces.contains(.urlScheme))
+        XCTAssertEqual(scheme.exampleURL, "shortcuts://run-shortcut?name=Kairo%20Daily%20Briefing&input=text")
+        XCTAssertTrue(scheme.userVisibleOnly)
+        XCTAssertTrue(scheme.notes.contains("user-visible"))
+    }
+
+    func testShortcutHandoffBuildsRunShortcutURLWithEncodedInputAndCallbackContract() throws {
+        let service = ShortcutHandoffService()
+        let request = ShortcutHandoffRequest(
+            shortcutName: "Kairo Daily Briefing",
+            input: ShortcutNodeInput(
+                text: "Action: Review Shortcut handoff",
+                sourceName: "Kairo App",
+                variables: ["recipe": "daily-briefing"]
+            ),
+            callbackBaseURL: URL(string: "kairo://shortcuts/callback")!,
+            requestID: "handoff-123"
+        )
+
+        let url = try service.runShortcutURL(for: request)
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+        let encodedInput = try XCTUnwrap(query["text"])
+        let decodedInput = try JSONDecoder().decode(ShortcutNodeInput.self, from: Data(encodedInput.utf8))
+
+        XCTAssertEqual(components.scheme, "shortcuts")
+        XCTAssertEqual(components.host, "run-shortcut")
+        XCTAssertEqual(query["name"], "Kairo Daily Briefing")
+        XCTAssertEqual(query["input"], "text")
+        XCTAssertEqual(decodedInput.text, "Action: Review Shortcut handoff")
+        XCTAssertEqual(decodedInput.sourceName, "Kairo App")
+        XCTAssertEqual(decodedInput.variables["recipe"], "daily-briefing")
+        XCTAssertEqual(decodedInput.variables["kairoHandoffRequestID"], "handoff-123")
+        XCTAssertEqual(decodedInput.variables["kairoCallbackURL"], "kairo://shortcuts/callback?requestID=handoff-123")
+    }
+
+    func testShortcutHandoffParsesStructuredOutputCallback() throws {
+        let service = ShortcutHandoffService()
+        let output = ShortcutNodeOutput(
+            kind: .dailyBriefing,
+            displayText: "Briefing ready.",
+            fields: ["briefing": "Review Shortcut handoff"]
+        )
+        var components = URLComponents(string: "kairo://shortcuts/callback")!
+        components.queryItems = [
+            URLQueryItem(name: "requestID", value: "handoff-123"),
+            URLQueryItem(name: "output", value: try output.encodedJSONString())
+        ]
+
+        let callback = try service.parseCallback(try XCTUnwrap(components.url))
+
+        XCTAssertEqual(callback.requestID, "handoff-123")
+        XCTAssertEqual(callback.output, output)
+    }
+
     func testShortcutSaveMemoryNodeSavesTextAndReturnsStructuredOutput() async throws {
         let store = InMemoryMemoryStore()
         let runtime = ShortcutNodeRuntime(memoryStore: store)
