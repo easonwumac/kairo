@@ -122,11 +122,28 @@ public struct UnsupportedActionExplanation: Codable, Equatable, Sendable {
     }
 }
 
-public enum ActionRiskTier: String, Codable, CaseIterable, Sendable {
+public enum ActionRiskTier: String, Codable, CaseIterable, Sendable, Comparable {
     case tier0ReadOnly
     case tier1Draft
     case tier2LowRiskWrite
     case tier3HighRiskExternal
+
+    public static func < (lhs: ActionRiskTier, rhs: ActionRiskTier) -> Bool {
+        lhs.sortOrder < rhs.sortOrder
+    }
+
+    public var sortOrder: Int {
+        switch self {
+        case .tier0ReadOnly:
+            return 0
+        case .tier1Draft:
+            return 1
+        case .tier2LowRiskWrite:
+            return 2
+        case .tier3HighRiskExternal:
+            return 3
+        }
+    }
 
     public var requiresConfirmation: Bool {
         switch self {

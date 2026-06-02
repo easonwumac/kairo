@@ -82,3 +82,9 @@ Audit log 不應保存完整敏感 payload，除非使用者明確允許。
 ## Tool Preview Boundary
 
 Kairo may map user requests to installed skills or OAuth connector metadata before a model response is shown, but this is only a preview layer. Disabled skills are ignored, local/no-tool routing returns no tool candidates, Shortcut/OAuth matches remain visible handoffs, and action-backed skills still pass through `SafetyPolicyEngine` before any proposed action appears in chat. Chat stores `toolCandidates` separately from `proposedActions`; candidates are inspection/setup hints, not evidence that Kairo ran a Shortcut or touched an external account.
+
+## Kairo Recipe Boundary
+
+Kairo Recipes are internal Kairo workflows. They can be created, stored, previewed, enabled, disabled, and run by Kairo, but they are not Apple Shortcuts workflows. Kairo must not silently create, edit, install, or reorder Apple Shortcuts.
+
+Recipe runner behavior follows the same risk tiers: read-only and draft steps can produce summaries or drafts, while Tier 2 and Tier 3 writes require preview and explicit confirmation before any write step is allowed. Draft steps such as reminder, calendar, notification, and HomeKit proposals remain visible drafts until a user-approved execution path exists.

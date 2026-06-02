@@ -185,6 +185,39 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "sample-sensitive-code")).firstMatch.exists)
     }
 
+    func testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe() throws {
+        assertPrimaryTabsExist()
+        tapTab(identifier: "root.tab.automations", label: "Automations")
+
+        XCTAssertTrue(findElement("automations.recipe-center").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Kairo internal recipe", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "does not create Apple Shortcuts", direction: .both, maxSwipes: 1).exists)
+
+        let seedSamples = findButton("automations.seed-samples", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(seedSamples.exists)
+        seedSamples.tap()
+
+        XCTAssertTrue(findElement("automations.list", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findElement("automations.recipe.daily-briefing", direction: .down, maxSwipes: 2).exists)
+        XCTAssertTrue(findStaticText(containing: "Daily Briefing", direction: .both, maxSwipes: 1).exists)
+
+        let previewButton = findButton("automations.recipe.daily-briefing.preview", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(previewButton.exists)
+        previewButton.tap()
+        XCTAssertTrue(findElement("automations.message", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Preview Daily Briefing", direction: .both, maxSwipes: 1).exists)
+
+        let runButton = findButton("automations.recipe.daily-briefing.run", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(runButton.exists)
+        runButton.tap()
+        XCTAssertTrue(findStaticText(containing: "Ran Daily Briefing", direction: .both, maxSwipes: 1).exists)
+
+        let toggleButton = findButton("automations.recipe.daily-briefing.toggle", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(toggleButton.exists)
+        toggleButton.tap()
+        XCTAssertTrue(findStaticText(containing: "Disabled Daily Briefing", direction: .both, maxSwipes: 1).exists)
+    }
+
     func testMemoryTabCanSaveManualMemory() throws {
         assertPrimaryTabsExist()
         tapTab(identifier: "root.tab.memory", label: "Memory")
@@ -239,6 +272,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     private func assertPrimaryTabsExist() {
         XCTAssertTrue(tabButton(identifier: "root.tab.chat", label: "Chat").waitForExistence(timeout: 5))
         XCTAssertTrue(tabButton(identifier: "root.tab.memory", label: "Memory").exists)
+        XCTAssertTrue(tabButton(identifier: "root.tab.automations", label: "Automations").exists)
         XCTAssertTrue(tabButton(identifier: "root.tab.access", label: "Access").exists)
         XCTAssertTrue(tabButton(identifier: "root.tab.settings", label: "Settings").exists)
     }

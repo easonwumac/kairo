@@ -14,6 +14,8 @@ Kairo 不應嘗試繞過 iOS sandbox，而是成為 Shortcuts 裡的 AI brain：
 - 決定下一步建議。
 - 把結構化結果交給 Shortcuts 後續動作。
 
+Kairo Recipes 是另一層：它們是 Kairo app 內部 workflows，可以由 Kairo 儲存、preview、run、enable/disable。Apple Shortcuts 之後可以透過 App Intents 呼叫 Kairo Recipes，但 Kairo 不會 silent create/edit/install Apple Shortcuts。
+
 ## MVP App Intents
 
 第一批建議：
@@ -122,6 +124,8 @@ Node contract:
 - safety: task extraction and reminder creation only produce drafts; they do not write EventKit data unless a later confirmed action does so.
 
 `Run Kairo Shortcut Node` is the generic node bridge for advanced Shortcuts. The user supplies a supported `ShortcutNodeKind` raw value and encoded `ShortcutNodeInput` JSON, and Kairo returns encoded `ShortcutNodeOutput` JSON. This makes Kairo usable as a Shortcuts node graph component without giving Kairo permission to silently create, edit, or execute Apple Shortcuts.
+
+Internal Kairo Recipes use `KairoRecipeRunner` instead of `ShortcutNodeRuntime`. They may be exposed to Shortcuts through a future `Run Kairo Recipe` App Intent, but the source of truth remains Kairo's recipe store rather than the user's Apple Shortcuts collection.
 
 Current nodes:
 

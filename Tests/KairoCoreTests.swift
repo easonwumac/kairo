@@ -228,6 +228,128 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(response.proposedActions.isEmpty)
     }
 
+    func testKairoRecipeTemplateFactoryProvidesInternalSampleRecipes() throws {
+        let catalog = KairoRecipeTemplateFactory.sampleCatalog()
+
+        let dailyBriefing = try XCTUnwrap(catalog.recipe(id: "daily-briefing"))
+        let sharedTextToTasks = try XCTUnwrap(catalog.recipe(id: "shared-text-to-tasks"))
+        let keyboardTodoCapture = try XCTUnwrap(catalog.recipe(id: "keyboard-todo-capture"))
+
+        XCTAssertEqual(dailyBriefing.title, "Daily Briefing")
+        XCTAssertEqual(dailyBriefing.createdBy, .template)
+        XCTAssertEqual(dailyBriefing.triggerHint, .dailyTime(hour: 8, minute: 30))
+        XCTAssertEqual(dailyBriefing.riskTier, .tier1Draft)
+        XCTAssertTrue(dailyBriefing.requiredCapabilities.contains(.memory))
+        XCTAssertTrue(dailyBriefing.requiredCapabilities.contains(.notifications))
+        XCTAssertTrue(dailyBriefing.steps.contains { $0.kind == .askKairo })
+        XCTAssertTrue(sharedTextToTasks.steps.contains { $0.kind == .extractTasks })
+        XCTAssertTrue(sharedTextToTasks.steps.contains { $0.kind == .createReminderDraft })
+        XCTAssertTrue(keyboardTodoCapture.requiredCapabilities.contains(.keyboard))
+        XCTAssertFalse(catalog.recipes.contains { $0.title.contains("Apple Shortcut") })
+    }
+
+    func testFileBackedKairoRecipeStorePersistsAndTogglesInternalRecipes() async throws {
+        let fileURL = temporaryFileURL(named: "kairo-recipes.json")
+        let recipe = try XCTUnwrap(KairoRecipeTemplateFactory.sampleCatalog().recipe(id: "daily-briefing"))
+
+        let firstStore = try await FileBackedKairoRecipeStore(fileURL: fileURL)
+        try await firstStore.save(recipe)
+        try await firstStore.setEnabled(false, id: recipe.id)
+
+        let secondStore = try await FileBackedKairoRecipeStore(fileURL: fileURL)
+        let reloadedRecipe = try await secondStore.recipe(id: recipe.id)
+        let reloaded = try XCTUnwrap(reloadedRecipe)
+        let listedRecipeIDs = try await secondStore.listRecipes().map(\.id)
+
+        XCTAssertEqual(listedRecipeIDs, [recipe.id])
+        XCTAssertFalse(reloaded.isEnabled)
+
+        try await secondStore.delete(id: recipe.id)
+        let recipesAfterDelete = try await secondStore.listRecipes()
+        XCTAssertTrue(recipesAfterDelete.isEmpty)
+    }
+
+    func testKairoRecipeRunnerRequiresConfirmationBeforeLowRiskWrites() async throws {
+        let recipe = KairoRecipe(
+            id: "low-risk-write",
+            title: "Low Risk Write",
+            summary: "Tests confirmation gating.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "save-memory",
+                    title: "Save Memory",
+                    kind: .saveMemory,
+                    input: .literal("Remember the confirmation gate.")
+                )
+            ],
+            requiredCapabilities: [.memory],
+            riskTier: .tier2LowRiskWrite,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let memoryStore = InMemoryMemoryStore()
+        let recipeStore = InMemoryKairoRecipeStore(recipes: [recipe])
+        let runner = KairoRecipeRunner(recipeStore: recipeStore, memoryStore: memoryStore)
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .app,
+            input: nil,
+            dryRun: false,
+            userConfirmed: false
+        ))
+
+        XCTAssertFalse(result.success)
+        XCTAssertTrue(result.requiresConfirmation)
+        XCTAssertTrue(result.summary.contains("requires confirmation"))
+        let memories = try await memoryStore.list(limit: 10)
+        XCTAssertTrue(memories.isEmpty)
+    }
+
+    func testKairoRecipeRunnerExtractsTasksAndCreatesDraftsDeterministically() async throws {
+        let recipe = KairoRecipe(
+            id: "task-draft",
+            title: "Task Draft",
+            summary: "Extracts tasks into drafts.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "extract",
+                    title: "Extract Tasks",
+                    kind: .extractTasks,
+                    input: .sharedContent
+                ),
+                KairoRecipeStep(
+                    id: "draft",
+                    title: "Reminder Draft",
+                    kind: .createReminderDraft,
+                    input: .previousStepOutput
+                )
+            ],
+            requiredCapabilities: [.reminders],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let runner = KairoRecipeRunner(recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]))
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .shareExtension,
+            input: "TODO: Send Automations UI screenshot\n- Book review meeting",
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertTrue(result.success)
+        XCTAssertFalse(result.requiresConfirmation)
+        XCTAssertEqual(result.proposedActions.count, 2)
+        XCTAssertEqual(result.proposedActions.map(\.kind), [.createReminderDraft, .createReminderDraft])
+        XCTAssertTrue(result.stepResults.first?.outputText?.contains("Send Automations UI screenshot") == true)
+        XCTAssertTrue(result.summary.contains("2 draft"))
+    }
+
     func testChatMessageDecodesMissingToolCandidatesAsEmptyForOldHistory() throws {
         let json = """
         {
@@ -1219,6 +1341,26 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.models.catalog-source""#))
     }
 
+    func testRootViewDefinesAutomationsRecipeCenterAccessibilityIdentifiers() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let rootView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
+        let automationsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/AutomationsView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(rootView.contains("AutomationsView("))
+        XCTAssertTrue(rootView.contains("recipeStore: environment.kairoRecipeStore"))
+        XCTAssertTrue(rootView.contains(#""root.tab.automations""#))
+        XCTAssertTrue(automationsView.contains("Kairo internal recipe"))
+        XCTAssertTrue(automationsView.contains("does not create Apple Shortcuts"))
+        XCTAssertTrue(automationsView.contains(#""automations.recipe-center""#))
+        XCTAssertTrue(automationsView.contains(#""automations.list""#))
+        XCTAssertTrue(automationsView.contains(#""automations.seed-samples""#))
+        XCTAssertTrue(automationsView.contains(#""automations.message""#))
+        XCTAssertTrue(automationsView.contains(#""automations.recipe.\(recipe.id)""#))
+        XCTAssertTrue(automationsView.contains(#""automations.recipe.\(recipe.id).preview""#))
+        XCTAssertTrue(automationsView.contains(#""automations.recipe.\(recipe.id).run""#))
+        XCTAssertTrue(automationsView.contains(#""automations.recipe.\(recipe.id).toggle""#))
+    }
+
     func testPermissionHubDefinesHomeKitDemoAccessibilityIdentifiers() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let permissionHubView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/PermissionHubView.swift"), encoding: .utf8)
@@ -1257,10 +1399,14 @@ final class KairoCoreTests: XCTestCase {
         let permissionHubSource = try String(contentsOf: root.appendingPathComponent("Kairo/Views/PermissionHubView.swift"), encoding: .utf8)
 
         XCTAssertTrue(environmentSource.contains("agentSkillManagerService: AgentSkillManagerService?"))
+        XCTAssertTrue(environmentSource.contains("kairoRecipeStore: any KairoRecipeStore"))
+        XCTAssertTrue(environmentSource.contains("FileBackedKairoRecipeStore(fileURL: paths.kairoRecipeStoreURL)"))
         XCTAssertTrue(environmentSource.contains("FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)"))
         XCTAssertTrue(environmentSource.contains("AgentSkillManagerService("))
         XCTAssertTrue(environmentSource.contains("store: agentSkillStore"))
         XCTAssertTrue(environmentSource.contains("AgentSkillMarketplaceCatalogService.defaultStandaloneRepository"))
+        XCTAssertTrue(rootViewSource.contains("AutomationsView("))
+        XCTAssertTrue(rootViewSource.contains("recipeStore: environment.kairoRecipeStore"))
         XCTAssertTrue(rootViewSource.contains("PermissionHubView("))
         XCTAssertTrue(rootViewSource.contains("skillManagerService: environment.agentSkillManagerService"))
         XCTAssertTrue(rootViewSource.contains("marketplaceCatalogService: environment.agentSkillMarketplaceCatalogService"))
@@ -1294,6 +1440,8 @@ final class KairoCoreTests: XCTestCase {
         let reloadedSkillManagerService = try XCTUnwrap(reloadedEnvironment.agentSkillManagerService)
         catalog = try await reloadedSkillManagerService.catalog()
         XCTAssertEqual(catalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .disabled)
+        let reloadedRecipes = try await reloadedEnvironment.kairoRecipeStore.listRecipes()
+        XCTAssertTrue(reloadedRecipes.isEmpty)
 
         let remoteCatalog = try await marketplaceCatalogService.fetchCatalog()
         let weatherSkill = try XCTUnwrap(remoteCatalog.catalog.skill(id: "marketplace-weather-briefing"))
@@ -1326,6 +1474,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(paths.localModelSettingsURL.lastPathComponent, "settings.json")
         XCTAssertEqual(paths.agentSkillStoreURL.lastPathComponent, "agent-skills.json")
         XCTAssertEqual(paths.agentSkillStoreURL.deletingLastPathComponent().lastPathComponent, "Skills")
+        XCTAssertEqual(paths.kairoRecipeStoreURL.lastPathComponent, "kairo-recipes.json")
+        XCTAssertEqual(paths.kairoRecipeStoreURL.deletingLastPathComponent().lastPathComponent, "Recipes")
         XCTAssertFalse(paths.usesAppGroup)
     }
 
@@ -1366,6 +1516,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-tool-preview",
             "chat-shortcut-tool-candidate",
             "memory-manual-save",
+            "automations-recipe-center",
             "settings-api-key-status",
             "settings-oauth-connectors",
             "settings-local-model-benchmark",
@@ -1384,6 +1535,16 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.save") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.list") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.record") == true)
+        let automationsScenarioIdentifiers = catalog.scenario(id: "automations-recipe-center")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(automationsScenarioIdentifiers.contains("root.tab.automations"))
+        XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe-center"))
+        XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.seed-samples"))
+        XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.list"))
+        XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe.daily-briefing"))
+        XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe.daily-briefing.preview"))
+        XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe.daily-briefing.run"))
+        XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe.daily-briefing.toggle"))
+        XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.message"))
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
@@ -1451,6 +1612,14 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("請先下載 Qwen3.5 0.8B Q4_K_M 後再跑 benchmark。"))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsOAuthConnectorReadinessAndBoundaries"))
         XCTAssertTrue(smokeTest.contains("testSettingsPreviewsOAuthCallbackWithoutLeakingCode"))
+        XCTAssertTrue(smokeTest.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
+        XCTAssertTrue(smokeTest.contains(#""root.tab.automations""#))
+        XCTAssertTrue(smokeTest.contains(#""automations.seed-samples""#))
+        XCTAssertTrue(smokeTest.contains(#""automations.recipe.daily-briefing.preview""#))
+        XCTAssertTrue(smokeTest.contains(#""automations.recipe.daily-briefing.run""#))
+        XCTAssertTrue(smokeTest.contains(#""automations.recipe.daily-briefing.toggle""#))
+        XCTAssertTrue(smokeTest.contains("Kairo internal recipe"))
+        XCTAssertTrue(smokeTest.contains("does not create Apple Shortcuts"))
         XCTAssertTrue(smokeTest.contains(#""settings.oauth.callback-url""#))
         XCTAssertTrue(smokeTest.contains(#""settings.oauth.preview-callback""#))
         XCTAssertTrue(smokeTest.contains(#""settings.oauth.callback-message""#))

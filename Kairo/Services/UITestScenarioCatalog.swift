@@ -15,16 +15,17 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
         UITestScenario(
             id: "launch-tabs",
             title: "Launch and Tab Navigation",
-            userGoal: "Confirm the app boots and exposes the primary Chat, Memory, Access, and Settings surfaces.",
+            userGoal: "Confirm the app boots and exposes the primary Chat, Memory, Automations, Access, and Settings surfaces.",
             requiredAccessibilityIdentifiers: [
                 "root.tab.chat",
                 "root.tab.memory",
+                "root.tab.automations",
                 "root.tab.access",
                 "root.tab.settings"
             ],
             assertions: [
                 "Chat tab is visible after launch.",
-                "Memory, Access, and Settings tabs are reachable."
+                "Memory, Automations, Access, and Settings tabs are reachable."
             ]
         ),
         UITestScenario(
@@ -94,6 +95,29 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "The Memory tab exposes a manual memory text field.",
                 "The Save button is disabled until the user enters text.",
                 "A saved memory appears visibly in the Memory list."
+            ]
+        ),
+        UITestScenario(
+            id: "automations-recipe-center",
+            title: "Automations Recipe Center",
+            userGoal: "Open Automations, add Kairo-owned sample recipes, preview/run a recipe, and toggle it without creating Apple Shortcuts.",
+            requiredAccessibilityIdentifiers: [
+                "root.tab.automations",
+                "automations.recipe-center",
+                "automations.seed-samples",
+                "automations.list",
+                "automations.recipe.daily-briefing",
+                "automations.recipe.daily-briefing.preview",
+                "automations.recipe.daily-briefing.run",
+                "automations.recipe.daily-briefing.toggle",
+                "automations.message"
+            ],
+            assertions: [
+                "The Automations tab exposes Kairo internal recipes.",
+                "Sample recipes are added by a visible user action.",
+                "Preview and run actions stay within Kairo's recipe runner.",
+                "Enable/disable state is user-visible.",
+                "The UI states that Kairo does not create Apple Shortcuts silently."
             ]
         ),
         UITestScenario(

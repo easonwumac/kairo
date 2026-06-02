@@ -62,7 +62,9 @@
 - Sensitive data classifier。
 - More App Intents。
 - Widget。
-- Shortcuts recipes。
+- Kairo internal recipe engine：sample recipes、file-backed store、preview/run、enable/disable、Automations tab。
+- App Intents bridge for Kairo Recipes：Shortcuts/Siri/Action Button can call user-approved Kairo recipes without Kairo silently creating Apple Shortcuts。
+- Shortcut template registry：提供 user-installed setup guidance，不做 silent installation。
 - Local model experiments。
 
 ## Phase 7：Skill 管理與 marketplace

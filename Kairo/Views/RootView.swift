@@ -22,6 +22,16 @@ public struct RootView: View {
                         .accessibilityIdentifier("root.tab.memory")
                 }
 
+            AutomationsView(
+                recipeStore: environment.kairoRecipeStore,
+                memoryStore: environment.memoryStore,
+                aiProvider: environment.aiProvider
+            )
+                .tabItem {
+                    Label("Automations", systemImage: "bolt.badge.automatic")
+                        .accessibilityIdentifier("root.tab.automations")
+                }
+
             PermissionHubView(
                 skillManagerService: environment.agentSkillManagerService,
                 marketplaceCatalogService: environment.agentSkillMarketplaceCatalogService

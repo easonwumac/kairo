@@ -14,6 +14,7 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 | 通知 | UserNotifications | 是 | 是 | 是 | 中 |
 | App Intents | AppIntents | 使用者觸發 | Shortcuts 決定 | 是 | 低 |
 | Siri / Shortcuts | App Intents | 使用者設定 | 有限 | 是 | 低 |
+| Kairo Recipes | App internal store + App Intents bridge | 使用者建立/啟用 | App 內有限 | 是 | Tier 2+ 需確認；不是 Apple Shortcuts |
 | URL schemes / Universal Links | `openURL` / links | 使用者可見 | 否 | 是 | 僅 handoff，不能隱藏控制 |
 | OAuth connectors | 官方 API + OAuth | 是 | 有限 / 後端輔助 | 後續 | Token / scope 安全 |
 | BGTaskScheduler | BGAppRefreshTask / BGProcessingTask | 系統與使用者設定 | 有限、非即時 | 是 | 不可宣稱 daemon |
@@ -41,3 +42,4 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 7. OAuth connector 只能存取使用者授權 scope 內的官方 API；敏感 scopes 需要審核、token 安全與撤銷流程。
 8. 背景工作只能使用 BGTaskScheduler 的有限刷新/處理模型；不得宣稱常駐、即時或精準排程。
 9. HomeKit action 只能透過 HomeKit entitlement、使用者家庭授權、action preview 與 explicit confirmation 執行；目前 core 已有 typed request / executor injection scaffold，尚未啟用實機 entitlement。
+10. Kairo Recipes 是 app 內部 workflows；可以由 Kairo 儲存、preview、run、enable/disable，但不得 silent create/edit Apple Shortcuts。

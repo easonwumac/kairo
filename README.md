@@ -39,6 +39,7 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - OpenAI provider abstraction, credential store, Keychain-backed credential store, ChatGPT OAuth scaffold, generic OAuth connector authorization core, redacted callback preview store, connector login status center, and Settings connector status/callback UI.
 - Downloadable local-model catalog entries for public GGUF models at 2B parameters or below, including Qwen3.5, Qwen3, Qwen2.5, Llama 3.2, DeepSeek R1 Distill Qwen, H2O Danube2, OpenELM, Falcon-H1, SmolLM2, TinyLlama, and Gemma variants, plus `LocalModelCatalogService` for the planned `kairo-models` static backend, verified downloader, install registry, selected-model settings, Settings model management UI/catalog refresh, benchmark metadata, and provider-routing scaffold. Model weights are not bundled in the app or repository.
 - Capability registry, sandbox action catalog, safety policy engine, action preview UI, and sandbox action executor.
+- Kairo-owned internal recipe engine with sample recipes, file-backed recipe store, deterministic preview/run runner, risk confirmation gates, and an Automations tab for adding, previewing, running, enabling, and disabling recipes. These are not Apple Shortcuts workflows.
 - Agent skill catalog, all official Shortcut demo recipes as built-in skills, deterministic tool invocation planner, chat-visible tool candidates for Shortcut/OAuth handoffs, manifest signature metadata, SHA-256 checksum validation, public-key trust-store verification, signed manifest JSON import, update preview with changelog, version downgrade protection, file-backed skill install lifecycle, environment-backed Access Skill Manager UI, so installed tools can be shown to the model and managed by the user.
 - Static skill marketplace seed under `Website/skills`, mirrored to the independent `easonwumac/kairo-skills` repo, plus app-side catalog refresh and manifest-download preview from the published GitHub Pages catalog.
 - Static model catalog seed under `Website/models`, intended to be mirrored to the planned independent `easonwumac/kairo-models` repo for signed model-list updates and runtime benchmark metadata.
@@ -120,6 +121,7 @@ The package is intentionally dependency-free. The iOS app target is described in
 - [Safety and privacy](docs/SAFETY_AND_PRIVACY.md)
 - [OpenAI/auth strategy](docs/AUTH_OPENAI.md)
 - [Local model fallback](docs/LOCAL_MODEL_FALLBACK.md)
+- [Recipe engine](docs/RECIPE_ENGINE.md)
 - [Shortcuts strategy](docs/SHORTCUTS_STRATEGY.md)
 - [Skill management](docs/SKILL_MANAGEMENT.md)
 - [App Store readiness](docs/APP_STORE_READINESS.md)

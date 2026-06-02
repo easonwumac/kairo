@@ -22,6 +22,7 @@ public struct KairoEnvironment: Sendable {
     public let aiProvider: AIProvider
     public let chatHistoryStore: ChatHistoryStore
     public let shareIngestionQueue: ShareIngestionQueue
+    public let kairoRecipeStore: any KairoRecipeStore
     public let permissionService: PermissionService
     public let auditLogger: AuditLogger
     public let oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore?
@@ -39,6 +40,7 @@ public struct KairoEnvironment: Sendable {
         aiProvider: AIProvider,
         chatHistoryStore: ChatHistoryStore = InMemoryChatHistoryStore(),
         shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
+        kairoRecipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
         permissionService: PermissionService = StubPermissionService(),
         auditLogger: AuditLogger = InMemoryAuditLogger(),
         oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
@@ -55,6 +57,7 @@ public struct KairoEnvironment: Sendable {
         self.aiProvider = aiProvider
         self.chatHistoryStore = chatHistoryStore
         self.shareIngestionQueue = shareIngestionQueue
+        self.kairoRecipeStore = kairoRecipeStore
         self.permissionService = permissionService
         self.auditLogger = auditLogger
         self.oauthConnectorCallbackStore = oauthConnectorCallbackStore
@@ -77,6 +80,7 @@ public struct KairoEnvironment: Sendable {
                 ChatMessage(role: .assistant, text: "我是 Kairo。我會記住你選擇交給我的內容，並只操作 iOS sandbox 與公開 API 允許的能力。")
             ])]),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
+            kairoRecipeStore: InMemoryKairoRecipeStore(),
             permissionService: StubPermissionService(),
             auditLogger: InMemoryAuditLogger()
         )
@@ -131,6 +135,11 @@ public struct KairoEnvironment: Sendable {
                 .appendingPathComponent("OAuth", isDirectory: true)
                 .appendingPathComponent("callback-previews.json")
         )
+        let kairoRecipeStore = try await FileBackedKairoRecipeStore(
+            fileURL: rootDirectory
+                .appendingPathComponent("Recipes", isDirectory: true)
+                .appendingPathComponent("kairo-recipes.json")
+        )
 
         return KairoEnvironment(
             memoryStore: InMemoryMemoryStore(),
@@ -140,6 +149,7 @@ public struct KairoEnvironment: Sendable {
                 ChatMessage(role: .assistant, text: "UI testing Kairo environment loaded.")
             ])]),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
+            kairoRecipeStore: kairoRecipeStore,
             permissionService: StubPermissionService(),
             auditLogger: InMemoryAuditLogger(),
             oauthConnectorCallbackStore: oauthCallbackStore,
@@ -219,6 +229,7 @@ public struct KairoEnvironment: Sendable {
         let memoryStore = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
         let chatHistoryStore = try await JSONFileChatHistoryStore(fileURL: paths.chatHistoryStoreURL)
         let shareIngestionQueue = try await JSONFileShareIngestionQueue(fileURL: paths.shareIngestionQueueURL)
+        let kairoRecipeStore = try await FileBackedKairoRecipeStore(fileURL: paths.kairoRecipeStoreURL)
         let agentSkillStore = try await FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)
         let agentSkillManagerService = AgentSkillManagerService(
             store: agentSkillStore,
@@ -258,6 +269,7 @@ public struct KairoEnvironment: Sendable {
             aiProvider: aiProvider,
             chatHistoryStore: chatHistoryStore,
             shareIngestionQueue: shareIngestionQueue,
+            kairoRecipeStore: kairoRecipeStore,
             permissionService: SystemPermissionService(),
             auditLogger: InMemoryAuditLogger(),
             oauthConnectorCallbackStore: oauthCallbackStore,
@@ -337,6 +349,14 @@ public struct KairoPaths: Sendable {
 
     public var localModelBenchmarkResultsURL: URL {
         localModelsDirectory.appendingPathComponent("benchmarks.json")
+    }
+
+    public var kairoRecipesDirectory: URL {
+        applicationSupportDirectory.appendingPathComponent("Recipes", isDirectory: true)
+    }
+
+    public var kairoRecipeStoreURL: URL {
+        kairoRecipesDirectory.appendingPathComponent("kairo-recipes.json")
     }
 
     public var agentSkillsDirectory: URL {

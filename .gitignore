@@ -52,6 +52,8 @@ Application Support/
 *.mlpackage/
 LocalModels/
 models/
+!Kairo/Models/
+!Kairo/Models/**/*.swift
 !Website/models/
 !Website/models/*.json
 !Website/models/*.md
