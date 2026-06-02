@@ -43,17 +43,19 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
         ),
         UITestScenario(
             id: "settings-api-key-status",
-            title: "Settings API Key Status",
-            userGoal: "Open Settings and verify credential status is visible without exposing secret values.",
+            title: "Settings Credential Status",
+            userGoal: "Open Settings and verify API key plus OAuth connector status is visible without exposing secret values.",
             requiredAccessibilityIdentifiers: [
                 "settings.form",
                 "settings.openai.api-key-status",
                 "settings.openai.api-key-field",
-                "settings.openai.save-api-key"
+                "settings.openai.save-api-key",
+                "settings.oauth.connectors"
             ],
             assertions: [
                 "API key status is visible.",
-                "API key field is secure and save is disabled until text is entered."
+                "API key field is secure and save is disabled until text is entered.",
+                "OAuth connector status list is visible."
             ]
         )
     ])

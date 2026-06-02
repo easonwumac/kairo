@@ -89,6 +89,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 - [x] Core OAuth connector service builds authorization URLs and stores provider-namespaced token sets.
 - [x] Core OAuth login center reports connector status and builds configured authorization sessions.
+- [x] Settings UI lists OAuth connector readiness without exposing token values.
 - [ ] 支援 API key 或官方 OAuth/connector。
 - [ ] 不保存 ChatGPT web cookie。
 - [ ] 不爬取 ChatGPT web session。

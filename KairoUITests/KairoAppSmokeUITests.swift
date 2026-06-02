@@ -41,5 +41,6 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["settings.openai.api-key-status"].exists)
         XCTAssertTrue(app.secureTextFields["settings.openai.api-key-field"].exists)
         XCTAssertTrue(app.buttons["settings.openai.save-api-key"].exists)
+        XCTAssertTrue(app.otherElements["settings.oauth.connectors"].exists)
     }
 }

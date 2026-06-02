@@ -28,7 +28,10 @@ public struct RootView: View {
                         .accessibilityIdentifier("root.tab.access")
                 }
 
-            SettingsView(settingsService: OpenAISettingsService(credentialStore: environment.credentialStore))
+            SettingsView(
+                settingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
+                credentialStore: environment.credentialStore
+            )
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                         .accessibilityIdentifier("root.tab.settings")

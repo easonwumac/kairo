@@ -351,6 +351,47 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertFalse(deletedStatus.hasAPIKey)
     }
 
+    func testOAuthConnectorReadinessProvidesSettingsCopyAndActionState() {
+        XCTAssertEqual(OAuthConnectorLoginReadiness.connected.settingsStatusText, "已連線")
+        XCTAssertEqual(OAuthConnectorLoginReadiness.readyToAuthorize.settingsStatusText, "可授權")
+        XCTAssertEqual(OAuthConnectorLoginReadiness.needsClientConfiguration.settingsStatusText, "需要 Client 設定")
+        XCTAssertEqual(OAuthConnectorLoginReadiness.needsReauthorization.settingsStatusText, "需要重新授權")
+
+        let readyOption = OAuthConnectorLoginOption(
+            integrationKey: "gmail-google-workspace",
+            displayName: "Gmail / Google Workspace",
+            providerKey: "google",
+            readiness: .readyToAuthorize,
+            defaultScopes: ["openid"],
+            requiresBackendTokenExchange: true,
+            accountDataBoundary: "Google scopes only."
+        )
+        let connectedOption = OAuthConnectorLoginOption(
+            integrationKey: "github",
+            displayName: "GitHub",
+            providerKey: "github",
+            readiness: .connected,
+            defaultScopes: ["repo"],
+            grantedScopes: ["repo"],
+            requiresBackendTokenExchange: true,
+            accountDataBoundary: "GitHub scopes only."
+        )
+
+        XCTAssertTrue(readyOption.canStartAuthorization)
+        XCTAssertFalse(connectedOption.canStartAuthorization)
+        XCTAssertEqual(connectedOption.settingsDetailText, "已授權 scopes: repo")
+    }
+
+    func testSettingsViewDefinesOAuthConnectorSectionAccessibilityIdentifiers() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(settingsView.contains("OAuth Connectors"))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.connectors""#))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).status""#))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).authorize""#))
+    }
+
     func testKairoPathsBuildsApplicationSupportMemoryURL() {
         let paths = KairoPaths(appName: "KairoTests")
 
@@ -403,6 +444,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "launch-tabs")?.requiredAccessibilityIdentifiers.contains("root.tab.chat") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
+        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
     }
 
     func testXcodeProjectDefinesKairoUITestTargetAndSmokeTestFile() throws {
@@ -417,6 +459,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
         XCTAssertTrue(smokeTest.contains("chat.composer.text"))
         XCTAssertTrue(smokeTest.contains("settings.openai.api-key-status"))
+        XCTAssertTrue(smokeTest.contains("settings.oauth.connectors"))
     }
 
     func testLocalModelCatalogFiltersDeprecatedAndOldSafetyPolicyModels() throws {

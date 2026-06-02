@@ -17,6 +17,19 @@ public enum OAuthConnectorLoginReadiness: String, Codable, Equatable, Sendable {
     case readyToAuthorize
     case needsClientConfiguration
     case needsReauthorization
+
+    public var settingsStatusText: String {
+        switch self {
+        case .connected:
+            return "已連線"
+        case .readyToAuthorize:
+            return "可授權"
+        case .needsClientConfiguration:
+            return "需要 Client 設定"
+        case .needsReauthorization:
+            return "需要重新授權"
+        }
+    }
 }
 
 public struct OAuthConnectorLoginOption: Identifiable, Equatable, Sendable {
@@ -48,6 +61,25 @@ public struct OAuthConnectorLoginOption: Identifiable, Equatable, Sendable {
         self.grantedScopes = grantedScopes
         self.requiresBackendTokenExchange = requiresBackendTokenExchange
         self.accountDataBoundary = accountDataBoundary
+    }
+
+    public var canStartAuthorization: Bool {
+        switch readiness {
+        case .readyToAuthorize, .needsReauthorization:
+            return true
+        case .connected, .needsClientConfiguration:
+            return false
+        }
+    }
+
+    public var settingsDetailText: String {
+        if !grantedScopes.isEmpty {
+            return "已授權 scopes: \(grantedScopes.joined(separator: ", "))"
+        }
+        if !defaultScopes.isEmpty {
+            return "預設 scopes: \(defaultScopes.joined(separator: ", "))"
+        }
+        return accountDataBoundary
     }
 }
 

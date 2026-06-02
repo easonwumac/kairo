@@ -60,6 +60,8 @@ Current scope:
 - exposes granted scopes from stored token sets without leaking token values;
 - creates authorization sessions from per-provider iOS client configuration.
 
+`SettingsView` surfaces these login options as a status list. It can open an authorization URL only when the app has a provider client configuration; otherwise it labels the connector as needing iOS OAuth client setup.
+
 Out of scope for this core:
 
 - exchanging authorization codes for provider tokens;
