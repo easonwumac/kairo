@@ -72,6 +72,8 @@ The Access Skill Manager is the first app-facing surface for installed, availabl
 
 `AgentSkillMarketplaceCatalogService.defaultStandaloneRepository` fetches `https://easonwumac.github.io/kairo-skills/skills.json`, resolves relative manifest URLs against that catalog URL, maps remote entries into available `AgentSkill` values, and downloads a selected skill's signed manifest for preview. `PermissionHubView` can refresh that catalog through an injected service and merges remote marketplace skills without overwriting already installed or disabled local skill state. Tapping Install on a downloadable marketplace skill fetches its manifest, asks `AgentSkillManagerService` for an install preview, and still requires the separate confirm install action.
 
+`Website/models` is the static model-catalog seed intended for the planned `https://github.com/easonwumac/kairo-models` repository. It contains `models.json` and a small GitHub Pages index, but no model weights. `LocalModelCatalogService.defaultStandaloneRepository` fetches `https://easonwumac.github.io/kairo-models/models.json`, validates HTTPS download URLs and SHA-256 metadata, and merges remote entries with the built-in fallback catalog. Settings exposes a visible Refresh Catalog control and source label; model downloads still require a separate user-triggered Download action.
+
 ## Modules
 
 - `Models`：Memory、Action、Permission、Audit、AI request/response。

@@ -52,3 +52,7 @@ Application Support/
 *.mlpackage/
 LocalModels/
 models/
+!Website/models/
+!Website/models/*.json
+!Website/models/*.md
+!Website/models/*.html

@@ -35,6 +35,7 @@ public struct RootView: View {
                 settingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
                 credentialStore: environment.credentialStore,
                 localModelCatalog: environment.localModelCatalog,
+                localModelCatalogService: environment.localModelCatalogService,
                 localModelSettingsService: environment.localModelSettingsService,
                 localModelDownloader: environment.localModelDownloader
             )

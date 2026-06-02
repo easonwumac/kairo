@@ -708,6 +708,33 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(html.contains("Skill card artwork"))
     }
 
+    func testModelCatalogWebsitePublishesDownloadableModelIndex() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let catalogURL = root.appendingPathComponent("Website/models/models.json")
+        let catalog = try LocalModelCatalog.decode(Data(contentsOf: catalogURL))
+        let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
+        let builtInIDs = LocalModelCatalog.kairoDefault
+            .availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
+            .map(\.id)
+
+        XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
+        XCTAssertEqual(availableModels.map(\.id), builtInIDs)
+        XCTAssertTrue(availableModels.allSatisfy { $0.runtime == .gguf })
+        XCTAssertTrue(availableModels.allSatisfy { $0.downloadURL.scheme == "https" })
+        XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
+    }
+
+    func testModelCatalogWebsiteDocumentsNoWeightsPolicy() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let indexHTML = try String(contentsOf: root.appendingPathComponent("Website/models/index.html"), encoding: .utf8)
+        let readme = try String(contentsOf: root.appendingPathComponent("Website/models/README.md"), encoding: .utf8)
+
+        XCTAssertTrue(indexHTML.contains("Kairo Model Catalog"))
+        XCTAssertTrue(indexHTML.contains("models.json"))
+        XCTAssertTrue(readme.contains("Do not commit model weights"))
+        XCTAssertTrue(readme.contains("kairo-models"))
+    }
+
     func testSkillMarketplaceIndexListsDownloadableSkillsWithSafetyMetadata() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let data = try Data(contentsOf: root.appendingPathComponent("Website/skills/skills.json"))
@@ -1035,6 +1062,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).download""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).select""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).delete""#))
+        XCTAssertTrue(settingsView.contains("refreshLocalModelCatalog"))
+        XCTAssertTrue(settingsView.contains(#""settings.models.refresh-catalog""#))
+        XCTAssertTrue(settingsView.contains(#""settings.models.catalog-source""#))
     }
 
     func testPermissionHubDefinesHomeKitDemoAccessibilityIdentifiers() throws {
@@ -1082,6 +1112,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(rootViewSource.contains("PermissionHubView("))
         XCTAssertTrue(rootViewSource.contains("skillManagerService: environment.agentSkillManagerService"))
         XCTAssertTrue(rootViewSource.contains("marketplaceCatalogService: environment.agentSkillMarketplaceCatalogService"))
+        XCTAssertTrue(environmentSource.contains("localModelCatalogService"))
+        XCTAssertTrue(environmentSource.contains("LocalModelCatalogService.defaultStandaloneRepository"))
+        XCTAssertTrue(rootViewSource.contains("localModelCatalogService: environment.localModelCatalogService"))
         XCTAssertTrue(permissionHubSource.contains("private let skillManagerService: AgentSkillManagerService?"))
         XCTAssertTrue(permissionHubSource.contains("private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?"))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.catalog()"))
@@ -1094,6 +1127,7 @@ final class KairoCoreTests: XCTestCase {
         let environment = try await KairoEnvironment.uiTesting(resetPersistentState: true)
         let skillManagerService = try XCTUnwrap(environment.agentSkillManagerService)
         let marketplaceCatalogService = try XCTUnwrap(environment.agentSkillMarketplaceCatalogService)
+        let modelCatalogService = try XCTUnwrap(environment.localModelCatalogService)
 
         var catalog = try await skillManagerService.catalog()
         XCTAssertEqual(catalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .installed)
@@ -1114,6 +1148,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(remoteCatalog.sourceRepository.absoluteString, "https://github.com/easonwumac/kairo-skills")
         XCTAssertEqual(weatherSkill.downloadURL?.absoluteString, "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json")
         XCTAssertEqual(preview.summary, "Install Weather Briefing 2.1.0.")
+
+        let modelCatalog = try await modelCatalogService.fetchCatalog()
+        XCTAssertEqual(modelCatalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
+        XCTAssertEqual(modelCatalog.availableModels(minimumSafetyPolicyVersion: modelCatalog.minimumSafetyPolicyVersion).count, 5)
     }
 
     func testKairoPathsBuildsApplicationSupportMemoryURL() {
@@ -1176,6 +1214,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.local") == true)
+        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.refresh-catalog") == true)
+        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.catalog-source") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.download") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.qwen3-5-2b-q4-k-m.status") == true)
@@ -1214,6 +1254,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(projectYAML.contains("target: KairoApp"))
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
         XCTAssertTrue(smokeTest.contains("testSettingsLocalModelCatalogListsDownloadableModels"))
+        XCTAssertTrue(smokeTest.contains("Refresh Catalog"))
+        XCTAssertTrue(smokeTest.contains("github.com/easonwumac/kairo-models"))
         XCTAssertTrue(smokeTest.contains("chat.history.thread"))
         XCTAssertTrue(smokeTest.contains("chat.new"))
         XCTAssertTrue(smokeTest.contains("chat.composer.text"))
@@ -1271,6 +1313,7 @@ final class KairoCoreTests: XCTestCase {
         let catalog = LocalModelCatalog.kairoDefault
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
 
+        XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
         XCTAssertEqual(availableModels.map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
             "qwen3-5-2b-q4-k-m",
@@ -1291,10 +1334,95 @@ final class KairoCoreTests: XCTestCase {
             XCTAssertEqual(model.downloadURL.host(), "huggingface.co", model.id)
             XCTAssertEqual(model.sha256.count, 64, model.id)
             XCTAssertLessThanOrEqual(model.minRAMGB, 6, model.id)
+            XCTAssertEqual(model.runtime, .gguf, model.id)
             XCTAssertTrue(model.capabilities.contains(.offlineChat), model.id)
             XCTAssertTrue(model.disallowedCapabilities.contains(.webCurrentInfo), model.id)
             XCTAssertTrue(model.disallowedCapabilities.contains(.toolUse), model.id)
         }
+    }
+
+    func testLocalModelCatalogServiceFetchesStandaloneModelRepoCatalog() async throws {
+        let indexURL = URL(string: "https://easonwumac.github.io/kairo-models/models.json")!
+        let body = remoteModelCatalogJSON(
+            minimumSafetyPolicyVersion: "2026.2",
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "qwen3-5-0-8b-q4-k-m",
+                    displayName: "Qwen3.5 0.8B Q4_K_M",
+                    version: "1.1.0"
+                )
+            ]
+        )
+        let httpClient = MockHTTPClient(statusCode: 200, body: body)
+        let service = LocalModelCatalogService(indexURL: indexURL, httpClient: httpClient)
+
+        let catalog = try await service.fetchCatalog()
+        let request = try await httpClient.lastRequest()
+
+        XCTAssertEqual(LocalModelCatalogService.defaultIndexURL.absoluteString, "https://easonwumac.github.io/kairo-models/models.json")
+        XCTAssertEqual(request.url?.absoluteString, "https://easonwumac.github.io/kairo-models/models.json")
+        XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
+        XCTAssertEqual(catalog.minimumSafetyPolicyVersion, "2026.2")
+        XCTAssertEqual(catalog.models.first?.runtime, .gguf)
+        XCTAssertEqual(catalog.models.first?.version, "1.1.0")
+    }
+
+    func testLocalModelCatalogServiceRejectsUnsafeRemoteModelDownloads() async throws {
+        let body = remoteModelCatalogJSON(
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "unsafe-model",
+                    displayName: "Unsafe Model",
+                    downloadURL: "http://example.com/unsafe.gguf"
+                )
+            ]
+        )
+        let httpClient = MockHTTPClient(statusCode: 200, body: body)
+        let service = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: httpClient
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected unsafe model catalog to be rejected.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .unsafeDownloadURL(modelID: "unsafe-model", url: "http://example.com/unsafe.gguf"))
+        }
+    }
+
+    func testLocalModelCatalogMergesRemoteModelsWithoutDroppingBuiltInFallbacks() {
+        let builtIn = LocalModelCatalog(
+            generatedAt: Date(timeIntervalSince1970: 1),
+            signingKeyID: "built-in",
+            signature: "built-in-signature",
+            sourceRepository: URL(string: "https://github.com/easonwumac/kairo"),
+            minimumSafetyPolicyVersion: "2026.1",
+            models: [
+                makeLocalModelManifest(id: "shared-model", version: "1.0", safetyPolicyVersion: "2026.1"),
+                makeLocalModelManifest(id: "built-in-only", version: "1.0", safetyPolicyVersion: "2026.1")
+            ]
+        )
+        let remote = LocalModelCatalog(
+            generatedAt: Date(timeIntervalSince1970: 2),
+            signingKeyID: "kairo-models-2026",
+            signature: "remote-signature",
+            sourceRepository: URL(string: "https://github.com/easonwumac/kairo-models"),
+            minimumSafetyPolicyVersion: "2026.2",
+            models: [
+                makeLocalModelManifest(id: "shared-model", version: "2.0", safetyPolicyVersion: "2026.2"),
+                makeLocalModelManifest(id: "remote-only", version: "1.0", safetyPolicyVersion: "2026.2")
+            ]
+        )
+
+        let merged = builtIn.mergingRemoteCatalog(remote)
+
+        XCTAssertEqual(merged.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
+        XCTAssertEqual(merged.signingKeyID, "kairo-models-2026")
+        XCTAssertEqual(merged.minimumSafetyPolicyVersion, "2026.2")
+        XCTAssertEqual(merged.models.map(\.id), ["shared-model", "built-in-only", "remote-only"])
+        XCTAssertEqual(merged.models.first?.version, "2.0")
+        XCTAssertEqual(merged.models.last?.id, "remote-only")
     }
 
     func testFileBackedLocalModelInstallRegistryPersistsInstalledRecords() async throws {
@@ -2174,6 +2302,62 @@ final class KairoCoreTests: XCTestCase {
             safetyPolicyVersion: safetyPolicyVersion,
             deprecated: deprecated
         )
+    }
+
+    private func remoteModelCatalogJSON(
+        minimumSafetyPolicyVersion: String = "2026.1",
+        modelsJSON: [String]
+    ) -> String {
+        """
+        {
+          "schemaVersion": 1,
+          "generatedAt": "2026-06-02T00:00:00Z",
+          "signingKeyID": "kairo-models-2026",
+          "signature": "signed-catalog-placeholder",
+          "sourceRepository": "https://github.com/easonwumac/kairo-models",
+          "minimumSafetyPolicyVersion": "\(minimumSafetyPolicyVersion)",
+          "models": [
+            \(modelsJSON.joined(separator: ",\n"))
+          ]
+        }
+        """
+    }
+
+    private func remoteModelManifestJSON(
+        id: String,
+        displayName: String,
+        version: String = "1.0.0",
+        downloadURL: String = "https://huggingface.co/example/model/resolve/main/model.gguf"
+    ) -> String {
+        """
+        {
+          "id": "\(id)",
+          "displayName": "\(displayName)",
+          "family": "Qwen",
+          "version": "\(version)",
+          "parameterCount": "0.8B",
+          "quantization": "Q4_K_M",
+          "runtime": "gguf",
+          "fileSizeBytes": 512,
+          "installedSizeBytes": 1024,
+          "contextWindow": 2048,
+          "tokenizerID": "qwen-test-tokenizer",
+          "licenseName": "Apache-2.0",
+          "licenseURL": "https://example.com/license",
+          "minOSVersion": "17.0",
+          "minDeviceClass": "A15",
+          "minRAMGB": 4,
+          "supportedLocales": ["en", "zh-Hant"],
+          "capabilities": ["drafts", "summarization", "simpleQuestionAnswer", "offlineChat"],
+          "disallowedCapabilities": ["toolUse", "webCurrentInfo", "codeExecution", "accountActions", "regulatedAdvice"],
+          "downloadURL": "\(downloadURL)",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "createdAt": "2026-06-02T00:00:00Z",
+          "updatedAt": "2026-06-02T00:00:00Z",
+          "safetyPolicyVersion": "2026.1",
+          "deprecated": false
+        }
+        """
     }
 }
 

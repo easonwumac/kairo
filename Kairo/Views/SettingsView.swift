@@ -9,13 +9,14 @@ public struct SettingsView: View {
     @State private var statusMessage: String?
     @State private var connectorOptions: [OAuthConnectorLoginOption] = []
     @State private var connectorStatusMessage: String?
+    @State private var localModelCatalog: LocalModelCatalog
     @State private var localModelStatus: LocalModelSettingsStatus
     @State private var localModelStatusMessage: String?
 
     private let settingsService: OpenAISettingsService
     private let credentialStore: any CredentialStore
     private let oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
-    private let localModelCatalog: LocalModelCatalog
+    private let localModelCatalogService: LocalModelCatalogService?
     private let localModelSettingsService: LocalModelSettingsService?
     private let localModelDownloader: (any LocalModelDownloader)?
 
@@ -23,15 +24,17 @@ public struct SettingsView: View {
         credentialStore: any CredentialStore = InMemoryCredentialStore(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         localModelCatalog: LocalModelCatalog = .kairoDefault,
+        localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
         localModelDownloader: (any LocalModelDownloader)? = nil
     ) {
         self.settingsService = OpenAISettingsService(credentialStore: credentialStore)
         self.credentialStore = credentialStore
         self.oauthClientConfigurations = oauthClientConfigurations
-        self.localModelCatalog = localModelCatalog
+        self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
+        self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
 
@@ -40,15 +43,17 @@ public struct SettingsView: View {
         credentialStore: any CredentialStore,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         localModelCatalog: LocalModelCatalog = .kairoDefault,
+        localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
         localModelDownloader: (any LocalModelDownloader)? = nil
     ) {
         self.settingsService = settingsService
         self.credentialStore = credentialStore
         self.oauthClientConfigurations = oauthClientConfigurations
-        self.localModelCatalog = localModelCatalog
+        self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
+        self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
 
@@ -100,6 +105,7 @@ public struct SettingsView: View {
 
                 Section("Local Models") {
                     localModelPreferencePicker()
+                    localModelCatalogControls()
 
                     if localModelStatus.settingsRows.isEmpty {
                         Text("尚未載入 local model catalog。")
@@ -212,6 +218,30 @@ public struct SettingsView: View {
             Text(localModelStatus.preference.settingsDetailText)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func localModelCatalogControls() -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Catalog")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+
+                Spacer()
+
+                Button("Refresh Catalog") {
+                    refreshLocalModelCatalog()
+                }
+                .accessibilityIdentifier("settings.models.refresh-catalog")
+            }
+
+            Text(localModelCatalogSourceText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("settings.models.catalog-source")
         }
         .padding(.vertical, 4)
     }
@@ -475,6 +505,39 @@ public struct SettingsView: View {
         }
     }
 
+    private func refreshLocalModelCatalog() {
+        Task {
+            guard let localModelCatalogService else {
+                await MainActor.run {
+                    localModelStatusMessage = "使用內建 local model catalog。"
+                }
+                return
+            }
+
+            do {
+                await MainActor.run {
+                    localModelStatusMessage = "正在刷新 model catalog。"
+                }
+                let mergedCatalog = try await localModelCatalogService.fetchMergedCatalog(with: localModelCatalog)
+                if let localModelSettingsService {
+                    await localModelSettingsService.replaceCatalog(mergedCatalog)
+                }
+                await MainActor.run {
+                    localModelCatalog = mergedCatalog
+                    let count = mergedCatalog.availableModels(
+                        minimumSafetyPolicyVersion: mergedCatalog.minimumSafetyPolicyVersion
+                    ).count
+                    localModelStatusMessage = "已刷新 model catalog：\(count) 個可用模型。"
+                }
+                await reloadLocalModelStatus()
+            } catch {
+                await MainActor.run {
+                    localModelStatusMessage = "刷新 model catalog 失敗：\(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
     private func reloadAllStatus() async {
         await reloadStatus()
         await reloadConnectorOptions()
@@ -539,6 +602,10 @@ public struct SettingsView: View {
             availableModels: catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion),
             installedModels: []
         )
+    }
+
+    private var localModelCatalogSourceText: String {
+        localModelCatalog.sourceRepository?.absoluteString ?? "Built-in Kairo model catalog"
     }
 
     private func statusColor(for readiness: OAuthConnectorLoginReadiness) -> Color {

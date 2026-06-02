@@ -55,6 +55,8 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.openai.save-api-key",
                 "settings.oauth.connectors",
                 "settings.models.local",
+                "settings.models.refresh-catalog",
+                "settings.models.catalog-source",
                 "settings.models.qwen3-5-0-8b-q4-k-m.status",
                 "settings.models.qwen3-5-0-8b-q4-k-m.download",
                 "settings.models.qwen3-5-2b-q4-k-m.status",

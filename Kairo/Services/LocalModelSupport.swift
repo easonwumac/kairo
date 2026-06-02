@@ -15,6 +15,13 @@ public enum LocalModelCapability: String, Codable, Equatable, Sendable, CaseIter
     case regulatedAdvice
 }
 
+public enum LocalModelRuntime: String, Codable, Equatable, Sendable, CaseIterable {
+    case gguf
+    case mlx
+    case coreML
+    case unknown
+}
+
 public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var displayName: String
@@ -22,6 +29,7 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
     public var version: String
     public var parameterCount: String
     public var quantization: String
+    public var runtime: LocalModelRuntime
     public var fileSizeBytes: Int64
     public var installedSizeBytes: Int64
     public var contextWindow: Int
@@ -50,6 +58,7 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
         version: String,
         parameterCount: String,
         quantization: String,
+        runtime: LocalModelRuntime = .gguf,
         fileSizeBytes: Int64,
         installedSizeBytes: Int64,
         contextWindow: Int,
@@ -77,6 +86,7 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
         self.version = version
         self.parameterCount = parameterCount
         self.quantization = quantization
+        self.runtime = runtime
         self.fileSizeBytes = fileSizeBytes
         self.installedSizeBytes = installedSizeBytes
         self.contextWindow = contextWindow
@@ -105,6 +115,7 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
     public var generatedAt: Date
     public var signingKeyID: String
     public var signature: String
+    public var sourceRepository: URL?
     public var minimumSafetyPolicyVersion: String
     public var models: [LocalModelManifest]
 
@@ -113,6 +124,7 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
         generatedAt: Date = Date(),
         signingKeyID: String,
         signature: String,
+        sourceRepository: URL? = nil,
         minimumSafetyPolicyVersion: String,
         models: [LocalModelManifest]
     ) {
@@ -120,6 +132,7 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
         self.generatedAt = generatedAt
         self.signingKeyID = signingKeyID
         self.signature = signature
+        self.sourceRepository = sourceRepository
         self.minimumSafetyPolicyVersion = minimumSafetyPolicyVersion
         self.models = models
     }
@@ -129,6 +142,35 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
             !model.deprecated
             && model.safetyPolicyVersion.compare(minimumSafetyPolicyVersion, options: .numeric) != .orderedAscending
         }
+    }
+
+    public func mergingRemoteCatalog(_ remoteCatalog: LocalModelCatalog) -> LocalModelCatalog {
+        var modelsByID = Dictionary(uniqueKeysWithValues: models.map { ($0.id, $0) })
+        var orderedIDs = models.map(\.id)
+
+        for remoteModel in remoteCatalog.models {
+            if modelsByID[remoteModel.id] == nil {
+                orderedIDs.append(remoteModel.id)
+            }
+            modelsByID[remoteModel.id] = remoteModel
+        }
+
+        return LocalModelCatalog(
+            schemaVersion: max(schemaVersion, remoteCatalog.schemaVersion),
+            generatedAt: remoteCatalog.generatedAt,
+            signingKeyID: remoteCatalog.signingKeyID,
+            signature: remoteCatalog.signature,
+            sourceRepository: remoteCatalog.sourceRepository ?? sourceRepository,
+            minimumSafetyPolicyVersion: Self.stricterSafetyPolicy(
+                minimumSafetyPolicyVersion,
+                remoteCatalog.minimumSafetyPolicyVersion
+            ),
+            models: orderedIDs.compactMap { modelsByID[$0] }
+        )
+    }
+
+    private static func stricterSafetyPolicy(_ lhs: String, _ rhs: String) -> String {
+        lhs.compare(rhs, options: .numeric) == .orderedAscending ? rhs : lhs
     }
 
     public static func decode(_ data: Data) throws -> LocalModelCatalog {
@@ -150,6 +192,7 @@ public extension LocalModelCatalog {
         generatedAt: Date(timeIntervalSince1970: 1_767_225_600),
         signingKeyID: "kairo-default-local-settings",
         signature: "unsigned-settings-placeholder",
+        sourceRepository: URL(string: "https://github.com/easonwumac/kairo-models"),
         minimumSafetyPolicyVersion: "2026.1",
         models: [
             .qwen35Tiny,
@@ -159,6 +202,69 @@ public extension LocalModelCatalog {
             .tinyLlamaChat
         ]
     )
+}
+
+public enum LocalModelCatalogServiceError: Error, Equatable {
+    case invalidJSON
+    case unsafeDownloadURL(modelID: String, url: String)
+    case invalidChecksum(modelID: String, sha256: String)
+}
+
+public struct LocalModelCatalogService: Sendable {
+    public static let defaultIndexURL = URL(string: "https://easonwumac.github.io/kairo-models/models.json")!
+    public static let defaultStandaloneRepository = LocalModelCatalogService(indexURL: defaultIndexURL)
+
+    private let indexURL: URL
+    private let httpClient: any HTTPClient
+
+    public init(
+        indexURL: URL = Self.defaultIndexURL,
+        httpClient: any HTTPClient = URLSessionHTTPClient()
+    ) {
+        self.indexURL = indexURL
+        self.httpClient = httpClient
+    }
+
+    public func fetchCatalog() async throws -> LocalModelCatalog {
+        let request = URLRequest(url: indexURL)
+        let (data, response) = try await httpClient.data(for: request)
+        guard (200..<300).contains(response.statusCode) else {
+            let bodyPreview = String(data: data.prefix(300), encoding: .utf8) ?? ""
+            throw HTTPClientError.unacceptableStatusCode(response.statusCode, bodyPreview)
+        }
+
+        let catalog: LocalModelCatalog
+        do {
+            catalog = try LocalModelCatalog.decode(data)
+        } catch {
+            throw LocalModelCatalogServiceError.invalidJSON
+        }
+
+        try validate(catalog)
+        return catalog
+    }
+
+    public func fetchMergedCatalog(with builtInCatalog: LocalModelCatalog = .kairoDefault) async throws -> LocalModelCatalog {
+        let remoteCatalog = try await fetchCatalog()
+        return builtInCatalog.mergingRemoteCatalog(remoteCatalog)
+    }
+
+    private func validate(_ catalog: LocalModelCatalog) throws {
+        for model in catalog.models {
+            guard model.downloadURL.scheme?.lowercased() == "https" else {
+                throw LocalModelCatalogServiceError.unsafeDownloadURL(
+                    modelID: model.id,
+                    url: model.downloadURL.absoluteString
+                )
+            }
+            guard model.sha256.count == 64 else {
+                throw LocalModelCatalogServiceError.invalidChecksum(
+                    modelID: model.id,
+                    sha256: model.sha256
+                )
+            }
+        }
+    }
 }
 
 public extension LocalModelManifest {
@@ -759,7 +865,7 @@ public actor FileBackedLocalModelSettingsStore {
 }
 
 public actor LocalModelSettingsService {
-    private let catalog: LocalModelCatalog
+    private var catalog: LocalModelCatalog
     private let installRegistry: FileBackedLocalModelInstallRegistry
     private let settingsStore: FileBackedLocalModelSettingsStore
 
@@ -771,6 +877,10 @@ public actor LocalModelSettingsService {
         self.catalog = catalog
         self.installRegistry = installRegistry
         self.settingsStore = settingsStore
+    }
+
+    public func replaceCatalog(_ catalog: LocalModelCatalog) {
+        self.catalog = catalog
     }
 
     public func status(minimumSafetyPolicyVersion: String = "2026.1") async -> LocalModelSettingsStatus {

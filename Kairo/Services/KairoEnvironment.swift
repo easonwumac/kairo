@@ -27,6 +27,7 @@ public struct KairoEnvironment: Sendable {
     public let agentSkillManagerService: AgentSkillManagerService?
     public let agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService?
     public let localModelCatalog: LocalModelCatalog
+    public let localModelCatalogService: LocalModelCatalogService?
     public let localModelSettingsService: LocalModelSettingsService?
     public let localModelDownloader: (any LocalModelDownloader)?
 
@@ -41,6 +42,7 @@ public struct KairoEnvironment: Sendable {
         agentSkillManagerService: AgentSkillManagerService? = nil,
         agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil,
         localModelCatalog: LocalModelCatalog = .kairoDefault,
+        localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
         localModelDownloader: (any LocalModelDownloader)? = nil
     ) {
@@ -54,6 +56,7 @@ public struct KairoEnvironment: Sendable {
         self.agentSkillManagerService = agentSkillManagerService
         self.agentSkillMarketplaceCatalogService = agentSkillMarketplaceCatalogService
         self.localModelCatalog = localModelCatalog
+        self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
     }
@@ -90,6 +93,7 @@ public struct KairoEnvironment: Sendable {
             builtInCatalog: .defaultWithMarketplaceSamples
         )
         let marketplaceCatalogService = try uiTestingMarketplaceCatalogService()
+        let localModelCatalogService = try uiTestingLocalModelCatalogService()
         let credentialStore = InMemoryCredentialStore()
 
         return KairoEnvironment(
@@ -103,7 +107,8 @@ public struct KairoEnvironment: Sendable {
             permissionService: StubPermissionService(),
             auditLogger: InMemoryAuditLogger(),
             agentSkillManagerService: skillManagerService,
-            agentSkillMarketplaceCatalogService: marketplaceCatalogService
+            agentSkillMarketplaceCatalogService: marketplaceCatalogService,
+            localModelCatalogService: localModelCatalogService
         )
     }
 
@@ -158,6 +163,15 @@ public struct KairoEnvironment: Sendable {
         return AgentSkillMarketplaceCatalogService(indexURL: indexURL, httpClient: httpClient)
     }
 
+    private static func uiTestingLocalModelCatalogService() throws -> LocalModelCatalogService {
+        let indexURL = LocalModelCatalogService.defaultIndexURL
+        let catalogJSON = String(data: try LocalModelCatalog.kairoDefault.encoded(), encoding: .utf8) ?? "{}"
+        let httpClient = StaticHTTPClient(routes: [
+            indexURL: StaticHTTPResponse(body: catalogJSON)
+        ])
+        return LocalModelCatalogService(indexURL: indexURL, httpClient: httpClient)
+    }
+
     public static func live(
         appName: String = KairoSharedAppStorage.appName,
         appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier
@@ -190,6 +204,7 @@ public struct KairoEnvironment: Sendable {
         let credentialStore = KeychainCredentialStore()
         let aiProvider = OpenAIProvider(credentialStore: credentialStore)
         let agentSkillMarketplaceCatalogService = AgentSkillMarketplaceCatalogService.defaultStandaloneRepository
+        let localModelCatalogService = LocalModelCatalogService.defaultStandaloneRepository
 
         return KairoEnvironment(
             memoryStore: memoryStore,
@@ -202,6 +217,7 @@ public struct KairoEnvironment: Sendable {
             agentSkillManagerService: agentSkillManagerService,
             agentSkillMarketplaceCatalogService: agentSkillMarketplaceCatalogService,
             localModelCatalog: localModelCatalog,
+            localModelCatalogService: localModelCatalogService,
             localModelSettingsService: localModelSettingsService,
             localModelDownloader: localModelDownloader
         )

@@ -78,7 +78,7 @@ protocol AIProvider {
 - writes `downloading`, `installed`, or `failed` records to `FileBackedLocalModelInstallRegistry`;
 - removes partial files when checksum verification fails.
 
-The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances and route preference control, but a production build still needs a real signed catalog, configured downloader, progress/cancellation handling, license text, and stronger size disclosure.
+The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, and a Refresh Catalog action. A production build still needs a real signed catalog, stronger signature verification, progress/cancellation handling, license text, and stronger size disclosure.
 
 The default development catalog points to public GGUF downloads through Hugging Face:
 
@@ -104,7 +104,9 @@ MLX is the stronger Apple Silicon benchmark path for macOS/dev validation. iPhon
 
 ## Model catalog backend
 
-Kairo should eventually move model availability into a standalone GitHub repository, for example `kairo-models`, used like a static backend:
+Kairo now includes `LocalModelCatalogService.defaultStandaloneRepository`, which fetches `https://easonwumac.github.io/kairo-models/models.json` and treats it like a static backend. This repository also contains `Website/models` as the reference seed that can be mirrored to the standalone `kairo-models` repository.
+
+The model catalog backend should:
 
 - publish signed model catalog JSON and per-model manifests;
 - list runtime-specific artifacts, such as GGUF for llama.cpp-compatible runtimes and MLX artifacts for Apple Silicon validation;
@@ -112,6 +114,14 @@ Kairo should eventually move model availability into a standalone GitHub reposit
 - never host committed model weights in the app repo;
 - support catalog versioning, key rotation, revocation, and rollback;
 - let Kairo fetch the catalog visibly and install only after user approval.
+
+Current service behavior:
+
+- decodes `LocalModelCatalog` JSON with `sourceRepository` metadata;
+- rejects remote catalog entries whose model download URL is not HTTPS;
+- rejects entries missing a 64-character SHA-256 checksum;
+- merges remote entries over matching built-in model IDs while preserving built-in fallback models that the remote catalog omits;
+- syncs refreshed catalog metadata into `LocalModelSettingsService` so Settings can still select models from the refreshed catalog.
 
 ## Model selection
 

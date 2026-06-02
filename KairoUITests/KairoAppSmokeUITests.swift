@@ -123,6 +123,11 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findButton("settings.openai.save-api-key").exists)
         XCTAssertTrue(findElement("settings.oauth.connectors", direction: .down).exists)
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
+        XCTAssertTrue(findStaticText(containing: "github.com/easonwumac/kairo-models", direction: .down).exists)
+        let refreshCatalogButton = findButton(labeled: "Refresh Catalog", direction: .both)
+        XCTAssertTrue(refreshCatalogButton.exists)
+        refreshCatalogButton.tap()
+        XCTAssertTrue(findStaticText(containing: "已刷新 model catalog", direction: .down).exists)
         for (index, localModel) in localModelExpectations.enumerated() {
             verifyDownloadableLocalModel(
                 id: localModel.0,
