@@ -69,6 +69,15 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] 可回傳 structured output 給 Shortcuts。
 - [ ] 高風險 action 仍遵守 confirmation policy。
 
+### 6.5 Skill management
+
+- [x] Core `AgentSkillCatalog` exposes installed skills/tools to prompt context.
+- [x] Access UI shows installed skills in a Skill Manager section.
+- [ ] Downloadable skills use signed manifests and checksum verification.
+- [ ] Skill marketplace website shows permissions, risk tier, version, author, and changelog before install.
+- [ ] User-created skills require explicit capability selection and confirmation policy.
+- [ ] Skill install/update/remove flows are covered by UI/e2e tests.
+
 ### 7. Background tasks
 
 - [ ] 不宣稱常駐 daemon。

@@ -18,6 +18,7 @@
 │ - Safety Policy Engine               │
 │ - Capability Registry                │
 │ - Integration Registry               │
+│ - Agent Skill Catalog                │
 │ - Background Task Policy             │
 │ - Audit Logger                       │
 └────────────────┬────────────────────┘
@@ -32,6 +33,7 @@
 │ - NotificationService                │
 │ - CalendarReminderService            │
 │ - IntegrationRegistry                │
+│ - AgentSkillCatalog                  │
 │ - BackgroundTaskPolicy               │
 └────────────────┬────────────────────┘
                  │
@@ -57,6 +59,12 @@
 7. 使用者確認後，`ActionExecutor` 呼叫對應 iOS service。
 8. `AuditLogger` 記錄結果。
 9. 可選擇寫入新記憶。
+
+## Agent skills
+
+`AgentSkillCatalog` packages usable capabilities as managed skills. A skill can bind to an `AgentAction`, a Shortcut recipe, an OAuth connector, a local model, or a future marketplace manifest. Installed skills are included in `CapabilityPromptContextBuilder` so the model sees named tools it may propose, including whether each skill requires confirmation.
+
+The Access Skill Manager is the first app-facing surface for installed skills. It is intentionally metadata-first: showing skills, capabilities, source, installation state, and confirmation requirements does not bypass iOS permissions. Downloadable marketplace skills should later use signed manifests, checksums, compatibility gates, and explicit install/update/remove flows.
 
 ## Modules
 

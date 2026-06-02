@@ -13,6 +13,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     func testLaunchTabsChatAndSettingsSmokeFlow() throws {
         assertPrimaryTabsExist()
         sendChatMessage()
+        openAccessAndVerifyHomeKitDemos()
         openSettingsAndVerifyAPIKeyStatus()
     }
 
@@ -33,6 +34,16 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Run the Kairo UI smoke test"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "mock 回應")).firstMatch.waitForExistence(timeout: 5))
+    }
+
+    private func openAccessAndVerifyHomeKitDemos() {
+        app.buttons["root.tab.access"].tap()
+        XCTAssertTrue(app.otherElements["access.skills.manager"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["access.skill.homekit-evening-scene"].exists)
+        XCTAssertTrue(app.buttons["access.skill.homekit-evening-scene.manage"].exists)
+        XCTAssertTrue(app.otherElements["access.homekit.demos"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["access.homekit.demo.evening-scene"].exists)
+        XCTAssertTrue(app.buttons["access.homekit.demo.evening-scene.confirm"].exists)
     }
 
     private func openSettingsAndVerifyAPIKeyStatus() {

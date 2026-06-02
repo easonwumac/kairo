@@ -39,13 +39,14 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - OpenAI provider abstraction, credential store, Keychain-backed credential store, ChatGPT OAuth scaffold, generic OAuth connector authorization core, connector login status center, and Settings connector status UI.
 - Local-model catalog, verified downloader, install registry, selected-model settings, Settings model management UI, and provider-routing scaffold.
 - Capability registry, sandbox action catalog, safety policy engine, action preview UI, and sandbox action executor.
+- Agent skill catalog and Access Skill Manager UI, so installed tools can be shown to the model and managed by the user.
 - Popular app integration registry covering App Intents, Shortcuts, URL schemes/universal links, Share Extension handoff, and OAuth connector metadata.
 - BGTaskScheduler-compatible background task policy for bounded app refresh/processing work without daemon overclaims.
 - Share Extension ingestion queue for text, URLs, files, and images.
 - Structured Shortcut node runtime, official demo catalog, Settings demo recipe UI, and App Intents for asking, saving, searching, summarizing, task extraction, reminder drafts, and daily briefings.
 - User-visible Shortcuts handoff URL builder with encoded input payloads and structured callback parsing.
-- HomeKit-safe action model and executor injection for confirmed scene/accessory control.
-- XcodeGen UI test target scaffold, UI smoke scenario catalog, and stable SwiftUI accessibility identifiers.
+- HomeKit-safe action model, executor injection, and Access demo UI for confirmed scene/accessory control.
+- XcodeGen UI test target scaffold, UI smoke scenario catalog, Access/HomeKit smoke coverage, and stable SwiftUI accessibility identifiers.
 - App icon source plus GitHub/README visual assets.
 - Privacy manifest, purpose-string notes, capability matrix, App Store readiness docs, and unit tests.
 
@@ -103,10 +104,11 @@ The package is intentionally dependency-free. The iOS app target is described in
 1. App target hardening: entitlements, App Group, Share Extension UI, widgets.
 2. Memory and chat persistence migration to SwiftData/Core Data for production apps.
 3. Real provider integrations: OpenAI Responses API, official OAuth connectors, optional backend proxy, and provider-specific app review/security requirements.
-4. Tool execution: EventKit writes, local notifications, URL/deep-link handoff, Shortcuts/App Intents, documents/photos import.
+4. Tool/skill execution: package usable iOS capabilities as managed skills, then execute EventKit writes, local notifications, URL/deep-link handoff, Shortcuts/App Intents, documents/photos import.
 5. Bounded background work: BGAppRefreshTask/BGProcessingTask registration, checkpointing, expiration handling, and user-visible rescheduling.
 6. Local model fallback: signed production model catalog, real download wiring, device gating, safety policy versioning.
-6. App Store readiness: privacy nutrition labels, review notes, permission prompts, deletion/export flows.
+7. Skill marketplace: signed skill manifests, install/update/remove flows, and a management website for downloadable skills.
+8. App Store readiness: privacy nutrition labels, review notes, permission prompts, deletion/export flows.
 
 ## Documentation
 
@@ -116,6 +118,7 @@ The package is intentionally dependency-free. The iOS app target is described in
 - [OpenAI/auth strategy](docs/AUTH_OPENAI.md)
 - [Local model fallback](docs/LOCAL_MODEL_FALLBACK.md)
 - [Shortcuts strategy](docs/SHORTCUTS_STRATEGY.md)
+- [Skill management](docs/SKILL_MANAGEMENT.md)
 - [App Store readiness](docs/APP_STORE_READINESS.md)
 - [Roadmap](docs/ROADMAP.md)
 

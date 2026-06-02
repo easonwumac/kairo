@@ -108,6 +108,15 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("controlHome"))
     }
 
+    func testCapabilityPromptContextIncludesInstalledSkillsAsToolOptions() {
+        let context = CapabilityPromptContextBuilder(skillCatalog: .default).build()
+
+        XCTAssertTrue(context.contains("Installed skills/tools the model may use"))
+        XCTAssertTrue(context.contains("homekit-evening-scene"))
+        XCTAssertTrue(context.contains("shortcut-daily-briefing"))
+        XCTAssertTrue(context.contains("requiresConfirmation=true"))
+    }
+
     func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {
         let registry = IntegrationRegistry()
 
@@ -283,6 +292,57 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(descriptor?.supportStatus, .scaffolded)
     }
 
+    func testHomeKitControlDemoCatalogBuildsConfirmedSceneAndAccessoryActions() throws {
+        let catalog = HomeKitControlDemoCatalog.default
+        let sceneRecipe = try XCTUnwrap(catalog.recipe(id: "evening-scene"))
+        let accessoryRecipe = try XCTUnwrap(catalog.recipe(id: "desk-lamp"))
+
+        XCTAssertEqual(catalog.recipes.map(\.id), ["evening-scene", "desk-lamp"])
+        XCTAssertEqual(sceneRecipe.action.kind, .controlHome)
+        XCTAssertEqual(sceneRecipe.action.payload, .homeControl(HomeControlRequest(
+            homeName: "Home",
+            roomName: "Living Room",
+            targetName: "Evening Wind Down",
+            command: .runScene
+        )))
+        XCTAssertTrue(sceneRecipe.action.requiresConfirmation)
+        XCTAssertEqual(sceneRecipe.confirmationSummary, "Confirm before Kairo runs the HomeKit scene.")
+        XCTAssertEqual(accessoryRecipe.action.payload, .homeControl(HomeControlRequest(
+            homeName: "Home",
+            roomName: "Office",
+            targetName: "Desk Lamp",
+            command: .setPower,
+            value: .bool(true)
+        )))
+        XCTAssertTrue(accessoryRecipe.sandboxNotes.contains("HomeKit entitlement"))
+    }
+
+    func testAgentSkillCatalogExposesInstalledToolsAndDownloadableMarketplaceSkills() throws {
+        let catalog = AgentSkillCatalog.default
+        let homeKitSkill = try XCTUnwrap(catalog.skill(id: "homekit-evening-scene"))
+        let shortcutSkill = try XCTUnwrap(catalog.skill(id: "shortcut-daily-briefing"))
+        let marketplaceSkill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Downloadable skill package that summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/weather-briefing.json")!
+        )
+
+        XCTAssertEqual(catalog.installedSkills.map(\.id), [
+            "homekit-evening-scene",
+            "homekit-desk-lamp",
+            "shortcut-daily-briefing"
+        ])
+        XCTAssertEqual(homeKitSkill.kind, .homeKitControl)
+        XCTAssertEqual(homeKitSkill.installationStatus, .installed)
+        XCTAssertEqual(homeKitSkill.action?.kind, .controlHome)
+        XCTAssertTrue(homeKitSkill.managementSummary.contains("Requires confirmation"))
+        XCTAssertEqual(shortcutSkill.kind, .shortcutWorkflow)
+        XCTAssertTrue(marketplaceSkill.canDownload)
+        XCTAssertEqual(marketplaceSkill.source, .marketplace)
+    }
+
     func testSandboxActionExecutorRequiresConfirmationBeforeHomeKitControl() async throws {
         let service = MockHomeControlService(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), homeControlService: service)
@@ -418,6 +478,20 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).delete""#))
     }
 
+    func testPermissionHubDefinesHomeKitDemoAccessibilityIdentifiers() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let permissionHubView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/PermissionHubView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(permissionHubView.contains("Skill Manager"))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.manager""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id)""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).manage""#))
+        XCTAssertTrue(permissionHubView.contains("HomeKit Control Demos"))
+        XCTAssertTrue(permissionHubView.contains(#""access.homekit.demos""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.homekit.demo.\(recipe.id)""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.homekit.demo.\(recipe.id).confirm""#))
+    }
+
     func testKairoPathsBuildsApplicationSupportMemoryURL() {
         let paths = KairoPaths(appName: "KairoTests")
 
@@ -465,7 +539,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(catalog.scenarios.map(\.id), [
             "launch-tabs",
             "chat-send",
-            "settings-api-key-status"
+            "settings-api-key-status",
+            "access-homekit-demos"
         ])
         XCTAssertTrue(catalog.scenario(id: "launch-tabs")?.requiredAccessibilityIdentifiers.contains("root.tab.chat") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
@@ -474,6 +549,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.local") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.preference") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manager") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demos") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demo.evening-scene") == true)
     }
 
     func testXcodeProjectDefinesKairoUITestTargetAndSmokeTestFile() throws {
@@ -492,6 +570,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("settings.shortcuts.demos"))
         XCTAssertTrue(smokeTest.contains("settings.models.local"))
         XCTAssertTrue(smokeTest.contains("settings.models.preference"))
+        XCTAssertTrue(smokeTest.contains("access.skills.manager"))
+        XCTAssertTrue(smokeTest.contains("access.homekit.demos"))
     }
 
     func testLocalModelCatalogFiltersDeprecatedAndOldSafetyPolicyModels() throws {

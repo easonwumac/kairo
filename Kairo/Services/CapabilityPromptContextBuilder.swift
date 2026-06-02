@@ -5,17 +5,20 @@ public struct CapabilityPromptContextBuilder: Sendable {
     public var actionCatalog: SandboxActionCatalog
     public var integrationRegistry: IntegrationRegistry
     public var backgroundTaskPolicy: BackgroundTaskPolicy
+    public var skillCatalog: AgentSkillCatalog
 
     public init(
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         actionCatalog: SandboxActionCatalog = SandboxActionCatalog(),
         integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
-        backgroundTaskPolicy: BackgroundTaskPolicy = BackgroundTaskPolicy()
+        backgroundTaskPolicy: BackgroundTaskPolicy = BackgroundTaskPolicy(),
+        skillCatalog: AgentSkillCatalog = .default
     ) {
         self.capabilityRegistry = capabilityRegistry
         self.actionCatalog = actionCatalog
         self.integrationRegistry = integrationRegistry
         self.backgroundTaskPolicy = backgroundTaskPolicy
+        self.skillCatalog = skillCatalog
     }
 
     public func build() -> String {
@@ -25,6 +28,12 @@ public struct CapabilityPromptContextBuilder: Sendable {
 
         let actionLines = actionCatalog.descriptors.map { descriptor in
             "- \(descriptor.kind.rawValue): \(descriptor.displayName); capability=\(descriptor.capability.rawValue); permission=\(descriptor.permissionRequirement.rawValue); risk=\(descriptor.riskTier.rawValue); support=\(descriptor.supportStatus.rawValue); \(descriptor.description)"
+        }
+
+        let skillLines = skillCatalog.installedSkills.map { skill in
+            let capabilities = skill.requiredCapabilities.map(\.rawValue).joined(separator: ",")
+            let actionKind = skill.action?.kind.rawValue ?? "none"
+            return "- \(skill.id): \(skill.displayName); kind=\(skill.kind.rawValue); action=\(actionKind); requiresConfirmation=\(skill.action?.requiresConfirmation == true); capabilities=\(capabilities); \(skill.summary)"
         }
 
         let unsupportedLines = actionCatalog.unsupportedDescriptors.map { descriptor in
@@ -49,6 +58,9 @@ public struct CapabilityPromptContextBuilder: Sendable {
 
         Action catalog the model may propose. Proposed actions must use these exact action kinds and payload types:
         \(actionLines.joined(separator: "\n"))
+
+        Installed skills/tools the model may use. Treat these as named, managed tool packages layered on top of the action catalog:
+        \(skillLines.isEmpty ? "- None" : skillLines.joined(separator: "\n"))
 
         If the user asks for an unavailable or unsafe capability, propose unsupportedSandboxAction with a clear reason and safe alternative. Do not claim completion for unsupported actions:
         \(unsupportedLines.isEmpty ? "- None" : unsupportedLines.joined(separator: "\n"))

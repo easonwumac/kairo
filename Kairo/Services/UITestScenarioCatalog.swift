@@ -63,6 +63,24 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "Local model route preference is visible.",
                 "Shortcut demo recipes are visible."
             ]
+        ),
+        UITestScenario(
+            id: "access-homekit-demos",
+            title: "Access HomeKit Control Demos",
+            userGoal: "Open Access and verify HomeKit control examples are visible as confirmed, sandbox-safe demos.",
+            requiredAccessibilityIdentifiers: [
+                "root.tab.access",
+                "access.skills.manager",
+                "access.homekit.demos",
+                "access.homekit.demo.evening-scene",
+                "access.homekit.demo.evening-scene.confirm"
+            ],
+            assertions: [
+                "Skill Manager section is visible.",
+                "HomeKit demo section is visible.",
+                "A scene control demo is visible.",
+                "The demo exposes confirmation before execution."
+            ]
         )
     ])
 }

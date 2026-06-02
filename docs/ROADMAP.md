@@ -64,3 +64,12 @@
 - Widget。
 - Shortcuts recipes。
 - Local model experiments。
+
+## Phase 7：Skill 管理與 marketplace
+
+- 把可操作能力封裝成 `AgentSkill`。
+- 讓 model prompt context 明確看到 installed skills/tools。
+- Skill Manager UI：install / disable / remove / inspect permissions。
+- 使用者可新增自訂 skill manifest。
+- Skill marketplace website：搜尋、分類、權限、風險、版本與下載。
+- Signed skill manifests、checksum、compatibility gates。
