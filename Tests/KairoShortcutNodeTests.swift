@@ -221,4 +221,75 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(output.proposedActions.isEmpty)
         XCTAssertTrue(output.displayText.contains("2 tasks"))
     }
+
+    func testShortcutDemoRecipeRunnerExecutesSampleStepsWithStructuredOutputs() async throws {
+        let catalog = ShortcutDemoCatalog.default
+        let recipe = try XCTUnwrap(catalog.recipe(id: "save-shared-text"))
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let runner = ShortcutDemoRecipeRunner(runtime: runtime)
+
+        let run = try await runner.runSample(recipe)
+
+        XCTAssertEqual(run.recipeID, "save-shared-text")
+        XCTAssertEqual(run.recipeTitle, "Save Shared Text")
+        XCTAssertEqual(run.steps.map(\.nodeKind), [.saveMemory, .extractTasks])
+        XCTAssertEqual(run.steps.map(\.shortcutActionTitle), ["Save to Kairo Memory", "Extract Kairo Tasks"])
+        XCTAssertEqual(run.steps[0].output.kind, .saveMemory)
+        XCTAssertEqual(run.steps[0].output.fields["taskCount"], "1")
+        XCTAssertNotNil(run.steps[0].output.memoryID)
+        XCTAssertEqual(run.steps[1].output.kind, .extractTasks)
+        XCTAssertEqual(run.steps[1].output.fields["taskCount"], "1")
+        XCTAssertEqual(run.totalTaskCount, 2)
+        XCTAssertTrue(run.displaySummary.contains("Save Shared Text"))
+        XCTAssertTrue(run.displaySummary.contains("2 steps"))
+    }
+
+    func testShortcutDemoRecipeRunnerCanChainPreviousStepTextIntoNextStep() async throws {
+        let recipe = ShortcutDemoRecipe(
+            id: "chain-summary-to-tasks",
+            title: "Chain Summary To Tasks",
+            summary: "Summarize text, then extract tasks from the previous output.",
+            triggerSummary: "Manual test recipe.",
+            setupNotes: ["Use previous output as the next step input."],
+            steps: [
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Summarize",
+                    nodeKind: .summarize,
+                    inputContract: ShortcutNodeContract(requiredFields: ["text"], description: "Source text."),
+                    outputContract: ShortcutNodeContract(requiredFields: ["displayText"], description: "Summary."),
+                    sampleInput: ShortcutNodeInput(
+                        text: "Action: Prepare Shortcut I/O schema\nReminder: Validate node chain",
+                        variables: ["shortcutRecipeID": "chain-summary-to-tasks"]
+                    )
+                ),
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Extract From Previous Output",
+                    nodeKind: .extractTasks,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["text"],
+                        optionalFields: ["previousStepOutput"],
+                        description: "Previous Kairo output."
+                    ),
+                    outputContract: ShortcutNodeContract(requiredFields: ["fields.taskCount"], description: "Task count."),
+                    sampleInput: ShortcutNodeInput(
+                        text: "",
+                        variables: [
+                            "shortcutRecipeID": "chain-summary-to-tasks",
+                            "kairoInputSource": "previousStepOutput"
+                        ]
+                    )
+                )
+            ]
+        )
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let runner = ShortcutDemoRecipeRunner(runtime: runtime)
+
+        let run = try await runner.runSample(recipe)
+
+        let expectedChainText = "Action: Prepare Shortcut I/O schema\nReminder: Validate node chain"
+        XCTAssertEqual(run.steps[0].output.fields["chainText"], expectedChainText)
+        XCTAssertEqual(run.steps[1].input.text, expectedChainText)
+        XCTAssertEqual(run.steps[1].output.fields["taskCount"], "2")
+        XCTAssertEqual(run.totalTaskCount, 2)
+    }
 }

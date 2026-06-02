@@ -258,3 +258,116 @@ public struct ShortcutNodeContract: Codable, Equatable, Sendable {
         requiredFields + optionalFields
     }
 }
+
+public struct ShortcutDemoRecipeRun: Codable, Equatable, Sendable {
+    public var recipeID: String
+    public var recipeTitle: String
+    public var displaySummary: String
+    public var steps: [ShortcutDemoStepRun]
+
+    public init(
+        recipeID: String,
+        recipeTitle: String,
+        displaySummary: String,
+        steps: [ShortcutDemoStepRun]
+    ) {
+        self.recipeID = recipeID
+        self.recipeTitle = recipeTitle
+        self.displaySummary = displaySummary
+        self.steps = steps
+    }
+
+    public var totalTaskCount: Int {
+        steps.reduce(0) { count, step in count + step.output.tasks.count }
+    }
+
+    public var totalReminderDraftCount: Int {
+        steps.reduce(0) { count, step in count + step.output.reminderDrafts.count }
+    }
+}
+
+public struct ShortcutDemoStepRun: Codable, Equatable, Sendable {
+    public var shortcutActionTitle: String
+    public var nodeKind: ShortcutNodeKind
+    public var input: ShortcutNodeInput
+    public var output: ShortcutNodeOutput
+
+    public init(
+        shortcutActionTitle: String,
+        nodeKind: ShortcutNodeKind,
+        input: ShortcutNodeInput,
+        output: ShortcutNodeOutput
+    ) {
+        self.shortcutActionTitle = shortcutActionTitle
+        self.nodeKind = nodeKind
+        self.input = input
+        self.output = output
+    }
+}
+
+public actor ShortcutDemoRecipeRunner {
+    private let runtime: ShortcutNodeRuntime
+
+    public init(runtime: ShortcutNodeRuntime) {
+        self.runtime = runtime
+    }
+
+    public func runSample(_ recipe: ShortcutDemoRecipe) async throws -> ShortcutDemoRecipeRun {
+        var stepRuns: [ShortcutDemoStepRun] = []
+        var previousOutput: ShortcutNodeOutput?
+
+        for step in recipe.steps {
+            var input = step.sampleInput
+            if input.variables["kairoInputSource"] == "previousStepOutput",
+               let previousOutput {
+                input.text = Self.chainedText(from: previousOutput)
+            }
+
+            let output = try await runtime.run(step.nodeKind, input: input)
+            stepRuns.append(
+                ShortcutDemoStepRun(
+                    shortcutActionTitle: step.shortcutActionTitle,
+                    nodeKind: step.nodeKind,
+                    input: input,
+                    output: output
+                )
+            )
+            previousOutput = output
+        }
+
+        return ShortcutDemoRecipeRun(
+            recipeID: recipe.id,
+            recipeTitle: recipe.title,
+            displaySummary: Self.displaySummary(recipe: recipe, stepRuns: stepRuns),
+            steps: stepRuns
+        )
+    }
+
+    private static func displaySummary(recipe: ShortcutDemoRecipe, stepRuns: [ShortcutDemoStepRun]) -> String {
+        let stepLabel = stepRuns.count == 1 ? "1 step" : "\(stepRuns.count) steps"
+        let taskCount = stepRuns.reduce(0) { count, step in count + step.output.tasks.count }
+        let reminderCount = stepRuns.reduce(0) { count, step in count + step.output.reminderDrafts.count }
+        return "\(recipe.title): \(stepLabel), \(taskCount) task drafts, \(reminderCount) reminder drafts."
+    }
+
+    private static func chainedText(from output: ShortcutNodeOutput) -> String {
+        if let chainText = output.fields["chainText"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !chainText.isEmpty {
+            return chainText
+        }
+
+        if !output.tasks.isEmpty {
+            return output.tasks
+                .map { "Action: \($0.title)" }
+                .joined(separator: "\n")
+        }
+
+        if !output.reminderDrafts.isEmpty {
+            return output.reminderDrafts
+                .map { "Reminder: \($0.title)" }
+                .joined(separator: "\n")
+        }
+
+        return output.displayText
+    }
+}

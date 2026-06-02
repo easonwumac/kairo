@@ -57,6 +57,8 @@ Kairo 不應嘗試繞過 iOS sandbox，而是成為 Shortcuts 裡的 AI brain：
 
 `SettingsView` surfaces these recipes under `Shortcut Demos` so users can inspect the trigger, node path, input fields, output fields, and sample input before building or installing the Shortcut.
 
+`ShortcutDemoRecipeRunner` can execute a demo recipe's sample steps against `ShortcutNodeRuntime` for tests and future previews. When a step marks `variables.kairoInputSource = previousStepOutput`, the runner chains structured output into the next node by preferring `fields.chainText`, then task/reminder drafts, then `displayText`. This keeps UI summaries separate from machine-readable node input.
+
 ### Daily Briefing
 
 ```text
@@ -115,7 +117,7 @@ Node contract:
 `ShortcutNodeRuntime` is the shared core used by App Intents and tests. It treats each Shortcut action as a small node:
 
 - input: text, optional query, source name, user variables, and result limit.
-- output: display text, typed fields, optional memory id, memory matches, extracted task drafts, reminder drafts, and proposed actions.
+- output: display text, typed fields, optional chain text for downstream nodes, optional memory id, memory matches, extracted task drafts, reminder drafts, and proposed actions.
 - transport: App Intents return the encoded `ShortcutNodeOutput` JSON string so downstream Shortcut steps can pass the result into another Kairo node or parse fields with Shortcuts dictionary actions.
 - safety: task extraction and reminder creation only produce drafts; they do not write EventKit data unless a later confirmed action does so.
 

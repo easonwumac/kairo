@@ -217,6 +217,7 @@ public actor ShortcutNodeRuntime {
         let summary = deterministicSummary(for: text)
         var fields = baseFields(for: input)
         fields["summary"] = summary
+        fields["chainText"] = text
 
         return ShortcutNodeOutput(
             kind: .summarize,
