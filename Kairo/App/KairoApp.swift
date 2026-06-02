@@ -10,6 +10,9 @@ struct KairoApp: App {
         WindowGroup {
             RootView(environment: environment)
                 .task {
+                    guard !ProcessInfo.processInfo.arguments.contains("--ui-testing") else {
+                        return
+                    }
                     if let liveEnvironment = try? await KairoEnvironment.live(
                         appGroupIdentifier: KairoSharedAppStorage.appGroupIdentifier
                     ) {

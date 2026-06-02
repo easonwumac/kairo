@@ -46,3 +46,13 @@ targets:
     dependencies:
       - package: KairoCore
         product: KairoCore
+  KairoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: KairoUITests
+    dependencies:
+      - target: KairoApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.kairo.ios.uitests

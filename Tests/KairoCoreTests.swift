@@ -367,6 +367,33 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(paths.sharedFilesDirectory, groupRoot.appendingPathComponent("Kairo", isDirectory: true).appendingPathComponent("SharedFiles", isDirectory: true))
     }
 
+    func testUITestScenarioCatalogCoversCoreAppSmokeFlows() {
+        let catalog = UITestScenarioCatalog.default
+
+        XCTAssertEqual(catalog.scenarios.map(\.id), [
+            "launch-tabs",
+            "chat-send",
+            "settings-api-key-status"
+        ])
+        XCTAssertTrue(catalog.scenario(id: "launch-tabs")?.requiredAccessibilityIdentifiers.contains("root.tab.chat") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
+        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
+    }
+
+    func testXcodeProjectDefinesKairoUITestTargetAndSmokeTestFile() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let projectYAML = try String(contentsOf: root.appendingPathComponent("project.yml"), encoding: .utf8)
+        let smokeTestURL = root.appendingPathComponent("KairoUITests/KairoAppSmokeUITests.swift")
+        let smokeTest = try String(contentsOf: smokeTestURL, encoding: .utf8)
+
+        XCTAssertTrue(projectYAML.contains("KairoUITests:"))
+        XCTAssertTrue(projectYAML.contains("type: bundle.ui-testing"))
+        XCTAssertTrue(projectYAML.contains("target: KairoApp"))
+        XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
+        XCTAssertTrue(smokeTest.contains("chat.composer.text"))
+        XCTAssertTrue(smokeTest.contains("settings.openai.api-key-status"))
+    }
+
     func testLocalModelCatalogFiltersDeprecatedAndOldSafetyPolicyModels() throws {
         let catalog = LocalModelCatalog(
             signingKeyID: "test-key",

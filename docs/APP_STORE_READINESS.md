@@ -103,6 +103,8 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 ## Beta acceptance criteria
 
 - [ ] `swift test` 通過。
+- [x] Core UI e2e smoke scenarios and XCUITest target are scaffolded.
+- [ ] Simulator/real-device XCUITest smoke flow passes.
 - [ ] 真機可開啟 Chat / Memory / Access / Settings。
 - [ ] Chat history app 重啟後仍存在。
 - [ ] Share Extension 可匯入文字、URL、圖片、PDF/file metadata。

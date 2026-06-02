@@ -44,6 +44,7 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - Share Extension ingestion queue for text, URLs, files, and images.
 - Structured Shortcut node runtime, official demo catalog, and App Intents for asking, saving, searching, summarizing, task extraction, reminder drafts, and daily briefings.
 - HomeKit-safe action model and executor injection for confirmed scene/accessory control.
+- XcodeGen UI test target scaffold, UI smoke scenario catalog, and stable SwiftUI accessibility identifiers.
 - App icon source plus GitHub/README visual assets.
 - Privacy manifest, purpose-string notes, capability matrix, App Store readiness docs, and unit tests.
 

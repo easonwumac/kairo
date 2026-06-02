@@ -125,6 +125,7 @@ public struct ChatView: View {
 
             composer
         }
+        .accessibilityIdentifier("chat.surface")
     }
 
     private var composer: some View {
@@ -133,6 +134,7 @@ public struct ChatView: View {
                 .lineLimit(1...5)
                 .textFieldStyle(.roundedBorder)
                 .disabled(viewModel.isLoading)
+                .accessibilityIdentifier("chat.composer.text")
                 .onSubmit {
                     Task { await viewModel.sendComposerMessage() }
                 }
@@ -145,6 +147,7 @@ public struct ChatView: View {
             }
             .disabled((viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading)
             .accessibilityLabel("Send")
+            .accessibilityIdentifier("chat.composer.send")
         }
         .padding()
         .background(.regularMaterial)

@@ -11,16 +11,28 @@ public struct RootView: View {
     public var body: some View {
         TabView {
             ChatView(environment: environment)
-                .tabItem { Label("Chat", systemImage: "message") }
+                .tabItem {
+                    Label("Chat", systemImage: "message")
+                        .accessibilityIdentifier("root.tab.chat")
+                }
 
             MemoryCenterView(store: environment.memoryStore)
-                .tabItem { Label("Memory", systemImage: "brain.head.profile") }
+                .tabItem {
+                    Label("Memory", systemImage: "brain.head.profile")
+                        .accessibilityIdentifier("root.tab.memory")
+                }
 
             PermissionHubView()
-                .tabItem { Label("Access", systemImage: "switch.2") }
+                .tabItem {
+                    Label("Access", systemImage: "switch.2")
+                        .accessibilityIdentifier("root.tab.access")
+                }
 
             SettingsView(settingsService: OpenAISettingsService(credentialStore: environment.credentialStore))
-                .tabItem { Label("Settings", systemImage: "gear") }
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                        .accessibilityIdentifier("root.tab.settings")
+                }
         }
     }
 }

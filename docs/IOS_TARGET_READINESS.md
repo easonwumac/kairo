@@ -7,6 +7,7 @@ This repo is source-first. `project.yml` describes an XcodeGen path for creating
 - `KairoApp`: main SwiftUI app.
 - `KairoShareExtension`: receives user-shared content and writes pending ingestion items.
 - `KairoCoreTests`: unit tests for core logic.
+- `KairoUITests`: XCUITest smoke coverage for launch, chat, and settings flows.
 
 ## Required Apple Developer setup
 
@@ -59,6 +60,7 @@ These match `BackgroundTaskPolicy.defaultTasks`.
 - [ ] Confirm entitlements resolve against the Apple Developer team.
 - [ ] Build `KairoApp` on simulator.
 - [ ] Build `KairoShareExtension` on simulator.
+- [ ] Run `KairoUITests` smoke flow on simulator.
 - [ ] Verify App Group container read/write.
 - [ ] Verify purpose strings display correctly.
 - [ ] Verify BackgroundTasks identifiers match Info.plist.

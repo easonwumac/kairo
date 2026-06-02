@@ -21,16 +21,19 @@ public struct SettingsView: View {
                         Spacer()
                         Text(hasAPIKey ? "已設定" : "未設定")
                             .foregroundStyle(hasAPIKey ? .green : .secondary)
+                            .accessibilityIdentifier("settings.openai.api-key-status")
                     }
 
                     SecureField("sk-...", text: $apiKey)
                         .textContentType(.password)
+                        .accessibilityIdentifier("settings.openai.api-key-field")
 
                     HStack {
                         Button("Save API Key") {
                             saveAPIKey()
                         }
                         .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .accessibilityIdentifier("settings.openai.save-api-key")
 
                         Spacer()
 
@@ -38,6 +41,7 @@ public struct SettingsView: View {
                             deleteAPIKey()
                         }
                         .disabled(!hasAPIKey)
+                        .accessibilityIdentifier("settings.openai.delete-api-key")
                     }
                 }
 
@@ -55,6 +59,7 @@ public struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .accessibilityIdentifier("settings.form")
             .task { await reloadStatus() }
         }
     }
