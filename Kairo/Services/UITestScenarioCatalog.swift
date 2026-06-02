@@ -13,19 +13,21 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
 
     public static let `default` = UITestScenarioCatalog(scenarios: [
         UITestScenario(
-            id: "launch-tabs",
-            title: "Launch and Tab Navigation",
-            userGoal: "Confirm the app boots and exposes the primary Chat, Memory, Automations, Access, and Settings surfaces.",
+            id: "launch-drawer",
+            title: "Launch and Drawer Navigation",
+            userGoal: "Confirm the app boots full-screen and exposes Chat, Memory, Automations, Access, and Settings through the side drawer.",
             requiredAccessibilityIdentifiers: [
-                "root.tab.chat",
-                "root.tab.memory",
-                "root.tab.automations",
-                "root.tab.access",
-                "root.tab.settings"
+                "root.drawer.toggle",
+                "root.drawer",
+                "root.drawer.chat",
+                "root.drawer.memory",
+                "root.drawer.automations",
+                "root.drawer.access",
+                "root.drawer.settings"
             ],
             assertions: [
-                "Chat tab is visible after launch.",
-                "Memory, Automations, Access, and Settings tabs are reachable."
+                "The drawer toggle is visible after launch.",
+                "The drawer exposes Chat, Memory, Automations, Access, and Settings navigation without a bottom TabView."
             ]
         ),
         UITestScenario(
@@ -236,7 +238,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             title: "Memory Manual Save",
             userGoal: "Open Memory, save a user-provided memory, and verify it appears in the list.",
             requiredAccessibilityIdentifiers: [
-                "root.tab.memory",
+                "root.drawer.memory",
                 "memory.add.text",
                 "memory.add.save",
                 "memory.list",
@@ -253,7 +255,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             title: "Automations Recipe Center",
             userGoal: "Open Automations, add Kairo-owned sample recipes, preview/run a recipe, and toggle it without creating Apple Shortcuts.",
             requiredAccessibilityIdentifiers: [
-                "root.tab.automations",
+                "root.drawer.automations",
                 "automations.recipe-center",
                 "automations.seed-samples",
                 "automations.list",
@@ -276,7 +278,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             title: "Automations Shortcut Templates",
             userGoal: "Open Automations and verify Kairo explains user-approved Apple Shortcuts template setup for running internal recipes.",
             requiredAccessibilityIdentifiers: [
-                "root.tab.automations",
+                "root.drawer.automations",
                 "automations.shortcut-templates",
                 "automations.shortcut-template.disclaimer",
                 "automations.shortcut-template.run-kairo-recipe-shortcut",
@@ -474,7 +476,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             title: "Access HomeKit Control Demos",
             userGoal: "Open Access and verify HomeKit control examples are visible as confirmed, sandbox-safe demos.",
             requiredAccessibilityIdentifiers: [
-                "root.tab.access",
+                "root.drawer.access",
                 "access.skills.manager",
                 "access.skills.marketplace-refresh",
                 "access.skills.manifest-import",

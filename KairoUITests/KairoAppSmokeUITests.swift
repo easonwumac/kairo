@@ -73,8 +73,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         app.launch()
     }
 
-    func testLaunchTabsChatAndSettingsSmokeFlow() throws {
-        assertPrimaryTabsExist()
+    func testLaunchDrawerChatAndSettingsSmokeFlow() throws {
+        assertPrimaryDrawerItemsExist()
         sendChatMessage()
         openAccessAndVerifyHomeKitDemos()
         verifySkillManagerInteractionFlow()
@@ -82,13 +82,13 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testSettingsLocalModelCatalogListsDownloadableModels() throws {
-        assertPrimaryTabsExist()
+        assertPrimaryDrawerItemsExist()
         openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: true)
     }
 
     func testSettingsShowsQwenBenchmarkFlowRequiresDownload() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.settings", label: "Settings")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
 
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
         XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
@@ -105,8 +105,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testSettingsShowsShortcutDemoInputOutputContracts() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.settings", label: "Settings")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
 
         XCTAssertTrue(findElement("settings.shortcuts.demos", direction: .down).exists)
         verifyShortcutDemoContract(
@@ -160,8 +160,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testSettingsShowsOAuthConnectorReadinessAndBoundaries() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.settings", label: "Settings")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
 
         XCTAssertTrue(findElement("settings.oauth.connectors", direction: .down).exists)
         verifyOAuthConnector(
@@ -203,8 +203,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testSettingsPreviewsOAuthCallbackWithoutLeakingCode() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.settings", label: "Settings")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
 
         let callbackField = findElement("settings.oauth.callback-url", direction: .down, maxSwipes: 4)
         XCTAssertTrue(callbackField.exists)
@@ -222,8 +222,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.automations", label: "Automations")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.automations", label: "Automations")
 
         XCTAssertTrue(findElement("automations.recipe-center").waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "Kairo internal recipe", direction: .both, maxSwipes: 1).exists)
@@ -254,8 +254,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testAutomationsShowsShortcutTemplatesRequireUserApproval() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.automations", label: "Automations")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.automations", label: "Automations")
 
         XCTAssertTrue(findElement("automations.shortcut-templates", direction: .down, maxSwipes: 3).exists)
         XCTAssertTrue(findStaticText(containing: "Apple Shortcuts installation requires user approval", direction: .both, maxSwipes: 1).exists)
@@ -265,8 +265,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testMemoryTabCanSaveManualMemory() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.memory", label: "Memory")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.memory", label: "Memory")
 
         let memoryText = "UI e2e memory note for Shortcut and local model routing"
         let composer = anyElement("memory.add.text")
@@ -284,8 +284,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testChatShowsHomeKitToolPreviewAction() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.chat", label: "Chat")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
@@ -300,8 +300,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testChatShowsShortcutToolCandidatePreview() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.chat", label: "Chat")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
@@ -316,8 +316,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testChatCanPreviewAndConfirmNotificationAction() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.chat", label: "Chat")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
@@ -341,8 +341,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testChatCanPreviewAndConfirmReminderAction() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.chat", label: "Chat")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
@@ -366,8 +366,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testChatCanPreviewAndConfirmCalendarAction() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.chat", label: "Chat")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
@@ -391,8 +391,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testChatCanPreviewAndConfirmContactAction() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.chat", label: "Chat")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
@@ -417,8 +417,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testChatCanPreviewAndConfirmEmailDraftHandoff() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.chat", label: "Chat")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
@@ -444,8 +444,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testChatCanPreviewAndConfirmMapDirectionsHandoff() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.chat", label: "Chat")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
@@ -470,8 +470,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testChatCanPreviewAndConfirmMessagesHandoff() throws {
-        assertPrimaryTabsExist()
-        tapTab(identifier: "root.tab.chat", label: "Chat")
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
@@ -497,16 +497,18 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findStaticText(containing: "Prepared Messages handoff.", direction: .both, maxSwipes: 1).exists)
     }
 
-    private func assertPrimaryTabsExist() {
-        XCTAssertTrue(tabButton(identifier: "root.tab.chat", label: "Chat").waitForExistence(timeout: 5))
-        XCTAssertTrue(tabButton(identifier: "root.tab.memory", label: "Memory").exists)
-        XCTAssertTrue(tabButton(identifier: "root.tab.automations", label: "Automations").exists)
-        XCTAssertTrue(tabButton(identifier: "root.tab.access", label: "Access").exists)
-        XCTAssertTrue(tabButton(identifier: "root.tab.settings", label: "Settings").exists)
+    private func assertPrimaryDrawerItemsExist() {
+        openDrawer()
+        XCTAssertTrue(findButton("root.drawer.chat", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.memory", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.automations", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.access", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.settings", direction: .both, maxSwipes: 1).exists)
+        closeDrawerIfOpen()
     }
 
     private func sendChatMessage() {
-        tapTab(identifier: "root.tab.chat", label: "Chat")
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
@@ -520,7 +522,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     private func openAccessAndVerifyHomeKitDemos() {
-        tapTab(identifier: "root.tab.access", label: "Access")
+        selectDrawerSection(identifier: "root.drawer.access", label: "Access")
         scrollTowardTop()
         XCTAssertTrue(findButton("access.skills.marketplace-refresh", direction: .down).exists)
         XCTAssertTrue(findElement("access.skills.manifest-import", direction: .down).exists)
@@ -539,7 +541,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     private func verifySkillManagerInteractionFlow() {
-        tapTab(identifier: "root.tab.access", label: "Access")
+        selectDrawerSection(identifier: "root.drawer.access", label: "Access")
 
         let refreshMarketplace = findButton("access.skills.marketplace-refresh")
         XCTAssertTrue(refreshMarketplace.exists)
@@ -574,7 +576,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     private func openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: Bool) {
-        tapTab(identifier: "root.tab.settings", label: "Settings")
+        selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
         XCTAssertTrue(findElement("settings.openai.api-key-status").exists)
         XCTAssertTrue(anyElement("settings.openai.api-key-field").exists)
         XCTAssertTrue(findButton("settings.openai.save-api-key").exists)
@@ -650,19 +652,40 @@ final class KairoAppSmokeUITests: XCTestCase {
         }
     }
 
-    private func tapTab(identifier: String, label: String) {
+    private func selectDrawerSection(identifier: String, label: String) {
         dismissKeyboardIfPresent()
-        let button = tabButton(identifier: identifier, label: label)
+        openDrawer()
+        let button = drawerButton(identifier: identifier, label: label)
         XCTAssertTrue(button.waitForExistence(timeout: 5))
         button.tap()
     }
 
-    private func tabButton(identifier: String, label: String) -> XCUIElement {
-        let tabBarButton = app.tabBars.buttons[label]
-        if tabBarButton.exists {
-            return tabBarButton
+    private func openDrawer() {
+        if anyElement("root.drawer").waitForExistence(timeout: 0.5) {
+            return
         }
 
+        let toggle = anyElement("root.drawer.toggle")
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        toggle.tap()
+        XCTAssertTrue(anyElement("root.drawer").waitForExistence(timeout: 5))
+    }
+
+    private func closeDrawerIfOpen() {
+        guard anyElement("root.drawer").exists else {
+            return
+        }
+
+        let close = app.buttons["root.drawer.close"]
+        if close.exists {
+            close.tap()
+        } else {
+            anyElement("root.drawer.toggle").tap()
+        }
+        _ = anyElement("root.drawer").waitForNonExistence(timeout: 3)
+    }
+
+    private func drawerButton(identifier: String, label: String) -> XCUIElement {
         let identifiedButton = app.buttons[identifier]
         if identifiedButton.exists {
             return identifiedButton

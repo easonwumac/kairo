@@ -2054,9 +2054,19 @@ final class KairoCoreTests: XCTestCase {
         let rootView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
         let automationsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/AutomationsView.swift"), encoding: .utf8)
 
+        XCTAssertFalse(rootView.contains("TabView"))
+        XCTAssertTrue(rootView.contains(#""root.shell""#))
+        XCTAssertTrue(rootView.contains(#""root.drawer.toggle""#))
+        XCTAssertTrue(rootView.contains(#""root.drawer""#))
+        XCTAssertTrue(rootView.contains(#""root.drawer.close""#))
+        XCTAssertTrue(rootView.contains(#""root.drawer.\(section.rawValue)""#))
+        XCTAssertTrue(rootView.contains("case chat"))
+        XCTAssertTrue(rootView.contains("case memory"))
+        XCTAssertTrue(rootView.contains("case automations"))
+        XCTAssertTrue(rootView.contains("case access"))
+        XCTAssertTrue(rootView.contains("case settings"))
         XCTAssertTrue(rootView.contains("AutomationsView("))
         XCTAssertTrue(rootView.contains("recipeStore: environment.kairoRecipeStore"))
-        XCTAssertTrue(rootView.contains(#""root.tab.automations""#))
         XCTAssertTrue(automationsView.contains("Kairo internal recipe"))
         XCTAssertTrue(automationsView.contains("does not create Apple Shortcuts"))
         XCTAssertTrue(automationsView.contains(#""automations.recipe-center""#))
@@ -2226,7 +2236,7 @@ final class KairoCoreTests: XCTestCase {
         let catalog = UITestScenarioCatalog.default
 
         XCTAssertEqual(catalog.scenarios.map(\.id), [
-            "launch-tabs",
+            "launch-drawer",
             "chat-send",
             "chat-tool-preview",
             "chat-shortcut-tool-candidate",
@@ -2246,7 +2256,13 @@ final class KairoCoreTests: XCTestCase {
             "settings-shortcut-demo-io",
             "access-homekit-demos"
         ])
-        XCTAssertTrue(catalog.scenario(id: "launch-tabs")?.requiredAccessibilityIdentifiers.contains("root.tab.chat") == true)
+        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.toggle") == true)
+        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer") == true)
+        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.chat") == true)
+        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.memory") == true)
+        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.automations") == true)
+        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.access") == true)
+        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.settings") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.history.thread") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.new") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
@@ -2294,7 +2310,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.list") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.record") == true)
         let automationsScenarioIdentifiers = catalog.scenario(id: "automations-recipe-center")?.requiredAccessibilityIdentifiers ?? []
-        XCTAssertTrue(automationsScenarioIdentifiers.contains("root.tab.automations"))
+        XCTAssertTrue(automationsScenarioIdentifiers.contains("root.drawer.automations"))
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe-center"))
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.seed-samples"))
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.list"))
@@ -2304,7 +2320,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe.daily-briefing.toggle"))
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.message"))
         let automationsShortcutScenarioIdentifiers = catalog.scenario(id: "automations-shortcut-templates")?.requiredAccessibilityIdentifiers ?? []
-        XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("root.tab.automations"))
+        XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("root.drawer.automations"))
         XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-templates"))
         XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-template.disclaimer"))
         XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-template.run-kairo-recipe-shortcut"))
@@ -2411,7 +2427,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("Prepared Messages handoff."))
         XCTAssertTrue(smokeTest.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
         XCTAssertTrue(smokeTest.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
-        XCTAssertTrue(smokeTest.contains(#""root.tab.automations""#))
+        XCTAssertTrue(smokeTest.contains(#""root.drawer.automations""#))
         XCTAssertTrue(smokeTest.contains(#""automations.seed-samples""#))
         XCTAssertTrue(smokeTest.contains(#""automations.recipe.daily-briefing.preview""#))
         XCTAssertTrue(smokeTest.contains(#""automations.recipe.daily-briefing.run""#))
