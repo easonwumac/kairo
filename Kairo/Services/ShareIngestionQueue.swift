@@ -151,10 +151,15 @@ public struct ShareAttachmentBuilder: Sendable {
         )
     }
 
-    public func file(url: URL, uniformTypeIdentifier: String? = nil, byteCount: Int64? = nil) -> ChatAttachment {
+    public func file(
+        url: URL,
+        displayName: String? = nil,
+        uniformTypeIdentifier: String? = nil,
+        byteCount: Int64? = nil
+    ) -> ChatAttachment {
         ChatAttachment(
             kind: kind(for: uniformTypeIdentifier, url: url),
-            displayName: url.lastPathComponent.isEmpty ? "Shared File" : url.lastPathComponent,
+            displayName: displayName ?? (url.lastPathComponent.isEmpty ? "Shared File" : url.lastPathComponent),
             uniformTypeIdentifier: uniformTypeIdentifier,
             fileURL: url,
             byteCount: byteCount,
@@ -178,5 +183,65 @@ public struct ShareAttachmentBuilder: Sendable {
             return .text
         }
         return .file
+    }
+}
+
+public struct SharedFileIngestionStore: Sendable {
+    public let sharedFilesDirectory: URL
+    private let fileNameGenerator: @Sendable (URL) -> String
+
+    public init(
+        sharedFilesDirectory: URL,
+        fileNameGenerator: @escaping @Sendable (URL) -> String = { sourceURL in
+            SharedFileIngestionStore.defaultStoredFileName(for: sourceURL)
+        }
+    ) {
+        self.sharedFilesDirectory = sharedFilesDirectory
+        self.fileNameGenerator = fileNameGenerator
+    }
+
+    public func copyFile(from sourceURL: URL, uniformTypeIdentifier: String? = nil) throws -> ChatAttachment {
+        try FileManager.default.createDirectory(at: sharedFilesDirectory, withIntermediateDirectories: true)
+        let destinationURL = sharedFilesDirectory.appendingPathComponent(fileNameGenerator(sourceURL))
+        let accessedSecurityScope = sourceURL.startAccessingSecurityScopedResource()
+        defer {
+            if accessedSecurityScope {
+                sourceURL.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        if FileManager.default.fileExists(atPath: destinationURL.path) {
+            try FileManager.default.removeItem(at: destinationURL)
+        }
+        try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+        let byteCount = try Self.byteCount(for: destinationURL)
+
+        return ShareAttachmentBuilder().file(
+            url: destinationURL,
+            displayName: sourceURL.lastPathComponent.isEmpty ? "Shared File" : sourceURL.lastPathComponent,
+            uniformTypeIdentifier: uniformTypeIdentifier,
+            byteCount: byteCount
+        )
+    }
+
+    public static func defaultStoredFileName(for sourceURL: URL) -> String {
+        "\(UUID().uuidString)-\(sanitizedFileName(sourceURL.lastPathComponent))"
+    }
+
+    public static func sanitizedFileName(_ fileName: String) -> String {
+        let fallback = "Shared File"
+        let trimmed = fileName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let candidate = trimmed.isEmpty ? fallback : trimmed
+        let disallowed = CharacterSet(charactersIn: "/:\\?%*|\"<>")
+        let scalars = candidate.unicodeScalars.map { scalar in
+            disallowed.contains(scalar) || CharacterSet.controlCharacters.contains(scalar) ? "-" : Character(scalar)
+        }
+        let sanitized = String(scalars).trimmingCharacters(in: CharacterSet(charactersIn: ". "))
+        return sanitized.isEmpty ? fallback : sanitized
+    }
+
+    private static func byteCount(for url: URL) throws -> Int64? {
+        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+        return (attributes[.size] as? NSNumber)?.int64Value
     }
 }

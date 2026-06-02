@@ -15,7 +15,6 @@ targets:
     platform: iOS
     sources:
       - path: Kairo/App
-      - path: Kairo/Views
       - path: Kairo/Resources
     dependencies:
       - package: KairoCore

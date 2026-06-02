@@ -1,4 +1,5 @@
 #if canImport(UIKit)
+import KairoCore
 import UIKit
 import UniformTypeIdentifiers
 
@@ -75,7 +76,17 @@ public final class ShareViewController: UIViewController {
                     continuation.resume(returning: nil)
                     return
                 }
-                continuation.resume(returning: self.builder.file(url: url, uniformTypeIdentifier: identifier))
+                guard let paths = self.sharedPaths() else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                do {
+                    let store = SharedFileIngestionStore(sharedFilesDirectory: paths.sharedFilesDirectory)
+                    let attachment = try store.copyFile(from: url, uniformTypeIdentifier: identifier)
+                    continuation.resume(returning: attachment)
+                } catch {
+                    continuation.resume(returning: nil)
+                }
             }
         }
     }
@@ -93,8 +104,12 @@ public final class ShareViewController: UIViewController {
     }
 
     private func sharedQueueURL() -> URL? {
-        let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.app.kairo.shared")
-        return container?.appendingPathComponent("share-ingestion-queue.json")
+        sharedPaths()?.shareIngestionQueueURL
+    }
+
+    private func sharedPaths() -> KairoPaths? {
+        let paths = KairoSharedAppStorage.paths()
+        return paths.usesAppGroup ? paths : nil
     }
 
     private func completeRequest() {

@@ -268,8 +268,39 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertEqual(paths.memoryStoreURL.lastPathComponent, "memory-store.json")
         XCTAssertEqual(paths.memoryStoreURL.deletingLastPathComponent().lastPathComponent, "KairoTests")
+        XCTAssertEqual(paths.shareIngestionQueueURL.lastPathComponent, "share-ingestion-queue.json")
+        XCTAssertEqual(paths.sharedFilesDirectory.lastPathComponent, "SharedFiles")
         XCTAssertEqual(paths.localModelsDirectory.lastPathComponent, "LocalModels")
         XCTAssertEqual(paths.localModelInstallRegistryURL.lastPathComponent, "install-registry.json")
+        XCTAssertFalse(paths.usesAppGroup)
+    }
+
+    func testKairoPathsUsesInjectedAppGroupContainerWhenAvailable() {
+        let groupRoot = FileManager.default.temporaryDirectory.appendingPathComponent("KairoGroup", isDirectory: true)
+        let paths = KairoPaths(
+            appName: "KairoTests",
+            appGroupIdentifier: "group.app.kairo.shared",
+            appGroupContainerProvider: { identifier in
+                identifier == "group.app.kairo.shared" ? groupRoot : nil
+            }
+        )
+
+        XCTAssertTrue(paths.usesAppGroup)
+        XCTAssertEqual(paths.applicationSupportDirectory, groupRoot.appendingPathComponent("KairoTests", isDirectory: true))
+        XCTAssertEqual(paths.shareIngestionQueueURL.deletingLastPathComponent(), paths.applicationSupportDirectory)
+    }
+
+    func testKairoSharedAppStorageBuildsCanonicalAppGroupPaths() {
+        let groupRoot = FileManager.default.temporaryDirectory.appendingPathComponent("KairoSharedGroup", isDirectory: true)
+        let paths = KairoSharedAppStorage.paths(appGroupContainerProvider: { identifier in
+            identifier == KairoSharedAppStorage.appGroupIdentifier ? groupRoot : nil
+        })
+
+        XCTAssertEqual(KairoSharedAppStorage.appGroupIdentifier, "group.app.kairo.shared")
+        XCTAssertTrue(paths.usesAppGroup)
+        XCTAssertEqual(paths.applicationSupportDirectory, groupRoot.appendingPathComponent("Kairo", isDirectory: true))
+        XCTAssertEqual(paths.shareIngestionQueueURL, groupRoot.appendingPathComponent("Kairo", isDirectory: true).appendingPathComponent("share-ingestion-queue.json"))
+        XCTAssertEqual(paths.sharedFilesDirectory, groupRoot.appendingPathComponent("Kairo", isDirectory: true).appendingPathComponent("SharedFiles", isDirectory: true))
     }
 
     func testLocalModelCatalogFiltersDeprecatedAndOldSafetyPolicyModels() throws {
@@ -588,6 +619,28 @@ final class KairoCoreTests: XCTestCase {
         try await secondQueue.markImported(id: item.id)
         let afterImport = try await secondQueue.pendingItems(limit: 10)
         XCTAssertTrue(afterImport.isEmpty)
+    }
+
+    func testSharedFileIngestionStoreCopiesFilesIntoDurableSharedDirectory() throws {
+        let sourceURL = temporaryFileURL(named: "notes.txt")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "shared notes".write(to: sourceURL, atomically: true, encoding: .utf8)
+        let sharedDirectory = temporaryFileURL(named: "SharedFiles")
+        let store = SharedFileIngestionStore(
+            sharedFilesDirectory: sharedDirectory,
+            fileNameGenerator: { _ in "copied-notes.txt" }
+        )
+
+        let attachment = try store.copyFile(from: sourceURL, uniformTypeIdentifier: "public.plain-text")
+
+        let copiedURL = try XCTUnwrap(attachment.fileURL)
+        XCTAssertEqual(copiedURL, sharedDirectory.appendingPathComponent("copied-notes.txt"))
+        XCTAssertNotEqual(copiedURL, sourceURL)
+        XCTAssertEqual(try String(contentsOf: copiedURL, encoding: .utf8), "shared notes")
+        XCTAssertEqual(attachment.displayName, "notes.txt")
+        XCTAssertEqual(attachment.kind, .text)
+        XCTAssertEqual(attachment.byteCount, Int64("shared notes".utf8.count))
+        XCTAssertEqual(attachment.source, .shareExtension)
     }
 
     func testKairoPathsBuildsApplicationSupportChatHistoryURL() {

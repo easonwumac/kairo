@@ -1,5 +1,21 @@
 import Foundation
 
+public enum KairoSharedAppStorage {
+    public static let appName = "Kairo"
+    public static let appGroupIdentifier = "group.app.kairo.shared"
+
+    public static func paths(
+        appName: String = KairoSharedAppStorage.appName,
+        appGroupContainerProvider: (@Sendable (String) -> URL?)? = nil
+    ) -> KairoPaths {
+        KairoPaths(
+            appName: appName,
+            appGroupIdentifier: appGroupIdentifier,
+            appGroupContainerProvider: appGroupContainerProvider
+        )
+    }
+}
+
 public struct KairoEnvironment: Sendable {
     public let memoryStore: MemoryStore
     public let credentialStore: CredentialStore
@@ -42,8 +58,11 @@ public struct KairoEnvironment: Sendable {
         )
     }
 
-    public static func live(appName: String = "Kairo") async throws -> KairoEnvironment {
-        let paths = KairoPaths(appName: appName)
+    public static func live(
+        appName: String = KairoSharedAppStorage.appName,
+        appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier
+    ) async throws -> KairoEnvironment {
+        let paths = KairoPaths(appName: appName, appGroupIdentifier: appGroupIdentifier)
         let memoryStore = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
         let chatHistoryStore = try await JSONFileChatHistoryStore(fileURL: paths.chatHistoryStoreURL)
         let shareIngestionQueue = try await JSONFileShareIngestionQueue(fileURL: paths.shareIngestionQueueURL)
@@ -64,15 +83,37 @@ public struct KairoEnvironment: Sendable {
 
 public struct KairoPaths: Sendable {
     public let appName: String
+    public let appGroupIdentifier: String?
+    private let appGroupContainerProvider: @Sendable (String) -> URL?
 
-    public init(appName: String = "Kairo") {
+    public init(
+        appName: String = "Kairo",
+        appGroupIdentifier: String? = nil,
+        appGroupContainerProvider: (@Sendable (String) -> URL?)? = nil
+    ) {
         self.appName = appName
+        self.appGroupIdentifier = appGroupIdentifier
+        self.appGroupContainerProvider = appGroupContainerProvider ?? { identifier in
+            Self.defaultAppGroupContainerURL(for: identifier)
+        }
     }
 
     public var applicationSupportDirectory: URL {
+        if let appGroupDirectory {
+            return appGroupDirectory.appendingPathComponent(appName, isDirectory: true)
+        }
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         return base.appendingPathComponent(appName, isDirectory: true)
+    }
+
+    public var appGroupDirectory: URL? {
+        guard let appGroupIdentifier else { return nil }
+        return appGroupContainerProvider(appGroupIdentifier)
+    }
+
+    public var usesAppGroup: Bool {
+        appGroupDirectory != nil
     }
 
     public var memoryStoreURL: URL {
@@ -87,11 +128,19 @@ public struct KairoPaths: Sendable {
         applicationSupportDirectory.appendingPathComponent("share-ingestion-queue.json")
     }
 
+    public var sharedFilesDirectory: URL {
+        applicationSupportDirectory.appendingPathComponent("SharedFiles", isDirectory: true)
+    }
+
     public var localModelsDirectory: URL {
         applicationSupportDirectory.appendingPathComponent("LocalModels", isDirectory: true)
     }
 
     public var localModelInstallRegistryURL: URL {
         localModelsDirectory.appendingPathComponent("install-registry.json")
+    }
+
+    public static func defaultAppGroupContainerURL(for identifier: String) -> URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: identifier)
     }
 }

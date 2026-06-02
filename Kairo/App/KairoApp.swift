@@ -1,4 +1,5 @@
 #if canImport(SwiftUI)
+import KairoCore
 import SwiftUI
 
 @main
@@ -9,7 +10,9 @@ struct KairoApp: App {
         WindowGroup {
             RootView(environment: environment)
                 .task {
-                    if let liveEnvironment = try? await KairoEnvironment.live() {
+                    if let liveEnvironment = try? await KairoEnvironment.live(
+                        appGroupIdentifier: KairoSharedAppStorage.appGroupIdentifier
+                    ) {
                         environment = liveEnvironment
                     }
                 }
