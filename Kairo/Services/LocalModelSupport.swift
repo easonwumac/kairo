@@ -151,22 +151,22 @@ public extension LocalModelCatalog {
         signingKeyID: "kairo-default-local-settings",
         signature: "unsigned-settings-placeholder",
         minimumSafetyPolicyVersion: "2026.1",
-        models: [.kairoDraftTiny]
+        models: [.qwen35Tiny]
     )
 }
 
 public extension LocalModelManifest {
-    static let kairoDraftTiny = LocalModelManifest(
-        id: "kairo-draft-tiny",
-        displayName: "Kairo Draft Local",
-        family: "Kairo Draft",
+    static let qwen35Tiny = LocalModelManifest(
+        id: "qwen3-5-0-8b-q4-k-m",
+        displayName: "Qwen3.5 0.8B Q4_K_M",
+        family: "Qwen3.5",
         version: "1.0",
         parameterCount: "0.8B",
-        quantization: "Q4",
-        fileSizeBytes: 512 * 1024 * 1024,
+        quantization: "Q4_K_M",
+        fileSizeBytes: 527_503_328,
         installedSizeBytes: 900 * 1024 * 1024,
-        contextWindow: 2048,
-        tokenizerID: "kairo-draft-tokenizer",
+        contextWindow: 32_768,
+        tokenizerID: "qwen3.5-tokenizer",
         licenseName: "Apache-2.0",
         licenseURL: URL(string: "https://www.apache.org/licenses/LICENSE-2.0")!,
         minOSVersion: "17.0",
@@ -175,12 +175,14 @@ public extension LocalModelManifest {
         supportedLocales: ["en", "zh-Hant"],
         capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat, .rewriting, .extraction],
         disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
-        downloadURL: URL(string: "https://kairo.local.invalid/models/kairo-draft-tiny-q4.gguf")!,
-        sha256: String(repeating: "0", count: 64),
+        downloadURL: URL(string: "https://huggingface.co/AaryanK/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B.q4_k_m.gguf")!,
+        sha256: "e8e388246c2a6ddbbb9fffc0df7ef0bd0ad71622f3c851b68df6cc58b78a51af",
         createdAt: Date(timeIntervalSince1970: 1_767_225_600),
         updatedAt: Date(timeIntervalSince1970: 1_767_225_600),
         safetyPolicyVersion: "2026.1"
     )
+
+    static let kairoDraftTiny = qwen35Tiny
 }
 
 public enum LocalModelDownloadError: Error, Equatable {

@@ -9,6 +9,7 @@ build/
 *.xcuserdata/
 *.xcuserstate
 *.xcscmblueprint
+*.xcodeproj/
 *.moved-aside
 *.hmap
 *.ipa
@@ -42,3 +43,12 @@ memory-store.json
 *.sqlite-shm
 *.sqlite-wal
 Application Support/
+
+# Local model downloads / weights
+*.gguf
+*.safetensors
+*.onnx
+*.mlmodelc/
+*.mlpackage/
+LocalModels/
+models/

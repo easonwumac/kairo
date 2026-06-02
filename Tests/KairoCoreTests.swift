@@ -1050,6 +1050,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import.text""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import.button""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.message""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-preview""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-preview.confirm""#))
         XCTAssertTrue(permissionHubView.contains("try await skillManagerService.previewInstall(jsonString: manifestImportText)"))
@@ -1085,6 +1086,32 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.disableSkill(id: skill.id)"))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.enableSkill(id: skill.id)"))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.removeSkill(id: skill.id)"))
+    }
+
+    func testKairoEnvironmentProvidesDeterministicUITestingSkillManagerAndMarketplace() async throws {
+        let environment = try await KairoEnvironment.uiTesting(resetPersistentState: true)
+        let skillManagerService = try XCTUnwrap(environment.agentSkillManagerService)
+        let marketplaceCatalogService = try XCTUnwrap(environment.agentSkillMarketplaceCatalogService)
+
+        var catalog = try await skillManagerService.catalog()
+        XCTAssertEqual(catalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .installed)
+
+        let disabled = try await skillManagerService.disableSkill(id: "shortcut-save-shared-text")
+        XCTAssertEqual(disabled?.installationStatus, .disabled)
+
+        let reloadedEnvironment = try await KairoEnvironment.uiTesting(resetPersistentState: false)
+        let reloadedSkillManagerService = try XCTUnwrap(reloadedEnvironment.agentSkillManagerService)
+        catalog = try await reloadedSkillManagerService.catalog()
+        XCTAssertEqual(catalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .disabled)
+
+        let remoteCatalog = try await marketplaceCatalogService.fetchCatalog()
+        let weatherSkill = try XCTUnwrap(remoteCatalog.catalog.skill(id: "marketplace-weather-briefing"))
+        let manifest = try await marketplaceCatalogService.fetchManifest(for: weatherSkill)
+        let preview = try await skillManagerService.previewInstall(manifest: manifest)
+
+        XCTAssertEqual(remoteCatalog.sourceRepository.absoluteString, "https://github.com/easonwumac/kairo-skills")
+        XCTAssertEqual(weatherSkill.downloadURL?.absoluteString, "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json")
+        XCTAssertEqual(preview.summary, "Install Weather Briefing 2.1.0.")
     }
 
     func testKairoPathsBuildsApplicationSupportMemoryURL() {
@@ -1140,12 +1167,15 @@ final class KairoCoreTests: XCTestCase {
             "access-homekit-demos"
         ])
         XCTAssertTrue(catalog.scenario(id: "launch-tabs")?.requiredAccessibilityIdentifiers.contains("root.tab.chat") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.history.thread") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.new") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.local") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.preference") == true)
+        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.status") == true)
+        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.download") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manager") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.marketplace-refresh") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import") == true)
@@ -1153,6 +1183,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.button") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-screenshot-to-reminders") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text.disable") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text.enable") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.marketplace-weather-briefing.install") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.message") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-preview.confirm") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demos") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demo.evening-scene") == true)
     }
@@ -1167,19 +1202,29 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(projectYAML.contains("type: bundle.ui-testing"))
         XCTAssertTrue(projectYAML.contains("target: KairoApp"))
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
+        XCTAssertTrue(smokeTest.contains("chat.history.thread"))
+        XCTAssertTrue(smokeTest.contains("chat.new"))
         XCTAssertTrue(smokeTest.contains("chat.composer.text"))
         XCTAssertTrue(smokeTest.contains("settings.openai.api-key-status"))
         XCTAssertTrue(smokeTest.contains("settings.oauth.connectors"))
         XCTAssertTrue(smokeTest.contains("settings.shortcuts.demos"))
         XCTAssertTrue(smokeTest.contains("settings.models.local"))
-        XCTAssertTrue(smokeTest.contains("settings.models.preference"))
-        XCTAssertTrue(smokeTest.contains("access.skills.manager"))
+        XCTAssertTrue(smokeTest.contains("Qwen3.5 0.8B Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("可下載"))
+        XCTAssertTrue(smokeTest.contains("Download"))
         XCTAssertTrue(smokeTest.contains("access.skills.marketplace-refresh"))
         XCTAssertTrue(smokeTest.contains("access.skills.manifest-import"))
         XCTAssertTrue(smokeTest.contains("access.skills.manifest-import.text"))
         XCTAssertTrue(smokeTest.contains("access.skills.manifest-import.button"))
         XCTAssertTrue(smokeTest.contains("access.skill.shortcut-save-shared-text"))
         XCTAssertTrue(smokeTest.contains("access.skill.shortcut-screenshot-to-reminders"))
+        XCTAssertTrue(smokeTest.contains("verifySkillManagerInteractionFlow()"))
+        XCTAssertTrue(smokeTest.contains(#""access.skill.shortcut-save-shared-text.disable""#))
+        XCTAssertTrue(smokeTest.contains(#""access.skill.shortcut-save-shared-text.enable""#))
+        XCTAssertTrue(smokeTest.contains(#""access.skill.marketplace-weather-briefing.install""#))
+        XCTAssertTrue(smokeTest.contains(#""access.skills.message""#))
+        XCTAssertTrue(smokeTest.contains(#""access.skills.manifest-preview.confirm""#))
+        XCTAssertTrue(smokeTest.contains(#""access.homekit.demo.evening-scene.confirm""#))
         XCTAssertTrue(smokeTest.contains("access.homekit.demos"))
     }
 
@@ -1202,12 +1247,14 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(available.map(\.id), ["available"])
     }
 
-    func testDefaultLocalModelCatalogExposesDraftModelForSettings() {
+    func testDefaultLocalModelCatalogExposesQwenModelForSettings() {
         let catalog = LocalModelCatalog.kairoDefault
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
 
-        XCTAssertEqual(availableModels.map(\.id), ["kairo-draft-tiny"])
-        XCTAssertEqual(availableModels.first?.displayName, "Kairo Draft Local")
+        XCTAssertEqual(availableModels.map(\.id), ["qwen3-5-0-8b-q4-k-m"])
+        XCTAssertEqual(availableModels.first?.displayName, "Qwen3.5 0.8B Q4_K_M")
+        XCTAssertEqual(availableModels.first?.downloadURL.host(), "huggingface.co")
+        XCTAssertEqual(availableModels.first?.sha256.count, 64)
         XCTAssertTrue(availableModels.first?.capabilities.contains(.offlineChat) == true)
         XCTAssertTrue(availableModels.first?.disallowedCapabilities.contains(.webCurrentInfo) == true)
     }

@@ -179,7 +179,7 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
             displayName: "Weather Briefing",
             summary: "Downloadable skill package that summarizes weather through an approved provider API.",
             requiredCapabilities: [.externalConnectors],
-            downloadURL: URL(string: "https://skills.kairo.app/weather-briefing.json")!
+            downloadURL: URL(string: "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json")!
         )
     ]
 
@@ -794,7 +794,8 @@ public struct AgentSkillManagerService: Sendable {
 
     public func previewInstall(manifest: AgentSkillManifest) async throws -> AgentSkillInstallPreview {
         try validateManifestForInstall(manifest)
-        let installedSkill = try await catalog().skill(id: manifest.skill.id)
+        let existingSkill = try await catalog().skill(id: manifest.skill.id)
+        let installedSkill = existingSkill?.installationStatus == .available ? nil : existingSkill
         return AgentSkillInstallPreview(manifest: manifest, installedSkill: installedSkill)
     }
 

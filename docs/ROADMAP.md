@@ -76,6 +76,7 @@
 - Skill update preview：installed version、incoming version、changelog、confirm before replace。
 - Skill Manager UI：install / disable / enable / remove / inspect permissions。
 - 官方 Shortcut demo recipes 與 HomeKit controls 已映射為 built-in skills，並可透過 file-backed manager 持久化狀態。
+- `--ui-testing` deterministic Skill Manager：static marketplace refresh/install preview、disable/enable、HomeKit preview e2e source coverage。
 - 使用者可新增自訂 skill manifest。
 - Skill marketplace website：搜尋、分類、權限、風險、版本與下載。
 - 獨立 `kairo-skills` GitHub repo：專門放可更新 skill catalog、manifest、GitHub Pages。

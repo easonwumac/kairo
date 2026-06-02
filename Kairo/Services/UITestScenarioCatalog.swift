@@ -32,11 +32,15 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             title: "Chat Send Smoke Test",
             userGoal: "Send a message through the chat composer and verify a visible assistant response.",
             requiredAccessibilityIdentifiers: [
-                "chat.surface",
+                "chat.history.thread",
+                "chat.new",
                 "chat.composer.text",
-                "chat.composer.send"
+                "chat.composer.send",
+                "chat.message.user",
+                "chat.message.assistant"
             ],
             assertions: [
+                "A chat thread or new chat entry point can open the composer.",
                 "User-entered text appears in the transcript.",
                 "A Kairo assistant response appears after sending."
             ]
@@ -46,13 +50,13 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             title: "Settings Credential Status",
             userGoal: "Open Settings and verify API key plus OAuth connector status is visible without exposing secret values.",
             requiredAccessibilityIdentifiers: [
-                "settings.form",
                 "settings.openai.api-key-status",
                 "settings.openai.api-key-field",
                 "settings.openai.save-api-key",
                 "settings.oauth.connectors",
                 "settings.models.local",
-                "settings.models.preference",
+                "settings.models.qwen3-5-0-8b-q4-k-m.status",
+                "settings.models.qwen3-5-0-8b-q4-k-m.download",
                 "settings.shortcuts.demos"
             ],
             assertions: [
@@ -77,6 +81,11 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "access.skills.manifest-import.button",
                 "access.skill.shortcut-save-shared-text",
                 "access.skill.shortcut-screenshot-to-reminders",
+                "access.skill.shortcut-save-shared-text.disable",
+                "access.skill.shortcut-save-shared-text.enable",
+                "access.skill.marketplace-weather-briefing.install",
+                "access.skills.message",
+                "access.skills.manifest-preview.confirm",
                 "access.homekit.demos",
                 "access.homekit.demo.evening-scene",
                 "access.homekit.demo.evening-scene.confirm"
@@ -86,6 +95,8 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "Marketplace refresh control is visible.",
                 "Signed manifest import controls are visible.",
                 "Shortcut demo skills are visible in the Skill Manager.",
+                "A built-in Shortcut skill can be disabled and enabled.",
+                "A marketplace skill can show a signed manifest preview and confirm install.",
                 "HomeKit demo section is visible.",
                 "A scene control demo is visible.",
                 "The demo exposes confirmation before execution."

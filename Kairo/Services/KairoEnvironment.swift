@@ -26,6 +26,9 @@ public struct KairoEnvironment: Sendable {
     public let auditLogger: AuditLogger
     public let agentSkillManagerService: AgentSkillManagerService?
     public let agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService?
+    public let localModelCatalog: LocalModelCatalog
+    public let localModelSettingsService: LocalModelSettingsService?
+    public let localModelDownloader: (any LocalModelDownloader)?
 
     public init(
         memoryStore: MemoryStore,
@@ -36,7 +39,10 @@ public struct KairoEnvironment: Sendable {
         permissionService: PermissionService = StubPermissionService(),
         auditLogger: AuditLogger = InMemoryAuditLogger(),
         agentSkillManagerService: AgentSkillManagerService? = nil,
-        agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil
+        agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil,
+        localModelCatalog: LocalModelCatalog = .kairoDefault,
+        localModelSettingsService: LocalModelSettingsService? = nil,
+        localModelDownloader: (any LocalModelDownloader)? = nil
     ) {
         self.memoryStore = memoryStore
         self.credentialStore = credentialStore
@@ -47,6 +53,9 @@ public struct KairoEnvironment: Sendable {
         self.auditLogger = auditLogger
         self.agentSkillManagerService = agentSkillManagerService
         self.agentSkillMarketplaceCatalogService = agentSkillMarketplaceCatalogService
+        self.localModelCatalog = localModelCatalog
+        self.localModelSettingsService = localModelSettingsService
+        self.localModelDownloader = localModelDownloader
     }
 
     public static func preview() -> KairoEnvironment {
@@ -64,6 +73,91 @@ public struct KairoEnvironment: Sendable {
         )
     }
 
+    public static func uiTesting(resetPersistentState: Bool = true) async throws -> KairoEnvironment {
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("KairoUITesting", isDirectory: true)
+        if resetPersistentState {
+            try? FileManager.default.removeItem(at: rootDirectory)
+        }
+
+        let skillStore = try await FileBackedAgentSkillStore(
+            fileURL: rootDirectory
+                .appendingPathComponent("Skills", isDirectory: true)
+                .appendingPathComponent("agent-skills.json")
+        )
+        let skillManagerService = AgentSkillManagerService(
+            store: skillStore,
+            builtInCatalog: .defaultWithMarketplaceSamples
+        )
+        let marketplaceCatalogService = try uiTestingMarketplaceCatalogService()
+        let credentialStore = InMemoryCredentialStore()
+
+        return KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: credentialStore,
+            aiProvider: MockAIProvider(),
+            chatHistoryStore: InMemoryChatHistoryStore(seed: [ChatThread(messages: [
+                ChatMessage(role: .assistant, text: "UI testing Kairo environment loaded.")
+            ])]),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            permissionService: StubPermissionService(),
+            auditLogger: InMemoryAuditLogger(),
+            agentSkillManagerService: skillManagerService,
+            agentSkillMarketplaceCatalogService: marketplaceCatalogService
+        )
+    }
+
+    private static func uiTestingMarketplaceCatalogService() throws -> AgentSkillMarketplaceCatalogService {
+        let indexURL = AgentSkillMarketplaceCatalogService.defaultIndexURL
+        let manifestURL = URL(string: "manifests/weather-briefing.json", relativeTo: indexURL)!.absoluteURL
+        var weatherSkill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API and returns a compact daily plan.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: manifestURL
+        )
+        weatherSkill.version = "2.1.0"
+        weatherSkill.author = "Kairo Marketplace"
+
+        let manifest = try AgentSkillManifest.signedForTesting(
+            skill: weatherSkill,
+            packageVersion: "2026.6"
+        )
+        let manifestJSON = try AgentSkillManifest.encodeJSONString(manifest)
+        let indexJSON = """
+        {
+          "marketplaceVersion": "2026.6",
+          "sourceRepository": "https://github.com/easonwumac/kairo-skills",
+          "generatedAt": "2026-06-02T00:00:00Z",
+          "skills": [
+            {
+              "id": "marketplace-weather-briefing",
+              "displayName": "Weather Briefing",
+              "summary": "Summarizes weather through an approved provider API and returns a compact daily plan.",
+              "version": "2.1.0",
+              "author": "Kairo Marketplace",
+              "category": "External API",
+              "kind": "custom",
+              "permissions": ["externalConnectors"],
+              "riskTier": "Tier 3: external data request",
+              "requiresConfirmation": true,
+              "installSurface": "Access Skill Manager",
+              "manifestURL": "manifests/weather-briefing.json",
+              "screenshots": ["assets/weather-briefing-card.svg"],
+              "changelog": ["Adds storm alerts."]
+            }
+          ]
+        }
+        """
+        let httpClient = StaticHTTPClient(routes: [
+            indexURL: StaticHTTPResponse(body: indexJSON),
+            manifestURL: StaticHTTPResponse(body: manifestJSON)
+        ])
+
+        return AgentSkillMarketplaceCatalogService(indexURL: indexURL, httpClient: httpClient)
+    }
+
     public static func live(
         appName: String = KairoSharedAppStorage.appName,
         appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier
@@ -76,6 +170,22 @@ public struct KairoEnvironment: Sendable {
         let agentSkillManagerService = AgentSkillManagerService(
             store: agentSkillStore,
             builtInCatalog: .defaultWithMarketplaceSamples
+        )
+        let localModelCatalog = LocalModelCatalog.kairoDefault
+        let localModelInstallRegistry = try await FileBackedLocalModelInstallRegistry(
+            fileURL: paths.localModelInstallRegistryURL
+        )
+        let localModelSettingsStore = try await FileBackedLocalModelSettingsStore(
+            fileURL: paths.localModelSettingsURL
+        )
+        let localModelSettingsService = LocalModelSettingsService(
+            catalog: localModelCatalog,
+            installRegistry: localModelInstallRegistry,
+            settingsStore: localModelSettingsStore
+        )
+        let localModelDownloader = VerifiedLocalModelDownloader(
+            installRegistry: localModelInstallRegistry,
+            modelsDirectory: paths.localModelsDirectory
         )
         let credentialStore = KeychainCredentialStore()
         let aiProvider = OpenAIProvider(credentialStore: credentialStore)
@@ -90,7 +200,10 @@ public struct KairoEnvironment: Sendable {
             permissionService: SystemPermissionService(),
             auditLogger: InMemoryAuditLogger(),
             agentSkillManagerService: agentSkillManagerService,
-            agentSkillMarketplaceCatalogService: agentSkillMarketplaceCatalogService
+            agentSkillMarketplaceCatalogService: agentSkillMarketplaceCatalogService,
+            localModelCatalog: localModelCatalog,
+            localModelSettingsService: localModelSettingsService,
+            localModelDownloader: localModelDownloader
         )
     }
 }

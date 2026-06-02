@@ -223,6 +223,7 @@ public struct SettingsView: View {
                 Text(row.displayName)
                     .font(.subheadline)
                     .fontWeight(.medium)
+                    .accessibilityIdentifier("settings.models.\(row.modelID).name")
 
                 Spacer()
 
@@ -248,6 +249,7 @@ public struct SettingsView: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityIdentifier("settings.models.\(row.modelID).row")
     }
 
     @ViewBuilder

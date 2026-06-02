@@ -5,18 +5,48 @@ import SwiftUI
 @main
 struct KairoApp: App {
     @State private var environment: KairoEnvironment = .preview()
+    @State private var environmentRevision = 0
+    @State private var didLoadEnvironment = false
+    @State private var isLoadingLaunchEnvironment = ProcessInfo.processInfo.arguments.contains("--ui-testing")
+    @State private var launchEnvironmentError: String?
 
     var body: some Scene {
         WindowGroup {
-            RootView(environment: environment)
+            Group {
+                if let launchEnvironmentError {
+                    Text(launchEnvironmentError)
+                        .accessibilityIdentifier("root.environment.error")
+                } else if isLoadingLaunchEnvironment {
+                    ProgressView("Loading Kairo")
+                        .accessibilityIdentifier("root.environment.loading")
+                } else {
+                    RootView(environment: environment)
+                        .id(environmentRevision)
+                }
+            }
                 .task {
-                    guard !ProcessInfo.processInfo.arguments.contains("--ui-testing") else {
+                    guard !didLoadEnvironment else { return }
+                    didLoadEnvironment = true
+
+                    let arguments = ProcessInfo.processInfo.arguments
+                    if arguments.contains("--ui-testing") {
+                        do {
+                            let uiTestingEnvironment = try await KairoEnvironment.uiTesting(
+                                resetPersistentState: arguments.contains("--reset-ui-testing-data")
+                            )
+                            environment = uiTestingEnvironment
+                            environmentRevision += 1
+                            isLoadingLaunchEnvironment = false
+                        } catch {
+                            launchEnvironmentError = "Unable to load UI testing environment."
+                        }
                         return
                     }
                     if let liveEnvironment = try? await KairoEnvironment.live(
                         appGroupIdentifier: KairoSharedAppStorage.appGroupIdentifier
                     ) {
                         environment = liveEnvironment
+                        environmentRevision += 1
                     }
                 }
         }

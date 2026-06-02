@@ -3,35 +3,56 @@ import SwiftUI
 
 public struct ChatView: View {
     @StateObject private var viewModel: ChatViewModel
+    @FocusState private var isComposerFocused: Bool
 
     public init(environment: KairoEnvironment = .preview()) {
         _viewModel = StateObject(wrappedValue: ChatViewModel(environment: environment))
     }
 
+    @ViewBuilder
     public var body: some View {
-        NavigationSplitView {
-            historyList
-                .navigationTitle("History")
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            viewModel.startNewThread()
-                        } label: {
-                            Label("New Chat", systemImage: "square.and.pencil")
-                        }
-                    }
-                }
-        } detail: {
+        #if os(iOS)
+        NavigationStack {
             chatSurface
                 .navigationTitle(viewModel.currentThread.title)
-                #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
-                #endif
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        newChatButton
+                    }
+                }
         }
         .task {
             await viewModel.load()
             await viewModel.importPendingShares()
         }
+        #else
+        NavigationSplitView {
+            historyList
+                .navigationTitle("History")
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        newChatButton
+                    }
+                }
+        } detail: {
+            chatSurface
+                .navigationTitle(viewModel.currentThread.title)
+        }
+        .task {
+            await viewModel.load()
+            await viewModel.importPendingShares()
+        }
+        #endif
+    }
+
+    private var newChatButton: some View {
+        Button {
+            viewModel.startNewThread()
+        } label: {
+            Label("New Chat", systemImage: "square.and.pencil")
+        }
+        .accessibilityIdentifier("chat.new")
     }
 
     private var historyList: some View {
@@ -125,7 +146,6 @@ public struct ChatView: View {
 
             composer
         }
-        .accessibilityIdentifier("chat.surface")
     }
 
     private var composer: some View {
@@ -134,12 +154,15 @@ public struct ChatView: View {
                 .lineLimit(1...5)
                 .textFieldStyle(.roundedBorder)
                 .disabled(viewModel.isLoading)
+                .focused($isComposerFocused)
                 .accessibilityIdentifier("chat.composer.text")
                 .onSubmit {
+                    isComposerFocused = false
                     Task { await viewModel.sendComposerMessage() }
                 }
 
             Button {
+                isComposerFocused = false
                 Task { await viewModel.sendComposerMessage() }
             } label: {
                 Image(systemName: viewModel.isLoading ? "hourglass" : "arrow.up.circle.fill")
@@ -266,6 +289,8 @@ private struct ChatHistoryRow: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("chat.history.thread")
     }
 }
 
@@ -301,6 +326,9 @@ private struct ChatBubble: View {
             if !isUser { Spacer(minLength: 44) }
         }
         .padding(.horizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(message.text)
+        .accessibilityIdentifier(isUser ? "chat.message.user" : "chat.message.assistant")
     }
 
     private var bubbleColor: Color {

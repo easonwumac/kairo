@@ -66,7 +66,7 @@ protocol AIProvider {
 
 ## MVP 策略
 
-第一階段保留 mock/local placeholder，不急著塞模型權重。Kairo core 已具備 catalog、install registry、selected-model settings、provider routing、verified downloader scaffold，以及 Settings 內的本機模型 catalog/status UI；下一步是接上 signed production catalog、真實 downloader 設定與實機 runtime proof of concept。
+第一階段不把模型權重塞進 app 或 repo。Kairo core 已具備 Qwen3.5 0.8B Q4_K_M 的遠端下載 manifest entry、install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring，以及 Settings 內的本機模型 catalog/status UI；下一步是 signed production catalog、progress/cancel UI、實機 runtime proof of concept。
 
 ## Download pipeline
 
@@ -79,6 +79,15 @@ protocol AIProvider {
 - removes partial files when checksum verification fails.
 
 The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances and route preference control, but a production build still needs a real signed catalog, configured downloader, progress/cancellation handling, license text, and stronger size disclosure.
+
+The default development catalog points to `Qwen3.5 0.8B Q4_K_M` through Hugging Face:
+
+- model source: `Qwen/Qwen3.5-0.8B`;
+- downloadable GGUF: `AaryanK/Qwen3.5-0.8B-GGUF`, file `Qwen3.5-0.8B.q4_k_m.gguf`;
+- expected file size: about 527.5 MB;
+- SHA-256 is stored in the manifest and verified after download.
+
+Kairo must keep this as an explicit user-triggered download. Do not commit model weights, tokenizer blobs, downloaded `.gguf` files, or cached model artifacts into this repository.
 
 ## Model selection
 

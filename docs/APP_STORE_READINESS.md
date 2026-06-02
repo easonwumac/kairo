@@ -85,9 +85,11 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Standalone skill update repository exists for catalog and manifest updates.
 - [x] Production app settings fetch the standalone skill update repository catalog.
 - [x] Marketplace skill Install downloads the signed manifest and shows the preview before confirmation.
+- [x] `--ui-testing` launches a deterministic Skill Manager environment with static marketplace responses.
+- [x] XCUITest smoke source covers Skill Manager refresh, disable/enable, marketplace preview/confirm, and HomeKit preview interactions.
 - [ ] Marketplace trust store supports production key rotation and revocation metadata.
 - [ ] User-created skills require explicit capability selection and confirmation policy.
-- [ ] Skill install/update/remove flows are covered by UI/e2e tests.
+- [ ] Skill update/remove flows are covered by UI/e2e tests.
 
 ### 7. Background tasks
 
@@ -99,14 +101,15 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 ### 8. Model downloads
 
-- [ ] 模型下載由使用者明確觸發。
+- [x] 模型下載由使用者明確觸發；Qwen3.5 0.8B Q4_K_M is a remote manifest entry, not a bundled app asset.
 - [x] Settings UI 顯示本機模型 catalog/status rows 與 download/select affordances。
 - [x] Settings UI 顯示 provider route preference，可選 Automatic / Prefer Local / Prefer Cloud / Local Only。
 - [x] Settings UI 可刪除已安裝模型並清除 selected-model state。
 - [ ] 顯示模型大小、授權、用途、刪除方式。
 - [x] Core downloader supports HTTPS + checksum verification.
 - [x] Core settings can persist and validate the user-selected installed model.
-- [ ] Production signed catalog、真實 downloader wiring、progress/cancel UI。
+- [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
+- [ ] Production signed catalog、progress/cancel UI、runtime speed proof。
 - [ ] 模型存在 Application Support，不進 iCloud backup，或有明確策略。
 - [ ] 本機模型不執行任意程式碼，只作為 app binary 內 inference engine 的資料資產。
 

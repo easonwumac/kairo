@@ -33,7 +33,10 @@ public struct RootView: View {
 
             SettingsView(
                 settingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
-                credentialStore: environment.credentialStore
+                credentialStore: environment.credentialStore,
+                localModelCatalog: environment.localModelCatalog,
+                localModelSettingsService: environment.localModelSettingsService,
+                localModelDownloader: environment.localModelDownloader
             )
                 .tabItem {
                     Label("Settings", systemImage: "gear")

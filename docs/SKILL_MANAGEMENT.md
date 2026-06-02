@@ -13,6 +13,7 @@ Kairo 的核心方向是把可操作能力包成可管理的 skills，並讓 mod
 - `AgentSkillMarketplaceCatalogService.defaultStandaloneRepository` fetches the published standalone `skills.json` catalog, maps entries into downloadable marketplace skills, and downloads signed manifests for preview.
 - `CapabilityPromptContextBuilder` includes installed skills/tools so the model can propose named, supported tool packages.
 - Access shows a Skill Manager section backed by the app environment when available, with marketplace refresh, marketplace install preview, signed manifest preview/import, built-in Shortcut demo skills, and installed, available, and disabled skill states with install/disable/enable/remove affordances.
+- `KairoEnvironment.uiTesting(resetPersistentState:)` gives XCUITest a deterministic file-backed Skill Manager and static marketplace responses for refresh, install preview, confirm install, disable/enable, and HomeKit preview flows.
 - HomeKit skills still require entitlement, Home authorization, action preview, and explicit confirmation before execution.
 
 ## Skill package requirements
@@ -43,6 +44,6 @@ The management website provides:
 
 ## Near-term implementation order
 
-1. Add UI/e2e interaction coverage for marketplace refresh, marketplace install preview, signed import, update, disable, remove, and prompt-context availability.
+1. Expand UI/e2e interaction coverage to signed text import, update, remove, and prompt-context availability.
 2. Add production trust-store key rotation/revocation metadata.
 3. Add compatibility gates for iOS version, entitlements, OAuth scopes, and local model requirements.

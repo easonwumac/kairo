@@ -59,22 +59,29 @@ public struct PermissionHubView: View {
                     }
                 }
 
-                Section("Skill Manager") {
+                Section {
                     manifestImportControls()
 
                     ForEach(skillCatalog.skills) { skill in
                         skillManagerRow(skill)
                     }
 
+                    if let manifestInstallPreview {
+                        manifestPreview(manifestInstallPreview)
+                    }
+
                     if let skillManagerMessage {
                         Text(skillManagerMessage)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("access.skills.message")
                     }
+                } header: {
+                    Text("Skill Manager")
+                        .accessibilityIdentifier("access.skills.manager")
                 }
-                .accessibilityIdentifier("access.skills.manager")
 
-                Section("HomeKit Control Demos") {
+                Section {
                     ForEach(homeKitDemoCatalog.recipes) { recipe in
                         homeKitDemoRow(recipe)
                     }
@@ -84,8 +91,10 @@ public struct PermissionHubView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+                } header: {
+                    Text("HomeKit Control Demos")
+                        .accessibilityIdentifier("access.homekit.demos")
                 }
-                .accessibilityIdentifier("access.homekit.demos")
             }
             .navigationTitle("Access")
             .task {
@@ -97,6 +106,11 @@ public struct PermissionHubView: View {
     @ViewBuilder
     private func manifestImportControls() -> some View {
         VStack(alignment: .leading, spacing: 8) {
+            Text("Signed Manifest Import")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("access.skills.manifest-import")
+
             Button {
                 Task {
                     await refreshMarketplaceCatalog()
@@ -121,13 +135,8 @@ public struct PermissionHubView: View {
             }
             .disabled(manifestImportText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .accessibilityIdentifier("access.skills.manifest-import.button")
-
-            if let manifestInstallPreview {
-                manifestPreview(manifestInstallPreview)
-            }
         }
         .padding(.vertical, 4)
-        .accessibilityIdentifier("access.skills.manifest-import")
     }
 
     @ViewBuilder
@@ -136,6 +145,7 @@ public struct PermissionHubView: View {
             Text(manifestInstallPreview.summary)
                 .font(.caption)
                 .fontWeight(.medium)
+                .accessibilityIdentifier("access.skills.manifest-preview")
 
             Text(manifestPreviewVersionSummary(manifestInstallPreview))
                 .font(.caption2)
@@ -164,7 +174,6 @@ public struct PermissionHubView: View {
             .disabled(manifestInstallPreview.installationChange == .downgradeBlocked)
             .accessibilityIdentifier("access.skills.manifest-preview.confirm")
         }
-        .accessibilityIdentifier("access.skills.manifest-preview")
     }
 
     private func manifestPreviewVersionSummary(_ manifestInstallPreview: AgentSkillInstallPreview) -> String {
