@@ -8,6 +8,20 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     private var app: XCUIApplication!
+    private let localModelExpectations = [
+        ("qwen2-5-1-5b-instruct-q4-k-m", "Qwen2.5 1.5B Instruct Q4_K_M"),
+        ("qwen3-5-0-8b-q4-k-m", "Qwen3.5 0.8B Q4_K_M"),
+        ("qwen3-5-2b-q4-k-m", "Qwen3.5 2B Q4_K_M"),
+        ("smollm2-1-7b-instruct-q4-k-m", "SmolLM2 1.7B Instruct Q4_K_M"),
+        ("tinyllama-1-1b-chat-q4-k-m", "TinyLlama 1.1B Chat Q4_K_M")
+    ]
+    private let localModelDownloadIdentifiers = [
+        "settings.models.qwen2-5-1-5b-instruct-q4-k-m.download",
+        "settings.models.qwen3-5-0-8b-q4-k-m.download",
+        "settings.models.qwen3-5-2b-q4-k-m.download",
+        "settings.models.smollm2-1-7b-instruct-q4-k-m.download",
+        "settings.models.tinyllama-1-1b-chat-q4-k-m.download"
+    ]
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -22,6 +36,11 @@ final class KairoAppSmokeUITests: XCTestCase {
         sendChatMessage()
         openAccessAndVerifyHomeKitDemos()
         verifySkillManagerInteractionFlow()
+        openSettingsAndVerifyAPIKeyStatus()
+    }
+
+    func testSettingsLocalModelCatalogListsDownloadableModels() throws {
+        assertPrimaryTabsExist()
         openSettingsAndVerifyAPIKeyStatus()
     }
 
@@ -104,10 +123,22 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findButton("settings.openai.save-api-key").exists)
         XCTAssertTrue(findElement("settings.oauth.connectors", direction: .down).exists)
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
-        XCTAssertTrue(findStaticText(containing: "Qwen3.5 0.8B Q4_K_M", direction: .down, maxSwipes: 3).exists)
-        XCTAssertTrue(findStaticText(containing: "可下載", direction: .down, maxSwipes: 2).exists)
-        XCTAssertTrue(findButton(labeled: "Download", direction: .down, maxSwipes: 2).exists)
+        for (index, localModel) in localModelExpectations.enumerated() {
+            verifyDownloadableLocalModel(
+                id: localModel.0,
+                displayName: localModel.1,
+                downloadIdentifier: localModelDownloadIdentifiers[index]
+            )
+        }
+        XCTAssertTrue(findStaticText(containing: "可下載", direction: .both).exists)
+        XCTAssertTrue(findButton(labeled: "Download", direction: .both).exists)
         XCTAssertTrue(findElement("settings.shortcuts.demos", direction: .down).exists)
+    }
+
+    private func verifyDownloadableLocalModel(id: String, displayName: String, downloadIdentifier: String) {
+        XCTAssertTrue(findStaticText(containing: displayName, direction: .both).exists)
+        XCTAssertTrue(findElement("settings.models.\(id).name", direction: .both).exists)
+        XCTAssertFalse(downloadIdentifier.isEmpty)
     }
 
     private func tapTab(identifier: String, label: String) {

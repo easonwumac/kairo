@@ -57,6 +57,14 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.models.local",
                 "settings.models.qwen3-5-0-8b-q4-k-m.status",
                 "settings.models.qwen3-5-0-8b-q4-k-m.download",
+                "settings.models.qwen3-5-2b-q4-k-m.status",
+                "settings.models.qwen3-5-2b-q4-k-m.download",
+                "settings.models.qwen2-5-1-5b-instruct-q4-k-m.status",
+                "settings.models.qwen2-5-1-5b-instruct-q4-k-m.download",
+                "settings.models.smollm2-1-7b-instruct-q4-k-m.status",
+                "settings.models.smollm2-1-7b-instruct-q4-k-m.download",
+                "settings.models.tinyllama-1-1b-chat-q4-k-m.status",
+                "settings.models.tinyllama-1-1b-chat-q4-k-m.download",
                 "settings.shortcuts.demos"
             ],
             assertions: [

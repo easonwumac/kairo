@@ -101,7 +101,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 ### 8. Model downloads
 
-- [x] 模型下載由使用者明確觸發；Qwen3.5 0.8B Q4_K_M is a remote manifest entry, not a bundled app asset.
+- [x] 模型下載由使用者明確觸發；the local-model catalog uses remote manifest entries, not bundled app assets.
 - [x] Settings UI 顯示本機模型 catalog/status rows 與 download/select affordances。
 - [x] Settings UI 顯示 provider route preference，可選 Automatic / Prefer Local / Prefer Cloud / Local Only。
 - [x] Settings UI 可刪除已安裝模型並清除 selected-model state。

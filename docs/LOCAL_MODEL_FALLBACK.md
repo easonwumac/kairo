@@ -66,7 +66,7 @@ protocol AIProvider {
 
 ## MVP 策略
 
-第一階段不把模型權重塞進 app 或 repo。Kairo core 已具備 Qwen3.5 0.8B Q4_K_M 的遠端下載 manifest entry、install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring，以及 Settings 內的本機模型 catalog/status UI；下一步是 signed production catalog、progress/cancel UI、實機 runtime proof of concept。
+第一階段不把模型權重塞進 app 或 repo。Kairo core 已具備多個 2B 參數以下公開 GGUF 模型的遠端下載 manifest entries、install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring，以及 Settings 內的本機模型 catalog/status UI；下一步是 signed production catalog、progress/cancel UI、實機 runtime proof of concept。
 
 ## Download pipeline
 
@@ -80,12 +80,15 @@ protocol AIProvider {
 
 The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances and route preference control, but a production build still needs a real signed catalog, configured downloader, progress/cancellation handling, license text, and stronger size disclosure.
 
-The default development catalog points to `Qwen3.5 0.8B Q4_K_M` through Hugging Face:
+The default development catalog points to public GGUF downloads through Hugging Face:
 
-- model source: `Qwen/Qwen3.5-0.8B`;
-- downloadable GGUF: `AaryanK/Qwen3.5-0.8B-GGUF`, file `Qwen3.5-0.8B.q4_k_m.gguf`;
-- expected file size: about 527.5 MB;
-- SHA-256 is stored in the manifest and verified after download.
+- `Qwen3.5 0.8B Q4_K_M`: `AaryanK/Qwen3.5-0.8B-GGUF`, file `Qwen3.5-0.8B.q4_k_m.gguf`, about 527.5 MB.
+- `Qwen3.5 2B Q4_K_M`: `AaryanK/Qwen3.5-2B-GGUF`, file `Qwen3.5-2B.q4_k_m.gguf`, about 1.27 GB.
+- `Qwen2.5 1.5B Instruct Q4_K_M`: `Qwen/Qwen2.5-1.5B-Instruct-GGUF`, file `qwen2.5-1.5b-instruct-q4_k_m.gguf`, about 1.12 GB.
+- `SmolLM2 1.7B Instruct Q4_K_M`: `bartowski/SmolLM2-1.7B-Instruct-GGUF`, file `SmolLM2-1.7B-Instruct-Q4_K_M.gguf`, about 1.06 GB.
+- `TinyLlama 1.1B Chat Q4_K_M`: `TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF`, file `tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf`, about 668.8 MB.
+
+SHA-256 and file size are stored in each manifest and verified after download. Models that require gated license approval should not be exposed as normal downloadable rows until the catalog schema can represent the approval step clearly.
 
 Kairo must keep this as an explicit user-triggered download. Do not commit model weights, tokenizer blobs, downloaded `.gguf` files, or cached model artifacts into this repository.
 

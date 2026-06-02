@@ -151,38 +151,128 @@ public extension LocalModelCatalog {
         signingKeyID: "kairo-default-local-settings",
         signature: "unsigned-settings-placeholder",
         minimumSafetyPolicyVersion: "2026.1",
-        models: [.qwen35Tiny]
+        models: [
+            .qwen35Tiny,
+            .qwen35Small,
+            .qwen25TinyInstruct,
+            .smolLM2TinyInstruct,
+            .tinyLlamaChat
+        ]
     )
 }
 
 public extension LocalModelManifest {
-    static let qwen35Tiny = LocalModelManifest(
+    static let qwen35Tiny = ggufManifest(
         id: "qwen3-5-0-8b-q4-k-m",
         displayName: "Qwen3.5 0.8B Q4_K_M",
         family: "Qwen3.5",
-        version: "1.0",
         parameterCount: "0.8B",
-        quantization: "Q4_K_M",
         fileSizeBytes: 527_503_328,
         installedSizeBytes: 900 * 1024 * 1024,
         contextWindow: 32_768,
         tokenizerID: "qwen3.5-tokenizer",
-        licenseName: "Apache-2.0",
-        licenseURL: URL(string: "https://www.apache.org/licenses/LICENSE-2.0")!,
-        minOSVersion: "17.0",
-        minDeviceClass: "A15",
         minRAMGB: 4,
-        supportedLocales: ["en", "zh-Hant"],
-        capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat, .rewriting, .extraction],
-        disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
-        downloadURL: URL(string: "https://huggingface.co/AaryanK/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B.q4_k_m.gguf")!,
-        sha256: "e8e388246c2a6ddbbb9fffc0df7ef0bd0ad71622f3c851b68df6cc58b78a51af",
-        createdAt: Date(timeIntervalSince1970: 1_767_225_600),
-        updatedAt: Date(timeIntervalSince1970: 1_767_225_600),
-        safetyPolicyVersion: "2026.1"
+        downloadURL: "https://huggingface.co/AaryanK/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B.q4_k_m.gguf",
+        sha256: "e8e388246c2a6ddbbb9fffc0df7ef0bd0ad71622f3c851b68df6cc58b78a51af"
+    )
+
+    static let qwen35Small = ggufManifest(
+        id: "qwen3-5-2b-q4-k-m",
+        displayName: "Qwen3.5 2B Q4_K_M",
+        family: "Qwen3.5",
+        parameterCount: "2B",
+        fileSizeBytes: 1_270_808_512,
+        installedSizeBytes: 2_000 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen3.5-tokenizer",
+        minRAMGB: 6,
+        downloadURL: "https://huggingface.co/AaryanK/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B.q4_k_m.gguf",
+        sha256: "a511452ec932613d6b26b4fa24488fd431eb61eac69321460447d475edc221e2"
+    )
+
+    static let qwen25TinyInstruct = ggufManifest(
+        id: "qwen2-5-1-5b-instruct-q4-k-m",
+        displayName: "Qwen2.5 1.5B Instruct Q4_K_M",
+        family: "Qwen2.5",
+        parameterCount: "1.5B",
+        fileSizeBytes: 1_117_320_736,
+        installedSizeBytes: 1_700 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen2.5-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+        sha256: "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e"
+    )
+
+    static let smolLM2TinyInstruct = ggufManifest(
+        id: "smollm2-1-7b-instruct-q4-k-m",
+        displayName: "SmolLM2 1.7B Instruct Q4_K_M",
+        family: "SmolLM2",
+        parameterCount: "1.7B",
+        fileSizeBytes: 1_055_609_824,
+        installedSizeBytes: 1_600 * 1024 * 1024,
+        contextWindow: 8_192,
+        tokenizerID: "smollm2-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/bartowski/SmolLM2-1.7B-Instruct-GGUF/resolve/main/SmolLM2-1.7B-Instruct-Q4_K_M.gguf",
+        sha256: "77665ea4815999596525c636fbeb56ba8b080b46ae85efef4f0d986a139834d7"
+    )
+
+    static let tinyLlamaChat = ggufManifest(
+        id: "tinyllama-1-1b-chat-q4-k-m",
+        displayName: "TinyLlama 1.1B Chat Q4_K_M",
+        family: "TinyLlama",
+        parameterCount: "1.1B",
+        fileSizeBytes: 668_788_096,
+        installedSizeBytes: 1_100 * 1024 * 1024,
+        contextWindow: 4_096,
+        tokenizerID: "llama2-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
+        sha256: "9fecc3b3cd76bba89d504f29b616eedf7da85b96540e490ca5824d3f7d2776a0"
     )
 
     static let kairoDraftTiny = qwen35Tiny
+
+    private static func ggufManifest(
+        id: String,
+        displayName: String,
+        family: String,
+        parameterCount: String,
+        fileSizeBytes: Int64,
+        installedSizeBytes: Int64,
+        contextWindow: Int,
+        tokenizerID: String,
+        minRAMGB: Double,
+        downloadURL: String,
+        sha256: String
+    ) -> LocalModelManifest {
+        LocalModelManifest(
+            id: id,
+            displayName: displayName,
+            family: family,
+            version: "1.0",
+            parameterCount: parameterCount,
+            quantization: "Q4_K_M",
+            fileSizeBytes: fileSizeBytes,
+            installedSizeBytes: installedSizeBytes,
+            contextWindow: contextWindow,
+            tokenizerID: tokenizerID,
+            licenseName: "Apache-2.0",
+            licenseURL: URL(string: "https://www.apache.org/licenses/LICENSE-2.0")!,
+            minOSVersion: "17.0",
+            minDeviceClass: "A15",
+            minRAMGB: minRAMGB,
+            supportedLocales: ["en", "zh-Hant"],
+            capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat, .rewriting, .extraction],
+            disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
+            downloadURL: URL(string: downloadURL)!,
+            sha256: sha256,
+            createdAt: Date(timeIntervalSince1970: 1_767_225_600),
+            updatedAt: Date(timeIntervalSince1970: 1_767_225_600),
+            safetyPolicyVersion: "2026.1"
+        )
+    }
 }
 
 public enum LocalModelDownloadError: Error, Equatable {

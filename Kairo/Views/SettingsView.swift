@@ -249,6 +249,7 @@ public struct SettingsView: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.models.\(row.modelID).row")
     }
 

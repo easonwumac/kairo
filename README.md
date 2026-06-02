@@ -37,7 +37,7 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - Persistent chat threads with JSON-backed history store.
 - Memory store protocols plus in-memory and JSON file implementations.
 - OpenAI provider abstraction, credential store, Keychain-backed credential store, ChatGPT OAuth scaffold, generic OAuth connector authorization core, connector login status center, and Settings connector status UI.
-- Downloadable Qwen3.5 0.8B Q4_K_M local-model catalog entry, verified downloader, install registry, selected-model settings, Settings model management UI, and provider-routing scaffold. Model weights are not bundled in the app or repository.
+- Downloadable local-model catalog entries for public GGUF models at 2B parameters or below, including Qwen3.5, Qwen2.5, SmolLM2, and TinyLlama variants, plus verified downloader, install registry, selected-model settings, Settings model management UI, and provider-routing scaffold. Model weights are not bundled in the app or repository.
 - Capability registry, sandbox action catalog, safety policy engine, action preview UI, and sandbox action executor.
 - Agent skill catalog, all official Shortcut demo recipes as built-in skills, manifest signature metadata, SHA-256 checksum validation, public-key trust-store verification, signed manifest JSON import, update preview with changelog, version downgrade protection, file-backed skill install lifecycle, environment-backed Access Skill Manager UI, so installed tools can be shown to the model and managed by the user.
 - Static skill marketplace seed under `Website/skills`, mirrored to the independent `easonwumac/kairo-skills` repo, plus app-side catalog refresh and manifest-download preview from the published GitHub Pages catalog.
@@ -108,7 +108,7 @@ The package is intentionally dependency-free. The iOS app target is described in
 3. Real provider integrations: OpenAI Responses API, official OAuth connectors, optional backend proxy, and provider-specific app review/security requirements.
 4. Tool/skill execution: package usable iOS capabilities as managed skills, then execute EventKit writes, local notifications, URL/deep-link handoff, Shortcuts/App Intents, documents/photos import.
 5. Bounded background work: BGAppRefreshTask/BGProcessingTask registration, checkpointing, expiration handling, and user-visible rescheduling.
-6. Local model fallback: signed production model catalog, Qwen runtime benchmark proof, device gating, progress/cancel UI, and safety policy versioning.
+6. Local model fallback: signed production model catalog, runtime benchmark proof, device gating, progress/cancel UI, and safety policy versioning.
 7. Skill marketplace: signed skill manifests, install/update/remove flows, and a management website for downloadable skills.
 8. App Store readiness: privacy nutrition labels, review notes, permission prompts, deletion/export flows.
 

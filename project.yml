@@ -55,4 +55,5 @@ targets:
       - target: KairoApp
     settings:
       base:
+        GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: app.kairo.ios.uitests
