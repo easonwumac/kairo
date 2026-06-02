@@ -98,7 +98,9 @@ public struct ChatView: View {
                                         .padding(.horizontal)
                                 }
                                 if !message.proposedActions.isEmpty {
-                                    ProposedActionsStrip(actions: message.proposedActions)
+                                    ProposedActionsStrip(actions: message.proposedActions) { action in
+                                        viewModel.previewAction(action)
+                                    }
                                         .padding(.horizontal)
                                 }
                                 if !message.toolCandidates.isEmpty {
@@ -142,6 +144,16 @@ public struct ChatView: View {
                     .padding(.top, 8)
             }
 
+            if let actionResultMessage = viewModel.actionResultMessage {
+                Label(actionResultMessage, systemImage: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .accessibilityIdentifier("chat.action-result")
+            }
+
             if !viewModel.pendingAttachments.isEmpty {
                 AttachmentTray(attachments: viewModel.pendingAttachments) { id in
                     viewModel.removeAttachment(id: id)
@@ -149,6 +161,13 @@ public struct ChatView: View {
             }
 
             composer
+        }
+        .sheet(item: $viewModel.pendingAction) { action in
+            ActionPreviewView(action: action) {
+                Task { await viewModel.confirmPendingAction() }
+            } onCancel: {
+                viewModel.cancelPendingAction()
+            }
         }
     }
 
@@ -252,6 +271,7 @@ private func iconName(for kind: AttachmentKind) -> String {
 
 private struct ProposedActionsStrip: View {
     let actions: [AgentAction]
+    let onSelect: (AgentAction) -> Void
     private let catalog = SandboxActionCatalog()
 
     var body: some View {
@@ -259,11 +279,16 @@ private struct ProposedActionsStrip: View {
             HStack(spacing: 8) {
                 ForEach(actions) { action in
                     if let descriptor = catalog.descriptor(for: action.kind) {
-                        HStack(spacing: 6) {
-                            Image(systemName: descriptor.supportStatus == .unsupportedBySandbox ? "exclamationmark.triangle" : "checkmark.circle")
-                            Text(descriptor.displayName)
-                            CapabilityChipView(descriptor: descriptor)
+                        Button {
+                            onSelect(action)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: descriptor.supportStatus == .unsupportedBySandbox ? "exclamationmark.triangle" : "checkmark.circle")
+                                Text(descriptor.displayName)
+                                CapabilityChipView(descriptor: descriptor)
+                            }
                         }
+                        .buttonStyle(.plain)
                         .font(.caption)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)

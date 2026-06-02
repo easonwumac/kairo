@@ -305,6 +305,31 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findStaticText(containing: "Shortcut", direction: .down).exists)
     }
 
+    func testChatCanPreviewAndConfirmNotificationAction() throws {
+        assertPrimaryTabsExist()
+        tapTab(identifier: "root.tab.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+        let composer = anyElement("chat.composer.text")
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        composer.tap()
+        composer.typeText("通知我喝水")
+        anyElement("chat.composer.send").tap()
+
+        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
+        let notificationAction = findButton("chat.proposed-action.sendNotification", direction: .down)
+        XCTAssertTrue(notificationAction.exists)
+        notificationAction.tap()
+
+        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Schedule Local Notification", direction: .both, maxSwipes: 1).exists)
+        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(confirm.exists)
+        confirm.tap()
+
+        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Scheduled notification.", direction: .both, maxSwipes: 1).exists)
+    }
+
     private func assertPrimaryTabsExist() {
         XCTAssertTrue(tabButton(identifier: "root.tab.chat", label: "Chat").waitForExistence(timeout: 5))
         XCTAssertTrue(tabButton(identifier: "root.tab.memory", label: "Memory").exists)

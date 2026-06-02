@@ -39,14 +39,23 @@ public struct ActionPreviewView: View {
             Text("Risk: \(action.riskTier.rawValue)").font(.caption)
 
             HStack {
-                Button("Cancel", role: .cancel, action: onCancel)
+                Button(role: .cancel, action: onCancel) {
+                    Text("Cancel")
+                        .accessibilityIdentifier("chat.action.cancel.label")
+                }
+                    .accessibilityIdentifier("chat.action.cancel")
                 Spacer()
-                Button(action.kind == .unsupportedSandboxAction ? "OK" : "Confirm", action: onConfirm)
+                Button(action: onConfirm) {
+                    Text(action.kind == .unsupportedSandboxAction ? "OK" : "Confirm")
+                        .accessibilityIdentifier("chat.action.confirm.label")
+                }
                     .buttonStyle(.borderedProminent)
                     .disabled(descriptor?.supportStatus == .unsupportedBySandbox)
+                    .accessibilityIdentifier("chat.action.confirm")
             }
         }
         .padding()
+        .accessibilityIdentifier("chat.action-preview")
     }
 
     @ViewBuilder

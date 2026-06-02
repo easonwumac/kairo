@@ -3,6 +3,7 @@ import Foundation
 public enum AgentToolInvocationSource: String, Codable, Equatable, Sendable {
     case installedSkill
     case integrationRegistry
+    case actionCatalog
 }
 
 public struct AgentToolInvocationRequest: Codable, Equatable, Sendable {
@@ -107,6 +108,9 @@ public struct AgentToolInvocationPlanner: Sendable {
         candidates.append(contentsOf: integrationRegistry.oauthConnectors.compactMap { integration in
             candidate(for: integration, normalizedText: normalizedText)
         })
+        if let notificationCandidate = notificationActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+            candidates.append(notificationCandidate)
+        }
 
         return AgentToolInvocationPlan(candidates: uniqueCandidates(candidates))
     }
@@ -250,6 +254,54 @@ public struct AgentToolInvocationPlanner: Sendable {
                 token.count >= 4 && normalizedText.contains(token)
             }
         }
+    }
+
+    private func notificationActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard containsAny(normalizedText, [
+            "notify me",
+            "notification",
+            "send notification",
+            "remind me",
+            "reminder alert",
+            "通知我",
+            "通知",
+            "提醒我",
+            "提醒"
+        ]) else {
+            return nil
+        }
+
+        let draft = NotificationDraft(
+            title: "Kairo Notification",
+            body: notificationBody(from: userText)
+        )
+        let action = AgentAction(
+            kind: .sendNotification,
+            title: "Schedule Local Notification",
+            rationale: "User asked Kairo to prepare a local notification through the public UserNotifications API.",
+            payload: .notification(draft),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        return AgentToolInvocationCandidate(
+            id: "action-send-notification",
+            title: "Schedule Local Notification",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.notifications],
+            riskTier: .tier2LowRiskWrite,
+            requiresConfirmation: true,
+            handoffSummary: "Use UserNotifications for a local notification after runtime permission and visible confirmation.",
+            action: action
+        )
+    }
+
+    private func notificationBody(from userText: String) -> String {
+        let trimmed = userText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return "Kairo notification requested by the user."
+        }
+        return trimmed
     }
 
     private func containsAny(_ text: String, _ needles: [String]) -> Bool {

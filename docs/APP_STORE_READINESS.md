@@ -30,7 +30,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 ### 2. 權限與 purpose strings
 
 - [ ] Calendar / Reminders 使用 EventKit 且有清楚 purpose string。
-- [ ] Notifications 使用 UserNotifications，明確說明用途。
+- [x] Notifications 使用 UserNotifications，明確說明用途，Chat action 需 preview + confirmation 後才排程。
 - [ ] Photos / Documents 以使用者選取為主，不預設要求全庫存取。
 - [ ] HomeKit 只在有明確家庭控制 use case、entitlement、purpose copy 與 confirmation flow 後啟用。
 - [ ] Contacts / Location / Health 等高敏感權限只在功能需要時要求。
@@ -89,6 +89,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Marketplace skill Install downloads the signed manifest and shows the preview before confirmation.
 - [x] `--ui-testing` launches a deterministic Skill Manager environment with static marketplace responses.
 - [x] XCUITest smoke source covers Skill Manager refresh, disable/enable, marketplace preview/confirm, chat HomeKit action preview, chat Shortcut tool candidate preview, and HomeKit preview interactions.
+- [x] XCUITest covers chat local-notification preview and confirmation before scheduling.
 - [ ] Marketplace trust store supports production key rotation and revocation metadata.
 - [ ] User-created skills require explicit capability selection and confirmation policy.
 - [ ] Skill update/remove flows are covered by UI/e2e tests.

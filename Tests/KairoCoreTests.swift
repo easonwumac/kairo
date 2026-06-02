@@ -190,6 +190,29 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
+    func testAgentToolInvocationPlannerSuggestsNotificationActionWithConfirmation() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "通知我五分鐘後喝水"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-send-notification" })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.skillKind, .custom)
+        XCTAssertEqual(candidate.requiredCapabilities, [.notifications])
+        XCTAssertEqual(candidate.riskTier, .tier2LowRiskWrite)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertTrue(candidate.handoffSummary.contains("UserNotifications"))
+        XCTAssertEqual(action.kind, .sendNotification)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case let .notification(draft) = action.payload else {
+            return XCTFail("Expected notification payload.")
+        }
+        XCTAssertEqual(draft.title, "Kairo Notification")
+        XCTAssertTrue(draft.body.contains("喝水"))
+        XCTAssertNil(draft.deliveryDate)
+    }
+
     func testAgentToolInvocationPlannerRefusesToolUseWhenDisabled() {
         let planner = AgentToolInvocationPlanner(skillCatalog: .default)
 
@@ -245,6 +268,52 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(candidate.handoffSummary.contains("Kairo does not install Apple Shortcuts silently"))
         XCTAssertTrue(response.proposedActions.isEmpty)
     }
+
+    func testAgentCoreAddsDeterministicNotificationPreviewAction() async throws {
+        let agent = AgentCore(
+            memoryStore: InMemoryMemoryStore(),
+            aiProvider: MockAIProvider(),
+            skillCatalog: .default,
+            integrationRegistry: IntegrationRegistry()
+        )
+
+        let response = try await agent.respond(to: "提醒我下班前整理 Kairo model list")
+
+        let action = try XCTUnwrap(response.proposedActions.first { $0.kind == .sendNotification })
+        XCTAssertEqual(action.title, "Schedule Local Notification")
+        XCTAssertEqual(action.riskTier, .tier2LowRiskWrite)
+        XCTAssertTrue(action.requiresConfirmation)
+        XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-send-notification" })
+    }
+
+#if canImport(SwiftUI)
+    @MainActor
+    func testChatViewModelConfirmsNotificationActionThroughInjectedExecutor() async throws {
+        let executor = MockActionExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: executor
+        )
+
+        await viewModel.send("通知我喝水")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .sendNotification })
+
+        viewModel.previewAction(action)
+        XCTAssertEqual(viewModel.pendingAction?.kind, .sendNotification)
+
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertTrue(viewModel.actionResultMessage?.contains("Scheduled notification.") == true)
+        let executedActions = await executor.executedActions
+        let confirmations = await executor.confirmations
+        XCTAssertEqual(executedActions.map(\.kind), [.sendNotification])
+        XCTAssertEqual(confirmations, [true])
+    }
+#endif
 
     func testKairoRecipeTemplateFactoryProvidesInternalSampleRecipes() throws {
         let catalog = KairoRecipeTemplateFactory.sampleCatalog()
@@ -1542,6 +1611,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-send",
             "chat-tool-preview",
             "chat-shortcut-tool-candidate",
+            "chat-notification-confirmation",
             "memory-manual-save",
             "automations-recipe-center",
             "automations-shortcut-templates",
@@ -1559,6 +1629,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "chat-tool-preview")?.requiredAccessibilityIdentifiers.contains("chat.proposed-action.controlHome") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidates") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidate.shortcut-save-shared-text") == true)
+        let notificationScenarioIdentifiers = catalog.scenario(id: "chat-notification-confirmation")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(notificationScenarioIdentifiers.contains("chat.proposed-action.sendNotification"))
+        XCTAssertTrue(notificationScenarioIdentifiers.contains("chat.action-preview"))
+        XCTAssertTrue(notificationScenarioIdentifiers.contains("chat.action.confirm"))
+        XCTAssertTrue(notificationScenarioIdentifiers.contains("chat.action-result"))
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.text") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.save") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.list") == true)
@@ -1634,6 +1709,10 @@ final class KairoCoreTests: XCTestCase {
         let appInfoPlist = try String(contentsOf: root.appendingPathComponent("Config/KairoApp-Info.plist"), encoding: .utf8)
         let smokeTestURL = root.appendingPathComponent("KairoUITests/KairoAppSmokeUITests.swift")
         let smokeTest = try String(contentsOf: smokeTestURL, encoding: .utf8)
+        let actionPreviewView = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Views/ActionPreviewView.swift"),
+            encoding: .utf8
+        )
 
         XCTAssertTrue(projectYAML.contains("KairoUITests:"))
         XCTAssertTrue(projectYAML.contains("type: bundle.ui-testing"))
@@ -1648,6 +1727,12 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("請先下載 Qwen3.5 0.8B Q4_K_M 後再跑 benchmark。"))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsOAuthConnectorReadinessAndBoundaries"))
         XCTAssertTrue(smokeTest.contains("testSettingsPreviewsOAuthCallbackWithoutLeakingCode"))
+        XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmNotificationAction"))
+        XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.sendNotification""#))
+        XCTAssertTrue(smokeTest.contains(#""chat.action-preview""#))
+        XCTAssertTrue(smokeTest.contains(#"findButton(labeled: "Confirm""#))
+        XCTAssertTrue(actionPreviewView.contains(#""chat.action.confirm""#))
+        XCTAssertTrue(smokeTest.contains(#""chat.action-result""#))
         XCTAssertTrue(smokeTest.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
         XCTAssertTrue(smokeTest.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
         XCTAssertTrue(smokeTest.contains(#""root.tab.automations""#))
@@ -3068,6 +3153,17 @@ private actor MockNotificationScheduler: NotificationScheduling {
     func schedule(_ draft: NotificationDraft) async throws -> String {
         scheduledDrafts.append(draft)
         return "notification-id"
+    }
+}
+
+private actor MockActionExecutor: ActionExecutor {
+    private(set) var executedActions: [AgentAction] = []
+    private(set) var confirmations: [Bool] = []
+
+    func execute(_ action: AgentAction, confirmed: Bool) async throws -> ActionExecutionResult {
+        executedActions.append(action)
+        confirmations.append(confirmed)
+        return ActionExecutionResult(completed: true, message: "Scheduled notification.", createdIdentifier: "notification-id")
     }
 }
 

@@ -81,6 +81,27 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "chat-notification-confirmation",
+            title: "Chat Notification Confirmation",
+            userGoal: "Ask Kairo to schedule a local notification, preview the action, and confirm it through a visible user-controlled flow.",
+            requiredAccessibilityIdentifiers: [
+                "chat.composer.text",
+                "chat.composer.send",
+                "chat.message.assistant",
+                "chat.proposed-actions",
+                "chat.proposed-action.sendNotification",
+                "chat.action-preview",
+                "chat.action.confirm",
+                "chat.action-result"
+            ],
+            assertions: [
+                "A notification request creates an assistant response.",
+                "The response exposes a sendNotification action preview.",
+                "The preview is shown before execution.",
+                "The notification is scheduled only after visible confirmation."
+            ]
+        ),
+        UITestScenario(
             id: "memory-manual-save",
             title: "Memory Manual Save",
             userGoal: "Open Memory, save a user-provided memory, and verify it appears in the list.",

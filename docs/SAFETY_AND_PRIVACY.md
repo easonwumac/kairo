@@ -83,6 +83,10 @@ Audit log 不應保存完整敏感 payload，除非使用者明確允許。
 
 Kairo may map user requests to installed skills or OAuth connector metadata before a model response is shown, but this is only a preview layer. Disabled skills are ignored, local/no-tool routing returns no tool candidates, Shortcut/OAuth matches remain visible handoffs, and action-backed skills still pass through `SafetyPolicyEngine` before any proposed action appears in chat. Chat stores `toolCandidates` separately from `proposedActions`; candidates are inspection/setup hints, not evidence that Kairo ran a Shortcut or touched an external account.
 
+## Local Notification Boundary
+
+Kairo may propose a local notification action when the user explicitly asks to be notified or reminded. Scheduling uses only Apple's public `UserNotifications` API, requires runtime notification authorization, and must be shown as an action preview in chat before the user confirms. Kairo must not silently schedule notifications from hidden model output, background monitoring, or unapproved Shortcut installation.
+
 ## Kairo Recipe Boundary
 
 Kairo Recipes are internal Kairo workflows. They can be created, stored, previewed, enabled, disabled, and run by Kairo, but they are not Apple Shortcuts workflows. Kairo must not silently create, edit, install, or reorder Apple Shortcuts.

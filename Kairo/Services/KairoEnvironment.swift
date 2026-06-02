@@ -33,6 +33,7 @@ public struct KairoEnvironment: Sendable {
     public let localModelSettingsService: LocalModelSettingsService?
     public let localModelDownloader: (any LocalModelDownloader)?
     public let localModelBenchmarkService: LocalModelBenchmarkService?
+    public let actionExecutor: any ActionExecutor
 
     public init(
         memoryStore: MemoryStore,
@@ -50,7 +51,8 @@ public struct KairoEnvironment: Sendable {
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
         localModelDownloader: (any LocalModelDownloader)? = nil,
-        localModelBenchmarkService: LocalModelBenchmarkService? = nil
+        localModelBenchmarkService: LocalModelBenchmarkService? = nil,
+        actionExecutor: (any ActionExecutor)? = nil
     ) {
         self.memoryStore = memoryStore
         self.credentialStore = credentialStore
@@ -68,6 +70,7 @@ public struct KairoEnvironment: Sendable {
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
         self.localModelBenchmarkService = localModelBenchmarkService
+        self.actionExecutor = actionExecutor ?? SandboxActionExecutor(memoryStore: memoryStore)
     }
 
     public static func preview() -> KairoEnvironment {
@@ -140,9 +143,10 @@ public struct KairoEnvironment: Sendable {
                 .appendingPathComponent("Recipes", isDirectory: true)
                 .appendingPathComponent("kairo-recipes.json")
         )
+        let memoryStore = InMemoryMemoryStore()
 
         return KairoEnvironment(
-            memoryStore: InMemoryMemoryStore(),
+            memoryStore: memoryStore,
             credentialStore: credentialStore,
             aiProvider: MockAIProvider(),
             chatHistoryStore: InMemoryChatHistoryStore(seed: [ChatThread(messages: [
@@ -157,7 +161,11 @@ public struct KairoEnvironment: Sendable {
             agentSkillMarketplaceCatalogService: marketplaceCatalogService,
             localModelCatalogService: localModelCatalogService,
             localModelSettingsService: localModelSettingsService,
-            localModelBenchmarkService: localModelBenchmarkService
+            localModelBenchmarkService: localModelBenchmarkService,
+            actionExecutor: SandboxActionExecutor(
+                memoryStore: memoryStore,
+                notificationScheduler: AllowingNotificationScheduler(identifier: "ui-testing-notification-id")
+            )
         )
     }
 
@@ -262,6 +270,15 @@ public struct KairoEnvironment: Sendable {
         let agentSkillMarketplaceCatalogService = AgentSkillMarketplaceCatalogService.defaultStandaloneRepository
         let localModelCatalogService = LocalModelCatalogService.defaultStandaloneRepository
         let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(fileURL: paths.oauthConnectorCallbackPreviewsURL)
+        let actionExecutor: any ActionExecutor
+        #if canImport(UserNotifications)
+        actionExecutor = SandboxActionExecutor(
+            memoryStore: memoryStore,
+            notificationScheduler: UserNotificationScheduler()
+        )
+        #else
+        actionExecutor = SandboxActionExecutor(memoryStore: memoryStore)
+        #endif
 
         return KairoEnvironment(
             memoryStore: memoryStore,
@@ -279,7 +296,8 @@ public struct KairoEnvironment: Sendable {
             localModelCatalogService: localModelCatalogService,
             localModelSettingsService: localModelSettingsService,
             localModelDownloader: localModelDownloader,
-            localModelBenchmarkService: localModelBenchmarkService
+            localModelBenchmarkService: localModelBenchmarkService,
+            actionExecutor: actionExecutor
         )
     }
 }

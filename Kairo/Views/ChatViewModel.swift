@@ -10,19 +10,24 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var pendingAttachments: [ChatAttachment] = []
     @Published public var composerText: String = ""
     @Published public var errorMessage: String?
+    @Published public var pendingAction: AgentAction?
+    @Published public private(set) var actionResultMessage: String?
 
     private let historyStore: ChatHistoryStore
     private let shareIngestionQueue: ShareIngestionQueue
     private let agent: AgentCore
+    private let actionExecutor: any ActionExecutor
 
     public init(
         historyStore: ChatHistoryStore = InMemoryChatHistoryStore(),
         shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
-        agent: AgentCore = AgentCore()
+        agent: AgentCore = AgentCore(),
+        actionExecutor: any ActionExecutor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore())
     ) {
         self.historyStore = historyStore
         self.shareIngestionQueue = shareIngestionQueue
         self.agent = agent
+        self.actionExecutor = actionExecutor
         self.currentThread = ChatThread(messages: [Self.welcomeMessage])
     }
 
@@ -30,7 +35,8 @@ public final class ChatViewModel: ObservableObject {
         self.init(
             historyStore: environment.chatHistoryStore,
             shareIngestionQueue: environment.shareIngestionQueue,
-            agent: AgentCore(memoryStore: environment.memoryStore, aiProvider: environment.aiProvider)
+            agent: AgentCore(memoryStore: environment.memoryStore, aiProvider: environment.aiProvider),
+            actionExecutor: environment.actionExecutor
         )
     }
 
@@ -137,6 +143,28 @@ public final class ChatViewModel: ObservableObject {
             await persistCurrentThread()
         }
         isLoading = false
+    }
+
+    public func previewAction(_ action: AgentAction) {
+        pendingAction = action
+        actionResultMessage = nil
+    }
+
+    public func cancelPendingAction() {
+        pendingAction = nil
+    }
+
+    public func confirmPendingAction() async {
+        guard let action = pendingAction else { return }
+        do {
+            let result = try await actionExecutor.execute(action, confirmed: true)
+            actionResultMessage = result.message
+            errorMessage = nil
+        } catch {
+            actionResultMessage = "Action failed: \(error.localizedDescription)"
+            errorMessage = "Kairo 無法執行此動作。"
+        }
+        pendingAction = nil
     }
 
     private func persistCurrentThread() async {

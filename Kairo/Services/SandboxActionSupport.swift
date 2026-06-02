@@ -345,6 +345,22 @@ public struct UnavailableNotificationScheduler: NotificationScheduling {
     }
 }
 
+public struct AllowingNotificationScheduler: NotificationScheduling {
+    private let identifier: String
+
+    public init(identifier: String = "notification-id") {
+        self.identifier = identifier
+    }
+
+    public func requestAuthorization() async throws -> Bool {
+        true
+    }
+
+    public func schedule(_ draft: NotificationDraft) async throws -> String {
+        identifier
+    }
+}
+
 public enum NotificationSchedulingError: Error, Equatable {
     case unavailable
     case authorizationDenied
