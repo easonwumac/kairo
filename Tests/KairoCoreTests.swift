@@ -1180,6 +1180,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id)""#))
         XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id).input""#))
         XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id).output""#))
+        XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id).sample""#))
     }
 
     func testSettingsViewDefinesLocalModelSectionAccessibilityIdentifiers() throws {
@@ -1349,6 +1350,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-shortcut-tool-candidate",
             "memory-manual-save",
             "settings-api-key-status",
+            "settings-shortcut-demo-io",
             "access-homekit-demos"
         ])
         XCTAssertTrue(catalog.scenario(id: "launch-tabs")?.requiredAccessibilityIdentifiers.contains("root.tab.chat") == true)
@@ -1369,6 +1371,13 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.local") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.refresh-catalog") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.catalog-source") == true)
+        let shortcutDemoScenarioIdentifiers = catalog.scenario(id: "settings-shortcut-demo-io")?.requiredAccessibilityIdentifiers ?? []
+        for recipe in ShortcutDemoCatalog.default.recipes {
+            XCTAssertTrue(shortcutDemoScenarioIdentifiers.contains("settings.shortcuts.demo.\(recipe.id)"), recipe.id)
+            XCTAssertTrue(shortcutDemoScenarioIdentifiers.contains("settings.shortcuts.demo.\(recipe.id).input"), recipe.id)
+            XCTAssertTrue(shortcutDemoScenarioIdentifiers.contains("settings.shortcuts.demo.\(recipe.id).output"), recipe.id)
+            XCTAssertTrue(shortcutDemoScenarioIdentifiers.contains("settings.shortcuts.demo.\(recipe.id).sample"), recipe.id)
+        }
         let settingsScenarioIdentifiers = catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers ?? []
         for modelID in LocalModelCatalog.kairoDefault.models.map(\.id) {
             XCTAssertTrue(settingsScenarioIdentifiers.contains("settings.models.\(modelID).status"), modelID)
@@ -1402,6 +1411,13 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(projectYAML.contains("target: KairoApp"))
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
         XCTAssertTrue(smokeTest.contains("testSettingsLocalModelCatalogListsDownloadableModels"))
+        XCTAssertTrue(smokeTest.contains("testSettingsShowsShortcutDemoInputOutputContracts"))
+        XCTAssertTrue(smokeTest.contains("Daily Briefing"))
+        XCTAssertTrue(smokeTest.contains("Save Shared Text"))
+        XCTAssertTrue(smokeTest.contains("Screenshot to Reminders"))
+        XCTAssertTrue(smokeTest.contains("Input: text, sourceName, variables"))
+        XCTAssertTrue(smokeTest.contains("Output: memoryID, fields.taskCount, tasks, reminderDrafts"))
+        XCTAssertTrue(smokeTest.contains("Screenshot OCR"))
         XCTAssertTrue(smokeTest.contains("testMemoryTabCanSaveManualMemory"))
         XCTAssertTrue(smokeTest.contains("memory.add.text"))
         XCTAssertTrue(smokeTest.contains("memory.add.save"))

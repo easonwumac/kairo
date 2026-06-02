@@ -333,7 +333,7 @@ public struct SettingsView: View {
 
             Text(recipe.settingsStepSummary)
                 .font(.caption)
-                .accessibilityIdentifier("settings.shortcuts.demo.\(recipe.id)")
+                .accessibilityIdentifier("settings.shortcuts.demo.\(recipe.id).steps")
 
             Text(recipe.settingsInputSummary)
                 .font(.caption)
@@ -350,9 +350,12 @@ public struct SettingsView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
+                    .accessibilityIdentifier("settings.shortcuts.demo.\(recipe.id).sample")
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("settings.shortcuts.demo.\(recipe.id)")
     }
 
     private func saveAPIKey() {

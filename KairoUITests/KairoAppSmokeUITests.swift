@@ -70,6 +70,34 @@ final class KairoAppSmokeUITests: XCTestCase {
         openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: true)
     }
 
+    func testSettingsShowsShortcutDemoInputOutputContracts() throws {
+        assertPrimaryTabsExist()
+        tapTab(identifier: "root.tab.settings", label: "Settings")
+
+        XCTAssertTrue(findElement("settings.shortcuts.demos", direction: .down).exists)
+        verifyShortcutDemoContract(
+            titleText: "Daily Briefing",
+            stepText: "1 step: dailyBriefing",
+            inputText: "Input: text, sourceName, variables",
+            outputText: "Output: displayText, fields.briefing, fields.taskCount, tasks",
+            sampleText: "Today's agenda"
+        )
+        verifyShortcutDemoContract(
+            titleText: "Save Shared Text",
+            stepText: "2 steps: saveMemory -> extractTasks",
+            inputText: "Input: text, sourceName, variables",
+            outputText: "Output: memoryID, fields.taskCount, tasks, reminderDrafts",
+            sampleText: "User research note"
+        )
+        verifyShortcutDemoContract(
+            titleText: "Screenshot to Reminders",
+            stepText: "2 steps: extractTasks -> createReminderDraft",
+            inputText: "Input: text, sourceName, variables",
+            outputText: "Output: fields.taskCount, tasks, reminderDrafts, fields.reminderDraftCount",
+            sampleText: "Screenshot OCR"
+        )
+    }
+
     func testMemoryTabCanSaveManualMemory() throws {
         assertPrimaryTabsExist()
         tapTab(identifier: "root.tab.memory", label: "Memory")
@@ -231,6 +259,20 @@ final class KairoAppSmokeUITests: XCTestCase {
             XCTAssertTrue(findStaticText(containing: "iPhone not verified", direction: .both).exists)
         }
         XCTAssertTrue(findButton(downloadIdentifier, direction: .down, maxSwipes: 2).exists)
+    }
+
+    private func verifyShortcutDemoContract(
+        titleText: String,
+        stepText: String,
+        inputText: String,
+        outputText: String,
+        sampleText: String
+    ) {
+        XCTAssertTrue(findStaticText(containing: titleText, direction: .both, maxSwipes: 8).exists)
+        XCTAssertTrue(findStaticText(containing: stepText, direction: .both, maxSwipes: 2).exists)
+        XCTAssertTrue(findStaticText(containing: inputText, direction: .both, maxSwipes: 2).exists)
+        XCTAssertTrue(findStaticText(containing: outputText, direction: .both, maxSwipes: 2).exists)
+        XCTAssertTrue(findStaticText(containing: sampleText, direction: .both, maxSwipes: 2).exists)
     }
 
     private func tapTab(identifier: String, label: String) {

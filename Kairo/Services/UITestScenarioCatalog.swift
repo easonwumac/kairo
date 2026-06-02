@@ -156,6 +156,33 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "settings-shortcut-demo-io",
+            title: "Shortcut Demo Input Output Contracts",
+            userGoal: "Open Settings and verify every Shortcut demo exposes node steps, Shortcut input fields, output fields, and sample input.",
+            requiredAccessibilityIdentifiers: [
+                "settings.shortcuts.demos",
+                "settings.shortcuts.demo.daily-briefing",
+                "settings.shortcuts.demo.daily-briefing.input",
+                "settings.shortcuts.demo.daily-briefing.output",
+                "settings.shortcuts.demo.daily-briefing.sample",
+                "settings.shortcuts.demo.save-shared-text",
+                "settings.shortcuts.demo.save-shared-text.input",
+                "settings.shortcuts.demo.save-shared-text.output",
+                "settings.shortcuts.demo.save-shared-text.sample",
+                "settings.shortcuts.demo.screenshot-to-reminders",
+                "settings.shortcuts.demo.screenshot-to-reminders.input",
+                "settings.shortcuts.demo.screenshot-to-reminders.output",
+                "settings.shortcuts.demo.screenshot-to-reminders.sample"
+            ],
+            assertions: [
+                "Each Shortcut demo row is visible in Settings.",
+                "Each demo shows the Kairo node path.",
+                "Each demo shows Shortcut input contract fields.",
+                "Each demo shows output contract fields.",
+                "Each demo exposes sample input without executing Apple Shortcuts."
+            ]
+        ),
+        UITestScenario(
             id: "access-homekit-demos",
             title: "Access HomeKit Control Demos",
             userGoal: "Open Access and verify HomeKit control examples are visible as confirmed, sandbox-safe demos.",
