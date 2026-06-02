@@ -78,7 +78,7 @@ protocol AIProvider {
 - writes `downloading`, `installed`, or `failed` records to `FileBackedLocalModelInstallRegistry`;
 - removes partial files when checksum verification fails.
 
-The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select affordances and route preference control, but a production build still needs a real signed catalog, configured downloader, progress/cancellation handling, license text, size disclosure, and delete controls.
+The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances and route preference control, but a production build still needs a real signed catalog, configured downloader, progress/cancellation handling, license text, and stronger size disclosure.
 
 ## Model selection
 
@@ -86,6 +86,7 @@ The downloader is intentionally UI-agnostic. Settings now exposes model rows wit
 
 - persists `selectedModelID` and `ProviderRoutePreference` in `KairoPaths.localModelSettingsURL`;
 - refuses to select deprecated, old-safety-policy, or uninstalled models;
+- deletes installed model files, registry records, and selected-model state when the user removes a model;
 - returns a `LocalModelSettingsStatus` snapshot used by Settings / model-library UI rows;
 - exposes route preferences for Automatic, Prefer Local, Prefer Cloud, and Local Only modes;
 - builds a `ProviderRoutingContext` so chat can route privacy/offline eligible prompts to the selected installed model.

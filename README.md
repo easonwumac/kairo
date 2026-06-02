@@ -37,7 +37,7 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - Persistent chat threads with JSON-backed history store.
 - Memory store protocols plus in-memory and JSON file implementations.
 - OpenAI provider abstraction, credential store, Keychain-backed credential store, ChatGPT OAuth scaffold, generic OAuth connector authorization core, connector login status center, and Settings connector status UI.
-- Local-model catalog, verified downloader, install registry, selected-model settings, Settings model catalog/status/preference UI, and provider-routing scaffold.
+- Local-model catalog, verified downloader, install registry, selected-model settings, Settings model management UI, and provider-routing scaffold.
 - Capability registry, sandbox action catalog, safety policy engine, action preview UI, and sandbox action executor.
 - Popular app integration registry covering App Intents, Shortcuts, URL schemes/universal links, Share Extension handoff, and OAuth connector metadata.
 - BGTaskScheduler-compatible background task policy for bounded app refresh/processing work without daemon overclaims.

@@ -547,6 +547,7 @@ public struct LocalModelSettingsRow: Identifiable, Equatable, Sendable {
     public var primaryAction: LocalModelSettingsPrimaryAction
     public var manifest: LocalModelManifest
     public var installRecord: LocalModelInstallRecord?
+    public var canDelete: Bool { installRecord != nil }
 
     public init(model: LocalModelManifest, installRecord: LocalModelInstallRecord?, isSelected: Bool) {
         self.modelID = model.id
@@ -727,6 +728,21 @@ public actor LocalModelSettingsService {
         var settings = await settingsStore.settings()
         settings.preference = preference
         try await settingsStore.save(settings)
+    }
+
+    public func deleteModel(id: String) async throws {
+        let record = await installRegistry.record(for: id)
+        if let record, FileManager.default.fileExists(atPath: record.fileURL.path) {
+            try FileManager.default.removeItem(at: record.fileURL)
+        }
+
+        try await installRegistry.delete(modelID: id)
+
+        var settings = await settingsStore.settings()
+        if settings.selectedModelID == id {
+            settings.selectedModelID = nil
+            try await settingsStore.save(settings)
+        }
     }
 
     public func routingContext(

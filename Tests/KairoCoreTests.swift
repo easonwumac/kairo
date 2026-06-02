@@ -415,6 +415,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).status""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).download""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).select""#))
+        XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).delete""#))
     }
 
     func testKairoPathsBuildsApplicationSupportMemoryURL() {
@@ -630,6 +631,45 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(context.localContextWindow, 2048)
     }
 
+    func testLocalModelSettingsServiceDeletesInstalledModelFileRecordAndSelection() async throws {
+        let settingsURL = temporaryFileURL(named: "local-model-settings.json")
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen-small.gguf")
+        let catalog = LocalModelCatalog(
+            signingKeyID: "test-key",
+            signature: "test-signature",
+            minimumSafetyPolicyVersion: "2026.1",
+            models: [
+                makeLocalModelManifest(id: "qwen-small", safetyPolicyVersion: "2026.2")
+            ]
+        )
+        try FileManager.default.createDirectory(at: modelURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("model-bytes".utf8).write(to: modelURL)
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen-small",
+            version: "1.0",
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: 1024,
+            sha256: "abc123"
+        ))
+        let store = try await FileBackedLocalModelSettingsStore(fileURL: settingsURL)
+        let service = LocalModelSettingsService(catalog: catalog, installRegistry: registry, settingsStore: store)
+        try await service.selectModel(id: "qwen-small", minimumSafetyPolicyVersion: "2026.1")
+
+        try await service.deleteModel(id: "qwen-small")
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: modelURL.path))
+        let deletedRecord = await registry.record(for: "qwen-small")
+        XCTAssertNil(deletedRecord)
+        let settings = await store.settings()
+        XCTAssertNil(settings.selectedModelID)
+        let status = await service.status(minimumSafetyPolicyVersion: "2026.1")
+        XCTAssertNil(status.selectedModelID)
+        XCTAssertFalse(status.localModelInstalled)
+    }
+
     func testLocalModelSettingsServiceRejectsUninstalledOrUnavailableSelections() async throws {
         let settingsURL = temporaryFileURL(named: "local-model-settings.json")
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
@@ -694,6 +734,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(selectedRow.primaryAction, .selected)
         XCTAssertEqual(downloadableRow.statusText, "可下載")
         XCTAssertEqual(downloadableRow.primaryAction, .download)
+        XCTAssertTrue(selectedRow.canDelete)
+        XCTAssertFalse(downloadableRow.canDelete)
         XCTAssertTrue(selectedRow.detailText.contains("0.8B"))
         XCTAssertTrue(selectedRow.detailText.contains("Q4"))
         XCTAssertTrue(selectedRow.detailText.contains("2K context"))

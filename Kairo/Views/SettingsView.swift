@@ -236,7 +236,16 @@ public struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            localModelAction(for: row)
+            HStack(spacing: 12) {
+                localModelAction(for: row)
+
+                if row.canDelete {
+                    Button("Delete", role: .destructive) {
+                        deleteLocalModel(row)
+                    }
+                    .accessibilityIdentifier("settings.models.\(row.modelID).delete")
+                }
+            }
         }
         .padding(.vertical, 4)
     }
@@ -435,6 +444,29 @@ public struct SettingsView: View {
             } catch {
                 await MainActor.run {
                     localModelStatusMessage = "選用失敗：\(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func deleteLocalModel(_ row: LocalModelSettingsRow) {
+        Task {
+            guard let localModelSettingsService else {
+                await MainActor.run {
+                    localModelStatusMessage = "尚未設定 local model settings service。"
+                }
+                return
+            }
+
+            do {
+                try await localModelSettingsService.deleteModel(id: row.modelID)
+                await MainActor.run {
+                    localModelStatusMessage = "\(row.displayName) 已刪除。"
+                }
+                await reloadLocalModelStatus()
+            } catch {
+                await MainActor.run {
+                    localModelStatusMessage = "刪除模型失敗：\(error.localizedDescription)"
                 }
             }
         }
