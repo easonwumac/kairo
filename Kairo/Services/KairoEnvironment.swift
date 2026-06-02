@@ -30,6 +30,7 @@ public struct KairoEnvironment: Sendable {
     public let localModelCatalogService: LocalModelCatalogService?
     public let localModelSettingsService: LocalModelSettingsService?
     public let localModelDownloader: (any LocalModelDownloader)?
+    public let localModelBenchmarkService: LocalModelBenchmarkService?
 
     public init(
         memoryStore: MemoryStore,
@@ -44,7 +45,8 @@ public struct KairoEnvironment: Sendable {
         localModelCatalog: LocalModelCatalog = .kairoDefault,
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
-        localModelDownloader: (any LocalModelDownloader)? = nil
+        localModelDownloader: (any LocalModelDownloader)? = nil,
+        localModelBenchmarkService: LocalModelBenchmarkService? = nil
     ) {
         self.memoryStore = memoryStore
         self.credentialStore = credentialStore
@@ -59,6 +61,7 @@ public struct KairoEnvironment: Sendable {
         self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
+        self.localModelBenchmarkService = localModelBenchmarkService
     }
 
     public static func preview() -> KairoEnvironment {
@@ -94,6 +97,31 @@ public struct KairoEnvironment: Sendable {
         )
         let marketplaceCatalogService = try uiTestingMarketplaceCatalogService()
         let localModelCatalogService = try uiTestingLocalModelCatalogService()
+        let localModelInstallRegistry = try await FileBackedLocalModelInstallRegistry(
+            fileURL: rootDirectory
+                .appendingPathComponent("LocalModels", isDirectory: true)
+                .appendingPathComponent("install-registry.json")
+        )
+        let localModelSettingsStore = try await FileBackedLocalModelSettingsStore(
+            fileURL: rootDirectory
+                .appendingPathComponent("LocalModels", isDirectory: true)
+                .appendingPathComponent("settings.json")
+        )
+        let localModelSettingsService = LocalModelSettingsService(
+            catalog: .kairoDefault,
+            installRegistry: localModelInstallRegistry,
+            settingsStore: localModelSettingsStore
+        )
+        let localModelBenchmarkStore = try await FileBackedLocalModelBenchmarkStore(
+            fileURL: rootDirectory
+                .appendingPathComponent("LocalModels", isDirectory: true)
+                .appendingPathComponent("benchmarks.json")
+        )
+        let localModelBenchmarkService = LocalModelBenchmarkService(
+            catalog: .kairoDefault,
+            installRegistry: localModelInstallRegistry,
+            resultStore: localModelBenchmarkStore
+        )
         let credentialStore = InMemoryCredentialStore()
 
         return KairoEnvironment(
@@ -108,7 +136,9 @@ public struct KairoEnvironment: Sendable {
             auditLogger: InMemoryAuditLogger(),
             agentSkillManagerService: skillManagerService,
             agentSkillMarketplaceCatalogService: marketplaceCatalogService,
-            localModelCatalogService: localModelCatalogService
+            localModelCatalogService: localModelCatalogService,
+            localModelSettingsService: localModelSettingsService,
+            localModelBenchmarkService: localModelBenchmarkService
         )
     }
 
@@ -201,6 +231,12 @@ public struct KairoEnvironment: Sendable {
             installRegistry: localModelInstallRegistry,
             modelsDirectory: paths.localModelsDirectory
         )
+        let localModelBenchmarkStore = try await FileBackedLocalModelBenchmarkStore(fileURL: paths.localModelBenchmarkResultsURL)
+        let localModelBenchmarkService = LocalModelBenchmarkService(
+            catalog: localModelCatalog,
+            installRegistry: localModelInstallRegistry,
+            resultStore: localModelBenchmarkStore
+        )
         let credentialStore = KeychainCredentialStore()
         let aiProvider = OpenAIProvider(credentialStore: credentialStore)
         let agentSkillMarketplaceCatalogService = AgentSkillMarketplaceCatalogService.defaultStandaloneRepository
@@ -219,7 +255,8 @@ public struct KairoEnvironment: Sendable {
             localModelCatalog: localModelCatalog,
             localModelCatalogService: localModelCatalogService,
             localModelSettingsService: localModelSettingsService,
-            localModelDownloader: localModelDownloader
+            localModelDownloader: localModelDownloader,
+            localModelBenchmarkService: localModelBenchmarkService
         )
     }
 }
@@ -285,6 +322,10 @@ public struct KairoPaths: Sendable {
 
     public var localModelSettingsURL: URL {
         localModelsDirectory.appendingPathComponent("settings.json")
+    }
+
+    public var localModelBenchmarkResultsURL: URL {
+        localModelsDirectory.appendingPathComponent("benchmarks.json")
     }
 
     public var agentSkillsDirectory: URL {

@@ -200,6 +200,27 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "settings-local-model-benchmark",
+            title: "Settings Local Model Benchmark Flow",
+            userGoal: "Open Settings and verify Qwen3.5 0.8B exposes reference benchmark metadata plus a user-triggered benchmark action that requires a downloaded model.",
+            requiredAccessibilityIdentifiers: [
+                "settings.models.local",
+                "settings.models.qwen3-5-0-8b-q4-k-m.row",
+                "settings.models.qwen3-5-0-8b-q4-k-m.name",
+                "settings.models.qwen3-5-0-8b-q4-k-m.status",
+                "settings.models.qwen3-5-0-8b-q4-k-m.benchmark",
+                "settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run",
+                "settings.models.qwen3-5-0-8b-q4-k-m.download",
+                "settings.models.benchmark-message"
+            ],
+            assertions: [
+                "Qwen3.5 0.8B is shown as a downloadable model, not a bundled asset.",
+                "Reference MLX/GGUF benchmark metadata is visible and labelled as not iPhone verified.",
+                "Benchmark execution is a visible user action.",
+                "Benchmark execution fails closed until the model is downloaded."
+            ]
+        ),
+        UITestScenario(
             id: "settings-shortcut-demo-io",
             title: "Shortcut Demo Input Output Contracts",
             userGoal: "Open Settings and verify every Shortcut demo exposes node steps, Shortcut input fields, output fields, and sample input.",

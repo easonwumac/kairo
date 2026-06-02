@@ -1204,6 +1204,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).delete""#))
         XCTAssertTrue(settingsView.contains("row.benchmarkSummaryText"))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).benchmark""#))
+        XCTAssertTrue(settingsView.contains("private let localModelBenchmarkService: LocalModelBenchmarkService?"))
+        XCTAssertTrue(settingsView.contains("runLocalModelBenchmark(row)"))
+        XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).benchmark-run""#))
+        XCTAssertTrue(settingsView.contains(#""settings.models.benchmark-message""#))
+        XCTAssertTrue(settingsView.contains("請先下載"))
         XCTAssertTrue(settingsView.contains("refreshLocalModelCatalog"))
         XCTAssertTrue(settingsView.contains(#""settings.models.refresh-catalog""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.catalog-source""#))
@@ -1257,6 +1262,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(environmentSource.contains("localModelCatalogService"))
         XCTAssertTrue(environmentSource.contains("LocalModelCatalogService.defaultStandaloneRepository"))
         XCTAssertTrue(rootViewSource.contains("localModelCatalogService: environment.localModelCatalogService"))
+        XCTAssertTrue(environmentSource.contains("localModelBenchmarkService"))
+        XCTAssertTrue(environmentSource.contains("FileBackedLocalModelBenchmarkStore(fileURL: paths.localModelBenchmarkResultsURL)"))
+        XCTAssertTrue(rootViewSource.contains("localModelBenchmarkService: environment.localModelBenchmarkService"))
         XCTAssertTrue(permissionHubSource.contains("private let skillManagerService: AgentSkillManagerService?"))
         XCTAssertTrue(permissionHubSource.contains("private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?"))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.catalog()"))
@@ -1355,6 +1363,7 @@ final class KairoCoreTests: XCTestCase {
             "memory-manual-save",
             "settings-api-key-status",
             "settings-oauth-connectors",
+            "settings-local-model-benchmark",
             "settings-shortcut-demo-io",
             "access-homekit-demos"
         ])
@@ -1383,6 +1392,11 @@ final class KairoCoreTests: XCTestCase {
             XCTAssertTrue(oauthScenarioIdentifiers.contains("settings.oauth.\(providerKey).status"), providerKey)
             XCTAssertTrue(oauthScenarioIdentifiers.contains("settings.oauth.\(providerKey).detail"), providerKey)
         }
+        let benchmarkScenarioIdentifiers = catalog.scenario(id: "settings-local-model-benchmark")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.local"))
+        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.benchmark"))
+        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run"))
+        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.benchmark-message"))
         let shortcutDemoScenarioIdentifiers = catalog.scenario(id: "settings-shortcut-demo-io")?.requiredAccessibilityIdentifiers ?? []
         for recipe in ShortcutDemoCatalog.default.recipes {
             XCTAssertTrue(shortcutDemoScenarioIdentifiers.contains("settings.shortcuts.demo.\(recipe.id)"), recipe.id)
@@ -1423,6 +1437,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(projectYAML.contains("target: KairoApp"))
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
         XCTAssertTrue(smokeTest.contains("testSettingsLocalModelCatalogListsDownloadableModels"))
+        XCTAssertTrue(smokeTest.contains("testSettingsShowsQwenBenchmarkFlowRequiresDownload"))
+        XCTAssertTrue(smokeTest.contains(#""settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run""#))
+        XCTAssertTrue(smokeTest.contains("請先下載 Qwen3.5 0.8B Q4_K_M 後再跑 benchmark。"))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsOAuthConnectorReadinessAndBoundaries"))
         XCTAssertTrue(smokeTest.contains(#"providerKey: "google""#))
         XCTAssertTrue(smokeTest.contains("Gmail / Google Workspace"))
@@ -1866,6 +1883,88 @@ final class KairoCoreTests: XCTestCase {
         let status = await service.status(minimumSafetyPolicyVersion: "2026.1")
         XCTAssertNil(status.selectedModelID)
         XCTAssertFalse(status.localModelInstalled)
+    }
+
+    func testLocalModelBenchmarkServiceRequiresDownloadedModelBeforeRunning() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let resultStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
+        let service = LocalModelBenchmarkService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            resultStore: resultStore,
+            engine: DeterministicLocalModelBenchmarkEngine(
+                runtime: .gguf,
+                generationTokensPerSecond: 43,
+                promptTokensPerSecond: 120
+            )
+        )
+
+        do {
+            _ = try await service.runBenchmark(
+                modelID: "qwen3-5-0-8b-q4-k-m",
+                prompt: "Benchmark Kairo local drafting.",
+                generatedTokenTarget: 64
+            )
+            XCTFail("Expected benchmark to require a downloaded local model.")
+        } catch let error as LocalModelBenchmarkError {
+            XCTAssertEqual(error, .modelNotInstalled("qwen3-5-0-8b-q4-k-m"))
+        }
+
+        let persisted = await resultStore.latestResult(for: "qwen3-5-0-8b-q4-k-m")
+        XCTAssertNil(persisted)
+    }
+
+    func testLocalModelBenchmarkServiceRunsInstalledQwenThroughInjectedEngineAndPersistsResult() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen3-5-0-8b-q4-k-m",
+            version: LocalModelManifest.qwen35Tiny.version,
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
+            sha256: LocalModelManifest.qwen35Tiny.sha256
+        ))
+        let resultStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
+        let service = LocalModelBenchmarkService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            resultStore: resultStore,
+            engine: DeterministicLocalModelBenchmarkEngine(
+                runtime: .gguf,
+                generationTokensPerSecond: 43.5,
+                promptTokensPerSecond: 121.3,
+                peakMemoryMB: 980
+            )
+        )
+
+        let result = try await service.runBenchmark(
+            modelID: "qwen3-5-0-8b-q4-k-m",
+            prompt: "Benchmark Kairo local drafting.",
+            generatedTokenTarget: 64
+        )
+
+        XCTAssertEqual(result.modelID, "qwen3-5-0-8b-q4-k-m")
+        XCTAssertEqual(result.runtime, .gguf)
+        XCTAssertEqual(result.promptTokens, 32)
+        XCTAssertEqual(result.generatedTokens, 64)
+        XCTAssertEqual(result.promptTokensPerSecond, 121.3)
+        XCTAssertEqual(result.generationTokensPerSecond, 43.5)
+        XCTAssertEqual(result.peakMemoryMB, 980)
+        XCTAssertFalse(result.isReferenceOnlyForIOS)
+        XCTAssertTrue(result.summaryText.contains("43.5 gen tok/s"))
+        XCTAssertTrue(result.summaryText.contains("121.3 prompt tok/s"))
+
+        let latestResult = await resultStore.latestResult(for: "qwen3-5-0-8b-q4-k-m")
+        let persisted = try XCTUnwrap(latestResult)
+        XCTAssertEqual(persisted, result)
+        let reloadedStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
+        let reloadedResult = await reloadedStore.latestResult(for: "qwen3-5-0-8b-q4-k-m")
+        XCTAssertEqual(reloadedResult, result)
     }
 
     func testLocalModelSettingsStatusBuildsSettingsRowsForDownloadSelectAndSelected() throws {

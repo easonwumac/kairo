@@ -70,6 +70,24 @@ final class KairoAppSmokeUITests: XCTestCase {
         openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: true)
     }
 
+    func testSettingsShowsQwenBenchmarkFlowRequiresDownload() throws {
+        assertPrimaryTabsExist()
+        tapTab(identifier: "root.tab.settings", label: "Settings")
+
+        XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
+        XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
+        XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.benchmark", direction: .down, maxSwipes: 2).exists)
+        XCTAssertTrue(findStaticText(containing: "MLX ref", direction: .both).exists)
+        XCTAssertTrue(findStaticText(containing: "iPhone not verified", direction: .both).exists)
+
+        let benchmarkButton = findButton("settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run", direction: .down, maxSwipes: 2)
+        XCTAssertTrue(benchmarkButton.exists)
+        benchmarkButton.tap()
+
+        XCTAssertTrue(findElement("settings.models.benchmark-message", direction: .both, maxSwipes: 2).exists)
+        XCTAssertTrue(findStaticText(containing: "請先下載 Qwen3.5 0.8B Q4_K_M 後再跑 benchmark。", direction: .both, maxSwipes: 2).exists)
+    }
+
     func testSettingsShowsShortcutDemoInputOutputContracts() throws {
         assertPrimaryTabsExist()
         tapTab(identifier: "root.tab.settings", label: "Settings")

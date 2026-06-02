@@ -12,6 +12,7 @@ public struct SettingsView: View {
     @State private var localModelCatalog: LocalModelCatalog
     @State private var localModelStatus: LocalModelSettingsStatus
     @State private var localModelStatusMessage: String?
+    @State private var localModelStatusMessageModelID: String?
 
     private let settingsService: OpenAISettingsService
     private let credentialStore: any CredentialStore
@@ -19,6 +20,7 @@ public struct SettingsView: View {
     private let localModelCatalogService: LocalModelCatalogService?
     private let localModelSettingsService: LocalModelSettingsService?
     private let localModelDownloader: (any LocalModelDownloader)?
+    private let localModelBenchmarkService: LocalModelBenchmarkService?
 
     public init(
         credentialStore: any CredentialStore = InMemoryCredentialStore(),
@@ -26,7 +28,8 @@ public struct SettingsView: View {
         localModelCatalog: LocalModelCatalog = .kairoDefault,
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
-        localModelDownloader: (any LocalModelDownloader)? = nil
+        localModelDownloader: (any LocalModelDownloader)? = nil,
+        localModelBenchmarkService: LocalModelBenchmarkService? = nil
     ) {
         self.settingsService = OpenAISettingsService(credentialStore: credentialStore)
         self.credentialStore = credentialStore
@@ -34,6 +37,7 @@ public struct SettingsView: View {
         self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
+        self.localModelBenchmarkService = localModelBenchmarkService
         self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
@@ -45,7 +49,8 @@ public struct SettingsView: View {
         localModelCatalog: LocalModelCatalog = .kairoDefault,
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
-        localModelDownloader: (any LocalModelDownloader)? = nil
+        localModelDownloader: (any LocalModelDownloader)? = nil,
+        localModelBenchmarkService: LocalModelBenchmarkService? = nil
     ) {
         self.settingsService = settingsService
         self.credentialStore = credentialStore
@@ -53,6 +58,7 @@ public struct SettingsView: View {
         self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
+        self.localModelBenchmarkService = localModelBenchmarkService
         self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
@@ -117,10 +123,11 @@ public struct SettingsView: View {
                         localModelRow(row)
                     }
 
-                    if let localModelStatusMessage {
+                    if localModelStatusMessageModelID == nil, let localModelStatusMessage {
                         Text(localModelStatusMessage)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("settings.models.benchmark-message")
                     }
                 }
                 .accessibilityIdentifier("settings.models.local")
@@ -282,12 +289,26 @@ public struct SettingsView: View {
             HStack(spacing: 12) {
                 localModelAction(for: row)
 
+                if row.benchmarkSummaryText != nil {
+                    Button("Run Benchmark") {
+                        runLocalModelBenchmark(row)
+                    }
+                    .accessibilityIdentifier("settings.models.\(row.modelID).benchmark-run")
+                }
+
                 if row.canDelete {
                     Button("Delete", role: .destructive) {
                         deleteLocalModel(row)
                     }
                     .accessibilityIdentifier("settings.models.\(row.modelID).delete")
                 }
+            }
+
+            if localModelStatusMessageModelID == row.modelID, let localModelStatusMessage {
+                Text(localModelStatusMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("settings.models.benchmark-message")
             }
         }
         .padding(.vertical, 4)
@@ -417,6 +438,7 @@ public struct SettingsView: View {
         Task {
             guard let localModelSettingsService else {
                 await MainActor.run {
+                    localModelStatusMessageModelID = nil
                     localModelStatusMessage = "尚未設定 local model settings service。"
                 }
                 return
@@ -426,11 +448,13 @@ public struct SettingsView: View {
                 try await localModelSettingsService.setPreference(preference)
                 await MainActor.run {
                     localModelStatus.preference = preference
+                    localModelStatusMessageModelID = nil
                     localModelStatusMessage = "\(preference.settingsTitle) routing 已儲存。"
                 }
                 await reloadLocalModelStatus()
             } catch {
                 await MainActor.run {
+                    localModelStatusMessageModelID = nil
                     localModelStatusMessage = "路由偏好儲存失敗：\(error.localizedDescription)"
                 }
             }
@@ -441,6 +465,7 @@ public struct SettingsView: View {
         Task {
             guard localModelSettingsService != nil else {
                 await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "尚未設定 local model settings service。"
                 }
                 return
@@ -448,6 +473,7 @@ public struct SettingsView: View {
 
             guard let localModelDownloader else {
                 await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "尚未設定 local model downloader。"
                 }
                 return
@@ -455,15 +481,18 @@ public struct SettingsView: View {
 
             do {
                 await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "正在下載 \(row.displayName)。"
                 }
                 _ = try await localModelDownloader.download(row.manifest, progress: nil)
                 await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "\(row.displayName) 已下載，可選用。"
                 }
                 await reloadLocalModelStatus()
             } catch {
                 await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "下載失敗：\(error.localizedDescription)"
                 }
                 await reloadLocalModelStatus()
@@ -475,6 +504,7 @@ public struct SettingsView: View {
         Task {
             guard let localModelSettingsService else {
                 await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "尚未設定 local model settings service。"
                 }
                 return
@@ -486,12 +516,58 @@ public struct SettingsView: View {
                     minimumSafetyPolicyVersion: localModelCatalog.minimumSafetyPolicyVersion
                 )
                 await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "\(row.displayName) 已選用。"
                 }
                 await reloadLocalModelStatus()
             } catch {
                 await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "選用失敗：\(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func runLocalModelBenchmark(_ row: LocalModelSettingsRow) {
+        Task {
+            guard let localModelBenchmarkService else {
+                await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
+                    localModelStatusMessage = "尚未設定 local model benchmark service。"
+                }
+                return
+            }
+
+            do {
+                await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
+                    localModelStatusMessage = "正在 benchmark \(row.displayName)。"
+                }
+                let result = try await localModelBenchmarkService.runBenchmark(
+                    modelID: row.modelID,
+                    minimumSafetyPolicyVersion: localModelCatalog.minimumSafetyPolicyVersion
+                )
+                await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
+                    localModelStatusMessage = "\(row.displayName) benchmark：\(result.summaryText)。"
+                }
+            } catch let error as LocalModelBenchmarkError {
+                await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
+                    switch error {
+                    case .modelNotInstalled:
+                        localModelStatusMessage = "請先下載 \(row.displayName) 後再跑 benchmark。"
+                    case let .modelUnavailable(modelID):
+                        localModelStatusMessage = "benchmark 模型不可用：\(modelID)。"
+                    case let .runtimeUnavailable(reason):
+                        localModelStatusMessage = "本機 benchmark runtime 尚未接上：\(reason)"
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
+                    localModelStatusMessage = "benchmark 失敗：\(error.localizedDescription)"
                 }
             }
         }
@@ -501,6 +577,7 @@ public struct SettingsView: View {
         Task {
             guard let localModelSettingsService else {
                 await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "尚未設定 local model settings service。"
                 }
                 return
@@ -509,11 +586,13 @@ public struct SettingsView: View {
             do {
                 try await localModelSettingsService.deleteModel(id: row.modelID)
                 await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "\(row.displayName) 已刪除。"
                 }
                 await reloadLocalModelStatus()
             } catch {
                 await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "刪除模型失敗：\(error.localizedDescription)"
                 }
             }
@@ -524,6 +603,7 @@ public struct SettingsView: View {
         Task {
             guard let localModelCatalogService else {
                 await MainActor.run {
+                    localModelStatusMessageModelID = nil
                     localModelStatusMessage = "使用內建 local model catalog。"
                 }
                 return
@@ -531,14 +611,19 @@ public struct SettingsView: View {
 
             do {
                 await MainActor.run {
+                    localModelStatusMessageModelID = nil
                     localModelStatusMessage = "正在刷新 model catalog。"
                 }
                 let mergedCatalog = try await localModelCatalogService.fetchMergedCatalog(with: localModelCatalog)
                 if let localModelSettingsService {
                     await localModelSettingsService.replaceCatalog(mergedCatalog)
                 }
+                if let localModelBenchmarkService {
+                    await localModelBenchmarkService.replaceCatalog(mergedCatalog)
+                }
                 await MainActor.run {
                     localModelCatalog = mergedCatalog
+                    localModelStatusMessageModelID = nil
                     let count = mergedCatalog.availableModels(
                         minimumSafetyPolicyVersion: mergedCatalog.minimumSafetyPolicyVersion
                     ).count
@@ -547,6 +632,7 @@ public struct SettingsView: View {
                 await reloadLocalModelStatus()
             } catch {
                 await MainActor.run {
+                    localModelStatusMessageModelID = nil
                     localModelStatusMessage = "刷新 model catalog 失敗：\(error.localizedDescription)"
                 }
             }

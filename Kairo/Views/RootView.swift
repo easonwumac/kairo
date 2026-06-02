@@ -37,7 +37,8 @@ public struct RootView: View {
                 localModelCatalog: environment.localModelCatalog,
                 localModelCatalogService: environment.localModelCatalogService,
                 localModelSettingsService: environment.localModelSettingsService,
-                localModelDownloader: environment.localModelDownloader
+                localModelDownloader: environment.localModelDownloader,
+                localModelBenchmarkService: environment.localModelBenchmarkService
             )
                 .tabItem {
                     Label("Settings", systemImage: "gear")
