@@ -1,0 +1,37 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" rx="44" fill="#F5F8FC"/>
+  <text x="88" y="116" fill="#111827" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="52" font-weight="800">Public-API capability board</text>
+  <text x="92" y="162" fill="#516070" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24">Kairo maximizes what iOS actually allows, and labels every boundary clearly.</text>
+  <rect x="86" y="230" width="442" height="220" rx="32" fill="#FFFFFF" stroke="#D9E2EC" stroke-width="3"/>
+  <circle cx="138" cy="286" r="24" fill="#61DDBB"/>
+  <text x="174" y="294" fill="#111827" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="800">Shortcuts nodes</text>
+  <text x="120" y="346" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">Ask, save memory, search, summarize,</text>
+  <text x="120" y="380" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">extract tasks, return JSON outputs.</text>
+  <rect x="570" y="230" width="442" height="220" rx="32" fill="#FFFFFF" stroke="#D9E2EC" stroke-width="3"/>
+  <circle cx="622" cy="286" r="24" fill="#8BA7FF"/>
+  <text x="658" y="294" fill="#111827" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="800">Share ingestion</text>
+  <text x="604" y="346" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">Text, URLs, images, PDFs, and files</text>
+  <text x="604" y="380" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">enter through an App Group queue.</text>
+  <rect x="1054" y="230" width="442" height="220" rx="32" fill="#FFFFFF" stroke="#D9E2EC" stroke-width="3"/>
+  <circle cx="1106" cy="286" r="24" fill="#FFB86B"/>
+  <text x="1142" y="294" fill="#111827" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="800">Action safety</text>
+  <text x="1088" y="346" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">Preview, confirmation, audit logs,</text>
+  <text x="1088" y="380" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">and unsupported action explanations.</text>
+  <rect x="86" y="504" width="442" height="220" rx="32" fill="#FFFFFF" stroke="#D9E2EC" stroke-width="3"/>
+  <circle cx="138" cy="560" r="24" fill="#FF7A90"/>
+  <text x="174" y="568" fill="#111827" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="800">OAuth connectors</text>
+  <text x="120" y="618" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">Google, Microsoft, Notion, Slack,</text>
+  <text x="120" y="652" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">GitHub, and ChatGPT via official APIs.</text>
+  <rect x="570" y="504" width="442" height="220" rx="32" fill="#FFFFFF" stroke="#D9E2EC" stroke-width="3"/>
+  <circle cx="622" cy="560" r="24" fill="#45D6A8"/>
+  <text x="658" y="568" fill="#111827" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="800">Model routing</text>
+  <text x="604" y="618" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">Cloud provider when needed, local</text>
+  <text x="604" y="652" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">fallback for eligible offline tasks.</text>
+  <rect x="1054" y="504" width="442" height="220" rx="32" fill="#FFFFFF" stroke="#D9E2EC" stroke-width="3"/>
+  <circle cx="1106" cy="560" r="24" fill="#C28BFF"/>
+  <text x="1142" y="568" fill="#111827" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="800">HomeKit path</text>
+  <text x="1088" y="618" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">Planned through HomeKit entitlement,</text>
+  <text x="1088" y="652" fill="#5C6B7B" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22">user consent, and visible previews.</text>
+  <rect x="88" y="786" width="1050" height="48" rx="24" fill="#111827"/>
+  <text x="122" y="818" fill="#F8FBFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20" font-weight="700">No private APIs. No hidden UI control. No background screen watching. Public interfaces only.</text>
+</svg>

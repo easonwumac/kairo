@@ -1,0 +1,41 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" rx="44" fill="#101826"/>
+  <text x="96" y="118" fill="#F8FBFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="54" font-weight="800">Shortcut recipes become agent nodes</text>
+  <text x="100" y="164" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24">Each node accepts input, returns structured output, and avoids hidden writes.</text>
+  <rect x="104" y="266" width="264" height="118" rx="32" fill="#F8FBFF" fill-opacity="0.09" stroke="#2B3A52" stroke-width="3"/>
+  <text x="136" y="315" fill="#FFFFFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="25" font-weight="800">Shortcut Input</text>
+  <text x="136" y="350" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="19">Text, URL, OCR, file</text>
+  <path d="M378 325H486" stroke="#61DDBB" stroke-width="10" stroke-linecap="round"/>
+  <path d="M462 297L494 325L462 353" stroke="#61DDBB" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="514" y="230" width="294" height="190" rx="36" fill="#5676FF"/>
+  <text x="548" y="288" fill="#FFFFFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="27" font-weight="900">Save Memory</text>
+  <text x="548" y="326" fill="#DCE6FF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">returns memoryID</text>
+  <text x="548" y="360" fill="#DCE6FF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">extracts task drafts</text>
+  <path d="M820 325H928" stroke="#FFB86B" stroke-width="10" stroke-linecap="round"/>
+  <path d="M904 297L936 325L904 353" stroke="#FFB86B" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="956" y="230" width="294" height="190" rx="36" fill="#F8FBFF" fill-opacity="0.09" stroke="#2B3A52" stroke-width="3"/>
+  <text x="990" y="288" fill="#FFFFFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="27" font-weight="900">Extract Tasks</text>
+  <text x="990" y="326" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">returns reminder drafts</text>
+  <text x="990" y="360" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">does not write EventKit</text>
+  <path d="M1262 325H1370" stroke="#61DDBB" stroke-width="10" stroke-linecap="round"/>
+  <path d="M1346 297L1378 325L1346 353" stroke="#61DDBB" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="106" y="540" width="314" height="166" rx="36" fill="#F8FBFF" fill-opacity="0.09" stroke="#2B3A52" stroke-width="3"/>
+  <text x="140" y="594" fill="#FFFFFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="26" font-weight="900">Daily Briefing</text>
+  <text x="140" y="632" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">Calendar context in</text>
+  <text x="140" y="666" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">summary + actions out</text>
+  <rect x="486" y="540" width="314" height="166" rx="36" fill="#F8FBFF" fill-opacity="0.09" stroke="#2B3A52" stroke-width="3"/>
+  <text x="520" y="594" fill="#FFFFFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="26" font-weight="900">Screenshot to Tasks</text>
+  <text x="520" y="632" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">OCR text in</text>
+  <text x="520" y="666" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">task drafts out</text>
+  <rect x="866" y="540" width="314" height="166" rx="36" fill="#F8FBFF" fill-opacity="0.09" stroke="#2B3A52" stroke-width="3"/>
+  <text x="900" y="594" fill="#FFFFFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="26" font-weight="900">Meeting Prep</text>
+  <text x="900" y="632" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">Calendar + memory in</text>
+  <text x="900" y="666" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">briefing out</text>
+  <rect x="1246" y="540" width="314" height="166" rx="36" fill="#F8FBFF" fill-opacity="0.09" stroke="#2B3A52" stroke-width="3"/>
+  <text x="1280" y="594" fill="#FFFFFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="26" font-weight="900">Shared Mail</text>
+  <text x="1280" y="632" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">User-shared content in</text>
+  <text x="1280" y="666" fill="#AFC0D1" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20">summary + follow-up out</text>
+  <rect x="1388" y="266" width="100" height="118" rx="32" fill="#61DDBB"/>
+  <text x="1418" y="331" fill="#061C16" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22" font-weight="900">JSON</text>
+  <text x="1412" y="360" fill="#061C16" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="16" font-weight="800">output</text>
+</svg>

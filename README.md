@@ -1,6 +1,6 @@
 # Kairo
 
-![Kairo hero](Assets/kairo-hero.svg)
+![Kairo GitHub cover](Assets/github-readme-cover.svg)
 
 Kairo is an open-source Swift/SwiftUI iOS agent scaffold for building a **universal, sandbox-compliant iPhone assistant**. It combines chat, long-term memory, Share Extension ingestion, App Intents/Shortcuts, permission-aware tools, audit logs, OpenAI-compatible cloud models, and local-model fallback planning without pretending iOS apps can bypass sandbox rules.
 
@@ -42,14 +42,30 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - Popular app integration registry covering App Intents, Shortcuts, URL schemes/universal links, Share Extension handoff, and OAuth connector metadata.
 - BGTaskScheduler-compatible background task policy for bounded app refresh/processing work without daemon overclaims.
 - Share Extension ingestion queue for text, URLs, files, and images.
-- App Intents scaffold for asking, saving, and searching.
+- Structured Shortcut node runtime and App Intents for asking, saving, searching, summarizing, and task extraction.
+- App icon source plus GitHub/README visual assets.
 - Privacy manifest, purpose-string notes, capability matrix, App Store readiness docs, and unit tests.
+
+## Visual overview
+
+![Kairo capability board](Assets/github-capability-board.svg)
+
+![Kairo Shortcut recipes](Assets/github-shortcut-recipes.svg)
+
+## Brand assets
+
+<img src="Assets/kairo-app-icon.svg" alt="Kairo app icon source" width="140">
+
+- App icon source: [Assets/kairo-app-icon.svg](Assets/kairo-app-icon.svg)
+- GitHub cover / social preview source: [Assets/github-readme-cover.svg](Assets/github-readme-cover.svg)
+- Capability overview: [Assets/github-capability-board.svg](Assets/github-capability-board.svg)
+- Shortcut recipes overview: [Assets/github-shortcut-recipes.svg](Assets/github-shortcut-recipes.svg)
 
 ## Repository layout
 
 ```text
 kairo/
-├── Assets/                         # Open-source SVG logo/hero assets
+├── Assets/                         # Open-source SVG logo, icon, and GitHub visual assets
 ├── Config/                         # Info.plist and purpose-string notes
 ├── Kairo/
 │   ├── App/                        # SwiftUI app entry point
@@ -97,7 +113,7 @@ The package is intentionally dependency-free. The iOS app target is described in
 - [OpenAI/auth strategy](docs/AUTH_OPENAI.md)
 - [Local model fallback](docs/LOCAL_MODEL_FALLBACK.md)
 - [Shortcuts strategy](docs/SHORTCUTS_STRATEGY.md)
-- [App Store readiness](docs/AppStore/APP_STORE_READINESS.md)
+- [App Store readiness](docs/APP_STORE_READINESS.md)
 - [Roadmap](docs/ROADMAP.md)
 
 ## License

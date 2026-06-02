@@ -24,6 +24,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: app.kairo.ios
         INFOPLIST_FILE: Config/KairoApp-Info.plist
         CODE_SIGN_ENTITLEMENTS: Config/KairoApp.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
   KairoShareExtension:
     type: app-extension
     platform: iOS

@@ -1,0 +1,41 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" rx="44" fill="#0E1624"/>
+  <rect x="0" y="0" width="1600" height="900" rx="44" fill="url(#cover-bg)"/>
+  <rect x="96" y="86" width="151" height="46" rx="23" fill="#F8FBFF" fill-opacity="0.11"/>
+  <text x="128" y="117" fill="#D9E8F7" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22" font-weight="700">KAIRO</text>
+  <text x="96" y="238" fill="#F8FBFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="88" font-weight="800">iOS Agent</text>
+  <text x="96" y="318" fill="#F8FBFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="88" font-weight="800">without overclaiming.</text>
+  <text x="100" y="388" fill="#B9C9D9" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="32">Shortcuts, Share Extension, memory, OAuth, local models, and safe action previews.</text>
+  <rect x="100" y="462" width="206" height="60" rx="30" fill="#61DDBB"/>
+  <text x="132" y="501" fill="#082018" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="800">Shortcuts</text>
+  <rect x="326" y="462" width="166" height="60" rx="30" fill="#FFB86B"/>
+  <text x="358" y="501" fill="#261303" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="800">Memory</text>
+  <rect x="512" y="462" width="222" height="60" rx="30" fill="#8BA7FF"/>
+  <text x="544" y="501" fill="#08122C" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="800">App Intents</text>
+  <rect x="908" y="78" width="424" height="748" rx="72" fill="#101827" stroke="#2B3A52" stroke-width="4"/>
+  <rect x="954" y="136" width="332" height="66" rx="33" fill="#F8FBFF" fill-opacity="0.1"/>
+  <circle cx="982" cy="169" r="13" fill="#61DDBB"/>
+  <rect x="1014" y="158" width="146" height="16" rx="8" fill="#DBEAFE" fill-opacity="0.74"/>
+  <rect x="954" y="246" width="284" height="96" rx="30" fill="#F8FBFF" fill-opacity="0.09"/>
+  <text x="984" y="287" fill="#F8FBFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700">Ask Kairo</text>
+  <text x="984" y="319" fill="#9FB3C8" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="18">Structured Shortcut output</text>
+  <rect x="1000" y="378" width="288" height="96" rx="30" fill="#5676FF"/>
+  <text x="1030" y="419" fill="#FFFFFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="800">Extract Tasks</text>
+  <text x="1030" y="451" fill="#DCE6FF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="18">Drafts, no hidden writes</text>
+  <rect x="954" y="510" width="320" height="96" rx="30" fill="#F8FBFF" fill-opacity="0.09"/>
+  <text x="984" y="551" fill="#F8FBFF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700">Share Ingestion</text>
+  <text x="984" y="583" fill="#9FB3C8" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="18">App Group queue</text>
+  <rect x="1000" y="642" width="244" height="68" rx="34" fill="#61DDBB" fill-opacity="0.18"/>
+  <text x="1034" y="685" fill="#BFFBEF" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="22" font-weight="700">Confirm action</text>
+  <path d="M792 585C836 565 866 525 886 476" stroke="#61DDBB" stroke-width="10" stroke-linecap="round"/>
+  <path d="M808 624C850 620 888 604 924 572" stroke="#FFB86B" stroke-width="10" stroke-linecap="round"/>
+  <path d="M1224 170H1450" stroke="#F8FBFF" stroke-opacity="0.08" stroke-width="12" stroke-linecap="round"/>
+  <path d="M1260 710H1454" stroke="#F8FBFF" stroke-opacity="0.08" stroke-width="12" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="cover-bg" x1="0" y1="0" x2="1600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset="0.48" stop-color="#162033"/>
+      <stop offset="1" stop-color="#0C1F24"/>
+    </linearGradient>
+  </defs>
+</svg>
