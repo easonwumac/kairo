@@ -15,6 +15,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         ("qwen3-1-7b-q4-k-m", "Qwen3 1.7B Q4_K_M"),
         ("qwen2-5-0-5b-instruct-q4-k-m", "Qwen2.5 0.5B Instruct Q4_K_M"),
         ("qwen2-5-1-5b-instruct-q4-k-m", "Qwen2.5 1.5B Instruct Q4_K_M"),
+        ("qwen2-5-coder-0-5b-instruct-q4-k-m", "Qwen2.5-Coder 0.5B Instruct Q4_K_M"),
+        ("qwen2-5-coder-1-5b-instruct-q4-k-m", "Qwen2.5-Coder 1.5B Instruct Q4_K_M"),
         ("llama3-2-1b-instruct-q4-k-m", "Llama 3.2 1B Instruct Q4_K_M"),
         ("deepseek-r1-distill-qwen-1-5b-q4-k-m", "DeepSeek R1 Distill Qwen 1.5B Q4_K_M"),
         ("h2o-danube2-1-8b-chat-q4-k-m", "H2O Danube2 1.8B Chat Q4_K_M"),
@@ -26,7 +28,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         ("tinyllama-1-1b-chat-q4-k-m", "TinyLlama 1.1B Chat Q4_K_M"),
         ("gemma3-1b-it-q4-k-m", "Gemma 3 1B IT Q4_K_M"),
         ("gemma2-2b-it-q4-k-m", "Gemma 2 2B IT Q4_K_M"),
-        ("gemma4-e2b-it-q4-k-m", "Gemma 4 E2B IT Q4_K_M")
+        ("gemma4-e2b-it-q4-k-m", "Gemma 4 E2B IT Q4_K_M"),
+        ("stablelm2-chat-1-6b-q4-k-m", "StableLM 2 Chat 1.6B Q4_K_M")
     ]
     private let localModelDownloadIdentifiers = [
         "settings.models.qwen3-5-0-8b-q4-k-m.download",
@@ -35,6 +38,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         "settings.models.qwen3-1-7b-q4-k-m.download",
         "settings.models.qwen2-5-0-5b-instruct-q4-k-m.download",
         "settings.models.qwen2-5-1-5b-instruct-q4-k-m.download",
+        "settings.models.qwen2-5-coder-0-5b-instruct-q4-k-m.download",
+        "settings.models.qwen2-5-coder-1-5b-instruct-q4-k-m.download",
         "settings.models.llama3-2-1b-instruct-q4-k-m.download",
         "settings.models.deepseek-r1-distill-qwen-1-5b-q4-k-m.download",
         "settings.models.h2o-danube2-1-8b-chat-q4-k-m.download",
@@ -46,7 +51,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         "settings.models.tinyllama-1-1b-chat-q4-k-m.download",
         "settings.models.gemma3-1b-it-q4-k-m.download",
         "settings.models.gemma2-2b-it-q4-k-m.download",
-        "settings.models.gemma4-e2b-it-q4-k-m.download"
+        "settings.models.gemma4-e2b-it-q4-k-m.download",
+        "settings.models.stablelm2-chat-1-6b-q4-k-m.download"
     ]
 
     override func setUpWithError() throws {
@@ -197,8 +203,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(seedSamples.exists)
         seedSamples.tap()
 
-        XCTAssertTrue(findElement("automations.list", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findElement("automations.recipe.daily-briefing", direction: .down, maxSwipes: 2).exists)
+        XCTAssertTrue(findElement("automations.recipe.daily-briefing", direction: .down, maxSwipes: 10).exists)
         XCTAssertTrue(findStaticText(containing: "Daily Briefing", direction: .both, maxSwipes: 1).exists)
 
         let previewButton = findButton("automations.recipe.daily-briefing.preview", direction: .both, maxSwipes: 1)
@@ -216,6 +221,17 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(toggleButton.exists)
         toggleButton.tap()
         XCTAssertTrue(findStaticText(containing: "Disabled Daily Briefing", direction: .both, maxSwipes: 1).exists)
+    }
+
+    func testAutomationsShowsShortcutTemplatesRequireUserApproval() throws {
+        assertPrimaryTabsExist()
+        tapTab(identifier: "root.tab.automations", label: "Automations")
+
+        XCTAssertTrue(findElement("automations.shortcut-templates", direction: .down, maxSwipes: 3).exists)
+        XCTAssertTrue(findStaticText(containing: "Apple Shortcuts installation requires user approval", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Run Kairo Recipe Shortcut", direction: .down, maxSwipes: 8).exists)
+        XCTAssertTrue(findStaticText(containing: "Run Kairo Recipe", direction: .both, maxSwipes: 2).exists)
+        XCTAssertTrue(findStaticText(containing: "Recipe ID", direction: .both, maxSwipes: 2).exists)
     }
 
     func testMemoryTabCanSaveManualMemory() throws {

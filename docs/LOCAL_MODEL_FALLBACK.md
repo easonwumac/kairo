@@ -80,7 +80,7 @@ protocol AIProvider {
 
 The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, and a Refresh Catalog action. A production build still needs a real signed catalog, stronger signature verification, progress/cancellation handling, license text, and stronger size disclosure.
 
-The default development catalog points to 18 public GGUF downloads through Hugging Face, all at 2B parameters or below:
+The default development catalog points to 21 public GGUF downloads through Hugging Face, all at 2B parameters or below:
 
 - `Qwen3.5 0.8B Q4_K_M`: `AaryanK/Qwen3.5-0.8B-GGUF`, file `Qwen3.5-0.8B.q4_k_m.gguf`, about 527.5 MB.
 - `Qwen3.5 2B Q4_K_M`: `AaryanK/Qwen3.5-2B-GGUF`, file `Qwen3.5-2B.q4_k_m.gguf`, about 1.27 GB.
@@ -88,6 +88,8 @@ The default development catalog points to 18 public GGUF downloads through Huggi
 - `Qwen3 1.7B Q4_K_M`: `unsloth/Qwen3-1.7B-GGUF`, file `Qwen3-1.7B-Q4_K_M.gguf`, about 1.11 GB.
 - `Qwen2.5 0.5B Instruct Q4_K_M`: `Qwen/Qwen2.5-0.5B-Instruct-GGUF`, file `qwen2.5-0.5b-instruct-q4_k_m.gguf`, about 491.4 MB.
 - `Qwen2.5 1.5B Instruct Q4_K_M`: `Qwen/Qwen2.5-1.5B-Instruct-GGUF`, file `qwen2.5-1.5b-instruct-q4_k_m.gguf`, about 1.12 GB.
+- `Qwen2.5-Coder 0.5B Instruct Q4_K_M`: `QuantFactory/Qwen2.5-Coder-0.5B-Instruct-GGUF`, file `Qwen2.5-Coder-0.5B-Instruct.Q4_K_M.gguf`, about 491.4 MB.
+- `Qwen2.5-Coder 1.5B Instruct Q4_K_M`: `Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF`, file `qwen2.5-coder-1.5b-instruct-q4_k_m.gguf`, about 1.12 GB.
 - `Llama 3.2 1B Instruct Q4_K_M`: `bartowski/Llama-3.2-1B-Instruct-GGUF`, file `Llama-3.2-1B-Instruct-Q4_K_M.gguf`, about 807.7 MB.
 - `DeepSeek R1 Distill Qwen 1.5B Q4_K_M`: `QuantFactory/DeepSeek-R1-Distill-Qwen-1.5B-GGUF`, file `DeepSeek-R1-Distill-Qwen-1.5B.Q4_K_M.gguf`, about 1.12 GB.
 - `H2O Danube2 1.8B Chat Q4_K_M`: `h2oai/h2o-danube2-1.8b-chat-GGUF`, file `h2o-danube2-1.8b-chat-Q4_K_M.gguf`, about 1.11 GB.
@@ -100,8 +102,9 @@ The default development catalog points to 18 public GGUF downloads through Huggi
 - `Gemma 3 1B IT Q4_K_M`: `ggml-org/gemma-3-1b-it-GGUF`, file `gemma-3-1b-it-Q4_K_M.gguf`, about 806.1 MB.
 - `Gemma 2 2B IT Q4_K_M`: `second-state/Gemma-2b-it-GGUF`, file `gemma-2b-it-Q4_K_M.gguf`, about 1.50 GB.
 - `Gemma 4 E2B IT Q4_K_M`: `unsloth/gemma-4-E2B-it-GGUF`, file `gemma-4-E2B-it-Q4_K_M.gguf`, about 3.11 GB.
+- `StableLM 2 Chat 1.6B Q4_K_M`: `RichardErkhov/stabilityai_-_stablelm-2-1_6b-chat-gguf`, file `stablelm-2-1_6b-chat.Q4_K_M.gguf`, about 1.03 GB.
 
-SHA-256 and file size are stored in each manifest and verified after download. Models that require gated license approval or noncommercial-only terms should not be exposed as normal downloadable rows until the catalog schema can represent the approval step and license constraints clearly; examples reviewed but intentionally not listed as normal downloads yet include StableLM 2 1.6B Chat and MobileLLM 1.5B.
+SHA-256 and file size are stored in each manifest and verified after download. Models with noncommercial or gated license terms, such as StableLM 2 Chat, must keep license text visible and should gain a production license-approval gate in the standalone `kairo-models` catalog before broad rollout.
 
 Kairo must keep this as an explicit user-triggered download. Do not commit model weights, tokenizer blobs, downloaded `.gguf` files, or cached model artifacts into this repository.
 

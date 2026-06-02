@@ -20,7 +20,11 @@ final class KairoShortcutNodeTests: XCTestCase {
                 "ExtractKairoTasksIntent",
                 "CreateDailyBriefingIntent",
                 "CreateReminderDraftsIntent",
-                "RunKairoShortcutNodeIntent"
+                "RunKairoShortcutNodeIntent",
+                "RunKairoRecipeIntent",
+                "SuggestKairoRecipeIntent",
+                "ListKairoRecipesIntent",
+                "RunKairoDailyBriefingIntent"
             ]
         )
     }
@@ -36,6 +40,10 @@ final class KairoShortcutNodeTests: XCTestCase {
         _ = CreateDailyBriefingIntent()
         _ = CreateReminderDraftsIntent()
         _ = RunKairoShortcutNodeIntent()
+        _ = RunKairoRecipeIntent()
+        _ = SuggestKairoRecipeIntent()
+        _ = ListKairoRecipesIntent()
+        _ = RunKairoDailyBriefingIntent()
     }
 #endif
 
@@ -137,6 +145,54 @@ final class KairoShortcutNodeTests: XCTestCase {
         let demoIDs = Set(ShortcutDemoCatalog.default.recipes.map(\.id))
 
         XCTAssertTrue(templateIDs.isSuperset(of: demoIDs))
+    }
+
+    func testShortcutTemplateRegistryShipsUserInstalledRecipeTemplates() throws {
+        let registry = ShortcutTemplateRegistry.default
+        let templateIDs = registry.templates.map(\.identifier)
+
+        XCTAssertEqual(templateIDs, [
+            "daily-briefing-shortcut",
+            "meeting-prep-shortcut",
+            "share-text-to-kairo-shortcut",
+            "screenshot-to-tasks-shortcut",
+            "action-button-ask-kairo-shortcut",
+            "run-kairo-recipe-shortcut"
+        ])
+        XCTAssertTrue(registry.manualInstallDisclaimer.contains("Kairo creates internal recipes"))
+        XCTAssertTrue(registry.manualInstallDisclaimer.contains("Apple Shortcuts installation requires user approval"))
+        XCTAssertTrue(registry.templates.allSatisfy(\.requiresExplicitUserSetup))
+        XCTAssertTrue(registry.templates.allSatisfy { !$0.setupInstructions.isEmpty })
+        XCTAssertTrue(registry.templates.allSatisfy { $0.installURL == nil })
+        XCTAssertFalse(registry.templates.flatMap(\.setupInstructions).contains { $0.localizedCaseInsensitiveContains("silent install") })
+
+        let daily = try XCTUnwrap(registry.template(id: "daily-briefing-shortcut"))
+        XCTAssertEqual(daily.category, .dailyBriefing)
+        XCTAssertEqual(daily.recommendedRecipeTemplateID, "daily-briefing")
+        XCTAssertTrue(daily.requiredIntentIdentifiers.contains("RunKairoDailyBriefingIntent"))
+
+        let runRecipe = try XCTUnwrap(registry.template(id: "run-kairo-recipe-shortcut"))
+        XCTAssertEqual(runRecipe.category, .genericRecipe)
+        XCTAssertTrue(runRecipe.requiredIntentIdentifiers.contains("RunKairoRecipeIntent"))
+        XCTAssertTrue(runRecipe.setupInstructions.joined(separator: " ").contains("Recipe ID"))
+    }
+
+    func testKairoRecipeAppIntentsAreDocumentedAsUserApprovedShortcutBridge() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let intentsSource = try String(contentsOf: root.appendingPathComponent("Kairo/Intents/KairoIntents.swift"), encoding: .utf8)
+
+        XCTAssertTrue(intentsSource.contains("struct RunKairoRecipeIntent"))
+        XCTAssertTrue(intentsSource.contains("struct SuggestKairoRecipeIntent"))
+        XCTAssertTrue(intentsSource.contains("struct ListKairoRecipesIntent"))
+        XCTAssertTrue(intentsSource.contains("struct RunKairoDailyBriefingIntent"))
+        XCTAssertTrue(intentsSource.contains("FileBackedKairoRecipeStore"))
+        XCTAssertTrue(intentsSource.contains("KairoRecipeRunner"))
+        XCTAssertTrue(intentsSource.contains("surface: .shortcut"))
+        XCTAssertTrue(intentsSource.contains("userConfirmed: false"))
+        XCTAssertTrue(intentsSource.contains("requires confirmation in the Kairo app"))
+        XCTAssertTrue(intentsSource.contains("does not create Apple Shortcuts"))
+        XCTAssertFalse(intentsSource.contains("shortcuts://create"))
+        XCTAssertFalse(intentsSource.contains("shortcuts://x-callback-url/create"))
     }
 
     func testAppleShortcutsIntegrationDocumentsUserVisibleHandoffURLScheme() throws {

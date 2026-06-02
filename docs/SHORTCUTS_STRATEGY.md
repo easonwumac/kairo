@@ -14,7 +14,7 @@ Kairo 不應嘗試繞過 iOS sandbox，而是成為 Shortcuts 裡的 AI brain：
 - 決定下一步建議。
 - 把結構化結果交給 Shortcuts 後續動作。
 
-Kairo Recipes 是另一層：它們是 Kairo app 內部 workflows，可以由 Kairo 儲存、preview、run、enable/disable。Apple Shortcuts 之後可以透過 App Intents 呼叫 Kairo Recipes，但 Kairo 不會 silent create/edit/install Apple Shortcuts。
+Kairo Recipes 是另一層：它們是 Kairo app 內部 workflows，可以由 Kairo 儲存、preview、run、enable/disable。Apple Shortcuts 可以透過 App Intents 呼叫 Kairo Recipes，但 Kairo 不會 silent create/edit/install Apple Shortcuts。
 
 ## MVP App Intents
 
@@ -47,6 +47,24 @@ Kairo Recipes 是另一層：它們是 Kairo app 內部 workflows，可以由 Ka
 7. `Create Daily Briefing`
    - input：date / options
    - output：briefing text
+
+8. `Run Kairo Recipe`
+   - input：recipe id, optional text
+   - output：encoded `KairoRecipeRunResult`
+   - boundary：Tier 2+ recipes return a preview that requires confirmation in the Kairo app
+
+9. `Suggest Kairo Recipe`
+   - input：natural-language automation request
+   - output：disabled Kairo recipe draft for review
+   - boundary：does not create Apple Shortcuts
+
+10. `List Kairo Recipes`
+    - output：enabled Kairo recipe ids/titles for user-created Shortcuts
+
+11. `Run Kairo Daily Briefing`
+    - input：optional text
+    - output：encoded `KairoRecipeRunResult`
+    - boundary：seeds the Kairo internal recipe if missing, not an Apple Shortcut
 
 ## Shortcuts Recipes
 
@@ -125,7 +143,7 @@ Node contract:
 
 `Run Kairo Shortcut Node` is the generic node bridge for advanced Shortcuts. The user supplies a supported `ShortcutNodeKind` raw value and encoded `ShortcutNodeInput` JSON, and Kairo returns encoded `ShortcutNodeOutput` JSON. This makes Kairo usable as a Shortcuts node graph component without giving Kairo permission to silently create, edit, or execute Apple Shortcuts.
 
-Internal Kairo Recipes use `KairoRecipeRunner` instead of `ShortcutNodeRuntime`. They may be exposed to Shortcuts through a future `Run Kairo Recipe` App Intent, but the source of truth remains Kairo's recipe store rather than the user's Apple Shortcuts collection.
+Internal Kairo Recipes use `KairoRecipeRunner` instead of `ShortcutNodeRuntime`. They are exposed to Shortcuts through `Run Kairo Recipe`, `Suggest Kairo Recipe`, `List Kairo Recipes`, and `Run Kairo Daily Briefing`, but the source of truth remains Kairo's recipe store rather than the user's Apple Shortcuts collection.
 
 Current nodes:
 
@@ -137,6 +155,10 @@ Current nodes:
 6. `Create Reminder Draft` returns reminder drafts without EventKit writes.
 7. `Create Daily Briefing` returns briefing text and suggested task drafts.
 8. `Run Kairo Shortcut Node` runs a supported node kind from JSON input and returns structured JSON output.
+9. `Run Kairo Recipe` runs an enabled internal recipe by id and returns structured JSON output.
+10. `Suggest Kairo Recipe` saves a disabled recipe draft for Kairo Automations review.
+11. `List Kairo Recipes` lists enabled recipe ids/titles.
+12. `Run Kairo Daily Briefing` seeds and runs the internal Daily Briefing recipe.
 
 Implemented App Intent types:
 
@@ -148,6 +170,16 @@ Implemented App Intent types:
 6. `CreateDailyBriefingIntent`
 7. `CreateReminderDraftsIntent`
 8. `RunKairoShortcutNodeIntent`
+9. `RunKairoRecipeIntent`
+10. `SuggestKairoRecipeIntent`
+11. `ListKairoRecipesIntent`
+12. `RunKairoDailyBriefingIntent`
+
+## Shortcut Template Registry
+
+`ShortcutTemplateRegistry.default` ships user-installed template metadata for Daily Briefing, Meeting Prep, Share Text to Kairo, Screenshot to Tasks, Action Button Ask Kairo, and generic Run Kairo Recipe. Templates store required App Intent identifiers, recommended internal recipe ids, and manual setup instructions.
+
+Template metadata is not a one-tap install mechanism. The Automations tab states that Kairo creates internal recipes and Apple Shortcuts installation requires user approval.
 
 ## User-visible Shortcut handoff
 

@@ -8,13 +8,14 @@ Kairo Recipes are Kairo-owned internal workflows. They are stored and run by Kai
 - Store recipes with `InMemoryKairoRecipeStore` or `FileBackedKairoRecipeStore`.
 - Preview and run recipes with `KairoRecipeRunner`.
 - Enable, disable, and delete recipes through the recipe store.
-- Expose a SwiftUI Automations tab for sample recipe install, preview, run, and toggle flows.
+- Expose a SwiftUI Automations tab for sample recipe install, preview, run, toggle flows, and Shortcut template install guidance.
+- Expose App Intents for `Run Kairo Recipe`, `Suggest Kairo Recipe`, `List Kairo Recipes`, and `Run Kairo Daily Briefing`.
 
 ## Shortcut Boundary
 
-Kairo does not silently create, edit, or install Apple Shortcuts. Apple Shortcuts can call Kairo App Intents in future stages, but Shortcut installation remains a user-approved action in the Shortcuts app.
+Kairo does not silently create, edit, or install Apple Shortcuts. Apple Shortcuts can call Kairo App Intents such as `Run Kairo Recipe`, but Shortcut installation remains a user-approved action in the Shortcuts app.
 
-The Automations tab manages internal Kairo recipes only. Shortcut setup guidance and Shortcut demo node contracts stay visible, but they are not evidence that Kairo has modified the user's Shortcuts library.
+The Automations tab manages internal Kairo recipes and shows `ShortcutTemplateRegistry` metadata for user-installed templates. Shortcut setup guidance and Shortcut demo node contracts stay visible, but they are not evidence that Kairo has modified the user's Shortcuts library.
 
 ## Risk Policy
 
@@ -41,5 +42,6 @@ The current stage covers:
 - runner confirmation gates for low-risk writes
 - deterministic task extraction and reminder draft creation
 - RootView/AutomationsView accessibility identifiers
+- Shortcut template registry metadata and Automations template identifiers
 - UI smoke scenario catalog entries
-- an XCUITest flow for adding samples, previewing, running, and disabling a recipe
+- XCUITest flows for adding samples, previewing, running, disabling a recipe, and verifying Shortcut templates require user approval

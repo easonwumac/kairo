@@ -2,9 +2,12 @@
 import SwiftUI
 
 public struct AutomationsView: View {
+    @Environment(\.openURL) private var openURL
+
     private let recipeStore: any KairoRecipeStore
     private let memoryStore: (any MemoryStore)?
     private let aiProvider: (any AIProvider)?
+    private let shortcutTemplateRegistry: ShortcutTemplateRegistry
 
     @State private var recipes: [KairoRecipe] = []
     @State private var message: String?
@@ -13,11 +16,13 @@ public struct AutomationsView: View {
     public init(
         recipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
         memoryStore: (any MemoryStore)? = nil,
-        aiProvider: (any AIProvider)? = nil
+        aiProvider: (any AIProvider)? = nil,
+        shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default
     ) {
         self.recipeStore = recipeStore
         self.memoryStore = memoryStore
         self.aiProvider = aiProvider
+        self.shortcutTemplateRegistry = shortcutTemplateRegistry
     }
 
     public var body: some View {
@@ -33,6 +38,18 @@ public struct AutomationsView: View {
                     }
                     .accessibilityIdentifier("automations.seed-samples")
                 }
+
+                Section("Shortcut Templates") {
+                    Text(shortcutTemplateRegistry.manualInstallDisclaimer)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("automations.shortcut-template.disclaimer")
+
+                    ForEach(shortcutTemplateRegistry.templates) { template in
+                        shortcutTemplateRow(template)
+                    }
+                }
+                .accessibilityIdentifier("automations.shortcut-templates")
 
                 Section("Recipes") {
                     if recipes.isEmpty {
@@ -61,6 +78,35 @@ public struct AutomationsView: View {
                 await loadRecipes()
             }
         }
+    }
+
+    private func shortcutTemplateRow(_ template: ShortcutTemplate) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(template.title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .accessibilityIdentifier("automations.shortcut-template.\(template.identifier)")
+
+            if !template.description.isEmpty {
+                Text(template.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(template.setupInstructions.joined(separator: "\n"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("automations.shortcut-template.\(template.identifier).instructions")
+
+            if let installURL = template.installURL {
+                Button("Open Template") {
+                    openURL(installURL)
+                }
+                .accessibilityIdentifier("automations.shortcut-template.\(template.identifier).open")
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
     }
 
     private func recipeRow(_ recipe: KairoRecipe) -> some View {

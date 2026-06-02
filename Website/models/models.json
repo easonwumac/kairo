@@ -298,6 +298,92 @@
       "deprecated": false
     },
     {
+      "id": "qwen2-5-coder-0-5b-instruct-q4-k-m",
+      "displayName": "Qwen2.5-Coder 0.5B Instruct Q4_K_M",
+      "family": "Qwen2.5-Coder",
+      "version": "1.0",
+      "parameterCount": "0.5B",
+      "quantization": "Q4_K_M",
+      "runtime": "gguf",
+      "fileSizeBytes": 491400512,
+      "installedSizeBytes": 838860800,
+      "contextWindow": 32768,
+      "tokenizerID": "qwen2.5-coder-tokenizer",
+      "licenseName": "Apache-2.0",
+      "licenseURL": "https://www.apache.org/licenses/LICENSE-2.0",
+      "minOSVersion": "17.0",
+      "minDeviceClass": "A15",
+      "minRAMGB": 4,
+      "supportedLocales": [
+        "en",
+        "zh-Hant"
+      ],
+      "capabilities": [
+        "drafts",
+        "summarization",
+        "simpleQuestionAnswer",
+        "offlineChat",
+        "rewriting",
+        "extraction"
+      ],
+      "disallowedCapabilities": [
+        "toolUse",
+        "webCurrentInfo",
+        "codeExecution",
+        "accountActions",
+        "regulatedAdvice"
+      ],
+      "downloadURL": "https://huggingface.co/QuantFactory/Qwen2.5-Coder-0.5B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-0.5B-Instruct.Q4_K_M.gguf",
+      "sha256": "5d933e04310b9184f9bc97e511820e71b5dc7704eda6f7c937126a241828e93e",
+      "createdAt": "2026-06-02T00:00:00Z",
+      "updatedAt": "2026-06-02T00:00:00Z",
+      "safetyPolicyVersion": "2026.1",
+      "deprecated": false
+    },
+    {
+      "id": "qwen2-5-coder-1-5b-instruct-q4-k-m",
+      "displayName": "Qwen2.5-Coder 1.5B Instruct Q4_K_M",
+      "family": "Qwen2.5-Coder",
+      "version": "1.0",
+      "parameterCount": "1.5B",
+      "quantization": "Q4_K_M",
+      "runtime": "gguf",
+      "fileSizeBytes": 1117320768,
+      "installedSizeBytes": 1782579200,
+      "contextWindow": 32768,
+      "tokenizerID": "qwen2.5-coder-tokenizer",
+      "licenseName": "Apache-2.0",
+      "licenseURL": "https://www.apache.org/licenses/LICENSE-2.0",
+      "minOSVersion": "17.0",
+      "minDeviceClass": "A15",
+      "minRAMGB": 4,
+      "supportedLocales": [
+        "en",
+        "zh-Hant"
+      ],
+      "capabilities": [
+        "drafts",
+        "summarization",
+        "simpleQuestionAnswer",
+        "offlineChat",
+        "rewriting",
+        "extraction"
+      ],
+      "disallowedCapabilities": [
+        "toolUse",
+        "webCurrentInfo",
+        "codeExecution",
+        "accountActions",
+        "regulatedAdvice"
+      ],
+      "downloadURL": "https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF/resolve/main/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+      "sha256": "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
+      "createdAt": "2026-06-02T00:00:00Z",
+      "updatedAt": "2026-06-02T00:00:00Z",
+      "safetyPolicyVersion": "2026.1",
+      "deprecated": false
+    },
+    {
       "id": "llama3-2-1b-instruct-q4-k-m",
       "displayName": "Llama 3.2 1B Instruct Q4_K_M",
       "family": "Llama 3.2",
@@ -808,6 +894,49 @@
       ],
       "downloadURL": "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf",
       "sha256": "9378bc471710229ef165709b62e34bfb62231420ddaf6d729e727305b5b8672d",
+      "createdAt": "2026-06-02T00:00:00Z",
+      "updatedAt": "2026-06-02T00:00:00Z",
+      "safetyPolicyVersion": "2026.1",
+      "deprecated": false
+    },
+    {
+      "id": "stablelm2-chat-1-6b-q4-k-m",
+      "displayName": "StableLM 2 Chat 1.6B Q4_K_M",
+      "family": "StableLM 2 Chat",
+      "version": "1.0",
+      "parameterCount": "1.6B",
+      "quantization": "Q4_K_M",
+      "runtime": "gguf",
+      "fileSizeBytes": 1031443456,
+      "installedSizeBytes": 1677721600,
+      "contextWindow": 4096,
+      "tokenizerID": "stablelm2-tokenizer",
+      "licenseName": "Stability AI Non-Commercial Research Community License",
+      "licenseURL": "https://huggingface.co/stabilityai/stablelm-2-1_6b-chat/blob/main/LICENSE",
+      "minOSVersion": "17.0",
+      "minDeviceClass": "A15",
+      "minRAMGB": 4,
+      "supportedLocales": [
+        "en",
+        "zh-Hant"
+      ],
+      "capabilities": [
+        "drafts",
+        "summarization",
+        "simpleQuestionAnswer",
+        "offlineChat",
+        "rewriting",
+        "extraction"
+      ],
+      "disallowedCapabilities": [
+        "toolUse",
+        "webCurrentInfo",
+        "codeExecution",
+        "accountActions",
+        "regulatedAdvice"
+      ],
+      "downloadURL": "https://huggingface.co/RichardErkhov/stabilityai_-_stablelm-2-1_6b-chat-gguf/resolve/main/stablelm-2-1_6b-chat.Q4_K_M.gguf",
+      "sha256": "cc3d155b10272a93cfd53304c95289b97ae677d8aaf455a23305c552fb83f091",
       "createdAt": "2026-06-02T00:00:00Z",
       "updatedAt": "2026-06-02T00:00:00Z",
       "safetyPolicyVersion": "2026.1",

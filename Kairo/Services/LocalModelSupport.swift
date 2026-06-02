@@ -322,6 +322,8 @@ public extension LocalModelCatalog {
             .qwen3Tiny,
             .qwen25MicroInstruct,
             .qwen25TinyInstruct,
+            .qwen25CoderMicroInstruct,
+            .qwen25CoderTinyInstruct,
             .llama32OneBInstruct,
             .deepSeekR1DistillQwenTiny,
             .h2oDanube2Chat,
@@ -333,7 +335,8 @@ public extension LocalModelCatalog {
             .tinyLlamaChat,
             .gemma3OneBIt,
             .gemma2TwoBIt,
-            .gemma4E2BIt
+            .gemma4E2BIt,
+            .stableLM2ChatTiny
         ]
     )
 }
@@ -493,6 +496,34 @@ public extension LocalModelManifest {
         minRAMGB: 4,
         downloadURL: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
         sha256: "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
+    )
+
+    static let qwen25CoderMicroInstruct = ggufManifest(
+        id: "qwen2-5-coder-0-5b-instruct-q4-k-m",
+        displayName: "Qwen2.5-Coder 0.5B Instruct Q4_K_M",
+        family: "Qwen2.5-Coder",
+        parameterCount: "0.5B",
+        fileSizeBytes: 491_400_512,
+        installedSizeBytes: 800 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen2.5-coder-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/QuantFactory/Qwen2.5-Coder-0.5B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-0.5B-Instruct.Q4_K_M.gguf",
+        sha256: "5d933e04310b9184f9bc97e511820e71b5dc7704eda6f7c937126a241828e93e"
+    )
+
+    static let qwen25CoderTinyInstruct = ggufManifest(
+        id: "qwen2-5-coder-1-5b-instruct-q4-k-m",
+        displayName: "Qwen2.5-Coder 1.5B Instruct Q4_K_M",
+        family: "Qwen2.5-Coder",
+        parameterCount: "1.5B",
+        fileSizeBytes: 1_117_320_768,
+        installedSizeBytes: 1_700 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen2.5-coder-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF/resolve/main/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+        sha256: "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046"
     )
 
     static let qwen3Micro = ggufManifest(
@@ -701,6 +732,22 @@ public extension LocalModelManifest {
         minRAMGB: 6,
         downloadURL: "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf",
         sha256: "9378bc471710229ef165709b62e34bfb62231420ddaf6d729e727305b5b8672d"
+    )
+
+    static let stableLM2ChatTiny = ggufManifest(
+        id: "stablelm2-chat-1-6b-q4-k-m",
+        displayName: "StableLM 2 Chat 1.6B Q4_K_M",
+        family: "StableLM 2 Chat",
+        parameterCount: "1.6B",
+        fileSizeBytes: 1_031_443_456,
+        installedSizeBytes: 1_600 * 1024 * 1024,
+        contextWindow: 4_096,
+        tokenizerID: "stablelm2-tokenizer",
+        licenseName: "Stability AI Non-Commercial Research Community License",
+        licenseURL: "https://huggingface.co/stabilityai/stablelm-2-1_6b-chat/blob/main/LICENSE",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/RichardErkhov/stabilityai_-_stablelm-2-1_6b-chat-gguf/resolve/main/stablelm-2-1_6b-chat.Q4_K_M.gguf",
+        sha256: "cc3d155b10272a93cfd53304c95289b97ae677d8aaf455a23305c552fb83f091"
     )
 
     static let kairoDraftTiny = qwen35Tiny

@@ -158,4 +158,145 @@ public struct RunKairoShortcutNodeIntent: AppIntent {
         return .result(value: outputJSON, dialog: IntentDialog(stringLiteral: output.displayText))
     }
 }
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct RunKairoRecipeIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Run Kairo Recipe"
+    public static var description = IntentDescription("Run a user-approved Kairo internal automation recipe. This does not create Apple Shortcuts.")
+
+    @Parameter(title: "Recipe ID")
+    public var recipeID: String
+
+    @Parameter(title: "Input")
+    public var input: String?
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let store = try await KairoRecipeIntentSupport.recipeStore()
+        let runner = KairoRecipeRunner(recipeStore: store)
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipeID,
+            surface: .shortcut,
+            input: input,
+            dryRun: false,
+            userConfirmed: false
+        ))
+        let value = try KairoRecipeIntentSupport.encode(result)
+
+        if result.requiresConfirmation {
+            return .result(
+                value: value,
+                dialog: IntentDialog(stringLiteral: "Kairo prepared a recipe preview that requires confirmation in the Kairo app: \(result.summary)")
+            )
+        }
+
+        return .result(value: value, dialog: IntentDialog(stringLiteral: result.summary))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct SuggestKairoRecipeIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Suggest Kairo Recipe"
+    public static var description = IntentDescription("Create a disabled Kairo internal recipe draft for review. Kairo does not create Apple Shortcuts.")
+
+    @Parameter(title: "Automation Request")
+    public var automationRequest: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let planner = KairoRecipePlanner()
+        let recipes = planner.suggestRecipes(for: automationRequest)
+        guard let recipe = recipes.first else {
+            return .result(
+                value: "[]",
+                dialog: IntentDialog(stringLiteral: "Kairo could not suggest a recipe from that request.")
+            )
+        }
+
+        let store = try await KairoRecipeIntentSupport.recipeStore()
+        try await store.save(recipe)
+        let encoded = try KairoRecipeIntentSupport.encode(recipe)
+        return .result(
+            value: encoded,
+            dialog: IntentDialog(stringLiteral: "Kairo saved a disabled recipe draft named \(recipe.title). Review and enable it in Kairo Automations; this does not create Apple Shortcuts.")
+        )
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct ListKairoRecipesIntent: AppIntent {
+    public static var title: LocalizedStringResource = "List Kairo Recipes"
+    public static var description = IntentDescription("List enabled Kairo internal recipes available for Shortcuts.")
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let store = try await KairoRecipeIntentSupport.recipeStore()
+        let recipes = try await store.listRecipes()
+        let enabledRecipes = recipes.filter(\.isEnabled)
+        let summary: String
+        if enabledRecipes.isEmpty {
+            summary = "No enabled Kairo recipes. Open Kairo Automations to add or enable recipes."
+        } else {
+            summary = enabledRecipes.map { "\($0.title) (\($0.id))" }.joined(separator: "\n")
+        }
+
+        return .result(value: summary, dialog: IntentDialog(stringLiteral: summary))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct RunKairoDailyBriefingIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Run Kairo Daily Briefing"
+    public static var description = IntentDescription("Run or seed Kairo's Daily Briefing internal recipe through a user-approved Shortcut action.")
+
+    @Parameter(title: "Input")
+    public var input: String?
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let store = try await KairoRecipeIntentSupport.recipeStore()
+        let dailyID = "daily-briefing"
+        if try await store.recipe(id: dailyID) == nil {
+            try await store.save(KairoRecipeTemplateFactory.dailyBriefing())
+        }
+
+        let runner = KairoRecipeRunner(recipeStore: store)
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: dailyID,
+            surface: .shortcut,
+            input: input,
+            dryRun: false,
+            userConfirmed: false
+        ))
+        let value = try KairoRecipeIntentSupport.encode(result)
+
+        if result.requiresConfirmation {
+            return .result(
+                value: value,
+                dialog: IntentDialog(stringLiteral: "Kairo prepared a Daily Briefing preview that requires confirmation in the Kairo app: \(result.summary)")
+            )
+        }
+
+        return .result(value: value, dialog: IntentDialog(stringLiteral: result.summary))
+    }
+}
+
+private enum KairoRecipeIntentSupport {
+    static func recipeStore() async throws -> FileBackedKairoRecipeStore {
+        let paths = KairoSharedAppStorage.paths()
+        return try await FileBackedKairoRecipeStore(fileURL: paths.kairoRecipeStoreURL)
+    }
+
+    static func encode<T: Encodable>(_ value: T) throws -> String {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.sortedKeys]
+        let data = try encoder.encode(value)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
 #endif

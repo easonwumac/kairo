@@ -1359,6 +1359,13 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(automationsView.contains(#""automations.recipe.\(recipe.id).preview""#))
         XCTAssertTrue(automationsView.contains(#""automations.recipe.\(recipe.id).run""#))
         XCTAssertTrue(automationsView.contains(#""automations.recipe.\(recipe.id).toggle""#))
+        XCTAssertTrue(automationsView.contains("Shortcut Templates"))
+        XCTAssertTrue(automationsView.contains("ShortcutTemplateRegistry.default"))
+        XCTAssertTrue(automationsView.contains("shortcutTemplateRegistry.manualInstallDisclaimer"))
+        XCTAssertTrue(automationsView.contains(#""automations.shortcut-templates""#))
+        XCTAssertTrue(automationsView.contains(#""automations.shortcut-template.disclaimer""#))
+        XCTAssertTrue(automationsView.contains(#""automations.shortcut-template.\(template.identifier)""#))
+        XCTAssertTrue(automationsView.contains(#""automations.shortcut-template.\(template.identifier).instructions""#))
     }
 
     func testPermissionHubDefinesHomeKitDemoAccessibilityIdentifiers() throws {
@@ -1517,6 +1524,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-shortcut-tool-candidate",
             "memory-manual-save",
             "automations-recipe-center",
+            "automations-shortcut-templates",
             "settings-api-key-status",
             "settings-oauth-connectors",
             "settings-local-model-benchmark",
@@ -1545,6 +1553,12 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe.daily-briefing.run"))
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe.daily-briefing.toggle"))
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.message"))
+        let automationsShortcutScenarioIdentifiers = catalog.scenario(id: "automations-shortcut-templates")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("root.tab.automations"))
+        XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-templates"))
+        XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-template.disclaimer"))
+        XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-template.run-kairo-recipe-shortcut"))
+        XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-template.run-kairo-recipe-shortcut.instructions"))
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
@@ -1613,11 +1627,16 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("testSettingsShowsOAuthConnectorReadinessAndBoundaries"))
         XCTAssertTrue(smokeTest.contains("testSettingsPreviewsOAuthCallbackWithoutLeakingCode"))
         XCTAssertTrue(smokeTest.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
+        XCTAssertTrue(smokeTest.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
         XCTAssertTrue(smokeTest.contains(#""root.tab.automations""#))
         XCTAssertTrue(smokeTest.contains(#""automations.seed-samples""#))
         XCTAssertTrue(smokeTest.contains(#""automations.recipe.daily-briefing.preview""#))
         XCTAssertTrue(smokeTest.contains(#""automations.recipe.daily-briefing.run""#))
         XCTAssertTrue(smokeTest.contains(#""automations.recipe.daily-briefing.toggle""#))
+        XCTAssertTrue(smokeTest.contains(#""automations.shortcut-templates""#))
+        XCTAssertTrue(smokeTest.contains("Apple Shortcuts installation requires user approval"))
+        XCTAssertTrue(smokeTest.contains("Run Kairo Recipe Shortcut"))
+        XCTAssertTrue(smokeTest.contains("Recipe ID"))
         XCTAssertTrue(smokeTest.contains("Kairo internal recipe"))
         XCTAssertTrue(smokeTest.contains("does not create Apple Shortcuts"))
         XCTAssertTrue(smokeTest.contains(#""settings.oauth.callback-url""#))
@@ -1661,6 +1680,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("Qwen3 1.7B Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Qwen2.5 0.5B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Qwen2.5 1.5B Instruct Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("Qwen2.5-Coder 0.5B Instruct Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("Qwen2.5-Coder 1.5B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Llama 3.2 1B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("DeepSeek R1 Distill Qwen 1.5B Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("H2O Danube2 1.8B Chat Q4_K_M"))
@@ -1673,6 +1694,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("Gemma 3 1B IT Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Gemma 2 2B IT Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Gemma 4 E2B IT Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("StableLM 2 Chat 1.6B Q4_K_M"))
         for modelID in LocalModelCatalog.kairoDefault.models.map(\.id) {
             XCTAssertTrue(smokeTest.contains(#""settings.models.\#(modelID).download""#), modelID)
         }
@@ -1737,6 +1759,8 @@ final class KairoCoreTests: XCTestCase {
             "qwen3-1-7b-q4-k-m",
             "qwen2-5-0-5b-instruct-q4-k-m",
             "qwen2-5-1-5b-instruct-q4-k-m",
+            "qwen2-5-coder-0-5b-instruct-q4-k-m",
+            "qwen2-5-coder-1-5b-instruct-q4-k-m",
             "llama3-2-1b-instruct-q4-k-m",
             "deepseek-r1-distill-qwen-1-5b-q4-k-m",
             "h2o-danube2-1-8b-chat-q4-k-m",
@@ -1748,7 +1772,8 @@ final class KairoCoreTests: XCTestCase {
             "tinyllama-1-1b-chat-q4-k-m",
             "gemma3-1b-it-q4-k-m",
             "gemma2-2b-it-q4-k-m",
-            "gemma4-e2b-it-q4-k-m"
+            "gemma4-e2b-it-q4-k-m",
+            "stablelm2-chat-1-6b-q4-k-m"
         ])
         XCTAssertEqual(availableModels.map(\.displayName), [
             "Qwen3.5 0.8B Q4_K_M",
@@ -1757,6 +1782,8 @@ final class KairoCoreTests: XCTestCase {
             "Qwen3 1.7B Q4_K_M",
             "Qwen2.5 0.5B Instruct Q4_K_M",
             "Qwen2.5 1.5B Instruct Q4_K_M",
+            "Qwen2.5-Coder 0.5B Instruct Q4_K_M",
+            "Qwen2.5-Coder 1.5B Instruct Q4_K_M",
             "Llama 3.2 1B Instruct Q4_K_M",
             "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
             "H2O Danube2 1.8B Chat Q4_K_M",
@@ -1768,7 +1795,8 @@ final class KairoCoreTests: XCTestCase {
             "TinyLlama 1.1B Chat Q4_K_M",
             "Gemma 3 1B IT Q4_K_M",
             "Gemma 2 2B IT Q4_K_M",
-            "Gemma 4 E2B IT Q4_K_M"
+            "Gemma 4 E2B IT Q4_K_M",
+            "StableLM 2 Chat 1.6B Q4_K_M"
         ])
 
         for model in availableModels {
@@ -1804,6 +1832,16 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(qwenTiny.recommendedBenchmarkProfile?.runtime, .mlx)
         XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("MLX ref 286 gen tok/s") == true)
         XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("iPhone not verified") == true)
+
+        let coderTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-coder-0-5b-instruct-q4-k-m" })
+        let coderSmall = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-coder-1-5b-instruct-q4-k-m" })
+        let stableLM = try XCTUnwrap(availableModels.first { $0.id == "stablelm2-chat-1-6b-q4-k-m" })
+        XCTAssertEqual(coderTiny.contextWindow, 32_768)
+        XCTAssertEqual(coderSmall.contextWindow, 32_768)
+        XCTAssertTrue(coderTiny.capabilities.contains(.rewriting))
+        XCTAssertTrue(coderSmall.capabilities.contains(.extraction))
+        XCTAssertEqual(stableLM.contextWindow, 4_096)
+        XCTAssertLessThanOrEqual(stableLM.fileSizeBytes, 1_100_000_000)
     }
 
     func testLocalModelCatalogServiceFetchesStandaloneModelRepoCatalog() async throws {

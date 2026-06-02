@@ -121,6 +121,24 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "automations-shortcut-templates",
+            title: "Automations Shortcut Templates",
+            userGoal: "Open Automations and verify Kairo explains user-approved Apple Shortcuts template setup for running internal recipes.",
+            requiredAccessibilityIdentifiers: [
+                "root.tab.automations",
+                "automations.shortcut-templates",
+                "automations.shortcut-template.disclaimer",
+                "automations.shortcut-template.run-kairo-recipe-shortcut",
+                "automations.shortcut-template.run-kairo-recipe-shortcut.instructions"
+            ],
+            assertions: [
+                "The Automations tab exposes Shortcut template metadata.",
+                "The UI states that Apple Shortcuts installation requires user approval.",
+                "Run Kairo Recipe template instructions are visible.",
+                "Kairo does not claim silent Apple Shortcut installation."
+            ]
+        ),
+        UITestScenario(
             id: "settings-api-key-status",
             title: "Settings Credential Status",
             userGoal: "Open Settings and verify API key plus OAuth connector status is visible without exposing secret values.",
@@ -144,6 +162,10 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.models.qwen2-5-0-5b-instruct-q4-k-m.download",
                 "settings.models.qwen2-5-1-5b-instruct-q4-k-m.status",
                 "settings.models.qwen2-5-1-5b-instruct-q4-k-m.download",
+                "settings.models.qwen2-5-coder-0-5b-instruct-q4-k-m.status",
+                "settings.models.qwen2-5-coder-0-5b-instruct-q4-k-m.download",
+                "settings.models.qwen2-5-coder-1-5b-instruct-q4-k-m.status",
+                "settings.models.qwen2-5-coder-1-5b-instruct-q4-k-m.download",
                 "settings.models.llama3-2-1b-instruct-q4-k-m.status",
                 "settings.models.llama3-2-1b-instruct-q4-k-m.download",
                 "settings.models.deepseek-r1-distill-qwen-1-5b-q4-k-m.status",
@@ -168,6 +190,8 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.models.gemma2-2b-it-q4-k-m.download",
                 "settings.models.gemma4-e2b-it-q4-k-m.status",
                 "settings.models.gemma4-e2b-it-q4-k-m.download",
+                "settings.models.stablelm2-chat-1-6b-q4-k-m.status",
+                "settings.models.stablelm2-chat-1-6b-q4-k-m.download",
                 "settings.shortcuts.demos"
             ],
             assertions: [

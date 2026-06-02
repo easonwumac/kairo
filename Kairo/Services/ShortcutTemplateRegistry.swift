@@ -1,0 +1,109 @@
+import Foundation
+
+public struct ShortcutTemplateRegistry: Codable, Equatable, Sendable {
+    public var templates: [ShortcutTemplate]
+    public var manualInstallDisclaimer: String
+
+    public init(
+        templates: [ShortcutTemplate],
+        manualInstallDisclaimer: String = "Kairo creates internal recipes. Apple Shortcuts installation requires user approval."
+    ) {
+        self.templates = templates
+        self.manualInstallDisclaimer = manualInstallDisclaimer
+    }
+
+    public func template(id: String) -> ShortcutTemplate? {
+        templates.first { $0.identifier == id }
+    }
+
+    public static let `default` = ShortcutTemplateRegistry(templates: [
+        ShortcutTemplate(
+            identifier: "daily-briefing-shortcut",
+            title: "Daily Briefing Shortcut",
+            description: "Shortcut template guidance for running the Kairo Daily Briefing recipe from Siri, widgets, or a personal morning automation.",
+            category: .dailyBriefing,
+            inputSummary: "Optional text from Shortcuts or Siri.",
+            outputSummary: "Kairo recipe run summary and draft actions.",
+            requiredIntentIdentifiers: ["RunKairoDailyBriefingIntent", "RunKairoRecipeIntent"],
+            recommendedRecipeTemplateID: "daily-briefing",
+            setupInstructions: [
+                "Open Apple Shortcuts and create a new personal Shortcut.",
+                "Add Run Kairo Daily Briefing, or add Run Kairo Recipe with Recipe ID daily-briefing.",
+                "Review the Shortcut actions and approve installation yourself."
+            ]
+        ),
+        ShortcutTemplate(
+            identifier: "meeting-prep-shortcut",
+            title: "Meeting Prep Shortcut",
+            description: "Shortcut template guidance for preparing a meeting brief from Kairo memory.",
+            category: .meetingPrep,
+            inputSummary: "Optional meeting title or Shortcut text.",
+            outputSummary: "Meeting prep summary returned by Kairo.",
+            requiredIntentIdentifiers: ["RunKairoRecipeIntent"],
+            recommendedRecipeTemplateID: "meeting-prep",
+            setupInstructions: [
+                "Open Apple Shortcuts and create a Shortcut before meetings.",
+                "Add Run Kairo Recipe with Recipe ID meeting-prep.",
+                "Keep any calendar trigger user-created and user-approved."
+            ]
+        ),
+        ShortcutTemplate(
+            identifier: "share-text-to-kairo-shortcut",
+            title: "Share Text to Kairo Shortcut",
+            description: "Shortcut template guidance for sending selected text into a Kairo internal recipe.",
+            category: .shareSheet,
+            inputSummary: "Shared text or Shortcut input.",
+            outputSummary: "Summary and task drafts created inside Kairo.",
+            requiredIntentIdentifiers: ["SaveToKairoMemoryIntent", "RunKairoRecipeIntent"],
+            recommendedRecipeTemplateID: "shared-text-to-tasks",
+            setupInstructions: [
+                "Create a Share Sheet Shortcut that accepts text.",
+                "Pass Shortcut Input to Run Kairo Recipe with Recipe ID shared-text-to-tasks.",
+                "Review any returned drafts in Kairo before external writes."
+            ]
+        ),
+        ShortcutTemplate(
+            identifier: "screenshot-to-tasks-shortcut",
+            title: "Screenshot to Tasks Shortcut",
+            description: "Shortcut template guidance for using user-approved OCR text as Kairo task input.",
+            category: .screenshotToTasks,
+            inputSummary: "OCR text extracted by a user-created Shortcut.",
+            outputSummary: "Reminder drafts returned by Kairo.",
+            requiredIntentIdentifiers: ["ExtractKairoTasksIntent", "RunKairoRecipeIntent"],
+            recommendedRecipeTemplateID: "shared-text-to-tasks",
+            setupInstructions: [
+                "Create an Apple Shortcut that gets a screenshot and extracts text.",
+                "Send that text to Run Kairo Recipe with Recipe ID shared-text-to-tasks.",
+                "Approve the Shortcut manually and keep Reminder writes user-confirmed."
+            ]
+        ),
+        ShortcutTemplate(
+            identifier: "action-button-ask-kairo-shortcut",
+            title: "Action Button Ask Kairo Shortcut",
+            description: "Shortcut template guidance for mapping the Action Button to a visible Ask Kairo handoff.",
+            category: .actionButton,
+            inputSummary: "Prompt text typed or dictated by a user-created Shortcut.",
+            outputSummary: "Kairo answer JSON and spoken/displayable text.",
+            requiredIntentIdentifiers: ["AskKairoIntent"],
+            setupInstructions: [
+                "Create a Shortcut that asks for text and passes it to Ask Kairo.",
+                "Assign that Shortcut to Action Button in iOS Settings.",
+                "Kairo does not create or edit the Action Button Shortcut for you."
+            ]
+        ),
+        ShortcutTemplate(
+            identifier: "run-kairo-recipe-shortcut",
+            title: "Run Kairo Recipe Shortcut",
+            description: "Generic template guidance for calling any enabled Kairo internal recipe by ID.",
+            category: .genericRecipe,
+            inputSummary: "Recipe ID and optional text input.",
+            outputSummary: "Kairo recipe run summary and structured result JSON.",
+            requiredIntentIdentifiers: ["RunKairoRecipeIntent"],
+            setupInstructions: [
+                "Create an Apple Shortcut and add the Run Kairo Recipe action.",
+                "Enter the Recipe ID from Kairo Automations.",
+                "Run the Shortcut only after reviewing the user-approved setup."
+            ]
+        )
+    ])
+}

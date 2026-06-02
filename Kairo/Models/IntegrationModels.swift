@@ -125,24 +125,83 @@ public struct URLSchemeIntegration: Codable, Equatable, Sendable {
     }
 }
 
-public struct ShortcutTemplate: Codable, Equatable, Sendable {
+public enum ShortcutTemplateCategory: String, Codable, CaseIterable, Sendable {
+    case dailyBriefing
+    case meetingPrep
+    case shareSheet
+    case keyboard
+    case actionButton
+    case screenshotToTasks
+    case carMode
+    case genericRecipe
+}
+
+public struct ShortcutTemplate: Codable, Equatable, Identifiable, Sendable {
+    public var id: String { identifier }
     public var identifier: String
     public var title: String
+    public var description: String
+    public var category: ShortcutTemplateCategory
     public var inputSummary: String
     public var outputSummary: String
+    public var requiredIntentIdentifiers: [String]
+    public var recommendedRecipeTemplateID: String?
+    public var installURL: URL?
+    public var setupInstructions: [String]
     public var requiresExplicitUserSetup: Bool
 
     public init(
         identifier: String,
         title: String,
+        description: String = "",
+        category: ShortcutTemplateCategory = .genericRecipe,
         inputSummary: String,
         outputSummary: String,
+        requiredIntentIdentifiers: [String] = [],
+        recommendedRecipeTemplateID: String? = nil,
+        installURL: URL? = nil,
+        setupInstructions: [String] = [],
         requiresExplicitUserSetup: Bool = true
     ) {
         self.identifier = identifier
         self.title = title
+        self.description = description
+        self.category = category
         self.inputSummary = inputSummary
         self.outputSummary = outputSummary
+        self.requiredIntentIdentifiers = requiredIntentIdentifiers
+        self.recommendedRecipeTemplateID = recommendedRecipeTemplateID
+        self.installURL = installURL
+        self.setupInstructions = setupInstructions
         self.requiresExplicitUserSetup = requiresExplicitUserSetup
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case identifier
+        case title
+        case description
+        case category
+        case inputSummary
+        case outputSummary
+        case requiredIntentIdentifiers
+        case recommendedRecipeTemplateID
+        case installURL
+        case setupInstructions
+        case requiresExplicitUserSetup
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.identifier = try container.decode(String.self, forKey: .identifier)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.description = try container.decodeIfPresent(String.self, forKey: .description) ?? ""
+        self.category = try container.decodeIfPresent(ShortcutTemplateCategory.self, forKey: .category) ?? .genericRecipe
+        self.inputSummary = try container.decode(String.self, forKey: .inputSummary)
+        self.outputSummary = try container.decode(String.self, forKey: .outputSummary)
+        self.requiredIntentIdentifiers = try container.decodeIfPresent([String].self, forKey: .requiredIntentIdentifiers) ?? []
+        self.recommendedRecipeTemplateID = try container.decodeIfPresent(String.self, forKey: .recommendedRecipeTemplateID)
+        self.installURL = try container.decodeIfPresent(URL.self, forKey: .installURL)
+        self.setupInstructions = try container.decodeIfPresent([String].self, forKey: .setupInstructions) ?? []
+        self.requiresExplicitUserSetup = try container.decodeIfPresent(Bool.self, forKey: .requiresExplicitUserSetup) ?? true
     }
 }
