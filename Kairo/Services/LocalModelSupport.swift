@@ -322,11 +322,13 @@ public extension LocalModelCatalog {
             .qwen3Tiny,
             .qwen25MicroInstruct,
             .qwen25TinyInstruct,
+            .qwen25MathTinyInstruct,
             .qwen25CoderMicroInstruct,
             .qwen25CoderTinyInstruct,
             .llama32OneBInstruct,
             .granite32TwoBInstruct,
             .deepSeekR1DistillQwenTiny,
+            .lfm25TinyInstruct,
             .h2oDanube2Chat,
             .olmo2OneBInstruct,
             .openELM11BInstruct,
@@ -335,6 +337,7 @@ public extension LocalModelCatalog {
             .smolLM2MicroInstruct,
             .smolLM2TinyInstruct,
             .tinyLlamaChat,
+            .gemma3NanoIt,
             .gemma3OneBIt,
             .gemma2TwoBIt,
             .gemma4E2BIt,
@@ -486,6 +489,20 @@ public extension LocalModelManifest {
         sha256: "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e"
     )
 
+    static let qwen25MathTinyInstruct = ggufManifest(
+        id: "qwen2-5-math-1-5b-instruct-q4-k-m",
+        displayName: "Qwen2.5 Math 1.5B Instruct Q4_K_M",
+        family: "Qwen2.5 Math",
+        parameterCount: "1.5B",
+        fileSizeBytes: 986_048_832,
+        installedSizeBytes: 1_500 * 1024 * 1024,
+        contextWindow: 4_096,
+        tokenizerID: "qwen2.5-math-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/bartowski/Qwen2.5-Math-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-Math-1.5B-Instruct-Q4_K_M.gguf",
+        sha256: "9614a50f03c897028920ca0dc4365da570bf587f9ee7768261216fe370b37e8e"
+    )
+
     static let qwen25MicroInstruct = ggufManifest(
         id: "qwen2-5-0-5b-instruct-q4-k-m",
         displayName: "Qwen2.5 0.5B Instruct Q4_K_M",
@@ -602,6 +619,22 @@ public extension LocalModelManifest {
         sha256: "41aa31689f2cbdcc5172e370db2ab7a10e17a9427520602437bd16d8d127d105"
     )
 
+    static let lfm25TinyInstruct = ggufManifest(
+        id: "lfm2-5-1-2b-instruct-q4-k-m",
+        displayName: "LFM2.5 1.2B Instruct Q4_K_M",
+        family: "LFM2.5",
+        parameterCount: "1.2B",
+        fileSizeBytes: 730_895_168,
+        installedSizeBytes: 1_100 * 1024 * 1024,
+        contextWindow: 128_000,
+        tokenizerID: "lfm2.5-tokenizer",
+        licenseName: "LFM 1.0 License",
+        licenseURL: "https://huggingface.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF/blob/main/LICENSE",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF/resolve/main/LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+        sha256: "b1b3de114215d9507409a662a501a631095a479a419584e8a2ded6304b19b4f5"
+    )
+
     static let h2oDanube2Chat = ggufManifest(
         id: "h2o-danube2-1-8b-chat-q4-k-m",
         displayName: "H2O Danube2 1.8B Chat Q4_K_M",
@@ -716,6 +749,22 @@ public extension LocalModelManifest {
         minRAMGB: 4,
         downloadURL: "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
         sha256: "9fecc3b3cd76bba89d504f29b616eedf7da85b96540e490ca5824d3f7d2776a0"
+    )
+
+    static let gemma3NanoIt = ggufManifest(
+        id: "gemma3-270m-it-q4-k-m",
+        displayName: "Gemma 3 270M IT Q4_K_M",
+        family: "Gemma 3",
+        parameterCount: "270M",
+        fileSizeBytes: 253_115_424,
+        installedSizeBytes: 450 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "gemma3-tokenizer",
+        licenseName: "Gemma Terms of Use",
+        licenseURL: "https://ai.google.dev/gemma/terms",
+        minRAMGB: 3,
+        downloadURL: "https://huggingface.co/unsloth/gemma-3-270m-it-GGUF/resolve/main/gemma-3-270m-it-Q4_K_M.gguf",
+        sha256: "b1baabd6b729e4041822220d3e648e00d99cac5df86b10dffb77bcccf0688e39"
     )
 
     static let gemma3OneBIt = ggufManifest(

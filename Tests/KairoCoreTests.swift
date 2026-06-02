@@ -1489,7 +1489,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(availableModels.allSatisfy { $0.runtime == .gguf })
         XCTAssertTrue(availableModels.allSatisfy { $0.downloadURL.scheme == "https" })
         XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
-        XCTAssertEqual(availableModels.count, 23)
+        XCTAssertEqual(availableModels.count, 26)
 
         let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
         let mlxBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .mlx })
@@ -1505,7 +1505,7 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(indexHTML.contains("Kairo Model Catalog"))
         XCTAssertTrue(indexHTML.contains("models.json"))
-        XCTAssertTrue(indexHTML.contains("23\n      downloadable GGUF models at 2B parameters or below"))
+        XCTAssertTrue(indexHTML.contains("26\n      downloadable GGUF models at 2B parameters or below"))
         XCTAssertTrue(indexHTML.contains("benchmark profiles"))
         XCTAssertTrue(readme.contains("Do not commit model weights"))
         XCTAssertTrue(readme.contains("kairo-models"))
@@ -2260,11 +2260,13 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("Qwen3 1.7B Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Qwen2.5 0.5B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Qwen2.5 1.5B Instruct Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("Qwen2.5 Math 1.5B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Qwen2.5-Coder 0.5B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Qwen2.5-Coder 1.5B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Llama 3.2 1B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Granite 3.2 2B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("DeepSeek R1 Distill Qwen 1.5B Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("LFM2.5 1.2B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("H2O Danube2 1.8B Chat Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("OLMo 2 1B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("OpenELM 1.1B Instruct Q4_K_M"))
@@ -2273,6 +2275,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("SmolLM2 360M Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("SmolLM2 1.7B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("TinyLlama 1.1B Chat Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("Gemma 3 270M IT Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Gemma 3 1B IT Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Gemma 2 2B IT Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Gemma 4 E2B IT Q4_K_M"))
@@ -2343,11 +2346,13 @@ final class KairoCoreTests: XCTestCase {
             "qwen3-1-7b-q4-k-m",
             "qwen2-5-0-5b-instruct-q4-k-m",
             "qwen2-5-1-5b-instruct-q4-k-m",
+            "qwen2-5-math-1-5b-instruct-q4-k-m",
             "qwen2-5-coder-0-5b-instruct-q4-k-m",
             "qwen2-5-coder-1-5b-instruct-q4-k-m",
             "llama3-2-1b-instruct-q4-k-m",
             "granite3-2-2b-instruct-q4-k-m",
             "deepseek-r1-distill-qwen-1-5b-q4-k-m",
+            "lfm2-5-1-2b-instruct-q4-k-m",
             "h2o-danube2-1-8b-chat-q4-k-m",
             "olmo2-0425-1b-instruct-q4-k-m",
             "openelm-1-1b-instruct-q4-k-m",
@@ -2356,6 +2361,7 @@ final class KairoCoreTests: XCTestCase {
             "smollm2-360m-instruct-q4-k-m",
             "smollm2-1-7b-instruct-q4-k-m",
             "tinyllama-1-1b-chat-q4-k-m",
+            "gemma3-270m-it-q4-k-m",
             "gemma3-1b-it-q4-k-m",
             "gemma2-2b-it-q4-k-m",
             "gemma4-e2b-it-q4-k-m",
@@ -2368,11 +2374,13 @@ final class KairoCoreTests: XCTestCase {
             "Qwen3 1.7B Q4_K_M",
             "Qwen2.5 0.5B Instruct Q4_K_M",
             "Qwen2.5 1.5B Instruct Q4_K_M",
+            "Qwen2.5 Math 1.5B Instruct Q4_K_M",
             "Qwen2.5-Coder 0.5B Instruct Q4_K_M",
             "Qwen2.5-Coder 1.5B Instruct Q4_K_M",
             "Llama 3.2 1B Instruct Q4_K_M",
             "Granite 3.2 2B Instruct Q4_K_M",
             "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
+            "LFM2.5 1.2B Instruct Q4_K_M",
             "H2O Danube2 1.8B Chat Q4_K_M",
             "OLMo 2 1B Instruct Q4_K_M",
             "OpenELM 1.1B Instruct Q4_K_M",
@@ -2381,6 +2389,7 @@ final class KairoCoreTests: XCTestCase {
             "SmolLM2 360M Instruct Q4_K_M",
             "SmolLM2 1.7B Instruct Q4_K_M",
             "TinyLlama 1.1B Chat Q4_K_M",
+            "Gemma 3 270M IT Q4_K_M",
             "Gemma 3 1B IT Q4_K_M",
             "Gemma 2 2B IT Q4_K_M",
             "Gemma 4 E2B IT Q4_K_M",
