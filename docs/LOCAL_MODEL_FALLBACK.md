@@ -66,12 +66,25 @@ protocol AIProvider {
 
 ## MVP 策略
 
-第一階段先保留 mock/local placeholder，不急著塞模型權重。等 Kairo 的 memory、Shortcuts、EventKit、OpenAI provider 穩定後，再做 local model proof of concept。
+第一階段保留 mock/local placeholder，不急著塞模型權重。Kairo core 已具備 catalog、install registry、provider routing，以及 verified downloader scaffold；下一步是接上使用者可見的下載 UI 與實機 runtime proof of concept。
+
+## Download pipeline
+
+`VerifiedLocalModelDownloader` handles the safe install path:
+
+- downloads from the manifest URL through an injected `HTTPClient`;
+- rejects unsupported manifests and non-2xx HTTP responses;
+- verifies SHA-256 before moving the file into `KairoPaths.localModelsDirectory`;
+- writes `downloading`, `installed`, or `failed` records to `FileBackedLocalModelInstallRegistry`;
+- removes partial files when checksum verification fails.
+
+The downloader is intentionally UI-agnostic so the app can later expose a model download screen with progress, cancellation, license text, size disclosure, and delete controls.
 
 建議順序：
 
 1. 先做 `LocalFallbackProvider` protocol shell。
 2. 用 rule-based fallback 模擬本機模型能力。
-3. 選定 Core ML / llama.cpp / MLX Swift 等 runtime。
-4. 測 Qwen 0.6B～0.8B quantized 在 iPhone 上的速度與 RAM。
-5. 只把 fallback 用於短任務，不拿來做長規劃。
+3. 用 verified downloader 安裝使用者明確選擇的模型。
+4. 選定 Core ML / llama.cpp / MLX Swift 等 runtime。
+5. 測 Qwen 0.6B～0.8B quantized 在 iPhone 上的速度與 RAM。
+6. 只把 fallback 用於短任務，不拿來做長規劃。

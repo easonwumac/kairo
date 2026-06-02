@@ -413,6 +413,70 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(installedRecords.map(\.modelID), [record.modelID])
     }
 
+    func testVerifiedLocalModelDownloaderInstallsModelAndUpdatesRegistry() async throws {
+        let registryURL = temporaryFileURL(named: "install-registry.json")
+        let modelsDirectory = registryURL.deletingLastPathComponent().appendingPathComponent("Models", isDirectory: true)
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let httpClient = MockHTTPClient(statusCode: 200, body: "model-bytes")
+        let downloader = VerifiedLocalModelDownloader(
+            httpClient: httpClient,
+            installRegistry: registry,
+            modelsDirectory: modelsDirectory
+        )
+        let manifest = makeLocalModelManifest(
+            id: "qwen-small",
+            version: "1.0",
+            sha256: "357e5d6fafa34d27360fec24b4326d3534905e33c6acdee60198fb078b7b79e5"
+        )
+
+        let installedURL = try await downloader.download(manifest, progress: nil)
+
+        XCTAssertEqual(installedURL.lastPathComponent, "qwen-small-1.0.gguf")
+        XCTAssertEqual(try String(contentsOf: installedURL, encoding: .utf8), "model-bytes")
+        let request = try await httpClient.lastRequest()
+        XCTAssertEqual(request.url, manifest.downloadURL)
+        let record = await registry.record(for: manifest.id)
+        XCTAssertEqual(record?.status, .installed)
+        XCTAssertEqual(record?.fileURL, installedURL)
+        XCTAssertEqual(record?.installedSizeBytes, Int64("model-bytes".utf8.count))
+        XCTAssertEqual(record?.sha256, manifest.sha256)
+        XCTAssertNotNil(record?.lastVerifiedAt)
+    }
+
+    func testVerifiedLocalModelDownloaderFailsClosedWhenChecksumDoesNotMatch() async throws {
+        let registryURL = temporaryFileURL(named: "install-registry.json")
+        let modelsDirectory = registryURL.deletingLastPathComponent().appendingPathComponent("Models", isDirectory: true)
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let downloader = VerifiedLocalModelDownloader(
+            httpClient: MockHTTPClient(statusCode: 200, body: "wrong-bytes"),
+            installRegistry: registry,
+            modelsDirectory: modelsDirectory
+        )
+        let manifest = makeLocalModelManifest(
+            id: "qwen-small",
+            version: "1.0",
+            sha256: "357e5d6fafa34d27360fec24b4326d3534905e33c6acdee60198fb078b7b79e5"
+        )
+
+        do {
+            _ = try await downloader.download(manifest, progress: nil)
+            XCTFail("Expected checksum mismatch")
+        } catch let error as LocalModelDownloadError {
+            XCTAssertEqual(
+                error,
+                .checksumMismatch(
+                    expected: manifest.sha256,
+                    actual: "7c1d387f892b3c965dfc1951e2a92a2149cd103cef25c8ba5d0cc30a3a21063f"
+                )
+            )
+        }
+
+        let record = await registry.record(for: manifest.id)
+        XCTAssertEqual(record?.status, .failed)
+        XCTAssertTrue(record?.failureReason?.contains("Checksum mismatch") == true)
+        XCTAssertTrue((try? FileManager.default.contentsOfDirectory(at: modelsDirectory, includingPropertiesForKeys: nil))?.isEmpty ?? true)
+    }
+
     func testLocalFallbackProviderReturnsPlaceholderWithoutActions() async throws {
         let provider = LocalFallbackProvider(installedModelID: "qwen-small")
 
@@ -795,14 +859,16 @@ final class KairoCoreTests: XCTestCase {
 
     private func makeLocalModelManifest(
         id: String,
+        version: String = "1.0",
         safetyPolicyVersion: String = "2026.1",
-        deprecated: Bool = false
+        deprecated: Bool = false,
+        sha256: String = "abc123"
     ) -> LocalModelManifest {
         LocalModelManifest(
             id: id,
             displayName: "Qwen Small Test",
             family: "Qwen",
-            version: "1.0",
+            version: version,
             parameterCount: "0.8B",
             quantization: "Q4",
             fileSizeBytes: 512,
@@ -818,7 +884,7 @@ final class KairoCoreTests: XCTestCase {
             capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat],
             disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
             downloadURL: URL(string: "https://example.com/model.gguf")!,
-            sha256: "abc123",
+            sha256: sha256,
             safetyPolicyVersion: safetyPolicyVersion,
             deprecated: deprecated
         )
