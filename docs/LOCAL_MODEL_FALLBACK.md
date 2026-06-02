@@ -89,6 +89,27 @@ The default development catalog points to `Qwen3.5 0.8B Q4_K_M` through Hugging 
 
 Kairo must keep this as an explicit user-triggered download. Do not commit model weights, tokenizer blobs, downloaded `.gguf` files, or cached model artifacts into this repository.
 
+## Benchmark notes
+
+Development-machine benchmark on June 2, 2026, using Apple M5 Pro:
+
+- `llama.cpp` / GGUF `Qwen3.5-0.8B.q4_k_m.gguf`, Metal, 512 prompt tokens, 128 generated tokens, 5 trials: about 8,810 prompt tok/s and 214 generation tok/s.
+- `llama.cpp` / GGUF with `-ngl 0`, 3 trials: about 433 prompt tok/s and 123 generation tok/s.
+- `mlx-lm` / `mlx-community/Qwen3.5-0.8B-OptiQ-4bit`, 512 prompt tokens, 128 generated tokens, 5 trials: about 10,639 prompt tok/s, 286 generation tok/s, and 1.36 GB peak memory.
+
+MLX is the stronger Apple Silicon benchmark path for macOS/dev validation. iPhone production support still needs a separate runtime decision and real-device proof for latency, memory, thermal behavior, and App Store-compatible packaging. Do not treat these Mac numbers as iPhone performance.
+
+## Model catalog backend
+
+Kairo should eventually move model availability into a standalone GitHub repository, for example `kairo-models`, used like a static backend:
+
+- publish signed model catalog JSON and per-model manifests;
+- list runtime-specific artifacts, such as GGUF for llama.cpp-compatible runtimes and MLX artifacts for Apple Silicon validation;
+- include download URLs, SHA-256, file size, license, minimum OS, minimum RAM/device tier, context window, safety policy version, and deprecation status;
+- never host committed model weights in the app repo;
+- support catalog versioning, key rotation, revocation, and rollback;
+- let Kairo fetch the catalog visibly and install only after user approval.
+
 ## Model selection
 
 `LocalModelSettingsService` owns the selected local model and route preference:
