@@ -186,6 +186,7 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
 
 public enum AgentSkillManifestSignatureAlgorithm: String, Codable, Equatable, Sendable {
     case ed25519
+    case p256SHA256
 }
 
 public enum AgentSkillManifestChecksumAlgorithm: String, Codable, Equatable, Sendable {
@@ -217,6 +218,45 @@ public enum AgentSkillManifestValidationError: Error, Equatable, Sendable {
     case missingSignature
     case checksumMismatch
     case unavailableSkill
+    case unknownSigningKey(String)
+    case unsupportedSignatureAlgorithm(AgentSkillManifestSignatureAlgorithm)
+    case invalidSignature
+}
+
+public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Sendable {
+    public var id: String { keyID }
+    public var keyID: String
+    public var algorithm: AgentSkillManifestSignatureAlgorithm
+    public var publicKeyBase64: String
+
+    public init(
+        keyID: String,
+        algorithm: AgentSkillManifestSignatureAlgorithm,
+        publicKeyBase64: String
+    ) {
+        self.keyID = keyID
+        self.algorithm = algorithm
+        self.publicKeyBase64 = publicKeyBase64
+    }
+}
+
+public struct AgentSkillManifestTrustStore: Codable, Equatable, Sendable {
+    public var trustedKeys: [AgentSkillTrustedPublicKey]
+
+    public init(trustedKeys: [AgentSkillTrustedPublicKey]) {
+        self.trustedKeys = trustedKeys
+    }
+
+    public func trustedKey(id: String) -> AgentSkillTrustedPublicKey? {
+        trustedKeys.first { $0.keyID == id }
+    }
+}
+
+private struct AgentSkillManifestSigningPayload: Codable, Equatable, Sendable {
+    public var skill: AgentSkill
+    public var packageVersion: String
+    public var checksumAlgorithm: AgentSkillManifestChecksumAlgorithm
+    public var checksum: String
 }
 
 public struct AgentSkillManifest: Codable, Equatable, Sendable {
@@ -260,6 +300,38 @@ public struct AgentSkillManifest: Codable, Equatable, Sendable {
         }
     }
 
+    public func validateForInstall(trustStore: AgentSkillManifestTrustStore) throws {
+        try validateForInstall()
+
+        guard let signature else {
+            throw AgentSkillManifestValidationError.missingSignature
+        }
+        guard let trustedKey = trustStore.trustedKey(id: signature.keyID) else {
+            throw AgentSkillManifestValidationError.unknownSigningKey(signature.keyID)
+        }
+        guard trustedKey.algorithm == signature.algorithm else {
+            throw AgentSkillManifestValidationError.unsupportedSignatureAlgorithm(signature.algorithm)
+        }
+
+        switch signature.algorithm {
+        case .p256SHA256:
+            try validateP256Signature(signature, trustedKey: trustedKey)
+        case .ed25519:
+            throw AgentSkillManifestValidationError.unsupportedSignatureAlgorithm(signature.algorithm)
+        }
+    }
+
+    public func signingPayloadData() throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return try encoder.encode(AgentSkillManifestSigningPayload(
+            skill: skill,
+            packageVersion: packageVersion,
+            checksumAlgorithm: checksumAlgorithm,
+            checksum: checksum
+        ))
+    }
+
     public static func sha256Hex(for skill: AgentSkill) throws -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
@@ -279,6 +351,51 @@ public struct AgentSkillManifest: Codable, Equatable, Sendable {
                 value: "test-signature"
             )
         )
+    }
+
+    public static func signedForTesting(
+        skill: AgentSkill,
+        packageVersion: String,
+        keyID: String,
+        signingKey: P256.Signing.PrivateKey
+    ) throws -> AgentSkillManifest {
+        var manifest = AgentSkillManifest(
+            skill: skill,
+            packageVersion: packageVersion,
+            checksum: try sha256Hex(for: skill),
+            signature: nil
+        )
+        let signature = try signingKey.signature(for: manifest.signingPayloadData())
+        manifest.signature = AgentSkillManifestSignature(
+            keyID: keyID,
+            algorithm: .p256SHA256,
+            value: signature.derRepresentation.base64EncodedString()
+        )
+        return manifest
+    }
+
+    private func validateP256Signature(
+        _ signature: AgentSkillManifestSignature,
+        trustedKey: AgentSkillTrustedPublicKey
+    ) throws {
+        guard
+            let publicKeyData = Data(base64Encoded: trustedKey.publicKeyBase64),
+            let signatureData = Data(base64Encoded: signature.value)
+        else {
+            throw AgentSkillManifestValidationError.invalidSignature
+        }
+
+        do {
+            let publicKey = try P256.Signing.PublicKey(derRepresentation: publicKeyData)
+            let ecdsaSignature = try P256.Signing.ECDSASignature(derRepresentation: signatureData)
+            guard publicKey.isValidSignature(ecdsaSignature, for: try signingPayloadData()) else {
+                throw AgentSkillManifestValidationError.invalidSignature
+            }
+        } catch let error as AgentSkillManifestValidationError {
+            throw error
+        } catch {
+            throw AgentSkillManifestValidationError.invalidSignature
+        }
     }
 }
 
@@ -348,10 +465,16 @@ public actor FileBackedAgentSkillStore {
 public struct AgentSkillManagerService: Sendable {
     private let store: FileBackedAgentSkillStore
     private let builtInCatalog: AgentSkillCatalog
+    private let trustStore: AgentSkillManifestTrustStore?
 
-    public init(store: FileBackedAgentSkillStore, builtInCatalog: AgentSkillCatalog = .default) {
+    public init(
+        store: FileBackedAgentSkillStore,
+        builtInCatalog: AgentSkillCatalog = .default,
+        trustStore: AgentSkillManifestTrustStore? = nil
+    ) {
         self.store = store
         self.builtInCatalog = builtInCatalog
+        self.trustStore = trustStore
     }
 
     public func catalog() async throws -> AgentSkillCatalog {
@@ -362,7 +485,11 @@ public struct AgentSkillManagerService: Sendable {
 
     @discardableResult
     public func install(manifest: AgentSkillManifest) async throws -> AgentSkill {
-        try manifest.validateForInstall()
+        if let trustStore {
+            try manifest.validateForInstall(trustStore: trustStore)
+        } else {
+            try manifest.validateForInstall()
+        }
         let skill = manifest.installableSkill
         try await store.upsert(skill)
         return skill

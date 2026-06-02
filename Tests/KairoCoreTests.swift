@@ -1,5 +1,6 @@
 import XCTest
 import Foundation
+import CryptoKit
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -386,6 +387,94 @@ final class KairoCoreTests: XCTestCase {
         )
         XCTAssertThrowsError(try unsignedManifest.validateForInstall()) { error in
             XCTAssertEqual(error as? AgentSkillManifestValidationError, .missingSignature)
+        }
+    }
+
+    func testAgentSkillManifestTrustStoreVerifiesPublicKeySignatureAndRejectsUnknownKeys() throws {
+        let downloadableSkill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/weather-briefing.json")!
+        )
+        var manifest = AgentSkillManifest(
+            skill: downloadableSkill,
+            packageVersion: "2026.6",
+            checksum: try AgentSkillManifest.sha256Hex(for: downloadableSkill),
+            signature: nil
+        )
+        let signingKey = P256.Signing.PrivateKey()
+        let signature = try signingKey.signature(for: manifest.signingPayloadData())
+        manifest.signature = AgentSkillManifestSignature(
+            keyID: "kairo-marketplace-2026",
+            algorithm: .p256SHA256,
+            value: signature.derRepresentation.base64EncodedString()
+        )
+        let trustedKey = AgentSkillTrustedPublicKey(
+            keyID: "kairo-marketplace-2026",
+            algorithm: .p256SHA256,
+            publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
+        )
+        let trustStore = AgentSkillManifestTrustStore(trustedKeys: [trustedKey])
+
+        XCTAssertNoThrow(try manifest.validateForInstall(trustStore: trustStore))
+
+        let emptyTrustStore = AgentSkillManifestTrustStore(trustedKeys: [])
+        XCTAssertThrowsError(try manifest.validateForInstall(trustStore: emptyTrustStore)) { error in
+            XCTAssertEqual(error as? AgentSkillManifestValidationError, .unknownSigningKey("kairo-marketplace-2026"))
+        }
+
+        manifest.signature?.value = Data("tampered-signature".utf8).base64EncodedString()
+        XCTAssertThrowsError(try manifest.validateForInstall(trustStore: trustStore)) { error in
+            XCTAssertEqual(error as? AgentSkillManifestValidationError, .invalidSignature)
+        }
+    }
+
+    func testAgentSkillManagerUsesTrustStoreWhenProvided() async throws {
+        let storeURL = temporaryFileURL(named: "trusted-agent-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let skill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/weather-briefing.json")!
+        )
+        let signingKey = P256.Signing.PrivateKey()
+        let manifest = try AgentSkillManifest.signedForTesting(
+            skill: skill,
+            packageVersion: "2026.6",
+            keyID: "kairo-marketplace-2026",
+            signingKey: signingKey
+        )
+        let trustStore = AgentSkillManifestTrustStore(trustedKeys: [
+            AgentSkillTrustedPublicKey(
+                keyID: "kairo-marketplace-2026",
+                algorithm: .p256SHA256,
+                publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
+            )
+        ])
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default, trustStore: trustStore)
+
+        let installed = try await service.install(manifest: manifest)
+        XCTAssertEqual(installed.installationStatus, .installed)
+
+        let untrustedKey = P256.Signing.PrivateKey()
+        let untrustedManifest = try AgentSkillManifest.signedForTesting(
+            skill: AgentSkill.marketplaceTemplate(
+                id: "marketplace-untrusted",
+                displayName: "Untrusted Skill",
+                summary: "A marketplace skill signed by an unknown key.",
+                requiredCapabilities: [.externalConnectors],
+                downloadURL: URL(string: "https://skills.kairo.app/untrusted.json")!
+            ),
+            packageVersion: "2026.6",
+            keyID: "unknown-key",
+            signingKey: untrustedKey
+        )
+        await XCTAssertThrowsErrorAsync(try await service.install(manifest: untrustedManifest)) { error in
+            XCTAssertEqual(error as? AgentSkillManifestValidationError, .unknownSigningKey("unknown-key"))
         }
     }
 
@@ -1481,6 +1570,20 @@ final class KairoCoreTests: XCTestCase {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
             .appendingPathComponent(name)
+    }
+
+    private func XCTAssertThrowsErrorAsync<T>(
+        _ expression: @autoclosure () async throws -> T,
+        _ errorHandler: (Error) -> Void,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async {
+        do {
+            _ = try await expression()
+            XCTFail("Expected async expression to throw.", file: file, line: line)
+        } catch {
+            errorHandler(error)
+        }
     }
 
     private func makeLocalModelManifest(
