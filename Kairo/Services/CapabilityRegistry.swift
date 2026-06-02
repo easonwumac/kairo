@@ -41,6 +41,22 @@ public struct CapabilityRegistry: Sendable {
             isMVP: true
         ),
         Capability(
+            key: .integrationRegistry,
+            displayName: "Integration Registry",
+            description: "記錄 App Intents、Shortcuts、URL schemes 與 OAuth connector metadata，避免誇大跨 App 能力。",
+            permission: .userInitiated,
+            status: .available,
+            isMVP: true
+        ),
+        Capability(
+            key: .backgroundTasks,
+            displayName: "Background Task Policy",
+            description: "規劃 BGTaskScheduler 可接受的有限背景刷新/處理工作，不宣稱常駐 daemon。",
+            permission: .entitlement,
+            status: .available,
+            isMVP: true
+        ),
+        Capability(
             key: .notifications,
             displayName: "Notifications",
             description: "傳送 briefing、確認請求與提醒通知。",

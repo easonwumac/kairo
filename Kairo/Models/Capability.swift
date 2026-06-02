@@ -31,6 +31,8 @@ public enum CapabilityKey: String, Codable, CaseIterable, Sendable {
     case memory
     case shareExtension
     case appIntents
+    case integrationRegistry
+    case backgroundTasks
     case notifications
     case calendar
     case reminders
