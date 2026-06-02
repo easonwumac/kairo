@@ -80,6 +80,23 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "memory-manual-save",
+            title: "Memory Manual Save",
+            userGoal: "Open Memory, save a user-provided memory, and verify it appears in the list.",
+            requiredAccessibilityIdentifiers: [
+                "root.tab.memory",
+                "memory.add.text",
+                "memory.add.save",
+                "memory.list",
+                "memory.record"
+            ],
+            assertions: [
+                "The Memory tab exposes a manual memory text field.",
+                "The Save button is disabled until the user enters text.",
+                "A saved memory appears visibly in the Memory list."
+            ]
+        ),
+        UITestScenario(
             id: "settings-api-key-status",
             title: "Settings Credential Status",
             userGoal: "Open Settings and verify API key plus OAuth connector status is visible without exposing secret values.",

@@ -18,8 +18,10 @@ public struct MemoryCenterView: View {
                 HStack {
                     TextField("Add a memory", text: $draft)
                         .textFieldStyle(.roundedBorder)
+                        .accessibilityIdentifier("memory.add.text")
                     Button("Save") { save() }
                         .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .accessibilityIdentifier("memory.add.save")
                 }
                 .padding()
 
@@ -28,6 +30,7 @@ public struct MemoryCenterView: View {
                         .font(.caption)
                         .foregroundStyle(.red)
                         .padding(.horizontal)
+                        .accessibilityIdentifier("memory.error")
                 }
 
                 List(memories) { memory in
@@ -36,7 +39,10 @@ public struct MemoryCenterView: View {
                         Text(memory.summary).font(.subheadline)
                         Text(memory.source.rawValue).font(.caption).foregroundStyle(.secondary)
                     }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("memory.record")
                 }
+                .accessibilityIdentifier("memory.list")
             }
             .navigationTitle("Memory")
             .task { await reload() }

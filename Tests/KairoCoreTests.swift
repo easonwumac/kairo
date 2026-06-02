@@ -1347,6 +1347,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-send",
             "chat-tool-preview",
             "chat-shortcut-tool-candidate",
+            "memory-manual-save",
             "settings-api-key-status",
             "access-homekit-demos"
         ])
@@ -1358,6 +1359,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "chat-tool-preview")?.requiredAccessibilityIdentifiers.contains("chat.proposed-action.controlHome") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidates") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidate.shortcut-save-shared-text") == true)
+        XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.text") == true)
+        XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.save") == true)
+        XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.list") == true)
+        XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.record") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
@@ -1397,6 +1402,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(projectYAML.contains("target: KairoApp"))
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
         XCTAssertTrue(smokeTest.contains("testSettingsLocalModelCatalogListsDownloadableModels"))
+        XCTAssertTrue(smokeTest.contains("testMemoryTabCanSaveManualMemory"))
+        XCTAssertTrue(smokeTest.contains("memory.add.text"))
+        XCTAssertTrue(smokeTest.contains("memory.add.save"))
+        XCTAssertTrue(smokeTest.contains("memory.list"))
+        XCTAssertTrue(smokeTest.contains("memory.record"))
         XCTAssertTrue(smokeTest.contains("Refresh Catalog"))
         XCTAssertTrue(smokeTest.contains("github.com/easonwumac/kairo-models"))
         XCTAssertTrue(smokeTest.contains("chat.history.thread"))
@@ -1443,6 +1453,17 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains(#""access.skills.manifest-preview.confirm""#))
         XCTAssertTrue(smokeTest.contains(#""access.homekit.demo.evening-scene.confirm""#))
         XCTAssertTrue(smokeTest.contains("access.homekit.demos"))
+    }
+
+    func testMemoryCenterViewDefinesManualSaveAccessibilityIdentifiers() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let memoryView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/MemoryCenterView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(memoryView.contains(#""memory.add.text""#))
+        XCTAssertTrue(memoryView.contains(#""memory.add.save""#))
+        XCTAssertTrue(memoryView.contains(#""memory.error""#))
+        XCTAssertTrue(memoryView.contains(#""memory.list""#))
+        XCTAssertTrue(memoryView.contains(#""memory.record""#))
     }
 
     func testLocalModelCatalogFiltersDeprecatedAndOldSafetyPolicyModels() throws {

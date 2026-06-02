@@ -70,6 +70,25 @@ final class KairoAppSmokeUITests: XCTestCase {
         openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: true)
     }
 
+    func testMemoryTabCanSaveManualMemory() throws {
+        assertPrimaryTabsExist()
+        tapTab(identifier: "root.tab.memory", label: "Memory")
+
+        let memoryText = "UI e2e memory note for Shortcut and local model routing"
+        let composer = anyElement("memory.add.text")
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        composer.tap()
+        composer.typeText(memoryText)
+
+        let saveButton = anyElement("memory.add.save")
+        XCTAssertTrue(saveButton.exists)
+        saveButton.tap()
+
+        XCTAssertTrue(anyElement("memory.list").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("memory.record").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "UI e2e memory note", direction: .down).exists)
+    }
+
     func testChatShowsHomeKitToolPreviewAction() throws {
         assertPrimaryTabsExist()
         tapTab(identifier: "root.tab.chat", label: "Chat")
