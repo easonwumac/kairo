@@ -43,6 +43,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["settings.openai.save-api-key"].exists)
         XCTAssertTrue(app.otherElements["settings.oauth.connectors"].exists)
         XCTAssertTrue(app.otherElements["settings.models.local"].exists)
+        XCTAssertTrue(app.otherElements["settings.models.preference"].exists)
         XCTAssertTrue(app.otherElements["settings.shortcuts.demos"].exists)
     }
 }

@@ -409,6 +409,9 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(settingsView.contains("Local Models"))
         XCTAssertTrue(settingsView.contains(#""settings.models.local""#))
+        XCTAssertTrue(settingsView.contains("Route Preference"))
+        XCTAssertTrue(settingsView.contains(#""settings.models.preference""#))
+        XCTAssertTrue(settingsView.contains(#""settings.models.preference.\(preference.rawValue)""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).status""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).download""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).select""#))
@@ -469,6 +472,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.local") == true)
+        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.preference") == true)
     }
 
     func testXcodeProjectDefinesKairoUITestTargetAndSmokeTestFile() throws {
@@ -486,6 +490,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("settings.oauth.connectors"))
         XCTAssertTrue(smokeTest.contains("settings.shortcuts.demos"))
         XCTAssertTrue(smokeTest.contains("settings.models.local"))
+        XCTAssertTrue(smokeTest.contains("settings.models.preference"))
     }
 
     func testLocalModelCatalogFiltersDeprecatedAndOldSafetyPolicyModels() throws {
@@ -561,6 +566,21 @@ final class KairoCoreTests: XCTestCase {
         let persisted = await secondStore.settings()
         XCTAssertEqual(persisted.selectedModelID, "qwen-small")
         XCTAssertEqual(persisted.preference, .preferLocal)
+    }
+
+    func testProviderRoutePreferenceBuildsSettingsCopyAndOrdering() {
+        XCTAssertEqual(ProviderRoutePreference.settingsChoices, [
+            .automatic,
+            .preferLocal,
+            .preferCloud,
+            .localOnly
+        ])
+        XCTAssertEqual(ProviderRoutePreference.automatic.settingsTitle, "Automatic")
+        XCTAssertEqual(ProviderRoutePreference.preferLocal.settingsTitle, "Prefer Local")
+        XCTAssertEqual(ProviderRoutePreference.preferCloud.settingsTitle, "Prefer Cloud")
+        XCTAssertEqual(ProviderRoutePreference.localOnly.settingsTitle, "Local Only")
+        XCTAssertTrue(ProviderRoutePreference.localOnly.settingsDetailText.contains("Never routes"))
+        XCTAssertTrue(ProviderRoutePreference.preferLocal.settingsDetailText.contains("eligible"))
     }
 
     func testLocalModelSettingsServiceSelectsInstalledModelAndBuildsRoutingContext() async throws {

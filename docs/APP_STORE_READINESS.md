@@ -81,6 +81,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 - [ ] 模型下載由使用者明確觸發。
 - [x] Settings UI 顯示本機模型 catalog/status rows 與 download/select affordances。
+- [x] Settings UI 顯示 provider route preference，可選 Automatic / Prefer Local / Prefer Cloud / Local Only。
 - [ ] 顯示模型大小、授權、用途、刪除方式。
 - [x] Core downloader supports HTTPS + checksum verification.
 - [x] Core settings can persist and validate the user-selected installed model.

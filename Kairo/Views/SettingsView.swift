@@ -99,6 +99,8 @@ public struct SettingsView: View {
                 .accessibilityIdentifier("settings.oauth.connectors")
 
                 Section("Local Models") {
+                    localModelPreferencePicker()
+
                     if localModelStatus.settingsRows.isEmpty {
                         Text("尚未載入 local model catalog。")
                             .font(.caption)
@@ -185,6 +187,31 @@ public struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func localModelPreferencePicker() -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Picker("Route Preference", selection: Binding(
+                get: { localModelStatus.preference },
+                set: { preference in
+                    setLocalModelPreference(preference)
+                }
+            )) {
+                ForEach(ProviderRoutePreference.settingsChoices, id: \.self) { preference in
+                    Text(preference.settingsTitle)
+                        .tag(preference)
+                        .accessibilityIdentifier("settings.models.preference.\(preference.rawValue)")
+                }
+            }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("settings.models.preference")
+
+            Text(localModelStatus.preference.settingsDetailText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
     }
@@ -324,6 +351,30 @@ public struct SettingsView: View {
             } catch {
                 await MainActor.run {
                     connectorStatusMessage = "授權啟動失敗：\(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func setLocalModelPreference(_ preference: ProviderRoutePreference) {
+        Task {
+            guard let localModelSettingsService else {
+                await MainActor.run {
+                    localModelStatusMessage = "尚未設定 local model settings service。"
+                }
+                return
+            }
+
+            do {
+                try await localModelSettingsService.setPreference(preference)
+                await MainActor.run {
+                    localModelStatus.preference = preference
+                    localModelStatusMessage = "\(preference.settingsTitle) routing 已儲存。"
+                }
+                await reloadLocalModelStatus()
+            } catch {
+                await MainActor.run {
+                    localModelStatusMessage = "路由偏好儲存失敗：\(error.localizedDescription)"
                 }
             }
         }

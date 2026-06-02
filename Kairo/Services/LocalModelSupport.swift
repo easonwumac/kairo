@@ -788,6 +788,39 @@ public enum ProviderRoutePreference: String, Codable, Equatable, Sendable {
     case preferLocal
     case preferCloud
     case localOnly
+
+    public static let settingsChoices: [ProviderRoutePreference] = [
+        .automatic,
+        .preferLocal,
+        .preferCloud,
+        .localOnly
+    ]
+
+    public var settingsTitle: String {
+        switch self {
+        case .automatic:
+            return "Automatic"
+        case .preferLocal:
+            return "Prefer Local"
+        case .preferCloud:
+            return "Prefer Cloud"
+        case .localOnly:
+            return "Local Only"
+        }
+    }
+
+    public var settingsDetailText: String {
+        switch self {
+        case .automatic:
+            return "Routes eligible private/offline work locally when policy requires it."
+        case .preferLocal:
+            return "Uses the selected local model for eligible low-risk work when installed."
+        case .preferCloud:
+            return "Uses the cloud provider when network access is available."
+        case .localOnly:
+            return "Never routes prompts to cloud providers; unsupported local tasks fail closed."
+        }
+    }
 }
 
 public enum ProviderTaskClass: String, Codable, Equatable, Sendable {
