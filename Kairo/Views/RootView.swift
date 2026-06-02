@@ -10,7 +10,7 @@ public struct RootView: View {
 
     public var body: some View {
         TabView {
-            ChatView()
+            ChatView(environment: environment)
                 .tabItem { Label("Chat", systemImage: "message") }
 
             MemoryCenterView(store: environment.memoryStore)

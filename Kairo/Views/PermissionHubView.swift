@@ -3,6 +3,7 @@ import SwiftUI
 
 public struct PermissionHubView: View {
     private let registry = CapabilityRegistry()
+    private let actionCatalog = SandboxActionCatalog()
 
     public init() {}
 
@@ -20,13 +21,18 @@ public struct PermissionHubView: View {
                     Text(capability.description)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    if capability.isMVP {
-                        Text("MVP")
-                            .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(.blue.opacity(0.15))
-                            .clipShape(Capsule())
+                    HStack {
+                        if capability.isMVP {
+                            Text("MVP")
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.blue.opacity(0.15))
+                                .clipShape(Capsule())
+                        }
+                        ForEach(actionCatalog.descriptors(for: capability.key).prefix(3)) { descriptor in
+                            CapabilityChipView(descriptor: descriptor)
+                        }
                     }
                 }
                 .padding(.vertical, 4)

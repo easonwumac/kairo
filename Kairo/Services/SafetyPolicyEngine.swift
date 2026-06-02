@@ -16,6 +16,14 @@ public struct SafetyPolicyEngine: Sendable {
     public init() {}
 
     public func evaluate(_ action: AgentAction) -> SafetyPolicyDecision {
+        if action.kind == .unsupportedSandboxAction {
+            return SafetyPolicyDecision(
+                allowed: true,
+                requiresConfirmation: false,
+                reason: "此項目只用來說明 iOS sandbox 或公開 API 不支援的操作，不會執行外部動作。"
+            )
+        }
+
         switch action.riskTier {
         case .tier0ReadOnly:
             return SafetyPolicyDecision(

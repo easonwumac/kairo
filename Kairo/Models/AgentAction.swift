@@ -35,13 +35,16 @@ public enum AgentActionKind: String, Codable, CaseIterable, Sendable {
     case sendNotification
     case openURL
     case externalAPIRequest
+    case unsupportedSandboxAction
 }
 
 public enum AgentActionPayload: Codable, Equatable, Sendable {
     case text(String)
     case reminder(ReminderDraft)
     case calendarEvent(CalendarEventDraft)
+    case notification(NotificationDraft)
     case url(String)
+    case unsupported(UnsupportedActionExplanation)
     case empty
 }
 
@@ -56,6 +59,30 @@ public struct CalendarEventDraft: Codable, Equatable, Sendable {
     public var notes: String?
     public var startDate: Date
     public var endDate: Date
+}
+
+public struct NotificationDraft: Codable, Equatable, Sendable {
+    public var title: String
+    public var body: String
+    public var deliveryDate: Date?
+
+    public init(title: String, body: String, deliveryDate: Date? = nil) {
+        self.title = title
+        self.body = body
+        self.deliveryDate = deliveryDate
+    }
+}
+
+public struct UnsupportedActionExplanation: Codable, Equatable, Sendable {
+    public var requestedAction: String
+    public var reason: String
+    public var safeAlternative: String?
+
+    public init(requestedAction: String, reason: String, safeAlternative: String? = nil) {
+        self.requestedAction = requestedAction
+        self.reason = reason
+        self.safeAlternative = safeAlternative
+    }
 }
 
 public enum ActionRiskTier: String, Codable, CaseIterable, Sendable {

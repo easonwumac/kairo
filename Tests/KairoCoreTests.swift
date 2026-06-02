@@ -104,6 +104,127 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertEqual(paths.memoryStoreURL.lastPathComponent, "memory-store.json")
         XCTAssertEqual(paths.memoryStoreURL.deletingLastPathComponent().lastPathComponent, "KairoTests")
+        XCTAssertEqual(paths.localModelsDirectory.lastPathComponent, "LocalModels")
+        XCTAssertEqual(paths.localModelInstallRegistryURL.lastPathComponent, "install-registry.json")
+    }
+
+    func testLocalModelCatalogFiltersDeprecatedAndOldSafetyPolicyModels() throws {
+        let catalog = LocalModelCatalog(
+            signingKeyID: "test-key",
+            signature: "test-signature",
+            minimumSafetyPolicyVersion: "2026.1",
+            models: [
+                makeLocalModelManifest(id: "available", safetyPolicyVersion: "2026.2"),
+                makeLocalModelManifest(id: "old-policy", safetyPolicyVersion: "2025.9"),
+                makeLocalModelManifest(id: "deprecated", safetyPolicyVersion: "2026.2", deprecated: true)
+            ]
+        )
+
+        let encoded = try catalog.encoded()
+        let decoded = try LocalModelCatalog.decode(encoded)
+        let available = decoded.availableModels(minimumSafetyPolicyVersion: "2026.1")
+
+        XCTAssertEqual(available.map(\.id), ["available"])
+    }
+
+    func testFileBackedLocalModelInstallRegistryPersistsInstalledRecords() async throws {
+        let fileURL = temporaryFileURL(named: "local-model-registry.json")
+        let modelURL = fileURL.deletingLastPathComponent().appendingPathComponent("model.gguf")
+        let record = LocalModelInstallRecord(
+            modelID: "qwen-small",
+            version: "1.0",
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: 1024,
+            sha256: "abc123"
+        )
+
+        let firstRegistry = try await FileBackedLocalModelInstallRegistry(fileURL: fileURL)
+        try await firstRegistry.upsert(record)
+
+        let secondRegistry = try await FileBackedLocalModelInstallRegistry(fileURL: fileURL)
+        let persisted = await secondRegistry.record(for: "qwen-small")
+        let installedRecords = await secondRegistry.installedRecords()
+
+        XCTAssertEqual(persisted?.modelID, record.modelID)
+        XCTAssertEqual(persisted?.version, record.version)
+        XCTAssertEqual(persisted?.status, .installed)
+        XCTAssertEqual(persisted?.fileURL, record.fileURL)
+        XCTAssertEqual(persisted?.installedSizeBytes, record.installedSizeBytes)
+        XCTAssertEqual(persisted?.sha256, record.sha256)
+        XCTAssertEqual(installedRecords.map(\.modelID), [record.modelID])
+    }
+
+    func testLocalFallbackProviderReturnsPlaceholderWithoutActions() async throws {
+        let provider = LocalFallbackProvider(installedModelID: "qwen-small")
+
+        let response = try await provider.complete(AICompletionRequest(systemPrompt: "system", userPrompt: "Draft a note"))
+
+        XCTAssertTrue(response.message.contains("Local fallback (qwen-small)"))
+        XCTAssertTrue(response.message.contains("cannot browse the web"))
+        XCTAssertTrue(response.proposedActions.isEmpty)
+    }
+
+    func testProviderRouterUsesInstalledLocalModelForOfflineEligiblePrompt() async throws {
+        let router = ProviderRouter(
+            cloudProvider: MockAIProvider(),
+            localProvider: LocalFallbackProvider(installedModelID: "qwen-small")
+        )
+        let request = AICompletionRequest(systemPrompt: "system", userPrompt: "Summarize this note")
+        let context = ProviderRoutingContext(
+            networkAvailable: false,
+            taskClass: .summarization,
+            localModelInstalled: true
+        )
+
+        let decision = router.decision(for: request, context: context)
+        let response = try await router.complete(request, context: context)
+
+        XCTAssertEqual(decision, ProviderRouteDecision(route: .local, reason: .cloudUnavailable))
+        XCTAssertTrue(response.message.contains("Local fallback"))
+    }
+
+    func testProviderRouterBlocksLocalForToolUseInOfflineMode() async throws {
+        let router = ProviderRouter(
+            cloudProvider: MockAIProvider(),
+            localProvider: LocalFallbackProvider(installedModelID: "qwen-small")
+        )
+        let request = AICompletionRequest(systemPrompt: "system", userPrompt: "Create a calendar event")
+        let context = ProviderRoutingContext(
+            networkAvailable: false,
+            offlineModeEnabled: true,
+            taskClass: .toolUse,
+            requiresToolUse: true,
+            localModelInstalled: true
+        )
+
+        let decision = router.decision(for: request, context: context)
+
+        XCTAssertEqual(decision, ProviderRouteDecision(route: .unavailable, reason: .toolRequired))
+        do {
+            _ = try await router.complete(request, context: context)
+            XCTFail("Expected unsupported route")
+        } catch let error as AIProviderError {
+            XCTAssertEqual(error, .unsupported)
+        }
+    }
+
+    func testProviderRouterRoutesCurrentInfoToCloudWhenAvailable() {
+        let router = ProviderRouter(
+            cloudProvider: MockAIProvider(),
+            localProvider: LocalFallbackProvider(installedModelID: "qwen-small")
+        )
+        let request = AICompletionRequest(systemPrompt: "system", userPrompt: "What happened today?")
+        let context = ProviderRoutingContext(
+            networkAvailable: true,
+            taskClass: .webCurrentInfo,
+            requiresCurrentInfo: true,
+            localModelInstalled: true
+        )
+
+        let decision = router.decision(for: request, context: context)
+
+        XCTAssertEqual(decision, ProviderRouteDecision(route: .cloud, reason: .localIncapable))
     }
 
     func testOpenAIProviderThrowsWhenCredentialIsMissing() async throws {
@@ -224,6 +345,104 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(query["audience"], "chatgpt")
     }
 
+    func testJSONFileChatHistoryStorePersistsAndSoftDeletesThreads() async throws {
+        let fileURL = temporaryFileURL(named: "chat-history.json")
+        let thread = ChatThread(
+            title: "Plan UI",
+            createdAt: Date(timeIntervalSince1970: 10),
+            updatedAt: Date(timeIntervalSince1970: 10),
+            messages: [
+                ChatMessage(role: .user, text: "Improve the chat UI", createdAt: Date(timeIntervalSince1970: 10)),
+                ChatMessage(role: .assistant, text: "Let's add history.", createdAt: Date(timeIntervalSince1970: 11))
+            ]
+        )
+
+        let firstStore = try await JSONFileChatHistoryStore(fileURL: fileURL)
+        try await firstStore.saveThread(thread)
+
+        let secondStore = try await JSONFileChatHistoryStore(fileURL: fileURL)
+        let loaded = try await secondStore.thread(id: thread.id)
+        let listed = try await secondStore.listThreads(limit: 10)
+
+        XCTAssertEqual(loaded?.messages.map(\.text), ["Improve the chat UI", "Let's add history."])
+        XCTAssertEqual(listed.map(\.id), [thread.id])
+
+        try await secondStore.deleteThread(id: thread.id)
+        let deletedThread = try await secondStore.thread(id: thread.id)
+        let threadsAfterDelete = try await secondStore.listThreads(limit: 10)
+        XCTAssertNil(deletedThread)
+        XCTAssertTrue(threadsAfterDelete.isEmpty)
+
+        let rawText = try String(contentsOf: fileURL, encoding: .utf8)
+        XCTAssertTrue(rawText.contains(thread.id.uuidString))
+        XCTAssertTrue(rawText.contains("deletedAt"))
+    }
+
+    func testChatThreadDerivesTitleFromFirstUserMessage() {
+        var thread = ChatThread()
+        let message = ChatMessage(role: .user, text: "  Please remember my meeting notes and summarize them later  ")
+
+        thread.append(message, now: message.createdAt)
+
+        XCTAssertEqual(thread.title, "Please remember my meeting notes and summa")
+        XCTAssertEqual(thread.lastMessagePreview, "Please remember my meeting notes and summarize them later")
+    }
+
+    func testKairoPathsBuildsApplicationSupportChatHistoryURL() {
+        let paths = KairoPaths(appName: "KairoTests")
+
+        XCTAssertEqual(paths.chatHistoryStoreURL.lastPathComponent, "chat-history.json")
+        XCTAssertEqual(paths.chatHistoryStoreURL.deletingLastPathComponent().lastPathComponent, "KairoTests")
+    }
+
+    func testSandboxActionCatalogDescribesSupportedIOSActions() {
+        let catalog = SandboxActionCatalog()
+
+        XCTAssertEqual(catalog.descriptor(for: .saveMemory)?.supportStatus, .implemented)
+        XCTAssertEqual(catalog.descriptor(for: .createReminderDraft)?.permissionRequirement, .runtimePrompt)
+        XCTAssertEqual(catalog.descriptor(for: .externalAPIRequest)?.riskTier, .tier3HighRiskExternal)
+        XCTAssertTrue(catalog.supportedDescriptors.map(\.kind).contains(.openURL))
+    }
+
+    func testSandboxActionExecutorRequiresConfirmationBeforeSavingMemory() async throws {
+        let memoryStore = InMemoryMemoryStore()
+        let executor = SandboxActionExecutor(memoryStore: memoryStore)
+        let action = AgentAction(
+            kind: .saveMemory,
+            title: "Remember",
+            rationale: "User asked Kairo to remember this.",
+            payload: .text("Remember that Kairo can operate sandboxed iOS capabilities."),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let unconfirmed = try await executor.execute(action, confirmed: false)
+        let memoriesBeforeConfirmation = try await memoryStore.list(limit: 10)
+        XCTAssertFalse(unconfirmed.completed)
+        XCTAssertTrue(memoriesBeforeConfirmation.isEmpty)
+
+        let confirmed = try await executor.execute(action, confirmed: true)
+        let memories = try await memoryStore.search(query: "sandboxed", limit: 10)
+        XCTAssertTrue(confirmed.completed)
+        XCTAssertEqual(memories.count, 1)
+    }
+
+    func testSandboxActionExecutorReturnsScaffoldedResultForOpenURL() async throws {
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore())
+        let action = AgentAction(
+            kind: .openURL,
+            title: "Open URL",
+            rationale: "User wants to open a URL.",
+            payload: .url("https://example.com"),
+            riskTier: .tier1Draft
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertFalse(result.completed)
+        XCTAssertTrue(result.requiresExternalUI)
+        XCTAssertTrue(result.message.contains("UI opener"))
+    }
+
     func testChatGPTOAuthServiceValidatesCallbackAndStoresTokens() async throws {
         let credentials = InMemoryCredentialStore()
         let service = ChatGPTOAuthService(
@@ -254,6 +473,37 @@ final class KairoCoreTests: XCTestCase {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
             .appendingPathComponent(name)
+    }
+
+    private func makeLocalModelManifest(
+        id: String,
+        safetyPolicyVersion: String = "2026.1",
+        deprecated: Bool = false
+    ) -> LocalModelManifest {
+        LocalModelManifest(
+            id: id,
+            displayName: "Qwen Small Test",
+            family: "Qwen",
+            version: "1.0",
+            parameterCount: "0.8B",
+            quantization: "Q4",
+            fileSizeBytes: 512,
+            installedSizeBytes: 1024,
+            contextWindow: 2048,
+            tokenizerID: "qwen-test-tokenizer",
+            licenseName: "Apache-2.0",
+            licenseURL: URL(string: "https://example.com/license")!,
+            minOSVersion: "17.0",
+            minDeviceClass: "A15",
+            minRAMGB: 4,
+            supportedLocales: ["en", "zh-Hant"],
+            capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat],
+            disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
+            downloadURL: URL(string: "https://example.com/model.gguf")!,
+            sha256: "abc123",
+            safetyPolicyVersion: safetyPolicyVersion,
+            deprecated: deprecated
+        )
     }
 }
 
