@@ -197,9 +197,17 @@ public extension LocalModelCatalog {
         models: [
             .qwen35Tiny,
             .qwen35Small,
+            .qwen3Micro,
+            .qwen3Tiny,
+            .qwen25MicroInstruct,
             .qwen25TinyInstruct,
+            .llama32OneBInstruct,
+            .deepSeekR1DistillQwenTiny,
+            .smolLM2NanoInstruct,
+            .smolLM2MicroInstruct,
             .smolLM2TinyInstruct,
-            .tinyLlamaChat
+            .tinyLlamaChat,
+            .gemma4E2BIt
         ]
     )
 }
@@ -310,6 +318,108 @@ public extension LocalModelManifest {
         sha256: "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e"
     )
 
+    static let qwen25MicroInstruct = ggufManifest(
+        id: "qwen2-5-0-5b-instruct-q4-k-m",
+        displayName: "Qwen2.5 0.5B Instruct Q4_K_M",
+        family: "Qwen2.5",
+        parameterCount: "0.5B",
+        fileSizeBytes: 491_400_032,
+        installedSizeBytes: 800 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen2.5-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        sha256: "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
+    )
+
+    static let qwen3Micro = ggufManifest(
+        id: "qwen3-0-6b-q4-k-m",
+        displayName: "Qwen3 0.6B Q4_K_M",
+        family: "Qwen3",
+        parameterCount: "0.6B",
+        fileSizeBytes: 396_705_472,
+        installedSizeBytes: 750 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen3-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_K_M.gguf",
+        sha256: "ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a"
+    )
+
+    static let qwen3Tiny = ggufManifest(
+        id: "qwen3-1-7b-q4-k-m",
+        displayName: "Qwen3 1.7B Q4_K_M",
+        family: "Qwen3",
+        parameterCount: "1.7B",
+        fileSizeBytes: 1_107_409_472,
+        installedSizeBytes: 1_700 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen3-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf",
+        sha256: "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897"
+    )
+
+    static let llama32OneBInstruct = ggufManifest(
+        id: "llama3-2-1b-instruct-q4-k-m",
+        displayName: "Llama 3.2 1B Instruct Q4_K_M",
+        family: "Llama 3.2",
+        parameterCount: "1B",
+        fileSizeBytes: 807_694_464,
+        installedSizeBytes: 1_200 * 1024 * 1024,
+        contextWindow: 131_072,
+        tokenizerID: "llama3.2-tokenizer",
+        licenseName: "Llama 3.2 Community License",
+        licenseURL: "https://www.llama.com/llama3_2/license/",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+        sha256: "6f85a640a97cf2bf5b8e764087b1e83da0fdb51d7c9fab7d0fece9385611df83"
+    )
+
+    static let deepSeekR1DistillQwenTiny = ggufManifest(
+        id: "deepseek-r1-distill-qwen-1-5b-q4-k-m",
+        displayName: "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
+        family: "DeepSeek R1 Distill Qwen",
+        parameterCount: "1.5B",
+        fileSizeBytes: 1_117_320_480,
+        installedSizeBytes: 1_700 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen2.5-tokenizer",
+        licenseName: "MIT",
+        licenseURL: "https://opensource.org/license/mit",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/QuantFactory/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-1.5B.Q4_K_M.gguf",
+        sha256: "41aa31689f2cbdcc5172e370db2ab7a10e17a9427520602437bd16d8d127d105"
+    )
+
+    static let smolLM2NanoInstruct = ggufManifest(
+        id: "smollm2-135m-instruct-q4-k-m",
+        displayName: "SmolLM2 135M Instruct Q4_K_M",
+        family: "SmolLM2",
+        parameterCount: "135M",
+        fileSizeBytes: 105_454_144,
+        installedSizeBytes: 250 * 1024 * 1024,
+        contextWindow: 8_192,
+        tokenizerID: "smollm2-tokenizer",
+        minRAMGB: 2.5,
+        downloadURL: "https://huggingface.co/unsloth/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct-Q4_K_M.gguf",
+        sha256: "ed5fa30c487b282ec156c29062f1222e5c20875a944ac98289dbd242e947f747"
+    )
+
+    static let smolLM2MicroInstruct = ggufManifest(
+        id: "smollm2-360m-instruct-q4-k-m",
+        displayName: "SmolLM2 360M Instruct Q4_K_M",
+        family: "SmolLM2",
+        parameterCount: "360M",
+        fileSizeBytes: 270_590_880,
+        installedSizeBytes: 500 * 1024 * 1024,
+        contextWindow: 8_192,
+        tokenizerID: "smollm2-tokenizer",
+        minRAMGB: 3,
+        downloadURL: "https://huggingface.co/bartowski/SmolLM2-360M-Instruct-GGUF/resolve/main/SmolLM2-360M-Instruct-Q4_K_M.gguf",
+        sha256: "2fa3f013dcdd7b99f9b237717fa0b12d75bbb89984cc1274be1471a465bac9c2"
+    )
+
     static let smolLM2TinyInstruct = ggufManifest(
         id: "smollm2-1-7b-instruct-q4-k-m",
         displayName: "SmolLM2 1.7B Instruct Q4_K_M",
@@ -338,6 +448,20 @@ public extension LocalModelManifest {
         sha256: "9fecc3b3cd76bba89d504f29b616eedf7da85b96540e490ca5824d3f7d2776a0"
     )
 
+    static let gemma4E2BIt = ggufManifest(
+        id: "gemma4-e2b-it-q4-k-m",
+        displayName: "Gemma 4 E2B IT Q4_K_M",
+        family: "Gemma 4",
+        parameterCount: "2B",
+        fileSizeBytes: 3_106_736_256,
+        installedSizeBytes: 3_700 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "gemma4-tokenizer",
+        minRAMGB: 6,
+        downloadURL: "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf",
+        sha256: "9378bc471710229ef165709b62e34bfb62231420ddaf6d729e727305b5b8672d"
+    )
+
     static let kairoDraftTiny = qwen35Tiny
 
     private static func ggufManifest(
@@ -349,6 +473,8 @@ public extension LocalModelManifest {
         installedSizeBytes: Int64,
         contextWindow: Int,
         tokenizerID: String,
+        licenseName: String = "Apache-2.0",
+        licenseURL: String = "https://www.apache.org/licenses/LICENSE-2.0",
         minRAMGB: Double,
         downloadURL: String,
         sha256: String
@@ -364,8 +490,8 @@ public extension LocalModelManifest {
             installedSizeBytes: installedSizeBytes,
             contextWindow: contextWindow,
             tokenizerID: tokenizerID,
-            licenseName: "Apache-2.0",
-            licenseURL: URL(string: "https://www.apache.org/licenses/LICENSE-2.0")!,
+            licenseName: licenseName,
+            licenseURL: URL(string: licenseURL)!,
             minOSVersion: "17.0",
             minDeviceClass: "A15",
             minRAMGB: minRAMGB,

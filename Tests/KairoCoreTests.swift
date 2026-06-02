@@ -1151,7 +1151,12 @@ final class KairoCoreTests: XCTestCase {
 
         let modelCatalog = try await modelCatalogService.fetchCatalog()
         XCTAssertEqual(modelCatalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
-        XCTAssertEqual(modelCatalog.availableModels(minimumSafetyPolicyVersion: modelCatalog.minimumSafetyPolicyVersion).count, 5)
+        XCTAssertEqual(
+            modelCatalog.availableModels(minimumSafetyPolicyVersion: modelCatalog.minimumSafetyPolicyVersion).count,
+            LocalModelCatalog.kairoDefault.availableModels(
+                minimumSafetyPolicyVersion: LocalModelCatalog.kairoDefault.minimumSafetyPolicyVersion
+            ).count
+        )
     }
 
     func testKairoPathsBuildsApplicationSupportMemoryURL() {
@@ -1216,16 +1221,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.local") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.refresh-catalog") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.catalog-source") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.status") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.download") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.qwen3-5-2b-q4-k-m.status") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.qwen3-5-2b-q4-k-m.download") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.qwen2-5-1-5b-instruct-q4-k-m.status") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.qwen2-5-1-5b-instruct-q4-k-m.download") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.smollm2-1-7b-instruct-q4-k-m.status") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.smollm2-1-7b-instruct-q4-k-m.download") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.tinyllama-1-1b-chat-q4-k-m.status") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.tinyllama-1-1b-chat-q4-k-m.download") == true)
+        let settingsScenarioIdentifiers = catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers ?? []
+        for modelID in LocalModelCatalog.kairoDefault.models.map(\.id) {
+            XCTAssertTrue(settingsScenarioIdentifiers.contains("settings.models.\(modelID).status"), modelID)
+            XCTAssertTrue(settingsScenarioIdentifiers.contains("settings.models.\(modelID).download"), modelID)
+        }
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manager") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.marketplace-refresh") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import") == true)
@@ -1265,13 +1265,20 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("settings.models.local"))
         XCTAssertTrue(smokeTest.contains("Qwen3.5 0.8B Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Qwen3.5 2B Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("Qwen3 0.6B Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("Qwen3 1.7B Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("Qwen2.5 0.5B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("Qwen2.5 1.5B Instruct Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("Llama 3.2 1B Instruct Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("DeepSeek R1 Distill Qwen 1.5B Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("SmolLM2 135M Instruct Q4_K_M"))
+        XCTAssertTrue(smokeTest.contains("SmolLM2 360M Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("SmolLM2 1.7B Instruct Q4_K_M"))
         XCTAssertTrue(smokeTest.contains("TinyLlama 1.1B Chat Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains(#""settings.models.qwen3-5-2b-q4-k-m.download""#))
-        XCTAssertTrue(smokeTest.contains(#""settings.models.qwen2-5-1-5b-instruct-q4-k-m.download""#))
-        XCTAssertTrue(smokeTest.contains(#""settings.models.smollm2-1-7b-instruct-q4-k-m.download""#))
-        XCTAssertTrue(smokeTest.contains(#""settings.models.tinyllama-1-1b-chat-q4-k-m.download""#))
+        XCTAssertTrue(smokeTest.contains("Gemma 4 E2B IT Q4_K_M"))
+        for modelID in LocalModelCatalog.kairoDefault.models.map(\.id) {
+            XCTAssertTrue(smokeTest.contains(#""settings.models.\#(modelID).download""#), modelID)
+        }
         XCTAssertTrue(smokeTest.contains("可下載"))
         XCTAssertTrue(smokeTest.contains("Download"))
         XCTAssertTrue(smokeTest.contains("access.skills.marketplace-refresh"))
@@ -1317,16 +1324,32 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(availableModels.map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
             "qwen3-5-2b-q4-k-m",
+            "qwen3-0-6b-q4-k-m",
+            "qwen3-1-7b-q4-k-m",
+            "qwen2-5-0-5b-instruct-q4-k-m",
             "qwen2-5-1-5b-instruct-q4-k-m",
+            "llama3-2-1b-instruct-q4-k-m",
+            "deepseek-r1-distill-qwen-1-5b-q4-k-m",
+            "smollm2-135m-instruct-q4-k-m",
+            "smollm2-360m-instruct-q4-k-m",
             "smollm2-1-7b-instruct-q4-k-m",
-            "tinyllama-1-1b-chat-q4-k-m"
+            "tinyllama-1-1b-chat-q4-k-m",
+            "gemma4-e2b-it-q4-k-m"
         ])
         XCTAssertEqual(availableModels.map(\.displayName), [
             "Qwen3.5 0.8B Q4_K_M",
             "Qwen3.5 2B Q4_K_M",
+            "Qwen3 0.6B Q4_K_M",
+            "Qwen3 1.7B Q4_K_M",
+            "Qwen2.5 0.5B Instruct Q4_K_M",
             "Qwen2.5 1.5B Instruct Q4_K_M",
+            "Llama 3.2 1B Instruct Q4_K_M",
+            "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
+            "SmolLM2 135M Instruct Q4_K_M",
+            "SmolLM2 360M Instruct Q4_K_M",
             "SmolLM2 1.7B Instruct Q4_K_M",
-            "TinyLlama 1.1B Chat Q4_K_M"
+            "TinyLlama 1.1B Chat Q4_K_M",
+            "Gemma 4 E2B IT Q4_K_M"
         ])
 
         for model in availableModels {

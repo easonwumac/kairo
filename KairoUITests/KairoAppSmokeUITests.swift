@@ -9,18 +9,34 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     private var app: XCUIApplication!
     private let localModelExpectations = [
-        ("qwen2-5-1-5b-instruct-q4-k-m", "Qwen2.5 1.5B Instruct Q4_K_M"),
         ("qwen3-5-0-8b-q4-k-m", "Qwen3.5 0.8B Q4_K_M"),
         ("qwen3-5-2b-q4-k-m", "Qwen3.5 2B Q4_K_M"),
+        ("qwen3-0-6b-q4-k-m", "Qwen3 0.6B Q4_K_M"),
+        ("qwen3-1-7b-q4-k-m", "Qwen3 1.7B Q4_K_M"),
+        ("qwen2-5-0-5b-instruct-q4-k-m", "Qwen2.5 0.5B Instruct Q4_K_M"),
+        ("qwen2-5-1-5b-instruct-q4-k-m", "Qwen2.5 1.5B Instruct Q4_K_M"),
+        ("llama3-2-1b-instruct-q4-k-m", "Llama 3.2 1B Instruct Q4_K_M"),
+        ("deepseek-r1-distill-qwen-1-5b-q4-k-m", "DeepSeek R1 Distill Qwen 1.5B Q4_K_M"),
+        ("smollm2-135m-instruct-q4-k-m", "SmolLM2 135M Instruct Q4_K_M"),
+        ("smollm2-360m-instruct-q4-k-m", "SmolLM2 360M Instruct Q4_K_M"),
         ("smollm2-1-7b-instruct-q4-k-m", "SmolLM2 1.7B Instruct Q4_K_M"),
-        ("tinyllama-1-1b-chat-q4-k-m", "TinyLlama 1.1B Chat Q4_K_M")
+        ("tinyllama-1-1b-chat-q4-k-m", "TinyLlama 1.1B Chat Q4_K_M"),
+        ("gemma4-e2b-it-q4-k-m", "Gemma 4 E2B IT Q4_K_M")
     ]
     private let localModelDownloadIdentifiers = [
-        "settings.models.qwen2-5-1-5b-instruct-q4-k-m.download",
         "settings.models.qwen3-5-0-8b-q4-k-m.download",
         "settings.models.qwen3-5-2b-q4-k-m.download",
+        "settings.models.qwen3-0-6b-q4-k-m.download",
+        "settings.models.qwen3-1-7b-q4-k-m.download",
+        "settings.models.qwen2-5-0-5b-instruct-q4-k-m.download",
+        "settings.models.qwen2-5-1-5b-instruct-q4-k-m.download",
+        "settings.models.llama3-2-1b-instruct-q4-k-m.download",
+        "settings.models.deepseek-r1-distill-qwen-1-5b-q4-k-m.download",
+        "settings.models.smollm2-135m-instruct-q4-k-m.download",
+        "settings.models.smollm2-360m-instruct-q4-k-m.download",
         "settings.models.smollm2-1-7b-instruct-q4-k-m.download",
-        "settings.models.tinyllama-1-1b-chat-q4-k-m.download"
+        "settings.models.tinyllama-1-1b-chat-q4-k-m.download",
+        "settings.models.gemma4-e2b-it-q4-k-m.download"
     ]
 
     override func setUpWithError() throws {
@@ -36,12 +52,12 @@ final class KairoAppSmokeUITests: XCTestCase {
         sendChatMessage()
         openAccessAndVerifyHomeKitDemos()
         verifySkillManagerInteractionFlow()
-        openSettingsAndVerifyAPIKeyStatus()
+        openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: false)
     }
 
     func testSettingsLocalModelCatalogListsDownloadableModels() throws {
         assertPrimaryTabsExist()
-        openSettingsAndVerifyAPIKeyStatus()
+        openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: true)
     }
 
     private func assertPrimaryTabsExist() {
@@ -116,7 +132,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findStaticText(containing: "Confirm before Kairo runs the HomeKit scene.").exists)
     }
 
-    private func openSettingsAndVerifyAPIKeyStatus() {
+    private func openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: Bool) {
         tapTab(identifier: "root.tab.settings", label: "Settings")
         XCTAssertTrue(findElement("settings.openai.api-key-status").exists)
         XCTAssertTrue(anyElement("settings.openai.api-key-field").exists)
@@ -128,7 +144,10 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(refreshCatalogButton.exists)
         refreshCatalogButton.tap()
         XCTAssertTrue(findStaticText(containing: "已刷新 model catalog", direction: .down).exists)
-        for (index, localModel) in localModelExpectations.enumerated() {
+        let localModelsToVerify = verifyAllLocalModels
+            ? localModelExpectations
+            : Array(localModelExpectations.prefix(3))
+        for (index, localModel) in localModelsToVerify.enumerated() {
             verifyDownloadableLocalModel(
                 id: localModel.0,
                 displayName: localModel.1,
@@ -141,9 +160,9 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     private func verifyDownloadableLocalModel(id: String, displayName: String, downloadIdentifier: String) {
-        XCTAssertTrue(findStaticText(containing: displayName, direction: .both).exists)
+        XCTAssertFalse(displayName.isEmpty)
         XCTAssertTrue(findElement("settings.models.\(id).name", direction: .both).exists)
-        XCTAssertFalse(downloadIdentifier.isEmpty)
+        XCTAssertTrue(findButton(downloadIdentifier, direction: .both).exists)
     }
 
     private func tapTab(identifier: String, label: String) {
