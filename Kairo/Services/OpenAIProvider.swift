@@ -81,12 +81,18 @@ public struct OpenAIProvider: AIProvider {
         }.joined(separator: "\n")
 
         let capabilities = request.allowedCapabilities.map(\.rawValue).joined(separator: ", ")
+        let attachmentContext = CapabilityPromptContextBuilder.attachmentContext(request.attachmentContext)
         let context = """
         Relevant memory:
         \(memoryContext.isEmpty ? "None" : memoryContext)
 
         Allowed capabilities:
         \(capabilities.isEmpty ? "None" : capabilities)
+
+        \(attachmentContext)
+
+        Tool context:
+        \(request.toolContext ?? "No tool context supplied.")
         """
 
         return [

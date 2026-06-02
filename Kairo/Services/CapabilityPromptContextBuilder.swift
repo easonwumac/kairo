@@ -44,4 +44,11 @@ public struct CapabilityPromptContextBuilder: Sendable {
         - Local model fallback cannot use tools, browse the web, or perform account actions.
         """
     }
+
+    public static func attachmentContext(_ attachments: [ChatAttachment]) -> String {
+        guard !attachments.isEmpty else {
+            return "No attachments were supplied."
+        }
+        return "Attachments available to this turn:\n" + attachments.map(\.promptSummary).joined(separator: "\n")
+    }
 }
