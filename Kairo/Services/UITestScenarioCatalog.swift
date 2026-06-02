@@ -188,6 +188,28 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "chat-map-directions-confirmation",
+            title: "Chat Apple Maps Directions Handoff Confirmation",
+            userGoal: "Ask Kairo for directions, preview the destination and mode, and confirm a visible Apple Maps handoff.",
+            requiredAccessibilityIdentifiers: [
+                "chat.composer.text",
+                "chat.composer.send",
+                "chat.message.assistant",
+                "chat.proposed-actions",
+                "chat.proposed-action.openMapDirections",
+                "chat.action-preview",
+                "chat.action.confirm",
+                "chat.action-result"
+            ],
+            assertions: [
+                "A directions request creates an assistant response.",
+                "The response exposes an openMapDirections action preview.",
+                "The preview shows destination and transport mode before opening Maps.",
+                "Kairo opens only a user-visible Apple Maps link after confirmation.",
+                "The flow does not read current location or start navigation silently."
+            ]
+        ),
+        UITestScenario(
             id: "memory-manual-save",
             title: "Memory Manual Save",
             userGoal: "Open Memory, save a user-provided memory, and verify it appears in the list.",

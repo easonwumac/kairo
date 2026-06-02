@@ -113,6 +113,14 @@ public struct CapabilityRegistry: Sendable {
             isMVP: true
         ),
         Capability(
+            key: .location,
+            displayName: "Maps Directions Handoff",
+            description: "透過 Apple Maps link 開啟使用者可見的路線規劃，不讀取目前位置、不自動開始導航。",
+            permission: .userInitiated,
+            status: .available,
+            isMVP: true
+        ),
+        Capability(
             key: .homeKit,
             displayName: "HomeKit",
             description: "在 HomeKit 權限與使用者確認後執行家庭場景或配件控制。",

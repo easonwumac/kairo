@@ -111,6 +111,9 @@ public struct AgentToolInvocationPlanner: Sendable {
         if let emailCandidate = emailActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(emailCandidate)
         }
+        if let mapDirectionsCandidate = mapDirectionsActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+            candidates.append(mapDirectionsCandidate)
+        }
         if let contactCandidate = contactActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(contactCandidate)
         }
@@ -347,6 +350,33 @@ public struct AgentToolInvocationPlanner: Sendable {
         )
     }
 
+    private func mapDirectionsActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard isMapDirectionsRequest(normalizedText) else {
+            return nil
+        }
+
+        let draft = mapDirectionsDraft(from: userText, normalizedText: normalizedText)
+        let action = AgentAction(
+            kind: .openMapDirections,
+            title: "Open Apple Maps Directions",
+            rationale: "User asked Kairo to open a visible Apple Maps directions handoff.",
+            payload: .mapDirections(draft),
+            riskTier: .tier1Draft
+        )
+
+        return AgentToolInvocationCandidate(
+            id: "action-open-map-directions",
+            title: "Open Apple Maps Directions",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.location],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Use an Apple Maps link after visible confirmation; Kairo does not read current location or start navigation silently.",
+            action: action
+        )
+    }
+
     private func contactActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
         guard isContactWriteRequest(normalizedText) else {
             return nil
@@ -512,6 +542,27 @@ public struct AgentToolInvocationPlanner: Sendable {
         ])
     }
 
+    private func isMapDirectionsRequest(_ normalizedText: String) -> Bool {
+        containsAny(normalizedText, [
+            "navigate to",
+            "directions to",
+            "drive to",
+            "walk to",
+            "transit to",
+            "route to",
+            "map directions",
+            "open maps to",
+            "apple maps",
+            "導航到",
+            "導航去",
+            "開車去",
+            "走路去",
+            "大眾運輸去",
+            "路線到",
+            "帶我去"
+        ])
+    }
+
     private func calendarTitle(from userText: String) -> String {
         var title = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefixes = [
@@ -623,6 +674,52 @@ public struct AgentToolInvocationPlanner: Sendable {
             to: Array(Set(recipients)).sorted(),
             subject: subject,
             body: body
+        )
+    }
+
+    private func mapDirectionsDraft(from userText: String, normalizedText: String) -> MapDirectionsDraft {
+        var destination = userText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefixes = [
+            "Navigate to",
+            "Directions to",
+            "Drive to",
+            "Walk to",
+            "Transit to",
+            "Route to",
+            "Map directions to",
+            "Open maps to",
+            "Apple Maps to",
+            "導航到",
+            "導航去",
+            "開車去",
+            "走路去",
+            "大眾運輸去",
+            "路線到",
+            "帶我去"
+        ]
+
+        for prefix in prefixes where destination.lowercased().hasPrefix(prefix.lowercased()) {
+            destination.removeFirst(prefix.count)
+            destination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
+            if destination.first == ":" || destination.first == "：" {
+                destination.removeFirst()
+                destination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            break
+        }
+
+        let mode: MapDirectionsMode
+        if containsAny(normalizedText, ["walk", "walking", "by foot", "走路", "步行"]) {
+            mode = .walking
+        } else if containsAny(normalizedText, ["transit", "public transit", "bus", "train", "大眾運輸", "捷運", "公車"]) {
+            mode = .transit
+        } else {
+            mode = .driving
+        }
+
+        return MapDirectionsDraft(
+            destinationQuery: destination.isEmpty ? "Current map destination" : destination,
+            mode: mode
         )
     }
 

@@ -28,7 +28,7 @@ Kairo does **not** promise capabilities that normal App Store apps cannot provid
 - Permission bypasses, private APIs, jailbreak-only APIs, or background daemons.
 - Unapproved access to Messages, Mail, Notes, or ChatGPT web sessions/cookies.
 
-Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo pickers, EventKit, Contacts.framework, UserNotifications, App Intents, Shortcuts, `mailto:`/URL handoff, OAuth connectors, and explicit user confirmation.
+Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo pickers, EventKit, Contacts.framework, UserNotifications, App Intents, Shortcuts, `mailto:`/Apple Maps/URL handoff, OAuth connectors, and explicit user confirmation.
 
 ## Current implementation
 
@@ -39,7 +39,7 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - OpenAI provider abstraction, credential store, Keychain-backed credential store, ChatGPT OAuth scaffold, generic OAuth connector authorization core, redacted callback preview store, connector login status center, and Settings connector status/callback UI.
 - Downloadable local-model catalog entries for public GGUF models at 2B parameters or below, including Qwen3.5, Qwen3, Qwen2.5, Qwen2.5-Coder, Qwen2.5 Math, Llama 3.2, Granite 3.2, DeepSeek R1 Distill Qwen, LFM2.5, H2O Danube2, OLMo 2, OpenELM, Falcon-H1, SmolLM2, TinyLlama, Gemma, and StableLM variants, plus `LocalModelCatalogService` for the planned `kairo-models` static backend, verified downloader, install registry, selected-model settings, Settings model management UI/catalog refresh, benchmark metadata, and provider-routing scaffold. Model weights are not bundled in the app or repository.
 - Capability registry, sandbox action catalog, safety policy engine, action preview UI, and sandbox action executor.
-- Chat can surface executable local notification actions through `UserNotifications`, reminder actions through EventKit Reminders, calendar-event actions through EventKit Calendar, contact-create actions through Contacts.framework, and email draft handoffs through `mailto:`, but all stay behind visible action preview, runtime permission or visible handoff, and explicit user confirmation.
+- Chat can surface executable local notification actions through `UserNotifications`, reminder actions through EventKit Reminders, calendar-event actions through EventKit Calendar, contact-create actions through Contacts.framework, email draft handoffs through `mailto:`, and Apple Maps directions handoffs through `maps.apple.com`, but all stay behind visible action preview, runtime permission or visible handoff, and explicit user confirmation.
 - Kairo-owned internal recipe engine with sample recipes, file-backed recipe store, deterministic preview/run runner, risk confirmation gates, App Intents bridge (`Run/Suggest/List Kairo Recipe`, `Run Kairo Daily Briefing`), Shortcut template registry, and an Automations tab for adding, previewing, running, enabling, disabling recipes, and reviewing user-installed Shortcut template guidance. These are not Apple Shortcuts workflows.
 - Agent skill catalog, all official Shortcut demo recipes as built-in skills, deterministic tool invocation planner, chat-visible tool candidates for Shortcut/OAuth handoffs, manifest signature metadata, SHA-256 checksum validation, public-key trust-store verification, signed manifest JSON import, update preview with changelog, version downgrade protection, file-backed skill install lifecycle, environment-backed Access Skill Manager UI, so installed tools can be shown to the model and managed by the user.
 - Static skill marketplace seed under `Website/skills`, mirrored to the independent `easonwumac/kairo-skills` repo, plus app-side catalog refresh and manifest-download preview from the published GitHub Pages catalog.
@@ -50,7 +50,7 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - Structured Shortcut node runtime, executable official demo recipe runner, Settings demo recipe UI, and App Intents for asking, saving, searching, summarizing, task extraction, draft replies, reminder drafts, daily briefings, and generic node-kind plus JSON input/output chaining.
 - User-visible Shortcuts handoff URL builder with encoded input payloads and structured callback parsing.
 - HomeKit-safe action model, executor injection, and Access demo UI for confirmed scene/accessory control.
-- XcodeGen UI test target scaffold, UI smoke scenario catalog, deterministic `--ui-testing` Skill Manager environment, Access/HomeKit/Skill Manager interaction coverage, chat notification/reminder/calendar/contact/email-draft action-preview e2e coverage, Shortcut tool-candidate e2e coverage, and stable SwiftUI accessibility identifiers.
+- XcodeGen UI test target scaffold, UI smoke scenario catalog, deterministic `--ui-testing` Skill Manager environment, Access/HomeKit/Skill Manager interaction coverage, chat notification/reminder/calendar/contact/email-draft/Apple-Maps action-preview e2e coverage, Shortcut tool-candidate e2e coverage, and stable SwiftUI accessibility identifiers.
 - App icon source plus GitHub/README visual assets.
 - Privacy manifest, purpose-string notes, capability matrix, App Store readiness docs, and unit tests.
 

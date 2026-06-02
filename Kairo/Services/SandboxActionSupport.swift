@@ -146,6 +146,15 @@ public struct SandboxActionCatalog: Sendable {
             supportStatus: .scaffolded
         ),
         SandboxActionDescriptor(
+            kind: .openMapDirections,
+            displayName: "Open Apple Maps Directions",
+            description: "透過 Apple Maps link 開啟使用者可見的路線規劃，不讀取位置、不自動開始導航。",
+            capability: .location,
+            permissionRequirement: .userInitiated,
+            riskTier: .tier1Draft,
+            supportStatus: .scaffolded
+        ),
+        SandboxActionDescriptor(
             kind: .sendNotification,
             displayName: "Send Notification",
             description: "在通知權限允許後發送本機提醒。",
@@ -714,6 +723,16 @@ public actor SandboxActionExecutor: ActionExecutor {
                 message: opened ? "Prepared email draft handoff." : "Email draft handoff is available only when the app supplies a UI opener.",
                 requiresExternalUI: true
             )
+        case (.openMapDirections, .mapDirections(let draft)):
+            guard let url = Self.appleMapsDirectionsURL(for: draft) else {
+                return ActionExecutionResult(completed: false, message: "Unsupported or invalid map directions request.")
+            }
+            let opened = await urlOpener.open(url)
+            return ActionExecutionResult(
+                completed: opened,
+                message: opened ? "Prepared Apple Maps directions handoff." : "Apple Maps directions handoff is available only when the app supplies a UI opener.",
+                requiresExternalUI: true
+            )
         case (.sendNotification, .notification(let draft)):
             guard try await notificationScheduler.requestAuthorization() else {
                 return ActionExecutionResult(completed: false, message: "Notification permission was not granted.")
@@ -757,6 +776,23 @@ public actor SandboxActionExecutor: ActionExecutor {
         return components.url
     }
 
+    private static func appleMapsDirectionsURL(for draft: MapDirectionsDraft) -> URL? {
+        let destination = draft.destinationQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !destination.isEmpty else {
+            return nil
+        }
+
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "maps.apple.com"
+        components.path = "/"
+        components.queryItems = [
+            URLQueryItem(name: "daddr", value: destination),
+            URLQueryItem(name: "dirflg", value: draft.mode.appleMapsDirectionFlag)
+        ]
+        return components.url
+    }
+
     private static func isSupportedUserVisibleURL(_ url: URL) -> Bool {
         switch url.scheme?.lowercased() {
         case "http", "https", "mailto", "tel":
@@ -765,6 +801,19 @@ public actor SandboxActionExecutor: ActionExecutor {
             return url.host?.lowercased() == "run-shortcut"
         default:
             return false
+        }
+    }
+}
+
+private extension MapDirectionsMode {
+    var appleMapsDirectionFlag: String {
+        switch self {
+        case .driving:
+            return "d"
+        case .walking:
+            return "w"
+        case .transit:
+            return "r"
         }
     }
 }

@@ -27,6 +27,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] 不宣稱能任意點擊/操控其他 App UI。
 - [ ] 不把 XCUITest/Appium/WebDriverAgent 作為 App Store runtime 功能。
 - [x] Email draft handoff uses visible `mailto:` URLs only; Kairo does not read Apple Mail or send email silently.
+- [x] Apple Maps directions handoff uses visible `maps.apple.com` links only; Kairo does not read current location or start navigation silently.
 
 ### 2. 權限與 purpose strings
 
@@ -35,7 +36,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] Photos / Documents 以使用者選取為主，不預設要求全庫存取。
 - [ ] HomeKit 只在有明確家庭控制 use case、entitlement、purpose copy 與 confirmation flow 後啟用。
 - [x] Contacts 只在使用者明確要求建立聯絡人時使用 Contacts.framework，且需 runtime permission + preview + confirmation；不讀取或匯出通訊錄。
-- [ ] Location / Health 等高敏感權限只在功能需要時要求。
+- [ ] Location / Health 等高敏感權限只在功能需要時要求；Apple Maps handoff 不要求 Kairo 讀取定位。
 - [ ] 權限被拒絕時有 fallback UI。
 
 ### 3. Memory privacy
@@ -96,6 +97,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] XCUITest covers chat EventKit calendar preview and confirmation before writing.
 - [x] XCUITest covers chat Contacts.framework contact preview and confirmation before writing.
 - [x] XCUITest covers chat email draft preview and visible handoff confirmation before opening `mailto:`.
+- [x] XCUITest covers chat Apple Maps directions preview and visible handoff confirmation before opening Maps.
 - [ ] Marketplace trust store supports production key rotation and revocation metadata.
 - [ ] User-created skills require explicit capability selection and confirmation policy.
 - [ ] Skill update/remove flows are covered by UI/e2e tests.

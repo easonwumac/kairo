@@ -99,6 +99,12 @@ public struct ActionPreviewView: View {
                     Text(draft.body).font(.caption)
                 }
             }
+        case .mapDirections(let draft):
+            VStack(alignment: .leading, spacing: 4) {
+                Text(draft.destinationQuery.isEmpty ? "Apple Maps Destination" : draft.destinationQuery).font(.headline)
+                Text("Mode: \(draft.mode.displayName)").font(.caption)
+                Text("Visible Apple Maps handoff").font(.caption).foregroundStyle(.secondary)
+            }
         case .notification(let draft):
             VStack(alignment: .leading, spacing: 4) {
                 Text(draft.title).font(.headline)
@@ -172,6 +178,19 @@ private extension HomeControlValue {
             return String(value)
         case .string(let value):
             return value
+        }
+    }
+}
+
+private extension MapDirectionsMode {
+    var displayName: String {
+        switch self {
+        case .driving:
+            return "Driving"
+        case .walking:
+            return "Walking"
+        case .transit:
+            return "Transit"
         }
     }
 }
