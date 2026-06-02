@@ -108,6 +108,9 @@ public struct AgentToolInvocationPlanner: Sendable {
         candidates.append(contentsOf: integrationRegistry.oauthConnectors.compactMap { integration in
             candidate(for: integration, normalizedText: normalizedText)
         })
+        if let calendarCandidate = calendarActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+            candidates.append(calendarCandidate)
+        }
         if let reminderCandidate = reminderActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(reminderCandidate)
         }
@@ -260,6 +263,9 @@ public struct AgentToolInvocationPlanner: Sendable {
     }
 
     private func notificationActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard !isCalendarWriteRequest(normalizedText) else {
+            return nil
+        }
         guard !isReminderWriteRequest(normalizedText) else {
             return nil
         }
@@ -302,6 +308,39 @@ public struct AgentToolInvocationPlanner: Sendable {
         )
     }
 
+    private func calendarActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard isCalendarWriteRequest(normalizedText) else {
+            return nil
+        }
+
+        let startDate = Date().addingTimeInterval(3600)
+        let draft = CalendarEventDraft(
+            title: calendarTitle(from: userText),
+            notes: "Drafted from a Kairo chat request.",
+            startDate: startDate,
+            endDate: startDate.addingTimeInterval(3600)
+        )
+        let action = AgentAction(
+            kind: .createCalendarDraft,
+            title: "Create Calendar Event",
+            rationale: "User asked Kairo to create a calendar event through the public EventKit Calendar API.",
+            payload: .calendarEvent(draft),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        return AgentToolInvocationCandidate(
+            id: "action-create-calendar-event",
+            title: "Create Calendar Event",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.calendar],
+            riskTier: .tier2LowRiskWrite,
+            requiresConfirmation: true,
+            handoffSummary: "Use EventKit Calendar after runtime permission and visible confirmation.",
+            action: action
+        )
+    }
+
     private func reminderActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
         guard isReminderWriteRequest(normalizedText) else {
             return nil
@@ -333,6 +372,25 @@ public struct AgentToolInvocationPlanner: Sendable {
         )
     }
 
+    private func isCalendarWriteRequest(_ normalizedText: String) -> Bool {
+        containsAny(normalizedText, [
+            "create a calendar event",
+            "create calendar event",
+            "add a calendar event",
+            "add calendar event",
+            "create an event",
+            "add an event",
+            "schedule event",
+            "calendar event",
+            "建立行程",
+            "新增行程",
+            "加入行程",
+            "建立日曆",
+            "新增日曆",
+            "加入日曆"
+        ])
+    }
+
     private func isReminderWriteRequest(_ normalizedText: String) -> Bool {
         containsAny(normalizedText, [
             "create a reminder",
@@ -349,6 +407,38 @@ public struct AgentToolInvocationPlanner: Sendable {
             "新增待辦",
             "加入待辦"
         ])
+    }
+
+    private func calendarTitle(from userText: String) -> String {
+        var title = userText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefixes = [
+            "Create a calendar event:",
+            "Create calendar event:",
+            "Add a calendar event:",
+            "Add calendar event:",
+            "Create an event:",
+            "Add an event:",
+            "Schedule event:",
+            "Calendar event:",
+            "建立行程：",
+            "建立行程:",
+            "新增行程：",
+            "新增行程:",
+            "加入行程：",
+            "加入行程:",
+            "建立日曆：",
+            "建立日曆:",
+            "新增日曆：",
+            "新增日曆:"
+        ]
+
+        for prefix in prefixes where title.lowercased().hasPrefix(prefix.lowercased()) {
+            title.removeFirst(prefix.count)
+            title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            break
+        }
+
+        return title.isEmpty ? "Kairo calendar event" : title
     }
 
     private func reminderTitle(from userText: String) -> String {

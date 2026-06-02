@@ -237,6 +237,30 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertFalse(plan.candidates.contains { $0.id == "action-send-notification" })
     }
 
+    func testAgentToolInvocationPlannerSuggestsCalendarActionWithConfirmation() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "建立行程：週五 10:00 Kairo roadmap review"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-create-calendar-event" })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.skillKind, .custom)
+        XCTAssertEqual(candidate.requiredCapabilities, [.calendar])
+        XCTAssertEqual(candidate.riskTier, .tier2LowRiskWrite)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertTrue(candidate.handoffSummary.contains("EventKit"))
+        XCTAssertEqual(action.kind, .createCalendarDraft)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case let .calendarEvent(draft) = action.payload else {
+            return XCTFail("Expected calendar payload.")
+        }
+        XCTAssertTrue(draft.title.contains("Kairo roadmap review"))
+        XCTAssertEqual(draft.notes, "Drafted from a Kairo chat request.")
+        XCTAssertEqual(draft.endDate.timeIntervalSince(draft.startDate), 3600, accuracy: 0.1)
+        XCTAssertFalse(plan.candidates.contains { $0.id == "action-send-notification" })
+    }
+
     func testAgentToolInvocationPlannerRefusesToolUseWhenDisabled() {
         let planner = AgentToolInvocationPlanner(skillCatalog: .default)
 
@@ -327,6 +351,23 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-create-reminder" })
     }
 
+    func testAgentCoreAddsDeterministicCalendarPreviewAction() async throws {
+        let agent = AgentCore(
+            memoryStore: InMemoryMemoryStore(),
+            aiProvider: MockAIProvider(),
+            skillCatalog: .default,
+            integrationRegistry: IntegrationRegistry()
+        )
+
+        let response = try await agent.respond(to: "Create a calendar event: Kairo launch review")
+
+        let action = try XCTUnwrap(response.proposedActions.first { $0.kind == .createCalendarDraft })
+        XCTAssertEqual(action.title, "Create Calendar Event")
+        XCTAssertEqual(action.riskTier, .tier2LowRiskWrite)
+        XCTAssertTrue(action.requiresConfirmation)
+        XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-create-calendar-event" })
+    }
+
 #if canImport(SwiftUI)
     @MainActor
     func testChatViewModelConfirmsNotificationActionThroughInjectedExecutor() async throws {
@@ -379,6 +420,33 @@ final class KairoCoreTests: XCTestCase {
         let executedActions = await executor.executedActions
         let confirmations = await executor.confirmations
         XCTAssertEqual(executedActions.map(\.kind), [.createReminderDraft])
+        XCTAssertEqual(confirmations, [true])
+    }
+
+    @MainActor
+    func testChatViewModelConfirmsCalendarActionThroughInjectedExecutor() async throws {
+        let executor = MockActionExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: executor
+        )
+
+        await viewModel.send("建立行程：週五 10:00 Kairo roadmap review")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createCalendarDraft })
+
+        viewModel.previewAction(action)
+        XCTAssertEqual(viewModel.pendingAction?.kind, .createCalendarDraft)
+
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertTrue(viewModel.actionResultMessage?.contains("Created calendar event.") == true)
+        let executedActions = await executor.executedActions
+        let confirmations = await executor.confirmations
+        XCTAssertEqual(executedActions.map(\.kind), [.createCalendarDraft])
         XCTAssertEqual(confirmations, [true])
     }
 #endif
@@ -706,6 +774,57 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(result.createdIdentifier, "reminder-id")
         let createdTitles = await scheduler.createdDrafts.map(\.title)
         XCTAssertEqual(createdTitles, ["Review Shortcut node outputs"])
+    }
+
+    func testSandboxActionExecutorCreatesCalendarEventThroughInjectedScheduler() async throws {
+        let scheduler = MockCalendarScheduler(granted: true)
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), calendarScheduler: scheduler)
+        let startDate = Date(timeIntervalSince1970: 1_780_358_400)
+        let action = AgentAction(
+            kind: .createCalendarDraft,
+            title: "Create Calendar Event",
+            rationale: "User confirmed Kairo may write an EventKit calendar event.",
+            payload: .calendarEvent(CalendarEventDraft(
+                title: "Kairo roadmap review",
+                notes: "From Kairo chat",
+                startDate: startDate,
+                endDate: startDate.addingTimeInterval(3600)
+            )),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(result.message, "Created calendar event.")
+        XCTAssertEqual(result.createdIdentifier, "calendar-event-id")
+        let createdTitles = await scheduler.createdDrafts.map(\.title)
+        XCTAssertEqual(createdTitles, ["Kairo roadmap review"])
+    }
+
+    func testSandboxActionExecutorReportsCalendarPermissionDenied() async throws {
+        let scheduler = MockCalendarScheduler(granted: false)
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), calendarScheduler: scheduler)
+        let startDate = Date(timeIntervalSince1970: 1_780_358_400)
+        let action = AgentAction(
+            kind: .createCalendarDraft,
+            title: "Create Calendar Event",
+            rationale: "User confirmed Kairo may write an EventKit calendar event.",
+            payload: .calendarEvent(CalendarEventDraft(
+                title: "Kairo roadmap review",
+                notes: nil,
+                startDate: startDate,
+                endDate: startDate.addingTimeInterval(3600)
+            )),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertFalse(result.completed)
+        XCTAssertEqual(result.message, "Calendar permission was not granted.")
+        let createdTitles = await scheduler.createdDrafts.map(\.title)
+        XCTAssertEqual(createdTitles, [])
     }
 
     func testSandboxActionCatalogIncludesHomeKitControlWithRuntimePermission() {
@@ -1703,6 +1822,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-shortcut-tool-candidate",
             "chat-notification-confirmation",
             "chat-reminder-confirmation",
+            "chat-calendar-confirmation",
             "memory-manual-save",
             "automations-recipe-center",
             "automations-shortcut-templates",
@@ -1730,6 +1850,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(reminderScenarioIdentifiers.contains("chat.action-preview"))
         XCTAssertTrue(reminderScenarioIdentifiers.contains("chat.action.confirm"))
         XCTAssertTrue(reminderScenarioIdentifiers.contains("chat.action-result"))
+        let calendarScenarioIdentifiers = catalog.scenario(id: "chat-calendar-confirmation")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(calendarScenarioIdentifiers.contains("chat.proposed-action.createCalendarDraft"))
+        XCTAssertTrue(calendarScenarioIdentifiers.contains("chat.action-preview"))
+        XCTAssertTrue(calendarScenarioIdentifiers.contains("chat.action.confirm"))
+        XCTAssertTrue(calendarScenarioIdentifiers.contains("chat.action-result"))
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.text") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.save") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.list") == true)
@@ -1816,6 +1941,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(projectYAML.contains("target: KairoApp"))
         XCTAssertTrue(appInfoPlist.contains("<key>CFBundleURLTypes</key>"))
         XCTAssertTrue(appInfoPlist.contains("<string>kairo</string>"))
+        XCTAssertTrue(appInfoPlist.contains("<key>NSCalendarsFullAccessUsageDescription</key>"))
+        XCTAssertTrue(appInfoPlist.contains("<key>NSRemindersFullAccessUsageDescription</key>"))
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
         XCTAssertTrue(smokeTest.contains("testSettingsLocalModelCatalogListsDownloadableModels"))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsQwenBenchmarkFlowRequiresDownload"))
@@ -1832,6 +1959,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmReminderAction"))
         XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.createReminderDraft""#))
         XCTAssertTrue(smokeTest.contains("Created reminder."))
+        XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmCalendarAction"))
+        XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.createCalendarDraft""#))
+        XCTAssertTrue(smokeTest.contains("Created calendar event."))
         XCTAssertTrue(smokeTest.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
         XCTAssertTrue(smokeTest.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
         XCTAssertTrue(smokeTest.contains(#""root.tab.automations""#))
@@ -3273,6 +3403,24 @@ private actor MockReminderScheduler: ReminderScheduling {
     }
 }
 
+private actor MockCalendarScheduler: CalendarScheduling {
+    private(set) var createdDrafts: [CalendarEventDraft] = []
+    private let granted: Bool
+
+    init(granted: Bool) {
+        self.granted = granted
+    }
+
+    func requestAccess() async throws -> Bool {
+        granted
+    }
+
+    func createCalendarEvent(from draft: CalendarEventDraft) async throws -> String {
+        createdDrafts.append(draft)
+        return "calendar-event-id"
+    }
+}
+
 private actor MockActionExecutor: ActionExecutor {
     private(set) var executedActions: [AgentAction] = []
     private(set) var confirmations: [Bool] = []
@@ -3281,6 +3429,8 @@ private actor MockActionExecutor: ActionExecutor {
         executedActions.append(action)
         confirmations.append(confirmed)
         switch action.kind {
+        case .createCalendarDraft:
+            return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: "calendar-event-id")
         case .createReminderDraft:
             return ActionExecutionResult(completed: true, message: "Created reminder.", createdIdentifier: "reminder-id")
         default:

@@ -37,8 +37,12 @@
 	</array>
 	<key>NSCalendarsUsageDescription</key>
 	<string>Kairo 需要行事曆權限，才能在你確認後建立或整理行事曆草稿。</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Kairo 需要完整行事曆權限，才能在你確認後透過 EventKit 建立行事曆事件。</string>
 	<key>NSRemindersUsageDescription</key>
 	<string>Kairo 需要提醒事項權限，才能在你確認後建立與整理待辦提醒。</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Kairo 需要提醒事項完整權限，才能在你確認後透過 EventKit 建立提醒事項。</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Kairo 只會處理你選擇的圖片或截圖，用於摘要、OCR、任務抽取與記憶保存。</string>
 	<key>NSUserNotificationsUsageDescription</key>

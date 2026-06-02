@@ -165,6 +165,7 @@ public struct KairoEnvironment: Sendable {
             actionExecutor: SandboxActionExecutor(
                 memoryStore: memoryStore,
                 reminderScheduler: AllowingReminderScheduler(identifier: "ui-testing-reminder-id"),
+                calendarScheduler: AllowingCalendarScheduler(identifier: "ui-testing-calendar-event-id"),
                 notificationScheduler: AllowingNotificationScheduler(identifier: "ui-testing-notification-id")
             )
         )

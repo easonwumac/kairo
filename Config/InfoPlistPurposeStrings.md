@@ -8,8 +8,14 @@
 <key>NSCalendarsUsageDescription</key>
 <string>Kairo 需要行事曆權限，才能在你確認後建立或整理行事曆草稿。</string>
 
+<key>NSCalendarsFullAccessUsageDescription</key>
+<string>Kairo 需要完整行事曆權限，才能在你確認後透過 EventKit 建立行事曆事件。</string>
+
 <key>NSRemindersUsageDescription</key>
 <string>Kairo 需要提醒事項權限，才能在你確認後建立與整理待辦提醒。</string>
+
+<key>NSRemindersFullAccessUsageDescription</key>
+<string>Kairo 需要提醒事項完整權限，才能在你確認後透過 EventKit 建立提醒事項。</string>
 
 <key>NSContactsUsageDescription</key>
 <string>Kairo 需要聯絡人權限，才能在你要求時輔助辨識收件人或產生聯絡相關草稿。</string>
@@ -32,3 +38,4 @@
 - 權限必須和功能直接相關。
 - 權限被拒絕時要有 graceful fallback。
 - 高敏感權限預設不在 onboarding 一次要求。
+- iOS 17+ 的 EventKit full-access requests 需要 `NSCalendarsFullAccessUsageDescription` / `NSRemindersFullAccessUsageDescription`，舊 key 只作為舊系統 fallback。

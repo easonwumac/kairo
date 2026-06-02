@@ -338,6 +338,11 @@ public protocol ReminderScheduling: Sendable {
     func createReminder(from draft: ReminderDraft) async throws -> String
 }
 
+public protocol CalendarScheduling: Sendable {
+    func requestAccess() async throws -> Bool
+    func createCalendarEvent(from draft: CalendarEventDraft) async throws -> String
+}
+
 public struct UnavailableNotificationScheduler: NotificationScheduling {
     public init() {}
 
@@ -420,6 +425,55 @@ public enum ReminderSchedulingError: Error, Equatable {
     case authorizationDenied
 }
 
+public struct UnavailableCalendarScheduler: CalendarScheduling {
+    public init() {}
+
+    public func requestAccess() async throws -> Bool {
+        false
+    }
+
+    public func createCalendarEvent(from draft: CalendarEventDraft) async throws -> String {
+        throw CalendarSchedulingError.unavailable
+    }
+}
+
+public struct AllowingCalendarScheduler: CalendarScheduling {
+    private let identifier: String
+
+    public init(identifier: String = "calendar-event-id") {
+        self.identifier = identifier
+    }
+
+    public func requestAccess() async throws -> Bool {
+        true
+    }
+
+    public func createCalendarEvent(from draft: CalendarEventDraft) async throws -> String {
+        identifier
+    }
+}
+
+public struct EventKitCalendarScheduler: CalendarScheduling {
+    private let eventKitService: EventKitService
+
+    public init(eventKitService: EventKitService = EventKitService()) {
+        self.eventKitService = eventKitService
+    }
+
+    public func requestAccess() async throws -> Bool {
+        try await eventKitService.requestCalendarAccess()
+    }
+
+    public func createCalendarEvent(from draft: CalendarEventDraft) async throws -> String {
+        try await eventKitService.createCalendarEvent(from: draft)
+    }
+}
+
+public enum CalendarSchedulingError: Error, Equatable {
+    case unavailable
+    case authorizationDenied
+}
+
 #if canImport(UserNotifications)
 public struct UserNotificationScheduler: NotificationScheduling {
     public init() {}
@@ -459,6 +513,7 @@ public actor SandboxActionExecutor: ActionExecutor {
     private let safetyPolicyEngine: SafetyPolicyEngine
     private let eventKitService: EventKitService
     private let reminderScheduler: any ReminderScheduling
+    private let calendarScheduler: any CalendarScheduling
     private let urlOpener: any URLOpener
     private let notificationScheduler: any NotificationScheduling
     private let homeControlService: any HomeControlService
@@ -468,6 +523,7 @@ public actor SandboxActionExecutor: ActionExecutor {
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         eventKitService: EventKitService = EventKitService(),
         reminderScheduler: (any ReminderScheduling)? = nil,
+        calendarScheduler: (any CalendarScheduling)? = nil,
         urlOpener: any URLOpener = NoOpURLOpener(),
         notificationScheduler: any NotificationScheduling = UnavailableNotificationScheduler(),
         homeControlService: any HomeControlService = UnavailableHomeControlService()
@@ -476,6 +532,7 @@ public actor SandboxActionExecutor: ActionExecutor {
         self.safetyPolicyEngine = safetyPolicyEngine
         self.eventKitService = eventKitService
         self.reminderScheduler = reminderScheduler ?? EventKitReminderScheduler(eventKitService: eventKitService)
+        self.calendarScheduler = calendarScheduler ?? EventKitCalendarScheduler(eventKitService: eventKitService)
         self.urlOpener = urlOpener
         self.notificationScheduler = notificationScheduler
         self.homeControlService = homeControlService
@@ -502,7 +559,10 @@ public actor SandboxActionExecutor: ActionExecutor {
             let identifier = try await reminderScheduler.createReminder(from: draft)
             return ActionExecutionResult(completed: true, message: "Created reminder.", createdIdentifier: identifier)
         case (.createCalendarDraft, .calendarEvent(let draft)):
-            let identifier = try await eventKitService.createCalendarEvent(from: draft)
+            guard try await calendarScheduler.requestAccess() else {
+                return ActionExecutionResult(completed: false, message: "Calendar permission was not granted.")
+            }
+            let identifier = try await calendarScheduler.createCalendarEvent(from: draft)
             return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: identifier)
         case (.answer, _):
             return ActionExecutionResult(completed: true, message: "No external action required.")
