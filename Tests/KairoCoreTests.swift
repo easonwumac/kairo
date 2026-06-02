@@ -845,6 +845,74 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertNotEqual(query["code_challenge"], "verifier-123")
     }
 
+    func testOAuthConnectorLoginCenterReportsStatusesForRegistryConnectors() async throws {
+        let registry = IntegrationRegistry()
+        let github = try XCTUnwrap(registry.integration(for: "github")?.oauth)
+        let credentials = InMemoryCredentialStore()
+        let githubAuth = OAuthConnectorAuthorizationService(
+            metadata: github,
+            clientID: "github-client",
+            redirectURI: "kairo://oauth/github/callback",
+            credentialStore: credentials
+        )
+        try await githubAuth.storeTokens(OAuthTokenSet(accessToken: "github-token", scopes: ["repo"]))
+
+        let center = OAuthConnectorLoginCenter(
+            registry: registry,
+            credentialStore: credentials,
+            clientConfigurations: [
+                "google": OAuthConnectorClientConfiguration(
+                    clientID: "google-client",
+                    redirectURI: "kairo://oauth/google/callback"
+                )
+            ]
+        )
+
+        let options = try await center.loginOptions()
+        let google = try XCTUnwrap(options.first { $0.providerKey == "google" })
+        let microsoft = try XCTUnwrap(options.first { $0.providerKey == "microsoft" })
+        let connectedGitHub = try XCTUnwrap(options.first { $0.providerKey == "github" })
+
+        XCTAssertEqual(options.map(\.providerKey), ["google", "microsoft", "notion", "slack", "chatgpt", "github"])
+        XCTAssertEqual(google.integrationKey, "gmail-google-workspace")
+        XCTAssertEqual(google.readiness, .readyToAuthorize)
+        XCTAssertEqual(microsoft.readiness, .needsClientConfiguration)
+        XCTAssertEqual(connectedGitHub.readiness, .connected)
+        XCTAssertEqual(connectedGitHub.grantedScopes, ["repo"])
+        XCTAssertTrue(connectedGitHub.requiresBackendTokenExchange)
+    }
+
+    func testOAuthConnectorLoginCenterBuildsAuthorizationSessionFromClientConfiguration() async throws {
+        let center = OAuthConnectorLoginCenter(
+            registry: IntegrationRegistry(),
+            credentialStore: InMemoryCredentialStore(),
+            clientConfigurations: [
+                "google": OAuthConnectorClientConfiguration(
+                    clientID: "google-client",
+                    redirectURI: "kairo://oauth/google/callback",
+                    scopes: ["openid", "email"]
+                )
+            ]
+        )
+
+        let session = try await center.makeAuthorizationSession(
+            for: "gmail-google-workspace",
+            state: "state-123",
+            codeVerifier: "verifier-123"
+        )
+        let components = try XCTUnwrap(URLComponents(url: session.authorizationURL, resolvingAgainstBaseURL: false))
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+
+        XCTAssertEqual(session.providerKey, "google")
+        XCTAssertEqual(query["client_id"], "google-client")
+        XCTAssertEqual(query["redirect_uri"], "kairo://oauth/google/callback")
+        XCTAssertEqual(query["scope"], "openid email")
+        XCTAssertEqual(query["state"], "state-123")
+        XCTAssertEqual(query["code_challenge_method"], "S256")
+    }
+
     func testOAuthConnectorAuthorizationServiceHandlesNonPKCEConnectorsAndStoresNamespacedTokens() async throws {
         let github = try XCTUnwrap(IntegrationRegistry().integration(for: "github")?.oauth)
         let credentials = InMemoryCredentialStore()

@@ -36,7 +36,7 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - SwiftUI app scaffold: Chat, Memory Center, Access/Permissions, Settings.
 - Persistent chat threads with JSON-backed history store.
 - Memory store protocols plus in-memory and JSON file implementations.
-- OpenAI provider abstraction, credential store, Keychain-backed credential store, ChatGPT OAuth scaffold, and generic OAuth connector authorization core.
+- OpenAI provider abstraction, credential store, Keychain-backed credential store, ChatGPT OAuth scaffold, generic OAuth connector authorization core, and connector login status center.
 - Local-model catalog, verified downloader, install registry, selected-model settings, and provider-routing scaffold.
 - Capability registry, sandbox action catalog, safety policy engine, action preview UI, and sandbox action executor.
 - Popular app integration registry covering App Intents, Shortcuts, URL schemes/universal links, Share Extension handoff, and OAuth connector metadata.

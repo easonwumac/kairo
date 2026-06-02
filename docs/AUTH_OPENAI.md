@@ -53,6 +53,13 @@ Current scope:
 - stores `OAuthTokenSet` values in `CredentialStore` under `CredentialKey.oauthTokenSet(providerKey:)`;
 - supports non-PKCE connectors that require backend token exchange, such as GitHub app flows.
 
+`OAuthConnectorLoginCenter` turns the registry into connector login options for Settings/onboarding:
+
+- lists OAuth connectors in registry order;
+- reports `connected`, `readyToAuthorize`, `needsClientConfiguration`, or `needsReauthorization`;
+- exposes granted scopes from stored token sets without leaking token values;
+- creates authorization sessions from per-provider iOS client configuration.
+
 Out of scope for this core:
 
 - exchanging authorization codes for provider tokens;
