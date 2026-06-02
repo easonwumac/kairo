@@ -24,6 +24,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.kairo.ios
         INFOPLIST_FILE: Config/KairoApp-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/KairoApp.entitlements
   KairoShareExtension:
     type: app-extension
     platform: iOS
@@ -36,6 +37,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.kairo.ios.share
         INFOPLIST_FILE: Config/KairoShareExtension-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/KairoShareExtension.entitlements
   KairoCoreTests:
     type: bundle.unit-test
     platform: iOS

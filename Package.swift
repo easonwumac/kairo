@@ -17,6 +17,7 @@ let package = Package(
             exclude: [
                 "App/KairoApp.swift",
                 "Extensions/ShareExtension/ShareExtensionNotes.md",
+                "Extensions/ShareExtension/ShareViewController.swift",
                 "Resources"
             ],
             resources: []
