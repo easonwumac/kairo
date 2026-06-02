@@ -4,11 +4,11 @@ import SwiftUI
 public struct PermissionHubView: View {
     @State private var homeKitPreviewMessage: String?
     @State private var skillManagerMessage: String?
+    @State private var skillCatalog = AgentSkillCatalog.defaultWithMarketplaceSamples
 
     private let registry = CapabilityRegistry()
     private let actionCatalog = SandboxActionCatalog()
     private let homeKitDemoCatalog = HomeKitControlDemoCatalog.default
-    private let skillCatalog = AgentSkillCatalog.default
 
     public init() {}
 
@@ -47,7 +47,7 @@ public struct PermissionHubView: View {
                 }
 
                 Section("Skill Manager") {
-                    ForEach(skillCatalog.installedSkills) { skill in
+                    ForEach(skillCatalog.skills) { skill in
                         skillManagerRow(skill)
                     }
 
@@ -91,10 +91,50 @@ public struct PermissionHubView: View {
                 .font(.caption)
                 .accessibilityIdentifier("access.skill.\(skill.id)")
 
-            Button("Manage") {
-                skillManagerMessage = "\(skill.displayName): \(skill.managementSummary)"
+            HStack {
+                Button {
+                    skillManagerMessage = "\(skill.displayName): \(skill.managementSummary)"
+                } label: {
+                    Label("Manage", systemImage: "slider.horizontal.3")
+                }
+                .accessibilityIdentifier("access.skill.\(skill.id).manage")
+
+                switch skill.installationStatus {
+                case .available:
+                    Button {
+                        skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .installed)
+                        skillManagerMessage = "\(skill.displayName) installed."
+                    } label: {
+                        Label("Install", systemImage: "square.and.arrow.down")
+                    }
+                    .accessibilityIdentifier("access.skill.\(skill.id).install")
+                case .installed:
+                    Button {
+                        skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .disabled)
+                        skillManagerMessage = "\(skill.displayName) disabled."
+                    } label: {
+                        Label("Disable", systemImage: "pause.circle")
+                    }
+                    .accessibilityIdentifier("access.skill.\(skill.id).disable")
+                case .disabled:
+                    Button {
+                        skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .installed)
+                        skillManagerMessage = "\(skill.displayName) enabled."
+                    } label: {
+                        Label("Enable", systemImage: "play.circle")
+                    }
+                    .accessibilityIdentifier("access.skill.\(skill.id).enable")
+                }
+
+                Button(role: .destructive) {
+                    skillCatalog = skillCatalog.removingSkill(id: skill.id)
+                    skillManagerMessage = "\(skill.displayName) removed from manager."
+                } label: {
+                    Label("Remove", systemImage: "trash")
+                }
+                .accessibilityIdentifier("access.skill.\(skill.id).remove")
             }
-            .accessibilityIdentifier("access.skill.\(skill.id).manage")
+            .font(.caption)
         }
         .padding(.vertical, 4)
     }

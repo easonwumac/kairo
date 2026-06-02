@@ -73,7 +73,9 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 - [x] Core `AgentSkillCatalog` exposes installed skills/tools to prompt context.
 - [x] Access UI shows installed skills in a Skill Manager section.
-- [ ] Downloadable skills use signed manifests and checksum verification.
+- [x] Downloadable skill manifests require signature metadata and SHA-256 checksum verification before install.
+- [x] File-backed skill manager core supports install, disable, enable, remove, and reload.
+- [ ] Marketplace signatures are verified against a real public-key trust store.
 - [ ] Skill marketplace website shows permissions, risk tier, version, author, and changelog before install.
 - [ ] User-created skills require explicit capability selection and confirmation policy.
 - [ ] Skill install/update/remove flows are covered by UI/e2e tests.

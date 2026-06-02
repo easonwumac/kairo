@@ -6,8 +6,10 @@ Kairo 的核心方向是把可操作能力包成可管理的 skills，並讓 mod
 
 - `AgentSkill` describes one managed tool package.
 - `AgentSkillCatalog.default` exposes built-in installed skills such as HomeKit scene/accessory demos and Shortcut Daily Briefing.
+- `AgentSkillManifest` validates downloadable marketplace manifests with required signature metadata and a SHA-256 checksum over the skill payload.
+- `AgentSkillManagerService` plus `FileBackedAgentSkillStore` provide install, disable, enable, remove, and reload behavior for marketplace/user-created skills.
 - `CapabilityPromptContextBuilder` includes installed skills/tools so the model can propose named, supported tool packages.
-- Access shows a Skill Manager section with installed skills and management affordances.
+- Access shows a Skill Manager section with installed, available, and disabled skill states plus install/disable/enable/remove affordances.
 - HomeKit skills still require entitlement, Home authorization, action preview, and explicit confirmation before execution.
 
 ## Skill package requirements
@@ -20,7 +22,7 @@ Every downloadable or user-created skill should declare:
 - required capabilities and permissions;
 - optional `AgentAction` payload or Shortcut recipe binding;
 - risk tier and whether confirmation is required;
-- download URL and signature/checksum for marketplace packages.
+- download URL, signature metadata, and checksum for marketplace packages.
 
 ## Marketplace website target
 
@@ -35,9 +37,9 @@ The eventual management website should provide:
 
 ## Near-term implementation order
 
-1. Expand `AgentSkill` into signed package manifests.
-2. Add persistence for installed/disabled skills.
-3. Add Skill Manager UI for enable/disable/remove and install-from-manifest.
-4. Make Shortcut demos and HomeKit controls first-class skills.
+1. Verify marketplace signatures with a real public-key trust store.
+2. Wire persisted skill manager state into the app environment instead of the current Access preview state.
+3. Add install-from-manifest import and update flows.
+4. Make Shortcut demos and HomeKit controls first-class persisted skills.
 5. Build a small static marketplace page backed by signed JSON manifests.
 6. Add UI/e2e coverage for install, disable, remove, and prompt-context availability.

@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 public enum AgentSkillKind: String, Codable, Equatable, Sendable {
     case homeKitControl
@@ -108,6 +109,47 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
         skills.filter { $0.installationStatus == .installed }
     }
 
+    public var availableSkills: [AgentSkill] {
+        skills.filter { $0.installationStatus == .available }
+    }
+
+    public var disabledSkills: [AgentSkill] {
+        skills.filter { $0.installationStatus == .disabled }
+    }
+
+    public func replacing(_ skill: AgentSkill) -> AgentSkillCatalog {
+        var updatedSkills = skills.filter { $0.id != skill.id }
+        updatedSkills.append(skill)
+        return AgentSkillCatalog(skills: updatedSkills)
+    }
+
+    public func updatingStatus(id: String, to status: AgentSkillInstallationStatus) -> AgentSkillCatalog {
+        AgentSkillCatalog(skills: skills.map { skill in
+            guard skill.id == id else { return skill }
+            var updated = skill
+            updated.installationStatus = status
+            return updated
+        })
+    }
+
+    public func removingSkill(id: String) -> AgentSkillCatalog {
+        AgentSkillCatalog(skills: skills.filter { $0.id != id })
+    }
+
+    public static let demoMarketplaceSkills: [AgentSkill] = [
+        AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Downloadable skill package that summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/weather-briefing.json")!
+        )
+    ]
+
+    public static let defaultWithMarketplaceSamples = AgentSkillCatalog(
+        skills: AgentSkillCatalog.default.skills + AgentSkillCatalog.demoMarketplaceSkills
+    )
+
     public static let `default` = AgentSkillCatalog(skills: [
         AgentSkill(
             id: "homekit-evening-scene",
@@ -140,6 +182,226 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
             shortcutRecipeID: "daily-briefing"
         )
     ])
+}
+
+public enum AgentSkillManifestSignatureAlgorithm: String, Codable, Equatable, Sendable {
+    case ed25519
+}
+
+public enum AgentSkillManifestChecksumAlgorithm: String, Codable, Equatable, Sendable {
+    case sha256
+}
+
+public struct AgentSkillManifestSignature: Codable, Equatable, Sendable {
+    public var keyID: String
+    public var algorithm: AgentSkillManifestSignatureAlgorithm
+    public var value: String
+
+    public init(
+        keyID: String,
+        algorithm: AgentSkillManifestSignatureAlgorithm,
+        value: String
+    ) {
+        self.keyID = keyID
+        self.algorithm = algorithm
+        self.value = value
+    }
+
+    public var isPresent: Bool {
+        !keyID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        && !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
+public enum AgentSkillManifestValidationError: Error, Equatable, Sendable {
+    case missingSignature
+    case checksumMismatch
+    case unavailableSkill
+}
+
+public struct AgentSkillManifest: Codable, Equatable, Sendable {
+    public var skill: AgentSkill
+    public var packageVersion: String
+    public var checksumAlgorithm: AgentSkillManifestChecksumAlgorithm
+    public var checksum: String
+    public var signature: AgentSkillManifestSignature?
+
+    public init(
+        skill: AgentSkill,
+        packageVersion: String,
+        checksumAlgorithm: AgentSkillManifestChecksumAlgorithm = .sha256,
+        checksum: String,
+        signature: AgentSkillManifestSignature?
+    ) {
+        self.skill = skill
+        self.packageVersion = packageVersion
+        self.checksumAlgorithm = checksumAlgorithm
+        self.checksum = checksum
+        self.signature = signature
+    }
+
+    public var installableSkill: AgentSkill {
+        var updated = skill
+        updated.source = .marketplace
+        updated.installationStatus = .installed
+        return updated
+    }
+
+    public func validateForInstall() throws {
+        guard signature?.isPresent == true else {
+            throw AgentSkillManifestValidationError.missingSignature
+        }
+        guard skill.canDownload else {
+            throw AgentSkillManifestValidationError.unavailableSkill
+        }
+        let expectedChecksum = try Self.sha256Hex(for: skill)
+        guard checksumAlgorithm == .sha256, checksum == expectedChecksum else {
+            throw AgentSkillManifestValidationError.checksumMismatch
+        }
+    }
+
+    public static func sha256Hex(for skill: AgentSkill) throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let data = try encoder.encode(skill)
+        let digest = SHA256.hash(data: data)
+        return digest.map { String(format: "%02x", $0) }.joined()
+    }
+
+    public static func signedForTesting(skill: AgentSkill, packageVersion: String) throws -> AgentSkillManifest {
+        AgentSkillManifest(
+            skill: skill,
+            packageVersion: packageVersion,
+            checksum: try sha256Hex(for: skill),
+            signature: AgentSkillManifestSignature(
+                keyID: "kairo-test-key",
+                algorithm: .ed25519,
+                value: "test-signature"
+            )
+        )
+    }
+}
+
+public actor FileBackedAgentSkillStore {
+    private let fileURL: URL
+    private let encoder: JSONEncoder
+    private let decoder: JSONDecoder
+    private var skills: [AgentSkill] = []
+
+    public init(fileURL: URL) async throws {
+        self.fileURL = fileURL
+        self.encoder = JSONEncoder()
+        self.decoder = JSONDecoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try await loadFromDisk()
+    }
+
+    public func listSkills() -> [AgentSkill] {
+        skills
+    }
+
+    public func upsert(_ skill: AgentSkill) throws {
+        skills.removeAll { $0.id == skill.id }
+        skills.append(skill)
+        try persist()
+    }
+
+    public func removeSkill(id: String) throws {
+        skills.removeAll { $0.id == id }
+        try persist()
+    }
+
+    private func loadFromDisk() async throws {
+        let directory = fileURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            skills = []
+            return
+        }
+
+        let data = try Data(contentsOf: fileURL)
+        guard !data.isEmpty else {
+            skills = []
+            return
+        }
+
+        skills = try decoder.decode([AgentSkill].self, from: data)
+    }
+
+    private func persist() throws {
+        let directory = fileURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let data = try encoder.encode(skills.sorted { $0.id < $1.id })
+        let temporaryURL = fileURL.appendingPathExtension("tmp")
+        try data.write(to: temporaryURL, options: [.atomic])
+
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            _ = try FileManager.default.replaceItemAt(fileURL, withItemAt: temporaryURL)
+        } else {
+            try FileManager.default.moveItem(at: temporaryURL, to: fileURL)
+        }
+    }
+}
+
+public struct AgentSkillManagerService: Sendable {
+    private let store: FileBackedAgentSkillStore
+    private let builtInCatalog: AgentSkillCatalog
+
+    public init(store: FileBackedAgentSkillStore, builtInCatalog: AgentSkillCatalog = .default) {
+        self.store = store
+        self.builtInCatalog = builtInCatalog
+    }
+
+    public func catalog() async throws -> AgentSkillCatalog {
+        let persistedSkills = await store.listSkills()
+        let combinedSkills = merge(base: builtInCatalog.skills, overrides: persistedSkills)
+        return AgentSkillCatalog(skills: combinedSkills)
+    }
+
+    @discardableResult
+    public func install(manifest: AgentSkillManifest) async throws -> AgentSkill {
+        try manifest.validateForInstall()
+        let skill = manifest.installableSkill
+        try await store.upsert(skill)
+        return skill
+    }
+
+    @discardableResult
+    public func disableSkill(id: String) async throws -> AgentSkill? {
+        try await updateStatus(id: id, to: .disabled)
+    }
+
+    @discardableResult
+    public func enableSkill(id: String) async throws -> AgentSkill? {
+        try await updateStatus(id: id, to: .installed)
+    }
+
+    public func removeSkill(id: String) async throws {
+        try await store.removeSkill(id: id)
+    }
+
+    private func updateStatus(id: String, to status: AgentSkillInstallationStatus) async throws -> AgentSkill? {
+        guard var skill = try await catalog().skill(id: id) else {
+            return nil
+        }
+        skill.installationStatus = status
+        try await store.upsert(skill)
+        return skill
+    }
+
+    private func merge(base: [AgentSkill], overrides: [AgentSkill]) -> [AgentSkill] {
+        var mergedByID = Dictionary(uniqueKeysWithValues: base.map { ($0.id, $0) })
+        for skill in overrides {
+            mergedByID[skill.id] = skill
+        }
+
+        let baseIDs = base.map(\.id)
+        let baseSkills = baseIDs.compactMap { mergedByID.removeValue(forKey: $0) }
+        let extraSkills = mergedByID.values.sorted { $0.id < $1.id }
+        return baseSkills + extraSkills
+    }
 }
 
 public extension AgentSkillKind {

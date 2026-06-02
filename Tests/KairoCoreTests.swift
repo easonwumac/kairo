@@ -343,6 +343,91 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(marketplaceSkill.source, .marketplace)
     }
 
+    func testAgentSkillManifestRequiresSignatureAndVerifiesChecksum() throws {
+        let downloadableSkill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/weather-briefing.json")!
+        )
+        let checksum = try AgentSkillManifest.sha256Hex(for: downloadableSkill)
+        let manifest = AgentSkillManifest(
+            skill: downloadableSkill,
+            packageVersion: "2026.6",
+            checksum: checksum,
+            signature: AgentSkillManifestSignature(
+                keyID: "kairo-marketplace-2026",
+                algorithm: .ed25519,
+                value: "signed-weather-briefing"
+            )
+        )
+
+        XCTAssertNoThrow(try manifest.validateForInstall())
+        XCTAssertEqual(manifest.installableSkill.installationStatus, .installed)
+        XCTAssertEqual(manifest.installableSkill.source, .marketplace)
+        XCTAssertEqual(manifest.installableSkill.version, "1.0")
+
+        let tamperedManifest = AgentSkillManifest(
+            skill: downloadableSkill,
+            packageVersion: "2026.6",
+            checksum: "invalid-checksum",
+            signature: manifest.signature
+        )
+        XCTAssertThrowsError(try tamperedManifest.validateForInstall()) { error in
+            XCTAssertEqual(error as? AgentSkillManifestValidationError, .checksumMismatch)
+        }
+
+        let unsignedManifest = AgentSkillManifest(
+            skill: downloadableSkill,
+            packageVersion: "2026.6",
+            checksum: checksum,
+            signature: nil
+        )
+        XCTAssertThrowsError(try unsignedManifest.validateForInstall()) { error in
+            XCTAssertEqual(error as? AgentSkillManifestValidationError, .missingSignature)
+        }
+    }
+
+    func testFileBackedAgentSkillManagerPersistsInstallDisableEnableAndRemoveLifecycle() async throws {
+        let storeURL = temporaryFileURL(named: "agent-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default)
+        let skill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/weather-briefing.json")!
+        )
+        let manifest = try AgentSkillManifest.signedForTesting(skill: skill, packageVersion: "2026.6")
+
+        let installed = try await service.install(manifest: manifest)
+        XCTAssertEqual(installed.installationStatus, .installed)
+        XCTAssertEqual(installed.source, .marketplace)
+
+        var catalog = try await service.catalog()
+        XCTAssertTrue(catalog.installedSkills.map(\.id).contains("marketplace-weather-briefing"))
+
+        let disabled = try await service.disableSkill(id: "marketplace-weather-briefing")
+        XCTAssertEqual(disabled?.installationStatus, .disabled)
+        catalog = try await service.catalog()
+        XCTAssertFalse(catalog.installedSkills.map(\.id).contains("marketplace-weather-briefing"))
+        XCTAssertEqual(catalog.skill(id: "marketplace-weather-briefing")?.installationStatus, .disabled)
+
+        let enabled = try await service.enableSkill(id: "marketplace-weather-briefing")
+        XCTAssertEqual(enabled?.installationStatus, .installed)
+
+        let reloadedStore = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let reloadedService = AgentSkillManagerService(store: reloadedStore, builtInCatalog: .default)
+        let reloadedCatalog = try await reloadedService.catalog()
+        XCTAssertEqual(reloadedCatalog.skill(id: "marketplace-weather-briefing")?.installationStatus, .installed)
+
+        try await reloadedService.removeSkill(id: "marketplace-weather-briefing")
+        let removedCatalog = try await reloadedService.catalog()
+        XCTAssertNil(removedCatalog.skill(id: "marketplace-weather-briefing"))
+    }
+
     func testSandboxActionExecutorRequiresConfirmationBeforeHomeKitControl() async throws {
         let service = MockHomeControlService(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), homeControlService: service)
@@ -486,6 +571,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manager""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id)""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).manage""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).install""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).disable""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).enable""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).remove""#))
         XCTAssertTrue(permissionHubView.contains("HomeKit Control Demos"))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demos""#))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demo.\(recipe.id)""#))
