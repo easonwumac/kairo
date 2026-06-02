@@ -80,7 +80,7 @@ protocol AIProvider {
 
 The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, and a Refresh Catalog action. A production build still needs a real signed catalog, stronger signature verification, progress/cancellation handling, license text, and stronger size disclosure.
 
-The default development catalog points to 21 public GGUF downloads through Hugging Face, all at 2B parameters or below:
+The default development catalog points to 23 public GGUF downloads through Hugging Face, all at 2B parameters or below:
 
 - `Qwen3.5 0.8B Q4_K_M`: `AaryanK/Qwen3.5-0.8B-GGUF`, file `Qwen3.5-0.8B.q4_k_m.gguf`, about 527.5 MB.
 - `Qwen3.5 2B Q4_K_M`: `AaryanK/Qwen3.5-2B-GGUF`, file `Qwen3.5-2B.q4_k_m.gguf`, about 1.27 GB.
@@ -91,8 +91,10 @@ The default development catalog points to 21 public GGUF downloads through Huggi
 - `Qwen2.5-Coder 0.5B Instruct Q4_K_M`: `QuantFactory/Qwen2.5-Coder-0.5B-Instruct-GGUF`, file `Qwen2.5-Coder-0.5B-Instruct.Q4_K_M.gguf`, about 491.4 MB.
 - `Qwen2.5-Coder 1.5B Instruct Q4_K_M`: `Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF`, file `qwen2.5-coder-1.5b-instruct-q4_k_m.gguf`, about 1.12 GB.
 - `Llama 3.2 1B Instruct Q4_K_M`: `bartowski/Llama-3.2-1B-Instruct-GGUF`, file `Llama-3.2-1B-Instruct-Q4_K_M.gguf`, about 807.7 MB.
+- `Granite 3.2 2B Instruct Q4_K_M`: `Mungert/granite-3.2-2b-instruct-GGUF`, file `granite-3.2-2b-instruct-q4_k_m.gguf`, about 1.53 GB.
 - `DeepSeek R1 Distill Qwen 1.5B Q4_K_M`: `QuantFactory/DeepSeek-R1-Distill-Qwen-1.5B-GGUF`, file `DeepSeek-R1-Distill-Qwen-1.5B.Q4_K_M.gguf`, about 1.12 GB.
 - `H2O Danube2 1.8B Chat Q4_K_M`: `h2oai/h2o-danube2-1.8b-chat-GGUF`, file `h2o-danube2-1.8b-chat-Q4_K_M.gguf`, about 1.11 GB.
+- `OLMo 2 1B Instruct Q4_K_M`: `unsloth/OLMo-2-0425-1B-Instruct-GGUF`, file `OLMo-2-0425-1B-Instruct-Q4_K_M.gguf`, about 935.5 MB.
 - `OpenELM 1.1B Instruct Q4_K_M`: `straino/OpenELM-1_1B-Instruct-Q4_K_M-GGUF`, file `openelm-1_1b-instruct-q4_k_m.gguf`, about 678.1 MB.
 - `Falcon-H1 1.5B Instruct Q4_K_M`: `tiiuae/Falcon-H1-1.5B-Instruct-GGUF`, file `Falcon-H1-1.5B-Instruct-Q4_K_M.gguf`, about 944.8 MB.
 - `SmolLM2 135M Instruct Q4_K_M`: `unsloth/SmolLM2-135M-Instruct-GGUF`, file `SmolLM2-135M-Instruct-Q4_K_M.gguf`, about 105.5 MB.

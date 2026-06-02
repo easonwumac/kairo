@@ -325,8 +325,10 @@ public extension LocalModelCatalog {
             .qwen25CoderMicroInstruct,
             .qwen25CoderTinyInstruct,
             .llama32OneBInstruct,
+            .granite32TwoBInstruct,
             .deepSeekR1DistillQwenTiny,
             .h2oDanube2Chat,
+            .olmo2OneBInstruct,
             .openELM11BInstruct,
             .falconH1TinyInstruct,
             .smolLM2NanoInstruct,
@@ -570,6 +572,20 @@ public extension LocalModelManifest {
         sha256: "6f85a640a97cf2bf5b8e764087b1e83da0fdb51d7c9fab7d0fece9385611df83"
     )
 
+    static let granite32TwoBInstruct = ggufManifest(
+        id: "granite3-2-2b-instruct-q4-k-m",
+        displayName: "Granite 3.2 2B Instruct Q4_K_M",
+        family: "Granite 3.2",
+        parameterCount: "2B",
+        fileSizeBytes: 1_530_551_136,
+        installedSizeBytes: 2_200 * 1024 * 1024,
+        contextWindow: 131_072,
+        tokenizerID: "granite3.2-tokenizer",
+        minRAMGB: 5,
+        downloadURL: "https://huggingface.co/Mungert/granite-3.2-2b-instruct-GGUF/resolve/main/granite-3.2-2b-instruct-q4_k_m.gguf",
+        sha256: "2db5bc4ba770f23bafe3376e49acbfac82fa04b75299bff41471399712fda0aa"
+    )
+
     static let deepSeekR1DistillQwenTiny = ggufManifest(
         id: "deepseek-r1-distill-qwen-1-5b-q4-k-m",
         displayName: "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
@@ -598,6 +614,20 @@ public extension LocalModelManifest {
         minRAMGB: 4,
         downloadURL: "https://huggingface.co/h2oai/h2o-danube2-1.8b-chat-GGUF/resolve/main/h2o-danube2-1.8b-chat-Q4_K_M.gguf",
         sha256: "6a303ee6b94a961aa43e48eb11629e933c4438fae5e6db336318a5d33fe57d79"
+    )
+
+    static let olmo2OneBInstruct = ggufManifest(
+        id: "olmo2-0425-1b-instruct-q4-k-m",
+        displayName: "OLMo 2 1B Instruct Q4_K_M",
+        family: "OLMo 2",
+        parameterCount: "1B",
+        fileSizeBytes: 935_515_360,
+        installedSizeBytes: 1_400 * 1024 * 1024,
+        contextWindow: 4_096,
+        tokenizerID: "olmo2-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/unsloth/OLMo-2-0425-1B-Instruct-GGUF/resolve/main/OLMo-2-0425-1B-Instruct-Q4_K_M.gguf",
+        sha256: "54b26d5388274d038608b42fdf1afb7544d2e51a0fac4d1abf4a8c54a813fbbc"
     )
 
     static let openELM11BInstruct = ggufManifest(
