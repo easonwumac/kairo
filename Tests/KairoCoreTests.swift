@@ -670,6 +670,24 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demo.\(recipe.id).confirm""#))
     }
 
+    func testKairoEnvironmentWiresFileBackedSkillManagerIntoAccessSurface() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let environmentSource = try String(contentsOf: root.appendingPathComponent("Kairo/Services/KairoEnvironment.swift"), encoding: .utf8)
+        let rootViewSource = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
+        let permissionHubSource = try String(contentsOf: root.appendingPathComponent("Kairo/Views/PermissionHubView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(environmentSource.contains("agentSkillManagerService: AgentSkillManagerService?"))
+        XCTAssertTrue(environmentSource.contains("FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)"))
+        XCTAssertTrue(environmentSource.contains("AgentSkillManagerService("))
+        XCTAssertTrue(environmentSource.contains("store: agentSkillStore"))
+        XCTAssertTrue(rootViewSource.contains("PermissionHubView(skillManagerService: environment.agentSkillManagerService)"))
+        XCTAssertTrue(permissionHubSource.contains("private let skillManagerService: AgentSkillManagerService?"))
+        XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.catalog()"))
+        XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.disableSkill(id: skill.id)"))
+        XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.enableSkill(id: skill.id)"))
+        XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.removeSkill(id: skill.id)"))
+    }
+
     func testKairoPathsBuildsApplicationSupportMemoryURL() {
         let paths = KairoPaths(appName: "KairoTests")
 
@@ -680,6 +698,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(paths.localModelsDirectory.lastPathComponent, "LocalModels")
         XCTAssertEqual(paths.localModelInstallRegistryURL.lastPathComponent, "install-registry.json")
         XCTAssertEqual(paths.localModelSettingsURL.lastPathComponent, "settings.json")
+        XCTAssertEqual(paths.agentSkillStoreURL.lastPathComponent, "agent-skills.json")
+        XCTAssertEqual(paths.agentSkillStoreURL.deletingLastPathComponent().lastPathComponent, "Skills")
         XCTAssertFalse(paths.usesAppGroup)
     }
 

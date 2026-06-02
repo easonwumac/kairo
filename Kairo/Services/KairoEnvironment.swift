@@ -24,6 +24,7 @@ public struct KairoEnvironment: Sendable {
     public let shareIngestionQueue: ShareIngestionQueue
     public let permissionService: PermissionService
     public let auditLogger: AuditLogger
+    public let agentSkillManagerService: AgentSkillManagerService?
 
     public init(
         memoryStore: MemoryStore,
@@ -32,7 +33,8 @@ public struct KairoEnvironment: Sendable {
         chatHistoryStore: ChatHistoryStore = InMemoryChatHistoryStore(),
         shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
         permissionService: PermissionService = StubPermissionService(),
-        auditLogger: AuditLogger = InMemoryAuditLogger()
+        auditLogger: AuditLogger = InMemoryAuditLogger(),
+        agentSkillManagerService: AgentSkillManagerService? = nil
     ) {
         self.memoryStore = memoryStore
         self.credentialStore = credentialStore
@@ -41,6 +43,7 @@ public struct KairoEnvironment: Sendable {
         self.shareIngestionQueue = shareIngestionQueue
         self.permissionService = permissionService
         self.auditLogger = auditLogger
+        self.agentSkillManagerService = agentSkillManagerService
     }
 
     public static func preview() -> KairoEnvironment {
@@ -66,6 +69,11 @@ public struct KairoEnvironment: Sendable {
         let memoryStore = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
         let chatHistoryStore = try await JSONFileChatHistoryStore(fileURL: paths.chatHistoryStoreURL)
         let shareIngestionQueue = try await JSONFileShareIngestionQueue(fileURL: paths.shareIngestionQueueURL)
+        let agentSkillStore = try await FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)
+        let agentSkillManagerService = AgentSkillManagerService(
+            store: agentSkillStore,
+            builtInCatalog: .defaultWithMarketplaceSamples
+        )
         let credentialStore = KeychainCredentialStore()
         let aiProvider = OpenAIProvider(credentialStore: credentialStore)
 
@@ -76,7 +84,8 @@ public struct KairoEnvironment: Sendable {
             chatHistoryStore: chatHistoryStore,
             shareIngestionQueue: shareIngestionQueue,
             permissionService: SystemPermissionService(),
-            auditLogger: InMemoryAuditLogger()
+            auditLogger: InMemoryAuditLogger(),
+            agentSkillManagerService: agentSkillManagerService
         )
     }
 }
@@ -142,6 +151,14 @@ public struct KairoPaths: Sendable {
 
     public var localModelSettingsURL: URL {
         localModelsDirectory.appendingPathComponent("settings.json")
+    }
+
+    public var agentSkillsDirectory: URL {
+        applicationSupportDirectory.appendingPathComponent("Skills", isDirectory: true)
+    }
+
+    public var agentSkillStoreURL: URL {
+        agentSkillsDirectory.appendingPathComponent("agent-skills.json")
     }
 
     public static func defaultAppGroupContainerURL(for identifier: String) -> URL? {

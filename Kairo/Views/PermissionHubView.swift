@@ -4,13 +4,20 @@ import SwiftUI
 public struct PermissionHubView: View {
     @State private var homeKitPreviewMessage: String?
     @State private var skillManagerMessage: String?
-    @State private var skillCatalog = AgentSkillCatalog.defaultWithMarketplaceSamples
+    @State private var skillCatalog: AgentSkillCatalog
 
     private let registry = CapabilityRegistry()
     private let actionCatalog = SandboxActionCatalog()
     private let homeKitDemoCatalog = HomeKitControlDemoCatalog.default
+    private let skillManagerService: AgentSkillManagerService?
 
-    public init() {}
+    public init(
+        skillManagerService: AgentSkillManagerService? = nil,
+        initialSkillCatalog: AgentSkillCatalog = .defaultWithMarketplaceSamples
+    ) {
+        self.skillManagerService = skillManagerService
+        _skillCatalog = State(initialValue: initialSkillCatalog)
+    }
 
     public var body: some View {
         NavigationStack {
@@ -73,6 +80,9 @@ public struct PermissionHubView: View {
                 .accessibilityIdentifier("access.homekit.demos")
             }
             .navigationTitle("Access")
+            .task {
+                await loadSkillCatalog()
+            }
         }
     }
 
@@ -102,24 +112,27 @@ public struct PermissionHubView: View {
                 switch skill.installationStatus {
                 case .available:
                     Button {
-                        skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .installed)
-                        skillManagerMessage = "\(skill.displayName) installed."
+                        Task {
+                            await installSkill(skill)
+                        }
                     } label: {
                         Label("Install", systemImage: "square.and.arrow.down")
                     }
                     .accessibilityIdentifier("access.skill.\(skill.id).install")
                 case .installed:
                     Button {
-                        skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .disabled)
-                        skillManagerMessage = "\(skill.displayName) disabled."
+                        Task {
+                            await disableSkill(skill)
+                        }
                     } label: {
                         Label("Disable", systemImage: "pause.circle")
                     }
                     .accessibilityIdentifier("access.skill.\(skill.id).disable")
                 case .disabled:
                     Button {
-                        skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .installed)
-                        skillManagerMessage = "\(skill.displayName) enabled."
+                        Task {
+                            await enableSkill(skill)
+                        }
                     } label: {
                         Label("Enable", systemImage: "play.circle")
                     }
@@ -127,8 +140,9 @@ public struct PermissionHubView: View {
                 }
 
                 Button(role: .destructive) {
-                    skillCatalog = skillCatalog.removingSkill(id: skill.id)
-                    skillManagerMessage = "\(skill.displayName) removed from manager."
+                    Task {
+                        await removeSkill(skill)
+                    }
                 } label: {
                     Label("Remove", systemImage: "trash")
                 }
@@ -137,6 +151,79 @@ public struct PermissionHubView: View {
             .font(.caption)
         }
         .padding(.vertical, 4)
+    }
+
+    @MainActor
+    private func loadSkillCatalog() async {
+        guard let skillManagerService else { return }
+
+        do {
+            skillCatalog = try await skillManagerService.catalog()
+        } catch {
+            skillManagerMessage = "Unable to load Skill Manager state."
+        }
+    }
+
+    @MainActor
+    private func installSkill(_ skill: AgentSkill) async {
+        guard skillManagerService != nil else {
+            skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .installed)
+            skillManagerMessage = "\(skill.displayName) installed."
+            return
+        }
+
+        skillManagerMessage = "\(skill.displayName) requires a signed manifest import before install."
+    }
+
+    @MainActor
+    private func disableSkill(_ skill: AgentSkill) async {
+        guard let skillManagerService else {
+            skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .disabled)
+            skillManagerMessage = "\(skill.displayName) disabled."
+            return
+        }
+
+        do {
+            _ = try await skillManagerService.disableSkill(id: skill.id)
+            skillCatalog = try await skillManagerService.catalog()
+            skillManagerMessage = "\(skill.displayName) disabled."
+        } catch {
+            skillManagerMessage = "Unable to disable \(skill.displayName)."
+        }
+    }
+
+    @MainActor
+    private func enableSkill(_ skill: AgentSkill) async {
+        guard let skillManagerService else {
+            skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .installed)
+            skillManagerMessage = "\(skill.displayName) enabled."
+            return
+        }
+
+        do {
+            _ = try await skillManagerService.enableSkill(id: skill.id)
+            skillCatalog = try await skillManagerService.catalog()
+            skillManagerMessage = "\(skill.displayName) enabled."
+        } catch {
+            skillManagerMessage = "Unable to enable \(skill.displayName)."
+        }
+    }
+
+    @MainActor
+    private func removeSkill(_ skill: AgentSkill) async {
+        guard let skillManagerService else {
+            skillCatalog = skillCatalog.removingSkill(id: skill.id)
+            skillManagerMessage = "\(skill.displayName) removed from manager."
+            return
+        }
+
+        do {
+            try await skillManagerService.removeSkill(id: skill.id)
+            skillCatalog = try await skillManagerService.catalog()
+            skillManagerMessage = "\(skill.displayName) removed from manager."
+        } catch {
+            skillManagerMessage = "Unable to remove \(skill.displayName)."
+        }
     }
 
     @ViewBuilder

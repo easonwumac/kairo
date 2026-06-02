@@ -66,7 +66,7 @@
 
 `AgentSkillManifest` is the package boundary for downloadable skills. It requires signature metadata, verifies a SHA-256 checksum over the skill payload, and can verify P-256 signatures against `AgentSkillManifestTrustStore` before `AgentSkillManagerService` installs it. `FileBackedAgentSkillStore` persists marketplace and user-created skills, including disabled state, so prompt context can later be derived from the user's actual installed tool set.
 
-The Access Skill Manager is the first app-facing surface for installed, available, and disabled skills. It is intentionally metadata-first: showing skills, capabilities, source, installation state, and confirmation requirements does not bypass iOS permissions. Downloadable marketplace skills still need production key rotation/revocation metadata, compatibility gates, and import/update UI before production distribution.
+The Access Skill Manager is the first app-facing surface for installed, available, and disabled skills. In live app wiring, `KairoEnvironment` creates a `FileBackedAgentSkillStore` at `KairoPaths.agentSkillStoreURL` and injects `AgentSkillManagerService` into `PermissionHubView`; preview mode still falls back to a local sample catalog. It is intentionally metadata-first: showing skills, capabilities, source, installation state, and confirmation requirements does not bypass iOS permissions. Downloadable marketplace skills still need production key rotation/revocation metadata, compatibility gates, and import/update UI before production distribution.
 
 ## Modules
 

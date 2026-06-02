@@ -70,6 +70,7 @@
 - 把可操作能力封裝成 `AgentSkill`。
 - 讓 model prompt context 明確看到 installed skills/tools。
 - Skill manifest：signature metadata、SHA-256 checksum、public-key verification、file-backed lifecycle。
+- Live app environment-backed Skill Manager state。
 - Skill Manager UI：install / disable / enable / remove / inspect permissions。
 - 使用者可新增自訂 skill manifest。
 - Skill marketplace website：搜尋、分類、權限、風險、版本與下載。

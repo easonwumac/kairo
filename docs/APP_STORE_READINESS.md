@@ -76,6 +76,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Downloadable skill manifests require signature metadata and SHA-256 checksum verification before install.
 - [x] Marketplace signatures can be verified against a public-key trust store before install.
 - [x] File-backed skill manager core supports install, disable, enable, remove, and reload.
+- [x] Live app environment wires the file-backed skill manager into Access.
 - [ ] Marketplace trust store supports production key rotation and revocation metadata.
 - [ ] Skill marketplace website shows permissions, risk tier, version, author, and changelog before install.
 - [ ] User-created skills require explicit capability selection and confirmation policy.
