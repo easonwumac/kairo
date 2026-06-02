@@ -22,6 +22,61 @@ public enum LocalModelRuntime: String, Codable, Equatable, Sendable, CaseIterabl
     case unknown
 }
 
+public struct LocalModelBenchmarkProfile: Codable, Equatable, Identifiable, Sendable {
+    public var id: String
+    public var runtime: LocalModelRuntime
+    public var runtimePackage: String
+    public var artifactReference: String
+    public var promptTokens: Int
+    public var generatedTokens: Int
+    public var trials: Int
+    public var promptTokensPerSecond: Double
+    public var generationTokensPerSecond: Double
+    public var peakMemoryMB: Int?
+    public var testPlatform: String
+    public var measuredAt: Date
+    public var sourceURL: URL?
+    public var supportsInAppDownload: Bool
+    public var isReferenceOnlyForIOS: Bool
+    public var notes: String
+
+    public init(
+        id: String,
+        runtime: LocalModelRuntime,
+        runtimePackage: String,
+        artifactReference: String,
+        promptTokens: Int,
+        generatedTokens: Int,
+        trials: Int,
+        promptTokensPerSecond: Double,
+        generationTokensPerSecond: Double,
+        peakMemoryMB: Int? = nil,
+        testPlatform: String,
+        measuredAt: Date,
+        sourceURL: URL? = nil,
+        supportsInAppDownload: Bool,
+        isReferenceOnlyForIOS: Bool,
+        notes: String
+    ) {
+        self.id = id
+        self.runtime = runtime
+        self.runtimePackage = runtimePackage
+        self.artifactReference = artifactReference
+        self.promptTokens = promptTokens
+        self.generatedTokens = generatedTokens
+        self.trials = trials
+        self.promptTokensPerSecond = promptTokensPerSecond
+        self.generationTokensPerSecond = generationTokensPerSecond
+        self.peakMemoryMB = peakMemoryMB
+        self.testPlatform = testPlatform
+        self.measuredAt = measuredAt
+        self.sourceURL = sourceURL
+        self.supportsInAppDownload = supportsInAppDownload
+        self.isReferenceOnlyForIOS = isReferenceOnlyForIOS
+        self.notes = notes
+    }
+}
+
 public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var displayName: String
@@ -45,6 +100,7 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
     public var downloadURL: URL
     public var sha256: String
     public var signature: String?
+    public var benchmarkProfiles: [LocalModelBenchmarkProfile]
     public var createdAt: Date
     public var updatedAt: Date
     public var safetyPolicyVersion: String
@@ -74,6 +130,7 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
         downloadURL: URL,
         sha256: String,
         signature: String? = nil,
+        benchmarkProfiles: [LocalModelBenchmarkProfile] = [],
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         safetyPolicyVersion: String,
@@ -102,11 +159,75 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
         self.downloadURL = downloadURL
         self.sha256 = sha256
         self.signature = signature
+        self.benchmarkProfiles = benchmarkProfiles
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.safetyPolicyVersion = safetyPolicyVersion
         self.deprecated = deprecated
         self.replacementModelID = replacementModelID
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case displayName
+        case family
+        case version
+        case parameterCount
+        case quantization
+        case runtime
+        case fileSizeBytes
+        case installedSizeBytes
+        case contextWindow
+        case tokenizerID
+        case licenseName
+        case licenseURL
+        case minOSVersion
+        case minDeviceClass
+        case minRAMGB
+        case supportedLocales
+        case capabilities
+        case disallowedCapabilities
+        case downloadURL
+        case sha256
+        case signature
+        case benchmarkProfiles
+        case createdAt
+        case updatedAt
+        case safetyPolicyVersion
+        case deprecated
+        case replacementModelID
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.displayName = try container.decode(String.self, forKey: .displayName)
+        self.family = try container.decode(String.self, forKey: .family)
+        self.version = try container.decode(String.self, forKey: .version)
+        self.parameterCount = try container.decode(String.self, forKey: .parameterCount)
+        self.quantization = try container.decode(String.self, forKey: .quantization)
+        self.runtime = try container.decodeIfPresent(LocalModelRuntime.self, forKey: .runtime) ?? .unknown
+        self.fileSizeBytes = try container.decode(Int64.self, forKey: .fileSizeBytes)
+        self.installedSizeBytes = try container.decode(Int64.self, forKey: .installedSizeBytes)
+        self.contextWindow = try container.decode(Int.self, forKey: .contextWindow)
+        self.tokenizerID = try container.decode(String.self, forKey: .tokenizerID)
+        self.licenseName = try container.decode(String.self, forKey: .licenseName)
+        self.licenseURL = try container.decode(URL.self, forKey: .licenseURL)
+        self.minOSVersion = try container.decode(String.self, forKey: .minOSVersion)
+        self.minDeviceClass = try container.decode(String.self, forKey: .minDeviceClass)
+        self.minRAMGB = try container.decode(Double.self, forKey: .minRAMGB)
+        self.supportedLocales = try container.decode([String].self, forKey: .supportedLocales)
+        self.capabilities = try container.decode([LocalModelCapability].self, forKey: .capabilities)
+        self.disallowedCapabilities = try container.decodeIfPresent([LocalModelCapability].self, forKey: .disallowedCapabilities) ?? []
+        self.downloadURL = try container.decode(URL.self, forKey: .downloadURL)
+        self.sha256 = try container.decode(String.self, forKey: .sha256)
+        self.signature = try container.decodeIfPresent(String.self, forKey: .signature)
+        self.benchmarkProfiles = try container.decodeIfPresent([LocalModelBenchmarkProfile].self, forKey: .benchmarkProfiles) ?? []
+        self.createdAt = try container.decode(Date.self, forKey: .createdAt)
+        self.updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        self.safetyPolicyVersion = try container.decode(String.self, forKey: .safetyPolicyVersion)
+        self.deprecated = try container.decodeIfPresent(Bool.self, forKey: .deprecated) ?? false
+        self.replacementModelID = try container.decodeIfPresent(String.self, forKey: .replacementModelID)
     }
 }
 
@@ -292,7 +413,44 @@ public extension LocalModelManifest {
         tokenizerID: "qwen3.5-tokenizer",
         minRAMGB: 4,
         downloadURL: "https://huggingface.co/AaryanK/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B.q4_k_m.gguf",
-        sha256: "e8e388246c2a6ddbbb9fffc0df7ef0bd0ad71622f3c851b68df6cc58b78a51af"
+        sha256: "e8e388246c2a6ddbbb9fffc0df7ef0bd0ad71622f3c851b68df6cc58b78a51af",
+        benchmarkProfiles: [
+            LocalModelBenchmarkProfile(
+                id: "qwen3-5-0-8b-gguf-metal-2026-06-02",
+                runtime: .gguf,
+                runtimePackage: "llama.cpp Metal",
+                artifactReference: "AaryanK/Qwen3.5-0.8B-GGUF:Q4_K_M",
+                promptTokens: 512,
+                generatedTokens: 128,
+                trials: 5,
+                promptTokensPerSecond: 8_810,
+                generationTokensPerSecond: 214,
+                testPlatform: "Apple Silicon Mac",
+                measuredAt: Date(timeIntervalSince1970: 1_780_358_400),
+                sourceURL: URL(string: "https://huggingface.co/AaryanK/Qwen3.5-0.8B-GGUF"),
+                supportsInAppDownload: true,
+                isReferenceOnlyForIOS: true,
+                notes: "Developer reference benchmark with 512 prompt tokens and 128 generated tokens. Real iPhone latency, memory, thermal behavior, and runtime choice still require device testing."
+            ),
+            LocalModelBenchmarkProfile(
+                id: "qwen3-5-0-8b-mlx-optiq-2026-06-02",
+                runtime: .mlx,
+                runtimePackage: "mlx-lm",
+                artifactReference: "mlx-community/Qwen3.5-0.8B-OptiQ-4bit",
+                promptTokens: 512,
+                generatedTokens: 128,
+                trials: 5,
+                promptTokensPerSecond: 10_639,
+                generationTokensPerSecond: 286,
+                peakMemoryMB: 1_360,
+                testPlatform: "Apple Silicon Mac",
+                measuredAt: Date(timeIntervalSince1970: 1_780_358_400),
+                sourceURL: URL(string: "https://huggingface.co/mlx-community/Qwen3.5-0.8B-OptiQ-4bit"),
+                supportsInAppDownload: false,
+                isReferenceOnlyForIOS: true,
+                notes: "MLX is the stronger Apple Silicon validation path, but this artifact is not an in-app iPhone download target in this pass."
+            )
+        ]
     )
 
     static let qwen35Small = ggufManifest(
@@ -560,7 +718,8 @@ public extension LocalModelManifest {
         licenseURL: String = "https://www.apache.org/licenses/LICENSE-2.0",
         minRAMGB: Double,
         downloadURL: String,
-        sha256: String
+        sha256: String,
+        benchmarkProfiles: [LocalModelBenchmarkProfile] = []
     ) -> LocalModelManifest {
         LocalModelManifest(
             id: id,
@@ -583,6 +742,7 @@ public extension LocalModelManifest {
             disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
             downloadURL: URL(string: downloadURL)!,
             sha256: sha256,
+            benchmarkProfiles: benchmarkProfiles,
             createdAt: Date(timeIntervalSince1970: 1_767_225_600),
             updatedAt: Date(timeIntervalSince1970: 1_767_225_600),
             safetyPolicyVersion: "2026.1"
@@ -950,6 +1110,7 @@ public struct LocalModelSettingsRow: Identifiable, Equatable, Sendable {
     public var modelID: String
     public var displayName: String
     public var detailText: String
+    public var benchmarkSummaryText: String?
     public var statusText: String
     public var primaryAction: LocalModelSettingsPrimaryAction
     public var manifest: LocalModelManifest
@@ -960,6 +1121,7 @@ public struct LocalModelSettingsRow: Identifiable, Equatable, Sendable {
         self.modelID = model.id
         self.displayName = model.displayName
         self.detailText = model.settingsDetailText
+        self.benchmarkSummaryText = model.benchmarkSummaryText
         self.manifest = model
         self.installRecord = installRecord
 
@@ -996,6 +1158,46 @@ public extension LocalModelManifest {
         ].joined(separator: " · ")
     }
 
+    var recommendedBenchmarkProfile: LocalModelBenchmarkProfile? {
+        benchmarkProfiles.max { lhs, rhs in
+            if lhs.generationTokensPerSecond == rhs.generationTokensPerSecond {
+                return lhs.promptTokensPerSecond < rhs.promptTokensPerSecond
+            }
+            return lhs.generationTokensPerSecond < rhs.generationTokensPerSecond
+        }
+    }
+
+    var benchmarkSummaryText: String? {
+        guard let benchmark = recommendedBenchmarkProfile else {
+            return nil
+        }
+
+        let runtimeLabel: String
+        switch benchmark.runtime {
+        case .mlx:
+            runtimeLabel = "MLX"
+        case .gguf:
+            runtimeLabel = "GGUF"
+        case .coreML:
+            runtimeLabel = "Core ML"
+        case .unknown:
+            runtimeLabel = benchmark.runtimePackage
+        }
+
+        var parts = [
+            "\(runtimeLabel) ref \(Self.formattedRate(benchmark.generationTokensPerSecond)) gen tok/s",
+            "\(Self.formattedRate(benchmark.promptTokensPerSecond)) prompt tok/s",
+            benchmark.testPlatform
+        ]
+        if let peakMemoryMB = benchmark.peakMemoryMB {
+            parts.append("\(Self.formattedMemoryMB(peakMemoryMB)) peak")
+        }
+        if benchmark.isReferenceOnlyForIOS {
+            parts.append("iPhone not verified")
+        }
+        return parts.joined(separator: " · ")
+    }
+
     private static func formattedBytes(_ bytes: Int64) -> String {
         let units = ["B", "KB", "MB", "GB"]
         var value = Double(bytes)
@@ -1008,6 +1210,20 @@ public extension LocalModelManifest {
             return "\(Int(value)) \(units[unitIndex])"
         }
         return String(format: "%.1f %@", value, units[unitIndex])
+    }
+
+    private static func formattedRate(_ rate: Double) -> String {
+        if rate.rounded() == rate {
+            return "\(Int(rate))"
+        }
+        return String(format: "%.1f", rate)
+    }
+
+    private static func formattedMemoryMB(_ memoryMB: Int) -> String {
+        if memoryMB >= 1024 {
+            return String(format: "%.2f GB", Double(memoryMB) / 1024.0)
+        }
+        return "\(memoryMB) MB"
     }
 }
 

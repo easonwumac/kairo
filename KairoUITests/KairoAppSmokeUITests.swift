@@ -206,6 +206,11 @@ final class KairoAppSmokeUITests: XCTestCase {
     private func verifyDownloadableLocalModel(id: String, displayName: String, downloadIdentifier: String) {
         XCTAssertFalse(displayName.isEmpty)
         XCTAssertTrue(findElement("settings.models.\(id).name", direction: .down, maxSwipes: 6).exists)
+        if id == "qwen3-5-0-8b-q4-k-m" {
+            XCTAssertTrue(findElement("settings.models.\(id).benchmark", direction: .down, maxSwipes: 2).exists)
+            XCTAssertTrue(findStaticText(containing: "MLX ref", direction: .both).exists)
+            XCTAssertTrue(findStaticText(containing: "iPhone not verified", direction: .both).exists)
+        }
         XCTAssertTrue(findButton(downloadIdentifier, direction: .down, maxSwipes: 2).exists)
     }
 

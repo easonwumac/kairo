@@ -267,6 +267,13 @@ public struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
+            if let benchmarkSummaryText = row.benchmarkSummaryText {
+                Text(benchmarkSummaryText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
+            }
+
             HStack(spacing: 12) {
                 localModelAction(for: row)
 

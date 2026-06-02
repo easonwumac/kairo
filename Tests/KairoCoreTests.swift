@@ -849,6 +849,12 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(availableModels.allSatisfy { $0.runtime == .gguf })
         XCTAssertTrue(availableModels.allSatisfy { $0.downloadURL.scheme == "https" })
         XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
+
+        let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
+        let mlxBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .mlx })
+        XCTAssertEqual(mlxBenchmark.artifactReference, "mlx-community/Qwen3.5-0.8B-OptiQ-4bit")
+        XCTAssertFalse(mlxBenchmark.supportsInAppDownload)
+        XCTAssertTrue(mlxBenchmark.isReferenceOnlyForIOS)
     }
 
     func testModelCatalogWebsiteDocumentsNoWeightsPolicy() throws {
@@ -858,8 +864,10 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(indexHTML.contains("Kairo Model Catalog"))
         XCTAssertTrue(indexHTML.contains("models.json"))
+        XCTAssertTrue(indexHTML.contains("benchmark profiles"))
         XCTAssertTrue(readme.contains("Do not commit model weights"))
         XCTAssertTrue(readme.contains("kairo-models"))
+        XCTAssertTrue(readme.contains("runtime benchmark profiles"))
     }
 
     func testSkillMarketplaceIndexListsDownloadableSkillsWithSafetyMetadata() throws {
@@ -1189,6 +1197,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).download""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).select""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).delete""#))
+        XCTAssertTrue(settingsView.contains("row.benchmarkSummaryText"))
+        XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).benchmark""#))
         XCTAssertTrue(settingsView.contains("refreshLocalModelCatalog"))
         XCTAssertTrue(settingsView.contains(#""settings.models.refresh-catalog""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.catalog-source""#))
@@ -1454,7 +1464,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(available.map(\.id), ["available"])
     }
 
-    func testDefaultLocalModelCatalogExposesPopularTwoBAndSmallerModelsForSettings() {
+    func testDefaultLocalModelCatalogExposesPopularTwoBAndSmallerModelsForSettings() throws {
         let catalog = LocalModelCatalog.kairoDefault
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
 
@@ -1510,6 +1520,29 @@ final class KairoCoreTests: XCTestCase {
             XCTAssertTrue(model.disallowedCapabilities.contains(.webCurrentInfo), model.id)
             XCTAssertTrue(model.disallowedCapabilities.contains(.toolUse), model.id)
         }
+
+        let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
+        let ggufBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .gguf })
+        let mlxBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .mlx })
+        XCTAssertEqual(ggufBenchmark.runtimePackage, "llama.cpp Metal")
+        XCTAssertEqual(ggufBenchmark.promptTokens, 512)
+        XCTAssertEqual(ggufBenchmark.generatedTokens, 128)
+        XCTAssertEqual(ggufBenchmark.trials, 5)
+        XCTAssertEqual(ggufBenchmark.promptTokensPerSecond, 8_810, accuracy: 0.1)
+        XCTAssertEqual(ggufBenchmark.generationTokensPerSecond, 214, accuracy: 0.1)
+        XCTAssertTrue(ggufBenchmark.supportsInAppDownload)
+        XCTAssertTrue(ggufBenchmark.isReferenceOnlyForIOS)
+        XCTAssertEqual(mlxBenchmark.runtimePackage, "mlx-lm")
+        XCTAssertEqual(mlxBenchmark.artifactReference, "mlx-community/Qwen3.5-0.8B-OptiQ-4bit")
+        XCTAssertEqual(mlxBenchmark.promptTokensPerSecond, 10_639, accuracy: 0.1)
+        XCTAssertEqual(mlxBenchmark.generationTokensPerSecond, 286, accuracy: 0.1)
+        XCTAssertEqual(mlxBenchmark.peakMemoryMB, 1_360)
+        XCTAssertFalse(mlxBenchmark.supportsInAppDownload)
+        XCTAssertTrue(mlxBenchmark.isReferenceOnlyForIOS)
+        XCTAssertEqual(mlxBenchmark.sourceURL?.absoluteString, "https://huggingface.co/mlx-community/Qwen3.5-0.8B-OptiQ-4bit")
+        XCTAssertEqual(qwenTiny.recommendedBenchmarkProfile?.runtime, .mlx)
+        XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("MLX ref 286 gen tok/s") == true)
+        XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("iPhone not verified") == true)
     }
 
     func testLocalModelCatalogServiceFetchesStandaloneModelRepoCatalog() async throws {
@@ -1536,6 +1569,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(catalog.minimumSafetyPolicyVersion, "2026.2")
         XCTAssertEqual(catalog.models.first?.runtime, .gguf)
         XCTAssertEqual(catalog.models.first?.version, "1.1.0")
+        XCTAssertEqual(catalog.models.first?.benchmarkProfiles, [])
     }
 
     func testLocalModelCatalogServiceRejectsUnsafeRemoteModelDownloads() async throws {
@@ -1812,6 +1846,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(selectedRow.detailText.contains("0.8B"))
         XCTAssertTrue(selectedRow.detailText.contains("Q4"))
         XCTAssertTrue(selectedRow.detailText.contains("2K context"))
+        XCTAssertNil(downloadableRow.benchmarkSummaryText)
     }
 
     func testVerifiedLocalModelDownloaderInstallsModelAndUpdatesRegistry() async throws {

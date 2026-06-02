@@ -115,6 +115,8 @@ Development-machine benchmark on June 2, 2026, using Apple M5 Pro:
 
 MLX is the stronger Apple Silicon benchmark path for macOS/dev validation. iPhone production support still needs a separate runtime decision and real-device proof for latency, memory, thermal behavior, and App Store-compatible packaging. Do not treat these Mac numbers as iPhone performance.
 
+`LocalModelManifest.benchmarkProfiles` now records the GGUF Metal and MLX reference profiles for `Qwen3.5 0.8B Q4_K_M`. Settings shows the best reference summary as `MLX ref 286 gen tok/s ... iPhone not verified`, while the row still downloads only the GGUF artifact through the explicit user-approved model downloader. The MLX artifact is tracked as benchmark metadata for Apple Silicon validation, not as an in-app iPhone download target in this pass.
+
 ## Model catalog backend
 
 Kairo now includes `LocalModelCatalogService.defaultStandaloneRepository`, which fetches `https://easonwumac.github.io/kairo-models/models.json` and treats it like a static backend. This repository also contains `Website/models` as the reference seed that can be mirrored to the standalone `kairo-models` repository.
@@ -123,7 +125,7 @@ The model catalog backend should:
 
 - publish signed model catalog JSON and per-model manifests;
 - list runtime-specific artifacts, such as GGUF for llama.cpp-compatible runtimes and MLX artifacts for Apple Silicon validation;
-- include download URLs, SHA-256, file size, license, minimum OS, minimum RAM/device tier, context window, safety policy version, and deprecation status;
+- include download URLs, SHA-256, file size, license, minimum OS, minimum RAM/device tier, context window, safety policy version, benchmark profiles, and deprecation status;
 - never host committed model weights in the app repo;
 - support catalog versioning, key rotation, revocation, and rollback;
 - let Kairo fetch the catalog visibly and install only after user approval.
@@ -134,6 +136,7 @@ Current service behavior:
 - rejects remote catalog entries whose model download URL is not HTTPS;
 - rejects entries missing a 64-character SHA-256 checksum;
 - merges remote entries over matching built-in model IDs while preserving built-in fallback models that the remote catalog omits;
+- decodes missing `benchmarkProfiles` as an empty list so older remote catalogs remain compatible;
 - syncs refreshed catalog metadata into `LocalModelSettingsService` so Settings can still select models from the refreshed catalog.
 
 ## Model selection

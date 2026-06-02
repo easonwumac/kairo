@@ -81,5 +81,5 @@
 - 使用者可新增自訂 skill manifest。
 - Skill marketplace website：搜尋、分類、權限、風險、版本與下載。
 - 獨立 `kairo-skills` GitHub repo：專門放可更新 skill catalog、manifest、GitHub Pages。
-- Model catalog backend seed：`Website/models` + `LocalModelCatalogService`，準備鏡像到獨立 `kairo-models` repo，讓 app 以可見刷新取得 downloadable model list。
+- Model catalog backend seed：`Website/models` + `LocalModelCatalogService`，準備鏡像到獨立 `kairo-models` repo，讓 app 以可見刷新取得 downloadable model list 與 runtime benchmark metadata。
 - Trust-store key rotation/revocation、checksum、compatibility gates。
