@@ -95,6 +95,19 @@ public struct AgentSkill: Codable, Equatable, Identifiable, Sendable {
             downloadURL: downloadURL
         )
     }
+
+    public static func shortcutDemoSkill(for recipe: ShortcutDemoRecipe) -> AgentSkill {
+        AgentSkill(
+            id: "shortcut-\(recipe.id)",
+            displayName: "Shortcut \(recipe.title)",
+            summary: "Use the \(recipe.title) Shortcut recipe as an installed skill.",
+            kind: .shortcutWorkflow,
+            source: .builtIn,
+            installationStatus: .installed,
+            requiredCapabilities: [.appIntents],
+            shortcutRecipeID: recipe.id
+        )
+    }
 }
 
 public struct AgentSkillCatalog: Codable, Equatable, Sendable {
@@ -174,7 +187,7 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
         skills: AgentSkillCatalog.default.skills + AgentSkillCatalog.demoMarketplaceSkills
     )
 
-    public static let `default` = AgentSkillCatalog(skills: [
+    public static let builtInHomeKitSkills: [AgentSkill] = [
         AgentSkill(
             id: "homekit-evening-scene",
             displayName: "Evening HomeKit Scene",
@@ -194,18 +207,16 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
             installationStatus: .installed,
             requiredCapabilities: [.homeKit],
             action: HomeKitControlDemoCatalog.default.recipe(id: "desk-lamp")?.action
-        ),
-        AgentSkill(
-            id: "shortcut-daily-briefing",
-            displayName: "Shortcut Daily Briefing",
-            summary: "Use the Daily Briefing Shortcut recipe as an installed skill.",
-            kind: .shortcutWorkflow,
-            source: .builtIn,
-            installationStatus: .installed,
-            requiredCapabilities: [.appIntents],
-            shortcutRecipeID: "daily-briefing"
         )
-    ])
+    ]
+
+    public static let builtInShortcutSkills: [AgentSkill] = ShortcutDemoCatalog.default.recipes.map {
+        AgentSkill.shortcutDemoSkill(for: $0)
+    }
+
+    public static let `default` = AgentSkillCatalog(
+        skills: builtInHomeKitSkills + builtInShortcutSkills
+    )
 }
 
 public enum AgentSkillManifestSignatureAlgorithm: String, Codable, Equatable, Sendable {

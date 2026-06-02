@@ -45,6 +45,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["access.skills.manifest-import.button"].exists)
         XCTAssertTrue(app.staticTexts["access.skill.homekit-evening-scene"].exists)
         XCTAssertTrue(app.buttons["access.skill.homekit-evening-scene.manage"].exists)
+        XCTAssertTrue(app.staticTexts["access.skill.shortcut-save-shared-text"].exists)
+        XCTAssertTrue(app.staticTexts["access.skill.shortcut-screenshot-to-reminders"].exists)
         XCTAssertTrue(app.otherElements["access.homekit.demos"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["access.homekit.demo.evening-scene"].exists)
         XCTAssertTrue(app.buttons["access.homekit.demo.evening-scene.confirm"].exists)

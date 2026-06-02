@@ -75,6 +75,8 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "access.skills.manifest-import",
                 "access.skills.manifest-import.text",
                 "access.skills.manifest-import.button",
+                "access.skill.shortcut-save-shared-text",
+                "access.skill.shortcut-screenshot-to-reminders",
                 "access.homekit.demos",
                 "access.homekit.demo.evening-scene",
                 "access.homekit.demo.evening-scene.confirm"
@@ -83,6 +85,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "Skill Manager section is visible.",
                 "Marketplace refresh control is visible.",
                 "Signed manifest import controls are visible.",
+                "Shortcut demo skills are visible in the Skill Manager.",
                 "HomeKit demo section is visible.",
                 "A scene control demo is visible.",
                 "The demo exposes confirmation before execution."

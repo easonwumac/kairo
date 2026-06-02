@@ -115,6 +115,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("Installed skills/tools the model may use"))
         XCTAssertTrue(context.contains("homekit-evening-scene"))
         XCTAssertTrue(context.contains("shortcut-daily-briefing"))
+        XCTAssertTrue(context.contains("shortcut-save-shared-text"))
+        XCTAssertTrue(context.contains("shortcut-screenshot-to-reminders"))
         XCTAssertTrue(context.contains("requiresConfirmation=true"))
     }
 
@@ -333,7 +335,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(catalog.installedSkills.map(\.id), [
             "homekit-evening-scene",
             "homekit-desk-lamp",
-            "shortcut-daily-briefing"
+            "shortcut-daily-briefing",
+            "shortcut-save-shared-text",
+            "shortcut-screenshot-to-reminders"
         ])
         XCTAssertEqual(homeKitSkill.kind, .homeKitControl)
         XCTAssertEqual(homeKitSkill.installationStatus, .installed)
@@ -342,6 +346,20 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(shortcutSkill.kind, .shortcutWorkflow)
         XCTAssertTrue(marketplaceSkill.canDownload)
         XCTAssertEqual(marketplaceSkill.source, .marketplace)
+    }
+
+    func testAgentSkillCatalogExposesEveryShortcutDemoAsInstalledSkill() throws {
+        let catalog = AgentSkillCatalog.default
+
+        for recipe in ShortcutDemoCatalog.default.recipes {
+            let skill = try XCTUnwrap(catalog.skill(id: "shortcut-\(recipe.id)"))
+            XCTAssertEqual(skill.kind, .shortcutWorkflow)
+            XCTAssertEqual(skill.source, .builtIn)
+            XCTAssertEqual(skill.installationStatus, .installed)
+            XCTAssertEqual(skill.requiredCapabilities, [.appIntents])
+            XCTAssertEqual(skill.shortcutRecipeID, recipe.id)
+            XCTAssertTrue(skill.summary.contains(recipe.title))
+        }
     }
 
     func testAgentSkillManifestRequiresSignatureAndVerifiesChecksum() throws {
@@ -651,6 +669,25 @@ final class KairoCoreTests: XCTestCase {
         try await reloadedService.removeSkill(id: "marketplace-weather-briefing")
         let removedCatalog = try await reloadedService.catalog()
         XCTAssertNil(removedCatalog.skill(id: "marketplace-weather-briefing"))
+    }
+
+    func testFileBackedAgentSkillManagerPersistsBuiltInShortcutSkillStatus() async throws {
+        let storeURL = temporaryFileURL(named: "built-in-shortcut-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default)
+
+        let disabled = try await service.disableSkill(id: "shortcut-save-shared-text")
+        XCTAssertEqual(disabled?.source, .builtIn)
+        XCTAssertEqual(disabled?.shortcutRecipeID, "save-shared-text")
+        XCTAssertEqual(disabled?.installationStatus, .disabled)
+
+        let reloadedStore = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let reloadedService = AgentSkillManagerService(store: reloadedStore, builtInCatalog: .default)
+        let reloadedCatalog = try await reloadedService.catalog()
+
+        XCTAssertEqual(reloadedCatalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .disabled)
+        XCTAssertFalse(reloadedCatalog.installedSkills.map(\.id).contains("shortcut-save-shared-text"))
+        XCTAssertTrue(reloadedCatalog.installedSkills.map(\.id).contains("shortcut-screenshot-to-reminders"))
     }
 
     func testSkillMarketplaceWebsitePublishesSearchableStaticSite() throws {
@@ -1114,6 +1151,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.text") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.button") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-screenshot-to-reminders") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demos") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demo.evening-scene") == true)
     }
@@ -1139,6 +1178,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("access.skills.manifest-import"))
         XCTAssertTrue(smokeTest.contains("access.skills.manifest-import.text"))
         XCTAssertTrue(smokeTest.contains("access.skills.manifest-import.button"))
+        XCTAssertTrue(smokeTest.contains("access.skill.shortcut-save-shared-text"))
+        XCTAssertTrue(smokeTest.contains("access.skill.shortcut-screenshot-to-reminders"))
         XCTAssertTrue(smokeTest.contains("access.homekit.demos"))
     }
 

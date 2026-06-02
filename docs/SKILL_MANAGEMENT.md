@@ -5,14 +5,14 @@ Kairo 的核心方向是把可操作能力包成可管理的 skills，並讓 mod
 ## Current foundation
 
 - `AgentSkill` describes one managed tool package.
-- `AgentSkillCatalog.default` exposes built-in installed skills such as HomeKit scene/accessory demos and Shortcut Daily Briefing.
+- `AgentSkillCatalog.default` exposes built-in installed skills for HomeKit scene/accessory demos and every official `ShortcutDemoCatalog` recipe.
 - `AgentSkillManifest` validates downloadable marketplace manifests with required signature metadata, a SHA-256 checksum over the skill payload, and optional P-256 public-key verification through `AgentSkillManifestTrustStore`.
 - `AgentSkillManagerService` plus `FileBackedAgentSkillStore` provide install, preview, disable, enable, remove, reload, and version downgrade protection for marketplace/user-created skills.
 - `AgentSkillManagerService.previewInstall(jsonString:)` decodes signed JSON manifests, validates them, and returns the installed version, incoming version, changelog, and whether the change is install, reinstall, update, or blocked downgrade.
 - `AgentSkillManagerService.installManifest(jsonString:)` still supports direct signed JSON install for service callers; the Access UI previews first, then installs the previewed manifest after user confirmation.
 - `AgentSkillMarketplaceCatalogService.defaultStandaloneRepository` fetches the published standalone `skills.json` catalog, maps entries into downloadable marketplace skills, and downloads signed manifests for preview.
 - `CapabilityPromptContextBuilder` includes installed skills/tools so the model can propose named, supported tool packages.
-- Access shows a Skill Manager section backed by the app environment when available, with marketplace refresh, marketplace install preview, signed manifest preview/import, and installed, available, and disabled skill states with install/disable/enable/remove affordances.
+- Access shows a Skill Manager section backed by the app environment when available, with marketplace refresh, marketplace install preview, signed manifest preview/import, built-in Shortcut demo skills, and installed, available, and disabled skill states with install/disable/enable/remove affordances.
 - HomeKit skills still require entitlement, Home authorization, action preview, and explicit confirmation before execution.
 
 ## Skill package requirements
@@ -43,7 +43,6 @@ The management website provides:
 
 ## Near-term implementation order
 
-1. Make Shortcut demos and HomeKit controls first-class persisted skills.
-2. Add UI/e2e coverage for marketplace refresh, marketplace install preview, signed import, update, disable, remove, and prompt-context availability.
-3. Add production trust-store key rotation/revocation metadata.
-4. Add compatibility gates for iOS version, entitlements, OAuth scopes, and local model requirements.
+1. Add UI/e2e interaction coverage for marketplace refresh, marketplace install preview, signed import, update, disable, remove, and prompt-context availability.
+2. Add production trust-store key rotation/revocation metadata.
+3. Add compatibility gates for iOS version, entitlements, OAuth scopes, and local model requirements.

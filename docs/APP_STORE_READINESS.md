@@ -80,6 +80,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Access UI exposes signed manifest JSON import controls.
 - [x] Skill manager rejects signed manifest downgrades and allows same/newer versions.
 - [x] Skill update UI shows installed version, incoming version, and changelog.
+- [x] Official Shortcut demo recipes are exposed as built-in installed skills and persist disabled state.
 - [x] Skill marketplace website shows permissions, risk tier, version, author, and changelog before install.
 - [x] Standalone skill update repository exists for catalog and manifest updates.
 - [x] Production app settings fetch the standalone skill update repository catalog.
