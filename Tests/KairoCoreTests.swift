@@ -100,7 +100,68 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("createReminderDraft"))
         XCTAssertTrue(context.contains("unsupportedSandboxAction"))
         XCTAssertTrue(context.contains("require visible user confirmation"))
+        XCTAssertTrue(context.contains("Integration registry"))
+        XCTAssertTrue(context.contains("apple-shortcuts"))
+        XCTAssertTrue(context.contains("BGTaskScheduler"))
         XCTAssertTrue(context.contains("Local model fallback cannot use tools"))
+    }
+
+    func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {
+        let registry = IntegrationRegistry()
+
+        let google = try XCTUnwrap(registry.integration(for: "gmail-google-workspace"))
+        XCTAssertEqual(google.oauth?.providerKey, "google")
+        XCTAssertTrue(google.oauth?.requiresBackendTokenExchange == true)
+        XCTAssertTrue(google.sandboxNotes.contains("official APIs"))
+        XCTAssertTrue(registry.integrations(for: .shortcuts).contains { $0.key == "apple-shortcuts" })
+        XCTAssertTrue(registry.userVisibleHandoffs.contains { $0.key == "chatgpt" })
+    }
+
+    func testBackgroundTaskPolicySchedulesBoundedRefreshAndRejectsDaemonClaims() throws {
+        let policy = BackgroundTaskPolicy()
+        let now = Date(timeIntervalSince1970: 1_000)
+
+        let scheduled = policy.plan(
+            for: BackgroundTaskRequest(
+                identifier: "com.kairo.app.refresh",
+                trigger: .systemRefresh,
+                estimatedDuration: 10
+            ),
+            now: now
+        )
+        XCTAssertEqual(scheduled.decision, .schedule)
+        XCTAssertEqual(scheduled.earliestBeginDate, now.addingTimeInterval(15 * 60))
+        XCTAssertTrue(scheduled.rationale.contains("BGTaskScheduler"))
+
+        let daemon = policy.plan(
+            for: BackgroundTaskRequest(
+                identifier: "com.kairo.app.refresh",
+                trigger: .systemRefresh,
+                estimatedDuration: 10,
+                requiresContinuousExecution: true
+            ),
+            now: now
+        )
+        XCTAssertEqual(daemon.decision, .reject)
+        XCTAssertTrue(daemon.rationale.contains("continuous background daemon"))
+    }
+
+    func testBackgroundTaskPolicyDefersOversizedConnectorWork() {
+        let policy = BackgroundTaskPolicy()
+        let now = Date(timeIntervalSince1970: 2_000)
+
+        let plan = policy.plan(
+            for: BackgroundTaskRequest(
+                identifier: "com.kairo.app.processing.connectors",
+                trigger: .afterOAuthRefresh,
+                estimatedDuration: 10 * 60
+            ),
+            now: now
+        )
+
+        XCTAssertEqual(plan.decision, .deferred)
+        XCTAssertEqual(plan.earliestBeginDate, now.addingTimeInterval(60 * 60))
+        XCTAssertTrue(plan.rationale.contains("bounded runtime budget"))
     }
 
     func testSandboxActionExecutorSavesConfirmedMemory() async throws {

@@ -3,13 +3,19 @@ import Foundation
 public struct CapabilityPromptContextBuilder: Sendable {
     public var capabilityRegistry: CapabilityRegistry
     public var actionCatalog: SandboxActionCatalog
+    public var integrationRegistry: IntegrationRegistry
+    public var backgroundTaskPolicy: BackgroundTaskPolicy
 
     public init(
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
-        actionCatalog: SandboxActionCatalog = SandboxActionCatalog()
+        actionCatalog: SandboxActionCatalog = SandboxActionCatalog(),
+        integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
+        backgroundTaskPolicy: BackgroundTaskPolicy = BackgroundTaskPolicy()
     ) {
         self.capabilityRegistry = capabilityRegistry
         self.actionCatalog = actionCatalog
+        self.integrationRegistry = integrationRegistry
+        self.backgroundTaskPolicy = backgroundTaskPolicy
     }
 
     public func build() -> String {
@@ -25,6 +31,16 @@ public struct CapabilityPromptContextBuilder: Sendable {
             "- \(descriptor.kind.rawValue): \(descriptor.description)"
         }
 
+        let integrationLines = integrationRegistry.integrations.map { integration in
+            let surfaces = integration.surfaces.map(\.rawValue).joined(separator: ",")
+            let scopes = integration.oauth?.defaultScopes.joined(separator: ",") ?? "none"
+            return "- \(integration.key): \(integration.displayName); surfaces=\(surfaces); status=\(integration.status.rawValue); oauthScopes=\(scopes); \(integration.sandboxNotes)"
+        }
+
+        let backgroundLines = backgroundTaskPolicy.tasks.map { descriptor in
+            "- \(descriptor.identifier): kind=\(descriptor.kind.rawValue); minInterval=\(Int(descriptor.minimumInterval))s; maxRuntime=\(Int(descriptor.maxRuntime))s; network=\(descriptor.requiresNetwork); \(descriptor.sandboxNotes)"
+        }
+
         return """
         Kairo tool/capability context:
 
@@ -37,10 +53,18 @@ public struct CapabilityPromptContextBuilder: Sendable {
         If the user asks for an unavailable or unsafe capability, propose unsupportedSandboxAction with a clear reason and safe alternative. Do not claim completion for unsupported actions:
         \(unsupportedLines.isEmpty ? "- None" : unsupportedLines.joined(separator: "\n"))
 
+        Integration registry. Use these as metadata for user-visible handoff, Shortcuts/App Intents, Share Extension, or official OAuth APIs; never claim private cross-app access:
+        \(integrationLines.joined(separator: "\n"))
+
+        Background task policy. Only propose bounded BGTaskScheduler-compatible work; never promise continuous background execution or exact launch timing:
+        \(backgroundLines.joined(separator: "\n"))
+
         Confirmation rules:
         - tier0ReadOnly may be answered directly.
         - tier1Draft, tier2LowRiskWrite, and tier3HighRiskExternal require visible user confirmation before execution.
         - External API/account actions require OAuth connector support and user-granted scopes.
+        - URL schemes and universal links are user-visible handoffs, not hidden app control.
+        - BGTaskScheduler work is opportunistic and bounded; Kairo cannot run as a daemon.
         - Local model fallback cannot use tools, browse the web, or perform account actions.
         """
     }
