@@ -478,6 +478,11 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             requiredAccessibilityIdentifiers: [
                 "root.drawer.access",
                 "access.skills.manager",
+                "access.skills.local-create.name",
+                "access.skills.local-create.summary",
+                "access.skills.local-create.button",
+                "access.skill.user-ui-created-skill",
+                "access.skill.user-ui-created-skill.enable",
                 "access.skills.marketplace-refresh",
                 "access.skills.manifest-import",
                 "access.skills.manifest-import.text",
@@ -501,6 +506,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ],
             assertions: [
                 "Skill Manager section is visible.",
+                "A user-created local skill draft can be created disabled before it is enabled.",
                 "Marketplace refresh control is visible.",
                 "Signed manifest import controls are visible.",
                 "Shortcut demo skills are visible in the Skill Manager.",

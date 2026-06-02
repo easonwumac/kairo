@@ -9,13 +9,14 @@ Kairo 的核心方向是把可操作能力包成可管理的 skills，並讓 mod
 - `AgentSkillManifest` validates downloadable marketplace manifests with required signature metadata, a SHA-256 checksum over the skill payload, and optional P-256 public-key verification through `AgentSkillManifestTrustStore`.
 - `AgentSkillManagerService` plus `FileBackedAgentSkillStore` provide install, preview, disable, enable, remove, reload, and version downgrade protection for marketplace/user-created skills.
 - `AgentSkillCompatibilityRequirements`, `AgentSkillRuntimeContext`, and `AgentSkillCompatibilityEvaluator` gate marketplace skills on minimum iOS version, required entitlements, connected OAuth providers, and downloaded local models.
+- `AgentSkillManagerService.createUserSkillDraft(_:)` creates local user-owned skill drafts with stable `user-` ids. These drafts are saved disabled by default, are not marketplace packages, and still need explicit enablement plus future action wiring before they can be used as tools.
 - `AgentSkillManagerService.previewInstall(jsonString:)` decodes signed JSON manifests, validates them, and returns the installed version, incoming version, changelog, compatibility report, and whether the change is install, reinstall, update, or blocked downgrade.
 - `AgentSkillManagerService.installManifest(jsonString:)` still supports direct signed JSON install for service callers; the Access UI previews first, then installs the previewed manifest after user confirmation.
 - `AgentSkillMarketplaceCatalogService.defaultStandaloneRepository` fetches the published standalone `skills.json` catalog, maps entries into downloadable marketplace skills, and downloads signed manifests for preview.
 - `CapabilityPromptContextBuilder` includes installed skills/tools so the model can propose named, supported tool packages.
 - `AgentToolInvocationPlanner` is the deterministic preview layer between natural-language requests and managed tools. It suggests only installed skills and official OAuth connector metadata, returns Shortcut/OAuth candidates as visible handoffs, and exposes action-backed skills such as HomeKit as `AgentAction` previews that still pass through `SafetyPolicyEngine`.
 - Chat responses persist and render `toolCandidates` separately from executable `proposedActions`, so users can inspect installed Shortcut/OAuth skill matches without Kairo silently running Apple Shortcuts or account actions.
-- Access shows a Skill Manager section backed by the app environment when available, with marketplace refresh, marketplace install preview, signed manifest preview/import, built-in Shortcut demo skills, and installed, available, and disabled skill states with install/disable/enable/remove affordances.
+- Access shows a Skill Manager section backed by the app environment when available, with local user-created draft creation, marketplace refresh, marketplace install preview, signed manifest preview/import, built-in Shortcut demo skills, and installed, available, and disabled skill states with install/disable/enable/remove affordances.
 - Access disables manifest confirmation when compatibility is blocked. The user still sees why: missing iOS version, entitlement, OAuth provider, or local model download.
 - `KairoEnvironment.uiTesting(resetPersistentState:)` gives XCUITest a deterministic file-backed Skill Manager and static marketplace responses for refresh, install preview, compatibility-blocked install, confirm install, disable/enable, and HomeKit preview flows.
 - HomeKit skills still require entitlement, Home authorization, action preview, and explicit confirmation before execution.
@@ -32,6 +33,8 @@ Every downloadable or user-created skill should declare:
 - optional compatibility requirements: minimum iOS version, entitlement ids, OAuth provider keys, and local model ids;
 - risk tier and whether confirmation is required;
 - download URL, signature metadata, checksum, and trusted public-key id for marketplace packages.
+
+Local drafts created in Access are intentionally smaller than downloadable marketplace packages. They record name, summary, source, capabilities, compatibility requirements, and disabled status first. They do not carry signatures, checksums, external download URLs, or executable payloads until the user connects them to approved Kairo capabilities.
 
 ## Compatibility Gates
 

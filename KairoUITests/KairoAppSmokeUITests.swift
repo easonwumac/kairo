@@ -287,6 +287,37 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertFalse(confirmInstall.isEnabled)
     }
 
+    func testAccessSkillManagerCreatesLocalUserSkillDraft() throws {
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.access", label: "Access")
+
+        let nameField = findElement("access.skills.local-create.name", direction: .down)
+        XCTAssertTrue(nameField.exists)
+        nameField.tap()
+        nameField.typeText("UI Created Skill")
+        let returnKey = app.keyboards.buttons["Return"]
+        if returnKey.exists {
+            returnKey.tap()
+        }
+
+        let summaryField = findElement("access.skills.local-create.summary", direction: .both)
+        XCTAssertTrue(summaryField.exists)
+        dismissKeyboardIfPresent()
+
+        let createButton = findButton("access.skills.local-create.button", direction: .both)
+        XCTAssertTrue(createButton.exists)
+        createButton.tap()
+
+        let createMessage = findElement("access.skills.message", direction: .both, maxSwipes: 4)
+        XCTAssertTrue(createMessage.waitForExistence(timeout: 5))
+        XCTAssertTrue(findElement("access.skill.user-ui-created-skill", direction: .both, maxSwipes: 10).exists)
+
+        let enableDraft = findButton("access.skill.user-ui-created-skill.enable", direction: .both, maxSwipes: 10)
+        XCTAssertTrue(enableDraft.exists)
+        enableDraft.tap()
+        XCTAssertTrue(findButton("access.skill.user-ui-created-skill.disable", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+    }
+
     func testMemoryTabCanSaveManualMemory() throws {
         assertPrimaryDrawerItemsExist()
         selectDrawerSection(identifier: "root.drawer.memory", label: "Memory")

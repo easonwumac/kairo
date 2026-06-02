@@ -24,6 +24,8 @@ struct KairoApp: App {
                         .id(environmentRevision)
                 }
             }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(.sRGB, white: 0.98, opacity: 1).ignoresSafeArea())
                 .task {
                     guard !didLoadEnvironment else { return }
                     didLoadEnvironment = true

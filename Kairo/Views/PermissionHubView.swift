@@ -7,6 +7,8 @@ public struct PermissionHubView: View {
     @State private var manifestImportText = ""
     @State private var manifestInstallPreview: AgentSkillInstallPreview?
     @State private var isRefreshingMarketplace = false
+    @State private var localSkillName = ""
+    @State private var localSkillSummary = ""
     @State private var skillCatalog: AgentSkillCatalog
 
     private let registry = CapabilityRegistry()
@@ -62,19 +64,19 @@ public struct PermissionHubView: View {
                 Section {
                     manifestImportControls()
 
+                    if let skillManagerMessage {
+                        Text(skillManagerMessage)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("access.skills.message")
+                    }
+
                     ForEach(skillCatalog.skills) { skill in
                         skillManagerRow(skill)
                     }
 
                     if let manifestInstallPreview {
                         manifestPreview(manifestInstallPreview)
-                    }
-
-                    if let skillManagerMessage {
-                        Text(skillManagerMessage)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .accessibilityIdentifier("access.skills.message")
                     }
                 } header: {
                     Text("Skill Manager")
@@ -111,6 +113,23 @@ public struct PermissionHubView: View {
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("access.skills.manifest-import")
 
+            TextField("Local skill name", text: $localSkillName)
+                .accessibilityIdentifier("access.skills.local-create.name")
+
+            TextField("Local skill summary", text: $localSkillSummary, axis: .vertical)
+                .lineLimit(2...4)
+                .accessibilityIdentifier("access.skills.local-create.summary")
+
+            Button {
+                Task {
+                    await createLocalSkillDraft()
+                }
+            } label: {
+                Label("Create Draft", systemImage: "plus.circle")
+            }
+            .disabled(localSkillName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityIdentifier("access.skills.local-create.button")
+
             Button {
                 Task {
                     await refreshMarketplaceCatalog()
@@ -137,6 +156,66 @@ public struct PermissionHubView: View {
             .accessibilityIdentifier("access.skills.manifest-import.button")
         }
         .padding(.vertical, 4)
+    }
+
+    @MainActor
+    private func createLocalSkillDraft() async {
+        let request = AgentSkillDraftRequest(
+            displayName: localSkillName,
+            summary: localSkillSummary,
+            kind: .custom,
+            requiredCapabilities: [.appIntents]
+        )
+
+        guard let skillManagerService else {
+            do {
+                let draft = try previewLocalSkillDraft(from: request)
+                skillCatalog = skillCatalog.replacing(draft)
+                localSkillName = ""
+                localSkillSummary = ""
+                manifestInstallPreview = nil
+                skillManagerMessage = "\(draft.displayName) saved as a disabled local draft."
+            } catch AgentSkillDraftError.emptyDisplayName {
+                skillManagerMessage = "Skill name is required."
+            } catch {
+                skillManagerMessage = "Unable to create local skill draft."
+            }
+            return
+        }
+
+        do {
+            let draft = try await skillManagerService.createUserSkillDraft(request)
+            skillCatalog = try await skillManagerService.catalog()
+            localSkillName = ""
+            localSkillSummary = ""
+            manifestInstallPreview = nil
+            skillManagerMessage = "\(draft.displayName) saved as a disabled local draft."
+        } catch AgentSkillDraftError.emptyDisplayName {
+            skillManagerMessage = "Skill name is required."
+        } catch {
+            skillManagerMessage = "Unable to create local skill draft."
+        }
+    }
+
+    private func previewLocalSkillDraft(from request: AgentSkillDraftRequest) throws -> AgentSkill {
+        let trimmedName = request.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { throw AgentSkillDraftError.emptyDisplayName }
+
+        let trimmedSummary = request.summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fallbackID = "user-\(trimmedName.lowercased().replacingOccurrences(of: " ", with: "-"))"
+        return AgentSkill(
+            id: fallbackID,
+            displayName: trimmedName,
+            summary: trimmedSummary.isEmpty ? "User-created local Kairo skill draft." : trimmedSummary,
+            kind: request.kind,
+            source: .userCreated,
+            installationStatus: .disabled,
+            requiredCapabilities: request.requiredCapabilities,
+            shortcutRecipeID: request.shortcutRecipeID,
+            version: "local-draft",
+            author: "User",
+            compatibilityRequirements: request.compatibilityRequirements
+        )
     }
 
     @ViewBuilder

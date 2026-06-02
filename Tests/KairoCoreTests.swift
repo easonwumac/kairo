@@ -1734,6 +1734,61 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(installed.installationStatus, .installed)
     }
 
+    func testAgentSkillManagerCreatesDisabledUserSkillDraftsWithStableIDs() async throws {
+        let storeURL = temporaryFileURL(named: "user-created-agent-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default)
+
+        let draft = try await service.createUserSkillDraft(AgentSkillDraftRequest(
+            displayName: "Kairo Inbox Triage",
+            summary: "Drafts a visible inbox triage plan from approved OAuth connector data.",
+            kind: .custom,
+            requiredCapabilities: [.externalConnectors],
+            compatibilityRequirements: AgentSkillCompatibilityRequirements(
+                requiredOAuthProviderKeys: ["google"]
+            )
+        ))
+
+        XCTAssertEqual(draft.id, "user-kairo-inbox-triage")
+        XCTAssertEqual(draft.source, .userCreated)
+        XCTAssertEqual(draft.installationStatus, .disabled)
+        XCTAssertEqual(draft.requiredCapabilities, [.externalConnectors])
+        XCTAssertEqual(draft.compatibilityRequirements.requiredOAuthProviderKeys, ["google"])
+
+        let catalog = try await service.catalog()
+        XCTAssertEqual(catalog.skill(id: "user-kairo-inbox-triage"), draft)
+
+        let reloadedStore = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let reloadedService = AgentSkillManagerService(store: reloadedStore, builtInCatalog: .default)
+        let reloadedCatalog = try await reloadedService.catalog()
+
+        XCTAssertEqual(reloadedCatalog.skill(id: "user-kairo-inbox-triage")?.source, .userCreated)
+        XCTAssertEqual(reloadedCatalog.skill(id: "user-kairo-inbox-triage")?.installationStatus, .disabled)
+    }
+
+    func testAgentSkillManagerCreatesUniqueUserSkillDraftIDsForDuplicateNames() async throws {
+        let storeURL = temporaryFileURL(named: "duplicate-user-created-agent-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default)
+        let request = AgentSkillDraftRequest(
+            displayName: "Daily Skill",
+            summary: "A user-created local skill draft.",
+            kind: .custom,
+            requiredCapabilities: [.appIntents]
+        )
+
+        let first = try await service.createUserSkillDraft(request)
+        let second = try await service.createUserSkillDraft(request)
+
+        XCTAssertEqual(first.id, "user-daily-skill")
+        XCTAssertEqual(second.id, "user-daily-skill-2")
+        let catalog = try await service.catalog()
+        XCTAssertEqual(catalog.disabledSkills.filter { $0.source == .userCreated }.map(\.id), [
+            "user-daily-skill",
+            "user-daily-skill-2"
+        ])
+    }
+
     func testFileBackedAgentSkillManagerPersistsInstallDisableEnableAndRemoveLifecycle() async throws {
         let storeURL = temporaryFileURL(named: "agent-skills.json")
         let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
@@ -2245,6 +2300,10 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(permissionHubView.contains("Skill Manager"))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manager""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.local-create.name""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.local-create.summary""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.local-create.button""#))
+        XCTAssertTrue(permissionHubView.contains("createUserSkillDraft"))
         XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id)""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).manage""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).install""#))
@@ -2518,6 +2577,11 @@ final class KairoCoreTests: XCTestCase {
             XCTAssertTrue(settingsScenarioIdentifiers.contains("settings.models.\(modelID).download"), modelID)
         }
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manager") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.local-create.name") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.local-create.summary") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.local-create.button") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.user-ui-created-skill") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.user-ui-created-skill.enable") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.marketplace-refresh") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.text") == true)
@@ -2555,6 +2619,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(projectYAML.contains("GENERATE_INFOPLIST_FILE"))
         XCTAssertTrue(projectYAML.contains("target: KairoApp"))
         XCTAssertTrue(appInfoPlist.contains("<key>CFBundleURLTypes</key>"))
+        XCTAssertTrue(appInfoPlist.contains("<key>UILaunchScreen</key>"))
         XCTAssertTrue(appInfoPlist.contains("<string>kairo</string>"))
         XCTAssertTrue(appInfoPlist.contains("<key>NSCalendarsFullAccessUsageDescription</key>"))
         XCTAssertTrue(appInfoPlist.contains("<key>NSRemindersFullAccessUsageDescription</key>"))
@@ -2683,6 +2748,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("access.skill.shortcut-meeting-prep-brief"))
         XCTAssertTrue(smokeTest.contains("access.skill.shortcut-generic-node-runner"))
         XCTAssertTrue(smokeTest.contains("verifySkillManagerInteractionFlow()"))
+        XCTAssertTrue(smokeTest.contains("testAccessSkillManagerCreatesLocalUserSkillDraft"))
+        XCTAssertTrue(smokeTest.contains(#""access.skills.local-create.name""#))
+        XCTAssertTrue(smokeTest.contains(#""access.skills.local-create.summary""#))
+        XCTAssertTrue(smokeTest.contains(#""access.skills.local-create.button""#))
+        XCTAssertTrue(smokeTest.contains(#""access.skill.user-ui-created-skill.enable""#))
         XCTAssertTrue(smokeTest.contains(#""access.skill.shortcut-save-shared-text.disable""#))
         XCTAssertTrue(smokeTest.contains(#""access.skill.shortcut-save-shared-text.enable""#))
         XCTAssertTrue(smokeTest.contains(#""access.skill.marketplace-weather-briefing.install""#))

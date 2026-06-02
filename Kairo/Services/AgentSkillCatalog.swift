@@ -379,6 +379,35 @@ public struct AgentSkill: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
+public struct AgentSkillDraftRequest: Codable, Equatable, Sendable {
+    public var displayName: String
+    public var summary: String
+    public var kind: AgentSkillKind
+    public var requiredCapabilities: [CapabilityKey]
+    public var shortcutRecipeID: String?
+    public var compatibilityRequirements: AgentSkillCompatibilityRequirements
+
+    public init(
+        displayName: String,
+        summary: String,
+        kind: AgentSkillKind = .custom,
+        requiredCapabilities: [CapabilityKey] = [.appIntents],
+        shortcutRecipeID: String? = nil,
+        compatibilityRequirements: AgentSkillCompatibilityRequirements = .empty
+    ) {
+        self.displayName = displayName
+        self.summary = summary
+        self.kind = kind
+        self.requiredCapabilities = requiredCapabilities
+        self.shortcutRecipeID = shortcutRecipeID
+        self.compatibilityRequirements = compatibilityRequirements
+    }
+}
+
+public enum AgentSkillDraftError: Error, Equatable, Sendable {
+    case emptyDisplayName
+}
+
 public struct AgentSkillCatalog: Codable, Equatable, Sendable {
     public var skills: [AgentSkill]
 
@@ -1092,6 +1121,33 @@ public struct AgentSkillManagerService: Sendable {
     }
 
     @discardableResult
+    public func createUserSkillDraft(_ request: AgentSkillDraftRequest) async throws -> AgentSkill {
+        let trimmedName = request.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
+            throw AgentSkillDraftError.emptyDisplayName
+        }
+
+        let trimmedSummary = request.summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        let currentCatalog = try await catalog()
+        let skillID = uniqueUserSkillID(base: trimmedName, existingIDs: Set(currentCatalog.skills.map(\.id)))
+        let skill = AgentSkill(
+            id: skillID,
+            displayName: trimmedName,
+            summary: trimmedSummary.isEmpty ? "User-created local Kairo skill draft." : trimmedSummary,
+            kind: request.kind,
+            source: .userCreated,
+            installationStatus: .disabled,
+            requiredCapabilities: request.requiredCapabilities,
+            shortcutRecipeID: request.shortcutRecipeID,
+            version: "local-draft",
+            author: "User",
+            compatibilityRequirements: request.compatibilityRequirements
+        )
+        try await store.upsert(skill)
+        return skill
+    }
+
+    @discardableResult
     public func installManifest(jsonString: String) async throws -> AgentSkill {
         let manifest = try AgentSkillManifest.decodeJSONString(jsonString)
         return try await install(manifest: manifest)
@@ -1136,6 +1192,36 @@ public struct AgentSkillManagerService: Sendable {
                 issues: report.blockingIssues
             )
         }
+    }
+
+    private func uniqueUserSkillID(base: String, existingIDs: Set<String>) -> String {
+        let slug = Self.slug(base)
+        let baseID = "user-\(slug.isEmpty ? "skill" : slug)"
+        guard existingIDs.contains(baseID) else {
+            return baseID
+        }
+
+        var suffix = 2
+        while existingIDs.contains("\(baseID)-\(suffix)") {
+            suffix += 1
+        }
+        return "\(baseID)-\(suffix)"
+    }
+
+    private static func slug(_ value: String) -> String {
+        let folded = value
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .lowercased()
+        let scalars = folded.unicodeScalars.map { scalar -> Character in
+            if CharacterSet.alphanumerics.contains(scalar) {
+                return Character(scalar)
+            }
+            return "-"
+        }
+        let collapsed = String(scalars)
+            .split(separator: "-", omittingEmptySubsequences: true)
+            .joined(separator: "-")
+        return String(collapsed.prefix(64)).trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
 
     private func validateVersionTransition(for incomingSkill: AgentSkill) async throws {

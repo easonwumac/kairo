@@ -12,6 +12,9 @@ public struct RootView: View {
 
     public var body: some View {
         ZStack(alignment: .topLeading) {
+            Self.fullScreenBackground
+                .ignoresSafeArea()
+
             shellMarker
 
             selectedContent
@@ -37,6 +40,8 @@ public struct RootView: View {
                     .transition(.move(edge: .leading))
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Self.fullScreenBackground.ignoresSafeArea())
         .animation(.easeInOut(duration: 0.22), value: isDrawerOpen)
         .onOpenURL { url in
             guard let oauthCallbackStore = environment.oauthConnectorCallbackStore else { return }
@@ -57,6 +62,10 @@ public struct RootView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Kairo root shell")
             .accessibilityIdentifier("root.shell")
+    }
+
+    private static var fullScreenBackground: Color {
+        Color(.sRGB, white: 0.98, opacity: 1)
     }
 
     @ViewBuilder
