@@ -114,6 +114,9 @@ public struct AgentToolInvocationPlanner: Sendable {
         if let mapDirectionsCandidate = mapDirectionsActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(mapDirectionsCandidate)
         }
+        if let messageCandidate = messageHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+            candidates.append(messageCandidate)
+        }
         if let contactCandidate = contactActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(contactCandidate)
         }
@@ -377,6 +380,36 @@ public struct AgentToolInvocationPlanner: Sendable {
         )
     }
 
+    private func messageHandoffActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard !isEmailDraftRequest(normalizedText) else {
+            return nil
+        }
+        guard isMessageHandoffRequest(normalizedText) else {
+            return nil
+        }
+
+        let draft = messageDraft(from: userText)
+        let action = AgentAction(
+            kind: .openMessageHandoff,
+            title: "Open Messages Handoff",
+            rationale: "User asked Kairo to prepare a visible Messages recipient handoff; Apple's SMS link does not carry message body text.",
+            payload: .message(draft),
+            riskTier: .tier1Draft
+        )
+
+        return AgentToolInvocationCandidate(
+            id: "action-open-message-handoff",
+            title: "Open Messages Handoff",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.messages],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Use a visible sms: recipient handoff after confirmation; body stays in Kairo preview and Kairo cannot read Messages or send silently.",
+            action: action
+        )
+    }
+
     private func contactActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
         guard isContactWriteRequest(normalizedText) else {
             return nil
@@ -563,6 +596,35 @@ public struct AgentToolInvocationPlanner: Sendable {
         ])
     }
 
+    private func isMessageHandoffRequest(_ normalizedText: String) -> Bool {
+        let explicitPrefixes = [
+            "text ",
+            "message ",
+            "sms ",
+            "傳訊息",
+            "發訊息",
+            "寫訊息",
+            "傳簡訊",
+            "發簡訊",
+            "寫簡訊"
+        ]
+        if explicitPrefixes.contains(where: { normalizedText.hasPrefix(normalize($0)) }) {
+            return true
+        }
+
+        return containsAny(normalizedText, [
+            "send a text",
+            "draft a text",
+            "send sms",
+            "write a message",
+            "send message",
+            "傳 sms",
+            "發 sms",
+            "傳 message",
+            "發 message"
+        ])
+    }
+
     private func calendarTitle(from userText: String) -> String {
         var title = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefixes = [
@@ -720,6 +782,68 @@ public struct AgentToolInvocationPlanner: Sendable {
         return MapDirectionsDraft(
             destinationQuery: destination.isEmpty ? "Current map destination" : destination,
             mode: mode
+        )
+    }
+
+    private func messageDraft(from userText: String) -> MessageDraft {
+        var content = userText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefixes = [
+            "Text",
+            "Send a text",
+            "Draft a text",
+            "Message",
+            "SMS",
+            "Send SMS",
+            "Write a message",
+            "Send message",
+            "傳訊息",
+            "發訊息",
+            "寫訊息",
+            "傳簡訊",
+            "發簡訊",
+            "寫簡訊"
+        ]
+
+        for prefix in prefixes where content.lowercased().hasPrefix(prefix.lowercased()) {
+            content.removeFirst(prefix.count)
+            content = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            if content.first == ":" || content.first == "：" {
+                content.removeFirst()
+                content = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            break
+        }
+
+        let recipients = content
+            .split(whereSeparator: \.isWhitespace)
+            .map { String($0).trimmingCharacters(in: .contactTokenBoundary) }
+            .filter(isPhoneToken)
+
+        let body = section(
+            in: content,
+            after: [
+                " body ",
+                " body:",
+                " body：",
+                " message ",
+                " message:",
+                " message：",
+                "內容 ",
+                "內容:",
+                "內容：",
+                "訊息 ",
+                "訊息:",
+                "訊息：",
+                "簡訊 ",
+                "簡訊:",
+                "簡訊："
+            ],
+            until: []
+        ) ?? "Drafted from a Kairo chat request."
+
+        return MessageDraft(
+            recipients: Array(Set(recipients)).sorted(),
+            body: body
         )
     }
 

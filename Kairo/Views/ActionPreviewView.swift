@@ -105,6 +105,14 @@ public struct ActionPreviewView: View {
                 Text("Mode: \(draft.mode.displayName)").font(.caption)
                 Text("Visible Apple Maps handoff").font(.caption).foregroundStyle(.secondary)
             }
+        case .message(let draft):
+            VStack(alignment: .leading, spacing: 4) {
+                Text(draft.recipients.isEmpty ? "Messages Handoff" : draft.recipients.joined(separator: ", ")).font(.headline)
+                if !draft.body.isEmpty {
+                    Text(draft.body).font(.caption)
+                }
+                Text("Body stays in Kairo preview; sms: opens only the recipient handoff.").font(.caption).foregroundStyle(.secondary)
+            }
         case .notification(let draft):
             VStack(alignment: .leading, spacing: 4) {
                 Text(draft.title).font(.headline)

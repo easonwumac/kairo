@@ -97,6 +97,14 @@ public struct CapabilityRegistry: Sendable {
             isMVP: true
         ),
         Capability(
+            key: .messages,
+            displayName: "Messages Handoff",
+            description: "透過 sms: 只開啟使用者可見的 Messages 收件人 handoff；正文留在 Kairo preview，不讀 Messages、不靜默傳送。",
+            permission: .userInitiated,
+            status: .available,
+            isMVP: true
+        ),
+        Capability(
             key: .photos,
             displayName: "Photos",
             description: "處理使用者選取的圖片或截圖。",

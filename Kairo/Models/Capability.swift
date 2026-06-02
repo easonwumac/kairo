@@ -38,6 +38,7 @@ public enum CapabilityKey: String, Codable, CaseIterable, Sendable {
     case reminders
     case contacts
     case mail
+    case messages
     case photos
     case documents
     case location

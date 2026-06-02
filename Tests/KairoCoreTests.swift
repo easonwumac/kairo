@@ -82,7 +82,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(decision.requiresConfirmation)
     }
 
-    func testSandboxActionCatalogSeparatesSupportedAndUnsupportedActions() {
+    func testSandboxActionCatalogSeparatesSupportedAndUnsupportedActions() throws {
         let catalog = SandboxActionCatalog()
 
         XCTAssertEqual(catalog.descriptor(for: .saveMemory)?.supportStatus, .implemented)
@@ -90,6 +90,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(catalog.descriptor(for: .createContactDraft)?.capability, .contacts)
         XCTAssertEqual(catalog.descriptor(for: .createContactDraft)?.permissionRequirement, .runtimePrompt)
         XCTAssertEqual(catalog.descriptor(for: .createContactDraft)?.riskTier, .tier2LowRiskWrite)
+        let messageKind = try XCTUnwrap(AgentActionKind(rawValue: "openMessageHandoff"))
+        XCTAssertEqual(catalog.descriptor(for: messageKind)?.capability.rawValue, "messages")
+        XCTAssertEqual(catalog.descriptor(for: messageKind)?.permissionRequirement, .userInitiated)
+        XCTAssertEqual(catalog.descriptor(for: messageKind)?.riskTier, .tier1Draft)
         XCTAssertEqual(catalog.descriptor(for: .unsupportedSandboxAction)?.supportStatus, .unsupportedBySandbox)
         XCTAssertTrue(catalog.supportedDescriptors.contains { $0.kind == .openURL })
         XCTAssertFalse(catalog.supportedDescriptors.contains { $0.kind == .unsupportedSandboxAction })
@@ -105,6 +109,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("createContactDraft"))
         XCTAssertTrue(context.contains("composeEmailDraft"))
         XCTAssertTrue(context.contains("openMapDirections"))
+        XCTAssertTrue(context.contains("openMessageHandoff"))
         XCTAssertTrue(context.contains("unsupportedSandboxAction"))
         XCTAssertTrue(context.contains("require visible user confirmation"))
         XCTAssertTrue(context.contains("Integration registry"))
@@ -338,6 +343,31 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(draft.mode, .driving)
     }
 
+    func testAgentToolInvocationPlannerSuggestsMessageHandoffWithConfirmation() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(
+            userText: "Text 0912-345-678 body I am running late."
+        ))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-open-message-handoff" })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.skillKind, .custom)
+        XCTAssertEqual(candidate.requiredCapabilities.map(\.rawValue), ["messages"])
+        XCTAssertEqual(candidate.riskTier, .tier1Draft)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertTrue(candidate.handoffSummary.contains("sms:"))
+        XCTAssertTrue(candidate.handoffSummary.contains("body stays in Kairo"))
+        XCTAssertEqual(action.kind.rawValue, "openMessageHandoff")
+        XCTAssertTrue(action.requiresConfirmation)
+        let payloadData = try JSONEncoder().encode(action.payload)
+        let payloadText = try XCTUnwrap(String(data: payloadData, encoding: .utf8))
+        XCTAssertTrue(payloadText.contains(#""message""#))
+        XCTAssertTrue(payloadText.contains("0912-345-678"))
+        XCTAssertTrue(payloadText.contains("I am running late."))
+    }
+
     func testAgentToolInvocationPlannerRefusesToolUseWhenDisabled() {
         let planner = AgentToolInvocationPlanner(skillCatalog: .default)
 
@@ -494,6 +524,23 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(action.riskTier, .tier1Draft)
         XCTAssertTrue(action.requiresConfirmation)
         XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-open-map-directions" })
+    }
+
+    func testAgentCoreAddsDeterministicMessagePreviewAction() async throws {
+        let agent = AgentCore(
+            memoryStore: InMemoryMemoryStore(),
+            aiProvider: MockAIProvider(),
+            skillCatalog: .default,
+            integrationRegistry: IntegrationRegistry()
+        )
+
+        let response = try await agent.respond(to: "Text 0912-345-678 body I am running late.")
+
+        let action = try XCTUnwrap(response.proposedActions.first { $0.kind.rawValue == "openMessageHandoff" })
+        XCTAssertEqual(action.title, "Open Messages Handoff")
+        XCTAssertEqual(action.riskTier, .tier1Draft)
+        XCTAssertTrue(action.requiresConfirmation)
+        XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-open-message-handoff" })
     }
 
 #if canImport(SwiftUI)
@@ -656,6 +703,33 @@ final class KairoCoreTests: XCTestCase {
         let executedActions = await executor.executedActions
         let confirmations = await executor.confirmations
         XCTAssertEqual(executedActions.map(\.kind), [.openMapDirections])
+        XCTAssertEqual(confirmations, [true])
+    }
+
+    @MainActor
+    func testChatViewModelConfirmsMessageHandoffThroughInjectedExecutor() async throws {
+        let executor = MockActionExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: executor
+        )
+
+        await viewModel.send("Text 0912-345-678 body I am running late.")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind.rawValue == "openMessageHandoff" })
+
+        viewModel.previewAction(action)
+        XCTAssertEqual(viewModel.pendingAction?.kind.rawValue, "openMessageHandoff")
+
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertTrue(viewModel.actionResultMessage?.contains("Prepared Messages handoff.") == true)
+        let executedActions = await executor.executedActions
+        let confirmations = await executor.confirmations
+        XCTAssertEqual(executedActions.map(\.kind.rawValue), ["openMessageHandoff"])
         XCTAssertEqual(confirmations, [true])
     }
 #endif
@@ -996,6 +1070,30 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(openedURL.host(), "maps.apple.com")
         XCTAssertTrue(openedURL.absoluteString.contains("daddr=Apple%20Park"))
         XCTAssertTrue(openedURL.absoluteString.contains("dirflg=d"))
+    }
+
+    func testSandboxActionExecutorOpensMessageHandoffThroughInjectedOpenerWithoutBodyInURL() async throws {
+        let opener = MockURLOpener()
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), urlOpener: opener)
+        let action = AgentAction(
+            kind: .openMessageHandoff,
+            title: "Open Messages Handoff",
+            rationale: "User confirmed Kairo may open a visible Messages recipient handoff.",
+            payload: .message(MessageDraft(recipients: ["0912-345-678"], body: "I am running late.")),
+            riskTier: .tier1Draft
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertTrue(result.requiresExternalUI)
+        XCTAssertEqual(result.message, "Prepared Messages handoff. Message body remains in Kairo preview.")
+        let openedURLs = await opener.openedURLs
+        let openedURL = try XCTUnwrap(openedURLs.first)
+        XCTAssertEqual(openedURL.scheme, "sms")
+        XCTAssertTrue(openedURL.absoluteString.contains("0912-345-678"))
+        XCTAssertFalse(openedURL.absoluteString.contains("I%20am%20running%20late"))
+        XCTAssertFalse(openedURL.absoluteString.contains("body="))
     }
 
     func testSandboxActionExecutorSchedulesNotificationThroughInjectedScheduler() async throws {
@@ -2138,6 +2236,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-contact-confirmation",
             "chat-email-draft-confirmation",
             "chat-map-directions-confirmation",
+            "chat-messages-handoff-confirmation",
             "memory-manual-save",
             "automations-recipe-center",
             "automations-shortcut-templates",
@@ -2185,6 +2284,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(mapScenarioIdentifiers.contains("chat.action-preview"))
         XCTAssertTrue(mapScenarioIdentifiers.contains("chat.action.confirm"))
         XCTAssertTrue(mapScenarioIdentifiers.contains("chat.action-result"))
+        let messageScenarioIdentifiers = catalog.scenario(id: "chat-messages-handoff-confirmation")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(messageScenarioIdentifiers.contains("chat.proposed-action.openMessageHandoff"))
+        XCTAssertTrue(messageScenarioIdentifiers.contains("chat.action-preview"))
+        XCTAssertTrue(messageScenarioIdentifiers.contains("chat.action.confirm"))
+        XCTAssertTrue(messageScenarioIdentifiers.contains("chat.action-result"))
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.text") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.save") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.list") == true)
@@ -2302,6 +2406,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmMapDirectionsHandoff"))
         XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.openMapDirections""#))
         XCTAssertTrue(smokeTest.contains("Prepared Apple Maps directions handoff."))
+        XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmMessagesHandoff"))
+        XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.openMessageHandoff""#))
+        XCTAssertTrue(smokeTest.contains("Prepared Messages handoff."))
         XCTAssertTrue(smokeTest.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
         XCTAssertTrue(smokeTest.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
         XCTAssertTrue(smokeTest.contains(#""root.tab.automations""#))
@@ -3801,16 +3908,18 @@ private actor MockActionExecutor: ActionExecutor {
     func execute(_ action: AgentAction, confirmed: Bool) async throws -> ActionExecutionResult {
         executedActions.append(action)
         confirmations.append(confirmed)
-        switch action.kind {
-        case .createContactDraft:
+        switch action.kind.rawValue {
+        case "createContactDraft":
             return ActionExecutionResult(completed: true, message: "Created contact.", createdIdentifier: "contact-id")
-        case .composeEmailDraft:
+        case "composeEmailDraft":
             return ActionExecutionResult(completed: true, message: "Prepared email draft handoff.", requiresExternalUI: true)
-        case .openMapDirections:
+        case "openMapDirections":
             return ActionExecutionResult(completed: true, message: "Prepared Apple Maps directions handoff.", requiresExternalUI: true)
-        case .createCalendarDraft:
+        case "openMessageHandoff":
+            return ActionExecutionResult(completed: true, message: "Prepared Messages handoff.", requiresExternalUI: true)
+        case "createCalendarDraft":
             return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: "calendar-event-id")
-        case .createReminderDraft:
+        case "createReminderDraft":
             return ActionExecutionResult(completed: true, message: "Created reminder.", createdIdentifier: "reminder-id")
         default:
             return ActionExecutionResult(completed: true, message: "Scheduled notification.", createdIdentifier: "notification-id")

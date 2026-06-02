@@ -27,6 +27,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] 不宣稱能任意點擊/操控其他 App UI。
 - [ ] 不把 XCUITest/Appium/WebDriverAgent 作為 App Store runtime 功能。
 - [x] Email draft handoff uses visible `mailto:` URLs only; Kairo does not read Apple Mail or send email silently.
+- [x] Messages handoff uses visible `sms:` recipient URLs only; Kairo does not read Messages, insert body text through the URL, or send messages silently.
 - [x] Apple Maps directions handoff uses visible `maps.apple.com` links only; Kairo does not read current location or start navigation silently.
 
 ### 2. 權限與 purpose strings
@@ -97,6 +98,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] XCUITest covers chat EventKit calendar preview and confirmation before writing.
 - [x] XCUITest covers chat Contacts.framework contact preview and confirmation before writing.
 - [x] XCUITest covers chat email draft preview and visible handoff confirmation before opening `mailto:`.
+- [x] XCUITest covers chat Messages handoff preview and visible confirmation before opening `sms:`.
 - [x] XCUITest covers chat Apple Maps directions preview and visible handoff confirmation before opening Maps.
 - [ ] Marketplace trust store supports production key rotation and revocation metadata.
 - [ ] User-created skills require explicit capability selection and confirmation policy.

@@ -469,6 +469,34 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findStaticText(containing: "Prepared Apple Maps directions handoff.", direction: .both, maxSwipes: 1).exists)
     }
 
+    func testChatCanPreviewAndConfirmMessagesHandoff() throws {
+        assertPrimaryTabsExist()
+        tapTab(identifier: "root.tab.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+        let composer = anyElement("chat.composer.text")
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        composer.tap()
+        composer.typeText("Text 0912-345-678 body I am running late.")
+        anyElement("chat.composer.send").tap()
+
+        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
+        let messageAction = findButton("chat.proposed-action.openMessageHandoff", direction: .down)
+        XCTAssertTrue(messageAction.exists)
+        messageAction.tap()
+
+        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Open Messages Handoff", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "0912-345-678", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "I am running late.", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Body stays in Kairo preview", direction: .both, maxSwipes: 1).exists)
+        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(confirm.exists)
+        confirm.tap()
+
+        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Prepared Messages handoff.", direction: .both, maxSwipes: 1).exists)
+    }
+
     private func assertPrimaryTabsExist() {
         XCTAssertTrue(tabButton(identifier: "root.tab.chat", label: "Chat").waitForExistence(timeout: 5))
         XCTAssertTrue(tabButton(identifier: "root.tab.memory", label: "Memory").exists)

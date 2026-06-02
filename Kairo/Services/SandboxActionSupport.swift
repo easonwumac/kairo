@@ -155,6 +155,15 @@ public struct SandboxActionCatalog: Sendable {
             supportStatus: .scaffolded
         ),
         SandboxActionDescriptor(
+            kind: .openMessageHandoff,
+            displayName: "Open Messages Handoff",
+            description: "透過 sms: 開啟使用者可見的 Messages 收件人 handoff；正文留在 Kairo preview，不會自動送出。",
+            capability: .messages,
+            permissionRequirement: .userInitiated,
+            riskTier: .tier1Draft,
+            supportStatus: .scaffolded
+        ),
+        SandboxActionDescriptor(
             kind: .sendNotification,
             displayName: "Send Notification",
             description: "在通知權限允許後發送本機提醒。",
@@ -733,6 +742,16 @@ public actor SandboxActionExecutor: ActionExecutor {
                 message: opened ? "Prepared Apple Maps directions handoff." : "Apple Maps directions handoff is available only when the app supplies a UI opener.",
                 requiresExternalUI: true
             )
+        case (.openMessageHandoff, .message(let draft)):
+            guard let url = Self.smsHandoffURL(for: draft) else {
+                return ActionExecutionResult(completed: false, message: "Unsupported or invalid message handoff request.")
+            }
+            let opened = await urlOpener.open(url)
+            return ActionExecutionResult(
+                completed: opened,
+                message: opened ? "Prepared Messages handoff. Message body remains in Kairo preview." : "Messages handoff is available only when the app supplies a UI opener.",
+                requiresExternalUI: true
+            )
         case (.sendNotification, .notification(let draft)):
             guard try await notificationScheduler.requestAuthorization() else {
                 return ActionExecutionResult(completed: false, message: "Notification permission was not granted.")
@@ -793,9 +812,24 @@ public actor SandboxActionExecutor: ActionExecutor {
         return components.url
     }
 
+    private static func smsHandoffURL(for draft: MessageDraft) -> URL? {
+        guard let rawRecipient = draft.recipients.first?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !rawRecipient.isEmpty else {
+            return URL(string: "sms:")
+        }
+
+        let allowedScalars = CharacterSet(charactersIn: "+-().").union(.decimalDigits)
+        let recipient = String(rawRecipient.unicodeScalars.filter { allowedScalars.contains($0) })
+        guard !recipient.isEmpty else {
+            return URL(string: "sms:")
+        }
+
+        return URL(string: "sms:\(recipient)")
+    }
+
     private static func isSupportedUserVisibleURL(_ url: URL) -> Bool {
         switch url.scheme?.lowercased() {
-        case "http", "https", "mailto", "tel":
+        case "http", "https", "mailto", "tel", "sms":
             return true
         case "shortcuts":
             return url.host?.lowercased() == "run-shortcut"
