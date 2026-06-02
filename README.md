@@ -37,7 +37,7 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - Persistent chat threads with JSON-backed history store.
 - Memory store protocols plus in-memory and JSON file implementations.
 - OpenAI provider abstraction, credential store, Keychain-backed credential store, ChatGPT OAuth scaffold, generic OAuth connector authorization core, connector login status center, and Settings connector status UI.
-- Local-model catalog, verified downloader, install registry, selected-model settings, and provider-routing scaffold.
+- Local-model catalog, verified downloader, install registry, selected-model settings, Settings model catalog/status UI, and provider-routing scaffold.
 - Capability registry, sandbox action catalog, safety policy engine, action preview UI, and sandbox action executor.
 - Popular app integration registry covering App Intents, Shortcuts, URL schemes/universal links, Share Extension handoff, and OAuth connector metadata.
 - BGTaskScheduler-compatible background task policy for bounded app refresh/processing work without daemon overclaims.
@@ -105,7 +105,7 @@ The package is intentionally dependency-free. The iOS app target is described in
 3. Real provider integrations: OpenAI Responses API, official OAuth connectors, optional backend proxy, and provider-specific app review/security requirements.
 4. Tool execution: EventKit writes, local notifications, URL/deep-link handoff, Shortcuts/App Intents, documents/photos import.
 5. Bounded background work: BGAppRefreshTask/BGProcessingTask registration, checkpointing, expiration handling, and user-visible rescheduling.
-6. Local model fallback: signed model catalog, download UI, device gating, safety policy versioning.
+6. Local model fallback: signed production model catalog, real download wiring, device gating, safety policy versioning.
 6. App Store readiness: privacy nutrition labels, review notes, permission prompts, deletion/export flows.
 
 ## Documentation

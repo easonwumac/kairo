@@ -51,12 +51,14 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.openai.api-key-field",
                 "settings.openai.save-api-key",
                 "settings.oauth.connectors",
+                "settings.models.local",
                 "settings.shortcuts.demos"
             ],
             assertions: [
                 "API key status is visible.",
                 "API key field is secure and save is disabled until text is entered.",
                 "OAuth connector status list is visible.",
+                "Local model catalog and status rows are visible.",
                 "Shortcut demo recipes are visible."
             ]
         )

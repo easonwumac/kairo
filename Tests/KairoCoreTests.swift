@@ -403,6 +403,17 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id).output""#))
     }
 
+    func testSettingsViewDefinesLocalModelSectionAccessibilityIdentifiers() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(settingsView.contains("Local Models"))
+        XCTAssertTrue(settingsView.contains(#""settings.models.local""#))
+        XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).status""#))
+        XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).download""#))
+        XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).select""#))
+    }
+
     func testKairoPathsBuildsApplicationSupportMemoryURL() {
         let paths = KairoPaths(appName: "KairoTests")
 
@@ -457,6 +468,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
+        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.local") == true)
     }
 
     func testXcodeProjectDefinesKairoUITestTargetAndSmokeTestFile() throws {
@@ -473,6 +485,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("settings.openai.api-key-status"))
         XCTAssertTrue(smokeTest.contains("settings.oauth.connectors"))
         XCTAssertTrue(smokeTest.contains("settings.shortcuts.demos"))
+        XCTAssertTrue(smokeTest.contains("settings.models.local"))
     }
 
     func testLocalModelCatalogFiltersDeprecatedAndOldSafetyPolicyModels() throws {
@@ -492,6 +505,16 @@ final class KairoCoreTests: XCTestCase {
         let available = decoded.availableModels(minimumSafetyPolicyVersion: "2026.1")
 
         XCTAssertEqual(available.map(\.id), ["available"])
+    }
+
+    func testDefaultLocalModelCatalogExposesDraftModelForSettings() {
+        let catalog = LocalModelCatalog.kairoDefault
+        let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
+
+        XCTAssertEqual(availableModels.map(\.id), ["kairo-draft-tiny"])
+        XCTAssertEqual(availableModels.first?.displayName, "Kairo Draft Local")
+        XCTAssertTrue(availableModels.first?.capabilities.contains(.offlineChat) == true)
+        XCTAssertTrue(availableModels.first?.disallowedCapabilities.contains(.webCurrentInfo) == true)
     }
 
     func testFileBackedLocalModelInstallRegistryPersistsInstalledRecords() async throws {
@@ -620,6 +643,40 @@ final class KairoCoreTests: XCTestCase {
         let status = await service.status(minimumSafetyPolicyVersion: "2026.1")
         XCTAssertNil(status.selectedModelID)
         XCTAssertFalse(status.localModelInstalled)
+    }
+
+    func testLocalModelSettingsStatusBuildsSettingsRowsForDownloadSelectAndSelected() throws {
+        let selectedManifest = makeLocalModelManifest(id: "qwen-small", safetyPolicyVersion: "2026.2")
+        let downloadableManifest = makeLocalModelManifest(id: "llama-draft", safetyPolicyVersion: "2026.2")
+        let installedRecord = LocalModelInstallRecord(
+            modelID: selectedManifest.id,
+            version: selectedManifest.version,
+            status: .installed,
+            fileURL: URL(fileURLWithPath: "/tmp/qwen-small.gguf"),
+            installedSizeBytes: selectedManifest.installedSizeBytes,
+            sha256: selectedManifest.sha256
+        )
+        let status = LocalModelSettingsStatus(
+            selectedModelID: selectedManifest.id,
+            selectedModel: selectedManifest,
+            installedRecord: installedRecord,
+            preference: .preferLocal,
+            availableModels: [selectedManifest, downloadableManifest],
+            installedModels: [installedRecord]
+        )
+
+        let rows = status.settingsRows
+        let selectedRow = try XCTUnwrap(rows.first { $0.modelID == selectedManifest.id })
+        let downloadableRow = try XCTUnwrap(rows.first { $0.modelID == downloadableManifest.id })
+
+        XCTAssertEqual(rows.map(\.modelID), [downloadableManifest.id, selectedManifest.id])
+        XCTAssertEqual(selectedRow.statusText, "已選用")
+        XCTAssertEqual(selectedRow.primaryAction, .selected)
+        XCTAssertEqual(downloadableRow.statusText, "可下載")
+        XCTAssertEqual(downloadableRow.primaryAction, .download)
+        XCTAssertTrue(selectedRow.detailText.contains("0.8B"))
+        XCTAssertTrue(selectedRow.detailText.contains("Q4"))
+        XCTAssertTrue(selectedRow.detailText.contains("2K context"))
     }
 
     func testVerifiedLocalModelDownloaderInstallsModelAndUpdatesRegistry() async throws {

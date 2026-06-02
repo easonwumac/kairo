@@ -9,28 +9,47 @@ public struct SettingsView: View {
     @State private var statusMessage: String?
     @State private var connectorOptions: [OAuthConnectorLoginOption] = []
     @State private var connectorStatusMessage: String?
+    @State private var localModelStatus: LocalModelSettingsStatus
+    @State private var localModelStatusMessage: String?
 
     private let settingsService: OpenAISettingsService
     private let credentialStore: any CredentialStore
     private let oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
+    private let localModelCatalog: LocalModelCatalog
+    private let localModelSettingsService: LocalModelSettingsService?
+    private let localModelDownloader: (any LocalModelDownloader)?
 
     public init(
         credentialStore: any CredentialStore = InMemoryCredentialStore(),
-        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:]
+        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
+        localModelCatalog: LocalModelCatalog = .kairoDefault,
+        localModelSettingsService: LocalModelSettingsService? = nil,
+        localModelDownloader: (any LocalModelDownloader)? = nil
     ) {
         self.settingsService = OpenAISettingsService(credentialStore: credentialStore)
         self.credentialStore = credentialStore
         self.oauthClientConfigurations = oauthClientConfigurations
+        self.localModelCatalog = localModelCatalog
+        self.localModelSettingsService = localModelSettingsService
+        self.localModelDownloader = localModelDownloader
+        self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
 
     public init(
         settingsService: OpenAISettingsService,
         credentialStore: any CredentialStore,
-        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:]
+        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
+        localModelCatalog: LocalModelCatalog = .kairoDefault,
+        localModelSettingsService: LocalModelSettingsService? = nil,
+        localModelDownloader: (any LocalModelDownloader)? = nil
     ) {
         self.settingsService = settingsService
         self.credentialStore = credentialStore
         self.oauthClientConfigurations = oauthClientConfigurations
+        self.localModelCatalog = localModelCatalog
+        self.localModelSettingsService = localModelSettingsService
+        self.localModelDownloader = localModelDownloader
+        self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
 
     public var body: some View {
@@ -78,6 +97,25 @@ public struct SettingsView: View {
                     }
                 }
                 .accessibilityIdentifier("settings.oauth.connectors")
+
+                Section("Local Models") {
+                    if localModelStatus.settingsRows.isEmpty {
+                        Text("尚未載入 local model catalog。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    ForEach(localModelStatus.settingsRows) { row in
+                        localModelRow(row)
+                    }
+
+                    if let localModelStatusMessage {
+                        Text(localModelStatusMessage)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .accessibilityIdentifier("settings.models.local")
 
                 Section("Shortcut Demos") {
                     ForEach(ShortcutDemoCatalog.default.recipes) { recipe in
@@ -149,6 +187,57 @@ public struct SettingsView: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func localModelRow(_ row: LocalModelSettingsRow) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(row.displayName)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+
+                Spacer()
+
+                Text(row.statusText)
+                    .font(.caption)
+                    .foregroundStyle(localModelStatusColor(for: row.primaryAction))
+                    .accessibilityIdentifier("settings.models.\(row.modelID).status")
+            }
+
+            Text(row.detailText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            localModelAction(for: row)
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func localModelAction(for row: LocalModelSettingsRow) -> some View {
+        switch row.primaryAction {
+        case .download, .retryDownload:
+            Button(row.primaryAction.title) {
+                downloadLocalModel(row)
+            }
+            .accessibilityIdentifier("settings.models.\(row.modelID).download")
+        case .select:
+            Button(row.primaryAction.title) {
+                selectLocalModel(row)
+            }
+            .accessibilityIdentifier("settings.models.\(row.modelID).select")
+        case .selected:
+            Label(row.primaryAction.title, systemImage: "checkmark.circle.fill")
+                .font(.caption)
+                .foregroundStyle(.green)
+                .accessibilityIdentifier("settings.models.\(row.modelID).select")
+        case .unavailable:
+            Text(row.primaryAction.title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("settings.models.\(row.modelID).unavailable")
+        }
     }
 
     @ViewBuilder
@@ -240,9 +329,70 @@ public struct SettingsView: View {
         }
     }
 
+    private func downloadLocalModel(_ row: LocalModelSettingsRow) {
+        Task {
+            guard localModelSettingsService != nil else {
+                await MainActor.run {
+                    localModelStatusMessage = "尚未設定 local model settings service。"
+                }
+                return
+            }
+
+            guard let localModelDownloader else {
+                await MainActor.run {
+                    localModelStatusMessage = "尚未設定 local model downloader。"
+                }
+                return
+            }
+
+            do {
+                await MainActor.run {
+                    localModelStatusMessage = "正在下載 \(row.displayName)。"
+                }
+                _ = try await localModelDownloader.download(row.manifest, progress: nil)
+                await MainActor.run {
+                    localModelStatusMessage = "\(row.displayName) 已下載，可選用。"
+                }
+                await reloadLocalModelStatus()
+            } catch {
+                await MainActor.run {
+                    localModelStatusMessage = "下載失敗：\(error.localizedDescription)"
+                }
+                await reloadLocalModelStatus()
+            }
+        }
+    }
+
+    private func selectLocalModel(_ row: LocalModelSettingsRow) {
+        Task {
+            guard let localModelSettingsService else {
+                await MainActor.run {
+                    localModelStatusMessage = "尚未設定 local model settings service。"
+                }
+                return
+            }
+
+            do {
+                try await localModelSettingsService.selectModel(
+                    id: row.modelID,
+                    minimumSafetyPolicyVersion: localModelCatalog.minimumSafetyPolicyVersion
+                )
+                await MainActor.run {
+                    localModelStatusMessage = "\(row.displayName) 已選用。"
+                }
+                await reloadLocalModelStatus()
+            } catch {
+                await MainActor.run {
+                    localModelStatusMessage = "選用失敗：\(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
     private func reloadAllStatus() async {
         await reloadStatus()
         await reloadConnectorOptions()
+        await reloadLocalModelStatus()
     }
 
     private func reloadStatus() async {
@@ -271,11 +421,37 @@ public struct SettingsView: View {
         }
     }
 
+    private func reloadLocalModelStatus() async {
+        let status: LocalModelSettingsStatus
+        if let localModelSettingsService {
+            status = await localModelSettingsService.status(
+                minimumSafetyPolicyVersion: localModelCatalog.minimumSafetyPolicyVersion
+            )
+        } else {
+            status = Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog)
+        }
+
+        await MainActor.run {
+            localModelStatus = status
+        }
+    }
+
     private func connectorLoginCenter() -> OAuthConnectorLoginCenter {
         OAuthConnectorLoginCenter(
             registry: IntegrationRegistry(),
             credentialStore: credentialStore,
             clientConfigurations: oauthClientConfigurations
+        )
+    }
+
+    private static func catalogOnlyLocalModelStatus(catalog: LocalModelCatalog) -> LocalModelSettingsStatus {
+        LocalModelSettingsStatus(
+            selectedModelID: nil,
+            selectedModel: nil,
+            installedRecord: nil,
+            preference: .automatic,
+            availableModels: catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion),
+            installedModels: []
         )
     }
 
@@ -289,6 +465,19 @@ public struct SettingsView: View {
             return .secondary
         case .needsReauthorization:
             return .orange
+        }
+    }
+
+    private func localModelStatusColor(for action: LocalModelSettingsPrimaryAction) -> Color {
+        switch action {
+        case .selected:
+            return .green
+        case .select:
+            return .blue
+        case .download, .retryDownload:
+            return .orange
+        case .unavailable:
+            return .secondary
         }
     }
 }

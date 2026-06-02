@@ -145,6 +145,44 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
     }
 }
 
+public extension LocalModelCatalog {
+    static let kairoDefault = LocalModelCatalog(
+        generatedAt: Date(timeIntervalSince1970: 1_767_225_600),
+        signingKeyID: "kairo-default-local-settings",
+        signature: "unsigned-settings-placeholder",
+        minimumSafetyPolicyVersion: "2026.1",
+        models: [.kairoDraftTiny]
+    )
+}
+
+public extension LocalModelManifest {
+    static let kairoDraftTiny = LocalModelManifest(
+        id: "kairo-draft-tiny",
+        displayName: "Kairo Draft Local",
+        family: "Kairo Draft",
+        version: "1.0",
+        parameterCount: "0.8B",
+        quantization: "Q4",
+        fileSizeBytes: 512 * 1024 * 1024,
+        installedSizeBytes: 900 * 1024 * 1024,
+        contextWindow: 2048,
+        tokenizerID: "kairo-draft-tokenizer",
+        licenseName: "Apache-2.0",
+        licenseURL: URL(string: "https://www.apache.org/licenses/LICENSE-2.0")!,
+        minOSVersion: "17.0",
+        minDeviceClass: "A15",
+        minRAMGB: 4,
+        supportedLocales: ["en", "zh-Hant"],
+        capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat, .rewriting, .extraction],
+        disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
+        downloadURL: URL(string: "https://kairo.local.invalid/models/kairo-draft-tiny-q4.gguf")!,
+        sha256: String(repeating: "0", count: 64),
+        createdAt: Date(timeIntervalSince1970: 1_767_225_600),
+        updatedAt: Date(timeIntervalSince1970: 1_767_225_600),
+        safetyPolicyVersion: "2026.1"
+    )
+}
+
 public enum LocalModelDownloadError: Error, Equatable {
     case checksumMismatch(expected: String, actual: String)
     case unsupportedManifest(String)
@@ -434,6 +472,134 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
 
     public var localModelInstalled: Bool {
         selectedModel != nil && installedRecord?.status == .installed
+    }
+
+    public var settingsRows: [LocalModelSettingsRow] {
+        let installedByID = Dictionary(uniqueKeysWithValues: installedModels.map { ($0.modelID, $0) })
+        return availableModels
+            .map { model in
+                let record = installedByID[model.id]
+                let isSelected = selectedModelID == model.id && record?.status == .installed
+                return LocalModelSettingsRow(model: model, installRecord: record, isSelected: isSelected)
+            }
+            .sorted { lhs, rhs in
+                if lhs.primaryAction == rhs.primaryAction {
+                    return lhs.modelID < rhs.modelID
+                }
+                return lhs.primaryAction.sortPriority < rhs.primaryAction.sortPriority
+            }
+    }
+}
+
+public enum LocalModelSettingsPrimaryAction: String, Codable, Equatable, Sendable {
+    case download
+    case retryDownload
+    case select
+    case selected
+    case unavailable
+
+    public var title: String {
+        switch self {
+        case .download:
+            return "Download"
+        case .retryDownload:
+            return "Retry"
+        case .select:
+            return "Select"
+        case .selected:
+            return "Selected"
+        case .unavailable:
+            return "Unavailable"
+        }
+    }
+
+    public var accessibilitySuffix: String {
+        switch self {
+        case .download, .retryDownload:
+            return "download"
+        case .select, .selected:
+            return "select"
+        case .unavailable:
+            return "unavailable"
+        }
+    }
+
+    fileprivate var sortPriority: Int {
+        switch self {
+        case .download, .retryDownload:
+            return 0
+        case .select:
+            return 1
+        case .selected:
+            return 2
+        case .unavailable:
+            return 3
+        }
+    }
+}
+
+public struct LocalModelSettingsRow: Identifiable, Equatable, Sendable {
+    public var id: String { modelID }
+    public var modelID: String
+    public var displayName: String
+    public var detailText: String
+    public var statusText: String
+    public var primaryAction: LocalModelSettingsPrimaryAction
+    public var manifest: LocalModelManifest
+    public var installRecord: LocalModelInstallRecord?
+
+    public init(model: LocalModelManifest, installRecord: LocalModelInstallRecord?, isSelected: Bool) {
+        self.modelID = model.id
+        self.displayName = model.displayName
+        self.detailText = model.settingsDetailText
+        self.manifest = model
+        self.installRecord = installRecord
+
+        if isSelected {
+            self.statusText = "已選用"
+            self.primaryAction = .selected
+        } else if let installRecord {
+            switch installRecord.status {
+            case .installed:
+                self.statusText = "已安裝"
+                self.primaryAction = .select
+            case .downloading:
+                self.statusText = "下載中"
+                self.primaryAction = .unavailable
+            case .failed:
+                self.statusText = "下載失敗"
+                self.primaryAction = .retryDownload
+            }
+        } else {
+            self.statusText = "可下載"
+            self.primaryAction = .download
+        }
+    }
+}
+
+public extension LocalModelManifest {
+    var settingsDetailText: String {
+        [
+            parameterCount,
+            quantization,
+            "\(Self.formattedBytes(fileSizeBytes)) download",
+            "\(contextWindow / 1000)K context",
+            licenseName
+        ].joined(separator: " · ")
+    }
+
+    private static func formattedBytes(_ bytes: Int64) -> String {
+        let units = ["B", "KB", "MB", "GB"]
+        var value = Double(bytes)
+        var unitIndex = 0
+        while value >= 1024, unitIndex < units.count - 1 {
+            value /= 1024
+            unitIndex += 1
+        }
+        if unitIndex == 0 {
+            return "\(Int(value)) \(units[unitIndex])"
+        }
+        return String(format: "%.1f %@", value, units[unitIndex])
     }
 }
 

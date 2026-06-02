@@ -66,7 +66,7 @@ protocol AIProvider {
 
 ## MVP 策略
 
-第一階段保留 mock/local placeholder，不急著塞模型權重。Kairo core 已具備 catalog、install registry、selected-model settings、provider routing，以及 verified downloader scaffold；下一步是接上使用者可見的下載 UI 與實機 runtime proof of concept。
+第一階段保留 mock/local placeholder，不急著塞模型權重。Kairo core 已具備 catalog、install registry、selected-model settings、provider routing、verified downloader scaffold，以及 Settings 內的本機模型 catalog/status UI；下一步是接上 signed production catalog、真實 downloader 設定與實機 runtime proof of concept。
 
 ## Download pipeline
 
@@ -78,7 +78,7 @@ protocol AIProvider {
 - writes `downloading`, `installed`, or `failed` records to `FileBackedLocalModelInstallRegistry`;
 - removes partial files when checksum verification fails.
 
-The downloader is intentionally UI-agnostic so the app can later expose a model download screen with progress, cancellation, license text, size disclosure, and delete controls.
+The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select affordances, but a production build still needs a real signed catalog, configured downloader, progress/cancellation handling, license text, size disclosure, and delete controls.
 
 ## Model selection
 
@@ -86,7 +86,7 @@ The downloader is intentionally UI-agnostic so the app can later expose a model 
 
 - persists `selectedModelID` and `ProviderRoutePreference` in `KairoPaths.localModelSettingsURL`;
 - refuses to select deprecated, old-safety-policy, or uninstalled models;
-- returns a `LocalModelSettingsStatus` snapshot for Settings / model-library UI;
+- returns a `LocalModelSettingsStatus` snapshot used by Settings / model-library UI rows;
 - builds a `ProviderRoutingContext` so chat can route privacy/offline eligible prompts to the selected installed model.
 
 建議順序：
