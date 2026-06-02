@@ -63,6 +63,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 - [x] Core registry lists implemented App Intent identifiers for all current Shortcut nodes.
 - [x] Core Shortcuts handoff builder encodes input and parses structured callback output.
+- [x] Settings UI lists official Shortcut demo recipes with input/output contracts.
 - [ ] App Intents 描述準確。
 - [ ] Intent action 不隱藏高風險副作用。
 - [ ] 可回傳 structured output 給 Shortcuts。

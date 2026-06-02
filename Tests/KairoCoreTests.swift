@@ -392,6 +392,17 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).authorize""#))
     }
 
+    func testSettingsViewDefinesShortcutDemoSectionAccessibilityIdentifiers() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(settingsView.contains("Shortcut Demos"))
+        XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demos""#))
+        XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id)""#))
+        XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id).input""#))
+        XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id).output""#))
+    }
+
     func testKairoPathsBuildsApplicationSupportMemoryURL() {
         let paths = KairoPaths(appName: "KairoTests")
 
@@ -445,6 +456,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
+        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
     }
 
     func testXcodeProjectDefinesKairoUITestTargetAndSmokeTestFile() throws {
@@ -460,6 +472,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("chat.composer.text"))
         XCTAssertTrue(smokeTest.contains("settings.openai.api-key-status"))
         XCTAssertTrue(smokeTest.contains("settings.oauth.connectors"))
+        XCTAssertTrue(smokeTest.contains("settings.shortcuts.demos"))
     }
 
     func testLocalModelCatalogFiltersDeprecatedAndOldSafetyPolicyModels() throws {

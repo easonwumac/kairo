@@ -74,6 +74,18 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(encoded.contains(#""shortcutRecipeID":"save-shared-text""#))
     }
 
+    func testShortcutDemoRecipeBuildsSettingsReadableContractSummaries() throws {
+        let catalog = ShortcutDemoCatalog.default
+        let dailyBriefing = try XCTUnwrap(catalog.recipe(id: "daily-briefing"))
+        let saveSharedText = try XCTUnwrap(catalog.recipe(id: "save-shared-text"))
+
+        XCTAssertEqual(dailyBriefing.settingsStepSummary, "1 step: dailyBriefing")
+        XCTAssertEqual(saveSharedText.settingsStepSummary, "2 steps: saveMemory -> extractTasks")
+        XCTAssertTrue(dailyBriefing.settingsContractSummary.contains("Input: text, sourceName, variables"))
+        XCTAssertTrue(dailyBriefing.settingsContractSummary.contains("Output: displayText, fields.briefing, fields.taskCount, tasks"))
+        XCTAssertTrue(saveSharedText.settingsSampleInputPreview.contains("User research note"))
+    }
+
     func testAppleShortcutsIntegrationTemplatesMirrorDemoCatalog() throws {
         let registry = IntegrationRegistry()
         let shortcuts = try XCTUnwrap(registry.integration(for: "apple-shortcuts"))

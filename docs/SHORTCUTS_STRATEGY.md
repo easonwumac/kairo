@@ -55,6 +55,8 @@ Kairo 不應嘗試繞過 iOS sandbox，而是成為 Shortcuts 裡的 AI brain：
 - input/output contract fields;
 - sample `ShortcutNodeInput` JSON for imported Shortcut examples or future UI previews.
 
+`SettingsView` surfaces these recipes under `Shortcut Demos` so users can inspect the trigger, node path, input fields, output fields, and sample input before building or installing the Shortcut.
+
 ### Daily Briefing
 
 ```text

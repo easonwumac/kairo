@@ -183,6 +183,42 @@ public struct ShortcutDemoRecipe: Codable, Equatable, Identifiable, Sendable {
         self.setupNotes = setupNotes
         self.steps = steps
     }
+
+    public var settingsStepSummary: String {
+        let countLabel = steps.count == 1 ? "1 step" : "\(steps.count) steps"
+        let nodePath = steps.map { $0.nodeKind.rawValue }.joined(separator: " -> ")
+        return "\(countLabel): \(nodePath)"
+    }
+
+    public var settingsContractSummary: String {
+        "\(settingsInputSummary); \(settingsOutputSummary)"
+    }
+
+    public var settingsInputSummary: String {
+        let fields = uniqueFields { $0.inputContract.fields }
+        return "Input: \(fields.joined(separator: ", "))"
+    }
+
+    public var settingsOutputSummary: String {
+        let fields = uniqueFields { $0.outputContract.fields }
+        return "Output: \(fields.joined(separator: ", "))"
+    }
+
+    public var settingsSampleInputPreview: String {
+        steps.first?.sampleInput.text
+            .replacingOccurrences(of: "\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    private func uniqueFields(_ fields: (ShortcutDemoStep) -> [String]) -> [String] {
+        var seen: Set<String> = []
+        var values: [String] = []
+        for field in steps.flatMap(fields) where !seen.contains(field) {
+            seen.insert(field)
+            values.append(field)
+        }
+        return values
+    }
 }
 
 public struct ShortcutDemoStep: Codable, Equatable, Sendable {
