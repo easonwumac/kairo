@@ -736,6 +736,108 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(manifest.installableSkill.installationStatus, .installed)
     }
 
+    func testAgentSkillMarketplaceCatalogServiceFetchesStandaloneRepoCatalog() async throws {
+        let body = """
+        {
+          "marketplaceVersion": "2026.6",
+          "sourceRepository": "https://github.com/easonwumac/kairo-skills",
+          "generatedAt": "2026-06-02T00:00:00Z",
+          "skills": [
+            {
+              "id": "marketplace-weather-briefing",
+              "displayName": "Weather Briefing",
+              "summary": "Summarizes weather through an approved provider API and returns a compact daily plan.",
+              "version": "2.1.0",
+              "author": "Kairo Marketplace",
+              "category": "External API",
+              "kind": "custom",
+              "permissions": ["externalConnectors"],
+              "riskTier": "Tier 3: external data request",
+              "requiresConfirmation": true,
+              "installSurface": "Access Skill Manager",
+              "manifestURL": "manifests/weather-briefing.json",
+              "screenshots": ["assets/weather-briefing-card.svg"],
+              "changelog": ["Adds storm alerts."]
+            },
+            {
+              "id": "marketplace-homekit-scene-guard",
+              "displayName": "HomeKit Scene Guard",
+              "summary": "Wraps confirmed HomeKit scene and accessory controls.",
+              "version": "1.1.0",
+              "author": "Kairo Marketplace",
+              "category": "Home",
+              "kind": "homeKitControl",
+              "permissions": ["homeKit"],
+              "riskTier": "Tier 3: confirmed home control",
+              "requiresConfirmation": true,
+              "installSurface": "Access Skill Manager",
+              "manifestURL": "manifests/homekit-scene-guard.json",
+              "screenshots": ["assets/homekit-scene-card.svg"],
+              "changelog": ["Adds scene and accessory metadata."]
+            }
+          ]
+        }
+        """
+        let httpClient = MockHTTPClient(statusCode: 200, body: body)
+        let service = AgentSkillMarketplaceCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-skills/skills.json")!,
+            httpClient: httpClient
+        )
+
+        let remoteCatalog = try await service.fetchCatalog()
+        let request = try await httpClient.lastRequest()
+
+        XCTAssertEqual(request.url?.absoluteString, "https://easonwumac.github.io/kairo-skills/skills.json")
+        XCTAssertEqual(remoteCatalog.sourceRepository.absoluteString, "https://github.com/easonwumac/kairo-skills")
+        XCTAssertEqual(remoteCatalog.marketplaceVersion, "2026.6")
+        XCTAssertEqual(remoteCatalog.catalog.skills.map(\.id), [
+            "marketplace-weather-briefing",
+            "marketplace-homekit-scene-guard"
+        ])
+        let weather = try XCTUnwrap(remoteCatalog.catalog.skill(id: "marketplace-weather-briefing"))
+        XCTAssertEqual(weather.version, "2.1.0")
+        XCTAssertEqual(weather.author, "Kairo Marketplace")
+        XCTAssertEqual(weather.kind, .custom)
+        XCTAssertEqual(weather.installationStatus, .available)
+        XCTAssertEqual(weather.requiredCapabilities, [.externalConnectors])
+        XCTAssertEqual(
+            weather.downloadURL?.absoluteString,
+            "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json"
+        )
+    }
+
+    func testAgentSkillCatalogMergesRemoteMarketplaceWithoutReplacingInstalledSkills() {
+        var installedWeather = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Installed user copy.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://example.com/weather.json")!
+        )
+        installedWeather.installationStatus = .installed
+        installedWeather.version = "2.0.0"
+        let existingCatalog = AgentSkillCatalog(skills: AgentSkillCatalog.default.skills + [installedWeather])
+        var remoteWeather = installedWeather
+        remoteWeather.installationStatus = .available
+        remoteWeather.version = "2.1.0"
+        remoteWeather.summary = "Remote update."
+        let remoteHomeKit = AgentSkill.marketplaceTemplate(
+            id: "marketplace-homekit-scene-guard",
+            displayName: "HomeKit Scene Guard",
+            summary: "New remote skill.",
+            requiredCapabilities: [.homeKit],
+            downloadURL: URL(string: "https://easonwumac.github.io/kairo-skills/manifests/homekit-scene-guard.json")!,
+            kind: .homeKitControl
+        )
+
+        let merged = existingCatalog.mergingMarketplaceCatalog(AgentSkillCatalog(skills: [remoteWeather, remoteHomeKit]))
+
+        XCTAssertEqual(merged.skill(id: "marketplace-weather-briefing")?.installationStatus, .installed)
+        XCTAssertEqual(merged.skill(id: "marketplace-weather-briefing")?.version, "2.0.0")
+        XCTAssertEqual(merged.skill(id: "marketplace-homekit-scene-guard")?.installationStatus, .available)
+        XCTAssertEqual(merged.skill(id: "marketplace-homekit-scene-guard")?.kind, .homeKitControl)
+    }
+
     func testSandboxActionExecutorRequiresConfirmationBeforeHomeKitControl() async throws {
         let service = MockHomeControlService(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), homeControlService: service)
@@ -890,6 +992,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-preview.confirm""#))
         XCTAssertTrue(permissionHubView.contains("try await skillManagerService.previewInstall(jsonString: manifestImportText)"))
         XCTAssertTrue(permissionHubView.contains("try await skillManagerService.install(manifest: manifestInstallPreview.manifest)"))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.marketplace-refresh""#))
+        XCTAssertTrue(permissionHubView.contains("try await marketplaceCatalogService.fetchCatalog()"))
+        XCTAssertTrue(permissionHubView.contains("skillCatalog.mergingMarketplaceCatalog(remoteCatalog.catalog)"))
         XCTAssertTrue(permissionHubView.contains("HomeKit Control Demos"))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demos""#))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demo.\(recipe.id)""#))
@@ -906,8 +1011,12 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(environmentSource.contains("FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)"))
         XCTAssertTrue(environmentSource.contains("AgentSkillManagerService("))
         XCTAssertTrue(environmentSource.contains("store: agentSkillStore"))
-        XCTAssertTrue(rootViewSource.contains("PermissionHubView(skillManagerService: environment.agentSkillManagerService)"))
+        XCTAssertTrue(environmentSource.contains("AgentSkillMarketplaceCatalogService.defaultStandaloneRepository"))
+        XCTAssertTrue(rootViewSource.contains("PermissionHubView("))
+        XCTAssertTrue(rootViewSource.contains("skillManagerService: environment.agentSkillManagerService"))
+        XCTAssertTrue(rootViewSource.contains("marketplaceCatalogService: environment.agentSkillMarketplaceCatalogService"))
         XCTAssertTrue(permissionHubSource.contains("private let skillManagerService: AgentSkillManagerService?"))
+        XCTAssertTrue(permissionHubSource.contains("private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?"))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.catalog()"))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.disableSkill(id: skill.id)"))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.enableSkill(id: skill.id)"))
@@ -974,6 +1083,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.local") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.preference") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manager") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.marketplace-refresh") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.text") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.button") == true)
@@ -998,6 +1108,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("settings.models.local"))
         XCTAssertTrue(smokeTest.contains("settings.models.preference"))
         XCTAssertTrue(smokeTest.contains("access.skills.manager"))
+        XCTAssertTrue(smokeTest.contains("access.skills.marketplace-refresh"))
         XCTAssertTrue(smokeTest.contains("access.skills.manifest-import"))
         XCTAssertTrue(smokeTest.contains("access.skills.manifest-import.text"))
         XCTAssertTrue(smokeTest.contains("access.skills.manifest-import.button"))

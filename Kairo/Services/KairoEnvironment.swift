@@ -25,6 +25,7 @@ public struct KairoEnvironment: Sendable {
     public let permissionService: PermissionService
     public let auditLogger: AuditLogger
     public let agentSkillManagerService: AgentSkillManagerService?
+    public let agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService?
 
     public init(
         memoryStore: MemoryStore,
@@ -34,7 +35,8 @@ public struct KairoEnvironment: Sendable {
         shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
         permissionService: PermissionService = StubPermissionService(),
         auditLogger: AuditLogger = InMemoryAuditLogger(),
-        agentSkillManagerService: AgentSkillManagerService? = nil
+        agentSkillManagerService: AgentSkillManagerService? = nil,
+        agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil
     ) {
         self.memoryStore = memoryStore
         self.credentialStore = credentialStore
@@ -44,6 +46,7 @@ public struct KairoEnvironment: Sendable {
         self.permissionService = permissionService
         self.auditLogger = auditLogger
         self.agentSkillManagerService = agentSkillManagerService
+        self.agentSkillMarketplaceCatalogService = agentSkillMarketplaceCatalogService
     }
 
     public static func preview() -> KairoEnvironment {
@@ -76,6 +79,7 @@ public struct KairoEnvironment: Sendable {
         )
         let credentialStore = KeychainCredentialStore()
         let aiProvider = OpenAIProvider(credentialStore: credentialStore)
+        let agentSkillMarketplaceCatalogService = AgentSkillMarketplaceCatalogService.defaultStandaloneRepository
 
         return KairoEnvironment(
             memoryStore: memoryStore,
@@ -85,7 +89,8 @@ public struct KairoEnvironment: Sendable {
             shareIngestionQueue: shareIngestionQueue,
             permissionService: SystemPermissionService(),
             auditLogger: InMemoryAuditLogger(),
-            agentSkillManagerService: agentSkillManagerService
+            agentSkillManagerService: agentSkillManagerService,
+            agentSkillMarketplaceCatalogService: agentSkillMarketplaceCatalogService
         )
     }
 }

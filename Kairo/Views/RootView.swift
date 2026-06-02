@@ -22,7 +22,10 @@ public struct RootView: View {
                         .accessibilityIdentifier("root.tab.memory")
                 }
 
-            PermissionHubView(skillManagerService: environment.agentSkillManagerService)
+            PermissionHubView(
+                skillManagerService: environment.agentSkillManagerService,
+                marketplaceCatalogService: environment.agentSkillMarketplaceCatalogService
+            )
                 .tabItem {
                     Label("Access", systemImage: "switch.2")
                         .accessibilityIdentifier("root.tab.access")

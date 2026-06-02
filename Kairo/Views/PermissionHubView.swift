@@ -6,18 +6,22 @@ public struct PermissionHubView: View {
     @State private var skillManagerMessage: String?
     @State private var manifestImportText = ""
     @State private var manifestInstallPreview: AgentSkillInstallPreview?
+    @State private var isRefreshingMarketplace = false
     @State private var skillCatalog: AgentSkillCatalog
 
     private let registry = CapabilityRegistry()
     private let actionCatalog = SandboxActionCatalog()
     private let homeKitDemoCatalog = HomeKitControlDemoCatalog.default
     private let skillManagerService: AgentSkillManagerService?
+    private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?
 
     public init(
         skillManagerService: AgentSkillManagerService? = nil,
+        marketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil,
         initialSkillCatalog: AgentSkillCatalog = .defaultWithMarketplaceSamples
     ) {
         self.skillManagerService = skillManagerService
+        self.marketplaceCatalogService = marketplaceCatalogService
         _skillCatalog = State(initialValue: initialSkillCatalog)
     }
 
@@ -93,6 +97,16 @@ public struct PermissionHubView: View {
     @ViewBuilder
     private func manifestImportControls() -> some View {
         VStack(alignment: .leading, spacing: 8) {
+            Button {
+                Task {
+                    await refreshMarketplaceCatalog()
+                }
+            } label: {
+                Label("Refresh Marketplace", systemImage: "arrow.clockwise")
+            }
+            .disabled(isRefreshingMarketplace || marketplaceCatalogService == nil)
+            .accessibilityIdentifier("access.skills.marketplace-refresh")
+
             TextEditor(text: $manifestImportText)
                 .frame(minHeight: 84)
                 .font(.caption)
@@ -226,6 +240,25 @@ public struct PermissionHubView: View {
             .font(.caption)
         }
         .padding(.vertical, 4)
+    }
+
+    @MainActor
+    private func refreshMarketplaceCatalog() async {
+        guard let marketplaceCatalogService else {
+            skillManagerMessage = "Marketplace refresh requires a catalog source."
+            return
+        }
+
+        isRefreshingMarketplace = true
+        defer { isRefreshingMarketplace = false }
+
+        do {
+            let remoteCatalog = try await marketplaceCatalogService.fetchCatalog()
+            skillCatalog = skillCatalog.mergingMarketplaceCatalog(remoteCatalog.catalog)
+            skillManagerMessage = "Loaded \(remoteCatalog.catalog.skills.count) marketplace skills from \(remoteCatalog.sourceRepository.host ?? "repository")."
+        } catch {
+            skillManagerMessage = "Unable to refresh marketplace skills."
+        }
     }
 
     @MainActor

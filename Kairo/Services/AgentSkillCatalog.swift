@@ -1,5 +1,8 @@
 import Foundation
 import CryptoKit
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public enum AgentSkillKind: String, Codable, Equatable, Sendable {
     case homeKitControl
@@ -136,6 +139,27 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
         AgentSkillCatalog(skills: skills.filter { $0.id != id })
     }
 
+    public func mergingMarketplaceCatalog(_ marketplaceCatalog: AgentSkillCatalog) -> AgentSkillCatalog {
+        var mergedByID = Dictionary(uniqueKeysWithValues: skills.map { ($0.id, $0) })
+        var orderedIDs = skills.map(\.id)
+
+        for remoteSkill in marketplaceCatalog.skills where remoteSkill.source == .marketplace {
+            if let existingSkill = mergedByID[remoteSkill.id],
+               existingSkill.installationStatus != .available {
+                continue
+            }
+
+            if mergedByID[remoteSkill.id] == nil {
+                orderedIDs.append(remoteSkill.id)
+            }
+            mergedByID[remoteSkill.id] = remoteSkill
+        }
+
+        let orderedSkills = orderedIDs.compactMap { mergedByID.removeValue(forKey: $0) }
+        let remainingSkills = mergedByID.values.sorted { $0.id < $1.id }
+        return AgentSkillCatalog(skills: orderedSkills + remainingSkills)
+    }
+
     public static let demoMarketplaceSkills: [AgentSkill] = [
         AgentSkill.marketplaceTemplate(
             id: "marketplace-weather-briefing",
@@ -229,6 +253,129 @@ public enum AgentSkillManifestImportError: Error, Equatable, Sendable {
 
 public enum AgentSkillInstallError: Error, Equatable, Sendable {
     case versionDowngrade(skillID: String, installedVersion: String, incomingVersion: String)
+}
+
+public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable {
+    case invalidPermission(skillID: String, permission: String)
+    case invalidManifestURL(skillID: String, manifestURL: String)
+    case invalidJSON
+}
+
+public struct AgentSkillRemoteMarketplaceCatalog: Codable, Equatable, Sendable {
+    public var marketplaceVersion: String
+    public var sourceRepository: URL
+    public var generatedAt: Date?
+    public var catalog: AgentSkillCatalog
+
+    public init(
+        marketplaceVersion: String,
+        sourceRepository: URL,
+        generatedAt: Date?,
+        catalog: AgentSkillCatalog
+    ) {
+        self.marketplaceVersion = marketplaceVersion
+        self.sourceRepository = sourceRepository
+        self.generatedAt = generatedAt
+        self.catalog = catalog
+    }
+}
+
+private struct AgentSkillMarketplaceIndex: Decodable, Sendable {
+    public var marketplaceVersion: String
+    public var sourceRepository: URL
+    public var generatedAt: Date?
+    public var skills: [AgentSkillMarketplaceIndexEntry]
+}
+
+private struct AgentSkillMarketplaceIndexEntry: Decodable, Sendable {
+    public var id: String
+    public var displayName: String
+    public var summary: String
+    public var version: String
+    public var author: String
+    public var category: String?
+    public var kind: AgentSkillKind
+    public var permissions: [String]
+    public var riskTier: String
+    public var requiresConfirmation: Bool
+    public var installSurface: String
+    public var manifestURL: String
+    public var screenshots: [String]
+    public var changelog: [String]
+}
+
+public struct AgentSkillMarketplaceCatalogService: Sendable {
+    public static let defaultIndexURL = URL(string: "https://easonwumac.github.io/kairo-skills/skills.json")!
+    public static let defaultStandaloneRepository = AgentSkillMarketplaceCatalogService(indexURL: defaultIndexURL)
+
+    private let indexURL: URL
+    private let httpClient: any HTTPClient
+
+    public init(
+        indexURL: URL = Self.defaultIndexURL,
+        httpClient: any HTTPClient = URLSessionHTTPClient()
+    ) {
+        self.indexURL = indexURL
+        self.httpClient = httpClient
+    }
+
+    public func fetchCatalog() async throws -> AgentSkillRemoteMarketplaceCatalog {
+        let request = URLRequest(url: indexURL)
+        let (data, response) = try await httpClient.data(for: request)
+        guard (200..<300).contains(response.statusCode) else {
+            let bodyPreview = String(data: data.prefix(300), encoding: .utf8) ?? ""
+            throw HTTPClientError.unacceptableStatusCode(response.statusCode, bodyPreview)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let index: AgentSkillMarketplaceIndex
+        do {
+            index = try decoder.decode(AgentSkillMarketplaceIndex.self, from: data)
+        } catch {
+            throw AgentSkillMarketplaceCatalogError.invalidJSON
+        }
+
+        return AgentSkillRemoteMarketplaceCatalog(
+            marketplaceVersion: index.marketplaceVersion,
+            sourceRepository: index.sourceRepository,
+            generatedAt: index.generatedAt,
+            catalog: AgentSkillCatalog(skills: try index.skills.map(skill(from:)))
+        )
+    }
+
+    private func skill(from entry: AgentSkillMarketplaceIndexEntry) throws -> AgentSkill {
+        let requiredCapabilities = try entry.permissions.map { permission in
+            guard let capability = CapabilityKey(rawValue: permission) else {
+                throw AgentSkillMarketplaceCatalogError.invalidPermission(
+                    skillID: entry.id,
+                    permission: permission
+                )
+            }
+            return capability
+        }
+
+        guard let manifestURL = URL(string: entry.manifestURL, relativeTo: indexURL)?.absoluteURL else {
+            throw AgentSkillMarketplaceCatalogError.invalidManifestURL(
+                skillID: entry.id,
+                manifestURL: entry.manifestURL
+            )
+        }
+
+        return AgentSkill(
+            id: entry.id,
+            displayName: entry.displayName,
+            summary: entry.summary,
+            kind: entry.kind,
+            source: .marketplace,
+            installationStatus: .available,
+            requiredCapabilities: requiredCapabilities,
+            downloadURL: manifestURL,
+            version: entry.version,
+            author: entry.author
+        )
+    }
 }
 
 public enum AgentSkillInstallationChange: String, Codable, Equatable, Sendable {

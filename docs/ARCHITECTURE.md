@@ -70,6 +70,8 @@ The Access Skill Manager is the first app-facing surface for installed, availabl
 
 `Website/skills` is the static marketplace seed. It contains `skills.json`, card artwork, and signed manifest examples mirrored to `https://github.com/easonwumac/kairo-skills` for live skill updates, while this app repo keeps reference tests for the expected catalog and manifest shape.
 
+`AgentSkillMarketplaceCatalogService.defaultStandaloneRepository` fetches `https://easonwumac.github.io/kairo-skills/skills.json`, resolves relative manifest URLs against that catalog URL, and maps remote entries into available `AgentSkill` values. `PermissionHubView` can refresh that catalog through an injected service and merges remote marketplace skills without overwriting already installed or disabled local skill state.
+
 ## Modules
 
 - `Models`：Memory、Action、Permission、Audit、AI request/response。

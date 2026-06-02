@@ -39,6 +39,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     private func openAccessAndVerifyHomeKitDemos() {
         app.buttons["root.tab.access"].tap()
         XCTAssertTrue(app.otherElements["access.skills.manager"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["access.skills.marketplace-refresh"].exists)
         XCTAssertTrue(app.otherElements["access.skills.manifest-import"].exists)
         XCTAssertTrue(app.textViews["access.skills.manifest-import.text"].exists)
         XCTAssertTrue(app.buttons["access.skills.manifest-import.button"].exists)

@@ -71,6 +71,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             requiredAccessibilityIdentifiers: [
                 "root.tab.access",
                 "access.skills.manager",
+                "access.skills.marketplace-refresh",
                 "access.skills.manifest-import",
                 "access.skills.manifest-import.text",
                 "access.skills.manifest-import.button",
@@ -80,6 +81,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ],
             assertions: [
                 "Skill Manager section is visible.",
+                "Marketplace refresh control is visible.",
                 "Signed manifest import controls are visible.",
                 "HomeKit demo section is visible.",
                 "A scene control demo is visible.",
