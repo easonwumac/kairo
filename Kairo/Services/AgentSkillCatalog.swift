@@ -223,6 +223,10 @@ public enum AgentSkillManifestValidationError: Error, Equatable, Sendable {
     case invalidSignature
 }
 
+public enum AgentSkillManifestImportError: Error, Equatable, Sendable {
+    case invalidJSON
+}
+
 public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Sendable {
     public var id: String { keyID }
     public var keyID: String
@@ -338,6 +342,25 @@ public struct AgentSkillManifest: Codable, Equatable, Sendable {
         let data = try encoder.encode(skill)
         let digest = SHA256.hash(data: data)
         return digest.map { String(format: "%02x", $0) }.joined()
+    }
+
+    public static func encodeJSONString(_ manifest: AgentSkillManifest) throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(manifest)
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    public static func decodeJSONString(_ jsonString: String) throws -> AgentSkillManifest {
+        guard let data = jsonString.data(using: .utf8) else {
+            throw AgentSkillManifestImportError.invalidJSON
+        }
+
+        do {
+            return try JSONDecoder().decode(AgentSkillManifest.self, from: data)
+        } catch {
+            throw AgentSkillManifestImportError.invalidJSON
+        }
     }
 
     public static func signedForTesting(skill: AgentSkill, packageVersion: String) throws -> AgentSkillManifest {
@@ -493,6 +516,12 @@ public struct AgentSkillManagerService: Sendable {
         let skill = manifest.installableSkill
         try await store.upsert(skill)
         return skill
+    }
+
+    @discardableResult
+    public func installManifest(jsonString: String) async throws -> AgentSkill {
+        let manifest = try AgentSkillManifest.decodeJSONString(jsonString)
+        return try await install(manifest: manifest)
     }
 
     @discardableResult

@@ -71,12 +71,16 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             requiredAccessibilityIdentifiers: [
                 "root.tab.access",
                 "access.skills.manager",
+                "access.skills.manifest-import",
+                "access.skills.manifest-import.text",
+                "access.skills.manifest-import.button",
                 "access.homekit.demos",
                 "access.homekit.demo.evening-scene",
                 "access.homekit.demo.evening-scene.confirm"
             ],
             assertions: [
                 "Skill Manager section is visible.",
+                "Signed manifest import controls are visible.",
                 "HomeKit demo section is visible.",
                 "A scene control demo is visible.",
                 "The demo exposes confirmation before execution."

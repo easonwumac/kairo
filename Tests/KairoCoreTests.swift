@@ -478,6 +478,51 @@ final class KairoCoreTests: XCTestCase {
         }
     }
 
+    func testAgentSkillManagerInstallsSignedManifestFromJSONString() async throws {
+        let storeURL = temporaryFileURL(named: "imported-agent-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let signingKey = P256.Signing.PrivateKey()
+        let skill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/weather-briefing.json")!
+        )
+        let manifest = try AgentSkillManifest.signedForTesting(
+            skill: skill,
+            packageVersion: "2026.6",
+            keyID: "kairo-marketplace-2026",
+            signingKey: signingKey
+        )
+        let manifestJSON = try AgentSkillManifest.encodeJSONString(manifest)
+        let trustStore = AgentSkillManifestTrustStore(trustedKeys: [
+            AgentSkillTrustedPublicKey(
+                keyID: "kairo-marketplace-2026",
+                algorithm: .p256SHA256,
+                publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
+            )
+        ])
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default, trustStore: trustStore)
+
+        let installed = try await service.installManifest(jsonString: manifestJSON)
+        let catalog = try await service.catalog()
+
+        XCTAssertEqual(installed.id, "marketplace-weather-briefing")
+        XCTAssertEqual(installed.installationStatus, .installed)
+        XCTAssertEqual(catalog.skill(id: "marketplace-weather-briefing")?.source, .marketplace)
+    }
+
+    func testAgentSkillManagerRejectsInvalidManifestJSONString() async throws {
+        let storeURL = temporaryFileURL(named: "invalid-agent-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default)
+
+        await XCTAssertThrowsErrorAsync(try await service.installManifest(jsonString: "{not-json")) { error in
+            XCTAssertEqual(error as? AgentSkillManifestImportError, .invalidJSON)
+        }
+    }
+
     func testFileBackedAgentSkillManagerPersistsInstallDisableEnableAndRemoveLifecycle() async throws {
         let storeURL = temporaryFileURL(named: "agent-skills.json")
         let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
@@ -664,6 +709,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).disable""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).enable""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).remove""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import.text""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import.button""#))
+        XCTAssertTrue(permissionHubView.contains("try await skillManagerService.installManifest(jsonString: manifestImportText)"))
         XCTAssertTrue(permissionHubView.contains("HomeKit Control Demos"))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demos""#))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demo.\(recipe.id)""#))
@@ -748,6 +797,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.local") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.preference") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manager") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.text") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.button") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demos") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demo.evening-scene") == true)
     }
@@ -769,6 +821,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("settings.models.local"))
         XCTAssertTrue(smokeTest.contains("settings.models.preference"))
         XCTAssertTrue(smokeTest.contains("access.skills.manager"))
+        XCTAssertTrue(smokeTest.contains("access.skills.manifest-import"))
+        XCTAssertTrue(smokeTest.contains("access.skills.manifest-import.text"))
+        XCTAssertTrue(smokeTest.contains("access.skills.manifest-import.button"))
         XCTAssertTrue(smokeTest.contains("access.homekit.demos"))
     }
 

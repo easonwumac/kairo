@@ -4,6 +4,7 @@ import SwiftUI
 public struct PermissionHubView: View {
     @State private var homeKitPreviewMessage: String?
     @State private var skillManagerMessage: String?
+    @State private var manifestImportText = ""
     @State private var skillCatalog: AgentSkillCatalog
 
     private let registry = CapabilityRegistry()
@@ -54,6 +55,8 @@ public struct PermissionHubView: View {
                 }
 
                 Section("Skill Manager") {
+                    manifestImportControls()
+
                     ForEach(skillCatalog.skills) { skill in
                         skillManagerRow(skill)
                     }
@@ -84,6 +87,28 @@ public struct PermissionHubView: View {
                 await loadSkillCatalog()
             }
         }
+    }
+
+    @ViewBuilder
+    private func manifestImportControls() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextEditor(text: $manifestImportText)
+                .frame(minHeight: 84)
+                .font(.caption)
+                .accessibilityIdentifier("access.skills.manifest-import.text")
+
+            Button {
+                Task {
+                    await importManifestText()
+                }
+            } label: {
+                Label("Import Manifest", systemImage: "square.and.arrow.down.on.square")
+            }
+            .disabled(manifestImportText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityIdentifier("access.skills.manifest-import.button")
+        }
+        .padding(.vertical, 4)
+        .accessibilityIdentifier("access.skills.manifest-import")
     }
 
     @ViewBuilder
@@ -151,6 +176,32 @@ public struct PermissionHubView: View {
             .font(.caption)
         }
         .padding(.vertical, 4)
+    }
+
+    @MainActor
+    private func importManifestText() async {
+        let trimmedManifest = manifestImportText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedManifest.isEmpty else {
+            skillManagerMessage = "Manifest JSON is empty."
+            return
+        }
+        guard let skillManagerService else {
+            skillManagerMessage = "Manifest import requires live Skill Manager."
+            return
+        }
+
+        do {
+            let installed = try await skillManagerService.installManifest(jsonString: manifestImportText)
+            skillCatalog = try await skillManagerService.catalog()
+            manifestImportText = ""
+            skillManagerMessage = "\(installed.displayName) installed from signed manifest."
+        } catch AgentSkillManifestImportError.invalidJSON {
+            skillManagerMessage = "Manifest JSON is invalid."
+        } catch AgentSkillManifestValidationError.invalidSignature {
+            skillManagerMessage = "Manifest signature is invalid."
+        } catch {
+            skillManagerMessage = "Unable to import manifest."
+        }
     }
 
     @MainActor
