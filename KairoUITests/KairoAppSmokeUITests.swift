@@ -114,6 +114,13 @@ final class KairoAppSmokeUITests: XCTestCase {
             outputText: "Output: fields.taskCount, tasks, reminderDrafts, fields.reminderDraftCount",
             sampleText: "Screenshot OCR"
         )
+        verifyShortcutDemoContract(
+            titleText: "Generic Node Runner",
+            stepText: "2 steps: summarize -> extractTasks",
+            inputText: "Input: nodeKind, inputJSON",
+            outputText: "Output: outputJSON, displayText, fields.taskCount, tasks",
+            sampleText: "Shortcut dictionary"
+        )
     }
 
     func testSettingsShowsOAuthConnectorReadinessAndBoundaries() throws {
@@ -242,6 +249,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findButton("access.skill.homekit-evening-scene.manage", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-save-shared-text", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-screenshot-to-reminders", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skill.shortcut-generic-node-runner", direction: .down).exists)
         XCTAssertTrue(findElement("access.homekit.demos", direction: .down).exists)
         XCTAssertTrue(findElement("access.homekit.demo.evening-scene", direction: .down).exists)
         XCTAssertTrue(findButton("access.homekit.demo.evening-scene.confirm", direction: .down).exists)

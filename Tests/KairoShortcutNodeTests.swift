@@ -19,7 +19,8 @@ final class KairoShortcutNodeTests: XCTestCase {
                 "SummarizeWithKairoIntent",
                 "ExtractKairoTasksIntent",
                 "CreateDailyBriefingIntent",
-                "CreateReminderDraftsIntent"
+                "CreateReminderDraftsIntent",
+                "RunKairoShortcutNodeIntent"
             ]
         )
     }
@@ -34,16 +35,18 @@ final class KairoShortcutNodeTests: XCTestCase {
         _ = ExtractKairoTasksIntent()
         _ = CreateDailyBriefingIntent()
         _ = CreateReminderDraftsIntent()
+        _ = RunKairoShortcutNodeIntent()
     }
 #endif
 
     func testShortcutDemoCatalogContainsPracticalRecipesWithNodeContracts() throws {
         let catalog = ShortcutDemoCatalog.default
 
-        XCTAssertGreaterThanOrEqual(catalog.recipes.count, 3)
+        XCTAssertGreaterThanOrEqual(catalog.recipes.count, 4)
         XCTAssertEqual(catalog.recipe(id: "daily-briefing")?.steps.map(\.nodeKind), [.dailyBriefing])
         XCTAssertEqual(catalog.recipe(id: "save-shared-text")?.steps.map(\.nodeKind), [.saveMemory, .extractTasks])
         XCTAssertEqual(catalog.recipe(id: "screenshot-to-reminders")?.steps.map(\.nodeKind), [.extractTasks, .createReminderDraft])
+        XCTAssertEqual(catalog.recipe(id: "generic-node-runner")?.steps.map(\.nodeKind), [.summarize, .extractTasks])
 
         for recipe in catalog.recipes {
             XCTAssertFalse(recipe.id.isEmpty)
@@ -56,6 +59,47 @@ final class KairoShortcutNodeTests: XCTestCase {
                 XCTAssertFalse(step.outputContract.fields.isEmpty)
                 XCTAssertFalse(step.shortcutActionTitle.isEmpty)
             }
+        }
+    }
+
+    func testShortcutNodeInvocationRunsNodeFromJSONAndReturnsEncodedOutput() async throws {
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let service = ShortcutNodeInvocationService(runtime: runtime)
+        let input = ShortcutNodeInput(
+            text: """
+            User provided this through a Shortcut dictionary.
+            Action: Validate generic Kairo node output
+            """,
+            sourceName: "Generic Shortcut Node",
+            variables: ["shortcutRecipeID": "generic-node-runner"]
+        )
+
+        let outputJSON = try await service.run(
+            nodeKindRawValue: "extractTasks",
+            inputJSON: try input.encodedJSONString()
+        )
+        let output = try JSONDecoder().decode(ShortcutNodeOutput.self, from: Data(outputJSON.utf8))
+
+        XCTAssertEqual(output.kind, .extractTasks)
+        XCTAssertEqual(output.fields["sourceName"], "Generic Shortcut Node")
+        XCTAssertEqual(output.fields["shortcutRecipeID"], "generic-node-runner")
+        XCTAssertEqual(output.fields["taskCount"], "1")
+        XCTAssertEqual(output.tasks.map(\.title), ["Validate generic Kairo node output"])
+        XCTAssertTrue(outputJSON.contains(#""kind":"extractTasks""#))
+    }
+
+    func testShortcutNodeInvocationRejectsUnsupportedNodeKind() async throws {
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let service = ShortcutNodeInvocationService(runtime: runtime)
+
+        do {
+            _ = try await service.run(
+                nodeKindRawValue: "silentCrossAppClick",
+                inputJSON: try ShortcutNodeInput(text: "No private control.").encodedJSONString()
+            )
+            XCTFail("Unsupported Shortcut node kind should throw.")
+        } catch let error as ShortcutNodeInvocationError {
+            XCTAssertEqual(error, .unsupportedNodeKind("silentCrossAppClick"))
         }
     }
 

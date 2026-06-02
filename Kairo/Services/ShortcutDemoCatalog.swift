@@ -156,6 +156,65 @@ public struct ShortcutDemoCatalog: Codable, Equatable, Sendable {
                     )
                 )
             ]
+        ),
+        ShortcutDemoRecipe(
+            id: "generic-node-runner",
+            title: "Generic Node Runner",
+            summary: "Use one Shortcut action as a reusable Kairo node by passing node kind and JSON input.",
+            triggerSummary: "Manual Shortcut node, Action Button flow, or any Shortcut that builds a JSON dictionary.",
+            setupNotes: [
+                "Choose Run Kairo Shortcut Node in Shortcuts.",
+                "Set nodeKind to a supported Kairo node such as summarize or extractTasks.",
+                "Pass ShortcutNodeInput JSON and use the returned ShortcutNodeOutput JSON in downstream steps."
+            ],
+            steps: [
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Run Kairo Shortcut Node",
+                    nodeKind: .summarize,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["nodeKind", "inputJSON"],
+                        description: "A supported Kairo node kind and encoded ShortcutNodeInput JSON."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["outputJSON", "displayText"],
+                        description: "Encoded ShortcutNodeOutput JSON plus a user-readable summary."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: """
+                        Shortcut dictionary:
+                        Action: Validate generic Kairo node output
+                        Reminder: Chain this output into the next Kairo node
+                        """,
+                        sourceName: "Generic Shortcut Node",
+                        variables: [
+                            "shortcutRecipeID": "generic-node-runner",
+                            "nodeKind": "summarize"
+                        ]
+                    )
+                ),
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Run Kairo Shortcut Node",
+                    nodeKind: .extractTasks,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["nodeKind", "inputJSON"],
+                        description: "A supported Kairo node kind and encoded ShortcutNodeInput JSON."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["fields.taskCount"],
+                        optionalFields: ["tasks"],
+                        description: "Task count and task drafts returned as structured JSON."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: "Action: Validate generic Kairo node output",
+                        sourceName: "Generic Shortcut Node",
+                        variables: [
+                            "shortcutRecipeID": "generic-node-runner",
+                            "nodeKind": "extractTasks",
+                            "kairoInputSource": "previousStepOutput"
+                        ]
+                    )
+                )
+            ]
         )
     ])
 }

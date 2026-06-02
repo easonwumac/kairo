@@ -45,7 +45,7 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - Popular app integration registry covering App Intents, Shortcuts, URL schemes/universal links, Share Extension handoff, and OAuth connector metadata.
 - BGTaskScheduler-compatible background task policy for bounded app refresh/processing work without daemon overclaims.
 - Share Extension ingestion queue for text, URLs, files, and images.
-- Structured Shortcut node runtime, executable official demo recipe runner, Settings demo recipe UI, and App Intents for asking, saving, searching, summarizing, task extraction, reminder drafts, and daily briefings.
+- Structured Shortcut node runtime, executable official demo recipe runner, Settings demo recipe UI, and App Intents for asking, saving, searching, summarizing, task extraction, reminder drafts, daily briefings, and generic node-kind plus JSON input/output chaining.
 - User-visible Shortcuts handoff URL builder with encoded input payloads and structured callback parsing.
 - HomeKit-safe action model, executor injection, and Access demo UI for confirmed scene/accessory control.
 - XcodeGen UI test target scaffold, UI smoke scenario catalog, deterministic `--ui-testing` Skill Manager environment, Access/HomeKit/Skill Manager interaction coverage, chat action-preview and Shortcut tool-candidate e2e coverage, and stable SwiftUI accessibility identifiers.

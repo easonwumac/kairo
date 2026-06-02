@@ -136,4 +136,26 @@ public struct CreateReminderDraftsIntent: AppIntent {
         return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
     }
 }
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct RunKairoShortcutNodeIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Run Kairo Shortcut Node"
+    public static var description = IntentDescription("Run a Kairo Shortcut node from a node kind and ShortcutNodeInput JSON, returning structured JSON output.")
+
+    @Parameter(title: "Node Kind")
+    public var nodeKind: String
+
+    @Parameter(title: "Input JSON")
+    public var inputJSON: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let runtime = try await ShortcutNodeRuntime.live()
+        let service = ShortcutNodeInvocationService(runtime: runtime)
+        let outputJSON = try await service.run(nodeKindRawValue: nodeKind, inputJSON: inputJSON)
+        let output = try JSONDecoder().decode(ShortcutNodeOutput.self, from: Data(outputJSON.utf8))
+        return .result(value: outputJSON, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
 #endif

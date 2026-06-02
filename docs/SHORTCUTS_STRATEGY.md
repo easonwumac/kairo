@@ -121,6 +121,8 @@ Node contract:
 - transport: App Intents return the encoded `ShortcutNodeOutput` JSON string so downstream Shortcut steps can pass the result into another Kairo node or parse fields with Shortcuts dictionary actions.
 - safety: task extraction and reminder creation only produce drafts; they do not write EventKit data unless a later confirmed action does so.
 
+`Run Kairo Shortcut Node` is the generic node bridge for advanced Shortcuts. The user supplies a supported `ShortcutNodeKind` raw value and encoded `ShortcutNodeInput` JSON, and Kairo returns encoded `ShortcutNodeOutput` JSON. This makes Kairo usable as a Shortcuts node graph component without giving Kairo permission to silently create, edit, or execute Apple Shortcuts.
+
 Current nodes:
 
 1. `Ask Kairo` returns an answer payload.
@@ -130,6 +132,7 @@ Current nodes:
 5. `Extract Kairo Tasks` returns task and reminder drafts without executing writes.
 6. `Create Reminder Draft` returns reminder drafts without EventKit writes.
 7. `Create Daily Briefing` returns briefing text and suggested task drafts.
+8. `Run Kairo Shortcut Node` runs a supported node kind from JSON input and returns structured JSON output.
 
 Implemented App Intent types:
 
@@ -140,6 +143,7 @@ Implemented App Intent types:
 5. `ExtractKairoTasksIntent`
 6. `CreateDailyBriefingIntent`
 7. `CreateReminderDraftsIntent`
+8. `RunKairoShortcutNodeIntent`
 
 ## User-visible Shortcut handoff
 

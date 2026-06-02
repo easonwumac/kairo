@@ -464,7 +464,8 @@ final class KairoCoreTests: XCTestCase {
             "homekit-desk-lamp",
             "shortcut-daily-briefing",
             "shortcut-save-shared-text",
-            "shortcut-screenshot-to-reminders"
+            "shortcut-screenshot-to-reminders",
+            "shortcut-generic-node-runner"
         ])
         XCTAssertEqual(homeKitSkill.kind, .homeKitControl)
         XCTAssertEqual(homeKitSkill.installationStatus, .installed)
@@ -1416,6 +1417,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.button") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-screenshot-to-reminders") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-generic-node-runner") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text.disable") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text.enable") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.marketplace-weather-briefing.install") == true)
@@ -1451,6 +1453,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("Daily Briefing"))
         XCTAssertTrue(smokeTest.contains("Save Shared Text"))
         XCTAssertTrue(smokeTest.contains("Screenshot to Reminders"))
+        XCTAssertTrue(smokeTest.contains("Generic Node Runner"))
+        XCTAssertTrue(smokeTest.contains("Input: nodeKind, inputJSON"))
+        XCTAssertTrue(smokeTest.contains("Output: outputJSON, displayText, fields.taskCount, tasks"))
         XCTAssertTrue(smokeTest.contains("Input: text, sourceName, variables"))
         XCTAssertTrue(smokeTest.contains("Output: memoryID, fields.taskCount, tasks, reminderDrafts"))
         XCTAssertTrue(smokeTest.contains("Screenshot OCR"))
@@ -1497,6 +1502,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("access.skills.manifest-import.button"))
         XCTAssertTrue(smokeTest.contains("access.skill.shortcut-save-shared-text"))
         XCTAssertTrue(smokeTest.contains("access.skill.shortcut-screenshot-to-reminders"))
+        XCTAssertTrue(smokeTest.contains("access.skill.shortcut-generic-node-runner"))
         XCTAssertTrue(smokeTest.contains("verifySkillManagerInteractionFlow()"))
         XCTAssertTrue(smokeTest.contains(#""access.skill.shortcut-save-shared-text.disable""#))
         XCTAssertTrue(smokeTest.contains(#""access.skill.shortcut-save-shared-text.enable""#))

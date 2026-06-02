@@ -237,14 +237,19 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.shortcuts.demo.screenshot-to-reminders",
                 "settings.shortcuts.demo.screenshot-to-reminders.input",
                 "settings.shortcuts.demo.screenshot-to-reminders.output",
-                "settings.shortcuts.demo.screenshot-to-reminders.sample"
+                "settings.shortcuts.demo.screenshot-to-reminders.sample",
+                "settings.shortcuts.demo.generic-node-runner",
+                "settings.shortcuts.demo.generic-node-runner.input",
+                "settings.shortcuts.demo.generic-node-runner.output",
+                "settings.shortcuts.demo.generic-node-runner.sample"
             ],
             assertions: [
                 "Each Shortcut demo row is visible in Settings.",
                 "Each demo shows the Kairo node path.",
                 "Each demo shows Shortcut input contract fields.",
                 "Each demo shows output contract fields.",
-                "Each demo exposes sample input without executing Apple Shortcuts."
+                "Each demo exposes sample input without executing Apple Shortcuts.",
+                "The generic node runner shows node kind and JSON input/output contracts for downstream Shortcut steps."
             ]
         ),
         UITestScenario(
@@ -260,6 +265,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "access.skills.manifest-import.button",
                 "access.skill.shortcut-save-shared-text",
                 "access.skill.shortcut-screenshot-to-reminders",
+                "access.skill.shortcut-generic-node-runner",
                 "access.skill.shortcut-save-shared-text.disable",
                 "access.skill.shortcut-save-shared-text.enable",
                 "access.skill.marketplace-weather-briefing.install",
