@@ -40,6 +40,7 @@ public enum CapabilityKey: String, Codable, CaseIterable, Sendable {
     case photos
     case documents
     case location
+    case homeKit
     case externalConnectors
 }
 

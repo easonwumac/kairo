@@ -74,6 +74,16 @@ public struct ActionPreviewView: View {
             }
         case .url(let url):
             Text(url).font(.callout.monospaced()).textSelection(.enabled)
+        case .homeControl(let request):
+            VStack(alignment: .leading, spacing: 4) {
+                Text(request.targetName).font(.headline)
+                if let homeName = request.homeName { Text("Home: \(homeName)").font(.caption) }
+                if let roomName = request.roomName { Text("Room: \(roomName)").font(.caption) }
+                Text("Command: \(request.command.rawValue)").font(.caption)
+                if let value = request.value {
+                    Text("Value: \(value.displayValue)").font(.caption)
+                }
+            }
         case .unsupported(let explanation):
             VStack(alignment: .leading, spacing: 4) {
                 Text(explanation.requestedAction).font(.headline)
@@ -117,6 +127,19 @@ public struct CapabilityChipView: View {
 
     private var chipBackground: Color {
         chipForeground.opacity(0.15)
+    }
+}
+
+private extension HomeControlValue {
+    var displayValue: String {
+        switch self {
+        case .bool(let value):
+            return value ? "true" : "false"
+        case .double(let value):
+            return String(value)
+        case .string(let value):
+            return value
+        }
     }
 }
 #endif

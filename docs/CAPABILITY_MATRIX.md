@@ -20,7 +20,7 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 | Contacts | Contacts.framework | 是 | 否 | 後續 | 隱私高 |
 | Location | CoreLocation | 是 | 特定模式 | 後續 | 隱私高 |
 | Health | HealthKit | 是 + entitlement | 有限 | 不預設 | 隱私高 |
-| Home | HomeKit | 是 | 有限 | 後續 | 中 |
+| Home | HomeKit | 是 | 有限 | Scaffolded | 中 |
 | Focus / 系統設定 | 大多無公開 API | 不適用 | 不適用 | 否 | 不可行 |
 | 讀取 Messages | 無一般公開 API | 不適用 | 不適用 | 否 | 不可行 |
 | 讀取 Apple Mail DB | 無一般公開 API | 不適用 | 不適用 | 否 | 不可行 |
@@ -40,3 +40,4 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 6. URL scheme / universal link 只能作為使用者可見 handoff，不能宣稱能讀取或控制對方 App UI。
 7. OAuth connector 只能存取使用者授權 scope 內的官方 API；敏感 scopes 需要審核、token 安全與撤銷流程。
 8. 背景工作只能使用 BGTaskScheduler 的有限刷新/處理模型；不得宣稱常駐、即時或精準排程。
+9. HomeKit action 只能透過 HomeKit entitlement、使用者家庭授權、action preview 與 explicit confirmation 執行；目前 core 已有 typed request / executor injection scaffold，尚未啟用實機 entitlement。

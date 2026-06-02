@@ -60,6 +60,7 @@ public enum IntegrationSurface: String, Codable, CaseIterable, Sendable {
     case documentPicker
     case oauthAPI
     case eventKit
+    case homeKit
     case userNotifications
 }
 

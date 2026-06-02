@@ -32,6 +32,8 @@
 	<string>Kairo 只會處理你選擇的圖片或截圖，用於摘要、OCR、任務抽取與記憶保存。</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Kairo 會用通知提醒你 briefing、待確認動作與重要待辦。</string>
+	<key>NSHomeKitUsageDescription</key>
+	<string>Kairo 需要家庭權限，才能在你確認後執行 HomeKit 場景或配件控制。</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Kairo 只會在你要求聯絡人相關協助時使用聯絡人資料，例如辨識收件人或產生草稿。</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

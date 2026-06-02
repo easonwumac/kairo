@@ -143,6 +143,15 @@ public struct SandboxActionCatalog: Sendable {
             supportStatus: .scaffolded
         ),
         SandboxActionDescriptor(
+            kind: .controlHome,
+            displayName: "Control Home",
+            description: "透過 HomeKit 在使用者授權與確認後執行家庭場景或配件控制。",
+            capability: .homeKit,
+            permissionRequirement: .runtimePrompt,
+            riskTier: .tier3HighRiskExternal,
+            supportStatus: .scaffolded
+        ),
+        SandboxActionDescriptor(
             kind: .externalAPIRequest,
             displayName: "External API Request",
             description: "透過使用者 OAuth 授權的官方 API 執行動作。",
@@ -267,19 +276,22 @@ public actor SandboxActionExecutor: ActionExecutor {
     private let eventKitService: EventKitService
     private let urlOpener: any URLOpener
     private let notificationScheduler: any NotificationScheduling
+    private let homeControlService: any HomeControlService
 
     public init(
         memoryStore: MemoryStore,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         eventKitService: EventKitService = EventKitService(),
         urlOpener: any URLOpener = NoOpURLOpener(),
-        notificationScheduler: any NotificationScheduling = UnavailableNotificationScheduler()
+        notificationScheduler: any NotificationScheduling = UnavailableNotificationScheduler(),
+        homeControlService: any HomeControlService = UnavailableHomeControlService()
     ) {
         self.memoryStore = memoryStore
         self.safetyPolicyEngine = safetyPolicyEngine
         self.eventKitService = eventKitService
         self.urlOpener = urlOpener
         self.notificationScheduler = notificationScheduler
+        self.homeControlService = homeControlService
     }
 
     public func execute(_ action: AgentAction, confirmed: Bool = false) async throws -> ActionExecutionResult {
@@ -320,6 +332,12 @@ public actor SandboxActionExecutor: ActionExecutor {
             }
             let identifier = try await notificationScheduler.schedule(draft)
             return ActionExecutionResult(completed: true, message: "Scheduled notification.", createdIdentifier: identifier)
+        case (.controlHome, .homeControl(let request)):
+            guard try await homeControlService.requestAuthorization() else {
+                return ActionExecutionResult(completed: false, message: "HomeKit permission was not granted.")
+            }
+            let identifier = try await homeControlService.execute(request)
+            return ActionExecutionResult(completed: true, message: "Executed HomeKit control.", createdIdentifier: identifier)
         case (.unsupportedSandboxAction, .unsupported(let explanation)):
             let alternative = explanation.safeAlternative.map { " Safe alternative: \($0)" } ?? ""
             return ActionExecutionResult(completed: false, message: "Unsupported by iOS sandbox: \(explanation.reason).\(alternative)")

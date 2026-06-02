@@ -32,6 +32,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] Calendar / Reminders 使用 EventKit 且有清楚 purpose string。
 - [ ] Notifications 使用 UserNotifications，明確說明用途。
 - [ ] Photos / Documents 以使用者選取為主，不預設要求全庫存取。
+- [ ] HomeKit 只在有明確家庭控制 use case、entitlement、purpose copy 與 confirmation flow 後啟用。
 - [ ] Contacts / Location / Health 等高敏感權限只在功能需要時要求。
 - [ ] 權限被拒絕時有 fallback UI。
 
@@ -104,6 +105,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] Share Extension 可匯入文字、URL、圖片、PDF/file metadata。
 - [ ] App Intent 可 Ask / Save / Search。
 - [ ] Reminder / Calendar permission flow 可用。
+- [ ] HomeKit control action 只在授權與確認後執行；未授權時顯示 fallback。
 - [ ] OpenAI API key 可存入/刪除 Keychain。
 - [ ] 無 API key 時有本機 fallback 或清楚錯誤。
 - [ ] 不支援的跨 App 操作會顯示安全替代方案。

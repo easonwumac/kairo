@@ -104,6 +104,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("apple-shortcuts"))
         XCTAssertTrue(context.contains("BGTaskScheduler"))
         XCTAssertTrue(context.contains("Local model fallback cannot use tools"))
+        XCTAssertTrue(context.contains("homeKit"))
+        XCTAssertTrue(context.contains("controlHome"))
     }
 
     func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {
@@ -243,6 +245,67 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(result.createdIdentifier, "notification-id")
         let scheduledTitles = await scheduler.scheduledDrafts.map(\.title)
         XCTAssertEqual(scheduledTitles, ["Kairo"])
+    }
+
+    func testSandboxActionCatalogIncludesHomeKitControlWithRuntimePermission() {
+        let catalog = SandboxActionCatalog()
+
+        let descriptor = catalog.descriptor(for: .controlHome)
+
+        XCTAssertEqual(descriptor?.capability, .homeKit)
+        XCTAssertEqual(descriptor?.permissionRequirement, .runtimePrompt)
+        XCTAssertEqual(descriptor?.riskTier, .tier3HighRiskExternal)
+        XCTAssertEqual(descriptor?.supportStatus, .scaffolded)
+    }
+
+    func testSandboxActionExecutorRequiresConfirmationBeforeHomeKitControl() async throws {
+        let service = MockHomeControlService(granted: true)
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), homeControlService: service)
+        let action = AgentAction(
+            kind: .controlHome,
+            title: "Turn on office scene",
+            rationale: "User asked Kairo to run a HomeKit scene.",
+            payload: .homeControl(HomeControlRequest(
+                homeName: "Home",
+                targetName: "Office Focus",
+                command: .runScene,
+                value: nil
+            )),
+            riskTier: .tier3HighRiskExternal
+        )
+
+        let result = try await executor.execute(action, confirmed: false)
+        let requests = await service.requests
+
+        XCTAssertFalse(result.completed)
+        XCTAssertEqual(result.message, "Action requires user confirmation.")
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testSandboxActionExecutorRunsConfirmedHomeKitControlThroughInjectedService() async throws {
+        let service = MockHomeControlService(granted: true)
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), homeControlService: service)
+        let request = HomeControlRequest(
+            homeName: "Home",
+            roomName: "Office",
+            targetName: "Desk Lamp",
+            command: .setPower,
+            value: .bool(true)
+        )
+        let action = AgentAction(
+            kind: .controlHome,
+            title: "Turn on desk lamp",
+            rationale: "User confirmed a HomeKit accessory action.",
+            payload: .homeControl(request),
+            riskTier: .tier3HighRiskExternal
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+        let requests = await service.requests
+
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(result.createdIdentifier, "home-control-id")
+        XCTAssertEqual(requests, [request])
     }
 
     func testOpenAISettingsServiceSavesAndDeletesAPIKey() async throws {
@@ -824,5 +887,23 @@ private actor MockNotificationScheduler: NotificationScheduling {
     func schedule(_ draft: NotificationDraft) async throws -> String {
         scheduledDrafts.append(draft)
         return "notification-id"
+    }
+}
+
+private actor MockHomeControlService: HomeControlService {
+    private(set) var requests: [HomeControlRequest] = []
+    private let granted: Bool
+
+    init(granted: Bool) {
+        self.granted = granted
+    }
+
+    func requestAuthorization() async throws -> Bool {
+        granted
+    }
+
+    func execute(_ request: HomeControlRequest) async throws -> String {
+        requests.append(request)
+        return "home-control-id"
     }
 }

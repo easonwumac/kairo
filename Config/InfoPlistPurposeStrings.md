@@ -22,6 +22,9 @@
 
 <key>NSUserNotificationsUsageDescription</key>
 <string>Kairo 會用通知提醒你 briefing、待確認動作與重要待辦。</string>
+
+<key>NSHomeKitUsageDescription</key>
+<string>Kairo 需要家庭權限，才能在你確認後執行 HomeKit 場景或配件控制。</string>
 ```
 
 ## 原則

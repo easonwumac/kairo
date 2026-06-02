@@ -34,6 +34,7 @@ public enum AgentActionKind: String, Codable, CaseIterable, Sendable {
     case createCalendarDraft
     case sendNotification
     case openURL
+    case controlHome
     case externalAPIRequest
     case unsupportedSandboxAction
 }
@@ -44,6 +45,7 @@ public enum AgentActionPayload: Codable, Equatable, Sendable {
     case calendarEvent(CalendarEventDraft)
     case notification(NotificationDraft)
     case url(String)
+    case homeControl(HomeControlRequest)
     case unsupported(UnsupportedActionExplanation)
     case empty
 }
@@ -71,6 +73,41 @@ public struct NotificationDraft: Codable, Equatable, Sendable {
         self.body = body
         self.deliveryDate = deliveryDate
     }
+}
+
+public struct HomeControlRequest: Codable, Equatable, Sendable {
+    public var homeName: String?
+    public var roomName: String?
+    public var targetName: String
+    public var command: HomeControlCommand
+    public var value: HomeControlValue?
+
+    public init(
+        homeName: String? = nil,
+        roomName: String? = nil,
+        targetName: String,
+        command: HomeControlCommand,
+        value: HomeControlValue? = nil
+    ) {
+        self.homeName = homeName
+        self.roomName = roomName
+        self.targetName = targetName
+        self.command = command
+        self.value = value
+    }
+}
+
+public enum HomeControlCommand: String, Codable, Equatable, Sendable {
+    case runScene
+    case setPower
+    case setBrightness
+    case setTargetTemperature
+}
+
+public enum HomeControlValue: Codable, Equatable, Sendable {
+    case bool(Bool)
+    case double(Double)
+    case string(String)
 }
 
 public struct UnsupportedActionExplanation: Codable, Equatable, Sendable {

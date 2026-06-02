@@ -64,6 +64,18 @@ public struct IntegrationRegistry: Sendable {
             status: .scaffolded
         ),
         AppIntegration(
+            key: "apple-home",
+            displayName: "Apple Home",
+            category: .appleSystem,
+            surfaces: [.homeKit, .shortcuts],
+            requiredCapabilities: [.homeKit],
+            shortcutTemplates: [
+                ShortcutTemplate(identifier: "home-scene-confirm", title: "Confirm Home Scene", inputSummary: "Scene or accessory target supplied by the user or Shortcut", outputSummary: "HomeKit control preview and confirmation result")
+            ],
+            sandboxNotes: "HomeKit requires the HomeKit entitlement, user Home authorization, and visible confirmation before Kairo runs a scene or writes an accessory characteristic. Kairo cannot control homes outside granted HomeKit access.",
+            status: .scaffolded
+        ),
+        AppIntegration(
             key: "apple-mail",
             displayName: "Apple Mail",
             category: .communication,

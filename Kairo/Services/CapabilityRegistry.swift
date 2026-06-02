@@ -97,6 +97,14 @@ public struct CapabilityRegistry: Sendable {
             isMVP: true
         ),
         Capability(
+            key: .homeKit,
+            displayName: "HomeKit",
+            description: "在 HomeKit 權限與使用者確認後執行家庭場景或配件控制。",
+            permission: .runtimePrompt,
+            status: .unknown,
+            isMVP: false
+        ),
+        Capability(
             key: .externalConnectors,
             displayName: "External Connectors",
             description: "透過 OAuth 連接 Gmail、Microsoft 365、Notion 等外部服務。",

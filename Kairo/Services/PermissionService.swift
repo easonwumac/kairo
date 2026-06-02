@@ -18,6 +18,8 @@ public struct StubPermissionService: PermissionService {
         switch capability {
         case .chat, .memory, .shareExtension, .appIntents, .integrationRegistry, .backgroundTasks, .documents, .photos:
             return .available
+        case .homeKit:
+            return .unknown
         default:
             return .unknown
         }
@@ -45,7 +47,7 @@ public struct SystemPermissionService: PermissionService {
             return reminderStatus()
         case .notifications:
             return await notificationStatus()
-        case .contacts, .location, .externalConnectors:
+        case .contacts, .location, .homeKit, .externalConnectors:
             return .unknown
         }
     }
