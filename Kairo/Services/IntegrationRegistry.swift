@@ -38,10 +38,12 @@ public struct IntegrationRegistry: Sendable {
             requiredCapabilities: [.appIntents],
             appIntentIdentifiers: [
                 "AskKairoIntent",
-                "SaveKairoMemoryIntent",
+                "SaveToKairoMemoryIntent",
                 "SearchKairoMemoryIntent",
                 "SummarizeWithKairoIntent",
-                "ExtractKairoTasksIntent"
+                "ExtractKairoTasksIntent",
+                "CreateDailyBriefingIntent",
+                "CreateReminderDraftsIntent"
             ],
             shortcutTemplates: [
                 ShortcutTemplate(identifier: "daily-briefing", title: "Daily Briefing", inputSummary: "Date, calendar context, shared text, or shortcut variables", outputSummary: "Briefing text and suggested next actions"),

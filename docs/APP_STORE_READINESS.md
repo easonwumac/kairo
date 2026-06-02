@@ -61,6 +61,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 ### 6. Shortcuts / App Intents
 
+- [x] Core registry lists implemented App Intent identifiers for all current Shortcut nodes.
 - [ ] App Intents 描述準確。
 - [ ] Intent action 不隱藏高風險副作用。
 - [ ] 可回傳 structured output 給 Shortcuts。

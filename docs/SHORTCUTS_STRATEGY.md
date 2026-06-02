@@ -127,6 +127,16 @@ Current nodes:
 6. `Create Reminder Draft` returns reminder drafts without EventKit writes.
 7. `Create Daily Briefing` returns briefing text and suggested task drafts.
 
+Implemented App Intent types:
+
+1. `AskKairoIntent`
+2. `SaveToKairoMemoryIntent`
+3. `SearchKairoMemoryIntent`
+4. `SummarizeWithKairoIntent`
+5. `ExtractKairoTasksIntent`
+6. `CreateDailyBriefingIntent`
+7. `CreateReminderDraftsIntent`
+
 ## Integration registry alignment
 
 `IntegrationRegistry` keeps Shortcuts/App Intents metadata beside URL-scheme and OAuth connector metadata so the model can distinguish three very different paths:
@@ -139,6 +149,5 @@ This registry should power UI explanations, prompt context, App Store review not
 
 ## 後續實作方向
 
-- 加入 `Create Daily Briefing` 與 `Create Reminder Draft` App Intents。
 - 把 JSON output 升級成 App Intents custom value/entity output when the generated Xcode target can verify it on device.
 - 將 `ShortcutDemoCatalog` 接到 Settings / onboarding UI，並輸出可匯入的 Shortcuts 範例。

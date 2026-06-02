@@ -100,4 +100,40 @@ public struct ExtractKairoTasksIntent: AppIntent {
         return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
     }
 }
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct CreateDailyBriefingIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Create Daily Briefing"
+    public static var description = IntentDescription("Create a Kairo briefing from Shortcut input and return structured task suggestions.")
+
+    @Parameter(title: "Text")
+    public var text: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(.dailyBriefing, input: ShortcutNodeInput(text: text, sourceName: "Create Daily Briefing"))
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct CreateReminderDraftsIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Create Reminder Drafts"
+    public static var description = IntentDescription("Create reminder drafts from Shortcut input without writing Reminders until a later confirmed action.")
+
+    @Parameter(title: "Text")
+    public var text: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(.createReminderDraft, input: ShortcutNodeInput(text: text, sourceName: "Create Reminder Drafts"))
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
 #endif

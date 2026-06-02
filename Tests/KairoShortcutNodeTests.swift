@@ -1,8 +1,42 @@
 import XCTest
 import Foundation
+#if canImport(AppIntents)
+import AppIntents
+#endif
 @testable import KairoCore
 
 final class KairoShortcutNodeTests: XCTestCase {
+    func testAppleShortcutsIntegrationListsImplementedAppIntentIdentifiers() throws {
+        let registry = IntegrationRegistry()
+        let shortcuts = try XCTUnwrap(registry.integration(for: "apple-shortcuts"))
+
+        XCTAssertEqual(
+            shortcuts.appIntentIdentifiers,
+            [
+                "AskKairoIntent",
+                "SaveToKairoMemoryIntent",
+                "SearchKairoMemoryIntent",
+                "SummarizeWithKairoIntent",
+                "ExtractKairoTasksIntent",
+                "CreateDailyBriefingIntent",
+                "CreateReminderDraftsIntent"
+            ]
+        )
+    }
+
+#if canImport(AppIntents)
+    @available(iOS 16.0, macOS 13.0, *)
+    func testShortcutAppIntentTypesCoverShortcutRuntimeNodes() throws {
+        _ = AskKairoIntent()
+        _ = SaveToKairoMemoryIntent()
+        _ = SearchKairoMemoryIntent()
+        _ = SummarizeWithKairoIntent()
+        _ = ExtractKairoTasksIntent()
+        _ = CreateDailyBriefingIntent()
+        _ = CreateReminderDraftsIntent()
+    }
+#endif
+
     func testShortcutDemoCatalogContainsPracticalRecipesWithNodeContracts() throws {
         let catalog = ShortcutDemoCatalog.default
 
