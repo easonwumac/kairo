@@ -1167,7 +1167,11 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(settingsView.contains("OAuth Connectors"))
         XCTAssertTrue(settingsView.contains(#""settings.oauth.connectors""#))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).row""#))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).name""#))
         XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).status""#))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).detail""#))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).backend-exchange""#))
         XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).authorize""#))
     }
 
@@ -1350,6 +1354,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-shortcut-tool-candidate",
             "memory-manual-save",
             "settings-api-key-status",
+            "settings-oauth-connectors",
             "settings-shortcut-demo-io",
             "access-homekit-demos"
         ])
@@ -1371,6 +1376,13 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.local") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.refresh-catalog") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.catalog-source") == true)
+        let oauthScenarioIdentifiers = catalog.scenario(id: "settings-oauth-connectors")?.requiredAccessibilityIdentifiers ?? []
+        for providerKey in ["google", "microsoft", "notion", "slack", "chatgpt", "github"] {
+            XCTAssertTrue(oauthScenarioIdentifiers.contains("settings.oauth.\(providerKey).row"), providerKey)
+            XCTAssertTrue(oauthScenarioIdentifiers.contains("settings.oauth.\(providerKey).name"), providerKey)
+            XCTAssertTrue(oauthScenarioIdentifiers.contains("settings.oauth.\(providerKey).status"), providerKey)
+            XCTAssertTrue(oauthScenarioIdentifiers.contains("settings.oauth.\(providerKey).detail"), providerKey)
+        }
         let shortcutDemoScenarioIdentifiers = catalog.scenario(id: "settings-shortcut-demo-io")?.requiredAccessibilityIdentifiers ?? []
         for recipe in ShortcutDemoCatalog.default.recipes {
             XCTAssertTrue(shortcutDemoScenarioIdentifiers.contains("settings.shortcuts.demo.\(recipe.id)"), recipe.id)
@@ -1411,6 +1423,13 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(projectYAML.contains("target: KairoApp"))
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
         XCTAssertTrue(smokeTest.contains("testSettingsLocalModelCatalogListsDownloadableModels"))
+        XCTAssertTrue(smokeTest.contains("testSettingsShowsOAuthConnectorReadinessAndBoundaries"))
+        XCTAssertTrue(smokeTest.contains(#"providerKey: "google""#))
+        XCTAssertTrue(smokeTest.contains("Gmail / Google Workspace"))
+        XCTAssertTrue(smokeTest.contains(#"providerKey: "chatgpt""#))
+        XCTAssertTrue(smokeTest.contains("需要 Client 設定"))
+        XCTAssertTrue(smokeTest.contains("需要後端 token exchange。"))
+        XCTAssertTrue(smokeTest.contains("Only pages/databases selected during Notion authorization may be read or written."))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsShortcutDemoInputOutputContracts"))
         XCTAssertTrue(smokeTest.contains("Daily Briefing"))
         XCTAssertTrue(smokeTest.contains("Save Shared Text"))

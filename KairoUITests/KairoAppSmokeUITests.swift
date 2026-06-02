@@ -98,6 +98,49 @@ final class KairoAppSmokeUITests: XCTestCase {
         )
     }
 
+    func testSettingsShowsOAuthConnectorReadinessAndBoundaries() throws {
+        assertPrimaryTabsExist()
+        tapTab(identifier: "root.tab.settings", label: "Settings")
+
+        XCTAssertTrue(findElement("settings.oauth.connectors", direction: .down).exists)
+        verifyOAuthConnector(
+            providerKey: "google",
+            displayName: "Gmail / Google Workspace",
+            detailText: "預設 scopes: openid, email, profile, https://www.googleapis.com/auth/gmail.readonly",
+            expectsBackendExchange: true
+        )
+        verifyOAuthConnector(
+            providerKey: "microsoft",
+            displayName: "Microsoft 365 / Outlook",
+            detailText: "預設 scopes: openid, profile, offline_access, User.Read, Mail.Read, Calendars.ReadWrite",
+            expectsBackendExchange: true
+        )
+        verifyOAuthConnector(
+            providerKey: "notion",
+            displayName: "Notion",
+            detailText: "Only pages/databases selected during Notion authorization may be read or written.",
+            expectsBackendExchange: true
+        )
+        verifyOAuthConnector(
+            providerKey: "slack",
+            displayName: "Slack",
+            detailText: "預設 scopes: channels:history, chat:write",
+            expectsBackendExchange: true
+        )
+        verifyOAuthConnector(
+            providerKey: "chatgpt",
+            displayName: "ChatGPT",
+            detailText: "預設 scopes: openid, profile, email",
+            expectsBackendExchange: false
+        )
+        verifyOAuthConnector(
+            providerKey: "github",
+            displayName: "GitHub",
+            detailText: "預設 scopes: read:user, repo",
+            expectsBackendExchange: true
+        )
+    }
+
     func testMemoryTabCanSaveManualMemory() throws {
         assertPrimaryTabsExist()
         tapTab(identifier: "root.tab.memory", label: "Memory")
@@ -273,6 +316,22 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findStaticText(containing: inputText, direction: .both, maxSwipes: 2).exists)
         XCTAssertTrue(findStaticText(containing: outputText, direction: .both, maxSwipes: 2).exists)
         XCTAssertTrue(findStaticText(containing: sampleText, direction: .both, maxSwipes: 2).exists)
+    }
+
+    private func verifyOAuthConnector(
+        providerKey: String,
+        displayName: String,
+        detailText: String,
+        expectsBackendExchange: Bool
+    ) {
+        XCTAssertFalse(providerKey.isEmpty)
+        XCTAssertTrue(findStaticText(containing: displayName, direction: .both, maxSwipes: 6).exists)
+        XCTAssertTrue(findStaticText(containing: "需要 Client 設定", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: detailText, direction: .both, maxSwipes: 2).exists)
+
+        if expectsBackendExchange {
+            XCTAssertTrue(findStaticText(containing: "需要後端 token exchange。", direction: .both, maxSwipes: 1).exists)
+        }
     }
 
     private func tapTab(identifier: String, label: String) {

@@ -164,6 +164,7 @@ public struct SettingsView: View {
                 Text(option.displayName)
                     .font(.subheadline)
                     .fontWeight(.medium)
+                    .accessibilityIdentifier("settings.oauth.\(option.providerKey).name")
 
                 Spacer()
 
@@ -176,11 +177,13 @@ public struct SettingsView: View {
             Text(option.settingsDetailText)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier("settings.oauth.\(option.providerKey).detail")
 
             if option.requiresBackendTokenExchange {
                 Text("需要後端 token exchange。")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("settings.oauth.\(option.providerKey).backend-exchange")
             }
 
             if option.canStartAuthorization {
@@ -195,6 +198,8 @@ public struct SettingsView: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("settings.oauth.\(option.providerKey).row")
     }
 
     @ViewBuilder
