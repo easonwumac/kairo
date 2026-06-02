@@ -1,11 +1,17 @@
 # Kairo Skill Marketplace
 
-This folder is the static seed for a standalone skills repository.
+This folder is the static seed for the standalone skills repository.
 
-Target standalone repository:
+Standalone repository:
 
 ```text
 https://github.com/easonwumac/kairo-skills
+```
+
+GitHub Pages URL:
+
+```text
+https://easonwumac.github.io/kairo-skills/
 ```
 
 The Kairo app can import signed skill manifests from `manifests/`, while `skills.json`
@@ -15,4 +21,3 @@ sync when publishing updates:
 - `skills.json`: searchable catalog entries, screenshots, risk tier, permissions, and changelog.
 - `manifests/*.json`: signed `AgentSkillManifest` payloads importable through Access Skill Manager.
 - `assets/*.svg`: public card artwork for GitHub Pages and README previews.
-

@@ -28,7 +28,7 @@ Every downloadable or user-created skill should declare:
 
 ## Marketplace website target
 
-The static seed lives in `Website/skills` and is shaped to move into a standalone GitHub repository such as `https://github.com/easonwumac/kairo-skills`. The app repo keeps the tests and reference artifacts; the standalone skills repo can own live skill updates, GitHub Pages hosting, screenshots, and signed manifest downloads.
+The static seed lives in `Website/skills` and is mirrored to the standalone GitHub repository `https://github.com/easonwumac/kairo-skills`. The app repo keeps the tests and reference artifacts; the standalone skills repo owns live skill updates, GitHub Pages hosting, screenshots, and signed manifest downloads.
 
 The management website provides:
 
@@ -43,6 +43,6 @@ The management website provides:
 ## Near-term implementation order
 
 1. Make Shortcut demos and HomeKit controls first-class persisted skills.
-2. Publish or mirror `Website/skills` into a standalone `kairo-skills` GitHub repo with GitHub Pages.
+2. Wire the production app settings to fetch `skills.json` from the standalone repo.
 3. Add UI/e2e coverage for signed import, update, disable, remove, and prompt-context availability.
 4. Add production trust-store key rotation/revocation metadata.
