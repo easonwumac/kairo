@@ -33,7 +33,8 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Notifications 使用 UserNotifications，明確說明用途，Chat action 需 preview + confirmation 後才排程。
 - [ ] Photos / Documents 以使用者選取為主，不預設要求全庫存取。
 - [ ] HomeKit 只在有明確家庭控制 use case、entitlement、purpose copy 與 confirmation flow 後啟用。
-- [ ] Contacts / Location / Health 等高敏感權限只在功能需要時要求。
+- [x] Contacts 只在使用者明確要求建立聯絡人時使用 Contacts.framework，且需 runtime permission + preview + confirmation；不讀取或匯出通訊錄。
+- [ ] Location / Health 等高敏感權限只在功能需要時要求。
 - [ ] 權限被拒絕時有 fallback UI。
 
 ### 3. Memory privacy
@@ -92,6 +93,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] XCUITest covers chat local-notification preview and confirmation before scheduling.
 - [x] XCUITest covers chat EventKit reminder preview and confirmation before writing.
 - [x] XCUITest covers chat EventKit calendar preview and confirmation before writing.
+- [x] XCUITest covers chat Contacts.framework contact preview and confirmation before writing.
 - [ ] Marketplace trust store supports production key rotation and revocation metadata.
 - [ ] User-created skills require explicit capability selection and confirmation policy.
 - [ ] Skill update/remove flows are covered by UI/e2e tests.

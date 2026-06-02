@@ -5,6 +5,9 @@ import UserNotifications
 #if canImport(EventKit)
 import EventKit
 #endif
+#if canImport(Contacts)
+@preconcurrency import Contacts
+#endif
 
 public protocol PermissionService: Sendable {
     func status(for capability: CapabilityKey) async -> CapabilityStatus
@@ -47,7 +50,9 @@ public struct SystemPermissionService: PermissionService {
             return reminderStatus()
         case .notifications:
             return await notificationStatus()
-        case .contacts, .location, .homeKit, .externalConnectors:
+        case .contacts:
+            return contactStatus()
+        case .location, .homeKit, .externalConnectors:
             return .unknown
         }
     }
@@ -60,6 +65,8 @@ public struct SystemPermissionService: PermissionService {
             return try await eventKitService.requestReminderAccess() ? .available : .denied
         case .notifications:
             return try await requestNotifications()
+        case .contacts:
+            return try await requestContacts()
         default:
             return await status(for: capability)
         }
@@ -98,6 +105,40 @@ public struct SystemPermissionService: PermissionService {
         @unknown default:
             return .unknown
         }
+        #else
+        return .unsupported
+        #endif
+    }
+
+    private func contactStatus() -> CapabilityStatus {
+        #if canImport(Contacts)
+        let status = CNContactStore.authorizationStatus(for: .contacts)
+        if status == .authorized {
+            return .available
+        } else if status == .denied {
+            return .denied
+        } else if status == .restricted {
+            return .restricted
+        } else {
+            return .unknown
+        }
+        #else
+        return .unsupported
+        #endif
+    }
+
+    private func requestContacts() async throws -> CapabilityStatus {
+        #if canImport(Contacts)
+        let granted = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
+            CNContactStore().requestAccess(for: .contacts) { granted, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: granted)
+                }
+            }
+        }
+        return granted ? .available : .denied
         #else
         return .unsupported
         #endif

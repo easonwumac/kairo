@@ -18,7 +18,7 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 | URL schemes / Universal Links | `openURL` / links | 使用者可見 | 否 | 是 | 僅 handoff，不能隱藏控制 |
 | OAuth connectors | 官方 API + OAuth | 是 | 有限 / 後端輔助 | 後續 | Token / scope 安全 |
 | BGTaskScheduler | BGAppRefreshTask / BGProcessingTask | 系統與使用者設定 | 有限、非即時 | 是 | 不可宣稱 daemon |
-| Contacts | Contacts.framework | 是 | 否 | 後續 | 隱私高 |
+| Contacts | Contacts.framework | 是 | 否 | 後續 | 隱私高；Chat action 需 preview + confirm；不讀取/匯出聯絡人資料庫 |
 | Location | CoreLocation | 是 | 特定模式 | 後續 | 隱私高 |
 | Health | HealthKit | 是 + entitlement | 有限 | 不預設 | 隱私高 |
 | Home | HomeKit | 是 | 有限 | Scaffolded | 中 |
@@ -46,3 +46,4 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 11. Local notifications 只能透過 `UserNotifications` 和 runtime permission 排程；Chat 內的通知 action 必須先顯示 action preview，使用者按 Confirm 後才可執行。
 12. Reminder writes 只能透過 EventKit Reminders 和 runtime permission；Shortcut/recipe 節點預設只產生 drafts，Chat 內的 reminder action 必須先預覽再由使用者 Confirm。
 13. Calendar writes 只能透過 EventKit Calendar 和 runtime permission；Shortcut/recipe 節點預設只產生 calendar drafts，Chat 內的 calendar action 必須先預覽再由使用者 Confirm。
+14. Contacts writes 只能在使用者明確要求建立/新增聯絡人時，透過 Contacts.framework runtime permission、action preview 與 Confirm 執行；此階段不讀取、搜尋、同步或匯出通訊錄。

@@ -5,6 +5,9 @@ import UIKit
 #if canImport(UserNotifications)
 import UserNotifications
 #endif
+#if canImport(Contacts)
+@preconcurrency import Contacts
+#endif
 
 public struct SandboxActionDescriptor: Identifiable, Codable, Equatable, Sendable {
     public var id: String { kind.rawValue }
@@ -120,6 +123,15 @@ public struct SandboxActionCatalog: Sendable {
             displayName: "Create Calendar Event",
             description: "在行事曆權限允許後建立行事曆事件。",
             capability: .calendar,
+            permissionRequirement: .runtimePrompt,
+            riskTier: .tier2LowRiskWrite,
+            supportStatus: .scaffolded
+        ),
+        SandboxActionDescriptor(
+            kind: .createContactDraft,
+            displayName: "Create Contact",
+            description: "在聯絡人權限允許後建立使用者確認的聯絡人。",
+            capability: .contacts,
             permissionRequirement: .runtimePrompt,
             riskTier: .tier2LowRiskWrite,
             supportStatus: .scaffolded
@@ -343,6 +355,11 @@ public protocol CalendarScheduling: Sendable {
     func createCalendarEvent(from draft: CalendarEventDraft) async throws -> String
 }
 
+public protocol ContactScheduling: Sendable {
+    func requestAccess() async throws -> Bool
+    func createContact(from draft: ContactDraft) async throws -> String
+}
+
 public struct UnavailableNotificationScheduler: NotificationScheduling {
     public init() {}
 
@@ -474,6 +491,91 @@ public enum CalendarSchedulingError: Error, Equatable {
     case authorizationDenied
 }
 
+public struct UnavailableContactScheduler: ContactScheduling {
+    public init() {}
+
+    public func requestAccess() async throws -> Bool {
+        false
+    }
+
+    public func createContact(from draft: ContactDraft) async throws -> String {
+        throw ContactSchedulingError.unavailable
+    }
+}
+
+public struct AllowingContactScheduler: ContactScheduling {
+    private let identifier: String
+
+    public init(identifier: String = "contact-id") {
+        self.identifier = identifier
+    }
+
+    public func requestAccess() async throws -> Bool {
+        true
+    }
+
+    public func createContact(from draft: ContactDraft) async throws -> String {
+        identifier
+    }
+}
+
+#if canImport(Contacts)
+public struct ContactsFrameworkContactScheduler: ContactScheduling {
+    private let store: CNContactStore
+
+    public init(store: CNContactStore = CNContactStore()) {
+        self.store = store
+    }
+
+    public func requestAccess() async throws -> Bool {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
+            store.requestAccess(for: .contacts) { granted, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: granted)
+                }
+            }
+        }
+    }
+
+    public func createContact(from draft: ContactDraft) async throws -> String {
+        let contact = CNMutableContact()
+        contact.givenName = draft.givenName
+        contact.familyName = draft.familyName
+        contact.note = draft.notes ?? ""
+        contact.phoneNumbers = draft.phoneNumbers.map {
+            CNLabeledValue(label: CNLabelPhoneNumberMobile, value: CNPhoneNumber(stringValue: $0))
+        }
+        contact.emailAddresses = draft.emailAddresses.map {
+            CNLabeledValue(label: CNLabelHome, value: $0 as NSString)
+        }
+
+        let saveRequest = CNSaveRequest()
+        saveRequest.add(contact, toContainerWithIdentifier: nil)
+        try store.execute(saveRequest)
+        return contact.identifier
+    }
+}
+#else
+public struct ContactsFrameworkContactScheduler: ContactScheduling {
+    public init() {}
+
+    public func requestAccess() async throws -> Bool {
+        throw ContactSchedulingError.unavailable
+    }
+
+    public func createContact(from draft: ContactDraft) async throws -> String {
+        throw ContactSchedulingError.unavailable
+    }
+}
+#endif
+
+public enum ContactSchedulingError: Error, Equatable {
+    case unavailable
+    case authorizationDenied
+}
+
 #if canImport(UserNotifications)
 public struct UserNotificationScheduler: NotificationScheduling {
     public init() {}
@@ -514,6 +616,7 @@ public actor SandboxActionExecutor: ActionExecutor {
     private let eventKitService: EventKitService
     private let reminderScheduler: any ReminderScheduling
     private let calendarScheduler: any CalendarScheduling
+    private let contactScheduler: any ContactScheduling
     private let urlOpener: any URLOpener
     private let notificationScheduler: any NotificationScheduling
     private let homeControlService: any HomeControlService
@@ -524,6 +627,7 @@ public actor SandboxActionExecutor: ActionExecutor {
         eventKitService: EventKitService = EventKitService(),
         reminderScheduler: (any ReminderScheduling)? = nil,
         calendarScheduler: (any CalendarScheduling)? = nil,
+        contactScheduler: any ContactScheduling = ContactsFrameworkContactScheduler(),
         urlOpener: any URLOpener = NoOpURLOpener(),
         notificationScheduler: any NotificationScheduling = UnavailableNotificationScheduler(),
         homeControlService: any HomeControlService = UnavailableHomeControlService()
@@ -533,6 +637,7 @@ public actor SandboxActionExecutor: ActionExecutor {
         self.eventKitService = eventKitService
         self.reminderScheduler = reminderScheduler ?? EventKitReminderScheduler(eventKitService: eventKitService)
         self.calendarScheduler = calendarScheduler ?? EventKitCalendarScheduler(eventKitService: eventKitService)
+        self.contactScheduler = contactScheduler
         self.urlOpener = urlOpener
         self.notificationScheduler = notificationScheduler
         self.homeControlService = homeControlService
@@ -564,6 +669,12 @@ public actor SandboxActionExecutor: ActionExecutor {
             }
             let identifier = try await calendarScheduler.createCalendarEvent(from: draft)
             return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: identifier)
+        case (.createContactDraft, .contact(let draft)):
+            guard try await contactScheduler.requestAccess() else {
+                return ActionExecutionResult(completed: false, message: "Contacts permission was not granted.")
+            }
+            let identifier = try await contactScheduler.createContact(from: draft)
+            return ActionExecutionResult(completed: true, message: "Created contact.", createdIdentifier: identifier)
         case (.answer, _):
             return ActionExecutionResult(completed: true, message: "No external action required.")
         case (.openURL, .url(let urlString)):

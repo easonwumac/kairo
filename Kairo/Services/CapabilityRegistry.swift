@@ -81,6 +81,14 @@ public struct CapabilityRegistry: Sendable {
             isMVP: true
         ),
         Capability(
+            key: .contacts,
+            displayName: "Contacts",
+            description: "在使用者授權與確認後建立聯絡人；不讀取或匯出聯絡人資料庫。",
+            permission: .runtimePrompt,
+            status: .unknown,
+            isMVP: false
+        ),
+        Capability(
             key: .photos,
             displayName: "Photos",
             description: "處理使用者選取的圖片或截圖。",

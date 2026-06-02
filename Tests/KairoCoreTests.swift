@@ -87,6 +87,9 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertEqual(catalog.descriptor(for: .saveMemory)?.supportStatus, .implemented)
         XCTAssertEqual(catalog.descriptor(for: .sendNotification)?.supportStatus, .scaffolded)
+        XCTAssertEqual(catalog.descriptor(for: .createContactDraft)?.capability, .contacts)
+        XCTAssertEqual(catalog.descriptor(for: .createContactDraft)?.permissionRequirement, .runtimePrompt)
+        XCTAssertEqual(catalog.descriptor(for: .createContactDraft)?.riskTier, .tier2LowRiskWrite)
         XCTAssertEqual(catalog.descriptor(for: .unsupportedSandboxAction)?.supportStatus, .unsupportedBySandbox)
         XCTAssertTrue(catalog.supportedDescriptors.contains { $0.kind == .openURL })
         XCTAssertFalse(catalog.supportedDescriptors.contains { $0.kind == .unsupportedSandboxAction })
@@ -99,6 +102,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("Kairo tool/capability context"))
         XCTAssertTrue(context.contains("saveMemory"))
         XCTAssertTrue(context.contains("createReminderDraft"))
+        XCTAssertTrue(context.contains("createContactDraft"))
         XCTAssertTrue(context.contains("unsupportedSandboxAction"))
         XCTAssertTrue(context.contains("require visible user confirmation"))
         XCTAssertTrue(context.contains("Integration registry"))
@@ -261,6 +265,30 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertFalse(plan.candidates.contains { $0.id == "action-send-notification" })
     }
 
+    func testAgentToolInvocationPlannerSuggestsContactActionWithConfirmation() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "建立聯絡人：王小明 0912-345-678 ming@example.com"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-create-contact" })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.skillKind, .custom)
+        XCTAssertEqual(candidate.requiredCapabilities, [.contacts])
+        XCTAssertEqual(candidate.riskTier, .tier2LowRiskWrite)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertTrue(candidate.handoffSummary.contains("Contacts.framework"))
+        XCTAssertEqual(action.kind, .createContactDraft)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case let .contact(draft) = action.payload else {
+            return XCTFail("Expected contact payload.")
+        }
+        XCTAssertEqual(draft.givenName, "王小明")
+        XCTAssertEqual(draft.phoneNumbers, ["0912-345-678"])
+        XCTAssertEqual(draft.emailAddresses, ["ming@example.com"])
+        XCTAssertEqual(draft.notes, "Drafted from a Kairo chat request.")
+    }
+
     func testAgentToolInvocationPlannerRefusesToolUseWhenDisabled() {
         let planner = AgentToolInvocationPlanner(skillCatalog: .default)
 
@@ -368,6 +396,23 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-create-calendar-event" })
     }
 
+    func testAgentCoreAddsDeterministicContactPreviewAction() async throws {
+        let agent = AgentCore(
+            memoryStore: InMemoryMemoryStore(),
+            aiProvider: MockAIProvider(),
+            skillCatalog: .default,
+            integrationRegistry: IntegrationRegistry()
+        )
+
+        let response = try await agent.respond(to: "Create a contact: Alex Chen 555-0100 alex@example.com")
+
+        let action = try XCTUnwrap(response.proposedActions.first { $0.kind == .createContactDraft })
+        XCTAssertEqual(action.title, "Create Contact")
+        XCTAssertEqual(action.riskTier, .tier2LowRiskWrite)
+        XCTAssertTrue(action.requiresConfirmation)
+        XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-create-contact" })
+    }
+
 #if canImport(SwiftUI)
     @MainActor
     func testChatViewModelConfirmsNotificationActionThroughInjectedExecutor() async throws {
@@ -447,6 +492,33 @@ final class KairoCoreTests: XCTestCase {
         let executedActions = await executor.executedActions
         let confirmations = await executor.confirmations
         XCTAssertEqual(executedActions.map(\.kind), [.createCalendarDraft])
+        XCTAssertEqual(confirmations, [true])
+    }
+
+    @MainActor
+    func testChatViewModelConfirmsContactActionThroughInjectedExecutor() async throws {
+        let executor = MockActionExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: executor
+        )
+
+        await viewModel.send("建立聯絡人：王小明 0912-345-678 ming@example.com")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createContactDraft })
+
+        viewModel.previewAction(action)
+        XCTAssertEqual(viewModel.pendingAction?.kind, .createContactDraft)
+
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertTrue(viewModel.actionResultMessage?.contains("Created contact.") == true)
+        let executedActions = await executor.executedActions
+        let confirmations = await executor.confirmations
+        XCTAssertEqual(executedActions.map(\.kind), [.createContactDraft])
         XCTAssertEqual(confirmations, [true])
     }
 #endif
@@ -825,6 +897,57 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(result.message, "Calendar permission was not granted.")
         let createdTitles = await scheduler.createdDrafts.map(\.title)
         XCTAssertEqual(createdTitles, [])
+    }
+
+    func testSandboxActionExecutorCreatesContactThroughInjectedScheduler() async throws {
+        let scheduler = MockContactScheduler(granted: true)
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), contactScheduler: scheduler)
+        let action = AgentAction(
+            kind: .createContactDraft,
+            title: "Create Contact",
+            rationale: "User confirmed Kairo may write a Contacts.framework contact.",
+            payload: .contact(ContactDraft(
+                givenName: "Alex",
+                familyName: "Chen",
+                phoneNumbers: ["555-0100"],
+                emailAddresses: ["alex@example.com"],
+                notes: "From Kairo chat"
+            )),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(result.message, "Created contact.")
+        XCTAssertEqual(result.createdIdentifier, "contact-id")
+        let createdNames = await scheduler.createdDrafts.map { "\($0.givenName) \($0.familyName)" }
+        XCTAssertEqual(createdNames, ["Alex Chen"])
+    }
+
+    func testSandboxActionExecutorReportsContactPermissionDenied() async throws {
+        let scheduler = MockContactScheduler(granted: false)
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), contactScheduler: scheduler)
+        let action = AgentAction(
+            kind: .createContactDraft,
+            title: "Create Contact",
+            rationale: "User confirmed Kairo may write a Contacts.framework contact.",
+            payload: .contact(ContactDraft(
+                givenName: "Alex",
+                familyName: "Chen",
+                phoneNumbers: ["555-0100"],
+                emailAddresses: [],
+                notes: nil
+            )),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertFalse(result.completed)
+        XCTAssertEqual(result.message, "Contacts permission was not granted.")
+        let createdNames = await scheduler.createdDrafts.map(\.givenName)
+        XCTAssertEqual(createdNames, [])
     }
 
     func testSandboxActionCatalogIncludesHomeKitControlWithRuntimePermission() {
@@ -1823,6 +1946,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-notification-confirmation",
             "chat-reminder-confirmation",
             "chat-calendar-confirmation",
+            "chat-contact-confirmation",
             "memory-manual-save",
             "automations-recipe-center",
             "automations-shortcut-templates",
@@ -1855,6 +1979,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(calendarScenarioIdentifiers.contains("chat.action-preview"))
         XCTAssertTrue(calendarScenarioIdentifiers.contains("chat.action.confirm"))
         XCTAssertTrue(calendarScenarioIdentifiers.contains("chat.action-result"))
+        let contactScenarioIdentifiers = catalog.scenario(id: "chat-contact-confirmation")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(contactScenarioIdentifiers.contains("chat.proposed-action.createContactDraft"))
+        XCTAssertTrue(contactScenarioIdentifiers.contains("chat.action-preview"))
+        XCTAssertTrue(contactScenarioIdentifiers.contains("chat.action.confirm"))
+        XCTAssertTrue(contactScenarioIdentifiers.contains("chat.action-result"))
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.text") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.save") == true)
         XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.list") == true)
@@ -1943,6 +2072,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(appInfoPlist.contains("<string>kairo</string>"))
         XCTAssertTrue(appInfoPlist.contains("<key>NSCalendarsFullAccessUsageDescription</key>"))
         XCTAssertTrue(appInfoPlist.contains("<key>NSRemindersFullAccessUsageDescription</key>"))
+        XCTAssertTrue(appInfoPlist.contains("<key>NSContactsUsageDescription</key>"))
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
         XCTAssertTrue(smokeTest.contains("testSettingsLocalModelCatalogListsDownloadableModels"))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsQwenBenchmarkFlowRequiresDownload"))
@@ -1962,6 +2092,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmCalendarAction"))
         XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.createCalendarDraft""#))
         XCTAssertTrue(smokeTest.contains("Created calendar event."))
+        XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmContactAction"))
+        XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.createContactDraft""#))
+        XCTAssertTrue(smokeTest.contains("Created contact."))
         XCTAssertTrue(smokeTest.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
         XCTAssertTrue(smokeTest.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
         XCTAssertTrue(smokeTest.contains(#""root.tab.automations""#))
@@ -3421,6 +3554,24 @@ private actor MockCalendarScheduler: CalendarScheduling {
     }
 }
 
+private actor MockContactScheduler: ContactScheduling {
+    private(set) var createdDrafts: [ContactDraft] = []
+    private let granted: Bool
+
+    init(granted: Bool) {
+        self.granted = granted
+    }
+
+    func requestAccess() async throws -> Bool {
+        granted
+    }
+
+    func createContact(from draft: ContactDraft) async throws -> String {
+        createdDrafts.append(draft)
+        return "contact-id"
+    }
+}
+
 private actor MockActionExecutor: ActionExecutor {
     private(set) var executedActions: [AgentAction] = []
     private(set) var confirmations: [Bool] = []
@@ -3429,6 +3580,8 @@ private actor MockActionExecutor: ActionExecutor {
         executedActions.append(action)
         confirmations.append(confirmed)
         switch action.kind {
+        case .createContactDraft:
+            return ActionExecutionResult(completed: true, message: "Created contact.", createdIdentifier: "contact-id")
         case .createCalendarDraft:
             return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: "calendar-event-id")
         case .createReminderDraft:

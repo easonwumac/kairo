@@ -75,6 +75,17 @@ public struct ActionPreviewView: View {
                 if let notes = draft.notes { Text(notes).font(.caption) }
                 Text("\(draft.startDate.formatted()) – \(draft.endDate.formatted())").font(.caption)
             }
+        case .contact(let draft):
+            VStack(alignment: .leading, spacing: 4) {
+                Text(draft.displayName.isEmpty ? "Kairo Contact" : draft.displayName).font(.headline)
+                if !draft.phoneNumbers.isEmpty {
+                    Text("Phone: \(draft.phoneNumbers.joined(separator: ", "))").font(.caption)
+                }
+                if !draft.emailAddresses.isEmpty {
+                    Text("Email: \(draft.emailAddresses.joined(separator: ", "))").font(.caption)
+                }
+                if let notes = draft.notes { Text(notes).font(.caption) }
+            }
         case .notification(let draft):
             VStack(alignment: .leading, spacing: 4) {
                 Text(draft.title).font(.headline)

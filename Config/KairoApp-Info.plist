@@ -50,7 +50,7 @@
 	<key>NSHomeKitUsageDescription</key>
 	<string>Kairo 需要家庭權限，才能在你確認後執行 HomeKit 場景或配件控制。</string>
 	<key>NSContactsUsageDescription</key>
-	<string>Kairo 只會在你要求聯絡人相關協助時使用聯絡人資料，例如辨識收件人或產生草稿。</string>
+	<string>Kairo 只會在你明確要求並確認後，透過 Contacts.framework 建立聯絡人。</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Kairo 只會在你要求地點相關協助時使用目前位置。</string>
 </dict>

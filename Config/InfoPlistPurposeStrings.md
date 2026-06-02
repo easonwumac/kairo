@@ -18,7 +18,7 @@
 <string>Kairo 需要提醒事項完整權限，才能在你確認後透過 EventKit 建立提醒事項。</string>
 
 <key>NSContactsUsageDescription</key>
-<string>Kairo 需要聯絡人權限，才能在你要求時輔助辨識收件人或產生聯絡相關草稿。</string>
+<string>Kairo 只會在你明確要求並確認後，透過 Contacts.framework 建立聯絡人。</string>
 
 <key>NSPhotoLibraryUsageDescription</key>
 <string>Kairo 只會處理你選擇的圖片或截圖，用於摘要、OCR、任務抽取與記憶保存。</string>

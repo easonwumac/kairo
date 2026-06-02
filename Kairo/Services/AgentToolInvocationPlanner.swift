@@ -108,6 +108,9 @@ public struct AgentToolInvocationPlanner: Sendable {
         candidates.append(contentsOf: integrationRegistry.oauthConnectors.compactMap { integration in
             candidate(for: integration, normalizedText: normalizedText)
         })
+        if let contactCandidate = contactActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+            candidates.append(contactCandidate)
+        }
         if let calendarCandidate = calendarActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(calendarCandidate)
         }
@@ -269,6 +272,9 @@ public struct AgentToolInvocationPlanner: Sendable {
         guard !isReminderWriteRequest(normalizedText) else {
             return nil
         }
+        guard !isContactWriteRequest(normalizedText) else {
+            return nil
+        }
         guard containsAny(normalizedText, [
             "notify me",
             "notification",
@@ -304,6 +310,33 @@ public struct AgentToolInvocationPlanner: Sendable {
             riskTier: .tier2LowRiskWrite,
             requiresConfirmation: true,
             handoffSummary: "Use UserNotifications for a local notification after runtime permission and visible confirmation.",
+            action: action
+        )
+    }
+
+    private func contactActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard isContactWriteRequest(normalizedText) else {
+            return nil
+        }
+
+        let draft = contactDraft(from: userText)
+        let action = AgentAction(
+            kind: .createContactDraft,
+            title: "Create Contact",
+            rationale: "User asked Kairo to create a contact through the public Contacts.framework API.",
+            payload: .contact(draft),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        return AgentToolInvocationCandidate(
+            id: "action-create-contact",
+            title: "Create Contact",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.contacts],
+            riskTier: .tier2LowRiskWrite,
+            requiresConfirmation: true,
+            handoffSummary: "Use Contacts.framework after runtime permission and visible confirmation.",
             action: action
         )
     }
@@ -409,6 +442,22 @@ public struct AgentToolInvocationPlanner: Sendable {
         ])
     }
 
+    private func isContactWriteRequest(_ normalizedText: String) -> Bool {
+        containsAny(normalizedText, [
+            "create a contact",
+            "create contact",
+            "add a contact",
+            "add contact",
+            "new contact",
+            "建立聯絡人",
+            "新增聯絡人",
+            "加入聯絡人",
+            "建立联系人",
+            "新增联系人",
+            "加入联系人"
+        ])
+    }
+
     private func calendarTitle(from userText: String) -> String {
         var title = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefixes = [
@@ -470,6 +519,84 @@ public struct AgentToolInvocationPlanner: Sendable {
         return title.isEmpty ? "Kairo reminder" : title
     }
 
+    private func contactDraft(from userText: String) -> ContactDraft {
+        var content = userText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefixes = [
+            "Create a contact:",
+            "Create contact:",
+            "Add a contact:",
+            "Add contact:",
+            "New contact:",
+            "建立聯絡人：",
+            "建立聯絡人:",
+            "新增聯絡人：",
+            "新增聯絡人:",
+            "加入聯絡人：",
+            "加入聯絡人:",
+            "建立联系人：",
+            "建立联系人:",
+            "新增联系人：",
+            "新增联系人:",
+            "加入联系人：",
+            "加入联系人:"
+        ]
+
+        for prefix in prefixes where content.lowercased().hasPrefix(prefix.lowercased()) {
+            content.removeFirst(prefix.count)
+            content = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            break
+        }
+
+        let tokens = content.split(whereSeparator: \.isWhitespace).map(String.init)
+        var nameTokens: [String] = []
+        var phoneNumbers: [String] = []
+        var emailAddresses: [String] = []
+
+        for token in tokens {
+            let trimmed = token.trimmingCharacters(in: .contactTokenBoundary)
+            if isEmailToken(trimmed) {
+                emailAddresses.append(trimmed)
+            } else if isPhoneToken(trimmed) {
+                phoneNumbers.append(trimmed)
+            } else if !trimmed.isEmpty {
+                nameTokens.append(trimmed)
+            }
+        }
+
+        let name = nameTokens.joined(separator: " ")
+        let fallbackName = name.isEmpty ? "Kairo Contact" : name
+        let shouldSplitASCIIName = nameTokens.count >= 2 && nameTokens.allSatisfy { $0.unicodeScalars.allSatisfy(\.isASCII) }
+        let givenName: String
+        let familyName: String
+        if shouldSplitASCIIName {
+            givenName = nameTokens.dropLast().joined(separator: " ")
+            familyName = nameTokens.last ?? ""
+        } else {
+            givenName = fallbackName
+            familyName = ""
+        }
+
+        return ContactDraft(
+            givenName: givenName,
+            familyName: familyName,
+            phoneNumbers: phoneNumbers,
+            emailAddresses: emailAddresses,
+            notes: "Drafted from a Kairo chat request."
+        )
+    }
+
+    private func isEmailToken(_ token: String) -> Bool {
+        token.contains("@") && token.contains(".")
+    }
+
+    private func isPhoneToken(_ token: String) -> Bool {
+        let allowed = CharacterSet(charactersIn: "+-().")
+            .union(.decimalDigits)
+        let scalars = token.unicodeScalars
+        let digitCount = scalars.filter { CharacterSet.decimalDigits.contains($0) }.count
+        return digitCount >= 3 && scalars.allSatisfy { allowed.contains($0) }
+    }
+
     private func notificationBody(from userText: String) -> String {
         let trimmed = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -499,4 +626,9 @@ public struct AgentToolInvocationPlanner: Sendable {
 
         return result
     }
+}
+
+private extension CharacterSet {
+    static let contactTokenBoundary = CharacterSet.whitespacesAndNewlines
+        .union(.punctuationCharacters.subtracting(CharacterSet(charactersIn: "+-@._")))
 }

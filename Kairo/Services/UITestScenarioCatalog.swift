@@ -144,6 +144,28 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "chat-contact-confirmation",
+            title: "Chat Contact Confirmation",
+            userGoal: "Ask Kairo to create a Contacts.framework contact, preview the action, and confirm it through a visible user-controlled flow.",
+            requiredAccessibilityIdentifiers: [
+                "chat.composer.text",
+                "chat.composer.send",
+                "chat.message.assistant",
+                "chat.proposed-actions",
+                "chat.proposed-action.createContactDraft",
+                "chat.action-preview",
+                "chat.action.confirm",
+                "chat.action-result"
+            ],
+            assertions: [
+                "A contact-create request creates an assistant response.",
+                "The response exposes a createContactDraft action preview.",
+                "The preview is shown before Contacts.framework execution.",
+                "The contact is created only after visible confirmation.",
+                "The flow does not read, search, or export the user's Contacts database."
+            ]
+        ),
+        UITestScenario(
             id: "memory-manual-save",
             title: "Memory Manual Save",
             userGoal: "Open Memory, save a user-provided memory, and verify it appears in the list.",

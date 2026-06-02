@@ -83,13 +83,15 @@ Audit log 不應保存完整敏感 payload，除非使用者明確允許。
 
 Kairo may map user requests to installed skills or OAuth connector metadata before a model response is shown, but this is only a preview layer. Disabled skills are ignored, local/no-tool routing returns no tool candidates, Shortcut/OAuth matches remain visible handoffs, and action-backed skills still pass through `SafetyPolicyEngine` before any proposed action appears in chat. Chat stores `toolCandidates` separately from `proposedActions`; candidates are inspection/setup hints, not evidence that Kairo ran a Shortcut or touched an external account.
 
-## Reminder, Calendar, and Notification Boundaries
+## Reminder, Calendar, Contact, and Notification Boundaries
 
 Kairo may propose a local notification action when the user explicitly asks to be notified or alerted. Scheduling uses only Apple's public `UserNotifications` API, requires runtime notification authorization, and must be shown as an action preview in chat before the user confirms. Kairo must not silently schedule notifications from hidden model output, background monitoring, or unapproved Shortcut installation.
 
 Kairo may propose an EventKit reminder action when the user explicitly asks to create a reminder, todo, or reminder item. Reminder writes use only EventKit Reminders, require runtime reminder authorization, and must be shown as an action preview before confirmation. Shortcut nodes and Kairo Recipes can prepare reminder drafts, but they must not write EventKit reminders unless a later confirmed action performs the write.
 
 Kairo may propose an EventKit calendar action when the user explicitly asks to create a calendar event. Calendar writes use only EventKit Calendar, require runtime calendar authorization, and must be shown as an action preview before confirmation. Shortcut nodes and Kairo Recipes can prepare calendar drafts, but they must not write EventKit calendar events unless a later confirmed action performs the write.
+
+Kairo may propose a Contacts.framework contact-create action when the user explicitly asks to create, add, or save a contact. Contact writes require runtime Contacts authorization and must be shown as an action preview before confirmation. This pass does not read, search, sync, or export the user's Contacts database, and contact data is not used as hidden model context.
 
 ## Kairo Recipe Boundary
 

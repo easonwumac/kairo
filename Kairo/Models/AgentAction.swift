@@ -32,6 +32,7 @@ public enum AgentActionKind: String, Codable, CaseIterable, Sendable {
     case saveMemory
     case createReminderDraft
     case createCalendarDraft
+    case createContactDraft
     case sendNotification
     case openURL
     case controlHome
@@ -43,6 +44,7 @@ public enum AgentActionPayload: Codable, Equatable, Sendable {
     case text(String)
     case reminder(ReminderDraft)
     case calendarEvent(CalendarEventDraft)
+    case contact(ContactDraft)
     case notification(NotificationDraft)
     case url(String)
     case homeControl(HomeControlRequest)
@@ -61,6 +63,35 @@ public struct CalendarEventDraft: Codable, Equatable, Sendable {
     public var notes: String?
     public var startDate: Date
     public var endDate: Date
+}
+
+public struct ContactDraft: Codable, Equatable, Sendable {
+    public var givenName: String
+    public var familyName: String
+    public var phoneNumbers: [String]
+    public var emailAddresses: [String]
+    public var notes: String?
+
+    public init(
+        givenName: String,
+        familyName: String = "",
+        phoneNumbers: [String] = [],
+        emailAddresses: [String] = [],
+        notes: String? = nil
+    ) {
+        self.givenName = givenName
+        self.familyName = familyName
+        self.phoneNumbers = phoneNumbers
+        self.emailAddresses = emailAddresses
+        self.notes = notes
+    }
+
+    public var displayName: String {
+        [givenName, familyName]
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
 }
 
 public struct NotificationDraft: Codable, Equatable, Sendable {
