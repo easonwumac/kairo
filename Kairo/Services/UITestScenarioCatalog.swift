@@ -490,7 +490,10 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "access.skill.shortcut-save-shared-text.disable",
                 "access.skill.shortcut-save-shared-text.enable",
                 "access.skill.marketplace-weather-briefing.install",
+                "access.skill.marketplace-qwen-oauth-workflow.install",
                 "access.skills.message",
+                "access.skills.manifest-preview",
+                "access.skills.manifest-preview.compatibility",
                 "access.skills.manifest-preview.confirm",
                 "access.homekit.demos",
                 "access.homekit.demo.evening-scene",
@@ -503,6 +506,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "Shortcut demo skills are visible in the Skill Manager.",
                 "A built-in Shortcut skill can be disabled and enabled.",
                 "A marketplace skill can show a signed manifest preview and confirm install.",
+                "A marketplace skill with missing OAuth/model prerequisites is compatibility-blocked.",
                 "HomeKit demo section is visible.",
                 "A scene control demo is visible.",
                 "The demo exposes confirmation before execution."

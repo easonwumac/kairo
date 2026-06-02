@@ -79,9 +79,10 @@
 - Skill update preview：installed version、incoming version、changelog、confirm before replace。
 - Skill Manager UI：install / disable / enable / remove / inspect permissions。
 - 官方 Shortcut demo recipes 與 HomeKit controls 已映射為 built-in skills，並可透過 file-backed manager 持久化狀態。
-- `--ui-testing` deterministic Skill Manager：static marketplace refresh/install preview、disable/enable、chat action preview、chat Shortcut tool candidate、HomeKit preview e2e source coverage。
+- Compatibility gates：marketplace skills can require minimum iOS version、entitlements、OAuth providers、downloaded local models；missing requirements are preview-only and cannot install。
+- `--ui-testing` deterministic Skill Manager：static marketplace refresh/install preview、compatibility-blocked install、disable/enable、chat action preview、chat Shortcut tool candidate、HomeKit preview e2e source coverage。
 - 使用者可新增自訂 skill manifest。
 - Skill marketplace website：搜尋、分類、權限、風險、版本與下載。
 - 獨立 `kairo-skills` GitHub repo：專門放可更新 skill catalog、manifest、GitHub Pages。
 - Model catalog backend seed：`Website/models` + `LocalModelCatalogService`，準備鏡像到獨立 `kairo-models` repo，讓 app 以可見刷新取得 downloadable model list 與 runtime benchmark metadata。
-- Trust-store key rotation/revocation、checksum、compatibility gates。
+- Trust-store key rotation/revocation、production entitlement inspection、per-provider OAuth readiness details。

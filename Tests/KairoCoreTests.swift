@@ -1588,6 +1588,152 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(preview.summary, "Blocked downgrade for Weather Briefing from 3.0.0 to 2.9.0.")
     }
 
+    func testAgentSkillCompatibilityEvaluatorReportsMissingRuntimeRequirements() {
+        let skill = AgentSkill(
+            id: "marketplace-local-oauth-homekit",
+            displayName: "Local OAuth HomeKit Skill",
+            summary: "Requires a newer device context, HomeKit, OAuth, and a downloaded local model.",
+            kind: .custom,
+            source: .marketplace,
+            installationStatus: .available,
+            requiredCapabilities: [.homeKit, .externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/local-oauth-homekit.json")!,
+            compatibilityRequirements: AgentSkillCompatibilityRequirements(
+                minimumIOSVersion: "18.0",
+                requiredEntitlements: ["com.apple.developer.homekit"],
+                requiredOAuthProviderKeys: ["google"],
+                requiredLocalModelIDs: ["qwen3-5-0-8b-q4-k-m"]
+            )
+        )
+        let context = AgentSkillRuntimeContext(
+            iosVersion: "17.0",
+            grantedEntitlements: [],
+            connectedOAuthProviderKeys: [],
+            installedLocalModelIDs: []
+        )
+
+        let report = AgentSkillCompatibilityEvaluator(context: context).evaluate(skill)
+
+        XCTAssertFalse(report.isInstallable)
+        XCTAssertEqual(report.blockingIssues.map(\.kind), [
+            .minimumIOSVersion,
+            .missingEntitlement,
+            .missingOAuthProvider,
+            .missingLocalModel
+        ])
+        XCTAssertTrue(report.summary.contains("Requires iOS 18.0 or later"))
+        XCTAssertTrue(report.summary.contains("Missing entitlement com.apple.developer.homekit"))
+        XCTAssertTrue(report.summary.contains("Connect OAuth provider google"))
+        XCTAssertTrue(report.summary.contains("Download local model qwen3-5-0-8b-q4-k-m"))
+    }
+
+    func testAgentSkillManagerBlocksInstallWhenCompatibilityRequirementsAreMissing() async throws {
+        let storeURL = temporaryFileURL(named: "compatibility-blocked-agent-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let signingKey = P256.Signing.PrivateKey()
+        let trustStore = AgentSkillManifestTrustStore(trustedKeys: [
+            AgentSkillTrustedPublicKey(
+                keyID: "kairo-marketplace-2026",
+                algorithm: .p256SHA256,
+                publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
+            )
+        ])
+        var skill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-qwen-oauth-workflow",
+            displayName: "Qwen OAuth Workflow",
+            summary: "Requires Google OAuth and a downloaded Qwen model before install.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/qwen-oauth-workflow.json")!
+        )
+        skill.compatibilityRequirements = AgentSkillCompatibilityRequirements(
+            requiredOAuthProviderKeys: ["google"],
+            requiredLocalModelIDs: ["qwen3-5-0-8b-q4-k-m"]
+        )
+        let manifest = try AgentSkillManifest.signedForTesting(
+            skill: skill,
+            packageVersion: "2026.6",
+            keyID: "kairo-marketplace-2026",
+            signingKey: signingKey
+        )
+        let service = AgentSkillManagerService(
+            store: store,
+            builtInCatalog: .default,
+            trustStore: trustStore,
+            runtimeContext: AgentSkillRuntimeContext(
+                iosVersion: "17.0",
+                grantedEntitlements: [],
+                connectedOAuthProviderKeys: [],
+                installedLocalModelIDs: []
+            )
+        )
+
+        let preview = try await service.previewInstall(manifest: manifest)
+        XCTAssertEqual(preview.compatibilityReport.blockingIssues.map(\.kind), [
+            .missingOAuthProvider,
+            .missingLocalModel
+        ])
+        XCTAssertTrue(preview.summary.contains("Blocked"))
+
+        await XCTAssertThrowsErrorAsync(try await service.install(manifest: manifest)) { error in
+            guard case AgentSkillInstallError.compatibilityBlocked(let skillID, let issues) = error else {
+                return XCTFail("Expected compatibilityBlocked, got \(error)")
+            }
+            XCTAssertEqual(skillID, "marketplace-qwen-oauth-workflow")
+            XCTAssertEqual(issues.map(\.kind), [.missingOAuthProvider, .missingLocalModel])
+        }
+    }
+
+    func testAgentSkillManagerInstallsWhenCompatibilityRequirementsAreSatisfied() async throws {
+        let storeURL = temporaryFileURL(named: "compatibility-allowed-agent-skills.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let signingKey = P256.Signing.PrivateKey()
+        let trustStore = AgentSkillManifestTrustStore(trustedKeys: [
+            AgentSkillTrustedPublicKey(
+                keyID: "kairo-marketplace-2026",
+                algorithm: .p256SHA256,
+                publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
+            )
+        ])
+        var skill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-homekit-qwen",
+            displayName: "HomeKit Qwen Skill",
+            summary: "Requires HomeKit entitlement and a downloaded Qwen model.",
+            requiredCapabilities: [.homeKit],
+            downloadURL: URL(string: "https://skills.kairo.app/homekit-qwen.json")!,
+            kind: .homeKitControl
+        )
+        skill.compatibilityRequirements = AgentSkillCompatibilityRequirements(
+            minimumIOSVersion: "17.0",
+            requiredEntitlements: ["com.apple.developer.homekit"],
+            requiredLocalModelIDs: ["qwen3-5-0-8b-q4-k-m"]
+        )
+        let manifest = try AgentSkillManifest.signedForTesting(
+            skill: skill,
+            packageVersion: "2026.6",
+            keyID: "kairo-marketplace-2026",
+            signingKey: signingKey
+        )
+        let service = AgentSkillManagerService(
+            store: store,
+            builtInCatalog: .default,
+            trustStore: trustStore,
+            runtimeContext: AgentSkillRuntimeContext(
+                iosVersion: "17.2",
+                grantedEntitlements: ["com.apple.developer.homekit"],
+                connectedOAuthProviderKeys: [],
+                installedLocalModelIDs: ["qwen3-5-0-8b-q4-k-m"]
+            )
+        )
+
+        let preview = try await service.previewInstall(manifest: manifest)
+        XCTAssertTrue(preview.compatibilityReport.isInstallable)
+        XCTAssertTrue(preview.compatibilityReport.blockingIssues.isEmpty)
+
+        let installed = try await service.install(manifest: manifest)
+        XCTAssertEqual(installed.id, "marketplace-homekit-qwen")
+        XCTAssertEqual(installed.installationStatus, .installed)
+    }
+
     func testFileBackedAgentSkillManagerPersistsInstallDisableEnableAndRemoveLifecycle() async throws {
         let storeURL = temporaryFileURL(named: "agent-skills.json")
         let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
@@ -1803,7 +1949,11 @@ final class KairoCoreTests: XCTestCase {
               "installSurface": "Access Skill Manager",
               "manifestURL": "manifests/homekit-scene-guard.json",
               "screenshots": ["assets/homekit-scene-card.svg"],
-              "changelog": ["Adds scene and accessory metadata."]
+              "changelog": ["Adds scene and accessory metadata."],
+              "compatibilityRequirements": {
+                "minimumIOSVersion": "17.0",
+                "requiredEntitlements": ["com.apple.developer.homekit"]
+              }
             }
           ]
         }
@@ -1834,6 +1984,9 @@ final class KairoCoreTests: XCTestCase {
             weather.downloadURL?.absoluteString,
             "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json"
         )
+        let homeKit = try XCTUnwrap(remoteCatalog.catalog.skill(id: "marketplace-homekit-scene-guard"))
+        XCTAssertEqual(homeKit.compatibilityRequirements.minimumIOSVersion, "17.0")
+        XCTAssertEqual(homeKit.compatibilityRequirements.requiredEntitlements, ["com.apple.developer.homekit"])
     }
 
     func testAgentSkillMarketplaceCatalogServiceFetchesManifestForDownloadableSkill() async throws {
@@ -2103,6 +2256,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import.button""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.message""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-preview""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-preview.compatibility""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-preview.compatibility.\(issue.kind.rawValue)""#))
+        XCTAssertTrue(permissionHubView.contains("manifestInstallPreview.compatibilityReport.isInstallable"))
+        XCTAssertTrue(permissionHubView.contains("AgentSkillInstallError.compatibilityBlocked"))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-preview.confirm""#))
         XCTAssertTrue(permissionHubView.contains("try await skillManagerService.previewInstall(jsonString: manifestImportText)"))
         XCTAssertTrue(permissionHubView.contains("try await skillManagerService.install(manifest: manifestInstallPreview.manifest)"))
@@ -2172,10 +2329,15 @@ final class KairoCoreTests: XCTestCase {
         let weatherSkill = try XCTUnwrap(remoteCatalog.catalog.skill(id: "marketplace-weather-briefing"))
         let manifest = try await marketplaceCatalogService.fetchManifest(for: weatherSkill)
         let preview = try await skillManagerService.previewInstall(manifest: manifest)
+        let qwenWorkflowSkill = try XCTUnwrap(remoteCatalog.catalog.skill(id: "marketplace-qwen-oauth-workflow"))
+        let qwenWorkflowManifest = try await marketplaceCatalogService.fetchManifest(for: qwenWorkflowSkill)
+        let qwenWorkflowPreview = try await skillManagerService.previewInstall(manifest: qwenWorkflowManifest)
 
         XCTAssertEqual(remoteCatalog.sourceRepository.absoluteString, "https://github.com/easonwumac/kairo-skills")
         XCTAssertEqual(weatherSkill.downloadURL?.absoluteString, "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json")
         XCTAssertEqual(preview.summary, "Install Weather Briefing 2.1.0.")
+        XCTAssertEqual(qwenWorkflowPreview.compatibilityReport.blockingIssues.map(\.kind), [.missingOAuthProvider, .missingLocalModel])
+        XCTAssertTrue(qwenWorkflowPreview.summary.contains("Blocked Qwen OAuth Workflow"))
 
         let modelCatalog = try await modelCatalogService.fetchCatalog()
         XCTAssertEqual(modelCatalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
@@ -2368,7 +2530,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text.disable") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text.enable") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.marketplace-weather-briefing.install") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.marketplace-qwen-oauth-workflow.install") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.message") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-preview") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-preview.compatibility") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-preview.confirm") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demos") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demo.evening-scene") == true)
@@ -2521,7 +2686,12 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains(#""access.skill.shortcut-save-shared-text.disable""#))
         XCTAssertTrue(smokeTest.contains(#""access.skill.shortcut-save-shared-text.enable""#))
         XCTAssertTrue(smokeTest.contains(#""access.skill.marketplace-weather-briefing.install""#))
+        XCTAssertTrue(smokeTest.contains("testAccessSkillManagerBlocksIncompatibleMarketplaceSkillInstall"))
+        XCTAssertTrue(smokeTest.contains(#""access.skill.marketplace-qwen-oauth-workflow.install""#))
         XCTAssertTrue(smokeTest.contains(#""access.skills.message""#))
+        XCTAssertTrue(smokeTest.contains(#""access.skills.manifest-preview.compatibility""#))
+        XCTAssertTrue(smokeTest.contains("Connect OAuth provider google"))
+        XCTAssertTrue(smokeTest.contains("Download local model qwen3-5-0-8b-q4-k-m"))
         XCTAssertTrue(smokeTest.contains(#""access.skills.manifest-preview.confirm""#))
         XCTAssertTrue(smokeTest.contains(#""access.homekit.demo.evening-scene.confirm""#))
         XCTAssertTrue(smokeTest.contains("access.homekit.demos"))

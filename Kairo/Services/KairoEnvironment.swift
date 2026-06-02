@@ -103,7 +103,13 @@ public struct KairoEnvironment: Sendable {
         )
         let skillManagerService = AgentSkillManagerService(
             store: skillStore,
-            builtInCatalog: .defaultWithMarketplaceSamples
+            builtInCatalog: .defaultWithMarketplaceSamples,
+            runtimeContext: AgentSkillRuntimeContext(
+                iosVersion: "17.0",
+                grantedEntitlements: [],
+                connectedOAuthProviderKeys: [],
+                installedLocalModelIDs: []
+            )
         )
         let marketplaceCatalogService = try uiTestingMarketplaceCatalogService()
         let localModelCatalogService = try uiTestingLocalModelCatalogService()
@@ -176,6 +182,7 @@ public struct KairoEnvironment: Sendable {
     private static func uiTestingMarketplaceCatalogService() throws -> AgentSkillMarketplaceCatalogService {
         let indexURL = AgentSkillMarketplaceCatalogService.defaultIndexURL
         let manifestURL = URL(string: "manifests/weather-briefing.json", relativeTo: indexURL)!.absoluteURL
+        let qwenWorkflowManifestURL = URL(string: "manifests/qwen-oauth-workflow.json", relativeTo: indexURL)!.absoluteURL
         var weatherSkill = AgentSkill.marketplaceTemplate(
             id: "marketplace-weather-briefing",
             displayName: "Weather Briefing",
@@ -191,6 +198,24 @@ public struct KairoEnvironment: Sendable {
             packageVersion: "2026.6"
         )
         let manifestJSON = try AgentSkillManifest.encodeJSONString(manifest)
+        var qwenWorkflowSkill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-qwen-oauth-workflow",
+            displayName: "Qwen OAuth Workflow",
+            summary: "Requires Google OAuth and a downloaded Qwen model before it can be installed.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: qwenWorkflowManifestURL
+        )
+        qwenWorkflowSkill.version = "1.0.0"
+        qwenWorkflowSkill.author = "Kairo Marketplace"
+        qwenWorkflowSkill.compatibilityRequirements = AgentSkillCompatibilityRequirements(
+            requiredOAuthProviderKeys: ["google"],
+            requiredLocalModelIDs: ["qwen3-5-0-8b-q4-k-m"]
+        )
+        let qwenWorkflowManifest = try AgentSkillManifest.signedForTesting(
+            skill: qwenWorkflowSkill,
+            packageVersion: "2026.6"
+        )
+        let qwenWorkflowManifestJSON = try AgentSkillManifest.encodeJSONString(qwenWorkflowManifest)
         let indexJSON = """
         {
           "marketplaceVersion": "2026.6",
@@ -212,13 +237,34 @@ public struct KairoEnvironment: Sendable {
               "manifestURL": "manifests/weather-briefing.json",
               "screenshots": ["assets/weather-briefing-card.svg"],
               "changelog": ["Adds storm alerts."]
+            },
+            {
+              "id": "marketplace-qwen-oauth-workflow",
+              "displayName": "Qwen OAuth Workflow",
+              "summary": "Requires Google OAuth and a downloaded Qwen model before it can be installed.",
+              "version": "1.0.0",
+              "author": "Kairo Marketplace",
+              "category": "Local Model",
+              "kind": "custom",
+              "permissions": ["externalConnectors"],
+              "riskTier": "Tier 2: local model plus OAuth-gated request",
+              "requiresConfirmation": true,
+              "installSurface": "Access Skill Manager",
+              "manifestURL": "manifests/qwen-oauth-workflow.json",
+              "screenshots": ["assets/shortcut-toolkit-card.svg"],
+              "changelog": ["Adds compatibility gates for OAuth and local model availability."],
+              "compatibilityRequirements": {
+                "requiredOAuthProviderKeys": ["google"],
+                "requiredLocalModelIDs": ["qwen3-5-0-8b-q4-k-m"]
+              }
             }
           ]
         }
         """
         let httpClient = StaticHTTPClient(routes: [
             indexURL: StaticHTTPResponse(body: indexJSON),
-            manifestURL: StaticHTTPResponse(body: manifestJSON)
+            manifestURL: StaticHTTPResponse(body: manifestJSON),
+            qwenWorkflowManifestURL: StaticHTTPResponse(body: qwenWorkflowManifestJSON)
         ])
 
         return AgentSkillMarketplaceCatalogService(indexURL: indexURL, httpClient: httpClient)
@@ -243,10 +289,6 @@ public struct KairoEnvironment: Sendable {
         let shareIngestionQueue = try await JSONFileShareIngestionQueue(fileURL: paths.shareIngestionQueueURL)
         let kairoRecipeStore = try await FileBackedKairoRecipeStore(fileURL: paths.kairoRecipeStoreURL)
         let agentSkillStore = try await FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)
-        let agentSkillManagerService = AgentSkillManagerService(
-            store: agentSkillStore,
-            builtInCatalog: .defaultWithMarketplaceSamples
-        )
         let localModelCatalog = LocalModelCatalog.kairoDefault
         let localModelInstallRegistry = try await FileBackedLocalModelInstallRegistry(
             fileURL: paths.localModelInstallRegistryURL
@@ -271,6 +313,17 @@ public struct KairoEnvironment: Sendable {
         )
         let credentialStore = KeychainCredentialStore()
         let aiProvider = OpenAIProvider(credentialStore: credentialStore)
+        let connectedOAuthProviderKeys = try await connectedOAuthProviderKeys(credentialStore: credentialStore)
+        let runtimeContext = AgentSkillRuntimeContext.current(
+            grantedEntitlements: [],
+            connectedOAuthProviderKeys: connectedOAuthProviderKeys,
+            installedLocalModelIDs: await localModelInstallRegistry.installedRecords().map(\.modelID)
+        )
+        let agentSkillManagerService = AgentSkillManagerService(
+            store: agentSkillStore,
+            builtInCatalog: .defaultWithMarketplaceSamples,
+            runtimeContext: runtimeContext
+        )
         let agentSkillMarketplaceCatalogService = AgentSkillMarketplaceCatalogService.defaultStandaloneRepository
         let localModelCatalogService = LocalModelCatalogService.defaultStandaloneRepository
         let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(fileURL: paths.oauthConnectorCallbackPreviewsURL)
@@ -303,6 +356,17 @@ public struct KairoEnvironment: Sendable {
             localModelBenchmarkService: localModelBenchmarkService,
             actionExecutor: actionExecutor
         )
+    }
+
+    private static func connectedOAuthProviderKeys(credentialStore: CredentialStore) async throws -> [String] {
+        var providerKeys: [String] = []
+        for integration in IntegrationRegistry().oauthConnectors {
+            guard let providerKey = integration.oauth?.providerKey else { continue }
+            if try await credentialStore.readSecret(for: CredentialKey.oauthTokenSet(providerKey: providerKey)) != nil {
+                providerKeys.append(providerKey)
+            }
+        }
+        return Array(Set(providerKeys)).sorted()
     }
 }
 

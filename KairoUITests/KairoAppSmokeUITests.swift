@@ -264,6 +264,29 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findStaticText(containing: "Recipe ID", direction: .both, maxSwipes: 2).exists)
     }
 
+    func testAccessSkillManagerBlocksIncompatibleMarketplaceSkillInstall() throws {
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.access", label: "Access")
+
+        let refreshMarketplace = findButton("access.skills.marketplace-refresh")
+        XCTAssertTrue(refreshMarketplace.exists)
+        refreshMarketplace.tap()
+
+        let installQwenWorkflow = findButton("access.skill.marketplace-qwen-oauth-workflow.install", direction: .down, maxSwipes: 8)
+        XCTAssertTrue(installQwenWorkflow.exists)
+        installQwenWorkflow.tap()
+
+        XCTAssertTrue(findElement("access.skills.manifest-preview", direction: .both, maxSwipes: 2).exists)
+        XCTAssertTrue(findElement("access.skills.manifest-preview.compatibility", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Blocked Qwen OAuth Workflow", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Connect OAuth provider google", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Download local model qwen3-5-0-8b-q4-k-m", direction: .both, maxSwipes: 1).exists)
+
+        let confirmInstall = findButton("access.skills.manifest-preview.confirm", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(confirmInstall.exists)
+        XCTAssertFalse(confirmInstall.isEnabled)
+    }
+
     func testMemoryTabCanSaveManualMemory() throws {
         assertPrimaryDrawerItemsExist()
         selectDrawerSection(identifier: "root.drawer.memory", label: "Memory")

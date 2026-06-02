@@ -151,6 +151,18 @@ public struct PermissionHubView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
+            Text(manifestInstallPreview.compatibilityReport.summary)
+                .font(.caption2)
+                .foregroundStyle(manifestInstallPreview.compatibilityReport.isInstallable ? Color.secondary : Color.red)
+                .accessibilityIdentifier("access.skills.manifest-preview.compatibility")
+
+            ForEach(manifestInstallPreview.compatibilityReport.issues) { issue in
+                Text("- \(issue.message)")
+                    .font(.caption2)
+                    .foregroundStyle(issue.severity == .blocking ? .red : .secondary)
+                    .accessibilityIdentifier("access.skills.manifest-preview.compatibility.\(issue.kind.rawValue)")
+            }
+
             if manifestInstallPreview.changelog.isEmpty {
                 Text("No changelog provided.")
                     .font(.caption2)
@@ -171,7 +183,10 @@ public struct PermissionHubView: View {
                 Label("Confirm Install", systemImage: "checkmark.circle")
             }
             .font(.caption)
-            .disabled(manifestInstallPreview.installationChange == .downgradeBlocked)
+            .disabled(
+                manifestInstallPreview.installationChange == .downgradeBlocked
+                || !manifestInstallPreview.compatibilityReport.isInstallable
+            )
             .accessibilityIdentifier("access.skills.manifest-preview.confirm")
         }
     }
@@ -323,6 +338,8 @@ public struct PermissionHubView: View {
             skillManagerMessage = "\(installed.displayName) installed from signed manifest."
         } catch AgentSkillInstallError.versionDowngrade(_, let installedVersion, let incomingVersion) {
             skillManagerMessage = "Blocked downgrade from \(installedVersion) to \(incomingVersion)."
+        } catch AgentSkillInstallError.compatibilityBlocked(_, let issues) {
+            skillManagerMessage = issues.map(\.message).joined(separator: "; ")
         } catch AgentSkillManifestValidationError.invalidSignature {
             skillManagerMessage = "Manifest signature is invalid."
         } catch {
