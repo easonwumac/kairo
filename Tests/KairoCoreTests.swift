@@ -2339,13 +2339,22 @@ final class KairoCoreTests: XCTestCase {
     func testSettingsViewDefinesShortcutDemoSectionAccessibilityIdentifiers() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
+        let shortcutDemosSection = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Views/SettingsShortcutDemosSection.swift"),
+            encoding: .utf8
+        )
 
-        XCTAssertTrue(settingsView.contains("Shortcut Demos"))
-        XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demos""#))
-        XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id)""#))
-        XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id).input""#))
-        XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id).output""#))
-        XCTAssertTrue(settingsView.contains(#""settings.shortcuts.demo.\(recipe.id).sample""#))
+        XCTAssertLessThan(settingsView.split(separator: "\n").count, 900)
+        XCTAssertTrue(settingsView.contains("SettingsShortcutDemosSection("))
+        XCTAssertFalse(settingsView.contains("private func shortcutDemoRow"))
+        XCTAssertTrue(shortcutDemosSection.contains("struct SettingsShortcutDemosSection"))
+        XCTAssertTrue(shortcutDemosSection.contains("ShortcutDemoCatalog.default.recipes"))
+        XCTAssertTrue(shortcutDemosSection.contains("Shortcut Demos"))
+        XCTAssertTrue(shortcutDemosSection.contains(#""settings.shortcuts.demos""#))
+        XCTAssertTrue(shortcutDemosSection.contains(#""settings.shortcuts.demo.\(recipe.id)""#))
+        XCTAssertTrue(shortcutDemosSection.contains(#""settings.shortcuts.demo.\(recipe.id).input""#))
+        XCTAssertTrue(shortcutDemosSection.contains(#""settings.shortcuts.demo.\(recipe.id).output""#))
+        XCTAssertTrue(shortcutDemosSection.contains(#""settings.shortcuts.demo.\(recipe.id).sample""#))
     }
 
     func testSettingsViewDefinesLocalModelSectionAccessibilityIdentifiers() throws {
