@@ -3637,7 +3637,7 @@ final class KairoCoreTests: XCTestCase {
             redirectURI: "kairo://oauth/github/callback",
             credentialStore: credentials
         )
-        try await githubAuth.storeTokens(OAuthTokenSet(accessToken: "github-token", scopes: ["repo"]))
+        try await githubAuth.storeTokens(OAuthTokenSet(accessToken: "dummy", scopes: ["repo"]))
 
         let center = OAuthConnectorLoginCenter(
             registry: registry,
@@ -3748,7 +3748,7 @@ final class KairoCoreTests: XCTestCase {
         )
         XCTAssertEqual(authorizationCode, "abc")
 
-        let tokens = OAuthTokenSet(accessToken: "github-access", refreshToken: "github-refresh", scopes: ["repo"])
+        let tokens = OAuthTokenSet(accessToken: "dummy", refreshToken: "dummy", scopes: ["repo"])
         try await service.storeTokens(tokens)
         let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "github"))
         let loaded = try await service.loadTokens()
