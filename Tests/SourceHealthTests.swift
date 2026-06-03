@@ -144,6 +144,66 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(actionStripSource.contains("No write"))
     }
 
+    func testPrivacyManifestMatchesNoCollectionNoTrackingBetaClaim() throws {
+        let root = packageRootURL()
+        let privacyManifestURL = root.appendingPathComponent("Kairo/Resources/PrivacyInfo.xcprivacy")
+        let data = try Data(contentsOf: privacyManifestURL)
+        let manifest = try XCTUnwrap(
+            PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
+        )
+
+        XCTAssertEqual(manifest["NSPrivacyTracking"] as? Bool, false)
+        XCTAssertTrue((manifest["NSPrivacyTrackingDomains"] as? [Any])?.isEmpty == true)
+        XCTAssertTrue((manifest["NSPrivacyCollectedDataTypes"] as? [Any])?.isEmpty == true)
+
+        let accessedAPITypes = try XCTUnwrap(manifest["NSPrivacyAccessedAPITypes"] as? [[String: Any]])
+        XCTAssertEqual(accessedAPITypes.count, 1)
+        XCTAssertEqual(accessedAPITypes.first?["NSPrivacyAccessedAPIType"] as? String, "NSPrivacyAccessedAPICategoryUserDefaults")
+        XCTAssertEqual(accessedAPITypes.first?["NSPrivacyAccessedAPITypeReasons"] as? [String], ["CA92.1"])
+    }
+
+    func testAppReviewCopyAndEntitlementsStayWithinBetaClaims() throws {
+        let root = packageRootURL()
+        let entitlements = try String(
+            contentsOf: root.appendingPathComponent("Config/KairoApp.entitlements"),
+            encoding: .utf8
+        )
+        let readiness = try String(
+            contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(entitlements.contains("com.apple.security.application-groups"))
+        XCTAssertFalse(entitlements.contains("com.apple.developer.homekit"))
+        XCTAssertTrue(readiness.contains("Privacy Labels scope"))
+        XCTAssertTrue(readiness.contains("no collected data"))
+        XCTAssertTrue(readiness.contains("no tracking"))
+        XCTAssertTrue(readiness.contains("Local model catalog/download/select/delete are present, but iOS production local inference is not complete."))
+        XCTAssertTrue(readiness.contains("HomeKit is limited to preview/demo/test scaffolding in this beta."))
+        XCTAssertTrue(readiness.contains("Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions."))
+        XCTAssertTrue(readiness.contains("Kairo does not create, edit, install, or reorder Apple Shortcuts silently."))
+    }
+
+    func testTrustStoreRunbookDocumentsRotationWithoutPrivateArtifacts() throws {
+        let root = packageRootURL()
+        let runbook = try String(
+            contentsOf: root.appendingPathComponent("docs/TRUST_STORE_RUNBOOK.md"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(runbook.contains("AgentSkillManifestTrustStore"))
+        XCTAssertTrue(runbook.contains("LocalModelCatalogTrustStore"))
+        XCTAssertTrue(runbook.contains("Planned Rotation"))
+        XCTAssertTrue(runbook.contains("Emergency Revocation"))
+        XCTAssertTrue(runbook.contains("Release Gate"))
+        XCTAssertTrue(runbook.contains("Real-device evidence is still required for runtime claims"))
+        XCTAssertTrue(runbook.contains("must not contain private signing keys"))
+        XCTAssertTrue(runbook.contains(".gguf"))
+        XCTAssertFalse(runbook.contains("-----BEGIN"))
+        XCTAssertFalse(runbook.localizedCaseInsensitiveContains("private signing key:"))
+        XCTAssertFalse(runbook.localizedCaseInsensitiveContains("api token:"))
+    }
+
     func testShortcutDemoCatalogStaysSplitAcrossFocusedFiles() throws {
         let root = packageRootURL()
         let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)

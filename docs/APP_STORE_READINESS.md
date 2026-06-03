@@ -43,8 +43,9 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 - **Real device blocked:** `devicectl` currently lists paired devices as `unavailable`, so this pass did not produce real-device sign-off.
 - **Copy QA scope:** Review notes avoid claiming iOS production local inference, live HomeKit control, private cross-app data reads, arbitrary UI control, ChatGPT web-session reuse, or silent Apple Shortcuts creation.
-- **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
+- **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking, and package source-health tests parse the privacy manifest plus entitlement/review-note boundaries. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
 - **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
+- **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, unsupported, or invalid signing keys. `docs/TRUST_STORE_RUNBOOK.md` defines the production rotation/revocation gate, but production signed catalogs and release public-key material still need publication in the standalone repos.
 
 ### 1. Public API only
 
@@ -129,6 +130,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] XCUITest covers chat Messages handoff preview and visible confirmation before opening `sms:`.
 - [x] XCUITest covers chat Apple Maps directions preview and visible handoff confirmation before opening Maps.
 - [x] Marketplace trust store supports key rotation and revocation metadata, including active/revoked state, validity windows, revoked timestamps, and revoked reasons.
+- [x] Marketplace/model catalog trust-store rotation and emergency revocation runbook is documented in `docs/TRUST_STORE_RUNBOOK.md`.
 - [x] User-created skills require explicit capability selection and confirmation policy before a disabled local draft can be saved.
 - [x] Skill remove flow has simulator UI smoke coverage for user-created drafts; signed marketplace update preview/confirm has simulator XCUITest smoke coverage.
 - [x] Chat uses live Skill Manager effective catalog, including disabled and compatibility-blocked skill state.
@@ -149,6 +151,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Settings UI 可刪除已安裝模型並清除 selected-model state。
 - [x] Settings download preview 顯示模型大小、授權、用途、儲存/備份政策與刪除方式。
 - [x] Complete final copy QA for App Review；copy 已保留 iOS local inference / HomeKit live control / private cross-app access / silent Shortcut modification 的限制。
+- [x] Package source-health tests cover no-collected-data/no-tracking privacy manifest claims, absence of HomeKit entitlement, and review-note boundary copy for local inference, HomeKit, cross-app access, and silent Shortcut modification.
 - [x] Core downloader supports HTTPS + checksum verification.
 - [x] Core settings can persist and validate the user-selected installed model.
 - [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
