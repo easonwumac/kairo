@@ -134,6 +134,130 @@ final class KairoShortcutNodeTests: XCTestCase {
         }
     }
 
+    func testShortcutSafetyCriticalNodesReturnStableSchemaAndConfirmationFields() async throws {
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let safetyCases: [(ShortcutNodeKind, ShortcutNodeInput, String, AgentActionKind?)] = [
+            (
+                .createReminderDraft,
+                ShortcutNodeInput(text: "Reminder: Review beta safety checklist", sourceName: "Safety Shortcut"),
+                "reminderRequiresConfirmation",
+                nil
+            ),
+            (
+                .createCalendarDraft,
+                ShortcutNodeInput(
+                    text: "Meeting: Beta safety review",
+                    sourceName: "Safety Shortcut",
+                    variables: [
+                        "startDateISO": "2026-06-03T09:00:00Z",
+                        "endDateISO": "2026-06-03T10:00:00Z"
+                    ]
+                ),
+                "calendarRequiresConfirmation",
+                nil
+            ),
+            (
+                .createContactDraft,
+                ShortcutNodeInput(
+                    text: "Name: Alex Chen\nPhone: +1-555-0100",
+                    sourceName: "Safety Shortcut"
+                ),
+                "contactRequiresConfirmation",
+                .createContactDraft
+            ),
+            (
+                .createEmailDraft,
+                ShortcutNodeInput(
+                    text: "To: ops@example.com\nSubject: Beta\nPlease review Kairo.",
+                    sourceName: "Safety Shortcut"
+                ),
+                "emailRequiresConfirmation",
+                .composeEmailDraft
+            ),
+            (
+                .prepareMessageHandoff,
+                ShortcutNodeInput(
+                    text: "Please review the Kairo beta.",
+                    sourceName: "Safety Shortcut",
+                    variables: ["recipient": "0912345678", "body": "Please review the Kairo beta."]
+                ),
+                "messageRequiresConfirmation",
+                .openMessageHandoff
+            ),
+            (
+                .preparePhoneCallHandoff,
+                ShortcutNodeInput(
+                    text: "Call Alex about Kairo.",
+                    sourceName: "Safety Shortcut",
+                    variables: ["phoneNumber": "+1 (555) 0100", "label": "Alex"]
+                ),
+                "phoneCallRequiresConfirmation",
+                .openPhoneCallHandoff
+            ),
+            (
+                .prepareWebSearchHandoff,
+                ShortcutNodeInput(
+                    text: "SwiftUI App Intents examples",
+                    sourceName: "Safety Shortcut",
+                    variables: ["query": "SwiftUI App Intents examples"]
+                ),
+                "webSearchRequiresConfirmation",
+                .openWebSearchHandoff
+            ),
+            (
+                .previewHomeAction,
+                ShortcutNodeInput(
+                    text: "Turn on the office desk lamp",
+                    sourceName: "Safety Shortcut",
+                    variables: [
+                        "homeName": "Home",
+                        "roomName": "Office",
+                        "targetName": "Desk Lamp",
+                        "command": "setPower",
+                        "value": "true"
+                    ]
+                ),
+                "homeActionRequiresConfirmation",
+                .controlHome
+            )
+        ]
+
+        for (kind, input, confirmationField, expectedActionKind) in safetyCases {
+            let output = try await runtime.run(kind, input: input)
+            let outputJSON = try output.encodedJSONString()
+            let object = try XCTUnwrap(
+                JSONSerialization.jsonObject(with: Data(outputJSON.utf8)) as? [String: Any],
+                "Expected ShortcutNodeOutput JSON object for \(kind.rawValue)."
+            )
+
+            XCTAssertEqual(object["schemaVersion"] as? Int, 1, kind.rawValue)
+            XCTAssertEqual(output.fields[confirmationField], "true", kind.rawValue)
+            XCTAssertTrue(output.proposedActions.allSatisfy(\.requiresConfirmation), kind.rawValue)
+
+            if let expectedActionKind {
+                XCTAssertTrue(output.proposedActions.contains { $0.kind == expectedActionKind }, kind.rawValue)
+            } else {
+                XCTAssertTrue(output.proposedActions.isEmpty, kind.rawValue)
+            }
+        }
+    }
+
+    func testShortcutSafetyContractsStayDocumentedForBetaReview() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let strategy = try String(contentsOf: root.appendingPathComponent("docs/SHORTCUTS_STRATEGY.md"), encoding: .utf8)
+        let appStore = try String(contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"), encoding: .utf8)
+
+        XCTAssertTrue(strategy.contains("## Beta safety contract"))
+        XCTAssertTrue(strategy.contains("| `createReminderDraft` | Draft only | `schemaVersion=1`, `reminderRequiresConfirmation=true` | No EventKit write. |"))
+        XCTAssertTrue(strategy.contains("| `prepareMessageHandoff` | Visible handoff | `schemaVersion=1`, `messageBodyInURL=false`, `messageRequiresConfirmation=true` | Body stays out of the `sms:` URL; no send. |"))
+        XCTAssertTrue(strategy.contains("| `previewHomeAction` | Preview only | `schemaVersion=1`, `homeActionRequiresConfirmation=true` | No HomeKit write without Kairo confirmation. |"))
+
+        XCTAssertTrue(appStore.contains("Shortcut safety schema"))
+        XCTAssertTrue(appStore.contains("`schemaVersion=1`"))
+        XCTAssertTrue(appStore.contains("`reminderRequiresConfirmation=true`"))
+        XCTAssertTrue(appStore.contains("`messageBodyInURL=false`"))
+    }
+
     func testShortcutCreateRecipeDraftNodeReturnsDisabledInternalRecipePreview() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let kind = try XCTUnwrap(ShortcutNodeKind(rawValue: "createRecipeDraft"))

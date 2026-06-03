@@ -9,8 +9,8 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 | Chat-first app shell | Implemented | Chat is the primary surface; support screens sit behind More. |
 | Memory | Scaffolded | Save/search exists; delete/export and derived cleanup are not beta-complete. |
 | Share Extension ingestion | Scaffolded | Queue/import path exists; extension must not run heavy inference or high-risk actions. |
-| App Intents / Shortcut nodes | Implemented | Existing nodes need schema/safety hardening before adding more. |
-| Skill Manager | Scaffolded | Access lifecycle exists; Chat still needs live effective catalog wiring. |
+| App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA. |
+| Skill Manager | Scaffolded | Access lifecycle exists; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
 | Email / Messages / Phone / Web / Maps handoffs | Implemented | Visible handoff only, preview + explicit confirmation. |
 | EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist for current scope. |
 | HomeKit | Scaffolded | Preview/demo/test path exists; real HomeKit entitlement/live control is not complete. |
@@ -92,6 +92,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] App Intents 描述準確。
 - [ ] Intent action 不隱藏高風險副作用。
 - [x] App Intents return encoded `ShortcutNodeOutput` JSON strings for downstream Shortcuts parsing.
+- [x] Shortcut safety schema uses `schemaVersion=1` and explicit confirmation fields such as `reminderRequiresConfirmation=true`, `messageBodyInURL=false`, and `homeActionRequiresConfirmation=true`.
 - [ ] 高風險 action 仍遵守 confirmation policy。
 
 ### 6.5 Skill management
@@ -123,7 +124,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] Marketplace trust store supports production key rotation and revocation metadata.
 - [ ] User-created skills require explicit capability selection and confirmation policy.
 - [ ] Skill update/remove flows are covered by UI/e2e tests.
-- [ ] Chat uses live Skill Manager effective catalog, including disabled and compatibility-blocked skill state.
+- [x] Chat uses live Skill Manager effective catalog, including disabled and compatibility-blocked skill state.
 
 ### 7. Background tasks
 

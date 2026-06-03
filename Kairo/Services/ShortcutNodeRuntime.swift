@@ -118,11 +118,12 @@ public actor ShortcutNodeRuntime {
             : tasks.map { ReminderDraft(title: $0.title, notes: $0.notes, dueDate: nil) }
         var fields = baseFields(for: input)
         fields["reminderDraftCount"] = String(reminderDrafts.count)
+        fields["reminderRequiresConfirmation"] = "true"
         fields["chainText"] = text
 
         return ShortcutNodeOutput(
             kind: .createReminderDraft,
-            displayText: "Prepared \(reminderDrafts.count) reminder drafts.",
+            displayText: "Prepared \(reminderDrafts.count) reminder drafts. Review before writing to EventKit.",
             fields: fields,
             reminderDrafts: reminderDrafts
         )

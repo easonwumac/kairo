@@ -20,9 +20,9 @@ Kairo has moved beyond the initial scaffold stage. The roadmap now prioritizes a
 | Chat-first shell | Implemented | Chat is the primary surface; More manages support screens. |
 | Memory | Scaffolded | Save/search stores exist; delete/export and derived cleanup are beta work. |
 | Share Extension ingestion queue | Scaffolded | Queue exists; import tests and no-heavy-work guarantees need tightening. |
-| App Intents / Shortcut nodes | Implemented | Existing node set is broad enough for beta; next work is safety/schema consistency. |
+| App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA. |
 | Kairo Recipes | Implemented | Internal workflows with preview/run/enable/disable and App Intent bridge. |
-| Skill Manager | Scaffolded | File-backed lifecycle and Access UI exist; Chat must use live effective catalog next. |
+| Skill Manager | Scaffolded | File-backed lifecycle and Access UI exist; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
 | URL handoff previews | Implemented | Email, Messages, Phone, Web Search, and Maps use visible handoff + confirmation. |
 | EventKit / Notifications / Contacts actions | Implemented | Chat preview + confirmation exists for current action scope. |
 | HomeKit | Scaffolded | Typed action model, demo UI, and tests exist; real entitlement/live home path is planned. |
@@ -43,10 +43,10 @@ Do first:
    - Every user-facing claim must map to Implemented, Scaffolded, Test-only / Mock, Planned, or Not allowed.
 
 2. **Chat uses live Skill Manager state**
-   - Chat and `AgentCore` should plan from the effective installed skill catalog, not only `AgentSkillCatalog.default`.
-   - Disabled skills must disappear from Chat tool candidates.
-   - Installed marketplace skills must appear in the effective catalog.
-   - Compatibility-blocked skills must stay preview-only and never become executable tools.
+   - Chat and `AgentCore` plan from the effective installed skill catalog, not only `AgentSkillCatalog.default`.
+   - Disabled skills disappear from Chat tool candidates.
+   - Installed marketplace skills appear in the effective catalog.
+   - Compatibility-blocked skills stay preview-only and never become executable tools.
 
 3. **Shortcut node hardening**
    - Do not add more nodes first.

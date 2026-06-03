@@ -72,9 +72,9 @@ Use these labels throughout the docs:
 | Chat-first app shell | Implemented | Chat is the launch surface; More holds support surfaces. |
 | Memory | Scaffolded | Save/search stores exist; delete/export and derived cleanup still need work. |
 | Share Extension ingestion | Scaffolded | Queue/import path exists; extension must stay lightweight and action-free. |
-| App Intents / Shortcut nodes | Implemented | Existing nodes need safety/schema hardening before adding more. |
+| App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA, not more nodes. |
 | Kairo Recipes | Implemented | Internal Kairo-owned workflows; not silent Apple Shortcuts edits. |
-| Skill Manager | Scaffolded | Access UI and file-backed lifecycle exist; Chat live effective catalog wiring is next. |
+| Skill Manager | Scaffolded | Access UI and file-backed lifecycle exist; Chat now uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
 | Email / Message / Phone / Web / Maps handoffs | Implemented | Visible handoff only, preview + explicit confirmation. |
 | EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist; Shortcut nodes stay draft/preview oriented. |
 | HomeKit | Scaffolded | Typed preview/action model and test/demo UI exist; real HomeKit entitlement path is not complete. |

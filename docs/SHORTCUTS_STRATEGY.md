@@ -17,6 +17,21 @@ Kairo 不應嘗試繞過 iOS sandbox，而是成為 Shortcuts 裡的 AI brain：
 
 Kairo Recipes 是另一層：它們是 Kairo app 內部 workflows，可以由 Kairo 儲存、preview、run、enable/disable。Apple Shortcuts 可以透過 App Intents 呼叫 Kairo Recipes，但 Kairo 不會 silent create/edit/install Apple Shortcuts。
 
+## Beta safety contract
+
+Current beta work should harden existing nodes before adding new Shortcut nodes. Every `ShortcutNodeOutput` JSON payload uses `schemaVersion=1` so downstream Shortcuts dictionary parsing has a stable contract.
+
+| Node | Beta mode | Required JSON safety fields | Boundary |
+|---|---|---|---|
+| `createReminderDraft` | Draft only | `schemaVersion=1`, `reminderRequiresConfirmation=true` | No EventKit write. |
+| `createCalendarDraft` | Draft only | `schemaVersion=1`, `calendarRequiresConfirmation=true` | No EventKit write. |
+| `createContactDraft` | Draft only | `schemaVersion=1`, `contactRequiresConfirmation=true` | No Contacts write. |
+| `createEmailDraft` | Draft only | `schemaVersion=1`, `emailRequiresConfirmation=true` | No send. |
+| `prepareMessageHandoff` | Visible handoff | `schemaVersion=1`, `messageBodyInURL=false`, `messageRequiresConfirmation=true` | Body stays out of the `sms:` URL; no send. |
+| `preparePhoneCallHandoff` | Visible handoff | `schemaVersion=1`, `phoneCallRequiresConfirmation=true` | `tel:` preview only; no silent call. |
+| `prepareWebSearchHandoff` | Visible handoff | `schemaVersion=1`, `webSearchRequiresConfirmation=true` | Search URL preview only; no background browsing, scraping, history, or cookie reads. |
+| `previewHomeAction` | Preview only | `schemaVersion=1`, `homeActionRequiresConfirmation=true` | No HomeKit write without Kairo confirmation. |
+
 ## MVP App Intents
 
 第一批建議：

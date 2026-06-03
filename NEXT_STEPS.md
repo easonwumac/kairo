@@ -30,9 +30,9 @@ Primary product shape:
 | Memory store | Scaffolded | JSON/in-memory stores exist; delete/export and derived cleanup still need beta hardening. |
 | Settings / Access | Implemented | Current settings, model rows, OAuth readiness, and Skill Manager UI exist. |
 | Share Extension ingestion queue | Scaffolded | Queue and import path exist; beta still needs stronger import tests and no-heavy-work enforcement. |
-| App Intents / Shortcut nodes | Implemented | Many node contracts exist; next work is safety/schema hardening, not more nodes. |
+| App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA, not more nodes. |
 | Kairo Recipes | Implemented | Internal recipes, preview/run, enable/disable, and App Intent bridge exist. These are not Apple Shortcuts. |
-| Skill Manager | Scaffolded | File-backed manager and Access UI exist; Chat still needs live effective catalog wiring. |
+| Skill Manager | Scaffolded | File-backed manager and Access UI exist; Chat now uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
 | Visible URL handoffs | Implemented | Email, Messages, Phone, Web Search, Maps handoffs require preview + confirmation. |
 | EventKit / Notifications / Contacts actions | Implemented | Chat actions preview before confirmed writes; Shortcut nodes should remain draft-only unless confirmed by Kairo. |
 | HomeKit action model | Scaffolded | Typed action model and demo/test preview exist; real HomeKit entitlement and live home control are not complete. |
@@ -50,30 +50,28 @@ Primary product shape:
 | Silent Apple Shortcuts editing | Not allowed | Kairo may guide user-installed Shortcuts; it must not silently create or edit them. |
 | Reading Messages/Mail/Notes private stores | Not allowed | Use share sheet, handoff, or official provider APIs only. |
 
+## Completed stabilization commits
+
+- Chat uses the live Skill Manager effective catalog.
+  - Disabled skills do not appear in Chat tool candidates.
+  - Enabled and installed marketplace skills can appear.
+  - Compatibility-blocked installed skills do not become executable tools.
+- Shortcut node safety schema is versioned with `schemaVersion=1`.
+  - Contact, Email, Message, Phone, Web Search, Calendar, Reminder, and Home preview boundaries are covered by tests.
+  - `docs/SHORTCUTS_STRATEGY.md` and App Store docs describe the beta safety contract.
+
 ## Immediate implementation commits
 
-1. Make Chat use the live Skill Manager effective catalog.
-   - Disabled skills must not appear in Chat tool candidates.
-   - Enabled skills should appear.
-   - Installed marketplace skills should enter the effective catalog.
-   - Compatibility-blocked skills should never become executable tools.
-
-2. Harden existing Shortcut node beta contracts.
-   - Do not add more nodes first.
-   - Confirm tests for Contact, Email, Message, Phone, Web Search, Calendar, Reminder, and Home preview boundaries.
-   - Stabilize App Intent JSON output schema.
-   - Update `docs/SHORTCUTS_STRATEGY.md` and App Store docs with exact status.
-
-3. Tighten local model beta path.
+1. Tighten local model beta path.
    - Keep downloads user-triggered.
    - Never commit weights, tokenizer files, GGUF files, caches, credentials, or generated secrets.
    - Keep iOS production inference marked as Planned until real-device runtime evidence exists.
 
-4. Add audit and memory lifecycle hardening.
+2. Add audit and memory lifecycle hardening.
    - Persist audit metadata by default, not full sensitive payload.
    - Add memory delete/export and cleanup for derived summaries/cache/attachment references.
 
-5. Complete Share Extension beta import path.
+3. Complete Share Extension beta import path.
    - Shared text, URL, image, and file metadata should appear in main app pending content.
    - Extension must not perform heavy model inference or high-risk actions.
 

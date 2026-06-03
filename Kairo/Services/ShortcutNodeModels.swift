@@ -71,6 +71,7 @@ public struct ShortcutMemoryMatch: Identifiable, Codable, Equatable, Sendable {
 }
 
 public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
+    public var schemaVersion: Int
     public var kind: ShortcutNodeKind
     public var displayText: String
     public var fields: [String: String]
@@ -89,6 +90,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
     public init(
         kind: ShortcutNodeKind,
         displayText: String,
+        schemaVersion: Int = 1,
         fields: [String: String] = [:],
         memoryID: UUID? = nil,
         memoryMatches: [ShortcutMemoryMatch] = [],
@@ -102,6 +104,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         recipeDrafts: [KairoRecipe] = [],
         proposedActions: [AgentAction] = []
     ) {
+        self.schemaVersion = schemaVersion
         self.kind = kind
         self.displayText = displayText
         self.fields = fields
@@ -119,6 +122,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case schemaVersion
         case kind
         case displayText
         case fields
@@ -137,6 +141,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
         kind = try container.decode(ShortcutNodeKind.self, forKey: .kind)
         displayText = try container.decode(String.self, forKey: .displayText)
         fields = try container.decodeIfPresent([String: String].self, forKey: .fields) ?? [:]

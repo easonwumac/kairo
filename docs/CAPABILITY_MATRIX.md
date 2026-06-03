@@ -25,10 +25,10 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 | 提醒事項 | Implemented | EventKit Reminders | 是 | Chat action 需 preview + confirm；Shortcut nodes 預設產生 draft。 |
 | 通知 | Implemented | UserNotifications | 是 | 只有 Confirm 後才排程。 |
 | Contacts create action | Implemented | Contacts.framework | 是 | 只處理使用者要求建立/新增；不讀取、同步或匯出通訊錄。 |
-| App Intents | Implemented | AppIntents | 使用者觸發 | 多個 current Shortcut node contracts 已有；JSON schema 需 beta hardening。 |
+| App Intents | Implemented | AppIntents | 使用者觸發 | Current Shortcut node contracts use `schemaVersion=1` safety fields；後續是 device/App Intent QA。 |
 | Siri / Shortcuts | Scaffolded | App Intents + user-installed Shortcuts | 使用者設定 | Kairo 可提供 App Intents/template guidance；不可 silent create/edit Apple Shortcuts。 |
 | Kairo Recipes | Implemented | App internal store + App Intents bridge | 使用者建立/啟用 | Kairo-owned workflows；不是 Apple Shortcuts。 |
-| Skill Manager | Scaffolded | File-backed manager + Access UI | 使用者管理 | Installed/disabled lifecycle exists；Chat effective catalog wiring 是下一步。 |
+| Skill Manager | Scaffolded | File-backed manager + Access UI | 使用者管理 | Installed/disabled lifecycle exists；Chat consumes the live effective catalog, including compatibility-blocked state。 |
 | URL schemes / Universal Links | Implemented | `openURL` / links | 使用者可見 | 僅 handoff，不能隱藏控制。 |
 | Email draft handoff | Implemented | `mailto:` URL handoff | 使用者確認 | 只建立可見草稿；不讀 Mail DB；不靜默寄信。 |
 | Messages recipient handoff | Implemented | `sms:` URL handoff | 使用者確認 | 只開可見收件人 handoff；正文留在 Kairo preview；不讀 Messages；不靜默送出。 |
