@@ -18,6 +18,18 @@ public struct OAuthTokenSet: Codable, Equatable, Sendable {
         self.expiresAt = expiresAt
         self.scopes = scopes
     }
+
+    public func encodedForStorage() throws -> String {
+        let data = try JSONEncoder().encode(self)
+        return data.base64EncodedString()
+    }
+
+    public static func decodeStoredSecret(_ encoded: String) throws -> OAuthTokenSet? {
+        guard let data = Data(base64Encoded: encoded) else {
+            return nil
+        }
+        return try JSONDecoder().decode(OAuthTokenSet.self, from: data)
+    }
 }
 
 public struct ChatGPTOAuthConfiguration: Equatable, Sendable {
@@ -121,17 +133,14 @@ public actor ChatGPTOAuthService {
     }
 
     public func storeTokens(_ tokens: OAuthTokenSet) async throws {
-        let data = try JSONEncoder().encode(tokens)
-        let encoded = data.base64EncodedString()
-        try await credentialStore.saveSecret(encoded, for: CredentialKey.chatGPTOAuthTokenSet)
+        try await credentialStore.saveSecret(tokens.encodedForStorage(), for: CredentialKey.chatGPTOAuthTokenSet)
     }
 
     public func loadTokens() async throws -> OAuthTokenSet? {
-        guard let encoded = try await credentialStore.readSecret(for: CredentialKey.chatGPTOAuthTokenSet),
-              let data = Data(base64Encoded: encoded) else {
+        guard let encoded = try await credentialStore.readSecret(for: CredentialKey.chatGPTOAuthTokenSet) else {
             return nil
         }
-        return try JSONDecoder().decode(OAuthTokenSet.self, from: data)
+        return try OAuthTokenSet.decodeStoredSecret(encoded)
     }
 
     public func signOut() async throws {
@@ -220,16 +229,14 @@ public actor OAuthConnectorAuthorizationService {
     }
 
     public func storeTokens(_ tokens: OAuthTokenSet) async throws {
-        let data = try JSONEncoder().encode(tokens)
-        try await credentialStore.saveSecret(data.base64EncodedString(), for: tokenKey)
+        try await credentialStore.saveSecret(tokens.encodedForStorage(), for: tokenKey)
     }
 
     public func loadTokens() async throws -> OAuthTokenSet? {
-        guard let encoded = try await credentialStore.readSecret(for: tokenKey),
-              let data = Data(base64Encoded: encoded) else {
+        guard let encoded = try await credentialStore.readSecret(for: tokenKey) else {
             return nil
         }
-        return try JSONDecoder().decode(OAuthTokenSet.self, from: data)
+        return try OAuthTokenSet.decodeStoredSecret(encoded)
     }
 
     public func signOut() async throws {

@@ -3534,6 +3534,30 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(disconnectedOption.canStartAuthorization)
     }
 
+    func testOAuthConnectorLoginCenterTreatsMalformedStoredTokenAsNeedsReauthorization() async throws {
+        let credentials = InMemoryCredentialStore()
+        try await credentials.saveSecret("not-a-valid-token-secret", for: CredentialKey.oauthTokenSet(providerKey: "github"))
+
+        let center = OAuthConnectorLoginCenter(
+            registry: IntegrationRegistry(),
+            credentialStore: credentials,
+            clientConfigurations: [
+                "github": OAuthConnectorClientConfiguration(
+                    clientID: "github-client",
+                    redirectURI: "kairo://oauth/github/callback",
+                    scopes: ["repo"]
+                )
+            ]
+        )
+
+        let options = try await center.loginOptions()
+        let github = try XCTUnwrap(options.first { $0.providerKey == "github" })
+
+        XCTAssertEqual(github.readiness, .needsReauthorization)
+        XCTAssertTrue(github.canStartAuthorization)
+        XCTAssertTrue(github.grantedScopes.isEmpty)
+    }
+
     func testOAuthConnectorLoginCenterBuildsAuthorizationSessionFromClientConfiguration() async throws {
         let center = OAuthConnectorLoginCenter(
             registry: IntegrationRegistry(),
@@ -3813,6 +3837,46 @@ final class KairoCoreTests: XCTestCase {
         try await service.signOut()
         let signedOutTokens = try await service.loadTokens()
         XCTAssertNil(signedOutTokens)
+    }
+
+    func testOAuthTokenSetStorageHelpersRoundTripAndRejectMalformedSecrets() throws {
+        let tokenSet = OAuthTokenSet(
+            accessToken: "access",
+            refreshToken: "refresh",
+            expiresAt: Date(timeIntervalSince1970: 42),
+            scopes: ["repo"]
+        )
+
+        let encoded = try tokenSet.encodedForStorage()
+        let decoded = try XCTUnwrap(OAuthTokenSet.decodeStoredSecret(encoded))
+
+        XCTAssertEqual(decoded, tokenSet)
+        XCTAssertNil(try OAuthTokenSet.decodeStoredSecret("not-base64"))
+    }
+
+    func testKairoEnvironmentConnectedOAuthProviderKeysIgnoreMalformedStoredTokens() async throws {
+        let credentials = InMemoryCredentialStore()
+        let validTokens = OAuthTokenSet(accessToken: "github-token", scopes: ["repo"])
+
+        try await credentials.saveSecret(validTokens.encodedForStorage(), for: CredentialKey.oauthTokenSet(providerKey: "github"))
+        try await credentials.saveSecret("not-a-valid-token-secret", for: CredentialKey.oauthTokenSet(providerKey: "google"))
+        try await credentials.saveSecret(try OAuthTokenSet(accessToken: "   ", scopes: []).encodedForStorage(), for: CredentialKey.oauthTokenSet(providerKey: "slack"))
+
+        let connected = try await KairoEnvironment.connectedOAuthProviderKeys(credentialStore: credentials)
+
+        XCTAssertEqual(connected, ["github"])
+    }
+
+    func testLiveEnvironmentSourceUsesKeychainCredentialStoreForProviderSecrets() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let environmentSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/KairoEnvironment.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(environmentSource.contains("let credentialStore = KeychainCredentialStore()"))
+        XCTAssertTrue(environmentSource.contains("OpenAIProvider(credentialStore: credentialStore)"))
+        XCTAssertTrue(environmentSource.contains("connectedOAuthProviderKeys(credentialStore: credentialStore)"))
     }
 
     private func temporaryFileURL(named name: String) -> URL {

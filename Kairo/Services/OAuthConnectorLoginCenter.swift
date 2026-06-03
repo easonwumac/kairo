@@ -225,8 +225,8 @@ public actor OAuthConnectorLoginCenter {
         guard let encoded = try await credentialStore.readSecret(for: CredentialKey.oauthTokenSet(providerKey: providerKey)) else {
             return .missing
         }
-        guard let data = Data(base64Encoded: encoded),
-              let tokens = try? JSONDecoder().decode(OAuthTokenSet.self, from: data) else {
+        let decoded = try? OAuthTokenSet.decodeStoredSecret(encoded)
+        guard let tokens = decoded ?? nil else {
             return .invalid
         }
         return .valid(tokens)

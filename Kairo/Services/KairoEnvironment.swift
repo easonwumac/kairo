@@ -482,11 +482,15 @@ public struct KairoEnvironment: Sendable {
         )
     }
 
-    private static func connectedOAuthProviderKeys(credentialStore: CredentialStore) async throws -> [String] {
+    static func connectedOAuthProviderKeys(credentialStore: CredentialStore) async throws -> [String] {
         var providerKeys: [String] = []
         for integration in IntegrationRegistry().oauthConnectors {
             guard let providerKey = integration.oauth?.providerKey else { continue }
-            if try await credentialStore.readSecret(for: CredentialKey.oauthTokenSet(providerKey: providerKey)) != nil {
+            guard let encoded = try await credentialStore.readSecret(for: CredentialKey.oauthTokenSet(providerKey: providerKey)) else {
+                continue
+            }
+            if let tokenSet = try OAuthTokenSet.decodeStoredSecret(encoded),
+               !tokenSet.accessToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 providerKeys.append(providerKey)
             }
         }
