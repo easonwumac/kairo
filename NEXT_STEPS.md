@@ -11,6 +11,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
 
 2. Permission-denied and App Review final QA.
    - Run real-device fallback checks for denied Calendar / Reminders / Notifications / Contacts permissions.
+   - Access permission status/request handling now has backend API coverage; keep device permission-denied fallback sign-off as real-device-only evidence.
    - Metadata-only audit log deletion and Settings credential/OAuth management now have backend API coverage; keep future deletion copy limited to on-device data unless a backend account exists.
    - Privacy manifest no-collection/no-tracking, absence of HomeKit entitlement, and review-note boundary copy are now package-tested; recheck labels only if analytics, backend accounts, cloud sync, crash collection, or connector sync is added.
    - Keep HomeKit live control out of beta claims until entitlement, permission copy, fallback UI, confirmation behavior, and real-device evidence are complete.

@@ -67,6 +67,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] HomeKit live control remains disabled for beta: current entitlements contain only App Group, so HomeKit must stay preview/demo/test-only until entitlement, purpose copy, permission fallback, and real-device confirmation are complete.
 - [x] Contacts 只在使用者明確要求建立聯絡人時使用 Contacts.framework，且需 runtime permission + preview + confirmation；不讀取或匯出通訊錄。
 - [x] Apple Maps handoff does not require Kairo to read current location; beta plist does not include Location permission until CoreLocation access exists.
+- [x] Access backend API facade resolves capability permission status and forwards explicit permission requests without treating status reads as OS prompt evidence.
 - [ ] Permission-denied fallback UI still needs real-device QA across Calendar / Reminders / Notifications / Contacts.
 
 ### 3. Memory privacy
@@ -259,7 +260,7 @@ Because no available real device was reachable, the following remain release-blo
   - `testChatCanPreviewAndConfirmMessagesHandoff`
   - `testChatCanPreviewAndConfirmPhoneCallHandoff`
   - `testChatCanPreviewAndConfirmWebSearchHandoff`
-- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, App Intent registry/type coverage plus Ask/Save/Search node runtime, local model catalog unknown/revoked/invalid signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup, local model backend API facade status/select/preference/delete/stale-cleanup/fail-closed behavior, Skill Manager backend API facade lifecycle/user-draft/compatibility/fail-closed behavior, Settings backend API facade OpenAI/OAuth secret-redaction behavior, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
+- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, App Intent registry/type coverage plus Ask/Save/Search node runtime, Access permission backend API status/request forwarding, local model catalog unknown/revoked/invalid signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup, local model backend API facade status/select/preference/delete/stale-cleanup/fail-closed behavior, Skill Manager backend API facade lifecycle/user-draft/compatibility/fail-closed behavior, Settings backend API facade OpenAI/OAuth secret-redaction behavior, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
 - [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
 - [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
 - [x] 不支援的跨 App 操作會顯示安全替代方案。

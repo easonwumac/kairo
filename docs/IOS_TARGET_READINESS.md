@@ -56,12 +56,17 @@ These match `BackgroundTaskPolicy.defaultTasks`.
 
 ## Verification before TestFlight
 
-- [ ] Generate/open Xcode project.
+- [x] Generate/open Xcode project.
+  - Verified 2026-06-04 with `xcodebuild -list -project Kairo.xcodeproj`.
 - [ ] Confirm entitlements resolve against the Apple Developer team.
-- [ ] Build `KairoApp` on simulator.
-- [ ] Build `KairoShareExtension` on simulator.
+- [x] Build `KairoApp` on simulator.
+  - Verified 2026-06-04 with `xcodebuild -project Kairo.xcodeproj -scheme KairoApp -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`.
+- [x] Build `KairoShareExtension` on simulator.
+  - Verified 2026-06-04 with `xcodebuild -project Kairo.xcodeproj -scheme KairoShareExtension -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/kairo-share-extension-derived-data CODE_SIGNING_ALLOWED=NO build`.
 - [ ] Run `KairoUITests` smoke flow on simulator.
 - [ ] Verify App Group container read/write.
 - [ ] Verify purpose strings display correctly.
 - [ ] Verify BackgroundTasks identifiers match Info.plist.
 - [ ] Verify no generated user data or secrets are included in the app bundle.
+
+These checks are simulator build evidence only. They are not real-device beta sign-off evidence and do not validate App Group runtime access, permission prompts, App Intents execution, Share Extension import, or persistence on a physical iPhone.
