@@ -13,23 +13,28 @@ public final class ChatViewModel: ObservableObject {
     @Published public var pendingAction: AgentAction?
     @Published public private(set) var actionResultMessage: String?
     @Published public private(set) var replyTarget: ChatMessage?
+    @Published public private(set) var providerRouteStatus: ChatProviderRouteStatus
 
     private let historyStore: ChatHistoryStore
     private let shareIngestionQueue: ShareIngestionQueue
     private let agent: AgentCore
     private let actionExecutor: any ActionExecutor
+    private let localModelSettingsService: LocalModelSettingsService?
 
     public init(
         historyStore: ChatHistoryStore = InMemoryChatHistoryStore(),
         shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
         agent: AgentCore = AgentCore(),
-        actionExecutor: any ActionExecutor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore())
+        actionExecutor: any ActionExecutor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore()),
+        localModelSettingsService: LocalModelSettingsService? = nil
     ) {
         self.historyStore = historyStore
         self.shareIngestionQueue = shareIngestionQueue
         self.agent = agent
         self.actionExecutor = actionExecutor
+        self.localModelSettingsService = localModelSettingsService
         self.currentThread = ChatThread(messages: [Self.welcomeMessage])
+        self.providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil)
     }
 
     public convenience init(environment: KairoEnvironment) {
@@ -37,7 +42,8 @@ public final class ChatViewModel: ObservableObject {
             historyStore: environment.chatHistoryStore,
             shareIngestionQueue: environment.shareIngestionQueue,
             agent: AgentCore(memoryStore: environment.memoryStore, aiProvider: environment.aiProvider),
-            actionExecutor: environment.actionExecutor
+            actionExecutor: environment.actionExecutor,
+            localModelSettingsService: environment.localModelSettingsService
         )
     }
 
@@ -50,6 +56,7 @@ public final class ChatViewModel: ObservableObject {
                 currentThread = ChatThread(messages: [Self.welcomeMessage])
             }
             errorMessage = nil
+            await refreshProviderRouteStatus()
         } catch {
             errorMessage = "無法載入聊天紀錄：\(error.localizedDescription)"
         }
@@ -112,6 +119,7 @@ public final class ChatViewModel: ObservableObject {
     public func sendComposerMessage() async {
         let text = composerText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard (!text.isEmpty || !pendingAttachments.isEmpty || replyTarget != nil), !isLoading else { return }
+        await refreshProviderRouteStatus()
         let attachments = pendingAttachments
         let replyTarget = replyTarget
         composerText = ""
@@ -162,6 +170,14 @@ public final class ChatViewModel: ObservableObject {
 
     public func cancelReplyTarget() {
         replyTarget = nil
+    }
+
+    public func refreshProviderRouteStatus() async {
+        guard let localModelSettingsService else {
+            providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil)
+            return
+        }
+        providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: await localModelSettingsService.status())
     }
 
     public func cancelPendingAction() {

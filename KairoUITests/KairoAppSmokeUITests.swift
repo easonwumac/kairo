@@ -40,6 +40,12 @@ final class KairoAppSmokeUITests: XCTestCase {
         selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
 
+        XCTAssertTrue(anyElement("chat.provider-route").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("chat.provider-route.title").exists)
+        XCTAssertTrue(anyElement("chat.provider-route.detail").exists)
+        XCTAssertTrue(anyElement("chat.provider-route.badge").exists)
+        XCTAssertTrue(findStaticText(containing: "Route: Automatic", direction: .both, maxSwipes: 1).exists)
+
         XCTAssertTrue(anyElement("chat.composer.surface").waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("chat.composer.input-shell").exists)
 

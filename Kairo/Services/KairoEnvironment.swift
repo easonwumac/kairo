@@ -343,7 +343,10 @@ public struct KairoEnvironment: Sendable {
             installRegistry: localModelInstallRegistry
         )
         let credentialStore = KeychainCredentialStore()
-        let aiProvider = OpenAIProvider(credentialStore: credentialStore)
+        let aiProvider = LocalModelRoutingAIProvider(
+            cloudProvider: OpenAIProvider(credentialStore: credentialStore),
+            localModelSettingsService: localModelSettingsService
+        )
         let connectedOAuthProviderKeys = try await connectedOAuthProviderKeys(credentialStore: credentialStore)
         let runtimeContext = AgentSkillRuntimeContext.current(
             grantedEntitlements: [],

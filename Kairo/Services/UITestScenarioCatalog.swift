@@ -40,6 +40,10 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             requiredAccessibilityIdentifiers: [
                 "chat.history.thread",
                 "chat.new",
+                "chat.provider-route",
+                "chat.provider-route.title",
+                "chat.provider-route.detail",
+                "chat.provider-route.badge",
                 "chat.composer.surface",
                 "chat.composer.input-shell",
                 "chat.composer.text",
@@ -48,6 +52,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "chat.message.assistant"
             ],
             assertions: [
+                "The chat surface shows the current model/provider route before the user sends a prompt.",
                 "The chat composer has a large, visible tap target.",
                 "A chat thread or new chat entry point can open the composer.",
                 "User-entered text appears in the transcript.",

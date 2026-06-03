@@ -2380,6 +2380,12 @@ final class KairoCoreTests: XCTestCase {
         let chatView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatView.swift"), encoding: .utf8)
 
         XCTAssertTrue(chatView.contains(#""chat.composer.surface""#))
+        XCTAssertTrue(chatView.contains(#""chat.provider-route""#))
+        XCTAssertTrue(chatView.contains(#""chat.provider-route.title""#))
+        XCTAssertTrue(chatView.contains(#""chat.provider-route.detail""#))
+        XCTAssertTrue(chatView.contains(#""chat.provider-route.badge""#))
+        XCTAssertTrue(chatView.contains(#""chat.provider-route.warning""#))
+        XCTAssertTrue(chatView.contains("providerRouteBar"))
         XCTAssertTrue(chatView.contains(#""chat.composer.input-shell""#))
         XCTAssertTrue(chatView.contains(#""chat.composer.text""#))
         XCTAssertTrue(chatView.contains(#""chat.composer.send""#))
@@ -2391,6 +2397,26 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(chatView.contains(#""chat.message.reply.\(message.id.uuidString)""#))
         XCTAssertTrue(chatView.contains(#""chat.reply-preview""#))
         XCTAssertTrue(chatView.contains("replyToMessage"))
+    }
+
+    @MainActor
+    func testChatViewModelLoadsProviderRouteStatusFromLocalModelSettings() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .preferLocal,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            localModelSettingsService: service
+        )
+
+        await viewModel.load()
+
+        XCTAssertEqual(viewModel.providerRouteStatus.title, "Route: Prefer Local")
+        XCTAssertTrue(viewModel.providerRouteStatus.detail.contains("Qwen Small Test"))
+        XCTAssertNil(viewModel.providerRouteStatus.warning)
     }
 
     @MainActor
@@ -2482,6 +2508,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(environmentSource.contains("localModelReplyCheckService"))
         XCTAssertTrue(environmentSource.contains("LocalModelReplyCheckService("))
         XCTAssertTrue(rootViewSource.contains("localModelReplyCheckService: environment.localModelReplyCheckService"))
+        XCTAssertTrue(environmentSource.contains("LocalModelRoutingAIProvider("))
+        XCTAssertTrue(environmentSource.contains("localModelSettingsService: localModelSettingsService"))
         XCTAssertTrue(rootViewSource.contains("mode: .modelsOnly"))
         XCTAssertTrue(permissionHubSource.contains("private let skillManagerService: AgentSkillManagerService?"))
         XCTAssertTrue(permissionHubSource.contains("private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?"))
@@ -2616,6 +2644,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.settings") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.history.thread") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.new") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.title") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.detail") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.badge") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
         let chatCopyReplyScenarioIdentifiers = catalog.scenario(id: "chat-message-copy-reply")?.requiredAccessibilityIdentifiers ?? []
         XCTAssertTrue(chatCopyReplyScenarioIdentifiers.contains("chat.message.copy."))
@@ -2870,6 +2902,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("chat.history.thread"))
         XCTAssertTrue(smokeTest.contains("chat.new"))
         XCTAssertTrue(smokeTest.contains("testChatMessageReplyPreviewAndCopyControlsExist"))
+        XCTAssertTrue(smokeTest.contains(#""chat.provider-route""#))
+        XCTAssertTrue(smokeTest.contains(#""chat.provider-route.title""#))
+        XCTAssertTrue(smokeTest.contains(#""chat.provider-route.detail""#))
+        XCTAssertTrue(smokeTest.contains(#""chat.provider-route.badge""#))
+        XCTAssertTrue(smokeTest.contains("Route: Automatic"))
         XCTAssertTrue(smokeTest.contains("chat.composer.text"))
         XCTAssertTrue(smokeTest.contains("chat.reply-preview"))
         XCTAssertTrue(smokeTest.contains("chat.message.copy."))
@@ -3158,6 +3195,89 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(ProviderRoutePreference.localOnly.settingsTitle, "Local Only")
         XCTAssertTrue(ProviderRoutePreference.localOnly.settingsDetailText.contains("Never routes"))
         XCTAssertTrue(ProviderRoutePreference.preferLocal.settingsDetailText.contains("eligible"))
+    }
+
+    func testChatProviderRouteStatusBuilderExplainsSelectedLocalModelAndWarnings() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .preferLocal,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let selectedStatus = ChatProviderRouteStatusBuilder.build(from: await service.status())
+
+        XCTAssertEqual(selectedStatus.title, "Route: Prefer Local")
+        XCTAssertEqual(selectedStatus.badge, "Local")
+        XCTAssertTrue(selectedStatus.detail.contains("Selected local model: Qwen Small Test"))
+        XCTAssertTrue(selectedStatus.detail.contains("tools and current info"))
+        XCTAssertNil(selectedStatus.warning)
+
+        let warningStatus = ChatProviderRouteStatusBuilder.build(from: LocalModelSettingsStatus(
+            selectedModelID: nil,
+            selectedModel: nil,
+            installedRecord: nil,
+            preference: .localOnly,
+            availableModels: [makeLocalModelManifest(id: "qwen-small")],
+            installedModels: []
+        ))
+
+        XCTAssertEqual(warningStatus.title, "Route: Local Only")
+        XCTAssertEqual(warningStatus.badge, "Local only")
+        XCTAssertEqual(warningStatus.warning, "Local Only is active but no downloaded model is selected.")
+    }
+
+    func testLocalModelRoutingAIProviderUsesSelectedLocalModelForEligiblePreferLocalWork() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .preferLocal,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let provider = LocalModelRoutingAIProvider(
+            cloudProvider: MockAIProvider(),
+            localModelSettingsService: service
+        )
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Draft a private reply for this message."
+        ))
+
+        XCTAssertTrue(response.message.contains("Local fallback (qwen-small)"))
+        XCTAssertTrue(response.message.contains("local mode cannot browse the web"))
+    }
+
+    func testLocalModelRoutingAIProviderKeepsToolRequestsOnCloudWhenPreferLocal() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .preferLocal,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let provider = LocalModelRoutingAIProvider(
+            cloudProvider: MockAIProvider(),
+            localModelSettingsService: service
+        )
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Use HomeKit to turn on the living room light."
+        ))
+
+        XCTAssertTrue(response.message.contains("mock 回應"))
+        XCTAssertFalse(response.message.contains("Local fallback"))
+    }
+
+    func testLocalModelRoutingAIProviderFailsClosedWhenLocalOnlyHasNoModel() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .localOnly,
+            installedAndSelectedModelID: nil
+        )
+        let provider = LocalModelRoutingAIProvider(
+            cloudProvider: MockAIProvider(),
+            localModelSettingsService: service
+        )
+
+        await XCTAssertThrowsErrorAsync(try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Draft a private reply."
+        ))) { error in
+            XCTAssertEqual(error as? AIProviderError, .unsupported)
+        }
     }
 
     func testLocalModelSettingsServiceSelectsInstalledModelAndBuildsRoutingContext() async throws {
@@ -4092,6 +4212,39 @@ final class KairoCoreTests: XCTestCase {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
             .appendingPathComponent(name)
+    }
+
+    private func makeLocalModelSettingsService(
+        preference: ProviderRoutePreference,
+        installedAndSelectedModelID: String?
+    ) async throws -> LocalModelSettingsService {
+        let settingsURL = temporaryFileURL(named: "local-model-settings.json")
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let catalog = LocalModelCatalog(
+            signingKeyID: "test-key",
+            signature: "test-signature",
+            minimumSafetyPolicyVersion: "2026.1",
+            models: [
+                makeLocalModelManifest(id: "qwen-small", safetyPolicyVersion: "2026.1")
+            ]
+        )
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let store = try await FileBackedLocalModelSettingsStore(fileURL: settingsURL)
+        let service = LocalModelSettingsService(catalog: catalog, installRegistry: registry, settingsStore: store)
+
+        if let modelID = installedAndSelectedModelID {
+            try await registry.upsert(LocalModelInstallRecord(
+                modelID: modelID,
+                version: "1.0",
+                status: .installed,
+                fileURL: registryURL.deletingLastPathComponent().appendingPathComponent("\(modelID).gguf"),
+                installedSizeBytes: 1024,
+                sha256: "abc123"
+            ))
+            try await service.selectModel(id: modelID)
+        }
+        try await service.setPreference(preference)
+        return service
     }
 
     private func XCTAssertThrowsErrorAsync<T>(
