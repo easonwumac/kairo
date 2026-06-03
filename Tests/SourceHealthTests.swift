@@ -10,6 +10,8 @@ final class SourceHealthTests: XCTestCase {
 
         XCTAssertTrue(workflow.contains("runs-on: [self-hosted, macOS]"))
         XCTAssertFalse(workflow.contains("runs-on: macos-15"))
+        XCTAssertTrue(workflow.contains("uses: actions/checkout@v5"))
+        XCTAssertFalse(workflow.contains("uses: actions/checkout@v4"))
     }
 
     func testRepositoryDoesNotContainModelArtifactsOrCaches() throws {
