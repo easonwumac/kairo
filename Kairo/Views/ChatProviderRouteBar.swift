@@ -7,86 +7,60 @@ struct ChatProviderRouteBar: View {
     let setPreference: (ProviderRoutePreference) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 8) {
-                Image(systemName: "arrow.triangle.branch")
-                    .foregroundStyle(.secondary)
+        HStack(spacing: 8) {
+            Text(status.title)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .accessibilityIdentifier("chat.provider-route.title")
 
-                Text(status.title)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-                    .accessibilityIdentifier("chat.provider-route.title")
-
-                Spacer(minLength: 8)
-
-                Text(status.badge)
+            if status.warning != nil {
+                Image(systemName: "exclamationmark.triangle.fill")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(Color.accentColor.opacity(0.10), in: Capsule())
-                    .accessibilityIdentifier("chat.provider-route.badge")
-            }
-
-            Text(status.detail)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("chat.provider-route.detail")
-
-            if let warning = status.warning {
-                Label(warning, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption2.weight(.medium))
                     .foregroundStyle(.orange)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel(status.warning ?? "")
                     .accessibilityIdentifier("chat.provider-route.warning")
             }
 
-            routePreferenceControls
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(Color(.sRGB, white: 0.985, opacity: 1))
-        .overlay(alignment: .bottom) {
-            Divider()
+            Spacer(minLength: 4)
+
+            routePreferenceMenu
         }
         .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(status.title). \(status.detail)")
         .accessibilityIdentifier("chat.provider-route")
     }
 
-    private var routePreferenceControls: some View {
-        HStack(spacing: 6) {
-            ForEach(ProviderRoutePreference.settingsChoices, id: \.rawValue) { preference in
-                routePreferenceButton(preference, isSelected: status.preference == preference)
+    private var routePreferenceMenu: some View {
+        Menu {
+            if canEdit {
+                ForEach(ProviderRoutePreference.settingsChoices, id: \.rawValue) { preference in
+                    Button {
+                        setPreference(preference)
+                    } label: {
+                        HStack {
+                            Text(preference.settingsTitle)
+                            if status.preference == preference {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                    .accessibilityIdentifier("chat.provider-route.preference.\(preference.rawValue)")
+                }
+            } else {
+                Text("Route settings unavailable")
             }
-        }
-        .padding(.top, 2)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("chat.provider-route.preference")
-    }
-
-    private func routePreferenceButton(_ preference: ProviderRoutePreference, isSelected: Bool) -> some View {
-        Button {
-            setPreference(preference)
         } label: {
-            Text(preference.chatControlTitle)
-                .font(.caption2.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .frame(minWidth: 52)
-                .foregroundStyle(isSelected ? Color.white : Color.primary)
-                .background(routePreferenceBackground(isSelected: isSelected), in: Capsule())
+            Label("Route", systemImage: "slider.horizontal.3")
+                .labelStyle(.titleAndIcon)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 9)
+                .frame(height: 34)
+                .background(Color.primary.opacity(0.06), in: Capsule())
         }
-        .buttonStyle(.plain)
         .disabled(!canEdit)
-        .accessibilityLabel("Set chat route to \(preference.settingsTitle)")
-        .accessibilityIdentifier("chat.provider-route.preference.\(preference.rawValue)")
-    }
-
-    private func routePreferenceBackground(isSelected: Bool) -> Color {
-        isSelected ? Color.accentColor : Color.primary.opacity(0.07)
+        .accessibilityLabel("Chat route")
+        .accessibilityIdentifier("chat.provider-route.preference")
     }
 }
 #endif

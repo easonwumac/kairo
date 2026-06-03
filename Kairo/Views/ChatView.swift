@@ -17,16 +17,7 @@ public struct ChatView: View {
     @ViewBuilder
     public var body: some View {
         #if os(iOS)
-        NavigationStack {
-            chatSurface
-                .navigationTitle(viewModel.currentThread.title)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        newChatButton
-                    }
-                }
-        }
+        chatSurface
         .task {
             await viewModel.load()
             await viewModel.importPendingShares()
@@ -55,7 +46,7 @@ public struct ChatView: View {
         Button {
             viewModel.startNewThread()
         } label: {
-            Label("New Chat", systemImage: "square.and.pencil")
+            Label("New", systemImage: "square.and.pencil")
         }
         .accessibilityIdentifier("chat.new")
     }
@@ -92,14 +83,7 @@ public struct ChatView: View {
 
     private var chatSurface: some View {
         VStack(spacing: 0) {
-            ChatProviderRouteBar(
-                status: viewModel.providerRouteStatus,
-                canEdit: viewModel.canEditProviderRoute
-            ) { preference in
-                Task { await viewModel.setProviderRoutePreference(preference) }
-            }
-
-            KairoBriefingStrip()
+            chatTopControls
 
             ScrollViewReader { proxy in
                 ScrollView {
@@ -187,6 +171,50 @@ public struct ChatView: View {
                 viewModel.cancelPendingAction()
             }
         }
+    }
+
+    private var chatTopControls: some View {
+        HStack(spacing: 10) {
+            ChatProviderRouteBar(
+                status: viewModel.providerRouteStatus,
+                canEdit: viewModel.canEditProviderRoute
+            ) { preference in
+                Task { await viewModel.setProviderRoutePreference(preference) }
+            }
+            .layoutPriority(1)
+
+            compactNewChatButton
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(Color(.sRGB, white: 0.985, opacity: 1))
+        .overlay(alignment: .bottom) {
+            Divider()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.top-controls")
+    }
+
+    private var compactNewChatButton: some View {
+        Button {
+            viewModel.startNewThread()
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "square.and.pencil")
+                    .imageScale(.small)
+                Text("New")
+                    .lineLimit(1)
+            }
+        }
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(KairoDesign.ink)
+        .padding(.horizontal, 9)
+        .frame(height: 34)
+        .fixedSize(horizontal: true, vertical: false)
+        .background(Color.primary.opacity(0.06), in: Capsule())
+        .buttonStyle(.plain)
+        .accessibilityLabel("New chat")
+        .accessibilityIdentifier("chat.new")
     }
 
     private var composer: some View {
@@ -475,11 +503,10 @@ private struct ChatBubble: View {
     ) -> some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .labelStyle(.titleAndIcon)
-                .font(.caption2.weight(.medium))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(Color.primary.opacity(0.06), in: Capsule())
+                .labelStyle(.iconOnly)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 26, height: 24)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(title) message")

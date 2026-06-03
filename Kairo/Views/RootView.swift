@@ -132,7 +132,23 @@ public struct RootView: View {
 
     private func rootHeader(topInset: CGFloat) -> some View {
         HStack(spacing: 12) {
-            KairoMark(size: 34)
+            if selectedSection == .home {
+                KairoMark(size: 34)
+            } else {
+                Button {
+                    selectedSection = .home
+                } label: {
+                    Label("Home", systemImage: "chevron.left")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.blue)
+                        .padding(.horizontal, 10)
+                        .frame(height: 34)
+                        .background(KairoDesign.blue.opacity(0.10), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Return home")
+                .accessibilityIdentifier("root.home")
+            }
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(selectedSection.title)
@@ -145,10 +161,6 @@ public struct RootView: View {
             }
 
             Spacer(minLength: 8)
-
-            if selectedSection == .chat {
-                KairoStatusPill(title: "Auto", systemImage: "arrow.triangle.branch", tint: KairoDesign.blue)
-            }
 
             Button {
                 isMenuPresented = true

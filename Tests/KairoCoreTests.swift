@@ -2520,7 +2520,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(rootView.contains("case home"))
         XCTAssertTrue(rootView.contains("case memory"))
         XCTAssertFalse(rootView.contains("TabView"))
-        XCTAssertTrue(chatView.contains("KairoBriefingStrip"))
+        XCTAssertFalse(chatView.contains("KairoBriefingStrip()"))
         XCTAssertTrue(actionPreview.contains("Review before Kairo acts"))
         XCTAssertTrue(actionPreview.contains("Nothing changes until you confirm."))
     }
@@ -2550,6 +2550,23 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(designSystem.contains(".symbolRenderingMode(.hierarchical)"))
         XCTAssertTrue(designSystem.contains(".frame(width: 28, height: 28)"))
         XCTAssertFalse(designSystem.contains(".background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))"))
+    }
+
+    func testChatScreenKeepsMobileNavigationAndContextSimple() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let rootView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
+        let chatView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatView.swift"), encoding: .utf8)
+        let routeBarView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatProviderRouteBar.swift"), encoding: .utf8)
+
+        XCTAssertTrue(rootView.contains(#""root.home""#))
+        XCTAssertTrue(rootView.contains("selectedSection = .home"))
+        XCTAssertFalse(rootView.contains(#"KairoStatusPill(title: "Auto""#))
+        XCTAssertTrue(chatView.contains(#""chat.top-controls""#))
+        XCTAssertFalse(chatView.contains("NavigationStack {"))
+        XCTAssertFalse(chatView.contains("KairoBriefingStrip()"))
+        XCTAssertTrue(routeBarView.contains("Menu {"))
+        XCTAssertTrue(routeBarView.contains(#""chat.provider-route.preference""#))
+        XCTAssertFalse(routeBarView.contains("routePreferenceControls"))
     }
 
     func testAutomationsViewSurfacesShortcutDemoNodeContracts() throws {
@@ -2598,12 +2615,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(routeBarView.contains("struct ChatProviderRouteBar"))
         XCTAssertTrue(routeBarView.contains(#""chat.provider-route""#))
         XCTAssertTrue(routeBarView.contains(#""chat.provider-route.title""#))
-        XCTAssertTrue(routeBarView.contains(#""chat.provider-route.detail""#))
-        XCTAssertTrue(routeBarView.contains(#""chat.provider-route.badge""#))
         XCTAssertTrue(routeBarView.contains(#""chat.provider-route.warning""#))
         XCTAssertTrue(routeBarView.contains(#""chat.provider-route.preference""#))
         XCTAssertTrue(routeBarView.contains(#""chat.provider-route.preference.\(preference.rawValue)""#))
-        XCTAssertTrue(routeBarView.contains("preference.chatControlTitle"))
+        XCTAssertTrue(routeBarView.contains("preference.settingsTitle"))
+        XCTAssertTrue(routeBarView.contains("Menu {"))
         XCTAssertTrue(chatView.contains(#""chat.composer.input-shell""#))
         XCTAssertTrue(chatView.contains(#""chat.composer.text""#))
         XCTAssertTrue(chatView.contains(#""chat.composer.send""#))
@@ -2900,8 +2916,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.new") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.title") == true)
-        XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.detail") == true)
-        XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.badge") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.preference") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.preference.preferCloud") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
@@ -3205,8 +3219,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("testChatMessageReplyPreviewAndCopyControlsExist"))
         XCTAssertTrue(uiTestSources.contains(#""chat.provider-route""#))
         XCTAssertTrue(uiTestSources.contains(#""chat.provider-route.title""#))
-        XCTAssertTrue(uiTestSources.contains(#""chat.provider-route.detail""#))
-        XCTAssertTrue(uiTestSources.contains(#""chat.provider-route.badge""#))
         XCTAssertTrue(uiTestSources.contains(#""chat.provider-route.preference""#))
         XCTAssertTrue(uiTestSources.contains(#""chat.provider-route.preference.preferCloud""#))
         XCTAssertTrue(uiTestSources.contains("Route: Automatic"))

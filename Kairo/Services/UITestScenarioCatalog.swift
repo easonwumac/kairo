@@ -42,8 +42,6 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "chat.new",
                 "chat.provider-route",
                 "chat.provider-route.title",
-                "chat.provider-route.detail",
-                "chat.provider-route.badge",
                 "chat.provider-route.preference",
                 "chat.provider-route.preference.automatic",
                 "chat.provider-route.preference.preferLocal",
