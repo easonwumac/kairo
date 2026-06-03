@@ -180,7 +180,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(previewSample.exists)
         previewSample.tap()
 
-        XCTAssertTrue(findElement("automations.message", direction: .both, maxSwipes: 4).waitForExistence(timeout: 5))
+        XCTAssertTrue(findElement("automations.shortcut-demo.generic-node-runner.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "Sample Generic Node Runner", direction: .both, maxSwipes: 2).exists)
     }
 

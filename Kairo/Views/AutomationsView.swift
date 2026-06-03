@@ -11,6 +11,7 @@ public struct AutomationsView: View {
 
     @State private var recipes: [KairoRecipe] = []
     @State private var message: String?
+    @State private var shortcutDemoPreviewMessages: [String: String] = [:]
     @State private var isLoading = false
 
     public init(
@@ -197,6 +198,14 @@ public struct AutomationsView: View {
             .buttonStyle(.bordered)
             .controlSize(.small)
             .disabled(isLoading)
+
+            if let previewMessage = shortcutDemoPreviewMessages[recipe.id] {
+                Text(previewMessage)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).preview-result")
+            }
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .contain)
@@ -279,9 +288,13 @@ public struct AutomationsView: View {
             let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
             let runner = ShortcutDemoRecipeRunner(runtime: runtime)
             let run = try await runner.runSample(recipe)
-            message = "Sample \(run.displaySummary)"
+            let previewMessage = "Sample \(run.displaySummary)"
+            shortcutDemoPreviewMessages[recipe.id] = previewMessage
+            message = previewMessage
         } catch {
-            message = "Unable to preview sample for \(recipe.title)."
+            let previewMessage = "Unable to preview sample for \(recipe.title)."
+            shortcutDemoPreviewMessages[recipe.id] = previewMessage
+            message = previewMessage
         }
     }
 

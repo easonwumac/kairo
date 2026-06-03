@@ -514,6 +514,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             identifiers.append("\(prefix).\(recipe.id).output")
             identifiers.append("\(prefix).\(recipe.id).sample")
             identifiers.append("\(prefix).\(recipe.id).preview-sample")
+            identifiers.append("\(prefix).\(recipe.id).preview-result")
         }
         return identifiers
     }
