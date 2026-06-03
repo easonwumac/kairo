@@ -2816,8 +2816,33 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("需要後端 token exchange。"))
         XCTAssertTrue(smokeTest.contains("Only pages/databases selected during Notion authorization may be read or written."))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsShortcutDemoInputOutputContracts"))
-        XCTAssertTrue(smokeTest.contains("func testShortcutsSurfaceShowsNodeDemoContracts()"))
-        XCTAssertTrue(smokeTest.contains(#"relaunchForUITesting(initialSection: "shortcuts")"#))
+        let settingsShortcutDemoStart = try XCTUnwrap(
+            smokeTest.range(of: "func testSettingsShowsShortcutDemoInputOutputContracts()")?.lowerBound
+        )
+        let settingsShortcutDemoEnd = try XCTUnwrap(
+            smokeTest.range(
+                of: "func testShortcutsSurfaceShowsNodeDemoContracts()",
+                range: settingsShortcutDemoStart..<smokeTest.endIndex
+            )?.lowerBound
+        )
+        let settingsShortcutDemoTest = String(smokeTest[settingsShortcutDemoStart..<settingsShortcutDemoEnd])
+        XCTAssertTrue(settingsShortcutDemoTest.contains(#"relaunchForUITesting(initialSection: "settings")"#))
+        XCTAssertFalse(settingsShortcutDemoTest.contains("assertPrimaryDrawerItemsExist()"))
+        XCTAssertFalse(settingsShortcutDemoTest.contains(#"selectDrawerSection(identifier: "root.drawer.settings""#))
+
+        let shortcutsSurfaceStart = try XCTUnwrap(
+            smokeTest.range(of: "func testShortcutsSurfaceShowsNodeDemoContracts()")?.lowerBound
+        )
+        let shortcutsSurfaceEnd = try XCTUnwrap(
+            smokeTest.range(
+                of: "func testSettingsShowsOAuthConnectorReadinessAndBoundaries()",
+                range: shortcutsSurfaceStart..<smokeTest.endIndex
+            )?.lowerBound
+        )
+        let shortcutsSurfaceTest = String(smokeTest[shortcutsSurfaceStart..<shortcutsSurfaceEnd])
+        XCTAssertTrue(shortcutsSurfaceTest.contains(#"relaunchForUITesting(initialSection: "shortcuts")"#))
+        XCTAssertFalse(shortcutsSurfaceTest.contains("assertPrimaryDrawerItemsExist()"))
+        XCTAssertFalse(shortcutsSurfaceTest.contains(#"selectDrawerSection(identifier: "root.drawer.shortcuts""#))
         XCTAssertTrue(smokeTest.contains(#""automations.shortcut-demo.generic-node-runner.preview-sample""#))
         XCTAssertTrue(smokeTest.contains("Daily Briefing"))
         XCTAssertTrue(smokeTest.contains("Save Shared Text"))
