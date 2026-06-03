@@ -4,8 +4,8 @@ import SwiftUI
 public struct RootView: View {
     private let environment: KairoEnvironment
     private let settingsMode: SettingsViewMode
-    @State private var selectedSection: RootSection = .chat
-    @State private var isDrawerOpen = false
+    @State private var selectedSection: RootSection = .home
+    @State private var isMenuPresented = false
 
     public init(
         environment: KairoEnvironment = .preview(),
@@ -14,7 +14,7 @@ public struct RootView: View {
     ) {
         self.environment = environment
         self.settingsMode = settingsMode
-        let section = initialSection.flatMap(RootSection.init(rawValue:)) ?? .chat
+        let section = initialSection.flatMap(RootSection.init(rawValue:)) ?? .home
         _selectedSection = State(initialValue: section)
     }
 
@@ -38,29 +38,17 @@ public struct RootView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea(edges: .top)
                 .ignoresSafeArea(.keyboard, edges: .bottom)
-
-                if isDrawerOpen {
-                    Color.black.opacity(0.28)
-                        .ignoresSafeArea()
-                        .accessibilityIdentifier("root.drawer.scrim")
-                        .onTapGesture {
-                            withAnimation(.easeInOut(duration: 0.22)) {
-                                isDrawerOpen = false
-                            }
-                        }
-                }
-
-                if isDrawerOpen {
-                    drawer(safeAreaInsets: safeAreaInsets)
-                        .transition(.move(edge: .leading))
-                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Self.fullScreenBackground.ignoresSafeArea())
+            .sheet(isPresented: $isMenuPresented) {
+                navigationMenu(safeAreaInsets: safeAreaInsets)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Self.fullScreenBackground.ignoresSafeArea())
-        .animation(.easeInOut(duration: 0.22), value: isDrawerOpen)
         .onOpenURL { url in
             guard let oauthCallbackStore = environment.oauthConnectorCallbackStore else { return }
             Task {
@@ -83,14 +71,20 @@ public struct RootView: View {
     }
 
     private static var fullScreenBackground: Color {
-        Color(.sRGB, white: 0.98, opacity: 1)
+        KairoDesign.background
     }
 
     @ViewBuilder
     private var selectedContent: some View {
         switch selectedSection {
+        case .home:
+            BriefingInboxView(selectSection: { section in
+                selectedSection = section
+            })
         case .chat:
             ChatView(environment: environment)
+        case .memory:
+            MemoryCenterView(store: environment.memoryStore)
         case .skills:
             PermissionHubView(
                 skillManagerService: environment.agentSkillManagerService,
@@ -138,117 +132,255 @@ public struct RootView: View {
 
     private func rootHeader(topInset: CGFloat) -> some View {
         HStack(spacing: 12) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.22)) {
-                    isDrawerOpen.toggle()
-                }
-            } label: {
-                Label("Menu", systemImage: "line.3.horizontal")
-                    .labelStyle(.iconOnly)
+            KairoMark(size: 34)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(selectedSection.title)
                     .font(.headline)
+                    .lineLimit(1)
+                Text(selectedSection.subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            if selectedSection != .models {
+                KairoStatusPill(title: "Auto", systemImage: "arrow.triangle.branch", tint: KairoDesign.blue)
+            }
+
+            Button {
+                isMenuPresented = true
+            } label: {
+                Label("Menu", systemImage: "ellipsis.circle")
+                    .labelStyle(.iconOnly)
+                    .font(.title3.weight(.semibold))
                     .frame(width: 42, height: 42)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(isDrawerOpen ? "Close navigation menu" : "Open navigation menu")
+            .accessibilityLabel("Open navigation menu")
             .accessibilityIdentifier("root.drawer.toggle")
-
-            Text(selectedSection.title)
-                .font(.headline)
-                .lineLimit(1)
-
-            Spacer()
         }
         .padding(.horizontal, 16)
         .padding(.top, max(topInset, 0) + 8)
-        .padding(.bottom, 8)
+        .padding(.bottom, 10)
         .background(.regularMaterial)
+        .overlay(alignment: .bottom) {
+            Divider()
+        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("root.safe-area-header")
     }
 
-    private func drawer(safeAreaInsets: EdgeInsets) -> some View {
-        ZStack(alignment: .topLeading) {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Kairo")
-                            .font(.title2.bold())
-                        Text("iPhone agent")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.22)) {
-                            isDrawerOpen = false
+    private func navigationMenu(safeAreaInsets: EdgeInsets) -> some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityIdentifier("root.menu.sheet")
+
+                    HStack(spacing: 12) {
+                        KairoMark(size: 44)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Kairo")
+                                .font(.title3.bold())
+                            Text("Choose what to review, remember, or run.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.headline)
-                            .frame(width: 36, height: 36)
+                        Spacer()
+                        Button {
+                            isMenuPresented = false
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 38, height: 38)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Close navigation menu")
+                        .accessibilityIdentifier("root.drawer.close")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Close navigation menu")
-                    .accessibilityIdentifier("root.drawer.close")
-                }
-                .padding(.top, max(safeAreaInsets.top, 0) + 14)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(RootSection.allCases) { section in
-                        drawerRow(section)
+                    KairoGroupedSurface {
+                        ForEach(RootSection.allCases) { section in
+                            navigationRow(section)
+                            if section != RootSection.allCases.last {
+                                Divider()
+                                    .padding(.leading, 44)
+                            }
+                        }
                     }
+
+                    Text("Kairo uses public APIs, explicit permission, and visible handoff.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-
-                Spacer()
-
-                Text("Public APIs, explicit permission, visible handoff.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 18)
+                .padding(.top, 8)
+                .padding(.bottom, max(safeAreaInsets.bottom, 0) + 24)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, max(safeAreaInsets.bottom, 0) + 24)
+            .background(KairoDesign.background.ignoresSafeArea())
+            .navigationTitle("Navigate")
         }
-        .frame(width: 304)
-        .frame(maxHeight: .infinity)
-        .background(.regularMaterial)
-        .shadow(color: .black.opacity(0.18), radius: 22, x: 8, y: 0)
-        .ignoresSafeArea(edges: [.top, .leading, .bottom])
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Kairo navigation drawer")
+        .accessibilityLabel("Kairo navigation menu")
         .accessibilityIdentifier("root.drawer")
     }
 
-    private func drawerRow(_ section: RootSection) -> some View {
+    private func navigationRow(_ section: RootSection) -> some View {
         Button {
             selectedSection = section
-            withAnimation(.easeInOut(duration: 0.22)) {
-                isDrawerOpen = false
-            }
+            isMenuPresented = false
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: section.systemImage)
-                    .frame(width: 24)
-                Text(section.title)
-                    .fontWeight(selectedSection == section ? .semibold : .regular)
-                Spacer()
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(section.tint)
+                    .frame(width: 32, height: 32)
+                    .background(section.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(section.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(section.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
+
                 if selectedSection == section {
-                    Image(systemName: "checkmark")
-                        .font(.caption.bold())
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(section.tint)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 11)
-            .foregroundStyle(selectedSection == section ? Color.accentColor : Color.primary)
-            .background(selectedSection == section ? Color.accentColor.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("root.drawer.\(section.rawValue)")
     }
 }
 
+private struct BriefingInboxView: View {
+    let selectSection: (RootSection) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Today")
+                        .font(.largeTitle.bold())
+                    Text("Review what Kairo can safely help with before anything changes.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, 18)
+
+                KairoGroupedSurface {
+                    KairoActionRow(
+                        title: "Ask Kairo",
+                        subtitle: "Start a chat with memory, routes, and safe actions available.",
+                        systemImage: "text.bubble",
+                        tint: KairoDesign.blue,
+                        trailingText: "Open"
+                    ) {
+                        selectSection(.chat)
+                    }
+                    .accessibilityIdentifier("home.ask-kairo")
+
+                    Divider().padding(.leading, 44)
+
+                    KairoActionRow(
+                        title: "Review Queue",
+                        subtitle: "Reminder, calendar, and handoff drafts wait for confirmation.",
+                        systemImage: "checklist.checked",
+                        tint: KairoDesign.amber,
+                        trailingText: "3"
+                    ) {
+                        selectSection(.chat)
+                    }
+                    .accessibilityIdentifier("home.review-queue")
+
+                    Divider().padding(.leading, 44)
+
+                    KairoActionRow(
+                        title: "Memory",
+                        subtitle: "Search saved context or add a user-approved memory.",
+                        systemImage: "books.vertical",
+                        tint: KairoDesign.teal,
+                        trailingText: "Ready"
+                    ) {
+                        selectSection(.memory)
+                    }
+                    .accessibilityIdentifier("home.memory")
+                }
+
+                KairoGroupedSurface {
+                    KairoActionRow(
+                        title: "Tools & Access",
+                        subtitle: "Skills, permissions, HomeKit demos, and compatibility gates.",
+                        systemImage: "switch.2",
+                        tint: KairoDesign.teal
+                    ) {
+                        selectSection(.access)
+                    }
+                    .accessibilityIdentifier("home.access")
+
+                    Divider().padding(.leading, 44)
+
+                    KairoActionRow(
+                        title: "Automations",
+                        subtitle: "Internal Kairo recipes and user-installed Shortcut templates.",
+                        systemImage: "square.stack.3d.up",
+                        tint: KairoDesign.amber
+                    ) {
+                        selectSection(.shortcuts)
+                    }
+                    .accessibilityIdentifier("home.automations")
+
+                    Divider().padding(.leading, 44)
+
+                    KairoActionRow(
+                        title: "Models",
+                        subtitle: "Cloud route, local fallback, downloads, and reply checks.",
+                        systemImage: "cpu",
+                        tint: KairoDesign.blue
+                    ) {
+                        selectSection(.models)
+                    }
+                    .accessibilityIdentifier("home.models")
+                }
+
+                HStack(spacing: 8) {
+                    KairoStatusPill(title: "No silent writes", systemImage: "hand.raised", tint: KairoDesign.amber)
+                    KairoStatusPill(title: "Public APIs", systemImage: "checkmark.shield", tint: KairoDesign.teal)
+                }
+                .accessibilityIdentifier("home.safety-pills")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 18)
+            .padding(.bottom, 32)
+        }
+        .scrollIndicators(.hidden)
+        .background(KairoDesign.background.ignoresSafeArea())
+        .accessibilityIdentifier("home.briefing-inbox")
+    }
+}
+
 private enum RootSection: String, CaseIterable, Identifiable {
+    case home
     case chat
+    case memory
     case skills
     case shortcuts
     case access
@@ -259,12 +391,16 @@ private enum RootSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .home:
+            return "Today"
         case .chat:
             return "Chat"
+        case .memory:
+            return "Memory"
         case .skills:
             return "Skills"
         case .shortcuts:
-            return "Shortcuts"
+            return "Automations"
         case .access:
             return "Access"
         case .models:
@@ -274,10 +410,35 @@ private enum RootSection: String, CaseIterable, Identifiable {
         }
     }
 
+    var subtitle: String {
+        switch self {
+        case .home:
+            return "Briefing inbox"
+        case .chat:
+            return "Ask and review"
+        case .memory:
+            return "Saved context"
+        case .skills:
+            return "Managed tools"
+        case .shortcuts:
+            return "Recipes and templates"
+        case .access:
+            return "Permissions and skills"
+        case .models:
+            return "Cloud and local route"
+        case .settings:
+            return "Accounts and privacy"
+        }
+    }
+
     var systemImage: String {
         switch self {
+        case .home:
+            return "tray.full"
         case .chat:
             return "message"
+        case .memory:
+            return "books.vertical"
         case .skills:
             return "wrench.and.screwdriver"
         case .shortcuts:
@@ -288,6 +449,19 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return "cpu"
         case .settings:
             return "gear"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .home, .memory, .access:
+            return KairoDesign.teal
+        case .chat, .models:
+            return KairoDesign.blue
+        case .skills, .shortcuts:
+            return KairoDesign.amber
+        case .settings:
+            return KairoDesign.muted
         }
     }
 }

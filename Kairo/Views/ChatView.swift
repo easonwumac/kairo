@@ -99,6 +99,8 @@ public struct ChatView: View {
                 Task { await viewModel.setProviderRoutePreference(preference) }
             }
 
+            KairoBriefingStrip()
+
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
@@ -142,7 +144,7 @@ public struct ChatView: View {
                     }
                     .padding(.vertical, 16)
                 }
-                .background(Color.gray.opacity(0.08))
+                .background(KairoDesign.background)
                 .onChange(of: viewModel.currentThread.messages.count) { _, _ in
                     scrollToBottom(proxy)
                 }

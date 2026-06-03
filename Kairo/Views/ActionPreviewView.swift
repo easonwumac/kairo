@@ -20,42 +20,105 @@ public struct ActionPreviewView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(action.title).font(.title2.bold())
-                    if let descriptor {
-                        Text(descriptor.displayName).font(.caption).foregroundStyle(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                Capsule()
+                    .fill(Color.secondary.opacity(0.35))
+                    .frame(width: 42, height: 5)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
+
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: action.kind == .unsupportedSandboxAction ? "exclamationmark.triangle.fill" : "checkmark.shield.fill")
+                        .font(.title2)
+                        .foregroundStyle(action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal)
+                        .frame(width: 42, height: 42)
+                        .background((action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Review before Kairo acts")
+                            .font(.title3.bold())
+                        Text(action.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text("Nothing changes until you confirm.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
+
+                    Spacer(minLength: 0)
                 }
-                Spacer()
+
+                HStack(spacing: 8) {
+                    if let descriptor {
+                        CapabilityChipView(descriptor: descriptor)
+                    }
+                    KairoStatusPill(title: action.riskTier.rawValue, systemImage: "gauge.medium", tint: riskColor)
+                }
+
                 if let descriptor {
-                    CapabilityChipView(descriptor: descriptor)
+                    reviewField(title: "Capability", value: descriptor.displayName)
                 }
-            }
 
-            Text(action.rationale).foregroundStyle(.secondary)
-            actionPayloadPreview
-            Text("Risk: \(action.riskTier.rawValue)").font(.caption)
+                reviewField(title: "Why", value: action.rationale)
 
-            HStack {
-                Button(role: .cancel, action: onCancel) {
-                    Text("Cancel")
-                        .accessibilityIdentifier("chat.action.cancel.label")
+                KairoGroupedSurface {
+                    actionPayloadPreview
                 }
+
+                HStack(spacing: 12) {
+                    Button(role: .cancel, action: onCancel) {
+                        Text("Edit")
+                            .frame(maxWidth: .infinity)
+                            .accessibilityIdentifier("chat.action.cancel.label")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
                     .accessibilityIdentifier("chat.action.cancel")
-                Spacer()
-                Button(action: onConfirm) {
-                    Text(action.kind == .unsupportedSandboxAction ? "OK" : "Confirm")
-                        .accessibilityIdentifier("chat.action.confirm.label")
-                }
+
+                    Button(action: onConfirm) {
+                        Text(action.kind == .unsupportedSandboxAction ? "OK" : "Confirm")
+                            .frame(maxWidth: .infinity)
+                            .accessibilityIdentifier("chat.action.confirm.label")
+                    }
                     .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                     .disabled(descriptor?.supportStatus == .unsupportedBySandbox)
                     .accessibilityIdentifier("chat.action.confirm")
+                }
             }
+            .padding(.horizontal, 18)
+            .padding(.top, 12)
+            .padding(.bottom, 24)
         }
-        .padding()
+        .background(KairoDesign.background.ignoresSafeArea())
         .accessibilityIdentifier("chat.action-preview")
+    }
+
+    private var riskColor: Color {
+        switch action.riskTier {
+        case .tier0ReadOnly:
+            return KairoDesign.muted
+        case .tier1Draft:
+            return KairoDesign.blue
+        case .tier2LowRiskWrite:
+            return KairoDesign.amber
+        case .tier3HighRiskExternal:
+            return KairoDesign.red
+        }
+    }
+
+    private func reviewField(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.subheadline)
+                .foregroundStyle(KairoDesign.ink)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
