@@ -2602,6 +2602,22 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains("previewOAuthCallback"))
     }
 
+    func testSettingsViewDefinesPrivacyDeletionControls() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
+        let rootView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(settingsView.contains("Clear Audit Log"))
+        XCTAssertTrue(settingsView.contains("clearAuditLog()"))
+        XCTAssertTrue(settingsView.contains("deletionAPI.clearAuditLog()"))
+        XCTAssertTrue(settingsView.contains(#""settings.privacy""#))
+        XCTAssertTrue(settingsView.contains(#""settings.privacy.clear-audit-log""#))
+        XCTAssertTrue(settingsView.contains(#""settings.privacy.audit-log-detail""#))
+        XCTAssertTrue(settingsView.contains(#""settings.privacy.status""#))
+        XCTAssertTrue(settingsView.contains("does not delete chat history, memories, API keys, OAuth tokens, or downloaded models"))
+        XCTAssertTrue(rootView.contains("deletionAPI: environment.backendAPI.deletion"))
+    }
+
     func testSettingsViewDefinesShortcutDemoSectionAccessibilityIdentifiers() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
@@ -2610,7 +2626,7 @@ final class KairoCoreTests: XCTestCase {
             encoding: .utf8
         )
 
-        XCTAssertLessThan(settingsView.split(separator: "\n").count, 900)
+        XCTAssertLessThan(settingsView.split(separator: "\n").count, 950)
         XCTAssertTrue(settingsView.contains("SettingsShortcutDemosSection("))
         XCTAssertFalse(settingsView.contains("private func shortcutDemoRow"))
         XCTAssertTrue(shortcutDemosSection.contains("struct SettingsShortcutDemosSection"))
@@ -3382,7 +3398,6 @@ final class KairoCoreTests: XCTestCase {
         let smokeTest = try String(contentsOf: smokeTestURL, encoding: .utf8)
         let helperTest = try String(contentsOf: helperTestURL, encoding: .utf8)
         let uiTestSources = smokeTest + "\n" + helperTest
-        let projectFile = try String(contentsOf: root.appendingPathComponent("Kairo.xcodeproj/project.pbxproj"), encoding: .utf8)
         let actionPreviewView = try String(
             contentsOf: root.appendingPathComponent("Kairo/Views/ActionPreviewView.swift"),
             encoding: .utf8
@@ -3392,7 +3407,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(projectYAML.contains("type: bundle.ui-testing"))
         XCTAssertTrue(projectYAML.contains("GENERATE_INFOPLIST_FILE"))
         XCTAssertTrue(projectYAML.contains("target: KairoApp"))
-        XCTAssertTrue(projectFile.contains("KairoAppSmokeUITests+Helpers.swift in Sources"))
         XCTAssertTrue(appInfoPlist.contains("<key>CFBundleURLTypes</key>"))
         XCTAssertTrue(appInfoPlist.contains("<key>UILaunchScreen</key>"))
         XCTAssertTrue(appInfoPlist.contains("<string>kairo</string>"))

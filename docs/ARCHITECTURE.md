@@ -79,6 +79,8 @@ SwiftUI views should move toward calling app-facing backend APIs instead of dire
 
 The UI pass should bind screens to these backend APIs rather than adding feature logic directly into SwiftUI views.
 
+Settings / Privacy uses this boundary for the user-triggered Clear Audit Log action, which clears only metadata-only audit records and does not delete chat history, memories, credentials, OAuth tokens, or downloaded models.
+
 ## Agent skills
 
 `AgentSkillCatalog` packages usable capabilities as managed skills. A skill can bind to an `AgentAction`, a Shortcut recipe, an OAuth connector, a local model, or a marketplace manifest. Installed skills are included in `CapabilityPromptContextBuilder` so the model sees named tools it may propose, including whether each skill requires confirmation.

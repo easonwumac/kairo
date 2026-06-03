@@ -199,7 +199,7 @@ Current beta deletion is on-device and user-triggered:
 | Memory records | Memory Center delete button removes a record; export shares active records only. | `JSONFileMemoryStore.delete` marks records deleted and `purgeDeleted` removes deleted JSON records from disk. |
 | Local models | Settings / Models delete removes the installed model and clears selected-model state. | Package tests cover selected-model delete; no model weights are committed or bundled. |
 | API keys / OAuth tokens | Settings delete/disconnect removes Keychain-backed secrets. | Package tests cover OpenAI API key delete and OAuth token disconnect/delete. |
-| Audit logs | Metadata-only audit logs are file-backed; full sensitive payloads should not be stored. | `KairoDeletionAPI.clearAuditLog()` and package tests cover backend deletion; user-facing UI wiring is deferred to the UI pass before submission if audit deletion must be exposed. |
+| Audit logs | Settings / Privacy exposes a user-triggered Clear Audit Log action for metadata-only audit logs; full sensitive payloads should not be stored. | `KairoDeletionAPI.clearAuditLog()` and package tests cover backend deletion; Settings UI wiring exposes the clear action without deleting chat history, memories, API keys, OAuth tokens, or downloaded models. |
 | Backend account | Not applicable in current beta. | No backend account exists; do not include backend deletion claims in shipped review copy. |
 
 ## Privacy label alignment
@@ -268,7 +268,7 @@ Because no available real device was reachable, the following remain release-blo
 
 - Kairo is a chat-first iOS app that uses only public APIs, App Intents, Share Extension, BGTaskScheduler, official OAuth/API flows, and visible URL handoffs.
 - Shared content enters Kairo only through Share Extension, document/photo pickers, App Intents/Shortcuts, or official OAuth APIs. Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions.
-- On-device deletion is user-triggered for chat history, memory JSON/export content, downloaded local models, and saved API keys. Metadata-only audit log deletion now has a backend API and package test coverage; expose it through UI during the UI pass if App Review requires a user-facing audit-log clear control. If a future Kairo backend account is added, backend account-deletion copy must be reviewed separately before release.
+- On-device deletion is user-triggered for chat history, memory JSON/export content, downloaded local models, saved API keys, OAuth tokens, and metadata-only audit logs. If a future Kairo backend account is added, backend account-deletion copy must be reviewed separately before release.
 - Background tasks are bounded refresh/index/verify/cleanup jobs only. Kairo is not a daemon, does not watch the screen, and background work can be disabled by the user through iOS settings.
 - Any write or external action is previewed and requires explicit confirmation according to the app safety policy.
 - Local model catalog/download/select/delete are present, but iOS production local inference is not complete. macOS/dev reply checks and benchmark numbers are not iPhone runtime proof.

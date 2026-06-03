@@ -34,6 +34,7 @@ public struct SettingsView: View {
     @State private var localModelDownloadTask: Task<Void, Never>?
     @State private var localModelStatusMessage: String?
     @State private var localModelStatusMessageModelID: String?
+    @State private var privacyStatusMessage: String?
 
     private let settingsService: OpenAISettingsService
     private let mode: SettingsViewMode
@@ -45,6 +46,7 @@ public struct SettingsView: View {
     private let localModelDownloader: (any LocalModelDownloader)?
     private let localModelBenchmarkService: LocalModelBenchmarkService?
     private let localModelReplyCheckService: LocalModelReplyCheckService?
+    private let deletionAPI: (any KairoDeletionAPI)?
 
     public init(
         mode: SettingsViewMode = .all,
@@ -56,7 +58,8 @@ public struct SettingsView: View {
         localModelSettingsService: LocalModelSettingsService? = nil,
         localModelDownloader: (any LocalModelDownloader)? = nil,
         localModelBenchmarkService: LocalModelBenchmarkService? = nil,
-        localModelReplyCheckService: LocalModelReplyCheckService? = nil
+        localModelReplyCheckService: LocalModelReplyCheckService? = nil,
+        deletionAPI: (any KairoDeletionAPI)? = nil
     ) {
         self.settingsService = OpenAISettingsService(credentialStore: credentialStore)
         self.mode = mode
@@ -68,6 +71,7 @@ public struct SettingsView: View {
         self.localModelDownloader = localModelDownloader
         self.localModelBenchmarkService = localModelBenchmarkService
         self.localModelReplyCheckService = localModelReplyCheckService
+        self.deletionAPI = deletionAPI
         self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
@@ -83,7 +87,8 @@ public struct SettingsView: View {
         localModelSettingsService: LocalModelSettingsService? = nil,
         localModelDownloader: (any LocalModelDownloader)? = nil,
         localModelBenchmarkService: LocalModelBenchmarkService? = nil,
-        localModelReplyCheckService: LocalModelReplyCheckService? = nil
+        localModelReplyCheckService: LocalModelReplyCheckService? = nil,
+        deletionAPI: (any KairoDeletionAPI)? = nil
     ) {
         self.settingsService = settingsService
         self.mode = mode
@@ -95,6 +100,7 @@ public struct SettingsView: View {
         self.localModelDownloader = localModelDownloader
         self.localModelBenchmarkService = localModelBenchmarkService
         self.localModelReplyCheckService = localModelReplyCheckService
+        self.deletionAPI = deletionAPI
         self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
@@ -199,7 +205,25 @@ public struct SettingsView: View {
                     Text("API key 只應儲存在 Keychain。Kairo 不應把 secret 寫入 UserDefaults、log 或 analytics。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    Button("Clear Audit Log", role: .destructive) {
+                        clearAuditLog()
+                    }
+                    .disabled(deletionAPI == nil)
+                    .accessibilityIdentifier("settings.privacy.clear-audit-log")
+
+                    Text("Clears the local metadata-only audit log. It does not delete chat history, memories, API keys, OAuth tokens, or downloaded models.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("settings.privacy.audit-log-detail")
+
+                    if let privacyStatusMessage {
+                        Text(privacyStatusMessage)
+                            .font(.caption)
+                            .accessibilityIdentifier("settings.privacy.status")
+                    }
                 }
+                .accessibilityIdentifier("settings.privacy")
 
                 if statusMessage != nil || connectorStatusMessage != nil {
                     Section("Status") {
@@ -542,6 +566,27 @@ public struct SettingsView: View {
             } catch {
                 await MainActor.run {
                     statusMessage = "Dry run 失敗：\(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func clearAuditLog() {
+        Task {
+            guard let deletionAPI else {
+                await MainActor.run {
+                    privacyStatusMessage = "Audit log deletion is unavailable in this environment."
+                }
+                return
+            }
+            do {
+                try await deletionAPI.clearAuditLog()
+                await MainActor.run {
+                    privacyStatusMessage = "Metadata-only audit log 已清除。"
+                }
+            } catch {
+                await MainActor.run {
+                    privacyStatusMessage = "Audit log 清除失敗：\(error.localizedDescription)"
                 }
             }
         }

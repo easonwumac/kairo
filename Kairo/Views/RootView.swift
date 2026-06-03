@@ -115,7 +115,8 @@ public struct RootView: View {
                 localModelSettingsService: environment.localModelSettingsService,
                 localModelDownloader: environment.localModelDownloader,
                 localModelBenchmarkService: environment.localModelBenchmarkService,
-                localModelReplyCheckService: environment.localModelReplyCheckService
+                localModelReplyCheckService: environment.localModelReplyCheckService,
+                deletionAPI: environment.backendAPI.deletion
             )
         }
     }
