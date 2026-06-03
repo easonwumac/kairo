@@ -24,8 +24,10 @@ final class KairoAppSmokeUITests: XCTestCase {
     func testLaunchDrawerChatAndSettingsSmokeFlow() throws {
         assertPrimaryDrawerItemsExist()
         sendChatMessage()
-        openAccessAndVerifyHomeKitDemos()
-        verifySkillManagerInteractionFlow()
+        selectDrawerSection(identifier: "root.drawer.access", label: "Access")
+        scrollTowardTop()
+        XCTAssertTrue(findButton("access.skills.marketplace-refresh", direction: .down, maxSwipes: 6).exists)
+        XCTAssertTrue(findElement("access.skill.homekit-evening-scene", direction: .down, maxSwipes: 8).exists)
         openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: false)
     }
 

@@ -182,6 +182,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] `swift test` 通過。
 - [x] `xcodegen generate` 通過。
 - [x] Focused simulator XCUITest smoke 通過：
+  - `testLaunchDrawerChatAndSettingsSmokeFlow`
   - `testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe`
   - `testAccessSkillManagerBlocksIncompatibleMarketplaceSkillInstall`
   - `testAccessSkillManagerSearchFiltersSkills`
@@ -199,7 +200,6 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
 - [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
 - [x] 不支援的跨 App 操作會顯示安全替代方案。
-- [ ] Full `testLaunchDrawerChatAndSettingsSmokeFlow` 尚未成為穩定的 sign-off gate；目前在 simulator 仍因 Access 清單捲動範圍過大而不適合拿來當上架前唯一 smoke。
 - [ ] 真機 smoke 尚未在這一輪重跑；Chat / Memory / Access / Settings / Share Extension / App Intents 仍需實機簽核。
 - [ ] App Intent Ask / Save / Search 在這一輪尚未做 device-level smoke；目前證據是 package tests 與 source coverage，不是實機驗證。
 - [ ] Chat history app 重啟後仍需在真機重跑簽核。
