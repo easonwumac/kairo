@@ -7,10 +7,14 @@ public struct MemoryCenterView: View {
     @State private var errorMessage: String?
     @State private var exportText: String = "{}"
 
-    private let store: MemoryStore
+    private let memoryAPI: any KairoMemoryAPI
 
     public init(store: MemoryStore = InMemoryMemoryStore()) {
-        self.store = store
+        self.memoryAPI = KairoMemoryBackendService(memoryStore: store)
+    }
+
+    public init(memoryAPI: any KairoMemoryAPI) {
+        self.memoryAPI = memoryAPI
     }
 
     public var body: some View {
@@ -140,7 +144,7 @@ public struct MemoryCenterView: View {
                 source: .manual
             )
             do {
-                try await store.save(memory)
+                try await memoryAPI.save(memory)
                 await reload()
             } catch {
                 await MainActor.run {
@@ -153,7 +157,7 @@ public struct MemoryCenterView: View {
     private func delete(_ memory: MemoryRecord) {
         Task {
             do {
-                try await store.delete(id: memory.id)
+                try await memoryAPI.delete(id: memory.id)
                 await reload()
             } catch {
                 await MainActor.run {
@@ -165,8 +169,8 @@ public struct MemoryCenterView: View {
 
     private func reload() async {
         do {
-            let loaded = try await store.list(limit: 50)
-            let export = try await store.export(limit: 500)
+            let loaded = try await memoryAPI.list(limit: 50)
+            let export = try await memoryAPI.export(limit: 500)
             let exportText = try Self.exportText(for: export)
             await MainActor.run {
                 memories = loaded

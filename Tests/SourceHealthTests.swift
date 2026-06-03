@@ -221,6 +221,25 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(readiness.contains("Kairo does not create, edit, install, or reorder Apple Shortcuts silently."))
     }
 
+    func testLocalModelDocsKeepRuntimeProofBoundaryExplicit() throws {
+        let root = packageRootURL()
+        let localModelFallback = try String(
+            contentsOf: root.appendingPathComponent("docs/LOCAL_MODEL_FALLBACK.md"),
+            encoding: .utf8
+        )
+        let readiness = try String(
+            contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(localModelFallback.contains("## Current beta boundary"))
+        XCTAssertTrue(localModelFallback.contains("catalog, explicit user-triggered download, select, delete, progress/cancel UI, checksum verification, trust-store verification"))
+        XCTAssertTrue(localModelFallback.contains("does not yet ship an App Store-compatible iPhone production inference runtime"))
+        XCTAssertTrue(localModelFallback.contains("not iPhone runtime proof"))
+        XCTAssertTrue(readiness.contains("| iOS production local model inference runtime | Planned |"))
+        XCTAssertTrue(readiness.contains("macOS/dev reply checks and benchmark numbers are not iPhone runtime proof"))
+    }
+
     func testTrustStoreRunbookDocumentsRotationWithoutPrivateArtifacts() throws {
         let root = packageRootURL()
         let runbook = try String(

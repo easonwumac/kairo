@@ -2,6 +2,7 @@ import Foundation
 
 public struct KairoBackendAPI: Sendable {
     public let chat: any KairoChatAPI
+    public let memory: any KairoMemoryAPI
     public let deletion: any KairoDeletionAPI
     public let localModels: any KairoLocalModelAPI
     public let skills: any KairoSkillAPI
@@ -10,6 +11,7 @@ public struct KairoBackendAPI: Sendable {
 
     public init(
         chat: any KairoChatAPI,
+        memory: any KairoMemoryAPI,
         deletion: any KairoDeletionAPI,
         localModels: any KairoLocalModelAPI,
         skills: any KairoSkillAPI,
@@ -17,11 +19,58 @@ public struct KairoBackendAPI: Sendable {
         access: any KairoAccessAPI
     ) {
         self.chat = chat
+        self.memory = memory
         self.deletion = deletion
         self.localModels = localModels
         self.skills = skills
         self.settings = settings
         self.access = access
+    }
+}
+
+public protocol KairoMemoryAPI: Sendable {
+    func list(limit: Int) async throws -> [MemoryRecord]
+    func search(query: String, limit: Int) async throws -> [MemoryRecord]
+    func save(_ memory: MemoryRecord) async throws
+    func delete(id: UUID) async throws
+    func erase(id: UUID) async throws
+    func purgeDeleted() async throws
+    func export(limit: Int) async throws -> MemoryExport
+}
+
+public struct KairoMemoryBackendService: KairoMemoryAPI {
+    private let memoryStore: any MemoryStore
+
+    public init(memoryStore: any MemoryStore) {
+        self.memoryStore = memoryStore
+    }
+
+    public func list(limit: Int = 50) async throws -> [MemoryRecord] {
+        try await memoryStore.list(limit: limit)
+    }
+
+    public func search(query: String, limit: Int = 20) async throws -> [MemoryRecord] {
+        try await memoryStore.search(query: query, limit: limit)
+    }
+
+    public func save(_ memory: MemoryRecord) async throws {
+        try await memoryStore.save(memory)
+    }
+
+    public func delete(id: UUID) async throws {
+        try await memoryStore.delete(id: id)
+    }
+
+    public func erase(id: UUID) async throws {
+        try await memoryStore.erase(id: id)
+    }
+
+    public func purgeDeleted() async throws {
+        try await memoryStore.purgeDeleted()
+    }
+
+    public func export(limit: Int = 50) async throws -> MemoryExport {
+        try await memoryStore.export(limit: limit)
     }
 }
 
@@ -357,6 +406,7 @@ public extension KairoEnvironment {
         )
         return KairoBackendAPI(
             chat: KairoChatBackendService(agent: agent),
+            memory: KairoMemoryBackendService(memoryStore: memoryStore),
             deletion: KairoDeletionBackendService(
                 chatHistoryStore: chatHistoryStore,
                 memoryStore: memoryStore,

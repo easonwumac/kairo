@@ -7,7 +7,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 | Area | Status | Review note |
 |---|---|---|
 | Chat-first app shell | Implemented | Chat is the primary surface; support screens sit behind More. |
-| Memory | Implemented | Save/search/delete/export exists; deleted JSON records can be purged from disk. |
+| Memory | Implemented | Save/search/delete/export exists behind a backend API facade; deleted JSON records can be purged from disk. |
 | Share Extension ingestion | Implemented | Text/URL/image/PDF/file metadata imports into Chat; extension is queue-only and action-free. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA. |
 | Skill Manager | Scaffolded | Access lifecycle exists; backend API facade covers catalog/effective catalog/preview/install/disable/enable/remove/user drafts with fail-closed behavior; signed marketplace install/update, compatibility-blocked install, and user-created remove flows have simulator XCUITest smoke coverage; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
@@ -73,6 +73,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 ### 3. Memory privacy
 
 - [x] Memory Center 可查看、刪除與匯出記憶；manual edit remains outside the current beta scope unless added explicitly.
+- [x] Memory backend API facade covers list/search/save/delete/erase/export/purge so the UI does not need direct store access for lifecycle actions.
 - [x] Private chat 不查詢/帶入 long-term memory context，且會過濾 `saveMemory` action/tool candidates；package tests cover this, not real-device evidence.
 - [x] 刪除記憶會在 JSON store 標記刪除，且 purge path 可從磁碟移除 deleted records；目前沒有 production embedding index。
 - [x] Private chat request metadata sets provider routing privacy mode; without a selected local model it fails closed instead of calling cloud completion. Package tests cover this, not real-device evidence.
@@ -260,7 +261,7 @@ Because no available real device was reachable, the following remain release-blo
   - `testChatCanPreviewAndConfirmMessagesHandoff`
   - `testChatCanPreviewAndConfirmPhoneCallHandoff`
   - `testChatCanPreviewAndConfirmWebSearchHandoff`
-- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, App Intent registry/type coverage plus Ask/Save/Search node runtime, Access permission backend API status/request forwarding, local model catalog unknown/revoked/invalid signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup, local model backend API facade status/select/preference/delete/stale-cleanup/fail-closed behavior, Skill Manager backend API facade lifecycle/user-draft/compatibility/fail-closed behavior, Settings backend API facade OpenAI/OAuth secret-redaction behavior, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
+- [x] Package tests currently cover Memory save/search/delete/export plus backend API lifecycle/export facade, Share Extension import, App Intent registry/type coverage plus Ask/Save/Search node runtime, Access permission backend API status/request forwarding, local model catalog unknown/revoked/invalid signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup, local model backend API facade status/select/preference/delete/stale-cleanup/fail-closed behavior, Skill Manager backend API facade lifecycle/user-draft/compatibility/fail-closed behavior, Settings backend API facade OpenAI/OAuth secret-redaction behavior, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
 - [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
 - [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
 - [x] 不支援的跨 App 操作會顯示安全替代方案。

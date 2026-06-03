@@ -79,7 +79,7 @@ public struct RootView: View {
         case .chat:
             ChatView(environment: environment)
         case .memory:
-            MemoryCenterView(store: environment.memoryStore)
+            MemoryCenterView(memoryAPI: environment.backendAPI.memory)
         case .shortcuts:
             AutomationsView(
                 recipeStore: environment.kairoRecipeStore,
