@@ -490,9 +490,13 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "access.skills.manifest-preview",
                 "access.skills.manifest-preview.compatibility",
                 "access.skills.manifest-preview.confirm",
+                "access.skill.homekit-front-door-lock",
+                "access.skill.homekit-front-door-lock.manage",
                 "access.homekit.demos",
                 "access.homekit.demo.evening-scene",
-                "access.homekit.demo.evening-scene.confirm"
+                "access.homekit.demo.evening-scene.confirm",
+                "access.homekit.demo.front-door-lock",
+                "access.homekit.demo.front-door-lock.confirm"
             ],
             assertions: [
                 "Skill Manager section is visible.",
@@ -505,7 +509,8 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "A marketplace skill with missing OAuth/model prerequisites is compatibility-blocked.",
                 "HomeKit demo section is visible.",
                 "A scene control demo is visible.",
-                "The demo exposes confirmation before execution."
+                "A high-risk lock demo is visible.",
+                "The demos expose confirmation before execution."
             ]
         )
     ])

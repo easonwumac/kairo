@@ -505,6 +505,16 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
             installationStatus: .installed,
             requiredCapabilities: [.homeKit],
             action: HomeKitControlDemoCatalog.default.recipe(id: "desk-lamp")?.action
+        ),
+        AgentSkill(
+            id: "homekit-front-door-lock",
+            displayName: "Front Door Lock Guard",
+            summary: "Preview a HomeKit security-device write; locks always require in-app confirmation.",
+            kind: .homeKitControl,
+            source: .builtIn,
+            installationStatus: .installed,
+            requiredCapabilities: [.homeKit],
+            action: HomeKitControlDemoCatalog.default.recipe(id: "front-door-lock")?.action
         )
     ]
 

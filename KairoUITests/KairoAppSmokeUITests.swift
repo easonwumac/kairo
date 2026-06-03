@@ -385,6 +385,20 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findButton("access.skill.user-ui-created-skill.disable", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
     }
 
+    func testAccessShowsHomeKitSecurityDevicePreview() throws {
+        relaunchForUITesting(initialSection: "access")
+
+        XCTAssertTrue(findElement("access.skill.homekit-front-door-lock", direction: .down, maxSwipes: 8).exists)
+        XCTAssertTrue(findButton("access.skill.homekit-front-door-lock.manage", direction: .down, maxSwipes: 2).exists)
+        XCTAssertTrue(findElement("access.homekit.demo.front-door-lock", direction: .down, maxSwipes: 8).exists)
+
+        let previewLock = findButton("access.homekit.demo.front-door-lock.confirm", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(previewLock.exists)
+        previewLock.tap()
+
+        XCTAssertTrue(findStaticText(containing: "Confirm in Kairo before any HomeKit security-device write.", direction: .both, maxSwipes: 1).exists)
+    }
+
     func testChatShowsHomeKitToolPreviewAction() throws {
         assertPrimaryDrawerItemsExist()
         selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")

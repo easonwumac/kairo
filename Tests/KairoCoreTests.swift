@@ -197,6 +197,20 @@ final class KairoCoreTests: XCTestCase {
             value: .bool(true)
         )))
         XCTAssertEqual(plan.proposedActions, [action])
+
+        let lockPlan = planner.plan(for: AgentToolInvocationRequest(userText: "請幫我處理前門門鎖"))
+        let lockCandidate = try XCTUnwrap(lockPlan.candidates.first { $0.skillID == "homekit-front-door-lock" })
+        let lockAction = try XCTUnwrap(lockCandidate.action)
+
+        XCTAssertEqual(lockCandidate.riskTier, .tier3HighRiskExternal)
+        XCTAssertTrue(lockCandidate.requiresConfirmation)
+        XCTAssertEqual(lockAction.payload, .homeControl(HomeControlRequest(
+            homeName: "Home",
+            roomName: "Entry",
+            targetName: "Front Door Lock",
+            command: .setPower,
+            value: .bool(false)
+        )))
     }
 
     func testAgentToolInvocationPlannerSuggestsOAuthConnectorWithoutPrivateAppClaims() throws {
@@ -1265,8 +1279,9 @@ final class KairoCoreTests: XCTestCase {
         let catalog = HomeKitControlDemoCatalog.default
         let sceneRecipe = try XCTUnwrap(catalog.recipe(id: "evening-scene"))
         let accessoryRecipe = try XCTUnwrap(catalog.recipe(id: "desk-lamp"))
+        let lockRecipe = try XCTUnwrap(catalog.recipe(id: "front-door-lock"))
 
-        XCTAssertEqual(catalog.recipes.map(\.id), ["evening-scene", "desk-lamp"])
+        XCTAssertEqual(catalog.recipes.map(\.id), ["evening-scene", "desk-lamp", "front-door-lock"])
         XCTAssertEqual(sceneRecipe.action.kind, .controlHome)
         XCTAssertEqual(sceneRecipe.action.payload, .homeControl(HomeControlRequest(
             homeName: "Home",
@@ -1284,11 +1299,22 @@ final class KairoCoreTests: XCTestCase {
             value: .bool(true)
         )))
         XCTAssertTrue(accessoryRecipe.sandboxNotes.contains("HomeKit entitlement"))
+        XCTAssertEqual(lockRecipe.action.payload, .homeControl(HomeControlRequest(
+            homeName: "Home",
+            roomName: "Entry",
+            targetName: "Front Door Lock",
+            command: .setPower,
+            value: .bool(false)
+        )))
+        XCTAssertEqual(lockRecipe.action.riskTier, .tier3HighRiskExternal)
+        XCTAssertTrue(lockRecipe.sandboxNotes.contains("Locks and security devices"))
+        XCTAssertEqual(lockRecipe.confirmationSummary, "Confirm in Kairo before any HomeKit security-device write.")
     }
 
     func testAgentSkillCatalogExposesInstalledToolsAndDownloadableMarketplaceSkills() throws {
         let catalog = AgentSkillCatalog.default
         let homeKitSkill = try XCTUnwrap(catalog.skill(id: "homekit-evening-scene"))
+        let lockSkill = try XCTUnwrap(catalog.skill(id: "homekit-front-door-lock"))
         let shortcutSkill = try XCTUnwrap(catalog.skill(id: "shortcut-daily-briefing"))
         let marketplaceSkill = AgentSkill.marketplaceTemplate(
             id: "marketplace-weather-briefing",
@@ -1301,6 +1327,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(catalog.installedSkills.map(\.id), [
             "homekit-evening-scene",
             "homekit-desk-lamp",
+            "homekit-front-door-lock",
             "shortcut-daily-briefing",
             "shortcut-save-shared-text",
             "shortcut-screenshot-to-reminders",
@@ -1313,6 +1340,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(homeKitSkill.installationStatus, .installed)
         XCTAssertEqual(homeKitSkill.action?.kind, .controlHome)
         XCTAssertTrue(homeKitSkill.managementSummary.contains("Requires confirmation"))
+        XCTAssertEqual(lockSkill.kind, .homeKitControl)
+        XCTAssertEqual(lockSkill.action?.riskTier, .tier3HighRiskExternal)
+        XCTAssertTrue(lockSkill.managementSummary.contains("Requires confirmation"))
         XCTAssertEqual(shortcutSkill.kind, .shortcutWorkflow)
         XCTAssertTrue(marketplaceSkill.canDownload)
         XCTAssertEqual(marketplaceSkill.source, .marketplace)
@@ -2831,8 +2861,12 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-preview") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-preview.compatibility") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-preview.confirm") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.homekit-front-door-lock") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.homekit-front-door-lock.manage") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demos") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demo.evening-scene") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demo.front-door-lock") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.homekit.demo.front-door-lock.confirm") == true)
     }
 
     func testXcodeProjectDefinesKairoUITestTargetAndSmokeTestFile() throws {
@@ -2984,6 +3018,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("chat.reply-preview"))
         XCTAssertTrue(smokeTest.contains("chat.message.copy."))
         XCTAssertTrue(smokeTest.contains("chat.message.reply."))
+        XCTAssertTrue(smokeTest.contains("testAccessShowsHomeKitSecurityDevicePreview"))
+        XCTAssertTrue(smokeTest.contains(#""access.homekit.demo.front-door-lock.confirm""#))
+        XCTAssertTrue(smokeTest.contains("Confirm in Kairo before any HomeKit security-device write."))
         XCTAssertTrue(smokeTest.contains("settings.openai.api-key-status"))
         XCTAssertTrue(smokeTest.contains("settings.oauth.connectors"))
         XCTAssertTrue(smokeTest.contains("settings.shortcuts.demos"))

@@ -216,6 +216,10 @@ public struct AgentToolInvocationPlanner: Sendable {
     }
 
     private func matchesHomeKit(skill: AgentSkill, normalizedText: String) -> Bool {
+        if skill.id.contains("front-door-lock") {
+            return containsAny(normalizedText, ["front door", "door lock", "lock", "unlock", "entry", "門鎖", "前門", "開鎖", "上鎖"])
+        }
+
         if skill.id.contains("desk-lamp") {
             return containsAny(normalizedText, ["desk lamp", "lamp", "light", "office", "燈", "檯燈", "書桌"])
         }

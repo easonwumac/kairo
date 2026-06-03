@@ -261,6 +261,26 @@ public struct HomeKitControlDemoCatalog: Codable, Equatable, Sendable {
                 )),
                 riskTier: .tier3HighRiskExternal
             )
+        ),
+        HomeKitControlDemoRecipe(
+            id: "front-door-lock",
+            title: "Front Door Lock Guard",
+            summary: "Preview a security-device HomeKit write without executing it automatically.",
+            sandboxNotes: "Locks and security devices stay high risk: HomeKit entitlement, Home authorization, visible preview, and explicit in-app confirmation are required.",
+            action: AgentAction(
+                id: UUID(uuidString: "33333333-3333-4333-8333-333333333333")!,
+                kind: .controlHome,
+                title: "Preview Front Door Lock Change",
+                rationale: "User reviewed a high-risk HomeKit security-device action before any write.",
+                payload: .homeControl(HomeControlRequest(
+                    homeName: "Home",
+                    roomName: "Entry",
+                    targetName: "Front Door Lock",
+                    command: .setPower,
+                    value: .bool(false)
+                )),
+                riskTier: .tier3HighRiskExternal
+            )
         )
     ])
 }
@@ -305,6 +325,10 @@ public struct HomeKitControlDemoRecipe: Codable, Equatable, Identifiable, Sendab
         case .runScene:
             return "Confirm before Kairo runs the HomeKit scene."
         case .setPower, .setBrightness, .setTargetTemperature:
+            let securityKeywords = ["lock", "door", "garage", "alarm", "camera"]
+            if securityKeywords.contains(where: { request.targetName.localizedCaseInsensitiveContains($0) }) {
+                return "Confirm in Kairo before any HomeKit security-device write."
+            }
             return "Confirm before Kairo writes to the HomeKit accessory."
         }
     }
