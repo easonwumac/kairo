@@ -39,6 +39,7 @@ public enum CapabilityKey: String, Codable, CaseIterable, Sendable {
     case contacts
     case mail
     case messages
+    case phone
     case photos
     case documents
     case location

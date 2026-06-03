@@ -36,6 +36,7 @@ public enum AgentActionKind: String, Codable, CaseIterable, Sendable {
     case composeEmailDraft
     case openMapDirections
     case openMessageHandoff
+    case openPhoneCallHandoff
     case sendNotification
     case openURL
     case controlHome
@@ -51,6 +52,7 @@ public enum AgentActionPayload: Codable, Equatable, Sendable {
     case email(EmailDraft)
     case mapDirections(MapDirectionsDraft)
     case message(MessageDraft)
+    case phoneCall(PhoneCallDraft)
     case notification(NotificationDraft)
     case url(String)
     case homeControl(HomeControlRequest)
@@ -145,6 +147,18 @@ public struct MessageDraft: Codable, Equatable, Sendable {
     public init(recipients: [String] = [], body: String) {
         self.recipients = recipients
         self.body = body
+    }
+}
+
+public struct PhoneCallDraft: Codable, Equatable, Sendable {
+    public var phoneNumber: String
+    public var label: String?
+    public var notes: String?
+
+    public init(phoneNumber: String, label: String? = nil, notes: String? = nil) {
+        self.phoneNumber = phoneNumber
+        self.label = label
+        self.notes = notes
     }
 }
 

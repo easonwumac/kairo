@@ -4,6 +4,7 @@ import SwiftUI
 public enum SettingsViewMode: String, Sendable {
     case all
     case modelsOnly
+    case shortcutDemosOnly
 
     var navigationTitle: String {
         switch self {
@@ -11,6 +12,8 @@ public enum SettingsViewMode: String, Sendable {
             return "Settings"
         case .modelsOnly:
             return "Models"
+        case .shortcutDemosOnly:
+            return "Shortcut Demos"
         }
     }
 }
@@ -96,13 +99,19 @@ public struct SettingsView: View {
 
     public var body: some View {
         Group {
-            if mode == .modelsOnly {
+            switch mode {
+            case .modelsOnly:
                 modelsOnlyContent
-            } else {
+            case .shortcutDemosOnly:
+                shortcutDemosOnlyContent
+            case .all:
                 settingsFormContent
             }
         }
-        .task { await reloadAllStatus() }
+        .task {
+            guard mode != .shortcutDemosOnly else { return }
+            await reloadAllStatus()
+        }
     }
 
     private var settingsFormContent: some View {
@@ -217,6 +226,16 @@ public struct SettingsView: View {
             runLocalModelReplyCheck: { runLocalModelReplyCheck($0) },
             deleteLocalModel: { deleteLocalModel($0) }
         )
+    }
+
+    private var shortcutDemosOnlyContent: some View {
+        NavigationStack {
+            Form {
+                SettingsShortcutDemosSection()
+            }
+            .navigationTitle(mode.navigationTitle)
+            .accessibilityIdentifier("settings.form")
+        }
     }
 
     @ViewBuilder

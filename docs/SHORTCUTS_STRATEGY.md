@@ -156,6 +156,22 @@ Node contract:
 - output: `proposedActions`, `fields.messageHandoffCount`, `fields.messageBodyInURL`, `fields.messageRequiresConfirmation`, `fields.messageHandoffURL`, and `fields.messageBody`
 - boundary: returns a visible `sms:` recipient handoff only; body text remains in Kairo preview because Apple's SMS URL does not carry message body text; Kairo does not read Messages or send messages silently
 
+### Phone Call Handoff
+
+```text
+Share Sheet / copied phone number / manual Shortcut input
+→ Prepare Phone Call Handoff with Kairo
+→ Review number and label
+→ Optional visible Phone handoff
+```
+
+Node contract:
+
+- node: `preparePhoneCallHandoff`
+- input: phone number text explicitly provided by the user; optional `phoneNumber` and `label` variables
+- output: `phoneCallDrafts`, `proposedActions`, `fields.phoneCallHandoffCount`, `fields.phoneCallNumber`, `fields.phoneCallURL`, and `fields.phoneCallRequiresConfirmation`
+- boundary: returns a visible `tel:` handoff only; Kairo does not read call history, place calls silently, or claim the call connected
+
 ### Contact Draft from Shared Text
 
 ```text
@@ -248,9 +264,9 @@ Node contract:
 `ShortcutNodeRuntime` is the shared core used by App Intents and tests. It treats each Shortcut action as a small node:
 
 - input: text, optional query, source name, user variables, and result limit.
-- output: display text, typed fields, optional chain text for downstream nodes, optional memory id, memory matches, extracted task drafts, reminder drafts, calendar drafts, contact drafts, email drafts, and proposed actions.
+- output: display text, typed fields, optional chain text for downstream nodes, optional memory id, memory matches, extracted task drafts, reminder drafts, calendar drafts, contact drafts, email drafts, phone call handoff drafts, and proposed actions.
 - transport: App Intents return the encoded `ShortcutNodeOutput` JSON string so downstream Shortcut steps can pass the result into another Kairo node or parse fields with Shortcuts dictionary actions.
-- safety: task extraction, reminder creation, calendar/contact/email draft creation, and message handoff preparation only produce drafts or visible handoffs; they do not write EventKit or Contacts data, send mail, or send messages unless a later confirmed action does so.
+- safety: task extraction, reminder creation, calendar/contact/email draft creation, and message/phone handoff preparation only produce drafts or visible handoffs; they do not write EventKit or Contacts data, send mail, send messages, or place calls unless a later user-confirmed system surface does so.
 
 `Run Kairo Shortcut Node` is the generic node bridge for advanced Shortcuts. The user supplies a supported `ShortcutNodeKind` raw value and encoded `ShortcutNodeInput` JSON, and Kairo returns encoded `ShortcutNodeOutput` JSON. This makes Kairo usable as a Shortcuts node graph component without giving Kairo permission to silently create, edit, or execute Apple Shortcuts.
 
@@ -269,20 +285,23 @@ Current nodes:
 9. `Create Email Draft` returns email draft JSON plus a proposed compose action without sending.
 10. `Draft Reply` returns reply draft text without sending email, chat, or SMS.
 11. `Prepare Message Handoff` returns an `sms:` handoff URL and keeps message body in Kairo for review.
-12. `Create Recipe Draft` returns disabled Kairo internal recipe drafts plus preview JSON; it does not create Apple Shortcuts.
-13. `Preview Home Action` returns a HomeKit action preview that still requires Kairo confirmation.
-14. `Create Daily Briefing` returns briefing text and suggested task drafts.
-15. `Run Kairo Shortcut Node` runs a supported node kind from JSON input and returns structured JSON output.
-16. `Run Kairo Recipe` runs an enabled internal recipe by id and returns structured JSON output.
-17. `Suggest Kairo Recipe` saves a disabled recipe draft for Kairo Shortcuts review.
-18. `List Kairo Recipes` lists enabled recipe ids/titles.
-19. `Run Kairo Daily Briefing` seeds and runs the internal Daily Briefing recipe.
+12. `Prepare Phone Call Handoff` returns a `tel:` handoff URL for user review and does not place calls silently.
+13. `Create Recipe Draft` returns disabled Kairo internal recipe drafts plus preview JSON; it does not create Apple Shortcuts.
+14. `Preview Home Action` returns a HomeKit action preview that still requires Kairo confirmation.
+15. `Create Daily Briefing` returns briefing text and suggested task drafts.
+16. `Run Kairo Shortcut Node` runs a supported node kind from JSON input and returns structured JSON output.
+17. `Run Kairo Recipe` runs an enabled internal recipe by id and returns structured JSON output.
+18. `Suggest Kairo Recipe` saves a disabled recipe draft for Kairo Shortcuts review.
+19. `List Kairo Recipes` lists enabled recipe ids/titles.
+20. `Run Kairo Daily Briefing` seeds and runs the internal Daily Briefing recipe.
 
 ### Email Triage
 
 `Email Triage` is the practical multi-node starter flow for inbox work: Shortcut Input or Share Sheet text -> `Summarize with Kairo` -> `Extract Kairo Tasks` -> `Draft Reply`. It returns a summary, follow-up task drafts, and a reply draft for manual review. It does not send email, create reminders, or silently read Mail data.
 
 `Email Draft from Shared Text` is the single-node compose flow: Shortcut Input or Share Sheet text -> `Create Email Draft`. Optional recipient and subject variables can be provided by the user-created Shortcut. Kairo returns `emailDrafts` and a proposed `composeEmailDraft` action for visible review; it does not open Mail or send email.
+
+`Phone Call Handoff` is the single-node call flow: Shortcut Input or Share Sheet text -> `Prepare Phone Call Handoff`. Optional phone number and label variables can be provided by the user-created Shortcut. Kairo returns `phoneCallDrafts`, a `tel:` preview, and a proposed `openPhoneCallHandoff` action for visible review; it does not place calls silently.
 
 `Contact Draft from Shared Text` is the single-node Contacts flow: Shortcut Input or Share Sheet text -> `Create Contact Draft`. Optional name, phone, email, and notes values can be provided by the user-created Shortcut. Kairo returns `contactDrafts` and a proposed `createContactDraft` action for visible review; it does not write Contacts.
 
@@ -299,15 +318,16 @@ Implemented App Intent types:
 9. `CreateContactDraftsIntent`
 10. `CreateEmailDraftsIntent`
 11. `PrepareMessageHandoffIntent`
-12. `RunKairoShortcutNodeIntent`
-13. `RunKairoRecipeIntent`
-14. `SuggestKairoRecipeIntent`
-15. `ListKairoRecipesIntent`
-16. `RunKairoDailyBriefingIntent`
+12. `PreparePhoneCallHandoffIntent`
+13. `RunKairoShortcutNodeIntent`
+14. `RunKairoRecipeIntent`
+15. `SuggestKairoRecipeIntent`
+16. `ListKairoRecipesIntent`
+17. `RunKairoDailyBriefingIntent`
 
 ## Shortcut Template Registry
 
-`ShortcutTemplateRegistry.default` ships user-installed template metadata for Daily Briefing, Meeting Prep, Share Text to Kairo, Screenshot to Tasks, Email Triage, Message Reply Handoff, Contact Draft, Calendar Draft, Email Draft, Action Button Ask Kairo, and generic Run Kairo Recipe. Templates store required App Intent identifiers, recommended internal recipe ids, and manual setup instructions.
+`ShortcutTemplateRegistry.default` ships user-installed template metadata for Daily Briefing, Meeting Prep, Share Text to Kairo, Screenshot to Tasks, Email Triage, Message Reply Handoff, Phone Call Handoff, Contact Draft, Calendar Draft, Email Draft, Action Button Ask Kairo, and generic Run Kairo Recipe. Templates store required App Intent identifiers, recommended internal recipe ids, and manual setup instructions.
 
 Template metadata is not a one-tap install mechanism. The Shortcuts drawer screen states that Kairo creates internal recipes and Apple Shortcuts installation requires user approval.
 

@@ -274,6 +274,28 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "chat-phone-handoff-confirmation",
+            title: "Chat Phone Handoff Confirmation",
+            userGoal: "Ask Kairo to prepare a phone call handoff, preview the number, and confirm a visible Phone handoff.",
+            requiredAccessibilityIdentifiers: [
+                "chat.composer.text",
+                "chat.composer.send",
+                "chat.message.assistant",
+                "chat.proposed-actions",
+                "chat.proposed-action.openPhoneCallHandoff",
+                "chat.action-preview",
+                "chat.action.confirm",
+                "chat.action-result"
+            ],
+            assertions: [
+                "A phone-call request creates an assistant response.",
+                "The response exposes an openPhoneCallHandoff action preview.",
+                "The preview shows the phone number before opening Phone.",
+                "Kairo opens only a user-visible tel: handoff after confirmation.",
+                "The flow does not read call history or place calls silently."
+            ]
+        ),
+        UITestScenario(
             id: "automations-recipe-center",
             title: "Shortcuts Recipe Center",
             userGoal: "Open Shortcuts, add Kairo-owned sample recipes, preview/run a recipe, and toggle it without creating Apple Shortcuts.",

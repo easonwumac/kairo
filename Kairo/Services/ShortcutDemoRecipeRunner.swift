@@ -45,7 +45,8 @@ public actor ShortcutDemoRecipeRunner {
         let calendarCount = stepRuns.reduce(0) { count, step in count + step.output.calendarDrafts.count }
         let contactCount = stepRuns.reduce(0) { count, step in count + step.output.contactDrafts.count }
         let emailCount = stepRuns.reduce(0) { count, step in count + step.output.emailDrafts.count }
-        return "\(recipe.title): \(stepLabel), \(taskCount) task drafts, \(reminderCount) reminder drafts, \(calendarCount) calendar drafts, \(contactCount) contact drafts, \(emailCount) email drafts."
+        let phoneCount = stepRuns.reduce(0) { count, step in count + step.output.phoneCallDrafts.count }
+        return "\(recipe.title): \(stepLabel), \(taskCount) task drafts, \(reminderCount) reminder drafts, \(calendarCount) calendar drafts, \(contactCount) contact drafts, \(emailCount) email drafts, \(phoneCount) phone handoffs."
     }
 
     private static func chainedText(from output: ShortcutNodeOutput) -> String {

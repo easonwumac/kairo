@@ -125,6 +125,31 @@ extension AgentToolInvocationPlanner {
         ])
     }
 
+    func isPhoneCallHandoffRequest(_ normalizedText: String) -> Bool {
+        let explicitPrefixes = [
+            "call ",
+            "phone ",
+            "dial ",
+            "tel ",
+            "打電話",
+            "撥號",
+            "致電"
+        ]
+        if explicitPrefixes.contains(where: { normalizedText.hasPrefix(normalize($0)) }) {
+            return true
+        }
+
+        return containsAny(normalizedText, [
+            "phone call",
+            "make a call",
+            "place a call",
+            "call number",
+            "call alex",
+            "撥打電話",
+            "打給"
+        ])
+    }
+
     func calendarTitle(from userText: String) -> String {
         var title = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefixes = [
@@ -344,6 +369,55 @@ extension AgentToolInvocationPlanner {
         return MessageDraft(
             recipients: Array(Set(recipients)).sorted(),
             body: body
+        )
+    }
+
+    func phoneCallDraft(from userText: String) -> PhoneCallDraft {
+        var content = userText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefixes = [
+            "Call",
+            "Phone",
+            "Dial",
+            "Tel",
+            "Make a call",
+            "Place a call",
+            "打電話",
+            "撥號",
+            "致電",
+            "打給"
+        ]
+
+        for prefix in prefixes where content.lowercased().hasPrefix(prefix.lowercased()) {
+            content.removeFirst(prefix.count)
+            content = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            if content.first == ":" || content.first == "：" {
+                content.removeFirst()
+                content = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            break
+        }
+
+        let tokens = content.split(whereSeparator: \.isWhitespace).map(String.init)
+        let phoneNumber = tokens
+            .map { $0.trimmingCharacters(in: .contactTokenBoundary) }
+            .first(where: isPhoneToken) ?? ""
+        let phoneIndex = tokens.firstIndex { token in
+            isPhoneToken(token.trimmingCharacters(in: .contactTokenBoundary))
+        }
+        let labelTokens: [String]
+        if let phoneIndex {
+            labelTokens = tokens[..<phoneIndex].map { String($0) }
+        } else {
+            labelTokens = []
+        }
+        let label = labelTokens
+            .joined(separator: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return PhoneCallDraft(
+            phoneNumber: phoneNumber,
+            label: label.isEmpty ? nil : label,
+            notes: content.isEmpty ? nil : content
         )
     }
 

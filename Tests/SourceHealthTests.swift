@@ -15,6 +15,26 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(coreTests.contains("testLocalModelRoutingAIProviderUsesSelectedLocalModelForEligiblePreferLocalWork"))
     }
 
+    func testAgentSkillMarketplaceCoverageLivesInFocusedTestFile() throws {
+        let root = packageRootURL()
+        let focusedTestsURL = root.appendingPathComponent("Tests/AgentSkillFeatureTests.swift")
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: focusedTestsURL.path),
+            "Skill marketplace tests should live in Tests/AgentSkillFeatureTests.swift instead of the KairoCoreTests monolith."
+        )
+
+        let focusedTests = try String(contentsOf: focusedTestsURL, encoding: .utf8)
+        XCTAssertTrue(focusedTests.contains("testSkillMarketplaceIndexListsDownloadableSkillsWithSafetyMetadata"))
+        XCTAssertTrue(focusedTests.contains("testSkillMarketplaceManifestIsImportableBySkillManager"))
+        XCTAssertTrue(focusedTests.contains("testAgentSkillMarketplaceCatalogServiceFetchesStandaloneRepoCatalog"))
+        XCTAssertTrue(focusedTests.contains("testAgentSkillCatalogMergesRemoteMarketplaceWithoutReplacingInstalledSkills"))
+        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 320)
+
+        let coreTests = try String(contentsOf: root.appendingPathComponent("Tests/KairoCoreTests.swift"))
+        XCTAssertFalse(coreTests.contains("testSkillMarketplaceIndexListsDownloadableSkillsWithSafetyMetadata"))
+        XCTAssertFalse(coreTests.contains("testAgentSkillMarketplaceCatalogServiceFetchesStandaloneRepoCatalog"))
+    }
+
     func testSandboxActionSupportStaysSplitAcrossFocusedFiles() throws {
         let root = packageRootURL()
         let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)
@@ -66,6 +86,7 @@ final class SourceHealthTests: XCTestCase {
             "ShortcutDemoCatalog.swift": "public struct ShortcutDemoCatalog",
             "ShortcutDemoRecipeDefinitions.swift": "static let officialRecipes",
             "ShortcutDemoEmailDefinitions.swift": "static let communicationRecipes",
+            "ShortcutDemoPhoneDefinitions.swift": "static let phoneRecipes",
             "ShortcutDemoContactDefinitions.swift": "static let contactRecipes",
             "ShortcutDemoHomeDefinitions.swift": "static let homeRecipes",
             "ShortcutDemoModels.swift": "public struct ShortcutDemoRecipe",
@@ -90,6 +111,7 @@ final class SourceHealthTests: XCTestCase {
             "ShortcutDemoModels.swift": 220,
             "ShortcutDemoRecipeDefinitions.swift": 500,
             "ShortcutDemoEmailDefinitions.swift": 260,
+            "ShortcutDemoPhoneDefinitions.swift": 100,
             "ShortcutDemoContactDefinitions.swift": 100,
             "ShortcutDemoHomeDefinitions.swift": 140,
             "ShortcutDemoRecipeRunner.swift": 120

@@ -22,7 +22,8 @@ struct KairoApp: App {
                 } else {
                     RootView(
                         environment: environment,
-                        initialSection: Self.launchInitialSection(arguments: ProcessInfo.processInfo.arguments)
+                        initialSection: Self.launchInitialSection(arguments: ProcessInfo.processInfo.arguments),
+                        settingsMode: Self.launchSettingsMode(arguments: ProcessInfo.processInfo.arguments)
                     )
                         .id(environmentRevision)
                 }
@@ -64,6 +65,13 @@ struct KairoApp: App {
         return arguments
             .first { $0.hasPrefix(prefix) }
             .map { String($0.dropFirst(prefix.count)) }
+    }
+
+    private static func launchSettingsMode(arguments: [String]) -> SettingsViewMode {
+        guard arguments.contains("--ui-testing-settings-shortcut-demos-only") else {
+            return .all
+        }
+        return .shortcutDemosOnly
     }
 }
 #endif

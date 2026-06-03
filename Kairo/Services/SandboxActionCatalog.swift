@@ -155,6 +155,15 @@ public struct SandboxActionCatalog: Sendable {
             supportStatus: .scaffolded
         ),
         SandboxActionDescriptor(
+            kind: .openPhoneCallHandoff,
+            displayName: "Open Phone Handoff",
+            description: "透過 tel: 開啟使用者可見的 Phone handoff；不讀通話紀錄、不會自動撥號。",
+            capability: .phone,
+            permissionRequirement: .userInitiated,
+            riskTier: .tier1Draft,
+            supportStatus: .scaffolded
+        ),
+        SandboxActionDescriptor(
             kind: .sendNotification,
             displayName: "Send Notification",
             description: "在通知權限允許後發送本機提醒。",

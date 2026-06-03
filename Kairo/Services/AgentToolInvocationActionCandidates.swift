@@ -137,6 +137,40 @@ extension AgentToolInvocationPlanner {
         )
     }
 
+    func phoneCallHandoffActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard !isContactWriteRequest(normalizedText) else {
+            return nil
+        }
+        guard isPhoneCallHandoffRequest(normalizedText) else {
+            return nil
+        }
+
+        let draft = phoneCallDraft(from: userText)
+        guard isPhoneToken(draft.phoneNumber) else {
+            return nil
+        }
+
+        let action = AgentAction(
+            kind: .openPhoneCallHandoff,
+            title: "Open Phone Handoff",
+            rationale: "User asked Kairo to prepare a visible Phone handoff. Kairo opens only a tel: URL after confirmation and does not place calls silently.",
+            payload: .phoneCall(draft),
+            riskTier: .tier1Draft
+        )
+
+        return AgentToolInvocationCandidate(
+            id: "action-open-phone-call-handoff",
+            title: "Open Phone Handoff",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.phone],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Use a visible tel: handoff after confirmation; Kairo cannot read call history or place calls silently.",
+            action: action
+        )
+    }
+
     func contactActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
         guard isContactWriteRequest(normalizedText) else {
             return nil

@@ -164,6 +164,16 @@ public actor SandboxActionExecutor: ActionExecutor {
                 message: opened ? "Prepared Messages handoff. Message body remains in Kairo preview." : "Messages handoff is available only when the app supplies a UI opener.",
                 requiresExternalUI: true
             )
+        case (.openPhoneCallHandoff, .phoneCall(let draft)):
+            guard let url = Self.phoneCallHandoffURL(for: draft) else {
+                return ActionExecutionResult(completed: false, message: "Unsupported or invalid phone call handoff request.")
+            }
+            let opened = await urlOpener.open(url)
+            return ActionExecutionResult(
+                completed: opened,
+                message: opened ? "Prepared phone call handoff. The call still requires user action in Phone." : "Phone call handoff is available only when the app supplies a UI opener.",
+                requiresExternalUI: true
+            )
         case (.sendNotification, .notification(let draft)):
             guard try await notificationScheduler.requestAuthorization() else {
                 return ActionExecutionResult(completed: false, message: "Notification permission was not granted.")
@@ -237,6 +247,27 @@ public actor SandboxActionExecutor: ActionExecutor {
         }
 
         return URL(string: "sms:\(recipient)")
+    }
+
+    private static func phoneCallHandoffURL(for draft: PhoneCallDraft) -> URL? {
+        let sanitized = sanitizedDialString(from: draft.phoneNumber)
+        guard !sanitized.isEmpty else {
+            return nil
+        }
+        return URL(string: "tel:\(sanitized)")
+    }
+
+    private static func sanitizedDialString(from rawValue: String) -> String {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        var output = ""
+        for scalar in trimmed.unicodeScalars {
+            if CharacterSet.decimalDigits.contains(scalar) {
+                output.unicodeScalars.append(scalar)
+            } else if scalar == "+", output.isEmpty {
+                output.unicodeScalars.append(scalar)
+            }
+        }
+        return output
     }
 
     private static func isSupportedUserVisibleURL(_ url: URL) -> Bool {

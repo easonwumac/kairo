@@ -261,6 +261,47 @@ public struct PrepareMessageHandoffIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct PreparePhoneCallHandoffIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Prepare Phone Call Handoff"
+    public static var description = IntentDescription("Prepare a visible Phone handoff from a phone number without placing a call silently.")
+
+    @Parameter(title: "Phone Number")
+    public var phoneNumber: String
+
+    @Parameter(title: "Label")
+    public var label: String?
+
+    @Parameter(title: "Notes")
+    public var notes: String?
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        var variables: [String: String] = [:]
+        let trimmedPhoneNumber = phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedPhoneNumber.isEmpty {
+            variables["phoneNumber"] = trimmedPhoneNumber
+        }
+        if let label = label?.trimmingCharacters(in: .whitespacesAndNewlines), !label.isEmpty {
+            variables["label"] = label
+        }
+        let trimmedNotes = notes?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let trimmedLabel = label?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let text = trimmedNotes.isEmpty
+            ? "Call \(trimmedLabel.isEmpty ? trimmedPhoneNumber : trimmedLabel)"
+            : trimmedNotes
+
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(
+            .preparePhoneCallHandoff,
+            input: ShortcutNodeInput(text: text, sourceName: "Prepare Phone Call Handoff", variables: variables)
+        )
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct RunKairoShortcutNodeIntent: AppIntent {
     public static var title: LocalizedStringResource = "Run Kairo Shortcut Node"
     public static var description = IntentDescription("Run a Kairo Shortcut node from a node kind and ShortcutNodeInput JSON, returning structured JSON output.")

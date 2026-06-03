@@ -113,6 +113,19 @@ public struct ActionPreviewView: View {
                 }
                 Text("Body stays in Kairo preview; sms: opens only the recipient handoff.").font(.caption).foregroundStyle(.secondary)
             }
+        case .phoneCall(let draft):
+            VStack(alignment: .leading, spacing: 4) {
+                if let label = draft.label, !label.isEmpty {
+                    Text(label).font(.headline)
+                } else {
+                    Text("Phone Handoff").font(.headline)
+                }
+                Text("Number: \(draft.phoneNumber)").font(.caption)
+                if let notes = draft.notes, !notes.isEmpty {
+                    Text(notes).font(.caption)
+                }
+                Text("tel: opens Phone visibly; the call still requires user action.").font(.caption).foregroundStyle(.secondary)
+            }
         case .notification(let draft):
             VStack(alignment: .leading, spacing: 4) {
                 Text(draft.title).font(.headline)

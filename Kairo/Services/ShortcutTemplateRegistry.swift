@@ -108,6 +108,21 @@ public struct ShortcutTemplateRegistry: Codable, Equatable, Sendable {
             ]
         ),
         ShortcutTemplate(
+            identifier: "phone-call-handoff-shortcut",
+            title: "Phone Call Handoff Shortcut",
+            description: "Shortcut template guidance for preparing a visible Phone handoff from explicit phone text without placing calls automatically.",
+            category: .shareSheet,
+            inputSummary: "Phone number plus optional label or notes explicitly provided by the user.",
+            outputSummary: "Phone handoff preview, tel: URL, and proposed action for manual review.",
+            requiredIntentIdentifiers: ["PreparePhoneCallHandoffIntent", "RunKairoShortcutNodeIntent"],
+            recommendedRecipeTemplateID: "phone-call-handoff",
+            setupInstructions: [
+                "Create a Share Sheet, Action Button, or manual Shortcut that accepts phone text.",
+                "Pass the phone number and optional label to Prepare Phone Call Handoff.",
+                "Show the returned tel: preview; do not place calls silently and require the user to continue in Phone."
+            ]
+        ),
+        ShortcutTemplate(
             identifier: "contact-draft-shortcut",
             title: "Contact Draft Shortcut",
             description: "Shortcut template guidance for creating a Contacts.framework draft from explicit text without writing Contacts silently.",

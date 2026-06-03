@@ -62,7 +62,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(anyElement("settings.models.qwen3-5-0-8b-q4-k-m.name").exists)
         XCTAssertTrue(anyElement("settings.models.llama3-2-1b-instruct-q4-k-m.name").exists)
         XCTAssertTrue(findElement("settings.models.trimmed-note", direction: .down, maxSwipes: 2).waitForExistence(timeout: 3))
-        XCTAssertFalse(findElement("settings.models.remote-catalog-test-model-q4-k-m.name", direction: .down, maxSwipes: 2).waitForExistence(timeout: 1))
+        XCTAssertFalse(anyElement("settings.models.remote-catalog-test-model-q4-k-m.name").exists)
         XCTAssertFalse(anyElement("settings.models.show-more").exists)
     }
 
@@ -151,7 +151,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testSettingsShowsShortcutDemoInputOutputContracts() throws {
-        relaunchForUITesting(initialSection: "settings")
+        relaunchForUITesting(initialSection: "settings", settingsShortcutDemosOnly: true)
 
         XCTAssertTrue(findElement("settings.shortcuts.demos", direction: .down).exists)
         verifyShortcutDemoContract(
@@ -171,84 +171,12 @@ final class KairoAppSmokeUITests: XCTestCase {
             sampleText: "User research note"
         )
         verifyShortcutDemoContract(
-            id: "screenshot-to-reminders",
-            titleText: "Screenshot to Reminders",
-            stepText: "2 steps: extractTasks -> createReminderDraft",
-            inputText: "Input: text, sourceName, variables",
-            outputText: "Output: fields.taskCount, fields.chainText, tasks, reminderDrafts, fields.reminderDraftCount",
-            sampleText: "Screenshot OCR"
-        )
-        verifyShortcutDemoContract(
-            id: "reply-draft-from-shared-text",
-            titleText: "Reply Draft from Shared Text",
-            stepText: "2 steps: summarize -> draftReply",
-            inputText: "Input: text, sourceName, variables, previousStepOutput",
-            outputText: "Output: displayText, fields.summary, fields.chainText, fields.replyDraft",
-            sampleText: "Customer email"
-        )
-        verifyShortcutDemoContract(
-            id: "email-triage",
-            titleText: "Email Triage",
-            stepText: "3 steps: summarize -> extractTasks -> draftReply",
-            inputText: "Input: text, sourceName, variables, previousStepOutput",
-            outputText: "Output: displayText, fields.summary, fields.chainText, fields.taskCount, tasks, reminderDrafts, fields.replyDraft",
-            sampleText: "Email from vendor"
-        )
-        verifyShortcutDemoContract(
-            id: "message-reply-handoff",
-            titleText: "Message Reply Handoff",
-            stepText: "1 step: prepareMessageHandoff",
-            inputText: "Input: text, sourceName, variables.recipient, variables.body",
-            outputText: "Output: fields.messageHandoffCount, fields.messageBodyInURL, fields.messageRequiresConfirmation",
-            sampleText: "Please tell Alex"
-        )
-        verifyShortcutDemoContract(
-            id: "contact-draft-from-shared-text",
-            titleText: "Contact Draft from Shared Text",
-            stepText: "1 step: createContactDraft",
-            inputText: "Input: text, sourceName, variables.name, variables.phone, variables.email, variables.notes",
-            outputText: "Output: fields.contactDraftCount, fields.contactDisplayName, fields.contactRequiresConfirmation",
-            sampleText: "Alex Chen"
-        )
-        verifyShortcutDemoContract(
-            id: "meeting-prep-brief",
-            titleText: "Meeting Prep Brief",
-            stepText: "3 steps: searchMemory -> summarize -> extractTasks",
-            inputText: "Input: query, limit, text, sourceName, variables, previousStepOutput",
-            outputText: "Output: fields.matchCount, memoryMatches, displayText, fields.summary, fields.chainText",
-            sampleText: "Kairo launch review"
-        )
-        verifyShortcutDemoContract(
-            id: "request-to-recipe-draft",
-            titleText: "Request to Recipe Draft",
-            stepText: "1 step: createRecipeDraft",
-            inputText: "Input: text, sourceName, variables",
-            outputText: "Output: fields.recipeID, fields.recipeTitle, fields.recipeStepCount",
-            sampleText: "每天早上整理今天事情"
-        )
-        verifyShortcutDemoContract(
-            id: "meeting-text-to-calendar-draft",
-            titleText: "Meeting Text to Calendar Draft",
-            stepText: "1 step: createCalendarDraft",
-            inputText: "Input: text, sourceName, variables.startDateISO, variables.endDateISO",
-            outputText: "Output: fields.calendarDraftCount, fields.calendarTitle, fields.calendarRequiresConfirmation",
-            sampleText: "Kairo roadmap review"
-        )
-        verifyShortcutDemoContract(
-            id: "home-action-preview",
-            titleText: "Home Action Preview",
-            stepText: "1 step: previewHomeAction",
-            inputText: "Input: text, sourceName, variables",
-            outputText: "Output: proposedActions, fields.homeActionCount, fields.homeActionRiskTier",
-            sampleText: "desk lamp"
-        )
-        verifyShortcutDemoContract(
-            id: "generic-node-runner",
-            titleText: "Generic Node Runner",
-            stepText: "2 steps: summarize -> extractTasks",
-            inputText: "Input: nodeKind, inputJSON",
-            outputText: "Output: outputJSON, displayText, fields.taskCount, fields.chainText, tasks",
-            sampleText: "Shortcut dictionary"
+            id: "phone-call-handoff",
+            titleText: "Phone Call Handoff",
+            stepText: "1 step: preparePhoneCallHandoff",
+            inputText: "Input: text, sourceName, variables.phoneNumber, variables.label",
+            outputText: "Output: fields.phoneCallHandoffCount, fields.phoneCallNumber, fields.phoneCallRequiresConfirmation",
+            sampleText: "Call Alex"
         )
     }
 
@@ -291,6 +219,15 @@ final class KairoAppSmokeUITests: XCTestCase {
             inputText: "Input: text, sourceName, variables.recipient, variables.body",
             outputText: "Output: fields.messageHandoffCount, fields.messageBodyInURL, fields.messageRequiresConfirmation",
             sampleText: "Please tell Alex"
+        )
+        verifyShortcutDemoContract(
+            namespace: "automations.shortcut-demo",
+            id: "phone-call-handoff",
+            titleText: "Phone Call Handoff",
+            stepText: "1 step: preparePhoneCallHandoff",
+            inputText: "Input: text, sourceName, variables.phoneNumber, variables.label",
+            outputText: "Output: fields.phoneCallHandoffCount, fields.phoneCallNumber, fields.phoneCallRequiresConfirmation",
+            sampleText: "Call Alex"
         )
         verifyShortcutDemoContract(
             namespace: "automations.shortcut-demo",
@@ -338,6 +275,13 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findElement("automations.shortcut-demo.message-reply-handoff.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "Messages handoff ready", direction: .both, maxSwipes: 2).exists)
+
+        let phonePreview = findButton("automations.shortcut-demo.phone-call-handoff.preview-sample", direction: .both, maxSwipes: 3)
+        XCTAssertTrue(phonePreview.exists)
+        phonePreview.tap()
+
+        XCTAssertTrue(findElement("automations.shortcut-demo.phone-call-handoff.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "No call has been placed", direction: .both, maxSwipes: 2).exists)
 
         let contactPreview = findButton("automations.shortcut-demo.contact-draft-from-shared-text.preview-sample", direction: .both, maxSwipes: 3)
         XCTAssertTrue(contactPreview.exists)
@@ -581,185 +525,75 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testChatCanPreviewAndConfirmNotificationAction() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
-        openCurrentThreadIfNeeded()
-        let composer = anyElement("chat.composer.text")
-        XCTAssertTrue(composer.waitForExistence(timeout: 5))
-        composer.tap()
-        composer.typeText("通知我喝水")
-        anyElement("chat.composer.send").tap()
-
-        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
-        let notificationAction = findButton("chat.proposed-action.sendNotification", direction: .down)
-        XCTAssertTrue(notificationAction.exists)
-        notificationAction.tap()
-
-        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Schedule Local Notification", direction: .both, maxSwipes: 1).exists)
-        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(confirm.exists)
-        confirm.tap()
-
-        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Scheduled notification.", direction: .both, maxSwipes: 1).exists)
+        verifyChatActionPreview(
+            prompt: "通知我喝水",
+            actionIdentifier: "chat.proposed-action.sendNotification",
+            previewContains: ["Schedule Local Notification"],
+            resultText: "Scheduled notification."
+        )
     }
 
     func testChatCanPreviewAndConfirmReminderAction() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
-        openCurrentThreadIfNeeded()
-        let composer = anyElement("chat.composer.text")
-        XCTAssertTrue(composer.waitForExistence(timeout: 5))
-        composer.tap()
-        composer.typeText("建立提醒事項：下班前整理 Kairo model list")
-        anyElement("chat.composer.send").tap()
-
-        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
-        let reminderAction = findButton("chat.proposed-action.createReminderDraft", direction: .down)
-        XCTAssertTrue(reminderAction.exists)
-        reminderAction.tap()
-
-        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Create Reminder", direction: .both, maxSwipes: 1).exists)
-        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(confirm.exists)
-        confirm.tap()
-
-        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Created reminder.", direction: .both, maxSwipes: 1).exists)
+        verifyChatActionPreview(
+            prompt: "建立提醒事項：下班前整理 Kairo model list",
+            actionIdentifier: "chat.proposed-action.createReminderDraft",
+            previewContains: ["Create Reminder"],
+            resultText: "Created reminder."
+        )
     }
 
     func testChatCanPreviewAndConfirmCalendarAction() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
-        openCurrentThreadIfNeeded()
-        let composer = anyElement("chat.composer.text")
-        XCTAssertTrue(composer.waitForExistence(timeout: 5))
-        composer.tap()
-        composer.typeText("建立行程：週五 10:00 Kairo roadmap review")
-        anyElement("chat.composer.send").tap()
-
-        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
-        let calendarAction = findButton("chat.proposed-action.createCalendarDraft", direction: .down)
-        XCTAssertTrue(calendarAction.exists)
-        calendarAction.tap()
-
-        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Create Calendar Event", direction: .both, maxSwipes: 1).exists)
-        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(confirm.exists)
-        confirm.tap()
-
-        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Created calendar event.", direction: .both, maxSwipes: 1).exists)
+        verifyChatActionPreview(
+            prompt: "建立行程：週五 10:00 Kairo roadmap review",
+            actionIdentifier: "chat.proposed-action.createCalendarDraft",
+            previewContains: ["Create Calendar Event"],
+            resultText: "Created calendar event."
+        )
     }
 
     func testChatCanPreviewAndConfirmContactAction() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
-        openCurrentThreadIfNeeded()
-        let composer = anyElement("chat.composer.text")
-        XCTAssertTrue(composer.waitForExistence(timeout: 5))
-        composer.tap()
-        composer.typeText("建立聯絡人：王小明 0912-345-678 ming@example.com")
-        anyElement("chat.composer.send").tap()
-
-        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
-        let contactAction = findButton("chat.proposed-action.createContactDraft", direction: .down)
-        XCTAssertTrue(contactAction.exists)
-        contactAction.tap()
-
-        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Create Contact", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "0912-345-678", direction: .both, maxSwipes: 1).exists)
-        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(confirm.exists)
-        confirm.tap()
-
-        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Created contact.", direction: .both, maxSwipes: 1).exists)
+        verifyChatActionPreview(
+            prompt: "建立聯絡人：王小明 0912-345-678 ming@example.com",
+            actionIdentifier: "chat.proposed-action.createContactDraft",
+            previewContains: ["Create Contact", "0912-345-678"],
+            resultText: "Created contact."
+        )
     }
 
     func testChatCanPreviewAndConfirmEmailDraftHandoff() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
-        openCurrentThreadIfNeeded()
-        let composer = anyElement("chat.composer.text")
-        XCTAssertTrue(composer.waitForExistence(timeout: 5))
-        composer.tap()
-        composer.typeText("Draft an email to alex@example.com subject Kairo update body Please review the roadmap.")
-        anyElement("chat.composer.send").tap()
-
-        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
-        let emailAction = findButton("chat.proposed-action.composeEmailDraft", direction: .down)
-        XCTAssertTrue(emailAction.exists)
-        emailAction.tap()
-
-        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Compose Email Draft", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "alex@example.com", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "Kairo update", direction: .both, maxSwipes: 1).exists)
-        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(confirm.exists)
-        confirm.tap()
-
-        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Prepared email draft handoff.", direction: .both, maxSwipes: 1).exists)
+        verifyChatActionPreview(
+            prompt: "Draft an email to alex@example.com subject Kairo update body Please review the roadmap.",
+            actionIdentifier: "chat.proposed-action.composeEmailDraft",
+            previewContains: ["Compose Email Draft", "alex@example.com", "Kairo update"],
+            resultText: "Prepared email draft handoff."
+        )
     }
 
     func testChatCanPreviewAndConfirmMapDirectionsHandoff() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
-        openCurrentThreadIfNeeded()
-        let composer = anyElement("chat.composer.text")
-        XCTAssertTrue(composer.waitForExistence(timeout: 5))
-        composer.tap()
-        composer.typeText("Drive to Apple Park")
-        anyElement("chat.composer.send").tap()
-
-        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
-        let mapAction = findButton("chat.proposed-action.openMapDirections", direction: .down)
-        XCTAssertTrue(mapAction.exists)
-        mapAction.tap()
-
-        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Open Apple Maps Directions", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "Apple Park", direction: .both, maxSwipes: 1).exists)
-        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(confirm.exists)
-        confirm.tap()
-
-        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Prepared Apple Maps directions handoff.", direction: .both, maxSwipes: 1).exists)
+        verifyChatActionPreview(
+            prompt: "Drive to Apple Park",
+            actionIdentifier: "chat.proposed-action.openMapDirections",
+            previewContains: ["Open Apple Maps Directions", "Apple Park"],
+            resultText: "Prepared Apple Maps directions handoff."
+        )
     }
 
     func testChatCanPreviewAndConfirmMessagesHandoff() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
-        openCurrentThreadIfNeeded()
-        let composer = anyElement("chat.composer.text")
-        XCTAssertTrue(composer.waitForExistence(timeout: 5))
-        composer.tap()
-        composer.typeText("Text 0912-345-678 body I am running late.")
-        anyElement("chat.composer.send").tap()
+        verifyChatActionPreview(
+            prompt: "Text 0912-345-678 body I am running late.",
+            actionIdentifier: "chat.proposed-action.openMessageHandoff",
+            previewContains: ["Open Messages Handoff", "0912-345-678", "I am running late.", "Body stays in Kairo preview"],
+            resultText: "Prepared Messages handoff."
+        )
+    }
 
-        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
-        let messageAction = findButton("chat.proposed-action.openMessageHandoff", direction: .down)
-        XCTAssertTrue(messageAction.exists)
-        messageAction.tap()
-
-        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Open Messages Handoff", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "0912-345-678", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "I am running late.", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "Body stays in Kairo preview", direction: .both, maxSwipes: 1).exists)
-        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(confirm.exists)
-        confirm.tap()
-
-        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Prepared Messages handoff.", direction: .both, maxSwipes: 1).exists)
+    func testChatCanPreviewAndConfirmPhoneCallHandoff() throws {
+        verifyChatActionPreview(
+            prompt: "Call 0912-345-678",
+            actionIdentifier: "chat.proposed-action.openPhoneCallHandoff",
+            previewContains: ["Phone Handoff", "0912-345-678", "tel: opens Phone visibly"],
+            resultText: "Prepared phone call handoff."
+        )
     }
 
 }

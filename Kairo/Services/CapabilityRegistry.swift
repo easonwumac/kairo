@@ -105,6 +105,14 @@ public struct CapabilityRegistry: Sendable {
             isMVP: true
         ),
         Capability(
+            key: .phone,
+            displayName: "Phone Handoff",
+            description: "透過 tel: 只開啟使用者可見的 Phone handoff；不讀通話紀錄、不靜默撥號。",
+            permission: .userInitiated,
+            status: .available,
+            isMVP: true
+        ),
+        Capability(
             key: .photos,
             displayName: "Photos",
             description: "處理使用者選取的圖片或截圖。",

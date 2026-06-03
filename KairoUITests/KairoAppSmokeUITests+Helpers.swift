@@ -199,6 +199,38 @@ extension KairoAppSmokeUITests {
         }
     }
 
+    func verifyChatActionPreview(
+        prompt: String,
+        actionIdentifier: String,
+        previewContains: [String],
+        resultText: String
+    ) {
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+        let composer = anyElement("chat.composer.text")
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        composer.tap()
+        composer.typeText(prompt)
+        anyElement("chat.composer.send").tap()
+
+        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
+        let action = findButton(actionIdentifier, direction: .down)
+        XCTAssertTrue(action.exists)
+        action.tap()
+
+        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
+        for text in previewContains {
+            XCTAssertTrue(findStaticText(containing: text, direction: .both, maxSwipes: 1).exists, text)
+        }
+        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(confirm.exists)
+        confirm.tap()
+
+        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: resultText, direction: .both, maxSwipes: 1).exists)
+    }
+
     func selectDrawerSection(identifier: String, label: String) {
         dismissKeyboardIfPresent()
         openDrawer()
@@ -308,7 +340,8 @@ extension KairoAppSmokeUITests {
     func relaunchForUITesting(
         initialSection: String? = nil,
         seedInstalledLocalModel: Bool = false,
-        seedExpandedLocalModelCatalog: Bool = false
+        seedExpandedLocalModelCatalog: Bool = false,
+        settingsShortcutDemosOnly: Bool = false
     ) {
         app.terminate()
         app = XCUIApplication()
@@ -319,6 +352,9 @@ extension KairoAppSmokeUITests {
         }
         if seedExpandedLocalModelCatalog {
             app.launchArguments.append("--ui-testing-expanded-local-model-catalog")
+        }
+        if settingsShortcutDemosOnly {
+            app.launchArguments.append("--ui-testing-settings-shortcut-demos-only")
         }
         if let initialSection {
             app.launchArguments.append("--ui-testing-root-section=\(initialSection)")

@@ -44,6 +44,9 @@ public struct AgentToolInvocationPlanner: Sendable {
         if let messageCandidate = messageHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(messageCandidate)
         }
+        if let phoneCandidate = phoneCallHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+            candidates.append(phoneCandidate)
+        }
         if let contactCandidate = contactActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(contactCandidate)
         }

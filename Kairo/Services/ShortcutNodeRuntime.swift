@@ -11,6 +11,7 @@ public enum ShortcutNodeKind: String, Codable, CaseIterable, Sendable {
     case createContactDraft
     case createEmailDraft
     case prepareMessageHandoff
+    case preparePhoneCallHandoff
     case createRecipeDraft
     case draftReply
     case dailyBriefing
@@ -79,6 +80,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
     public var calendarDrafts: [CalendarEventDraft]
     public var contactDrafts: [ContactDraft]
     public var emailDrafts: [EmailDraft]
+    public var phoneCallDrafts: [PhoneCallDraft]
     public var recipeDrafts: [KairoRecipe]
     public var proposedActions: [AgentAction]
 
@@ -93,6 +95,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         calendarDrafts: [CalendarEventDraft] = [],
         contactDrafts: [ContactDraft] = [],
         emailDrafts: [EmailDraft] = [],
+        phoneCallDrafts: [PhoneCallDraft] = [],
         recipeDrafts: [KairoRecipe] = [],
         proposedActions: [AgentAction] = []
     ) {
@@ -106,6 +109,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         self.calendarDrafts = calendarDrafts
         self.contactDrafts = contactDrafts
         self.emailDrafts = emailDrafts
+        self.phoneCallDrafts = phoneCallDrafts
         self.recipeDrafts = recipeDrafts
         self.proposedActions = proposedActions
     }
@@ -121,6 +125,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         case calendarDrafts
         case contactDrafts
         case emailDrafts
+        case phoneCallDrafts
         case recipeDrafts
         case proposedActions
     }
@@ -137,6 +142,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         calendarDrafts = try container.decodeIfPresent([CalendarEventDraft].self, forKey: .calendarDrafts) ?? []
         contactDrafts = try container.decodeIfPresent([ContactDraft].self, forKey: .contactDrafts) ?? []
         emailDrafts = try container.decodeIfPresent([EmailDraft].self, forKey: .emailDrafts) ?? []
+        phoneCallDrafts = try container.decodeIfPresent([PhoneCallDraft].self, forKey: .phoneCallDrafts) ?? []
         recipeDrafts = try container.decodeIfPresent([KairoRecipe].self, forKey: .recipeDrafts) ?? []
         proposedActions = try container.decodeIfPresent([AgentAction].self, forKey: .proposedActions) ?? []
     }
@@ -184,6 +190,8 @@ public actor ShortcutNodeRuntime {
             return try createEmailDraft(input)
         case .prepareMessageHandoff:
             return try prepareMessageHandoff(input)
+        case .preparePhoneCallHandoff:
+            return try preparePhoneCallHandoff(input)
         case .createRecipeDraft:
             return try createRecipeDraft(input)
         case .draftReply:
@@ -412,6 +420,41 @@ public actor ShortcutNodeRuntime {
             kind: .prepareMessageHandoff,
             displayText: "Messages handoff ready. Review in Kairo before opening Messages. No message has been sent.",
             fields: fields,
+            proposedActions: [action]
+        )
+    }
+
+    private func preparePhoneCallHandoff(_ input: ShortcutNodeInput) throws -> ShortcutNodeOutput {
+        let text = try validatedText(input.text)
+        let phoneNumber = phoneNumber(from: input, text: text)
+        let draft = PhoneCallDraft(
+            phoneNumber: phoneNumber,
+            label: phoneCallLabel(from: input, text: text),
+            notes: text
+        )
+        let action = AgentAction(
+            kind: .openPhoneCallHandoff,
+            title: "Review Phone Call Handoff",
+            rationale: "Shortcut requested a visible Phone handoff. Kairo opens only a tel: URL after user confirmation and does not place calls silently.",
+            payload: .phoneCall(draft),
+            riskTier: .tier1Draft
+        )
+
+        var fields = baseFields(for: input)
+        fields["phoneCallHandoffCount"] = "1"
+        fields["phoneCallLabel"] = draft.label ?? ""
+        fields["phoneCallNumber"] = draft.phoneNumber
+        fields["phoneCallURL"] = phoneCallURLPreview(for: draft.phoneNumber)
+        fields["phoneCallRequiresConfirmation"] = String(action.requiresConfirmation)
+        fields["chainText"] = [draft.label, draft.phoneNumber]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty }
+            .joined(separator: " ")
+
+        return ShortcutNodeOutput(
+            kind: .preparePhoneCallHandoff,
+            displayText: "Phone handoff ready. Review before opening Phone. No call has been placed.",
+            fields: fields,
+            phoneCallDrafts: [draft],
             proposedActions: [action]
         )
     }
@@ -790,6 +833,36 @@ public actor ShortcutNodeRuntime {
         return splitRecipients(value)
     }
 
+    private func phoneNumber(from input: ShortcutNodeInput, text: String) -> String {
+        input.variables["phoneNumber"]?.nilIfEmpty
+            ?? input.variables["phone"]?.nilIfEmpty
+            ?? input.variables["tel"]?.nilIfEmpty
+            ?? input.variables["callTo"]?.nilIfEmpty
+            ?? lineValue(from: text, prefixes: ["phone:", "tel:", "call:", "電話:", "手機:"])
+            ?? inferredPhoneNumber(from: text)
+            ?? ""
+    }
+
+    private func phoneCallLabel(from input: ShortcutNodeInput, text: String) -> String? {
+        input.variables["label"]?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            ?? input.variables["name"]?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            ?? input.variables["contactName"]?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            ?? lineValue(from: text, prefixes: ["name:", "contact:", "label:", "姓名:"])
+    }
+
+    private func inferredPhoneNumber(from text: String) -> String? {
+        let allowedScalars = CharacterSet(charactersIn: "+-(). ")
+            .union(.decimalDigits)
+        let candidates = text
+            .components(separatedBy: allowedScalars.inverted)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { candidate in
+                let digitCount = candidate.unicodeScalars.filter { CharacterSet.decimalDigits.contains($0) }.count
+                return digitCount >= 7
+            }
+        return candidates.first
+    }
+
     private func splitRecipients(_ value: String) -> [String] {
         value
             .split { [",", ";", "\n"].contains(String($0)) }
@@ -817,6 +890,24 @@ public actor ShortcutNodeRuntime {
         let allowedScalars = CharacterSet(charactersIn: "+-().").union(.decimalDigits)
         let recipient = String(rawRecipient.unicodeScalars.filter { allowedScalars.contains($0) })
         return recipient.isEmpty ? "sms:" : "sms:\(recipient)"
+    }
+
+    private func phoneCallURLPreview(for phoneNumber: String) -> String {
+        let sanitized = sanitizedDialString(from: phoneNumber)
+        return sanitized.isEmpty ? "tel:" : "tel:\(sanitized)"
+    }
+
+    private func sanitizedDialString(from rawValue: String) -> String {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        var output = ""
+        for scalar in trimmed.unicodeScalars {
+            if CharacterSet.decimalDigits.contains(scalar) {
+                output.unicodeScalars.append(scalar)
+            } else if scalar == "+", output.isEmpty {
+                output.unicodeScalars.append(scalar)
+            }
+        }
+        return output
     }
 
     private func lineValue(from text: String, prefixes: [String]) -> String? {

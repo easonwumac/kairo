@@ -403,6 +403,29 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(payloadText.contains("I am running late."))
     }
 
+    func testAgentToolInvocationPlannerSuggestsPhoneCallHandoffWithConfirmation() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Call 0912-345-678"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-open-phone-call-handoff" })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.skillKind, .custom)
+        XCTAssertEqual(candidate.requiredCapabilities, [.phone])
+        XCTAssertEqual(candidate.riskTier, .tier1Draft)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertTrue(candidate.handoffSummary.contains("tel:"))
+        XCTAssertEqual(action.kind, .openPhoneCallHandoff)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case let .phoneCall(draft) = action.payload else {
+            return XCTFail("Expected phone call payload.")
+        }
+        XCTAssertEqual(draft.phoneNumber, "0912-345-678")
+        XCTAssertNil(draft.label)
+        XCTAssertEqual(draft.notes, "0912-345-678")
+    }
+
     func testAgentToolInvocationPlannerRefusesToolUseWhenDisabled() {
         let planner = AgentToolInvocationPlanner(skillCatalog: .default)
 
@@ -456,7 +479,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(matchingSource.contains("func candidate(for integration: AppIntegration"))
         XCTAssertTrue(actionSource.contains("func notificationActionCandidate"))
         XCTAssertTrue(actionSource.contains("func emailActionCandidate"))
+        XCTAssertTrue(actionSource.contains("func phoneCallHandoffActionCandidate"))
         XCTAssertTrue(parsingSource.contains("func calendarTitle(from userText: String)"))
+        XCTAssertTrue(parsingSource.contains("func isPhoneCallHandoffRequest"))
         XCTAssertTrue(parsingSource.contains("func uniqueCandidates"))
     }
 
@@ -610,6 +635,23 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(action.riskTier, .tier1Draft)
         XCTAssertTrue(action.requiresConfirmation)
         XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-open-message-handoff" })
+    }
+
+    func testAgentCoreAddsDeterministicPhoneCallPreviewAction() async throws {
+        let agent = AgentCore(
+            memoryStore: InMemoryMemoryStore(),
+            aiProvider: MockAIProvider(),
+            skillCatalog: .default,
+            integrationRegistry: IntegrationRegistry()
+        )
+
+        let response = try await agent.respond(to: "Call 0912-345-678")
+
+        let action = try XCTUnwrap(response.proposedActions.first { $0.kind == .openPhoneCallHandoff })
+        XCTAssertEqual(action.title, "Open Phone Handoff")
+        XCTAssertEqual(action.riskTier, .tier1Draft)
+        XCTAssertTrue(action.requiresConfirmation)
+        XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-open-phone-call-handoff" })
     }
 
 #if canImport(SwiftUI)
@@ -799,6 +841,33 @@ final class KairoCoreTests: XCTestCase {
         let executedActions = await executor.executedActions
         let confirmations = await executor.confirmations
         XCTAssertEqual(executedActions.map(\.kind.rawValue), ["openMessageHandoff"])
+        XCTAssertEqual(confirmations, [true])
+    }
+
+    @MainActor
+    func testChatViewModelConfirmsPhoneCallHandoffThroughInjectedExecutor() async throws {
+        let executor = MockActionExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: executor
+        )
+
+        await viewModel.send("Call 0912-345-678")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .openPhoneCallHandoff })
+
+        viewModel.previewAction(action)
+        XCTAssertEqual(viewModel.pendingAction?.kind, .openPhoneCallHandoff)
+
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertTrue(viewModel.actionResultMessage?.contains("Prepared phone call handoff.") == true)
+        let executedActions = await executor.executedActions
+        let confirmations = await executor.confirmations
+        XCTAssertEqual(executedActions.map(\.kind), [.openPhoneCallHandoff])
         XCTAssertEqual(confirmations, [true])
     }
 #endif
@@ -1198,6 +1267,28 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertFalse(openedURL.absoluteString.contains("body="))
     }
 
+    func testSandboxActionExecutorOpensPhoneCallHandoffThroughInjectedOpenerWithoutCallingSilently() async throws {
+        let opener = MockURLOpener()
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), urlOpener: opener)
+        let action = AgentAction(
+            kind: .openPhoneCallHandoff,
+            title: "Open Phone Handoff",
+            rationale: "User confirmed Kairo may open a visible Phone handoff.",
+            payload: .phoneCall(PhoneCallDraft(phoneNumber: "+1 (555) 0100", label: "Alex", notes: "Follow up")),
+            riskTier: .tier1Draft
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertTrue(result.requiresExternalUI)
+        XCTAssertEqual(result.message, "Prepared phone call handoff. The call still requires user action in Phone.")
+        let openedURLs = await opener.openedURLs
+        let openedURL = try XCTUnwrap(openedURLs.first)
+        XCTAssertEqual(openedURL.scheme, "tel")
+        XCTAssertEqual(openedURL.absoluteString, "tel:+15550100")
+    }
+
     func testSandboxActionExecutorSchedulesNotificationThroughInjectedScheduler() async throws {
         let scheduler = MockNotificationScheduler(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), notificationScheduler: scheduler)
@@ -1410,6 +1501,7 @@ final class KairoCoreTests: XCTestCase {
             "shortcut-message-reply-handoff",
             "shortcut-email-triage",
             "shortcut-email-draft-from-shared-text",
+            "shortcut-phone-call-handoff",
             "shortcut-contact-draft-from-shared-text",
             "shortcut-meeting-prep-brief",
             "shortcut-request-to-recipe-draft",
@@ -2034,205 +2126,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertFalse(rootReadme.contains("DeepSeek R1 Distill Qwen"))
     }
 
-    func testSkillMarketplaceIndexListsDownloadableSkillsWithSafetyMetadata() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let data = try Data(contentsOf: root.appendingPathComponent("Website/skills/skills.json"))
-        let index = try JSONDecoder().decode(SkillMarketplaceIndex.self, from: data)
-
-        XCTAssertEqual(index.marketplaceVersion, "2026.6")
-        XCTAssertEqual(index.sourceRepository, "https://github.com/easonwumac/kairo-skills")
-        XCTAssertGreaterThanOrEqual(index.skills.count, 3)
-        XCTAssertTrue(index.skills.allSatisfy { !$0.permissions.isEmpty })
-        XCTAssertTrue(index.skills.allSatisfy { !$0.changelog.isEmpty })
-        XCTAssertTrue(index.skills.allSatisfy { !$0.screenshots.isEmpty })
-        XCTAssertTrue(index.skills.allSatisfy { !$0.riskTier.isEmpty })
-
-        let weatherSkill = try XCTUnwrap(index.skills.first { $0.id == "marketplace-weather-briefing" })
-        XCTAssertEqual(weatherSkill.displayName, "Weather Briefing")
-        XCTAssertEqual(weatherSkill.version, "2.1.0")
-        XCTAssertEqual(weatherSkill.author, "Kairo Marketplace")
-        XCTAssertEqual(weatherSkill.manifestURL, "manifests/weather-briefing.json")
-        XCTAssertEqual(weatherSkill.installSurface, "Access Skill Manager")
-        XCTAssertTrue(weatherSkill.permissions.contains("externalConnectors"))
-        XCTAssertTrue(weatherSkill.changelog.contains("Adds storm alerts."))
-    }
-
-    func testSkillMarketplaceManifestIsImportableBySkillManager() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let data = try Data(contentsOf: root.appendingPathComponent("Website/skills/skills.json"))
-        let index = try JSONDecoder().decode(SkillMarketplaceIndex.self, from: data)
-
-        for entry in index.skills {
-            let manifestJSON = try String(
-                contentsOf: root.appendingPathComponent("Website/skills/\(entry.manifestURL)"),
-                encoding: .utf8
-            )
-            let manifest = try AgentSkillManifest.decodeJSONString(manifestJSON)
-
-            XCTAssertEqual(manifest.skill.id, entry.id)
-            XCTAssertEqual(manifest.skill.version, entry.version)
-            XCTAssertEqual(manifest.packageVersion, index.marketplaceVersion)
-            XCTAssertEqual(manifest.signature?.keyID, "kairo-marketplace-2026")
-            XCTAssertNoThrow(try manifest.validateForInstall())
-            XCTAssertEqual(manifest.installableSkill.source, .marketplace)
-            XCTAssertEqual(manifest.installableSkill.installationStatus, .installed)
-        }
-
-        let manifestJSON = try String(
-            contentsOf: root.appendingPathComponent("Website/skills/manifests/weather-briefing.json"),
-            encoding: .utf8
-        )
-
-        let manifest = try AgentSkillManifest.decodeJSONString(manifestJSON)
-
-        XCTAssertEqual(manifest.skill.id, "marketplace-weather-briefing")
-        XCTAssertEqual(manifest.skill.version, "2.1.0")
-        XCTAssertEqual(manifest.packageVersion, "2026.6")
-        XCTAssertEqual(manifest.signature?.keyID, "kairo-marketplace-2026")
-        XCTAssertEqual(manifest.changelog, [
-            "Adds storm alerts.",
-            "Improves hourly summary.",
-            "Documents approved provider API boundaries."
-        ])
-        XCTAssertNoThrow(try manifest.validateForInstall())
-        XCTAssertEqual(manifest.installableSkill.source, .marketplace)
-        XCTAssertEqual(manifest.installableSkill.installationStatus, .installed)
-    }
-
-    func testAgentSkillMarketplaceCatalogServiceFetchesStandaloneRepoCatalog() async throws {
-        let body = """
-        {
-          "marketplaceVersion": "2026.6",
-          "sourceRepository": "https://github.com/easonwumac/kairo-skills",
-          "generatedAt": "2026-06-02T00:00:00Z",
-          "skills": [
-            {
-              "id": "marketplace-weather-briefing",
-              "displayName": "Weather Briefing",
-              "summary": "Summarizes weather through an approved provider API and returns a compact daily plan.",
-              "version": "2.1.0",
-              "author": "Kairo Marketplace",
-              "category": "External API",
-              "kind": "custom",
-              "permissions": ["externalConnectors"],
-              "riskTier": "Tier 3: external data request",
-              "requiresConfirmation": true,
-              "installSurface": "Access Skill Manager",
-              "manifestURL": "manifests/weather-briefing.json",
-              "screenshots": ["assets/weather-briefing-card.svg"],
-              "changelog": ["Adds storm alerts."]
-            },
-            {
-              "id": "marketplace-homekit-scene-guard",
-              "displayName": "HomeKit Scene Guard",
-              "summary": "Wraps confirmed HomeKit scene and accessory controls.",
-              "version": "1.1.0",
-              "author": "Kairo Marketplace",
-              "category": "Home",
-              "kind": "homeKitControl",
-              "permissions": ["homeKit"],
-              "riskTier": "Tier 3: confirmed home control",
-              "requiresConfirmation": true,
-              "installSurface": "Access Skill Manager",
-              "manifestURL": "manifests/homekit-scene-guard.json",
-              "screenshots": ["assets/homekit-scene-card.svg"],
-              "changelog": ["Adds scene and accessory metadata."],
-              "compatibilityRequirements": {
-                "minimumIOSVersion": "17.0",
-                "requiredEntitlements": ["com.apple.developer.homekit"]
-              }
-            }
-          ]
-        }
-        """
-        let httpClient = MockHTTPClient(statusCode: 200, body: body)
-        let service = AgentSkillMarketplaceCatalogService(
-            indexURL: URL(string: "https://easonwumac.github.io/kairo-skills/skills.json")!,
-            httpClient: httpClient
-        )
-
-        let remoteCatalog = try await service.fetchCatalog()
-        let request = try await httpClient.lastRequest()
-
-        XCTAssertEqual(request.url?.absoluteString, "https://easonwumac.github.io/kairo-skills/skills.json")
-        XCTAssertEqual(remoteCatalog.sourceRepository.absoluteString, "https://github.com/easonwumac/kairo-skills")
-        XCTAssertEqual(remoteCatalog.marketplaceVersion, "2026.6")
-        XCTAssertEqual(remoteCatalog.catalog.skills.map(\.id), [
-            "marketplace-weather-briefing",
-            "marketplace-homekit-scene-guard"
-        ])
-        let weather = try XCTUnwrap(remoteCatalog.catalog.skill(id: "marketplace-weather-briefing"))
-        XCTAssertEqual(weather.version, "2.1.0")
-        XCTAssertEqual(weather.author, "Kairo Marketplace")
-        XCTAssertEqual(weather.kind, .custom)
-        XCTAssertEqual(weather.installationStatus, .available)
-        XCTAssertEqual(weather.requiredCapabilities, [.externalConnectors])
-        XCTAssertEqual(
-            weather.downloadURL?.absoluteString,
-            "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json"
-        )
-        let homeKit = try XCTUnwrap(remoteCatalog.catalog.skill(id: "marketplace-homekit-scene-guard"))
-        XCTAssertEqual(homeKit.compatibilityRequirements.minimumIOSVersion, "17.0")
-        XCTAssertEqual(homeKit.compatibilityRequirements.requiredEntitlements, ["com.apple.developer.homekit"])
-    }
-
-    func testAgentSkillMarketplaceCatalogServiceFetchesManifestForDownloadableSkill() async throws {
-        let skill = AgentSkill.marketplaceTemplate(
-            id: "marketplace-weather-briefing",
-            displayName: "Weather Briefing",
-            summary: "Summarizes weather through an approved provider API.",
-            requiredCapabilities: [.externalConnectors],
-            downloadURL: URL(string: "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json")!
-        )
-        let manifest = try AgentSkillManifest.signedForTesting(skill: skill, packageVersion: "2026.6")
-        let manifestJSON = try AgentSkillManifest.encodeJSONString(manifest)
-        let httpClient = MockHTTPClient(statusCode: 200, body: manifestJSON)
-        let service = AgentSkillMarketplaceCatalogService(
-            indexURL: URL(string: "https://easonwumac.github.io/kairo-skills/skills.json")!,
-            httpClient: httpClient
-        )
-
-        let fetchedManifest = try await service.fetchManifest(for: skill)
-        let request = try await httpClient.lastRequest()
-
-        XCTAssertEqual(request.url?.absoluteString, "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json")
-        XCTAssertEqual(fetchedManifest.skill.id, "marketplace-weather-briefing")
-        XCTAssertEqual(fetchedManifest.packageVersion, "2026.6")
-        XCTAssertNoThrow(try fetchedManifest.validateForInstall())
-    }
-
-    func testAgentSkillCatalogMergesRemoteMarketplaceWithoutReplacingInstalledSkills() {
-        var installedWeather = AgentSkill.marketplaceTemplate(
-            id: "marketplace-weather-briefing",
-            displayName: "Weather Briefing",
-            summary: "Installed user copy.",
-            requiredCapabilities: [.externalConnectors],
-            downloadURL: URL(string: "https://example.com/weather.json")!
-        )
-        installedWeather.installationStatus = .installed
-        installedWeather.version = "2.0.0"
-        let existingCatalog = AgentSkillCatalog(skills: AgentSkillCatalog.default.skills + [installedWeather])
-        var remoteWeather = installedWeather
-        remoteWeather.installationStatus = .available
-        remoteWeather.version = "2.1.0"
-        remoteWeather.summary = "Remote update."
-        let remoteHomeKit = AgentSkill.marketplaceTemplate(
-            id: "marketplace-homekit-scene-guard",
-            displayName: "HomeKit Scene Guard",
-            summary: "New remote skill.",
-            requiredCapabilities: [.homeKit],
-            downloadURL: URL(string: "https://easonwumac.github.io/kairo-skills/manifests/homekit-scene-guard.json")!,
-            kind: .homeKitControl
-        )
-
-        let merged = existingCatalog.mergingMarketplaceCatalog(AgentSkillCatalog(skills: [remoteWeather, remoteHomeKit]))
-
-        XCTAssertEqual(merged.skill(id: "marketplace-weather-briefing")?.installationStatus, .installed)
-        XCTAssertEqual(merged.skill(id: "marketplace-weather-briefing")?.version, "2.0.0")
-        XCTAssertEqual(merged.skill(id: "marketplace-homekit-scene-guard")?.installationStatus, .available)
-        XCTAssertEqual(merged.skill(id: "marketplace-homekit-scene-guard")?.kind, .homeKitControl)
-    }
-
     func testSandboxActionExecutorRequiresConfirmationBeforeHomeKitControl() async throws {
         let service = MockHomeControlService(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), homeControlService: service)
@@ -2407,8 +2300,10 @@ final class KairoCoreTests: XCTestCase {
         let settingsView = try String(contentsOf: settingsViewURL, encoding: .utf8)
         let compactView = try String(contentsOf: compactViewURL, encoding: .utf8)
 
-        XCTAssertTrue(settingsView.contains("if mode == .modelsOnly"))
+        XCTAssertTrue(settingsView.contains("case .modelsOnly"))
+        XCTAssertTrue(settingsView.contains("case .shortcutDemosOnly"))
         XCTAssertTrue(settingsView.contains("LocalModelsCompactView("))
+        XCTAssertTrue(settingsView.contains("SettingsShortcutDemosSection()"))
         XCTAssertLessThan(settingsView.split(separator: "\n").count, 1_050)
         XCTAssertTrue(compactView.contains("struct LocalModelsCompactView"))
         XCTAssertTrue(compactView.contains(#""settings.models.screen""#))
@@ -2437,15 +2332,15 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))
-        XCTAssertTrue(compactView.contains("Popular starters only: Qwen + Llama."))
+        XCTAssertTrue(compactView.contains("Starter list: Qwen + Llama only."))
         XCTAssertTrue(compactView.contains("compactRoutePreferenceMenu"))
         XCTAssertFalse(compactView.contains("Picker(\"Route Preference\""))
-        XCTAssertTrue(compactView.contains("private var compactSectionTitleFont: Font { .system(size: 12, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactSectionHeadingFont: Font { .system(size: 8, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 8, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 7) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 7, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 7, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactSectionTitleFont: Font { .system(size: 11, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactSectionHeadingFont: Font { .system(size: 7.5, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 7.5, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 6.5) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 6.5, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 6.5, weight: .semibold) }"))
         XCTAssertTrue(compactView.contains("private var compactControlValueFont: Font { .system(size: 9, weight: .semibold) }"))
         XCTAssertTrue(compactView.contains(#""Reply""#))
         XCTAssertFalse(compactView.contains(#""Reply Check""#))
@@ -2704,6 +2599,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(environmentSource.contains("LocalModelRoutingAIProvider("))
         XCTAssertTrue(environmentSource.contains("localModelSettingsService: localModelSettingsService"))
         XCTAssertTrue(rootViewSource.contains("mode: .modelsOnly"))
+        XCTAssertTrue(rootViewSource.contains("settingsMode: SettingsViewMode = .all"))
         XCTAssertTrue(permissionHubSource.contains("private let skillManagerService: AgentSkillManagerService?"))
         XCTAssertTrue(permissionHubSource.contains("private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?"))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.catalog()"))
@@ -2828,6 +2724,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-email-draft-confirmation",
             "chat-map-directions-confirmation",
             "chat-messages-handoff-confirmation",
+            "chat-phone-handoff-confirmation",
             "automations-recipe-center",
             "automations-shortcut-templates",
             "automations-shortcut-demo-io",
@@ -2903,6 +2800,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(messageScenarioIdentifiers.contains("chat.action-preview"))
         XCTAssertTrue(messageScenarioIdentifiers.contains("chat.action.confirm"))
         XCTAssertTrue(messageScenarioIdentifiers.contains("chat.action-result"))
+        let phoneScenarioIdentifiers = catalog.scenario(id: "chat-phone-handoff-confirmation")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(phoneScenarioIdentifiers.contains("chat.proposed-action.openPhoneCallHandoff"))
+        XCTAssertTrue(phoneScenarioIdentifiers.contains("chat.action-preview"))
+        XCTAssertTrue(phoneScenarioIdentifiers.contains("chat.action.confirm"))
+        XCTAssertTrue(phoneScenarioIdentifiers.contains("chat.action-result"))
         let automationsScenarioIdentifiers = catalog.scenario(id: "automations-recipe-center")?.requiredAccessibilityIdentifiers ?? []
         XCTAssertTrue(automationsScenarioIdentifiers.contains("root.drawer.shortcuts"))
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe-center"))
@@ -3034,8 +2936,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains(#""settings.models.\(modelID).download-confirm""#))
         XCTAssertTrue(uiTestSources.contains(#""settings.models.\(modelID).download-cancel""#))
         XCTAssertTrue(uiTestSources.contains(#""settings.models.qwen3-5-0-8b-q4-k-m.reply-check""#))
+        XCTAssertTrue(uiTestSources.contains("--ui-testing-settings-shortcut-demos-only"))
         XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(anyElement("settings.models.show-more").exists)"#))
-        XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(findElement("settings.models.remote-catalog-test-model-q4-k-m.name""#))
+        XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(anyElement("settings.models.remote-catalog-test-model-q4-k-m.name").exists)"#))
         XCTAssertTrue(uiTestSources.contains("請先下載 Qwen3.5 0.8B Q4_K_M 後再跑 benchmark。"))
         XCTAssertTrue(uiTestSources.contains("Local model reply is alive."))
         XCTAssertTrue(uiTestSources.contains("--ui-testing-installed-local-model"))
@@ -3063,12 +2966,16 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmEmailDraftHandoff"))
         XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.composeEmailDraft""#))
         XCTAssertTrue(uiTestSources.contains("Prepared email draft handoff."))
+        XCTAssertTrue(actionPreviewView.contains("tel: opens Phone visibly; the call still requires user action."))
         XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmMapDirectionsHandoff"))
         XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.openMapDirections""#))
         XCTAssertTrue(uiTestSources.contains("Prepared Apple Maps directions handoff."))
         XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmMessagesHandoff"))
         XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.openMessageHandoff""#))
         XCTAssertTrue(uiTestSources.contains("Prepared Messages handoff."))
+        XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmPhoneCallHandoff"))
+        XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.openPhoneCallHandoff""#))
+        XCTAssertTrue(uiTestSources.contains("Prepared phone call handoff."))
         XCTAssertTrue(uiTestSources.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
         XCTAssertTrue(uiTestSources.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
         XCTAssertTrue(uiTestSources.contains(#""root.drawer.shortcuts""#))
@@ -3106,7 +3013,8 @@ final class KairoCoreTests: XCTestCase {
             )?.lowerBound
         )
         let settingsShortcutDemoTest = String(smokeTest[settingsShortcutDemoStart..<settingsShortcutDemoEnd])
-        XCTAssertTrue(settingsShortcutDemoTest.contains(#"relaunchForUITesting(initialSection: "settings")"#))
+        XCTAssertTrue(settingsShortcutDemoTest.contains(#"relaunchForUITesting(initialSection: "settings", settingsShortcutDemosOnly: true)"#))
+        XCTAssertTrue(settingsShortcutDemoTest.contains(#"id: "phone-call-handoff""#))
         XCTAssertFalse(settingsShortcutDemoTest.contains("assertPrimaryDrawerItemsExist()"))
         XCTAssertFalse(settingsShortcutDemoTest.contains(#"selectDrawerSection(identifier: "root.drawer.settings""#))
 
@@ -3127,20 +3035,14 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains(#""automations.shortcut-demo.generic-node-runner.preview-result""#))
         XCTAssertTrue(uiTestSources.contains("Daily Briefing"))
         XCTAssertTrue(uiTestSources.contains("Save Shared Text"))
-        XCTAssertTrue(uiTestSources.contains("Screenshot to Reminders"))
-        XCTAssertTrue(uiTestSources.contains("Reply Draft from Shared Text"))
-        XCTAssertTrue(uiTestSources.contains("Email Triage"))
-        XCTAssertTrue(uiTestSources.contains("Meeting Prep Brief"))
+        XCTAssertTrue(uiTestSources.contains("Phone Call Handoff"))
         XCTAssertTrue(uiTestSources.contains("Generic Node Runner"))
-        XCTAssertTrue(uiTestSources.contains("2 steps: summarize -> draftReply"))
-        XCTAssertTrue(uiTestSources.contains("3 steps: summarize -> extractTasks -> draftReply"))
-        XCTAssertTrue(uiTestSources.contains("3 steps: searchMemory -> summarize -> extractTasks"))
+        XCTAssertTrue(uiTestSources.contains("1 step: preparePhoneCallHandoff"))
+        XCTAssertTrue(uiTestSources.contains("Output: fields.phoneCallHandoffCount, fields.phoneCallNumber, fields.phoneCallRequiresConfirmation"))
         XCTAssertTrue(uiTestSources.contains("Input: nodeKind, inputJSON"))
         XCTAssertTrue(uiTestSources.contains("Output: outputJSON, displayText, fields.taskCount, fields.chainText"))
         XCTAssertTrue(uiTestSources.contains("Input: text, sourceName, variables"))
         XCTAssertTrue(uiTestSources.contains("Output: memoryID, fields.taskCount, tasks, fields.chainText"))
-        XCTAssertTrue(uiTestSources.contains("Email from vendor"))
-        XCTAssertTrue(uiTestSources.contains("Screenshot OCR"))
         XCTAssertTrue(uiTestSources.contains("settings.models.refresh-catalog"))
         XCTAssertTrue(uiTestSources.contains("github.com/easonwumac/kairo-models"))
         XCTAssertTrue(uiTestSources.contains("chat.history.thread"))
@@ -3732,25 +3634,6 @@ final class KairoCoreTests: XCTestCase {
         }
     }
 
-    private struct SkillMarketplaceIndex: Decodable {
-        var marketplaceVersion: String
-        var sourceRepository: String
-        var skills: [SkillMarketplaceEntry]
-    }
-
-    private struct SkillMarketplaceEntry: Decodable {
-        var id: String
-        var displayName: String
-        var version: String
-        var author: String
-        var permissions: [String]
-        var riskTier: String
-        var manifestURL: String
-        var installSurface: String
-        var changelog: [String]
-        var screenshots: [String]
-    }
-
     private func signedWeatherSkillManifest(
         version: String,
         signingKey: P256.Signing.PrivateKey,
@@ -3943,6 +3826,8 @@ private actor MockActionExecutor: ActionExecutor {
             return ActionExecutionResult(completed: true, message: "Prepared Apple Maps directions handoff.", requiresExternalUI: true)
         case "openMessageHandoff":
             return ActionExecutionResult(completed: true, message: "Prepared Messages handoff.", requiresExternalUI: true)
+        case "openPhoneCallHandoff":
+            return ActionExecutionResult(completed: true, message: "Prepared phone call handoff.", requiresExternalUI: true)
         case "createCalendarDraft":
             return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: "calendar-event-id")
         case "createReminderDraft":

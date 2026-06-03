@@ -97,6 +97,8 @@ Kairo may propose an email draft handoff when the user explicitly asks to draft,
 
 Kairo may propose a Messages recipient handoff when the user explicitly asks to text, message, or send an SMS. It builds a typed recipient/body preview and, after confirmation, opens only a visible `sms:` recipient handoff. Apple's SMS link does not carry message body text, so Kairo keeps the body in the preview and must not claim it inserted the text, read Messages, or sent a message silently.
 
+Kairo may propose a Phone call handoff when the user explicitly asks to call or dial a number. It builds a typed number/label preview and, after confirmation, opens only a visible `tel:` handoff. Kairo must not read call history, place calls silently, auto-confirm Phone UI, or claim that a call connected.
+
 Kairo may propose an Apple Maps directions handoff when the user explicitly asks to navigate, get directions, or open a route to a destination. It builds a typed destination/mode preview and, after confirmation, opens only a visible `maps.apple.com` link. Kairo must not read current location, monitor location in the background, start navigation silently, or claim that Maps navigation has begun.
 
 ## Kairo Recipe Boundary

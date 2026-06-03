@@ -24,6 +24,7 @@ final class KairoShortcutNodeTests: XCTestCase {
                 "CreateContactDraftsIntent",
                 "CreateEmailDraftsIntent",
                 "PrepareMessageHandoffIntent",
+                "PreparePhoneCallHandoffIntent",
                 "RunKairoShortcutNodeIntent",
                 "RunKairoRecipeIntent",
                 "SuggestKairoRecipeIntent",
@@ -47,6 +48,7 @@ final class KairoShortcutNodeTests: XCTestCase {
         _ = CreateContactDraftsIntent()
         _ = CreateEmailDraftsIntent()
         _ = PrepareMessageHandoffIntent()
+        _ = PreparePhoneCallHandoffIntent()
         _ = RunKairoShortcutNodeIntent()
         _ = RunKairoRecipeIntent()
         _ = SuggestKairoRecipeIntent()
@@ -65,6 +67,7 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(catalog.recipe(id: "reply-draft-from-shared-text")?.steps.map(\.nodeKind), [.summarize, .draftReply])
         XCTAssertEqual(catalog.recipe(id: "email-triage")?.steps.map(\.nodeKind), [.summarize, .extractTasks, .draftReply])
         XCTAssertEqual(catalog.recipe(id: "message-reply-handoff")?.steps.map(\.nodeKind.rawValue), ["prepareMessageHandoff"])
+        XCTAssertEqual(catalog.recipe(id: "phone-call-handoff")?.steps.map(\.nodeKind.rawValue), ["preparePhoneCallHandoff"])
         XCTAssertEqual(catalog.recipe(id: "contact-draft-from-shared-text")?.steps.map(\.nodeKind.rawValue), ["createContactDraft"])
         XCTAssertEqual(catalog.recipe(id: "meeting-prep-brief")?.steps.map(\.nodeKind), [.searchMemory, .summarize, .extractTasks])
         XCTAssertEqual(catalog.recipe(id: "request-to-recipe-draft")?.steps.map(\.nodeKind.rawValue), ["createRecipeDraft"])
@@ -270,6 +273,51 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(draft.body, body)
     }
 
+    func testShortcutPreparePhoneCallHandoffNodeReturnsVisibleTelHandoffWithoutCalling() async throws {
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let kind = try XCTUnwrap(ShortcutNodeKind(rawValue: "preparePhoneCallHandoff"))
+        let input = ShortcutNodeInput(
+            text: """
+            Call Alex at +1 (555) 0100 about the Kairo TestFlight.
+            """,
+            sourceName: "Shared Phone Text",
+            variables: [
+                "shortcutRecipeID": "phone-call-handoff",
+                "phoneNumber": "+1 (555) 0100",
+                "label": "Alex"
+            ]
+        )
+
+        let output = try await runtime.run(kind, input: input)
+        let draft = try XCTUnwrap(output.phoneCallDrafts.first)
+        let action = try XCTUnwrap(output.proposedActions.first)
+        let outputJSON = try output.encodedJSONString()
+
+        XCTAssertEqual(output.kind.rawValue, "preparePhoneCallHandoff")
+        XCTAssertEqual(output.fields["shortcutRecipeID"], "phone-call-handoff")
+        XCTAssertEqual(output.fields["sourceName"], "Shared Phone Text")
+        XCTAssertEqual(output.fields["phoneCallHandoffCount"], "1")
+        XCTAssertEqual(output.fields["phoneCallLabel"], "Alex")
+        XCTAssertEqual(output.fields["phoneCallNumber"], "+1 (555) 0100")
+        XCTAssertEqual(output.fields["phoneCallURL"], "tel:+15550100")
+        XCTAssertEqual(output.fields["phoneCallRequiresConfirmation"], "true")
+        XCTAssertEqual(output.fields["chainText"], "Alex +1 (555) 0100")
+        XCTAssertEqual(draft.phoneNumber, "+1 (555) 0100")
+        XCTAssertEqual(draft.label, "Alex")
+        XCTAssertEqual(draft.notes, "Call Alex at +1 (555) 0100 about the Kairo TestFlight.")
+        XCTAssertTrue(output.displayText.contains("Review before opening Phone"))
+        XCTAssertTrue(output.displayText.contains("No call has been placed"))
+        XCTAssertEqual(action.kind, .openPhoneCallHandoff)
+        XCTAssertEqual(action.riskTier, .tier1Draft)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case let .phoneCall(actionDraft) = action.payload else {
+            return XCTFail("Expected PhoneCallDraft payload.")
+        }
+        XCTAssertEqual(actionDraft, draft)
+        XCTAssertTrue(outputJSON.contains(#""phoneCallDrafts""#))
+        XCTAssertTrue(outputJSON.contains(#""openPhoneCallHandoff""#))
+    }
+
     func testShortcutCreateContactDraftNodeBuildsDraftWithoutWritingContacts() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let kind = try XCTUnwrap(ShortcutNodeKind(rawValue: "createContactDraft"))
@@ -398,6 +446,7 @@ final class KairoShortcutNodeTests: XCTestCase {
             "screenshot-to-tasks-shortcut",
             "email-triage-shortcut",
             "message-reply-handoff-shortcut",
+            "phone-call-handoff-shortcut",
             "contact-draft-shortcut",
             "calendar-draft-shortcut",
             "email-draft-shortcut",
@@ -434,6 +483,13 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(messageHandoff.setupInstructions.joined(separator: " ").contains("do not send messages silently"))
         XCTAssertTrue(messageHandoff.setupInstructions.joined(separator: " ").contains("body remains in Kairo"))
 
+        let phoneHandoff = try XCTUnwrap(registry.template(id: "phone-call-handoff-shortcut"))
+        XCTAssertEqual(phoneHandoff.category, .shareSheet)
+        XCTAssertEqual(phoneHandoff.recommendedRecipeTemplateID, "phone-call-handoff")
+        XCTAssertTrue(phoneHandoff.requiredIntentIdentifiers.contains("PreparePhoneCallHandoffIntent"))
+        XCTAssertTrue(phoneHandoff.setupInstructions.joined(separator: " ").contains("do not place calls silently"))
+        XCTAssertTrue(phoneHandoff.setupInstructions.joined(separator: " ").contains("tel:"))
+
         let contactDraft = try XCTUnwrap(registry.template(id: "contact-draft-shortcut"))
         XCTAssertEqual(contactDraft.category, .shareSheet)
         XCTAssertEqual(contactDraft.recommendedRecipeTemplateID, "contact-draft-from-shared-text")
@@ -465,6 +521,7 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(intentsSource.contains("struct CreateContactDraftsIntent"))
         XCTAssertTrue(intentsSource.contains("struct CreateEmailDraftsIntent"))
         XCTAssertTrue(intentsSource.contains("struct PrepareMessageHandoffIntent"))
+        XCTAssertTrue(intentsSource.contains("struct PreparePhoneCallHandoffIntent"))
         XCTAssertTrue(intentsSource.contains("FileBackedKairoRecipeStore"))
         XCTAssertTrue(intentsSource.contains("KairoRecipeRunner"))
         XCTAssertTrue(intentsSource.contains("surface: .shortcut"))
@@ -776,6 +833,30 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(action.requiresConfirmation)
         XCTAssertTrue(output.displayText.contains("No message has been sent"))
         XCTAssertFalse(try XCTUnwrap(output.fields["messageHandoffURL"]).contains(try XCTUnwrap(output.fields["messageBody"])))
+        XCTAssertEqual(run.totalTaskCount, 0)
+        XCTAssertEqual(run.totalReminderDraftCount, 0)
+    }
+
+    func testShortcutDemoRecipeRunnerExecutesPhoneCallHandoffSampleWithoutCalling() async throws {
+        let catalog = ShortcutDemoCatalog.default
+        let recipe = try XCTUnwrap(catalog.recipe(id: "phone-call-handoff"))
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let runner = ShortcutDemoRecipeRunner(runtime: runtime)
+
+        let run = try await runner.runSample(recipe)
+        let output = run.steps[0].output
+        let action = try XCTUnwrap(output.proposedActions.first)
+
+        XCTAssertEqual(run.recipeID, "phone-call-handoff")
+        XCTAssertEqual(run.steps.map(\.nodeKind.rawValue), ["preparePhoneCallHandoff"])
+        XCTAssertEqual(output.fields["phoneCallHandoffCount"], "1")
+        XCTAssertEqual(output.fields["phoneCallRequiresConfirmation"], "true")
+        XCTAssertEqual(output.fields["phoneCallURL"], "tel:+15550100")
+        XCTAssertEqual(action.kind, .openPhoneCallHandoff)
+        XCTAssertEqual(action.riskTier, .tier1Draft)
+        XCTAssertTrue(action.requiresConfirmation)
+        XCTAssertTrue(output.displayText.contains("No call has been placed"))
+        XCTAssertEqual(run.totalPhoneCallHandoffCount, 1)
         XCTAssertEqual(run.totalTaskCount, 0)
         XCTAssertEqual(run.totalReminderDraftCount, 0)
     }

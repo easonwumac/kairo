@@ -3,11 +3,17 @@ import SwiftUI
 
 public struct RootView: View {
     private let environment: KairoEnvironment
+    private let settingsMode: SettingsViewMode
     @State private var selectedSection: RootSection = .chat
     @State private var isDrawerOpen = false
 
-    public init(environment: KairoEnvironment = .preview(), initialSection: String? = nil) {
+    public init(
+        environment: KairoEnvironment = .preview(),
+        initialSection: String? = nil,
+        settingsMode: SettingsViewMode = .all
+    ) {
         self.environment = environment
+        self.settingsMode = settingsMode
         let section = initialSection.flatMap(RootSection.init(rawValue:)) ?? .chat
         _selectedSection = State(initialValue: section)
     }
@@ -117,6 +123,7 @@ public struct RootView: View {
         case .settings:
             SettingsView(
                 settingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
+                mode: settingsMode,
                 credentialStore: environment.credentialStore,
                 oauthCallbackStore: environment.oauthConnectorCallbackStore,
                 localModelCatalog: environment.localModelCatalog,

@@ -26,7 +26,7 @@ struct LocalModelsCompactView: View {
                         .font(compactSectionTitleFont)
                         .accessibilityIdentifier("settings.models.local")
 
-                    Text("Popular starters only: Qwen + Llama. Full catalog stays in kairo-models.")
+                    Text("Starter list: Qwen + Llama only. Full catalog stays in kairo-models.")
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -211,7 +211,7 @@ struct LocalModelsCompactView: View {
     }
 
     private var trimmedModelSummaryText: String {
-        "Showing \(visibleModelRows.count) popular starter models only. Full catalog stays in kairo-models."
+        "Showing \(visibleModelRows.count) starter models only. Full catalog stays in kairo-models."
     }
 
     private var compactRoutePreferenceMenu: some View {
@@ -371,17 +371,17 @@ struct LocalModelsCompactView: View {
         [GridItem(.adaptive(minimum: 52), spacing: 4, alignment: .leading)]
     }
 
-    private var compactSectionTitleFont: Font { .system(size: 12, weight: .semibold) }
+    private var compactSectionTitleFont: Font { .system(size: 11, weight: .semibold) }
 
-    private var compactSectionHeadingFont: Font { .system(size: 8, weight: .semibold) }
+    private var compactSectionHeadingFont: Font { .system(size: 7.5, weight: .semibold) }
 
-    private var compactModelNameFont: Font { .system(size: 8, weight: .semibold) }
+    private var compactModelNameFont: Font { .system(size: 7.5, weight: .semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 7) }
+    private var compactModelMetadataFont: Font { .system(size: 6.5) }
 
-    private var compactModelStatusFont: Font { .system(size: 7, weight: .semibold) }
+    private var compactModelStatusFont: Font { .system(size: 6.5, weight: .semibold) }
 
-    private var compactButtonLabelFont: Font { .system(size: 7, weight: .semibold) }
+    private var compactButtonLabelFont: Font { .system(size: 6.5, weight: .semibold) }
 
     private var compactControlValueFont: Font { .system(size: 9, weight: .semibold) }
 

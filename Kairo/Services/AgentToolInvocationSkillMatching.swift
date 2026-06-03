@@ -109,6 +109,10 @@ extension AgentToolInvocationPlanner {
             return containsAny(normalizedText, ["screenshot", "ocr", "image", "photo", "reminder", "截圖", "圖片", "照片", "提醒"])
         case "reply-draft-from-shared-text":
             return containsAny(normalizedText, ["reply", "draft reply", "respond", "email reply", "message reply", "回覆", "回信", "覆信", "草稿"])
+        case "message-reply-handoff":
+            return containsAny(normalizedText, ["message", "sms", "text message", "send text", "message reply", "簡訊", "訊息", "傳訊息"])
+        case "phone-call-handoff":
+            return containsAny(normalizedText, ["phone call", "call", "dial", "tel", "call alex", "打電話", "撥號", "致電"])
         case "email-triage":
             return containsAny(normalizedText, ["email triage", "triage", "inbox", "vendor email", "follow-up", "follow up", "mail tasks", "郵件整理", "信件整理", "分類", "追蹤"])
         case "email-draft-from-shared-text":
