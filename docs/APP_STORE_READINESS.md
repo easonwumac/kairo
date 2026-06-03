@@ -130,7 +130,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] XCUITest covers chat Apple Maps directions preview and visible handoff confirmation before opening Maps.
 - [ ] Marketplace trust store supports production key rotation and revocation metadata.
 - [x] User-created skills require explicit capability selection and confirmation policy before a disabled local draft can be saved.
-- [ ] Skill update/remove flows are covered by UI/e2e tests.
+- [ ] Skill remove flow has UI smoke coverage for user-created drafts; signed update preview has package/source coverage, but full update UI/e2e remains release-blocking.
 - [x] Chat uses live Skill Manager effective catalog, including disabled and compatibility-blocked skill state.
 
 ### 7. Background tasks

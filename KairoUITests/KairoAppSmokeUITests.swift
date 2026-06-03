@@ -463,6 +463,12 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(enableDraft.exists)
         enableDraft.tap()
         XCTAssertTrue(findButton("access.skill.user-ui-created-skill.disable", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+
+        let removeDraft = findButton("access.skill.user-ui-created-skill.remove", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(removeDraft.exists)
+        removeDraft.tap()
+        XCTAssertTrue(findStaticText(containing: "UI Created Skill removed from manager.", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertFalse(anyElement("access.skill.user-ui-created-skill").exists)
     }
 
     func testAccessSkillManagerSearchFiltersSkills() throws {
