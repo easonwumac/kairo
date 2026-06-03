@@ -1402,7 +1402,9 @@ final class KairoCoreTests: XCTestCase {
             "shortcut-email-triage",
             "shortcut-meeting-prep-brief",
             "shortcut-request-to-recipe-draft",
-            "shortcut-generic-node-runner"
+            "shortcut-meeting-text-to-calendar-draft",
+            "shortcut-generic-node-runner",
+            "shortcut-home-action-preview"
         ])
         XCTAssertEqual(homeKitSkill.kind, .homeKitControl)
         XCTAssertEqual(homeKitSkill.installationStatus, .installed)

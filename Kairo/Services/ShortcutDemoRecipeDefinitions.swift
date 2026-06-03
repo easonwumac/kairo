@@ -1,7 +1,9 @@
 import Foundation
 
 public extension ShortcutDemoCatalog {
-    static let officialRecipes: [ShortcutDemoRecipe] = [
+    static let officialRecipes: [ShortcutDemoRecipe] = coreRecipes + homeRecipes
+
+    static let coreRecipes: [ShortcutDemoRecipe] = [
         ShortcutDemoRecipe(
             id: "daily-briefing",
             title: "Daily Briefing",
@@ -388,6 +390,45 @@ public extension ShortcutDemoCatalog {
                         text: "每天早上整理今天事情，包含待辦和會議提醒",
                         sourceName: "Automation Idea Shortcut",
                         variables: ["shortcutRecipeID": "request-to-recipe-draft"]
+                    )
+                )
+            ]
+        ),
+        ShortcutDemoRecipe(
+            id: "meeting-text-to-calendar-draft",
+            title: "Meeting Text to Calendar Draft",
+            summary: "Turn explicit meeting text into a Calendar draft output for user-approved EventKit write steps.",
+            triggerSummary: "Share Sheet, copied meeting note, Action Button, or manual Shortcut text input.",
+            setupNotes: [
+                "Pass the meeting title and optional ISO start/end variables into Create Calendar Draft.",
+                "Show the returned calendar draft in Shortcuts or Kairo before any EventKit write.",
+                "Use a later user-confirmed step if the user chooses to create the real calendar event."
+            ],
+            steps: [
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Create Calendar Draft with Kairo",
+                    nodeKind: .createCalendarDraft,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["text"],
+                        optionalFields: ["sourceName", "variables.startDateISO", "variables.endDateISO"],
+                        description: "Meeting or schedule text explicitly provided by the user."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["fields.calendarDraftCount", "fields.calendarTitle", "fields.calendarRequiresConfirmation"],
+                        optionalFields: ["fields.calendarStartDate", "fields.calendarEndDate", "fields.chainText", "calendarDrafts"],
+                        description: "Calendar draft metadata only. No EventKit calendar write is executed by this node."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: """
+                        Meeting: Kairo roadmap review
+                        Agenda: confirm Shortcut node outputs and local model rollout
+                        """,
+                        sourceName: "Meeting Text Shortcut",
+                        variables: [
+                            "shortcutRecipeID": "meeting-text-to-calendar-draft",
+                            "startDateISO": "2026-06-05T02:00:00Z",
+                            "endDateISO": "2026-06-05T02:30:00Z"
+                        ]
                     )
                 )
             ]

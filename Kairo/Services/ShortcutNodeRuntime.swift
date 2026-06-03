@@ -7,9 +7,11 @@ public enum ShortcutNodeKind: String, Codable, CaseIterable, Sendable {
     case summarize
     case extractTasks
     case createReminderDraft
+    case createCalendarDraft
     case createRecipeDraft
     case draftReply
     case dailyBriefing
+    case previewHomeAction
 }
 
 public struct ShortcutNodeInput: Codable, Equatable, Sendable {
@@ -71,6 +73,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
     public var memoryMatches: [ShortcutMemoryMatch]
     public var tasks: [ShortcutTaskDraft]
     public var reminderDrafts: [ReminderDraft]
+    public var calendarDrafts: [CalendarEventDraft]
     public var recipeDrafts: [KairoRecipe]
     public var proposedActions: [AgentAction]
 
@@ -82,6 +85,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         memoryMatches: [ShortcutMemoryMatch] = [],
         tasks: [ShortcutTaskDraft] = [],
         reminderDrafts: [ReminderDraft] = [],
+        calendarDrafts: [CalendarEventDraft] = [],
         recipeDrafts: [KairoRecipe] = [],
         proposedActions: [AgentAction] = []
     ) {
@@ -92,6 +96,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         self.memoryMatches = memoryMatches
         self.tasks = tasks
         self.reminderDrafts = reminderDrafts
+        self.calendarDrafts = calendarDrafts
         self.recipeDrafts = recipeDrafts
         self.proposedActions = proposedActions
     }
@@ -104,6 +109,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         case memoryMatches
         case tasks
         case reminderDrafts
+        case calendarDrafts
         case recipeDrafts
         case proposedActions
     }
@@ -117,6 +123,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         memoryMatches = try container.decodeIfPresent([ShortcutMemoryMatch].self, forKey: .memoryMatches) ?? []
         tasks = try container.decodeIfPresent([ShortcutTaskDraft].self, forKey: .tasks) ?? []
         reminderDrafts = try container.decodeIfPresent([ReminderDraft].self, forKey: .reminderDrafts) ?? []
+        calendarDrafts = try container.decodeIfPresent([CalendarEventDraft].self, forKey: .calendarDrafts) ?? []
         recipeDrafts = try container.decodeIfPresent([KairoRecipe].self, forKey: .recipeDrafts) ?? []
         proposedActions = try container.decodeIfPresent([AgentAction].self, forKey: .proposedActions) ?? []
     }
@@ -156,6 +163,8 @@ public actor ShortcutNodeRuntime {
             return try extractTasks(input)
         case .createReminderDraft:
             return try createReminderDrafts(input)
+        case .createCalendarDraft:
+            return try createCalendarDraft(input)
         case .createRecipeDraft:
             return try createRecipeDraft(input)
         case .draftReply:
@@ -164,6 +173,8 @@ public actor ShortcutNodeRuntime {
             return try summarize(input)
         case .dailyBriefing:
             return try dailyBriefing(input)
+        case .previewHomeAction:
+            return try previewHomeAction(input)
         case .ask:
             return try await ask(input)
         }
@@ -248,6 +259,34 @@ public actor ShortcutNodeRuntime {
         )
     }
 
+    private func createCalendarDraft(_ input: ShortcutNodeInput) throws -> ShortcutNodeOutput {
+        let text = try validatedText(input.text)
+        let draft = CalendarEventDraft(
+            title: calendarTitle(from: text),
+            notes: text,
+            startDate: calendarDate(named: "startDateISO", from: input.variables)
+                ?? calendarDate(from: text, prefixes: ["start:", "starts:", "start time:", "開始:"])
+                ?? Self.defaultCalendarStartDate,
+            endDate: calendarDate(named: "endDateISO", from: input.variables)
+                ?? calendarDate(from: text, prefixes: ["end:", "ends:", "end time:", "結束:"])
+                ?? Self.defaultCalendarStartDate.addingTimeInterval(3_600)
+        )
+        var fields = baseFields(for: input)
+        fields["calendarDraftCount"] = "1"
+        fields["calendarTitle"] = draft.title
+        fields["calendarRequiresConfirmation"] = "true"
+        fields["calendarStartDate"] = iso8601String(from: draft.startDate)
+        fields["calendarEndDate"] = iso8601String(from: draft.endDate)
+        fields["chainText"] = text
+
+        return ShortcutNodeOutput(
+            kind: .createCalendarDraft,
+            displayText: "Prepared 1 calendar draft. Review before writing to EventKit.",
+            fields: fields,
+            calendarDrafts: [draft]
+        )
+    }
+
     private func createRecipeDraft(_ input: ShortcutNodeInput) throws -> ShortcutNodeOutput {
         let text = try validatedText(input.text)
         let recipes = KairoRecipePlanner().suggestRecipes(
@@ -325,6 +364,31 @@ public actor ShortcutNodeRuntime {
         )
     }
 
+    private func previewHomeAction(_ input: ShortcutNodeInput) throws -> ShortcutNodeOutput {
+        let text = try validatedText(input.text)
+        let request = homeControlRequest(from: input, fallbackText: text)
+        let action = AgentAction(
+            kind: .controlHome,
+            title: homeActionTitle(for: request),
+            rationale: "Shortcut requested a HomeKit preview. Kairo must show confirmation before any home write.",
+            payload: .homeControl(request),
+            riskTier: .tier3HighRiskExternal
+        )
+
+        var fields = baseFields(for: input)
+        fields["homeActionCount"] = "1"
+        fields["homeActionRiskTier"] = action.riskTier.rawValue
+        fields["homeActionRequiresConfirmation"] = String(action.requiresConfirmation)
+        fields["chainText"] = text
+
+        return ShortcutNodeOutput(
+            kind: .previewHomeAction,
+            displayText: "Home action preview ready. Review in Kairo before any HomeKit write.",
+            fields: fields,
+            proposedActions: [action]
+        )
+    }
+
     private func ask(_ input: ShortcutNodeInput) async throws -> ShortcutNodeOutput {
         let text = try validatedText(input.text)
         let memories = try await memoryStore.search(query: text, limit: max(input.limit, 1))
@@ -339,6 +403,74 @@ public actor ShortcutNodeRuntime {
             fields: fields,
             memoryMatches: memories.map { ShortcutMemoryMatch(id: $0.id, title: $0.title, summary: $0.summary) }
         )
+    }
+
+    private func homeControlRequest(from input: ShortcutNodeInput, fallbackText: String) -> HomeControlRequest {
+        let variables = input.variables
+        let targetName = variables["targetName"]?.nilIfEmpty ?? inferredHomeTarget(from: fallbackText)
+        let command = HomeControlCommand(rawValue: variables["command"]?.nilIfEmpty ?? "") ?? inferredHomeCommand(from: fallbackText)
+        return HomeControlRequest(
+            homeName: variables["homeName"]?.nilIfEmpty,
+            roomName: variables["roomName"]?.nilIfEmpty,
+            targetName: targetName,
+            command: command,
+            value: homeControlValue(from: variables["value"], command: command, text: fallbackText)
+        )
+    }
+
+    private func inferredHomeTarget(from text: String) -> String {
+        let lowercased = text.lowercased()
+        if lowercased.contains("lock") || lowercased.contains("door") {
+            return "Front Door Lock"
+        }
+        if lowercased.contains("garage") {
+            return "Garage Door"
+        }
+        if lowercased.contains("thermostat") || lowercased.contains("temperature") {
+            return "Thermostat"
+        }
+        return "Desk Lamp"
+    }
+
+    private func inferredHomeCommand(from text: String) -> HomeControlCommand {
+        let lowercased = text.lowercased()
+        if lowercased.contains("scene") {
+            return .runScene
+        }
+        if lowercased.contains("temperature") || lowercased.contains("thermostat") {
+            return .setTargetTemperature
+        }
+        return .setPower
+    }
+
+    private func homeControlValue(from rawValue: String?, command: HomeControlCommand, text: String) -> HomeControlValue? {
+        guard command != .runScene else { return nil }
+        if let rawValue = rawValue?.nilIfEmpty {
+            if let bool = Bool(rawValue.lowercased()) {
+                return .bool(bool)
+            }
+            if let double = Double(rawValue) {
+                return .double(double)
+            }
+            return .string(rawValue)
+        }
+        if command == .setTargetTemperature {
+            return .double(22)
+        }
+        return .bool(!text.localizedCaseInsensitiveContains("off"))
+    }
+
+    private func homeActionTitle(for request: HomeControlRequest) -> String {
+        switch request.command {
+        case .runScene:
+            return "Preview Home Scene: \(request.targetName)"
+        case .setPower:
+            return "Preview Home Power: \(request.targetName)"
+        case .setBrightness:
+            return "Preview Home Brightness: \(request.targetName)"
+        case .setTargetTemperature:
+            return "Preview Home Temperature: \(request.targetName)"
+        }
     }
 
     private func baseFields(for input: ShortcutNodeInput) -> [String: String] {
@@ -359,6 +491,55 @@ public actor ShortcutNodeRuntime {
 
     private func title(for text: String) -> String {
         String(text.prefix(40))
+    }
+
+    private func calendarTitle(from text: String) -> String {
+        let prefixes = [
+            "event:",
+            "meeting:",
+            "calendar:",
+            "create calendar event:",
+            "add calendar event:",
+            "行程:",
+            "會議:"
+        ]
+        for line in text.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            let lowercased = trimmed.lowercased()
+            guard let prefix = prefixes.first(where: { lowercased.hasPrefix($0) }) else {
+                continue
+            }
+            let title = String(trimmed.dropFirst(prefix.count))
+                .trimmingCharacters(in: CharacterSet(charactersIn: " \t:-"))
+            if !title.isEmpty {
+                return title
+            }
+        }
+        return title(for: text)
+    }
+
+    private func calendarDate(named key: String, from variables: [String: String]) -> Date? {
+        variables[key].flatMap(Self.iso8601Formatter.date(from:))
+    }
+
+    private func calendarDate(from text: String, prefixes: [String]) -> Date? {
+        for line in text.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            let lowercased = trimmed.lowercased()
+            guard let prefix = prefixes.first(where: { lowercased.hasPrefix($0) }) else {
+                continue
+            }
+            let value = String(trimmed.dropFirst(prefix.count))
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if let date = Self.iso8601Formatter.date(from: value) {
+                return date
+            }
+        }
+        return nil
+    }
+
+    private func iso8601String(from date: Date) -> String {
+        Self.iso8601Formatter.string(from: date)
     }
 
     private func deterministicSummary(for text: String) -> String {
@@ -405,6 +586,9 @@ public actor ShortcutNodeRuntime {
         }
         return string
     }
+
+    private static let defaultCalendarStartDate = Date(timeIntervalSince1970: 1_767_258_000)
+    private static let iso8601Formatter = ISO8601DateFormatter()
 }
 
 private extension String {

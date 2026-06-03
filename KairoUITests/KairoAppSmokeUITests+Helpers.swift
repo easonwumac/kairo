@@ -176,8 +176,11 @@ extension KairoAppSmokeUITests {
 
     func assertShortcutDemoField(namespace: String = "settings.shortcuts.demo", id: String, suffix: String, contains expectedText: String) {
         let element = findElement("\(namespace).\(id).\(suffix)", direction: .both, maxSwipes: 4)
-        XCTAssertTrue(element.exists)
-        XCTAssertTrue(element.label.contains(expectedText))
+        XCTAssertTrue(element.exists, "\(namespace).\(id).\(suffix) should exist")
+        XCTAssertTrue(
+            element.label.contains(expectedText),
+            "\(namespace).\(id).\(suffix) label '\(element.label)' should contain '\(expectedText)'"
+        )
     }
 
     func verifyOAuthConnector(

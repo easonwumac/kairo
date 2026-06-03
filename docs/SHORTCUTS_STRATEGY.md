@@ -171,6 +171,38 @@ Node contract:
 - output: `fields.recipeID`, `fields.recipeTitle`, `fields.recipeStepCount`, `fields.recipePreviewJSON`, and `recipeDrafts`
 - boundary: returns disabled Kairo internal recipe drafts only; Kairo does not create or edit Apple Shortcuts
 
+### Meeting Text to Calendar Draft
+
+```text
+Shortcut Input / copied meeting note
+→ Create Calendar Draft with Kairo
+→ Show calendar draft JSON
+→ Confirm later before EventKit write
+```
+
+Node contract:
+
+- node: `createCalendarDraft`
+- input: meeting or schedule text explicitly provided by the user; optional `startDateISO` and `endDateISO` variables
+- output: `fields.calendarDraftCount`, `fields.calendarTitle`, `fields.calendarStartDate`, `fields.calendarEndDate`, `fields.calendarRequiresConfirmation`, and `calendarDrafts`
+- boundary: returns Calendar draft metadata only; no EventKit calendar write occurs without a later confirmed action
+
+### Home Action Preview
+
+```text
+Shortcut Input / Action Button home request
+→ Preview Home Action with Kairo
+→ Review in Kairo
+→ Confirm before HomeKit write
+```
+
+Node contract:
+
+- node: `previewHomeAction`
+- input: natural-language home request plus optional `homeName`, `roomName`, `targetName`, `command`, and `value` variables
+- output: `proposedActions`, `fields.homeActionCount`, `fields.homeActionRiskTier`, and `fields.homeActionRequiresConfirmation`
+- boundary: returns a HomeKit action preview only; any HomeKit write still requires Kairo's visible confirmation flow
+
 ## 設計原則
 
 - App Intents 要小而穩定，不要做太多隱藏副作用。
@@ -184,9 +216,9 @@ Node contract:
 `ShortcutNodeRuntime` is the shared core used by App Intents and tests. It treats each Shortcut action as a small node:
 
 - input: text, optional query, source name, user variables, and result limit.
-- output: display text, typed fields, optional chain text for downstream nodes, optional memory id, memory matches, extracted task drafts, reminder drafts, and proposed actions.
+- output: display text, typed fields, optional chain text for downstream nodes, optional memory id, memory matches, extracted task drafts, reminder drafts, calendar drafts, and proposed actions.
 - transport: App Intents return the encoded `ShortcutNodeOutput` JSON string so downstream Shortcut steps can pass the result into another Kairo node or parse fields with Shortcuts dictionary actions.
-- safety: task extraction and reminder creation only produce drafts; they do not write EventKit data unless a later confirmed action does so.
+- safety: task extraction, reminder creation, and calendar draft creation only produce drafts; they do not write EventKit data unless a later confirmed action does so.
 
 `Run Kairo Shortcut Node` is the generic node bridge for advanced Shortcuts. The user supplies a supported `ShortcutNodeKind` raw value and encoded `ShortcutNodeInput` JSON, and Kairo returns encoded `ShortcutNodeOutput` JSON. This makes Kairo usable as a Shortcuts node graph component without giving Kairo permission to silently create, edit, or execute Apple Shortcuts.
 
@@ -200,14 +232,16 @@ Current nodes:
 4. `Summarize with Kairo` returns a bounded text summary.
 5. `Extract Kairo Tasks` returns task and reminder drafts without executing writes.
 6. `Create Reminder Draft` returns reminder drafts without EventKit writes.
-7. `Draft Reply` returns reply draft text without sending email, chat, or SMS.
-8. `Create Recipe Draft` returns disabled Kairo internal recipe drafts plus preview JSON; it does not create Apple Shortcuts.
-9. `Create Daily Briefing` returns briefing text and suggested task drafts.
-10. `Run Kairo Shortcut Node` runs a supported node kind from JSON input and returns structured JSON output.
-11. `Run Kairo Recipe` runs an enabled internal recipe by id and returns structured JSON output.
-12. `Suggest Kairo Recipe` saves a disabled recipe draft for Kairo Shortcuts review.
-13. `List Kairo Recipes` lists enabled recipe ids/titles.
-14. `Run Kairo Daily Briefing` seeds and runs the internal Daily Briefing recipe.
+7. `Create Calendar Draft` returns calendar drafts without EventKit writes.
+8. `Draft Reply` returns reply draft text without sending email, chat, or SMS.
+9. `Create Recipe Draft` returns disabled Kairo internal recipe drafts plus preview JSON; it does not create Apple Shortcuts.
+10. `Preview Home Action` returns a HomeKit action preview that still requires Kairo confirmation.
+11. `Create Daily Briefing` returns briefing text and suggested task drafts.
+12. `Run Kairo Shortcut Node` runs a supported node kind from JSON input and returns structured JSON output.
+13. `Run Kairo Recipe` runs an enabled internal recipe by id and returns structured JSON output.
+14. `Suggest Kairo Recipe` saves a disabled recipe draft for Kairo Shortcuts review.
+15. `List Kairo Recipes` lists enabled recipe ids/titles.
+16. `Run Kairo Daily Briefing` seeds and runs the internal Daily Briefing recipe.
 
 ### Email Triage
 
@@ -222,15 +256,16 @@ Implemented App Intent types:
 5. `ExtractKairoTasksIntent`
 6. `CreateDailyBriefingIntent`
 7. `CreateReminderDraftsIntent`
-8. `RunKairoShortcutNodeIntent`
-9. `RunKairoRecipeIntent`
-10. `SuggestKairoRecipeIntent`
-11. `ListKairoRecipesIntent`
-12. `RunKairoDailyBriefingIntent`
+8. `CreateCalendarDraftsIntent`
+9. `RunKairoShortcutNodeIntent`
+10. `RunKairoRecipeIntent`
+11. `SuggestKairoRecipeIntent`
+12. `ListKairoRecipesIntent`
+13. `RunKairoDailyBriefingIntent`
 
 ## Shortcut Template Registry
 
-`ShortcutTemplateRegistry.default` ships user-installed template metadata for Daily Briefing, Meeting Prep, Share Text to Kairo, Screenshot to Tasks, Email Triage, Action Button Ask Kairo, and generic Run Kairo Recipe. Templates store required App Intent identifiers, recommended internal recipe ids, and manual setup instructions.
+`ShortcutTemplateRegistry.default` ships user-installed template metadata for Daily Briefing, Meeting Prep, Share Text to Kairo, Screenshot to Tasks, Email Triage, Calendar Draft, Action Button Ask Kairo, and generic Run Kairo Recipe. Templates store required App Intent identifiers, recommended internal recipe ids, and manual setup instructions.
 
 Template metadata is not a one-tap install mechanism. The Shortcuts drawer screen states that Kairo creates internal recipes and Apple Shortcuts installation requires user approval.
 

@@ -51,6 +51,7 @@ public struct IntegrationRegistry: Sendable {
                 "ExtractKairoTasksIntent",
                 "CreateDailyBriefingIntent",
                 "CreateReminderDraftsIntent",
+                "CreateCalendarDraftsIntent",
                 "RunKairoShortcutNodeIntent",
                 "RunKairoRecipeIntent",
                 "SuggestKairoRecipeIntent",
@@ -65,6 +66,8 @@ public struct IntegrationRegistry: Sendable {
                 ShortcutTemplate(identifier: "email-triage", title: "Email Triage", inputSummary: "Email thread text explicitly shared by the user", outputSummary: "Summary, follow-up tasks, and reply draft for manual review"),
                 ShortcutTemplate(identifier: "meeting-prep-brief", title: "Meeting Prep Brief", inputSummary: "Meeting title, customer name, memory query, or meeting notes", outputSummary: "Meeting prep brief and task drafts"),
                 ShortcutTemplate(identifier: "request-to-recipe-draft", title: "Request to Recipe Draft", inputSummary: "Natural-language automation request explicitly passed by the user", outputSummary: "Disabled Kairo internal recipe draft preview JSON; no Apple Shortcut is created"),
+                ShortcutTemplate(identifier: "meeting-text-to-calendar-draft", title: "Meeting Text to Calendar Draft", inputSummary: "Meeting text plus optional startDateISO and endDateISO variables", outputSummary: "Calendar draft JSON for user-approved EventKit write steps"),
+                ShortcutTemplate(identifier: "home-action-preview", title: "Home Action Preview", inputSummary: "Home action request plus optional target variables", outputSummary: "HomeKit action preview JSON that still requires Kairo confirmation"),
                 ShortcutTemplate(identifier: "generic-node-runner", title: "Generic Node Runner", inputSummary: "Node kind plus ShortcutNodeInput JSON", outputSummary: "ShortcutNodeOutput JSON for downstream Shortcut steps")
             ] + ShortcutTemplateRegistry.default.templates,
             sandboxNotes: "Shortcuts must be configured or launched by the user. Kairo provides App Intents with structured JSON outputs for downstream Shortcut nodes, but it must not silently drive other apps.",

@@ -42,7 +42,8 @@ public actor ShortcutDemoRecipeRunner {
         let stepLabel = stepRuns.count == 1 ? "1 step" : "\(stepRuns.count) steps"
         let taskCount = stepRuns.reduce(0) { count, step in count + step.output.tasks.count }
         let reminderCount = stepRuns.reduce(0) { count, step in count + step.output.reminderDrafts.count }
-        return "\(recipe.title): \(stepLabel), \(taskCount) task drafts, \(reminderCount) reminder drafts."
+        let calendarCount = stepRuns.reduce(0) { count, step in count + step.output.calendarDrafts.count }
+        return "\(recipe.title): \(stepLabel), \(taskCount) task drafts, \(reminderCount) reminder drafts, \(calendarCount) calendar drafts."
     }
 
     private static func chainedText(from output: ShortcutNodeOutput) -> String {

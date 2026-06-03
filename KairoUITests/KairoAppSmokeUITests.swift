@@ -211,6 +211,22 @@ final class KairoAppSmokeUITests: XCTestCase {
             sampleText: "每天早上整理今天事情"
         )
         verifyShortcutDemoContract(
+            id: "meeting-text-to-calendar-draft",
+            titleText: "Meeting Text to Calendar Draft",
+            stepText: "1 step: createCalendarDraft",
+            inputText: "Input: text, sourceName, variables.startDateISO, variables.endDateISO",
+            outputText: "Output: fields.calendarDraftCount, fields.calendarTitle, fields.calendarRequiresConfirmation",
+            sampleText: "Kairo roadmap review"
+        )
+        verifyShortcutDemoContract(
+            id: "home-action-preview",
+            titleText: "Home Action Preview",
+            stepText: "1 step: previewHomeAction",
+            inputText: "Input: text, sourceName, variables",
+            outputText: "Output: proposedActions, fields.homeActionCount, fields.homeActionRiskTier",
+            sampleText: "desk lamp"
+        )
+        verifyShortcutDemoContract(
             id: "generic-node-runner",
             titleText: "Generic Node Runner",
             stepText: "2 steps: summarize -> extractTasks",
@@ -235,6 +251,15 @@ final class KairoAppSmokeUITests: XCTestCase {
         )
         verifyShortcutDemoContract(
             namespace: "automations.shortcut-demo",
+            id: "meeting-text-to-calendar-draft",
+            titleText: "Meeting Text to Calendar Draft",
+            stepText: "1 step: createCalendarDraft",
+            inputText: "Input: text, sourceName, variables.startDateISO, variables.endDateISO",
+            outputText: "Output: fields.calendarDraftCount, fields.calendarTitle, fields.calendarRequiresConfirmation",
+            sampleText: "Kairo roadmap review"
+        )
+        verifyShortcutDemoContract(
+            namespace: "automations.shortcut-demo",
             id: "generic-node-runner",
             titleText: "Generic Node Runner",
             stepText: "2 steps: summarize -> extractTasks",
@@ -249,6 +274,13 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findElement("automations.shortcut-demo.generic-node-runner.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "Sample Generic Node Runner", direction: .both, maxSwipes: 2).exists)
+
+        let calendarPreview = findButton("automations.shortcut-demo.meeting-text-to-calendar-draft.preview-sample", direction: .both, maxSwipes: 4)
+        XCTAssertTrue(calendarPreview.exists)
+        calendarPreview.tap()
+
+        XCTAssertTrue(findElement("automations.shortcut-demo.meeting-text-to-calendar-draft.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "1 calendar drafts", direction: .both, maxSwipes: 2).exists)
     }
 
     func testSettingsShowsOAuthConnectorReadinessAndBoundaries() throws {

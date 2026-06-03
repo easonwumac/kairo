@@ -93,6 +93,21 @@ public struct ShortcutTemplateRegistry: Codable, Equatable, Sendable {
             ]
         ),
         ShortcutTemplate(
+            identifier: "calendar-draft-shortcut",
+            title: "Calendar Draft Shortcut",
+            description: "Shortcut template guidance for turning meeting text into a calendar draft without writing EventKit automatically.",
+            category: .meetingPrep,
+            inputSummary: "Meeting title or schedule text, plus optional startDateISO and endDateISO variables.",
+            outputSummary: "Calendar draft JSON for manual review before any EventKit write.",
+            requiredIntentIdentifiers: ["CreateCalendarDraftsIntent", "RunKairoShortcutNodeIntent"],
+            recommendedRecipeTemplateID: "meeting-text-to-calendar-draft",
+            setupInstructions: [
+                "Create a Shortcut that accepts text or asks for a meeting title.",
+                "Pass the text to Create Calendar Drafts, optionally adding startDateISO and endDateISO variables.",
+                "Show the returned calendar draft and require user confirmation before any EventKit calendar write."
+            ]
+        ),
+        ShortcutTemplate(
             identifier: "action-button-ask-kairo-shortcut",
             title: "Action Button Ask Kairo Shortcut",
             description: "Shortcut template guidance for mapping the Action Button to a visible Ask Kairo handoff.",

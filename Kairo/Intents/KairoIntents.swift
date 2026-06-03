@@ -138,6 +138,24 @@ public struct CreateReminderDraftsIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct CreateCalendarDraftsIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Create Calendar Drafts"
+    public static var description = IntentDescription("Create calendar drafts from Shortcut input without writing Calendar until a later confirmed action.")
+
+    @Parameter(title: "Text")
+    public var text: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(.createCalendarDraft, input: ShortcutNodeInput(text: text, sourceName: "Create Calendar Drafts"))
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct RunKairoShortcutNodeIntent: AppIntent {
     public static var title: LocalizedStringResource = "Run Kairo Shortcut Node"
     public static var description = IntentDescription("Run a Kairo Shortcut node from a node kind and ShortcutNodeInput JSON, returning structured JSON output.")
