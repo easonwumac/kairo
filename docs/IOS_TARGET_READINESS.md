@@ -63,7 +63,8 @@ These match `BackgroundTaskPolicy.defaultTasks`.
   - Verified 2026-06-04 with `xcodebuild -project Kairo.xcodeproj -scheme KairoApp -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`.
 - [x] Build `KairoShareExtension` on simulator.
   - Verified 2026-06-04 with `xcodebuild -project Kairo.xcodeproj -scheme KairoShareExtension -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/kairo-share-extension-derived-data CODE_SIGNING_ALLOWED=NO build`.
-- [ ] Run `KairoUITests` smoke flow on simulator.
+- [x] Run `KairoUITests` smoke flow on simulator.
+  - Verified 2026-06-04 on `iPhone 17` simulator with `xcodebuild -project Kairo.xcodeproj -scheme KairoApp -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:KairoUITests/KairoAppSmokeUITests/testLaunchDrawerChatAndSettingsSmokeFlow test`.
 - [ ] Verify App Group container read/write.
 - [ ] Verify purpose strings display correctly.
 - [x] Verify BackgroundTasks identifiers match Info.plist.

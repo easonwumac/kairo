@@ -8,7 +8,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 |---|---|---|
 | Chat-first app shell | Implemented | Chat is the primary surface; support screens sit behind More. |
 | Memory | Implemented | Save/search/delete/export exists behind a backend API facade; deleted JSON records can be purged from disk. |
-| Share Extension ingestion | Implemented | Text/URL/image/PDF/file metadata imports into Chat; extension is queue-only and action-free. |
+| Share Extension ingestion | Implemented | Text/URL/image/PDF/file metadata imports into Chat through a backend API facade; extension is queue-only and action-free. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; Kairo-owned internal recipes have backend API lifecycle/run coverage; next work is device/App Intent QA. |
 | Skill Manager | Scaffolded | Access lifecycle exists; backend API facade covers catalog/effective catalog/preview/install/disable/enable/remove/user drafts with fail-closed behavior; signed marketplace install/update, compatibility-blocked install, and user-created remove flows have simulator XCUITest smoke coverage; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
 | Email / Messages / Phone / Web / Maps handoffs | Implemented | Visible handoff only, preview + explicit confirmation. |
@@ -92,6 +92,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Extension 只匯入使用者主動分享的內容。
 - [x] Extension 不執行高風險 agent action。
 - [x] Extension 將內容放入 App Group queue，由主 App 讓使用者確認。
+- [x] Share import backend API reads pending queue metadata, surfaces attachments/suggested prompt to Chat, and marks items imported without running agent actions in the extension.
 - [x] Extension 有時間/記憶體限制下的 fallback：每次最多 enqueue 8 個 attachment metadata。
 
 ### 6. Shortcuts / App Intents
@@ -262,7 +263,7 @@ Because no available real device was reachable, the following remain release-blo
   - `testChatCanPreviewAndConfirmMessagesHandoff`
   - `testChatCanPreviewAndConfirmPhoneCallHandoff`
   - `testChatCanPreviewAndConfirmWebSearchHandoff`
-- [x] Package tests currently cover Memory save/search/delete/export plus backend API lifecycle/export facade, Kairo-owned internal recipe backend API lifecycle/run/sample seeding, Share Extension import, App Intent registry/type coverage plus Ask/Save/Search node runtime, Access permission backend API status/request forwarding, local model catalog unknown/revoked/invalid signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup, local model backend API facade status/select/preference/delete/stale-cleanup/fail-closed behavior, Skill Manager backend API facade lifecycle/user-draft/compatibility/fail-closed behavior, Settings backend API facade OpenAI/OAuth secret-redaction behavior, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
+- [x] Package tests currently cover Memory save/search/delete/export plus backend API lifecycle/export facade, Kairo-owned internal recipe backend API lifecycle/run/sample seeding, Share Extension import plus backend API queue-import/mark-imported facade, App Intent registry/type coverage plus Ask/Save/Search node runtime, Access permission backend API status/request forwarding, local model catalog unknown/revoked/invalid signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup, local model backend API facade status/select/preference/delete/stale-cleanup/fail-closed behavior, Skill Manager backend API facade lifecycle/user-draft/compatibility/fail-closed behavior, Settings backend API facade OpenAI/OAuth secret-redaction behavior, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
 - [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
 - [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
 - [x] 不支援的跨 App 操作會顯示安全替代方案。

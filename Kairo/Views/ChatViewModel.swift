@@ -19,7 +19,7 @@ public final class ChatViewModel: ObservableObject {
     public var isPrivateChatEnabled: Bool { privacyMode == .privateChat }
 
     private let historyStore: ChatHistoryStore
-    private let shareIngestionQueue: ShareIngestionQueue
+    private let shareImportAPI: any KairoShareImportAPI
     private let chatAPI: any KairoChatAPI
     private let actionExecutor: any ActionExecutor
     private let localModelSettingsService: LocalModelSettingsService?
@@ -28,12 +28,13 @@ public final class ChatViewModel: ObservableObject {
         historyStore: ChatHistoryStore = InMemoryChatHistoryStore(),
         shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
         agent: AgentCore = AgentCore(),
+        shareImportAPI: (any KairoShareImportAPI)? = nil,
         chatAPI: (any KairoChatAPI)? = nil,
         actionExecutor: any ActionExecutor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore()),
         localModelSettingsService: LocalModelSettingsService? = nil
     ) {
         self.historyStore = historyStore
-        self.shareIngestionQueue = shareIngestionQueue
+        self.shareImportAPI = shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue)
         self.chatAPI = chatAPI ?? KairoChatBackendService(agent: agent)
         self.actionExecutor = actionExecutor
         self.localModelSettingsService = localModelSettingsService
@@ -44,7 +45,7 @@ public final class ChatViewModel: ObservableObject {
     public convenience init(environment: KairoEnvironment) {
         self.init(
             historyStore: environment.chatHistoryStore,
-            shareIngestionQueue: environment.shareIngestionQueue,
+            shareImportAPI: environment.backendAPI.shareImports,
             chatAPI: environment.backendAPI.chat,
             actionExecutor: environment.actionExecutor,
             localModelSettingsService: environment.localModelSettingsService
@@ -96,15 +97,11 @@ public final class ChatViewModel: ObservableObject {
 
     public func importPendingShares() async {
         do {
-            let items = try await shareIngestionQueue.pendingItems(limit: 10)
-            guard !items.isEmpty else { return }
-            let importedAttachments = items.flatMap(\.attachments)
-            pendingAttachments.append(contentsOf: importedAttachments)
+            let imported = try await shareImportAPI.importPendingShares(limit: 10)
+            guard !imported.isEmpty else { return }
+            pendingAttachments.append(contentsOf: imported.attachments)
             if composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                composerText = items.first?.suggestedPrompt ?? "Review the shared content."
-            }
-            for item in items {
-                try await shareIngestionQueue.markImported(id: item.id)
+                composerText = imported.suggestedPrompt ?? "Review the shared content."
             }
             errorMessage = nil
         } catch {

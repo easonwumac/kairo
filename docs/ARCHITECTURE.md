@@ -64,9 +64,13 @@ Live app wiring uses `FileBackedAuditLogger` at `KairoPaths.auditLogURL`. Audit 
 
 ## Backend API boundary
 
-SwiftUI views should move toward calling app-facing backend APIs instead of directly coordinating stores, credentials, model services, and audit loggers. `KairoBackendAPI` is the first facade for that split. It starts with `KairoChatAPI` for chat responses and `KairoDeletionAPI` for App Review/privacy deletion use cases.
+SwiftUI views should call app-facing backend APIs instead of directly coordinating stores, credentials, model services, share queues, and audit loggers. `KairoBackendAPI` is the facade for that split and currently exposes Chat, Memory, Kairo-owned internal recipes, Share Extension imports, deletion, local models, Skill Manager, Settings/OAuth, and Access permission status/request APIs.
 
 `KairoChatAPI` wraps `AgentCore.respond` behind an app-facing interface that accepts message text, attachments, and `ChatPrivacyMode`. This keeps memory lookup, tool candidate filtering, provider routing, and private-chat fail-closed behavior in Core instead of SwiftUI.
+
+`KairoShareImportAPI` wraps Share Extension queue import. It reads pending queue items, returns attachment metadata plus the suggested prompt, and marks imported items without executing agent actions inside the extension.
+
+`KairoMemoryAPI` and `KairoRecipeAPI` wrap memory lifecycle/export and Kairo-owned internal recipe lifecycle/run/sample seeding. Internal recipes remain Kairo data; they do not silently create or modify Apple Shortcuts.
 
 `KairoDeletionAPI` groups these deletion operations behind one Core interface:
 
