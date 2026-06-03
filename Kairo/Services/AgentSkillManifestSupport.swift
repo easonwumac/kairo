@@ -39,6 +39,9 @@ public enum AgentSkillManifestValidationError: Error, Equatable, Sendable {
     case checksumMismatch
     case unavailableSkill
     case unknownSigningKey(String)
+    case revokedSigningKey(String)
+    case signingKeyNotYetValid(String)
+    case signingKeyExpired(String)
     case unsupportedSignatureAlgorithm(AgentSkillManifestSignatureAlgorithm)
     case invalidSignature
 }
@@ -263,20 +266,101 @@ public struct AgentSkillInstallPreview: Codable, Equatable, Sendable {
     }
 }
 
+public enum AgentSkillTrustedPublicKeyStatus: String, Codable, Equatable, Sendable {
+    case active
+    case revoked
+}
+
 public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Sendable {
     public var id: String { keyID }
     public var keyID: String
     public var algorithm: AgentSkillManifestSignatureAlgorithm
     public var publicKeyBase64: String
+    public var status: AgentSkillTrustedPublicKeyStatus
+    public var validFrom: Date?
+    public var expiresAt: Date?
+    public var revokedAt: Date?
+    public var revokedReason: String?
 
     public init(
         keyID: String,
         algorithm: AgentSkillManifestSignatureAlgorithm,
-        publicKeyBase64: String
+        publicKeyBase64: String,
+        status: AgentSkillTrustedPublicKeyStatus = .active,
+        validFrom: Date? = nil,
+        expiresAt: Date? = nil,
+        revokedAt: Date? = nil,
+        revokedReason: String? = nil
     ) {
         self.keyID = keyID
         self.algorithm = algorithm
         self.publicKeyBase64 = publicKeyBase64
+        self.status = status
+        self.validFrom = validFrom
+        self.expiresAt = expiresAt
+        self.revokedAt = revokedAt
+        self.revokedReason = revokedReason
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case keyID
+        case algorithm
+        case publicKeyBase64
+        case status
+        case validFrom
+        case expiresAt
+        case revokedAt
+        case revokedReason
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.keyID = try container.decode(String.self, forKey: .keyID)
+        self.algorithm = try container.decode(AgentSkillManifestSignatureAlgorithm.self, forKey: .algorithm)
+        self.publicKeyBase64 = try container.decode(String.self, forKey: .publicKeyBase64)
+        self.status = try container.decodeIfPresent(AgentSkillTrustedPublicKeyStatus.self, forKey: .status) ?? .active
+        self.validFrom = try Self.decodeDateIfPresent(from: container, forKey: .validFrom)
+        self.expiresAt = try Self.decodeDateIfPresent(from: container, forKey: .expiresAt)
+        self.revokedAt = try Self.decodeDateIfPresent(from: container, forKey: .revokedAt)
+        self.revokedReason = try container.decodeIfPresent(String.self, forKey: .revokedReason)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(keyID, forKey: .keyID)
+        try container.encode(algorithm, forKey: .algorithm)
+        try container.encode(publicKeyBase64, forKey: .publicKeyBase64)
+        try container.encode(status, forKey: .status)
+        try Self.encodeDateIfPresent(validFrom, to: &container, forKey: .validFrom)
+        try Self.encodeDateIfPresent(expiresAt, to: &container, forKey: .expiresAt)
+        try Self.encodeDateIfPresent(revokedAt, to: &container, forKey: .revokedAt)
+        try container.encodeIfPresent(revokedReason, forKey: .revokedReason)
+    }
+
+    private static func decodeDateIfPresent(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) throws -> Date? {
+        if let dateString = try? container.decodeIfPresent(String.self, forKey: key) {
+            guard let date = ISO8601DateFormatter().date(from: dateString) else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: key,
+                    in: container,
+                    debugDescription: "Expected ISO-8601 date string."
+                )
+            }
+            return date
+        }
+        return try container.decodeIfPresent(Date.self, forKey: key)
+    }
+
+    private static func encodeDateIfPresent(
+        _ date: Date?,
+        to container: inout KeyedEncodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) throws {
+        guard let date else { return }
+        try container.encode(ISO8601DateFormatter().string(from: date), forKey: key)
     }
 }
 
@@ -373,7 +457,10 @@ public struct AgentSkillManifest: Codable, Equatable, Sendable {
         }
     }
 
-    public func validateForInstall(trustStore: AgentSkillManifestTrustStore) throws {
+    public func validateForInstall(
+        trustStore: AgentSkillManifestTrustStore,
+        currentDate: Date = Date()
+    ) throws {
         try validateForInstall()
 
         guard let signature else {
@@ -381,6 +468,15 @@ public struct AgentSkillManifest: Codable, Equatable, Sendable {
         }
         guard let trustedKey = trustStore.trustedKey(id: signature.keyID) else {
             throw AgentSkillManifestValidationError.unknownSigningKey(signature.keyID)
+        }
+        guard trustedKey.status == .active else {
+            throw AgentSkillManifestValidationError.revokedSigningKey(signature.keyID)
+        }
+        if let validFrom = trustedKey.validFrom, currentDate < validFrom {
+            throw AgentSkillManifestValidationError.signingKeyNotYetValid(signature.keyID)
+        }
+        if let expiresAt = trustedKey.expiresAt, currentDate >= expiresAt {
+            throw AgentSkillManifestValidationError.signingKeyExpired(signature.keyID)
         }
         guard trustedKey.algorithm == signature.algorithm else {
             throw AgentSkillManifestValidationError.unsupportedSignatureAlgorithm(signature.algorithm)

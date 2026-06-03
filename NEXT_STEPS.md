@@ -21,7 +21,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
    - Keep iOS production inference runtime marked `Planned` until there is real-device runtime proof.
 
 4. Skill Manager / marketplace production hardening.
-   - Add production trust-store key rotation and revocation metadata.
+   - Publish production marketplace trust-store key material and a rotation/revocation runbook; app-side trust keys now carry active/revoked metadata and validity windows.
    - User-created skill drafts now require explicit capability selection and confirmation policy; keep this invariant covered.
    - Add full UI/e2e coverage for signed skill update flows; remove flow now has user-created draft smoke coverage.
    - Preserve the invariant that compatibility-blocked skills never become executable tools.

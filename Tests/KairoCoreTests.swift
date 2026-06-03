@@ -1715,6 +1715,132 @@ final class KairoCoreTests: XCTestCase {
         }
     }
 
+    func testAgentSkillManifestTrustStoreRejectsRevokedAndOutOfWindowKeys() throws {
+        let downloadableSkill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/weather-briefing.json")!
+        )
+        let signingKey = P256.Signing.PrivateKey()
+        let manifest = try AgentSkillManifest.signedForTesting(
+            skill: downloadableSkill,
+            packageVersion: "2026.6",
+            keyID: "kairo-marketplace-2026",
+            signingKey: signingKey
+        )
+        let now = Date(timeIntervalSince1970: 1_767_225_600)
+        let baseKey = AgentSkillTrustedPublicKey(
+            keyID: "kairo-marketplace-2026",
+            algorithm: .p256SHA256,
+            publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString(),
+            validFrom: now.addingTimeInterval(-60),
+            expiresAt: now.addingTimeInterval(60)
+        )
+
+        XCTAssertNoThrow(try manifest.validateForInstall(
+            trustStore: AgentSkillManifestTrustStore(trustedKeys: [baseKey]),
+            currentDate: now
+        ))
+
+        let revokedKey = AgentSkillTrustedPublicKey(
+            keyID: "kairo-marketplace-2026",
+            algorithm: .p256SHA256,
+            publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString(),
+            status: .revoked,
+            revokedAt: now,
+            revokedReason: "Rotated after key compromise drill."
+        )
+        XCTAssertThrowsError(try manifest.validateForInstall(
+            trustStore: AgentSkillManifestTrustStore(trustedKeys: [revokedKey]),
+            currentDate: now
+        )) { error in
+            XCTAssertEqual(error as? AgentSkillManifestValidationError, .revokedSigningKey("kairo-marketplace-2026"))
+        }
+
+        let futureKey = AgentSkillTrustedPublicKey(
+            keyID: "kairo-marketplace-2026",
+            algorithm: .p256SHA256,
+            publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString(),
+            validFrom: now.addingTimeInterval(60)
+        )
+        XCTAssertThrowsError(try manifest.validateForInstall(
+            trustStore: AgentSkillManifestTrustStore(trustedKeys: [futureKey]),
+            currentDate: now
+        )) { error in
+            XCTAssertEqual(error as? AgentSkillManifestValidationError, .signingKeyNotYetValid("kairo-marketplace-2026"))
+        }
+
+        let expiredKey = AgentSkillTrustedPublicKey(
+            keyID: "kairo-marketplace-2026",
+            algorithm: .p256SHA256,
+            publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString(),
+            expiresAt: now
+        )
+        XCTAssertThrowsError(try manifest.validateForInstall(
+            trustStore: AgentSkillManifestTrustStore(trustedKeys: [expiredKey]),
+            currentDate: now
+        )) { error in
+            XCTAssertEqual(error as? AgentSkillManifestValidationError, .signingKeyExpired("kairo-marketplace-2026"))
+        }
+    }
+
+    func testAgentSkillTrustStoreDecodesLegacyKeysAsActive() throws {
+        let json = """
+        {
+          "trustedKeys": [
+            {
+              "keyID": "kairo-marketplace-2026",
+              "algorithm": "p256SHA256",
+              "publicKeyBase64": "abc123"
+            }
+          ]
+        }
+        """
+
+        let trustStore = try JSONDecoder().decode(AgentSkillManifestTrustStore.self, from: Data(json.utf8))
+        let trustedKey = try XCTUnwrap(trustStore.trustedKey(id: "kairo-marketplace-2026"))
+
+        XCTAssertEqual(trustedKey.status, .active)
+        XCTAssertNil(trustedKey.validFrom)
+        XCTAssertNil(trustedKey.expiresAt)
+        XCTAssertNil(trustedKey.revokedAt)
+        XCTAssertNil(trustedKey.revokedReason)
+    }
+
+    func testAgentSkillTrustStoreDecodesISO8601RotationMetadata() throws {
+        let json = """
+        {
+          "trustedKeys": [
+            {
+              "keyID": "kairo-marketplace-2025",
+              "algorithm": "p256SHA256",
+              "publicKeyBase64": "abc123",
+              "status": "revoked",
+              "validFrom": "2026-01-01T00:00:00Z",
+              "expiresAt": "2026-06-01T00:00:00Z",
+              "revokedAt": "2026-06-02T00:00:00Z",
+              "revokedReason": "Rotated to kairo-marketplace-2026."
+            }
+          ]
+        }
+        """
+
+        let trustStore = try JSONDecoder().decode(AgentSkillManifestTrustStore.self, from: Data(json.utf8))
+        let trustedKey = try XCTUnwrap(trustStore.trustedKey(id: "kairo-marketplace-2025"))
+
+        XCTAssertEqual(trustedKey.status, .revoked)
+        XCTAssertEqual(trustedKey.validFrom, ISO8601DateFormatter().date(from: "2026-01-01T00:00:00Z"))
+        XCTAssertEqual(trustedKey.expiresAt, ISO8601DateFormatter().date(from: "2026-06-01T00:00:00Z"))
+        XCTAssertEqual(trustedKey.revokedAt, ISO8601DateFormatter().date(from: "2026-06-02T00:00:00Z"))
+        XCTAssertEqual(trustedKey.revokedReason, "Rotated to kairo-marketplace-2026.")
+
+        let encoded = try JSONEncoder().encode(trustStore)
+        let encodedJSON = String(decoding: encoded, as: UTF8.self)
+        XCTAssertTrue(encodedJSON.contains(#""revokedAt":"2026-06-02T00:00:00Z""#))
+    }
+
     func testAgentSkillManagerUsesTrustStoreWhenProvided() async throws {
         let storeURL = temporaryFileURL(named: "trusted-agent-skills.json")
         let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
