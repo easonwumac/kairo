@@ -66,7 +66,8 @@ These match `BackgroundTaskPolicy.defaultTasks`.
 - [ ] Run `KairoUITests` smoke flow on simulator.
 - [ ] Verify App Group container read/write.
 - [ ] Verify purpose strings display correctly.
-- [ ] Verify BackgroundTasks identifiers match Info.plist.
+- [x] Verify BackgroundTasks identifiers match Info.plist.
+  - Verified 2026-06-04 by `SourceHealthTests.testBackgroundTaskIdentifiersMatchInfoPlist`, matching `BGTaskSchedulerPermittedIdentifiers` to `BackgroundTaskPolicy.defaultTasks`.
 - [ ] Verify no generated user data or secrets are included in the app bundle.
 
 These checks are simulator build evidence only. They are not real-device beta sign-off evidence and do not validate App Group runtime access, permission prompts, App Intents execution, Share Extension import, or persistence on a physical iPhone.

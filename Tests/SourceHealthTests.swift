@@ -199,6 +199,32 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertNil(plist["NSPhotoLibraryUsageDescription"])
     }
 
+    func testBackgroundTaskIdentifiersMatchInfoPlist() throws {
+        let root = packageRootURL()
+        let appInfoPlistURL = root.appendingPathComponent("Config/KairoApp-Info.plist")
+        let plistData = try Data(contentsOf: appInfoPlistURL)
+        let plist = try XCTUnwrap(
+            PropertyListSerialization.propertyList(from: plistData, options: [], format: nil) as? [String: Any]
+        )
+        let plistIdentifiers = try XCTUnwrap(plist["BGTaskSchedulerPermittedIdentifiers"] as? [String])
+        let policySource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/BackgroundTaskPolicy.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertEqual(
+            Set(plistIdentifiers),
+            [
+                "com.kairo.app.refresh",
+                "com.kairo.app.processing.local-model",
+                "com.kairo.app.processing.connectors"
+            ]
+        )
+        for identifier in plistIdentifiers {
+            XCTAssertTrue(policySource.contains(#"identifier: "\#(identifier)""#))
+        }
+    }
+
     func testAppReviewCopyAndEntitlementsStayWithinBetaClaims() throws {
         let root = packageRootURL()
         let entitlements = try String(
