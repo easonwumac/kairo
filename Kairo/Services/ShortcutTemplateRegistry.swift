@@ -78,6 +78,21 @@ public struct ShortcutTemplateRegistry: Codable, Equatable, Sendable {
             ]
         ),
         ShortcutTemplate(
+            identifier: "email-triage-shortcut",
+            title: "Email Triage Shortcut",
+            description: "Shortcut template guidance for summarizing an email, extracting follow-up tasks, and drafting a reply without sending.",
+            category: .shareSheet,
+            inputSummary: "Email thread text explicitly selected, copied, or shared by the user.",
+            outputSummary: "Email summary, follow-up task drafts, and reply draft for manual review.",
+            requiredIntentIdentifiers: ["SummarizeWithKairoIntent", "ExtractKairoTasksIntent", "RunKairoShortcutNodeIntent"],
+            recommendedRecipeTemplateID: "email-triage",
+            setupInstructions: [
+                "Create a Share Sheet Shortcut that accepts text from Mail or copied email content.",
+                "Pass Shortcut Input to Summarize with Kairo, then chain it through Extract Kairo Tasks and Draft Reply.",
+                "Show the returned task and reply drafts for review; do not send email or write reminders silently."
+            ]
+        ),
+        ShortcutTemplate(
             identifier: "action-button-ask-kairo-shortcut",
             title: "Action Button Ask Kairo Shortcut",
             description: "Shortcut template guidance for mapping the Action Button to a visible Ask Kairo handoff.",

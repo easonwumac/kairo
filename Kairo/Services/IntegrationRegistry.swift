@@ -62,6 +62,7 @@ public struct IntegrationRegistry: Sendable {
                 ShortcutTemplate(identifier: "save-shared-text", title: "Save Shared Text", inputSummary: "Shortcut input text or URL", outputSummary: "Memory identifier and extracted tasks"),
                 ShortcutTemplate(identifier: "screenshot-to-reminders", title: "Screenshot to Reminders", inputSummary: "OCR text from a user-selected screenshot", outputSummary: "Task titles and reminder drafts for downstream Shortcuts actions"),
                 ShortcutTemplate(identifier: "reply-draft-from-shared-text", title: "Reply Draft from Shared Text", inputSummary: "Email or chat text explicitly shared by the user", outputSummary: "Reply draft text for manual review before sending"),
+                ShortcutTemplate(identifier: "email-triage", title: "Email Triage", inputSummary: "Email thread text explicitly shared by the user", outputSummary: "Summary, follow-up tasks, and reply draft for manual review"),
                 ShortcutTemplate(identifier: "meeting-prep-brief", title: "Meeting Prep Brief", inputSummary: "Meeting title, customer name, memory query, or meeting notes", outputSummary: "Meeting prep brief and task drafts"),
                 ShortcutTemplate(identifier: "generic-node-runner", title: "Generic Node Runner", inputSummary: "Node kind plus ShortcutNodeInput JSON", outputSummary: "ShortcutNodeOutput JSON for downstream Shortcut steps")
             ] + ShortcutTemplateRegistry.default.templates,

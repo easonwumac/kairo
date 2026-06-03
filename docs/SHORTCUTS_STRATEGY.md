@@ -185,6 +185,10 @@ Current nodes:
 5. `Extract Kairo Tasks` returns task and reminder drafts without executing writes.
 6. `Create Reminder Draft` returns reminder drafts without EventKit writes.
 7. `Draft Reply` returns reply draft text without sending email, chat, or SMS.
+
+### Email Triage
+
+`Email Triage` is the practical multi-node starter flow for inbox work: Shortcut Input or Share Sheet text -> `Summarize with Kairo` -> `Extract Kairo Tasks` -> `Draft Reply`. It returns a summary, follow-up task drafts, and a reply draft for manual review. It does not send email, create reminders, or silently read Mail data.
 8. `Create Daily Briefing` returns briefing text and suggested task drafts.
 9. `Run Kairo Shortcut Node` runs a supported node kind from JSON input and returns structured JSON output.
 10. `Run Kairo Recipe` runs an enabled internal recipe by id and returns structured JSON output.
@@ -209,7 +213,7 @@ Implemented App Intent types:
 
 ## Shortcut Template Registry
 
-`ShortcutTemplateRegistry.default` ships user-installed template metadata for Daily Briefing, Meeting Prep, Share Text to Kairo, Screenshot to Tasks, Action Button Ask Kairo, and generic Run Kairo Recipe. Templates store required App Intent identifiers, recommended internal recipe ids, and manual setup instructions.
+`ShortcutTemplateRegistry.default` ships user-installed template metadata for Daily Briefing, Meeting Prep, Share Text to Kairo, Screenshot to Tasks, Email Triage, Action Button Ask Kairo, and generic Run Kairo Recipe. Templates store required App Intent identifiers, recommended internal recipe ids, and manual setup instructions.
 
 Template metadata is not a one-tap install mechanism. The Shortcuts drawer screen states that Kairo creates internal recipes and Apple Shortcuts installation requires user approval.
 

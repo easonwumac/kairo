@@ -88,7 +88,7 @@ public struct ShortcutDemoCatalog: Codable, Equatable, Sendable {
                         description: "The same shared text, or the saved memory summary."
                     ),
                     outputContract: ShortcutNodeContract(
-                        requiredFields: ["fields.taskCount"],
+                        requiredFields: ["fields.taskCount", "fields.chainText"],
                         optionalFields: ["tasks", "reminderDrafts"],
                         description: "Task and reminder drafts only; no calendar or reminder write is executed."
                     ),
@@ -119,7 +119,7 @@ public struct ShortcutDemoCatalog: Codable, Equatable, Sendable {
                         description: "OCR text from a user-selected screenshot."
                     ),
                     outputContract: ShortcutNodeContract(
-                        requiredFields: ["fields.taskCount"],
+                        requiredFields: ["fields.taskCount", "fields.chainText"],
                         optionalFields: ["tasks", "reminderDrafts"],
                         description: "Extracted task drafts for the next Shortcut step."
                     ),
@@ -142,7 +142,7 @@ public struct ShortcutDemoCatalog: Codable, Equatable, Sendable {
                         description: "Task text from OCR or a previous Kairo extraction step."
                     ),
                     outputContract: ShortcutNodeContract(
-                        requiredFields: ["fields.reminderDraftCount"],
+                        requiredFields: ["fields.reminderDraftCount", "fields.chainText"],
                         optionalFields: ["reminderDrafts"],
                         description: "Reminder drafts that still require an explicit confirmation/write step."
                     ),
@@ -214,6 +214,87 @@ public struct ShortcutDemoCatalog: Codable, Equatable, Sendable {
             ]
         ),
         ShortcutDemoRecipe(
+            id: "email-triage",
+            title: "Email Triage",
+            summary: "Summarize an email, extract follow-up tasks, and prepare a reply draft without sending.",
+            triggerSummary: "Share Sheet from Mail, a copied email thread, or an Action Button Shortcut that passes selected text.",
+            setupNotes: [
+                "Pass the selected email text to Summarize with Kairo.",
+                "Chain the output through Extract Kairo Tasks and Draft Reply.",
+                "Show task and reply drafts for manual review; do not send or write reminders silently."
+            ],
+            steps: [
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Summarize Email with Kairo",
+                    nodeKind: .summarize,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["text"],
+                        optionalFields: ["sourceName", "variables"],
+                        description: "Email thread text explicitly selected or shared by the user."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["displayText", "fields.summary", "fields.chainText"],
+                        description: "Compact email summary and original text for downstream Kairo nodes."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: """
+                        Email from vendor:
+                        Please confirm the revised launch timeline by Friday.
+                        Action: Send updated app screenshots
+                        Reminder: Ask legal to review the OAuth wording
+                        """,
+                        sourceName: "Shared Email",
+                        variables: ["shortcutRecipeID": "email-triage"]
+                    )
+                ),
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Extract Follow-up Tasks",
+                    nodeKind: .extractTasks,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["text"],
+                        optionalFields: ["previousStepOutput", "variables"],
+                        description: "Email summary or original text passed from the previous Kairo node."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["fields.taskCount", "fields.chainText"],
+                        optionalFields: ["tasks", "reminderDrafts"],
+                        description: "Follow-up task drafts plus chain text for reply drafting."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: "",
+                        sourceName: "Shared Email",
+                        variables: [
+                            "shortcutRecipeID": "email-triage",
+                            "kairoInputSource": "previousStepOutput"
+                        ]
+                    )
+                ),
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Draft Email Reply",
+                    nodeKind: .draftReply,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["text"],
+                        optionalFields: ["previousStepOutput", "variables"],
+                        description: "Email text chained from the task extraction node."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["fields.replyDraft"],
+                        optionalFields: ["fields.replyDraftTone", "displayText"],
+                        description: "Reply draft only. Shortcuts must still require visible user review before sending."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: "",
+                        sourceName: "Shared Email",
+                        variables: [
+                            "shortcutRecipeID": "email-triage",
+                            "kairoInputSource": "previousStepOutput",
+                            "tone": "clear"
+                        ]
+                    )
+                )
+            ]
+        ),
+        ShortcutDemoRecipe(
             id: "meeting-prep-brief",
             title: "Meeting Prep Brief",
             summary: "Search Kairo memory for meeting context, summarize it, and extract prep tasks as drafts.",
@@ -274,7 +355,7 @@ public struct ShortcutDemoCatalog: Codable, Equatable, Sendable {
                         description: "Meeting brief or notes that may contain action items."
                     ),
                     outputContract: ShortcutNodeContract(
-                        requiredFields: ["fields.taskCount"],
+                        requiredFields: ["fields.taskCount", "fields.chainText"],
                         optionalFields: ["tasks", "reminderDrafts"],
                         description: "Task drafts only; no EventKit write occurs in this demo."
                     ),
@@ -332,7 +413,7 @@ public struct ShortcutDemoCatalog: Codable, Equatable, Sendable {
                         description: "A supported Kairo node kind and encoded ShortcutNodeInput JSON."
                     ),
                     outputContract: ShortcutNodeContract(
-                        requiredFields: ["fields.taskCount"],
+                        requiredFields: ["fields.taskCount", "fields.chainText"],
                         optionalFields: ["tasks"],
                         description: "Task count and task drafts returned as structured JSON."
                     ),

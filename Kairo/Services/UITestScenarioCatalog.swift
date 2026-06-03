@@ -449,33 +449,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             id: "settings-shortcut-demo-io",
             title: "Shortcut Demo Input Output Contracts",
             userGoal: "Open Settings and verify every Shortcut demo exposes node steps, Shortcut input fields, output fields, and sample input.",
-            requiredAccessibilityIdentifiers: [
-                "settings.shortcuts.demos",
-                "settings.shortcuts.demo.daily-briefing",
-                "settings.shortcuts.demo.daily-briefing.input",
-                "settings.shortcuts.demo.daily-briefing.output",
-                "settings.shortcuts.demo.daily-briefing.sample",
-                "settings.shortcuts.demo.save-shared-text",
-                "settings.shortcuts.demo.save-shared-text.input",
-                "settings.shortcuts.demo.save-shared-text.output",
-                "settings.shortcuts.demo.save-shared-text.sample",
-                "settings.shortcuts.demo.screenshot-to-reminders",
-                "settings.shortcuts.demo.screenshot-to-reminders.input",
-                "settings.shortcuts.demo.screenshot-to-reminders.output",
-                "settings.shortcuts.demo.screenshot-to-reminders.sample",
-                "settings.shortcuts.demo.reply-draft-from-shared-text",
-                "settings.shortcuts.demo.reply-draft-from-shared-text.input",
-                "settings.shortcuts.demo.reply-draft-from-shared-text.output",
-                "settings.shortcuts.demo.reply-draft-from-shared-text.sample",
-                "settings.shortcuts.demo.meeting-prep-brief",
-                "settings.shortcuts.demo.meeting-prep-brief.input",
-                "settings.shortcuts.demo.meeting-prep-brief.output",
-                "settings.shortcuts.demo.meeting-prep-brief.sample",
-                "settings.shortcuts.demo.generic-node-runner",
-                "settings.shortcuts.demo.generic-node-runner.input",
-                "settings.shortcuts.demo.generic-node-runner.output",
-                "settings.shortcuts.demo.generic-node-runner.sample"
-            ],
+            requiredAccessibilityIdentifiers: settingsShortcutDemoIdentifiers(),
             assertions: [
                 "Each Shortcut demo row is visible in Settings.",
                 "Each demo shows the Kairo node path.",
@@ -504,6 +478,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "access.skill.shortcut-save-shared-text",
                 "access.skill.shortcut-screenshot-to-reminders",
                 "access.skill.shortcut-reply-draft-from-shared-text",
+                "access.skill.shortcut-email-triage",
                 "access.skill.shortcut-meeting-prep-brief",
                 "access.skill.shortcut-generic-node-runner",
                 "access.skill.shortcut-save-shared-text.disable",
@@ -533,6 +508,17 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         )
     ])
+
+    private static func settingsShortcutDemoIdentifiers() -> [String] {
+        var identifiers = ["settings.shortcuts.demos"]
+        for recipe in ShortcutDemoCatalog.default.recipes {
+            identifiers.append("settings.shortcuts.demo.\(recipe.id)")
+            identifiers.append("settings.shortcuts.demo.\(recipe.id).input")
+            identifiers.append("settings.shortcuts.demo.\(recipe.id).output")
+            identifiers.append("settings.shortcuts.demo.\(recipe.id).sample")
+        }
+        return identifiers
+    }
 
     private static func shortcutDemoIdentifiers(prefix: String, sectionIdentifier: String) -> [String] {
         var identifiers = ["root.drawer.shortcuts", sectionIdentifier]

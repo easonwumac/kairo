@@ -188,6 +188,7 @@ public actor ShortcutNodeRuntime {
         let tasks = extractTaskDrafts(from: text)
         var fields = baseFields(for: input)
         fields["taskCount"] = String(tasks.count)
+        fields["chainText"] = text
 
         return ShortcutNodeOutput(
             kind: .extractTasks,
@@ -206,6 +207,7 @@ public actor ShortcutNodeRuntime {
             : tasks.map { ReminderDraft(title: $0.title, notes: $0.notes, dueDate: nil) }
         var fields = baseFields(for: input)
         fields["reminderDraftCount"] = String(reminderDrafts.count)
+        fields["chainText"] = text
 
         return ShortcutNodeOutput(
             kind: .createReminderDraft,

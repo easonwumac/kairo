@@ -5,7 +5,7 @@ Kairo 的核心方向是把可操作能力包成可管理的 skills，並讓 mod
 ## Current foundation
 
 - `AgentSkill` describes one managed tool package.
-- `AgentSkillCatalog.default` exposes built-in installed skills for HomeKit scene/accessory demos and every official `ShortcutDemoCatalog` recipe, including shared-text capture, screenshot-to-reminders, reply drafting, meeting prep, daily briefing, and generic node-runner examples.
+- `AgentSkillCatalog.default` exposes built-in installed skills for HomeKit scene/accessory demos and every official `ShortcutDemoCatalog` recipe, including shared-text capture, screenshot-to-reminders, reply drafting, email triage, meeting prep, daily briefing, and generic node-runner examples.
 - `AgentSkillManifest` validates downloadable marketplace manifests with required signature metadata, a SHA-256 checksum over the skill payload, and optional P-256 public-key verification through `AgentSkillManifestTrustStore`.
 - `AgentSkillManagerService` plus `FileBackedAgentSkillStore` provide install, preview, disable, enable, remove, reload, and version downgrade protection for marketplace/user-created skills.
 - `AgentSkillCompatibilityRequirements`, `AgentSkillRuntimeContext`, and `AgentSkillCompatibilityEvaluator` gate marketplace skills on minimum iOS version, required entitlements, connected OAuth providers, and downloaded local models.

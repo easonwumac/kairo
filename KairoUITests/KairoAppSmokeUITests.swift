@@ -154,7 +154,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             titleText: "Save Shared Text",
             stepText: "2 steps: saveMemory -> extractTasks",
             inputText: "Input: text, sourceName, variables",
-            outputText: "Output: memoryID, fields.taskCount, tasks, reminderDrafts",
+            outputText: "Output: memoryID, fields.taskCount, tasks, fields.chainText, reminderDrafts",
             sampleText: "User research note"
         )
         verifyShortcutDemoContract(
@@ -162,7 +162,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             titleText: "Screenshot to Reminders",
             stepText: "2 steps: extractTasks -> createReminderDraft",
             inputText: "Input: text, sourceName, variables",
-            outputText: "Output: fields.taskCount, tasks, reminderDrafts, fields.reminderDraftCount",
+            outputText: "Output: fields.taskCount, fields.chainText, tasks, reminderDrafts, fields.reminderDraftCount",
             sampleText: "Screenshot OCR"
         )
         verifyShortcutDemoContract(
@@ -174,11 +174,19 @@ final class KairoAppSmokeUITests: XCTestCase {
             sampleText: "Customer email"
         )
         verifyShortcutDemoContract(
+            id: "email-triage",
+            titleText: "Email Triage",
+            stepText: "3 steps: summarize -> extractTasks -> draftReply",
+            inputText: "Input: text, sourceName, variables, previousStepOutput",
+            outputText: "Output: displayText, fields.summary, fields.chainText, fields.taskCount, tasks, reminderDrafts, fields.replyDraft",
+            sampleText: "Email from vendor"
+        )
+        verifyShortcutDemoContract(
             id: "meeting-prep-brief",
             titleText: "Meeting Prep Brief",
             stepText: "3 steps: searchMemory -> summarize -> extractTasks",
             inputText: "Input: query, limit, text, sourceName, variables, previousStepOutput",
-            outputText: "Output: fields.matchCount, memoryMatches, displayText, fields.summary",
+            outputText: "Output: fields.matchCount, memoryMatches, displayText, fields.summary, fields.chainText",
             sampleText: "Kairo launch review"
         )
         verifyShortcutDemoContract(
@@ -186,7 +194,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             titleText: "Generic Node Runner",
             stepText: "2 steps: summarize -> extractTasks",
             inputText: "Input: nodeKind, inputJSON",
-            outputText: "Output: outputJSON, displayText, fields.taskCount, tasks",
+            outputText: "Output: outputJSON, displayText, fields.taskCount, fields.chainText, tasks",
             sampleText: "Shortcut dictionary"
         )
     }
@@ -201,7 +209,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             titleText: "Generic Node Runner",
             stepText: "2 steps: summarize -> extractTasks",
             inputText: "Input: nodeKind, inputJSON",
-            outputText: "Output: outputJSON, displayText, fields.taskCount, tasks",
+            outputText: "Output: outputJSON, displayText, fields.taskCount, fields.chainText",
             sampleText: "Shortcut dictionary"
         )
 
@@ -328,6 +336,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         let refreshMarketplace = findButton("access.skills.marketplace-refresh")
         XCTAssertTrue(refreshMarketplace.exists)
         refreshMarketplace.tap()
+
+        XCTAssertTrue(findElement("access.skill.shortcut-email-triage", direction: .down).exists)
 
         let installQwenWorkflow = findButton("access.skill.marketplace-qwen-oauth-workflow.install", direction: .down, maxSwipes: 8)
         XCTAssertTrue(installQwenWorkflow.exists)
@@ -636,6 +646,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findElement("access.skill.shortcut-save-shared-text", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-screenshot-to-reminders", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-reply-draft-from-shared-text", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skill.shortcut-email-triage", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-meeting-prep-brief", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-generic-node-runner", direction: .down).exists)
         XCTAssertTrue(findElement("access.homekit.demos", direction: .down).exists)
@@ -754,7 +765,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     private func assertShortcutDemoField(namespace: String = "settings.shortcuts.demo", id: String, suffix: String, contains expectedText: String) {
-        let element = findElement("\(namespace).\(id).\(suffix)", direction: .both, maxSwipes: 2)
+        let element = findElement("\(namespace).\(id).\(suffix)", direction: .both, maxSwipes: 4)
         XCTAssertTrue(element.exists)
         XCTAssertTrue(element.label.contains(expectedText))
     }
