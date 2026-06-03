@@ -691,10 +691,10 @@ final class KairoAppSmokeUITests: XCTestCase {
 
             let manifest = anyElement("settings.models.\(id).manifest")
             XCTAssertTrue(manifest.exists)
-            XCTAssertTrue(manifest.label.contains("Source: huggingface.co"))
-            XCTAssertTrue(manifest.label.contains("Runtime: GGUF"))
-            XCTAssertTrue(manifest.label.contains("License: Apache-2.0"))
-            XCTAssertTrue(manifest.label.contains("SHA-256: e8e3882"))
+            XCTAssertTrue(manifest.label.contains("huggingface.co"))
+            XCTAssertTrue(manifest.label.contains("GGUF"))
+            XCTAssertTrue(manifest.label.contains("Apache-2.0"))
+            XCTAssertTrue(manifest.label.contains("SHA e8e3882"))
         }
         let downloadButton = app.buttons[downloadIdentifier]
         if !downloadButton.exists {

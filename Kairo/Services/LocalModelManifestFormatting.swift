@@ -9,12 +9,12 @@ public extension LocalModelSettingsRow {
 public extension LocalModelManifest {
     var manifestTransparencyText: String {
         [
-            "Source: \(downloadSourceHost)",
-            "Runtime: \(runtime.settingsDisplayName)",
-            "License: \(licenseName)",
-            "Requires: iOS \(minOSVersion), \(minDeviceClass)+, \(formattedRAMRequirement)",
-            "SHA-256: \(sha256.prefix(7))...",
-            "Safety: \(safetyPolicyVersion)"
+            downloadSourceHost,
+            runtime.settingsDisplayName,
+            licenseName,
+            "iOS \(minOSVersion)/\(minDeviceClass)+/\(formattedRAMRequirement)",
+            "SHA \(sha256.prefix(7))",
+            "policy \(safetyPolicyVersion)"
         ].joined(separator: " · ")
     }
 
@@ -24,9 +24,9 @@ public extension LocalModelManifest {
 
     private var formattedRAMRequirement: String {
         if minRAMGB.rounded() == minRAMGB {
-            return "\(Int(minRAMGB)) GB RAM"
+            return "\(Int(minRAMGB)) GB"
         }
-        return String(format: "%.1f GB RAM", minRAMGB)
+        return String(format: "%.1f GB", minRAMGB)
     }
 }
 

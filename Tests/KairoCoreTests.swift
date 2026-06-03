@@ -1897,6 +1897,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(indexHTML.contains("Kairo Model Catalog"))
         XCTAssertTrue(indexHTML.contains("models.json"))
         XCTAssertTrue(indexHTML.contains("3\n      popular starter GGUF models at 2B parameters or below"))
+        XCTAssertTrue(indexHTML.contains("font-size: 15px"))
         XCTAssertTrue(indexHTML.contains("benchmark profiles"))
         XCTAssertTrue(readme.contains("Do not commit model weights"))
         XCTAssertTrue(readme.contains("kairo-models"))
@@ -2281,12 +2282,15 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))
-        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .caption2 }"))
-        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .caption2 }"))
+        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 11, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 10) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 10, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 10, weight: .semibold) }"))
         XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 92)"))
         XCTAssertTrue(compactView.contains(".imageScale(.small)"))
         XCTAssertTrue(compactView.contains(".background(tint.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))"))
         XCTAssertTrue(compactView.contains(".font(compactModelNameFont)"))
+        XCTAssertTrue(compactView.contains(".font(compactModelMetadataFont)"))
         XCTAssertTrue(compactView.contains(".buttonStyle(.plain)"))
     }
 
@@ -2908,6 +2912,7 @@ final class KairoCoreTests: XCTestCase {
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
 
         XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
+        XCTAssertEqual(availableModels.count, 3)
         XCTAssertEqual(availableModels.map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
             "llama3-2-1b-instruct-q4-k-m",
@@ -2956,6 +2961,17 @@ final class KairoCoreTests: XCTestCase {
         let smolLM = try XCTUnwrap(availableModels.first { $0.id == "smollm2-1-7b-instruct-q4-k-m" })
         XCTAssertTrue(smolLM.capabilities.contains(.rewriting))
         XCTAssertLessThanOrEqual(smolLM.fileSizeBytes, 1_100_000_000)
+    }
+
+    func testLocalModelManifestTransparencyTextIsCompactForSettingsList() throws {
+        let qwenTiny = LocalModelManifest.qwen35Tiny
+        let text = qwenTiny.manifestTransparencyText
+
+        XCTAssertEqual(text, "huggingface.co · GGUF · Apache-2.0 · iOS 17.0/A15+/4 GB · SHA e8e3882 · policy 2026.1")
+        XCTAssertFalse(text.contains("Source:"))
+        XCTAssertFalse(text.contains("Runtime:"))
+        XCTAssertFalse(text.contains("License:"))
+        XCTAssertFalse(text.contains("Requires:"))
     }
 
     func testLocalModelCatalogServiceFetchesStandaloneModelRepoCatalog() async throws {
@@ -3409,12 +3425,10 @@ final class KairoCoreTests: XCTestCase {
             isSelected: false
         )
 
-        XCTAssertTrue(row.manifestTransparencyText.contains("Source: huggingface.co"))
-        XCTAssertTrue(row.manifestTransparencyText.contains("Runtime: GGUF"))
-        XCTAssertTrue(row.manifestTransparencyText.contains("License: Apache-2.0"))
-        XCTAssertTrue(row.manifestTransparencyText.contains("Requires: iOS 17.0, A15+, 4 GB RAM"))
-        XCTAssertTrue(row.manifestTransparencyText.contains("SHA-256: e8e3882"))
-        XCTAssertTrue(row.manifestTransparencyText.contains("Safety: 2026.1"))
+        XCTAssertEqual(
+            row.manifestTransparencyText,
+            "huggingface.co · GGUF · Apache-2.0 · iOS 17.0/A15+/4 GB · SHA e8e3882 · policy 2026.1"
+        )
     }
 
     func testLocalModelSettingsRowsPreserveCatalogOrderForEqualActions() {

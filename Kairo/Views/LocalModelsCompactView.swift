@@ -25,7 +25,7 @@ struct LocalModelsCompactView: View {
                         .accessibilityIdentifier("settings.models.local")
 
                     Text("Downloadable, user-approved on-device models. Weights stay outside the app bundle.")
-                        .font(.caption2)
+                        .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -75,7 +75,7 @@ struct LocalModelsCompactView: View {
                         .fontWeight(.semibold)
 
                     Text(localModelStatus.preference.settingsDetailText)
-                        .font(.caption2)
+                        .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -108,7 +108,7 @@ struct LocalModelsCompactView: View {
                         .fontWeight(.semibold)
 
                     Text(localModelCatalogSourceText)
-                        .font(.caption2)
+                        .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                         .accessibilityIdentifier("settings.models.catalog-source")
@@ -145,12 +145,12 @@ struct LocalModelsCompactView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Selected model")
-                    .font(.caption2)
+                    .font(compactModelMetadataFont)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
 
                 Text(selectedModelSummaryText)
-                    .font(.caption)
+                    .font(compactModelNameFont)
                     .fontWeight(.semibold)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -216,8 +216,7 @@ struct LocalModelsCompactView: View {
                 Spacer(minLength: 8)
 
                 Text(row.statusText)
-                    .font(.caption2)
-                    .fontWeight(.semibold)
+                    .font(compactModelStatusFont)
                     .foregroundStyle(localModelStatusColor(row.primaryAction))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -226,19 +225,19 @@ struct LocalModelsCompactView: View {
             }
 
             Text(row.detailText)
-                .font(.caption2)
+                .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(row.manifestTransparencyText)
-                .font(.caption2)
+                .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary.opacity(0.85))
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("settings.models.\(row.modelID).manifest")
 
             if let benchmarkSummaryText = row.benchmarkSummaryText {
                 Text(benchmarkSummaryText)
-                    .font(.caption2)
+                    .font(compactModelMetadataFont)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
@@ -282,7 +281,7 @@ struct LocalModelsCompactView: View {
 
             if localModelStatusMessageModelID == row.modelID, let localModelStatusMessage {
                 Text(localModelStatusMessage)
-                    .font(.caption)
+                    .font(compactModelMetadataFont)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("settings.models.benchmark-message")
@@ -303,9 +302,13 @@ struct LocalModelsCompactView: View {
         [GridItem(.adaptive(minimum: 92), spacing: 6, alignment: .leading)]
     }
 
-    private var compactModelNameFont: Font { .caption2 }
+    private var compactModelNameFont: Font { .system(size: 11, weight: .semibold) }
 
-    private var compactButtonLabelFont: Font { .caption2 }
+    private var compactModelMetadataFont: Font { .system(size: 10) }
+
+    private var compactModelStatusFont: Font { .system(size: 10, weight: .semibold) }
+
+    private var compactButtonLabelFont: Font { .system(size: 10, weight: .semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {
@@ -331,7 +334,6 @@ struct LocalModelsCompactView: View {
         case .selected:
             Label(row.primaryAction.title, systemImage: "checkmark.circle.fill")
                 .font(compactButtonLabelFont)
-                .fontWeight(.semibold)
                 .foregroundStyle(.green)
                 .accessibilityIdentifier("settings.models.\(row.modelID).select")
         case .unavailable:
@@ -355,7 +357,6 @@ struct LocalModelsCompactView: View {
         } label: {
             Label(title, systemImage: systemImage)
                 .font(compactButtonLabelFont)
-                .fontWeight(.semibold)
                 .imageScale(.small)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
