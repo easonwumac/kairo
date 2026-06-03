@@ -618,6 +618,9 @@ final class SourceHealthTests: XCTestCase {
             XCTAssertTrue(source.contains("docs/CATALOG_RELEASE_CHECKLIST.md"))
         }
         XCTAssertTrue(skillManagement.contains("Publish the production marketplace trust-store key material"))
+        XCTAssertTrue(skillManagement.contains("package tests cover prompt-context availability through the live effective catalog"))
+        XCTAssertTrue(skillManagement.contains("Run real-device Access sign-off before App Review"))
+        XCTAssertTrue(skillManagement.contains("Simulator UI smoke and package tests remain support evidence only"))
         XCTAssertTrue(localModelFallback.contains("production signed catalog publication"))
         XCTAssertTrue(localModelFallback.contains("實機 iPhone runtime proof"))
         XCTAssertTrue(catalogReleaseChecklist.contains("easonwumac/kairo-skills"))
