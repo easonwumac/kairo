@@ -39,10 +39,20 @@ public final class ChatViewModel: ObservableObject {
     }
 
     public convenience init(environment: KairoEnvironment) {
+        let skillCatalogProvider: AgentSkillCatalogProvider
+        if let skillManagerService = environment.agentSkillManagerService {
+            skillCatalogProvider = .skillManager(skillManagerService)
+        } else {
+            skillCatalogProvider = .default
+        }
         self.init(
             historyStore: environment.chatHistoryStore,
             shareIngestionQueue: environment.shareIngestionQueue,
-            agent: AgentCore(memoryStore: environment.memoryStore, aiProvider: environment.aiProvider),
+            agent: AgentCore(
+                memoryStore: environment.memoryStore,
+                aiProvider: environment.aiProvider,
+                skillCatalogProvider: skillCatalogProvider
+            ),
             actionExecutor: environment.actionExecutor,
             localModelSettingsService: environment.localModelSettingsService
         )

@@ -611,6 +611,14 @@ public struct AgentSkillManagerService: Sendable {
         return AgentSkillCatalog(skills: combinedSkills)
     }
 
+    public func effectiveCatalog() async throws -> AgentSkillCatalog {
+        let currentCatalog = try await catalog()
+        return AgentSkillCatalog(skills: currentCatalog.skills.filter { skill in
+            guard skill.installationStatus == .installed else { return true }
+            return compatibilityEvaluator.evaluate(skill).isInstallable
+        })
+    }
+
     @discardableResult
     public func install(manifest: AgentSkillManifest) async throws -> AgentSkill {
         try validateManifestForInstall(manifest)

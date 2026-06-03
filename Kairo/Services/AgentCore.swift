@@ -5,13 +5,14 @@ public actor AgentCore {
     private let aiProvider: AIProvider
     private let safetyPolicyEngine: SafetyPolicyEngine
     private let capabilityRegistry: CapabilityRegistry
-    private let skillCatalog: AgentSkillCatalog
+    private let skillCatalogProvider: AgentSkillCatalogProvider
     private let integrationRegistry: IntegrationRegistry
 
     public init(
         memoryStore: MemoryStore = InMemoryMemoryStore(),
         aiProvider: AIProvider = MockAIProvider(),
         skillCatalog: AgentSkillCatalog = .default,
+        skillCatalogProvider: AgentSkillCatalogProvider? = nil,
         integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry()
@@ -20,12 +21,13 @@ public actor AgentCore {
         self.aiProvider = aiProvider
         self.safetyPolicyEngine = safetyPolicyEngine
         self.capabilityRegistry = capabilityRegistry
-        self.skillCatalog = skillCatalog
+        self.skillCatalogProvider = skillCatalogProvider ?? .constant(skillCatalog)
         self.integrationRegistry = integrationRegistry
     }
 
     public func respond(to message: String, attachments: [ChatAttachment] = []) async throws -> AICompletionResponse {
         let memories = try await memoryStore.search(query: message, limit: 8)
+        let skillCatalog = try await skillCatalogProvider.catalog()
         let allowedCapabilities = capabilityRegistry.capabilities
             .filter { $0.status == .available || $0.status == .unknown }
             .map(\.key)
