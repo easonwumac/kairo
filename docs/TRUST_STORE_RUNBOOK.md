@@ -27,20 +27,21 @@ Local model catalog trust keys must include:
 - `algorithm`
 - `publicKeyBase64`
 - `status` as `active` or `revoked`
+- `publicationStatus` as `pendingPublication` or `published`; app-side validation must fail closed while a release key is still `pendingPublication`
 - `validFrom` when activating a future key
 - `validUntil` when scheduling retirement
 - `revokedAt` and `revokedReason` when revoking
 
-Production catalog payloads must include the matching signing key id and a non-empty signature. App-side validation must fail closed for missing signatures, unknown keys, revoked keys, out-of-window keys, unsupported algorithms, invalid signatures, non-HTTPS model URLs, and invalid checksums.
+Production catalog payloads must include the matching signing key id and a non-empty signature. App-side validation must fail closed for missing signatures, unknown keys, revoked keys, pending-publication keys, out-of-window keys, unsupported algorithms, invalid signatures, non-HTTPS model URLs, and invalid checksums.
 
 ## Planned Rotation
 
 1. Generate the new signing key outside this repository.
-2. Add only the new public key metadata to the relevant trust store.
+2. Add only the new public key metadata to the relevant trust store. For local model catalogs, keep the key `pendingPublication` until the standalone catalog and public trust metadata are actually published.
 3. Mark the outgoing key with a retirement window before using the new key for production payloads.
 4. Sign a staging skill manifest or model catalog with the new key.
 5. Verify the staging payload in package tests or a signed-catalog dry run before publishing.
-6. Publish the signed catalog to the standalone repository.
+6. Publish the signed catalog to the standalone repository and flip the local model key to `published` only in the same release handoff that publishes public trust metadata.
 7. Refresh the catalog from the app and verify that existing active keys still work and the new key is accepted.
 8. After the rollout window, mark the old key `revoked` with `revokedAt` or `revokedReason` metadata as supported by that trust store.
 

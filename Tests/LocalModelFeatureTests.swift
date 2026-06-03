@@ -299,6 +299,53 @@ final class LocalModelFeatureTests: XCTestCase {
         }
     }
 
+    func testLocalModelCatalogServiceRejectsPendingPublicationSigningKeys() async throws {
+        let signedCatalog = try signedRemoteModelCatalogJSON(
+            signingKeyID: "release-2026-q3",
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "qwen-small",
+                    displayName: "Qwen Small"
+                )
+            ],
+            trustKeyOverride: { signingKey, signingKeyID in
+                LocalModelTrustedSigningKey(
+                    keyID: signingKeyID,
+                    algorithm: "p256-sha256",
+                    status: .active,
+                    publicationStatus: .pendingPublication,
+                    publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
+                )
+            }
+        )
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+        let service = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: httpClient,
+            trustStore: signedCatalog.trustStore
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected pending publication signing key to fail closed.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .signingKeyPendingPublication("release-2026-q3"))
+        }
+    }
+
+    func testDefaultLocalModelCatalogTrustStoreKeepsReleaseKeysPendingPublication() throws {
+        let trustStore = LocalModelCatalogService.defaultTrustStore
+        let activeReleaseKey = try XCTUnwrap(trustStore.trustedKey(id: "kairo-models-2026"))
+        let revokedReleaseKey = try XCTUnwrap(trustStore.trustedKey(id: "kairo-models-2025"))
+
+        XCTAssertEqual(activeReleaseKey.status, .active)
+        XCTAssertEqual(activeReleaseKey.publicationStatus, .pendingPublication)
+        XCTAssertTrue(activeReleaseKey.publicKeyBase64.isEmpty)
+        XCTAssertEqual(revokedReleaseKey.status, .revoked)
+        XCTAssertEqual(revokedReleaseKey.publicationStatus, .pendingPublication)
+        XCTAssertTrue(revokedReleaseKey.publicKeyBase64.isEmpty)
+    }
+
     func testLocalModelCatalogTrustStoreDecodesRotationMetadata() throws {
         let json = """
         {
@@ -307,6 +354,7 @@ final class LocalModelFeatureTests: XCTestCase {
               "keyID": "kairo-models-2026",
               "algorithm": "p256-sha256",
               "status": "revoked",
+              "publicationStatus": "published",
               "publicKeyBase64": "abc123",
               "validFrom": "2026-01-01T00:00:00Z",
               "validUntil": "2026-12-31T00:00:00Z",
@@ -322,6 +370,7 @@ final class LocalModelFeatureTests: XCTestCase {
         let formatter = ISO8601DateFormatter()
 
         XCTAssertEqual(trustedKey.status, .revoked)
+        XCTAssertEqual(trustedKey.publicationStatus, .published)
         XCTAssertEqual(trustedKey.publicKeyBase64, "abc123")
         XCTAssertEqual(trustedKey.validFrom, formatter.date(from: "2026-01-01T00:00:00Z"))
         XCTAssertEqual(trustedKey.validUntil, formatter.date(from: "2026-12-31T00:00:00Z"))
@@ -332,6 +381,7 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertTrue(encodedJSON.contains(#""validFrom":"2026-01-01T00:00:00Z""#))
         XCTAssertTrue(encodedJSON.contains(#""validUntil":"2026-12-31T00:00:00Z""#))
         XCTAssertTrue(encodedJSON.contains(#""revokedAt":"2026-06-04T00:00:00Z""#))
+        XCTAssertTrue(encodedJSON.contains(#""publicationStatus":"published""#))
     }
 
     func testLocalModelCatalogTrustStoreDecodesLegacyKeysAsActive() throws {
@@ -350,6 +400,7 @@ final class LocalModelFeatureTests: XCTestCase {
         let trustedKey = try XCTUnwrap(trustStore.trustedKey(id: "legacy-model-key"))
 
         XCTAssertEqual(trustedKey.status, .active)
+        XCTAssertEqual(trustedKey.publicationStatus, .published)
         XCTAssertEqual(trustedKey.publicKeyBase64, "")
         XCTAssertNil(trustedKey.validFrom)
         XCTAssertNil(trustedKey.validUntil)

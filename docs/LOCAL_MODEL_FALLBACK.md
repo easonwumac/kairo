@@ -141,7 +141,7 @@ Current service behavior:
 
 - decodes `LocalModelCatalog` JSON with `sourceRepository` metadata;
 - verifies the canonical catalog payload with P-256/SHA-256 signature data from the trust store before accepting remote model rows;
-- rejects unknown, revoked, out-of-window, unsupported, or invalid signing keys and fails closed when production key material is absent or mismatched;
+- rejects unknown, revoked, pending-publication, out-of-window, unsupported, or invalid signing keys and fails closed when production key material is absent, unpublished, or mismatched;
 - rejects remote catalog entries whose model download URL is not HTTPS;
 - rejects entries missing a 64-character SHA-256 checksum;
 - merges remote entries over matching built-in model IDs while preserving built-in fallback models that the remote catalog omits;

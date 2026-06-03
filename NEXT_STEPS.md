@@ -20,7 +20,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
 
 3. Local model release hardening.
    - Keep downloads explicitly user-triggered and continue blocking model weights, `.gguf`, tokenizer blobs, caches, and generated artifacts from the repo.
-   - Publish the production signed catalog and real release public-key material; app-side catalog payload signature verification now fails closed for unknown, revoked, out-of-window, unsupported, or invalid keys, and `docs/TRUST_STORE_RUNBOOK.md` plus `docs/CATALOG_RELEASE_CHECKLIST.md` define the publication and rotation/revocation gates.
+   - Publish the production signed catalog and real release public-key material; app-side catalog payload signature verification now fails closed for unknown, revoked, pending-publication, out-of-window, unsupported, or invalid keys, default release keys remain `publicationStatus=pendingPublication`, and `docs/TRUST_STORE_RUNBOOK.md` plus `docs/CATALOG_RELEASE_CHECKLIST.md` define the publication and rotation/revocation gates.
    - Settings now shows foreground download progress/cancel, cleans stale interrupted download state on status reload, requires an explicit license-approval preview before download confirmation, and local model management now has a backend API facade for status/select/preference/delete/stale cleanup.
    - Keep iOS production inference runtime marked `Planned` until there is real-device runtime proof.
 

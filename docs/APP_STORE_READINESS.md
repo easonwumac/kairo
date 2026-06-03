@@ -15,7 +15,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 | EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist for current scope. |
 | HomeKit | Scaffolded | Preview/demo/test path exists; real HomeKit entitlement/live control is not complete. |
 | OAuth provider APIs | Scaffolded | Auth/callback/status scaffold exists; real provider API integrations are not complete. |
-| Local model catalog/download/select/delete | Scaffolded | User-triggered download/select/delete flows exist, no model weights are bundled, download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup paths are package-tested, Settings now shows visible foreground download progress, an explicit cancel control, and a license-approval preview before download confirmation, local model management has a backend API facade for status/select/preference/delete/stale cleanup, and remote catalog payload signatures now fail closed against unknown/revoked/invalid signing keys; production signed catalog publication and real-device iOS runtime proof are still incomplete. |
+| Local model catalog/download/select/delete | Scaffolded | User-triggered download/select/delete flows exist, no model weights are bundled, download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup paths are package-tested, Settings now shows visible foreground download progress, an explicit cancel control, and a license-approval preview before download confirmation, local model management has a backend API facade for status/select/preference/delete/stale cleanup, and remote catalog payload signatures now fail closed against unknown/revoked/pending-publication/invalid signing keys; production signed catalog publication and real-device iOS runtime proof are still incomplete. |
 | macOS/dev local model reply check | Test-only / Mock | External command validation only; not iOS runtime proof. |
 | iOS production local model inference runtime | Planned | Must remain unavailable until real device/runtime evidence exists. |
 | Keyboard Extension | Planned | Not built for beta. |
@@ -48,7 +48,7 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 - **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking, and package source-health tests parse the privacy manifest plus entitlement/review-note boundaries. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
 - **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
 - **Purpose string scope:** Beta app plist includes only currently exercised Calendar, Reminders, Contacts, and Notifications purpose strings; HomeKit, Location, and Photo Library purpose strings stay future-only until those capabilities ship.
-- **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, out-of-window, unsupported, or invalid signing keys. `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` define the production publication and rotation/revocation gates, but production signed catalogs and release public-key material still need publication in the standalone repos.
+- **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, pending-publication, out-of-window, unsupported, or invalid signing keys. Default local model release keys remain `publicationStatus=pendingPublication`. `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` define the production publication and rotation/revocation gates, but production signed catalogs and release public-key material still need publication in the standalone repos.
 
 ### 1. Public API only
 
@@ -163,7 +163,7 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 - [x] Core downloader supports HTTPS + checksum verification.
 - [x] Core settings can persist and validate the user-selected installed model.
 - [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
-- [x] Remote catalog payload signature verification rejects unknown, revoked, out-of-window, unsupported, or invalid P-256 signing keys before accepting download rows.
+- [x] Remote catalog payload signature verification rejects unknown, revoked, pending-publication, out-of-window, unsupported, or invalid P-256 signing keys before accepting download rows.
 - [x] Package tests cover checksum failure, download cancellation cleanup, stale interrupted-download cleanup after restart/status reload, deleting the selected model, and runtime-unavailable fail-closed paths.
 - [ ] Publish production signed catalog/public key material and runtime speed proof。
 - [x] 模型存在 Application Support/LocalModels，並由 downloader 標記為不進 iCloud backup。

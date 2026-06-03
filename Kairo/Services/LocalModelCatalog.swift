@@ -370,11 +370,17 @@ public enum LocalModelCatalogSigningKeyStatus: String, Codable, Equatable, Senda
     case revoked
 }
 
+public enum LocalModelCatalogSigningKeyPublicationStatus: String, Codable, Equatable, Sendable {
+    case pendingPublication
+    case published
+}
+
 public struct LocalModelTrustedSigningKey: Codable, Equatable, Identifiable, Sendable {
     public var id: String { keyID }
     public var keyID: String
     public var algorithm: String
     public var status: LocalModelCatalogSigningKeyStatus
+    public var publicationStatus: LocalModelCatalogSigningKeyPublicationStatus
     public var publicKeyBase64: String
     public var validFrom: Date?
     public var validUntil: Date?
@@ -385,6 +391,7 @@ public struct LocalModelTrustedSigningKey: Codable, Equatable, Identifiable, Sen
         keyID: String,
         algorithm: String,
         status: LocalModelCatalogSigningKeyStatus,
+        publicationStatus: LocalModelCatalogSigningKeyPublicationStatus = .published,
         publicKeyBase64: String = "",
         validFrom: Date? = nil,
         validUntil: Date? = nil,
@@ -394,6 +401,7 @@ public struct LocalModelTrustedSigningKey: Codable, Equatable, Identifiable, Sen
         self.keyID = keyID
         self.algorithm = algorithm
         self.status = status
+        self.publicationStatus = publicationStatus
         self.publicKeyBase64 = publicKeyBase64
         self.validFrom = validFrom
         self.validUntil = validUntil
@@ -405,6 +413,7 @@ public struct LocalModelTrustedSigningKey: Codable, Equatable, Identifiable, Sen
         case keyID
         case algorithm
         case status
+        case publicationStatus
         case publicKeyBase64
         case validFrom
         case validUntil
@@ -417,6 +426,10 @@ public struct LocalModelTrustedSigningKey: Codable, Equatable, Identifiable, Sen
         self.keyID = try container.decode(String.self, forKey: .keyID)
         self.algorithm = try container.decode(String.self, forKey: .algorithm)
         self.status = try container.decodeIfPresent(LocalModelCatalogSigningKeyStatus.self, forKey: .status) ?? .active
+        self.publicationStatus = try container.decodeIfPresent(
+            LocalModelCatalogSigningKeyPublicationStatus.self,
+            forKey: .publicationStatus
+        ) ?? .published
         self.publicKeyBase64 = try container.decodeIfPresent(String.self, forKey: .publicKeyBase64) ?? ""
         self.validFrom = try Self.decodeDateIfPresent(from: container, forKey: .validFrom)
         self.validUntil = try Self.decodeDateIfPresent(from: container, forKey: .validUntil)
@@ -429,6 +442,7 @@ public struct LocalModelTrustedSigningKey: Codable, Equatable, Identifiable, Sen
         try container.encode(keyID, forKey: .keyID)
         try container.encode(algorithm, forKey: .algorithm)
         try container.encode(status, forKey: .status)
+        try container.encode(publicationStatus, forKey: .publicationStatus)
         try container.encode(publicKeyBase64, forKey: .publicKeyBase64)
         try Self.encodeDateIfPresent(validFrom, to: &container, forKey: .validFrom)
         try Self.encodeDateIfPresent(validUntil, to: &container, forKey: .validUntil)
@@ -480,6 +494,7 @@ public enum LocalModelCatalogServiceError: Error, Equatable {
     case missingSignature
     case unknownSigningKey(String)
     case revokedSigningKey(String)
+    case signingKeyPendingPublication(String)
     case unsupportedSignatureAlgorithm(String)
     case invalidSignature
     case unsafeDownloadURL(modelID: String, url: String)
@@ -495,6 +510,7 @@ public struct LocalModelCatalogService: Sendable {
                 keyID: "kairo-models-2025",
                 algorithm: "p256-sha256",
                 status: .revoked,
+                publicationStatus: .pendingPublication,
                 publicKeyBase64: "",
                 revokedReason: "Superseded by the 2026 release signing key."
             ),
@@ -502,6 +518,7 @@ public struct LocalModelCatalogService: Sendable {
                 keyID: "kairo-models-2026",
                 algorithm: "p256-sha256",
                 status: .active,
+                publicationStatus: .pendingPublication,
                 publicKeyBase64: ""
             )
         ]
@@ -557,6 +574,9 @@ public struct LocalModelCatalogService: Sendable {
         }
         guard trustedKey.status == .active else {
             throw LocalModelCatalogServiceError.revokedSigningKey(catalog.signingKeyID)
+        }
+        guard trustedKey.publicationStatus == .published else {
+            throw LocalModelCatalogServiceError.signingKeyPendingPublication(catalog.signingKeyID)
         }
         try validateTrustWindow(for: trustedKey)
         try validateSignature(for: catalog, trustedKey: trustedKey)

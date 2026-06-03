@@ -27,8 +27,9 @@ Before marking local model catalog publication production-ready:
 - Publish a signed `models.json` catalog from `easonwumac/kairo-models`.
 - Publish only metadata and HTTPS download URLs; do not publish model weights in this app repo.
 - Include model id, display name, version, runtime type, SHA-256, file size, license, license URL, minimum OS, minimum RAM/device tier, context window, safety policy version, benchmark profiles, deprecation status, rollout channel, and rollback metadata.
-- Publish public trust-store key metadata with `keyID`, `algorithm`, `publicKeyBase64`, `status`, `validFrom`, `validUntil`, `revokedAt`, and `revokedReason` where applicable.
-- Verify unknown-key, revoked-key, out-of-window-key, invalid-signature, non-HTTPS URL, invalid-checksum, cancellation, stale-download cleanup, and delete-selected-model paths fail closed in package tests.
+- Publish public trust-store key metadata with `keyID`, `algorithm`, `publicKeyBase64`, `status`, `publicationStatus`, `validFrom`, `validUntil`, `revokedAt`, and `revokedReason` where applicable.
+- Keep default app-side release keys at `publicationStatus=pendingPublication` until the standalone signed catalog and public trust metadata are actually published.
+- Verify unknown-key, revoked-key, pending-publication-key, out-of-window-key, invalid-signature, non-HTTPS URL, invalid-checksum, cancellation, stale-download cleanup, and delete-selected-model paths fail closed in package tests.
 - Keep iOS production inference runtime marked Planned until a real-device runtime build proves latency, memory, thermal behavior, and App Store-compatible packaging.
 
 ## App Review Boundary
