@@ -318,7 +318,6 @@ public extension LocalModelCatalog {
         models: [
             .qwen35Tiny,
             .llama32OneBInstruct,
-            .deepSeekR1DistillQwenTiny,
             .smolLM2TinyInstruct
         ]
     )
@@ -1605,17 +1604,19 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
     public var settingsRows: [LocalModelSettingsRow] {
         let installedByID = Dictionary(uniqueKeysWithValues: installedModels.map { ($0.modelID, $0) })
         return availableModels
-            .map { model in
+            .enumerated()
+            .map { index, model in
                 let record = installedByID[model.id]
                 let isSelected = selectedModelID == model.id && record?.status == .installed
-                return LocalModelSettingsRow(model: model, installRecord: record, isSelected: isSelected)
+                return (index, LocalModelSettingsRow(model: model, installRecord: record, isSelected: isSelected))
             }
             .sorted { lhs, rhs in
-                if lhs.primaryAction == rhs.primaryAction {
-                    return lhs.modelID < rhs.modelID
+                if lhs.1.primaryAction == rhs.1.primaryAction {
+                    return lhs.0 < rhs.0
                 }
-                return lhs.primaryAction.sortPriority < rhs.primaryAction.sortPriority
+                return lhs.1.primaryAction.sortPriority < rhs.1.primaryAction.sortPriority
             }
+            .map(\.1)
     }
 }
 

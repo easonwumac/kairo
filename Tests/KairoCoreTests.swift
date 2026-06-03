@@ -1879,7 +1879,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(availableModels.allSatisfy { $0.runtime == .gguf })
         XCTAssertTrue(availableModels.allSatisfy { $0.downloadURL.scheme == "https" })
         XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
-        XCTAssertEqual(availableModels.count, 4)
+        XCTAssertEqual(availableModels.count, 3)
 
         let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
         let mlxBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .mlx })
@@ -1892,14 +1892,17 @@ final class KairoCoreTests: XCTestCase {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let indexHTML = try String(contentsOf: root.appendingPathComponent("Website/models/index.html"), encoding: .utf8)
         let readme = try String(contentsOf: root.appendingPathComponent("Website/models/README.md"), encoding: .utf8)
+        let rootReadme = try String(contentsOf: root.appendingPathComponent("README.md"), encoding: .utf8)
 
         XCTAssertTrue(indexHTML.contains("Kairo Model Catalog"))
         XCTAssertTrue(indexHTML.contains("models.json"))
-        XCTAssertTrue(indexHTML.contains("4\n      starter GGUF models at 2B parameters or below"))
+        XCTAssertTrue(indexHTML.contains("3\n      popular starter GGUF models at 2B parameters or below"))
         XCTAssertTrue(indexHTML.contains("benchmark profiles"))
         XCTAssertTrue(readme.contains("Do not commit model weights"))
         XCTAssertTrue(readme.contains("kairo-models"))
         XCTAssertTrue(readme.contains("runtime benchmark profiles"))
+        XCTAssertTrue(rootReadme.contains("popular public GGUF models, including Qwen3.5, Llama 3.2, and SmolLM2"))
+        XCTAssertFalse(rootReadme.contains("DeepSeek R1 Distill Qwen"))
     }
 
     func testSkillMarketplaceIndexListsDownloadableSkillsWithSafetyMetadata() throws {
@@ -2276,7 +2279,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))
-        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .caption }"))
+        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .caption2 }"))
+        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .caption2 }"))
         XCTAssertTrue(compactView.contains(".font(compactModelNameFont)"))
         XCTAssertTrue(compactView.contains(".buttonStyle(.plain)"))
     }
@@ -2815,7 +2819,6 @@ final class KairoCoreTests: XCTestCase {
         for displayName in [
             "Qwen3.5 0.8B Q4_K_M",
             "Llama 3.2 1B Instruct Q4_K_M",
-            "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
             "SmolLM2 1.7B Instruct Q4_K_M"
         ] {
             XCTAssertTrue(smokeTest.contains(displayName), displayName)
@@ -2890,13 +2893,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(availableModels.map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
             "llama3-2-1b-instruct-q4-k-m",
-            "deepseek-r1-distill-qwen-1-5b-q4-k-m",
             "smollm2-1-7b-instruct-q4-k-m"
         ])
         XCTAssertEqual(availableModels.map(\.displayName), [
             "Qwen3.5 0.8B Q4_K_M",
             "Llama 3.2 1B Instruct Q4_K_M",
-            "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
             "SmolLM2 1.7B Instruct Q4_K_M"
         ])
 
@@ -3381,6 +3382,26 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(selectedRow.detailText.contains("Q4"))
         XCTAssertTrue(selectedRow.detailText.contains("2K context"))
         XCTAssertNil(downloadableRow.benchmarkSummaryText)
+    }
+
+    func testLocalModelSettingsRowsPreserveCatalogOrderForEqualActions() {
+        let qwenManifest = makeLocalModelManifest(id: "qwen-small", safetyPolicyVersion: "2026.2")
+        let llamaManifest = makeLocalModelManifest(id: "llama-draft", safetyPolicyVersion: "2026.2")
+        let smolManifest = makeLocalModelManifest(id: "smollm-draft", safetyPolicyVersion: "2026.2")
+        let status = LocalModelSettingsStatus(
+            selectedModelID: nil,
+            selectedModel: nil,
+            installedRecord: nil,
+            preference: .automatic,
+            availableModels: [qwenManifest, llamaManifest, smolManifest],
+            installedModels: []
+        )
+
+        XCTAssertEqual(status.settingsRows.map(\.modelID), [
+            qwenManifest.id,
+            llamaManifest.id,
+            smolManifest.id
+        ])
     }
 
     func testVerifiedLocalModelDownloaderInstallsModelAndUpdatesRegistry() async throws {

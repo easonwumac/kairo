@@ -20,12 +20,12 @@ struct LocalModelsCompactView: View {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Local Models")
-                        .font(.title3)
+                        .font(.headline)
                         .fontWeight(.semibold)
                         .accessibilityIdentifier("settings.models.local")
 
                     Text("Downloadable, user-approved on-device models. Weights stay outside the app bundle.")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -56,8 +56,8 @@ struct LocalModelsCompactView: View {
                 .accessibilityIdentifier("settings.models.compact-list")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 18)
-            .padding(.top, 20)
+            .padding(.horizontal, 16)
+            .padding(.top, 18)
             .padding(.bottom, 32)
             .accessibilityIdentifier("settings.models.local")
         }
@@ -205,7 +205,7 @@ struct LocalModelsCompactView: View {
 
     @ViewBuilder
     private func compactLocalModelRow(_ row: LocalModelSettingsRow) -> some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: 7) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(row.displayName)
                     .font(compactModelNameFont)
@@ -219,8 +219,8 @@ struct LocalModelsCompactView: View {
                     .font(.caption2)
                     .fontWeight(.semibold)
                     .foregroundStyle(localModelStatusColor(row.primaryAction))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
                     .background(localModelStatusColor(row.primaryAction).opacity(0.11), in: Capsule())
                     .accessibilityIdentifier("settings.models.\(row.modelID).status")
             }
@@ -238,7 +238,7 @@ struct LocalModelsCompactView: View {
                     .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
             }
 
-            LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 8) {
+            LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 7) {
                 compactLocalModelAction(for: row)
 
                 if row.benchmarkSummaryText != nil {
@@ -283,7 +283,7 @@ struct LocalModelsCompactView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
+        .padding(10)
         .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -294,10 +294,12 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactButtonGridColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 118), spacing: 8, alignment: .leading)]
+        [GridItem(.adaptive(minimum: 104), spacing: 7, alignment: .leading)]
     }
 
-    private var compactModelNameFont: Font { .caption }
+    private var compactModelNameFont: Font { .caption2 }
+
+    private var compactButtonLabelFont: Font { .caption2 }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {
@@ -322,13 +324,13 @@ struct LocalModelsCompactView: View {
             }
         case .selected:
             Label(row.primaryAction.title, systemImage: "checkmark.circle.fill")
-                .font(.caption)
+                .font(compactButtonLabelFont)
                 .fontWeight(.semibold)
                 .foregroundStyle(.green)
                 .accessibilityIdentifier("settings.models.\(row.modelID).select")
         case .unavailable:
             Text(row.primaryAction.title)
-                .font(.caption)
+                .font(compactButtonLabelFont)
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("settings.models.\(row.modelID).unavailable")
         }
@@ -346,12 +348,12 @@ struct LocalModelsCompactView: View {
             action()
         } label: {
             Label(title, systemImage: systemImage)
-                .font(.caption)
+                .font(compactButtonLabelFont)
                 .fontWeight(.semibold)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 7)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .foregroundStyle(tint)
                 .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))

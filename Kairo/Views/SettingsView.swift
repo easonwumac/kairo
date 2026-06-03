@@ -348,10 +348,10 @@ public struct SettingsView: View {
 
     @ViewBuilder
     private func localModelRow(_ row: LocalModelSettingsRow) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
                 Text(row.displayName)
-                    .font(.caption)
+                    .font(.caption2)
                     .fontWeight(.semibold)
                     .accessibilityIdentifier("settings.models.\(row.modelID).name")
 
@@ -374,24 +374,26 @@ public struct SettingsView: View {
                     .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 10) {
                     localModelAction(for: row)
 
                     if row.benchmarkSummaryText != nil {
                         Button("Run Benchmark") {
                             runLocalModelBenchmark(row)
                         }
+                        .font(.caption2)
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                         .accessibilityIdentifier("settings.models.\(row.modelID).benchmark-run")
                     }
                 }
 
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     Button("Run Reply Check") {
                         runLocalModelReplyCheck(row)
                     }
+                    .font(.caption2)
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .accessibilityIdentifier("settings.models.\(row.modelID).reply-check")
@@ -400,6 +402,7 @@ public struct SettingsView: View {
                         Button("Delete", role: .destructive) {
                             deleteLocalModel(row)
                         }
+                        .font(.caption2)
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                         .accessibilityIdentifier("settings.models.\(row.modelID).delete")
@@ -426,6 +429,7 @@ public struct SettingsView: View {
             Button(row.primaryAction.title) {
                 downloadLocalModel(row)
             }
+            .font(.caption2)
             .buttonStyle(.bordered)
             .controlSize(.small)
             .accessibilityIdentifier("settings.models.\(row.modelID).download")
@@ -433,17 +437,18 @@ public struct SettingsView: View {
             Button(row.primaryAction.title) {
                 selectLocalModel(row)
             }
+            .font(.caption2)
             .buttonStyle(.bordered)
             .controlSize(.small)
             .accessibilityIdentifier("settings.models.\(row.modelID).select")
         case .selected:
             Label(row.primaryAction.title, systemImage: "checkmark.circle.fill")
-                .font(.caption)
+                .font(.caption2)
                 .foregroundStyle(.green)
                 .accessibilityIdentifier("settings.models.\(row.modelID).select")
         case .unavailable:
             Text(row.primaryAction.title)
-                .font(.caption)
+                .font(.caption2)
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("settings.models.\(row.modelID).unavailable")
         }

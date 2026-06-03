@@ -126,49 +126,6 @@
       "deprecated": false
     },
     {
-      "id": "deepseek-r1-distill-qwen-1-5b-q4-k-m",
-      "displayName": "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
-      "family": "DeepSeek R1 Distill Qwen",
-      "version": "1.0",
-      "parameterCount": "1.5B",
-      "quantization": "Q4_K_M",
-      "runtime": "gguf",
-      "fileSizeBytes": 1117320480,
-      "installedSizeBytes": 1782579200,
-      "contextWindow": 32768,
-      "tokenizerID": "qwen2.5-tokenizer",
-      "licenseName": "MIT",
-      "licenseURL": "https://opensource.org/license/mit",
-      "minOSVersion": "17.0",
-      "minDeviceClass": "A15",
-      "minRAMGB": 4,
-      "supportedLocales": [
-        "en",
-        "zh-Hant"
-      ],
-      "capabilities": [
-        "drafts",
-        "summarization",
-        "simpleQuestionAnswer",
-        "offlineChat",
-        "rewriting",
-        "extraction"
-      ],
-      "disallowedCapabilities": [
-        "toolUse",
-        "webCurrentInfo",
-        "codeExecution",
-        "accountActions",
-        "regulatedAdvice"
-      ],
-      "downloadURL": "https://huggingface.co/QuantFactory/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-1.5B.Q4_K_M.gguf",
-      "sha256": "41aa31689f2cbdcc5172e370db2ab7a10e17a9427520602437bd16d8d127d105",
-      "createdAt": "2026-06-02T00:00:00Z",
-      "updatedAt": "2026-06-02T00:00:00Z",
-      "safetyPolicyVersion": "2026.1",
-      "deprecated": false
-    },
-    {
       "id": "smollm2-1-7b-instruct-q4-k-m",
       "displayName": "SmolLM2 1.7B Instruct Q4_K_M",
       "family": "SmolLM2",
