@@ -32,6 +32,8 @@ struct LocalModelsCompactView: View {
 
                 compactLocalModelControls
 
+                selectedModelSummary
+
                 VStack(alignment: .leading, spacing: 10) {
                     if localModelStatus.settingsRows.isEmpty {
                         Text("尚未載入 local model catalog。")
@@ -133,6 +135,72 @@ struct LocalModelsCompactView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(localModelCatalogSourceText)
         .accessibilityIdentifier("settings.models.catalog-source")
+    }
+
+    private var selectedModelSummary: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: selectedModelSummaryIconName)
+                .font(.subheadline)
+                .foregroundStyle(selectedModelSummaryIconColor)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Selected model")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+
+                Text(selectedModelSummaryText)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Color.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(selectedModelSummaryText)
+        .accessibilityIdentifier("settings.models.selected-summary")
+    }
+
+    private var selectedModelSummaryText: String {
+        if localModelStatus.localModelInstalled, let selectedModel = localModelStatus.selectedModel {
+            return "\(selectedModel.displayName) is active for eligible local tasks."
+        }
+        if let downloadedModel {
+            return "\(downloadedModel.displayName) is downloaded. Select it to use local routing."
+        }
+        return "No downloaded model selected yet."
+    }
+
+    private var selectedModelSummaryIconName: String {
+        if localModelStatus.localModelInstalled {
+            return "checkmark.seal.fill"
+        }
+        if downloadedModel != nil {
+            return "arrow.down.circle.fill"
+        }
+        return "circle.dashed"
+    }
+
+    private var selectedModelSummaryIconColor: Color {
+        if localModelStatus.localModelInstalled || downloadedModel != nil {
+            return .blue
+        }
+        return .secondary
+    }
+
+    private var downloadedModel: LocalModelManifest? {
+        let installedModelIDs = Set(localModelStatus.installedModels
+            .filter { $0.status == .installed }
+            .map(\.modelID))
+        return localModelStatus.availableModels.first { installedModelIDs.contains($0.id) }
     }
 
     @ViewBuilder

@@ -646,6 +646,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         let catalogSource = anyElement("settings.models.catalog-source")
         XCTAssertTrue(catalogSource.exists)
         XCTAssertTrue(catalogSource.label.contains("github.com/easonwumac/kairo-models"))
+        XCTAssertTrue(findStaticText(containing: "No downloaded model selected yet.", direction: .both).exists)
         XCTAssertTrue(app.buttons["settings.models.refresh-catalog"].exists)
         let localModelsToVerify = verifyAllLocalModels
             ? localModelExpectations
