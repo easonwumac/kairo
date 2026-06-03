@@ -204,6 +204,33 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(runbook.localizedCaseInsensitiveContains("api token:"))
     }
 
+    func testTrustStoreRunbookIsReferencedByReleaseHardeningDocs() throws {
+        let root = packageRootURL()
+        let skillManagement = try String(
+            contentsOf: root.appendingPathComponent("docs/SKILL_MANAGEMENT.md"),
+            encoding: .utf8
+        )
+        let localModelFallback = try String(
+            contentsOf: root.appendingPathComponent("docs/LOCAL_MODEL_FALLBACK.md"),
+            encoding: .utf8
+        )
+        let nextSteps = try String(
+            contentsOf: root.appendingPathComponent("NEXT_STEPS.md"),
+            encoding: .utf8
+        )
+        let readiness = try String(
+            contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"),
+            encoding: .utf8
+        )
+
+        for source in [skillManagement, localModelFallback, nextSteps, readiness] {
+            XCTAssertTrue(source.contains("docs/TRUST_STORE_RUNBOOK.md"))
+        }
+        XCTAssertTrue(skillManagement.contains("Publish the production marketplace trust-store key material"))
+        XCTAssertTrue(localModelFallback.contains("production signed catalog publication"))
+        XCTAssertTrue(localModelFallback.contains("實機 iPhone runtime proof"))
+    }
+
     func testShortcutDemoCatalogStaysSplitAcrossFocusedFiles() throws {
         let root = packageRootURL()
         let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)
