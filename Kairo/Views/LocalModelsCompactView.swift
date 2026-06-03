@@ -20,13 +20,13 @@ struct LocalModelsCompactView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Local Models")
                         .font(compactSectionTitleFont)
                         .accessibilityIdentifier("settings.models.local")
 
-                    Text("Starter: Qwen + Llama. More models stay in kairo-models.")
+                    Text("Popular starters only: Qwen + Llama. Full catalog stays in kairo-models.")
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -72,8 +72,8 @@ struct LocalModelsCompactView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 14)
-            .padding(.top, 14)
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
             .padding(.bottom, 32)
         }
         .scrollIndicators(.visible)
@@ -96,21 +96,7 @@ struct LocalModelsCompactView: View {
 
                 Spacer(minLength: 10)
 
-                Picker("Route Preference", selection: Binding(
-                    get: { localModelStatus.preference },
-                    set: { preference in
-                        setLocalModelPreference(preference)
-                    }
-                )) {
-                    ForEach(ProviderRoutePreference.settingsChoices, id: \.self) { preference in
-                        Text(preference.settingsTitle)
-                            .tag(preference)
-                            .accessibilityIdentifier("settings.models.preference.\(preference.rawValue)")
-                    }
-                }
-                .pickerStyle(.menu)
-                .font(.caption)
-                .accessibilityIdentifier("settings.models.preference")
+                compactRoutePreferenceMenu
             }
 
             Divider()
@@ -225,7 +211,36 @@ struct LocalModelsCompactView: View {
     }
 
     private var trimmedModelSummaryText: String {
-        "Showing \(visibleModelRows.count) popular starter models. Larger catalogs stay in kairo-models."
+        "Showing \(visibleModelRows.count) popular starter models only. Full catalog stays in kairo-models."
+    }
+
+    private var compactRoutePreferenceMenu: some View {
+        Menu {
+            ForEach(ProviderRoutePreference.settingsChoices, id: \.self) { preference in
+                Button {
+                    setLocalModelPreference(preference)
+                } label: {
+                    Text(preference.settingsTitle)
+                }
+                .accessibilityIdentifier("settings.models.preference.\(preference.rawValue)")
+            }
+        } label: {
+            HStack(spacing: 3) {
+                Text(localModelStatus.preference.settingsTitle)
+                    .font(compactControlValueFont)
+                    .lineLimit(1)
+
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 6.5, weight: .semibold))
+            }
+            .foregroundStyle(.blue)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 4)
+            .background(Color.blue.opacity(0.06), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Route Preference")
+        .accessibilityIdentifier("settings.models.preference")
     }
 
     @ViewBuilder
@@ -356,17 +371,19 @@ struct LocalModelsCompactView: View {
         [GridItem(.adaptive(minimum: 52), spacing: 4, alignment: .leading)]
     }
 
-    private var compactSectionTitleFont: Font { .system(size: 13, weight: .semibold) }
+    private var compactSectionTitleFont: Font { .system(size: 12, weight: .semibold) }
 
-    private var compactSectionHeadingFont: Font { .system(size: 9, weight: .semibold) }
+    private var compactSectionHeadingFont: Font { .system(size: 8, weight: .semibold) }
 
-    private var compactModelNameFont: Font { .system(size: 9, weight: .semibold) }
+    private var compactModelNameFont: Font { .system(size: 8, weight: .semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 8) }
+    private var compactModelMetadataFont: Font { .system(size: 7) }
 
-    private var compactModelStatusFont: Font { .system(size: 8, weight: .semibold) }
+    private var compactModelStatusFont: Font { .system(size: 7, weight: .semibold) }
 
-    private var compactButtonLabelFont: Font { .system(size: 8, weight: .semibold) }
+    private var compactButtonLabelFont: Font { .system(size: 7, weight: .semibold) }
+
+    private var compactControlValueFont: Font { .system(size: 9, weight: .semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {
