@@ -25,7 +25,12 @@
         "Adds storm alerts.",
         "Improves hourly summary.",
         "Documents approved provider API boundaries."
-      ]
+      ],
+      "compatibilityRequirements": {
+        "requiredOAuthProviderKeys": [
+          "google"
+        ]
+      }
     },
     {
       "id": "marketplace-shortcut-daily-briefing",
@@ -49,7 +54,10 @@
         "Adds structured Shortcut output contracts.",
         "Includes demo inputs for daily briefing nodes.",
         "Documents callback payload expectations."
-      ]
+      ],
+      "compatibilityRequirements": {
+        "minimumIOSVersion": "17.0"
+      }
     },
     {
       "id": "marketplace-homekit-scene-guard",
@@ -73,8 +81,13 @@
         "Adds scene and accessory metadata.",
         "Requires visible confirmation before execution.",
         "Documents Home authorization boundaries."
-      ]
+      ],
+      "compatibilityRequirements": {
+        "minimumIOSVersion": "17.0",
+        "requiredEntitlements": [
+          "com.apple.developer.homekit"
+        ]
+      }
     }
   ]
 }
-

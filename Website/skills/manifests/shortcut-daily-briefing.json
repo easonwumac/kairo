@@ -4,7 +4,7 @@
     "Includes demo inputs for daily briefing nodes.",
     "Documents callback payload expectations."
   ],
-  "checksum": "21f5cdd9e97a1949af1011da9d8f675c1fa2d868e1e583610e7abbdce431d845",
+  "checksum": "6787b55ffdc406d222296a27430e313b34a3d4074c096335e8dcc7774a3c11f1",
   "checksumAlgorithm": "sha256",
   "packageVersion": "2026.6",
   "signature": {
@@ -25,6 +25,9 @@
     ],
     "source": "marketplace",
     "summary": "Bundles Shortcut input/output nodes for daily briefings, task extraction, and memory lookup.",
-    "version": "1.2.0"
+    "version": "1.2.0",
+    "compatibilityRequirements": {
+      "minimumIOSVersion": "17.0"
+    }
   }
 }

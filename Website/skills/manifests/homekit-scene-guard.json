@@ -4,7 +4,7 @@
     "Requires visible confirmation before execution.",
     "Documents Home authorization boundaries."
   ],
-  "checksum": "88d5c20601647865eac633c1e1b636f21bd3cfb3bd722dbe830ecd7d3ce161c6",
+  "checksum": "99115da81e844736f3024f76719d376d101f1329d6bd0b5ba7ae36aa80229f63",
   "checksumAlgorithm": "sha256",
   "packageVersion": "2026.6",
   "signature": {
@@ -25,6 +25,12 @@
     ],
     "source": "marketplace",
     "summary": "Wraps confirmed HomeKit scene and accessory controls with risk labels and visible approval.",
-    "version": "1.1.0"
+    "version": "1.1.0",
+    "compatibilityRequirements": {
+      "minimumIOSVersion": "17.0",
+      "requiredEntitlements": [
+        "com.apple.developer.homekit"
+      ]
+    }
   }
 }

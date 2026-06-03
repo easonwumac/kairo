@@ -505,6 +505,7 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(localModelFallback.contains("iOS live wiring keeps reply checks and benchmarks on the unavailable-runtime path until an App Store-compatible engine is explicitly implemented and verified on device."))
         XCTAssertTrue(readiness.contains("unknown/revoked/pending-publication/invalid signing keys"))
         XCTAssertTrue(readiness.contains("unknown, revoked, pending-publication, out-of-window, unsupported, or invalid P-256 signing keys"))
+        XCTAssertTrue(readiness.contains("unknown/revoked/pending-publication/out-of-window/invalid signing-key gating"))
         XCTAssertTrue(localModelFallback.contains("unknown, revoked, pending-publication, out-of-window, unsupported, or invalid signing keys"))
         XCTAssertTrue(localModelFallback.contains("production key material is absent, unpublished, or mismatched"))
         XCTAssertTrue(readme.contains("progress/cancel UI, and runtime-unavailable handling are in the beta path"))
@@ -618,6 +619,8 @@ final class SourceHealthTests: XCTestCase {
             XCTAssertTrue(source.contains("docs/CATALOG_RELEASE_CHECKLIST.md"))
         }
         XCTAssertTrue(skillManagement.contains("Publish the production marketplace trust-store key material"))
+        XCTAssertTrue(skillManagement.contains("Static marketplace seed entries and signed manifests carry compatibility requirements"))
+        XCTAssertTrue(skillManagement.contains("OAuth/provider readiness, HomeKit entitlement, and minimum iOS version"))
         XCTAssertTrue(skillManagement.contains("package tests cover prompt-context availability through the live effective catalog"))
         XCTAssertTrue(skillManagement.contains("Run real-device Access sign-off before App Review"))
         XCTAssertTrue(skillManagement.contains("Simulator UI smoke and package tests remain support evidence only"))

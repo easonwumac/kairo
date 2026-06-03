@@ -13,6 +13,7 @@ Kairo 的核心方向是把可操作能力包成可管理的 skills，並讓 mod
 - `AgentSkillManagerService.previewInstall(jsonString:)` decodes signed JSON manifests, validates them, and returns the installed version, incoming version, changelog, compatibility report, and whether the change is install, reinstall, update, or blocked downgrade.
 - `AgentSkillManagerService.installManifest(jsonString:)` still supports direct signed JSON install for service callers; the Access UI previews first, then installs the previewed manifest after user confirmation.
 - `AgentSkillMarketplaceCatalogService.defaultStandaloneRepository` fetches the published standalone `skills.json` catalog, maps entries into downloadable marketplace skills, and downloads signed manifests for preview.
+- Static marketplace seed entries and signed manifests carry compatibility requirements for OAuth/provider readiness, HomeKit entitlement, and minimum iOS version; package tests keep the index and manifest metadata aligned.
 - `CapabilityPromptContextBuilder` includes installed skills/tools so the model can propose named, supported tool packages.
 - `AgentToolInvocationPlanner` is the deterministic preview layer between natural-language requests and managed tools. It suggests only installed skills and official OAuth connector metadata, returns Shortcut/OAuth candidates as visible handoffs, and exposes action-backed skills such as HomeKit as `AgentAction` previews that still pass through `SafetyPolicyEngine`.
 - Chat responses persist and render `toolCandidates` separately from executable `proposedActions`, so users can inspect installed Shortcut/OAuth skill matches without Kairo silently running Apple Shortcuts or account actions.
@@ -68,4 +69,4 @@ The management website provides:
 1. Publish the production marketplace trust-store key material; `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` now define the publication and rotation/revocation release gate.
 2. Keep simulator UI smoke coverage for signed marketplace install/update, compatibility-blocked marketplace install, and user-created remove flows; package tests cover prompt-context availability through the live effective catalog.
 3. Run real-device Access sign-off before App Review. Simulator UI smoke and package tests remain support evidence only.
-4. Connect compatibility gates to production entitlement inspection and per-provider OAuth readiness details.
+4. Connect compatibility gates to production entitlement inspection and per-provider OAuth readiness details beyond the current package-tested seed metadata.

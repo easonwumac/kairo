@@ -4,7 +4,7 @@
     "Improves hourly summary.",
     "Documents approved provider API boundaries."
   ],
-  "checksum": "48c8b83f70a4f9c4deec6932b57e876083a6071706d09c157d17f0e751f8e033",
+  "checksum": "17d0b3b92523e84ae814e8b56578663c54a8753b52c236a6e95a9abd29d6447b",
   "checksumAlgorithm": "sha256",
   "packageVersion": "2026.6",
   "signature": {
@@ -25,6 +25,11 @@
     ],
     "source": "marketplace",
     "summary": "Summarizes weather through an approved provider API.",
-    "version": "2.1.0"
+    "version": "2.1.0",
+    "compatibilityRequirements": {
+      "requiredOAuthProviderKeys": [
+        "google"
+      ]
+    }
   }
 }

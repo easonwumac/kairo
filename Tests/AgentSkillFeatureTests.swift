@@ -30,6 +30,7 @@ final class AgentSkillFeatureTests: XCTestCase {
         XCTAssertTrue(index.skills.allSatisfy { !$0.changelog.isEmpty })
         XCTAssertTrue(index.skills.allSatisfy { !$0.screenshots.isEmpty })
         XCTAssertTrue(index.skills.allSatisfy { !$0.riskTier.isEmpty })
+        XCTAssertTrue(index.skills.allSatisfy { $0.compatibilityRequirements != nil })
 
         let weatherSkill = try XCTUnwrap(index.skills.first { $0.id == "marketplace-weather-briefing" })
         XCTAssertEqual(weatherSkill.displayName, "Weather Briefing")
@@ -39,6 +40,11 @@ final class AgentSkillFeatureTests: XCTestCase {
         XCTAssertEqual(weatherSkill.installSurface, "Access Skill Manager")
         XCTAssertTrue(weatherSkill.permissions.contains("externalConnectors"))
         XCTAssertTrue(weatherSkill.changelog.contains("Adds storm alerts."))
+        XCTAssertEqual(weatherSkill.compatibilityRequirements?.requiredOAuthProviderKeys, ["google"])
+
+        let homeKitSkill = try XCTUnwrap(index.skills.first { $0.id == "marketplace-homekit-scene-guard" })
+        XCTAssertEqual(homeKitSkill.compatibilityRequirements?.minimumIOSVersion, "17.0")
+        XCTAssertEqual(homeKitSkill.compatibilityRequirements?.requiredEntitlements, ["com.apple.developer.homekit"])
     }
 
     func testSkillMarketplaceManifestIsImportableBySkillManager() throws {
@@ -60,6 +66,7 @@ final class AgentSkillFeatureTests: XCTestCase {
             XCTAssertNoThrow(try manifest.validateForInstall())
             XCTAssertEqual(manifest.installableSkill.source, .marketplace)
             XCTAssertEqual(manifest.installableSkill.installationStatus, .installed)
+            XCTAssertEqual(manifest.skill.compatibilityRequirements, entry.compatibilityRequirements)
         }
 
         let manifestJSON = try String(
@@ -73,6 +80,7 @@ final class AgentSkillFeatureTests: XCTestCase {
         XCTAssertEqual(manifest.skill.version, "2.1.0")
         XCTAssertEqual(manifest.packageVersion, "2026.6")
         XCTAssertEqual(manifest.signature?.keyID, "kairo-marketplace-2026")
+        XCTAssertEqual(manifest.skill.compatibilityRequirements.requiredOAuthProviderKeys, ["google"])
         XCTAssertEqual(manifest.changelog, [
             "Adds storm alerts.",
             "Improves hourly summary.",
@@ -234,6 +242,7 @@ final class AgentSkillFeatureTests: XCTestCase {
         var installSurface: String
         var changelog: [String]
         var screenshots: [String]
+        var compatibilityRequirements: AgentSkillCompatibilityRequirements?
     }
 }
 
