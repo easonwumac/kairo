@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct LocalModelsCompactView: View {
-    private let starterModelRowLimit = 2
+    private let starterModelRowLimit = 3
     @State private var showsAllModelRows = false
 
     let localModelStatus: LocalModelSettingsStatus
@@ -27,7 +27,7 @@ struct LocalModelsCompactView: View {
                         .fontWeight(.semibold)
                         .accessibilityIdentifier("settings.models.local")
 
-                    Text("Starter list: Qwen plus one popular alternative. Downloads stay user-approved and outside the app bundle.")
+                    Text("Starter set: Qwen, Llama, and Gemma. Downloads require approval.")
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -273,7 +273,7 @@ struct LocalModelsCompactView: View {
             Text(row.manifestTransparencyText)
                 .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary.opacity(0.85))
-                .lineLimit(2)
+                .lineLimit(1)
                 .truncationMode(.tail)
                 .accessibilityIdentifier("settings.models.\(row.modelID).manifest")
 
@@ -288,7 +288,7 @@ struct LocalModelsCompactView: View {
                 Text(benchmarkSummaryText)
                     .font(compactModelMetadataFont)
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                    .lineLimit(1)
                     .truncationMode(.tail)
                     .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
             }

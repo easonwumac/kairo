@@ -310,12 +310,14 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
 public extension LocalModelCatalog {
     static let kairoStarterModelIDs = [
         "qwen3-5-0-8b-q4-k-m",
-        "llama3-2-1b-instruct-q4-k-m"
+        "llama3-2-1b-instruct-q4-k-m",
+        "gemma3-1b-it-q4-k-m"
     ]
 
     static let kairoStarterModels: [LocalModelManifest] = [
         .qwen35Tiny,
-        .llama32OneBInstruct
+        .llama32OneBInstruct,
+        .gemma3OneBIt
     ]
 
     static let kairoDefault = LocalModelCatalog(

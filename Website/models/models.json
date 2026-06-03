@@ -124,6 +124,49 @@
       "updatedAt": "2026-06-02T00:00:00Z",
       "safetyPolicyVersion": "2026.1",
       "deprecated": false
+    },
+    {
+      "id": "gemma3-1b-it-q4-k-m",
+      "displayName": "Gemma 3 1B IT Q4_K_M",
+      "family": "Gemma 3",
+      "version": "1.0",
+      "parameterCount": "1B",
+      "quantization": "Q4_K_M",
+      "runtime": "gguf",
+      "fileSizeBytes": 806058240,
+      "installedSizeBytes": 1258291200,
+      "contextWindow": 32768,
+      "tokenizerID": "gemma3-tokenizer",
+      "licenseName": "Gemma Terms of Use",
+      "licenseURL": "https://ai.google.dev/gemma/terms",
+      "minOSVersion": "17.0",
+      "minDeviceClass": "A15",
+      "minRAMGB": 4,
+      "supportedLocales": [
+        "en",
+        "zh-Hant"
+      ],
+      "capabilities": [
+        "drafts",
+        "summarization",
+        "simpleQuestionAnswer",
+        "offlineChat",
+        "rewriting",
+        "extraction"
+      ],
+      "disallowedCapabilities": [
+        "toolUse",
+        "webCurrentInfo",
+        "codeExecution",
+        "accountActions",
+        "regulatedAdvice"
+      ],
+      "downloadURL": "https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf",
+      "sha256": "8ccc5cd1f1b3602548715ae25a66ed73fd5dc68a210412eea643eb20eb75a135",
+      "createdAt": "2026-06-02T00:00:00Z",
+      "updatedAt": "2026-06-02T00:00:00Z",
+      "safetyPolicyVersion": "2026.1",
+      "deprecated": false
     }
   ],
   "schemaVersion": 1,
