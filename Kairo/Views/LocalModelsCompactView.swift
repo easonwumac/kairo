@@ -294,7 +294,7 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactButtonGridColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 104), spacing: 7, alignment: .leading)]
+        [GridItem(.adaptive(minimum: 92), spacing: 6, alignment: .leading)]
     }
 
     private var compactModelNameFont: Font { .caption2 }
@@ -350,13 +350,14 @@ struct LocalModelsCompactView: View {
             Label(title, systemImage: systemImage)
                 .font(compactButtonLabelFont)
                 .fontWeight(.semibold)
+                .imageScale(.small)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 5)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .foregroundStyle(tint)
-                .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+                .background(tint.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(accessibilityIdentifier)

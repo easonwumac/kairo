@@ -26,22 +26,36 @@ public struct AutomationsView: View {
     }
 
     public var body: some View {
-        NavigationStack {
-            Form {
-                Section("Recipe Center") {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Automations")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+
+                    Text("Kairo recipes, Shortcut templates, and node demos stay user-approved and visible.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                automationSection("Recipe Center") {
                     Text("Kairo internal recipe center. Kairo creates internal recipes and does not create Apple Shortcuts silently.")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
 
                     Button("Add Sample Recipes") {
                         Task { await seedSampleRecipes() }
                     }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                     .accessibilityIdentifier("automations.seed-samples")
                 }
+                .accessibilityIdentifier("automations.recipe-center")
 
-                Section("Shortcut Templates") {
+                automationSection("Shortcut Templates") {
                     Text(shortcutTemplateRegistry.manualInstallDisclaimer)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("automations.shortcut-template.disclaimer")
 
@@ -51,9 +65,9 @@ public struct AutomationsView: View {
                 }
                 .accessibilityIdentifier("automations.shortcut-templates")
 
-                Section("Shortcut Node Demos") {
+                automationSection("Shortcut Node Demos") {
                     Text("Use these as user-installed Shortcut node examples. Each demo passes explicit input into Kairo and returns structured output for downstream Shortcut steps.")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
 
                     ForEach(ShortcutDemoCatalog.default.recipes) { recipe in
@@ -62,10 +76,10 @@ public struct AutomationsView: View {
                 }
                 .accessibilityIdentifier("automations.shortcut-demos")
 
-                Section("Recipes") {
+                automationSection("Recipes") {
                     if recipes.isEmpty {
                         Text("No internal recipes yet.")
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
 
@@ -76,19 +90,39 @@ public struct AutomationsView: View {
                 .accessibilityIdentifier("automations.list")
 
                 if let message {
-                    Section("Status") {
+                    automationSection("Status") {
                         Text(message)
-                            .font(.caption)
+                            .font(.caption2)
                             .accessibilityIdentifier("automations.message")
                     }
                 }
             }
-            .navigationTitle("Automations")
-            .accessibilityIdentifier("automations.recipe-center")
-            .task {
-                await loadRecipes()
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 18)
+            .padding(.top, 20)
+            .padding(.bottom, 32)
         }
+        .background(Color(.sRGB, white: 0.98, opacity: 1).ignoresSafeArea())
+        .task {
+            await loadRecipes()
+        }
+    }
+
+    private func automationSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            automationSectionHeader(title)
+            content()
+            Divider()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func automationSectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.caption)
+            .fontWeight(.semibold)
+            .foregroundStyle(.secondary)
+            .textCase(.none)
     }
 
     private func shortcutTemplateRow(_ template: ShortcutTemplate) -> some View {

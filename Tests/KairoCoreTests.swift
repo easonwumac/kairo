@@ -2281,6 +2281,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))
         XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .caption2 }"))
         XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .caption2 }"))
+        XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 92)"))
+        XCTAssertTrue(compactView.contains(".imageScale(.small)"))
+        XCTAssertTrue(compactView.contains(".background(tint.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))"))
         XCTAssertTrue(compactView.contains(".font(compactModelNameFont)"))
         XCTAssertTrue(compactView.contains(".buttonStyle(.plain)"))
     }
@@ -2342,6 +2345,18 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(automationsView.contains(#""automations.shortcut-demo.\(recipe.id).output""#))
         XCTAssertTrue(automationsView.contains("settingsInputSummary"))
         XCTAssertTrue(automationsView.contains("settingsOutputSummary"))
+    }
+
+    func testAutomationsViewUsesCompactFullScreenScrollLayout() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let automationsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/AutomationsView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(automationsView.contains("ScrollView"))
+        XCTAssertTrue(automationsView.contains("automationSectionHeader"))
+        XCTAssertTrue(automationsView.contains("automationSection("))
+        XCTAssertTrue(automationsView.contains("Color(.sRGB, white: 0.98, opacity: 1).ignoresSafeArea()"))
+        XCTAssertFalse(automationsView.contains("Form {"))
+        XCTAssertFalse(automationsView.contains("automationPanel"))
     }
 
     func testChatViewDefinesPolishedComposerAccessibilityIdentifiers() throws {
