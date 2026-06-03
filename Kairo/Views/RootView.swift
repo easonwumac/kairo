@@ -146,7 +146,7 @@ public struct RootView: View {
 
             Spacer(minLength: 8)
 
-            if selectedSection != .models {
+            if selectedSection == .chat {
                 KairoStatusPill(title: "Auto", systemImage: "arrow.triangle.branch", tint: KairoDesign.blue)
             }
 
@@ -276,10 +276,10 @@ private struct BriefingInboxView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Today")
-                        .font(.largeTitle.bold())
-                    Text("Review what Kairo can safely help with before anything changes.")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Ready when you are")
+                        .font(.title.bold())
+                    Text("Start with one request. Kairo will ask before anything changes.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -289,10 +289,10 @@ private struct BriefingInboxView: View {
                 KairoGroupedSurface {
                     KairoActionRow(
                         title: "Ask Kairo",
-                        subtitle: "Start a chat with memory, routes, and safe actions available.",
+                        subtitle: "Chat, summarize, or prepare a draft.",
                         systemImage: "text.bubble",
                         tint: KairoDesign.blue,
-                        trailingText: "Open"
+                        trailingText: "Start"
                     ) {
                         selectSection(.chat)
                     }
@@ -301,71 +301,30 @@ private struct BriefingInboxView: View {
                     Divider().padding(.leading, 44)
 
                     KairoActionRow(
-                        title: "Review Queue",
-                        subtitle: "Reminder, calendar, and handoff drafts wait for confirmation.",
+                        title: "Review drafts",
+                        subtitle: "Confirm, edit, or cancel pending actions.",
                         systemImage: "checklist.checked",
                         tint: KairoDesign.amber,
                         trailingText: "3"
                     ) {
                         selectSection(.chat)
                     }
-                    .accessibilityIdentifier("home.review-queue")
+                    .accessibilityIdentifier("home.review-drafts")
 
                     Divider().padding(.leading, 44)
 
                     KairoActionRow(
                         title: "Memory",
-                        subtitle: "Search saved context or add a user-approved memory.",
+                        subtitle: "Save or search context you approved.",
                         systemImage: "books.vertical",
                         tint: KairoDesign.teal,
-                        trailingText: "Ready"
+                        trailingText: "Open"
                     ) {
                         selectSection(.memory)
                     }
                     .accessibilityIdentifier("home.memory")
                 }
-
-                KairoGroupedSurface {
-                    KairoActionRow(
-                        title: "Tools & Access",
-                        subtitle: "Skills, permissions, HomeKit demos, and compatibility gates.",
-                        systemImage: "switch.2",
-                        tint: KairoDesign.teal
-                    ) {
-                        selectSection(.access)
-                    }
-                    .accessibilityIdentifier("home.access")
-
-                    Divider().padding(.leading, 44)
-
-                    KairoActionRow(
-                        title: "Automations",
-                        subtitle: "Internal Kairo recipes and user-installed Shortcut templates.",
-                        systemImage: "square.stack.3d.up",
-                        tint: KairoDesign.amber
-                    ) {
-                        selectSection(.shortcuts)
-                    }
-                    .accessibilityIdentifier("home.automations")
-
-                    Divider().padding(.leading, 44)
-
-                    KairoActionRow(
-                        title: "Models",
-                        subtitle: "Cloud route, local fallback, downloads, and reply checks.",
-                        systemImage: "cpu",
-                        tint: KairoDesign.blue
-                    ) {
-                        selectSection(.models)
-                    }
-                    .accessibilityIdentifier("home.models")
-                }
-
-                HStack(spacing: 8) {
-                    KairoStatusPill(title: "No silent writes", systemImage: "hand.raised", tint: KairoDesign.amber)
-                    KairoStatusPill(title: "Public APIs", systemImage: "checkmark.shield", tint: KairoDesign.teal)
-                }
-                .accessibilityIdentifier("home.safety-pills")
+                .accessibilityIdentifier("home.primary-actions")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 18)
@@ -392,7 +351,7 @@ private enum RootSection: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .home:
-            return "Today"
+            return "Kairo"
         case .chat:
             return "Chat"
         case .memory:
@@ -413,7 +372,7 @@ private enum RootSection: String, CaseIterable, Identifiable {
     var subtitle: String {
         switch self {
         case .home:
-            return "Briefing inbox"
+            return "Ready"
         case .chat:
             return "Ask and review"
         case .memory:

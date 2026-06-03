@@ -2525,6 +2525,33 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(actionPreview.contains("Nothing changes until you confirm."))
     }
 
+    func testBriefingInboxStaysSimpleForMobileUse() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let rootView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(rootView.contains(#""home.primary-actions""#))
+        XCTAssertTrue(rootView.contains(#""home.ask-kairo""#))
+        XCTAssertTrue(rootView.contains(#""home.review-drafts""#))
+        XCTAssertTrue(rootView.contains(#""home.memory""#))
+        XCTAssertTrue(rootView.contains("Ready when you are"))
+        XCTAssertTrue(rootView.contains("Start with one request."))
+        XCTAssertFalse(rootView.contains(#""home.review-queue""#))
+        XCTAssertFalse(rootView.contains(#""home.access""#))
+        XCTAssertFalse(rootView.contains(#""home.automations""#))
+        XCTAssertFalse(rootView.contains(#""home.models""#))
+        XCTAssertFalse(rootView.contains(#""home.safety-pills""#))
+        XCTAssertFalse(rootView.contains(".font(.largeTitle.bold())"))
+    }
+
+    func testKairoActionRowsUseQuietNativeLineIcons() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let designSystem = try String(contentsOf: root.appendingPathComponent("Kairo/Views/KairoDesignSystem.swift"), encoding: .utf8)
+
+        XCTAssertTrue(designSystem.contains(".symbolRenderingMode(.hierarchical)"))
+        XCTAssertTrue(designSystem.contains(".frame(width: 28, height: 28)"))
+        XCTAssertFalse(designSystem.contains(".background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))"))
+    }
+
     func testAutomationsViewSurfacesShortcutDemoNodeContracts() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let automationsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/AutomationsView.swift"), encoding: .utf8)
