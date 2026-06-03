@@ -477,6 +477,15 @@ public struct PermissionHubView: View {
         } catch AgentSkillManifestValidationError.invalidSignature {
             skillManagerMessage = "Manifest signature is invalid."
             manifestInstallPreview = nil
+        } catch AgentSkillManifestValidationError.revokedSigningKey(_) {
+            skillManagerMessage = "Manifest signing key has been revoked."
+            manifestInstallPreview = nil
+        } catch AgentSkillManifestValidationError.signingKeyNotYetValid(_) {
+            skillManagerMessage = "Manifest signing key is not active yet."
+            manifestInstallPreview = nil
+        } catch AgentSkillManifestValidationError.signingKeyExpired(_) {
+            skillManagerMessage = "Manifest signing key has expired."
+            manifestInstallPreview = nil
         } catch {
             skillManagerMessage = "Unable to import manifest."
             manifestInstallPreview = nil
@@ -510,6 +519,12 @@ public struct PermissionHubView: View {
             skillManagerMessage = issues.map(\.message).joined(separator: "; ")
         } catch AgentSkillManifestValidationError.invalidSignature {
             skillManagerMessage = "Manifest signature is invalid."
+        } catch AgentSkillManifestValidationError.revokedSigningKey(_) {
+            skillManagerMessage = "Manifest signing key has been revoked."
+        } catch AgentSkillManifestValidationError.signingKeyNotYetValid(_) {
+            skillManagerMessage = "Manifest signing key is not active yet."
+        } catch AgentSkillManifestValidationError.signingKeyExpired(_) {
+            skillManagerMessage = "Manifest signing key has expired."
         } catch {
             skillManagerMessage = "Unable to import manifest."
         }
@@ -549,6 +564,15 @@ public struct PermissionHubView: View {
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.invalidSignature {
             skillManagerMessage = "Manifest signature is invalid."
+            manifestInstallPreview = nil
+        } catch AgentSkillManifestValidationError.revokedSigningKey(_) {
+            skillManagerMessage = "Manifest signing key has been revoked."
+            manifestInstallPreview = nil
+        } catch AgentSkillManifestValidationError.signingKeyNotYetValid(_) {
+            skillManagerMessage = "Manifest signing key is not active yet."
+            manifestInstallPreview = nil
+        } catch AgentSkillManifestValidationError.signingKeyExpired(_) {
+            skillManagerMessage = "Manifest signing key has expired."
             manifestInstallPreview = nil
         } catch {
             skillManagerMessage = "Unable to preview \(skill.displayName)."
