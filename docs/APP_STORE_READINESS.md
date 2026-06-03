@@ -31,18 +31,18 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 避免描述：
 
 - controls your entire iPhone
-- reads all apps
+- claims access to every app's private data
 - watches your screen in the background
 - automates any app UI
 - bypasses permissions
-- ChatGPT account takeover / web session reuse
+- ChatGPT browser account takeover or reuse of a user's browser session
 
 ## App Review Checklist
 
 ### Current release blocker summary
 
 - **Real device blocked:** `devicectl` currently lists paired devices as `unavailable`, so this pass did not produce real-device sign-off.
-- **Copy QA scope:** Review notes avoid claiming iOS production local inference, live HomeKit control, private cross-app data reads, arbitrary UI control, ChatGPT web-session reuse, or silent Apple Shortcuts creation.
+- **Copy QA scope:** Review notes avoid claiming iOS production local inference, live HomeKit control, private cross-app data reads, arbitrary UI control, reuse of a user's ChatGPT browser session, or silent Apple Shortcuts creation.
 - **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking, and package source-health tests parse the privacy manifest plus entitlement/review-note boundaries. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
 - **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
 - **Purpose string scope:** Beta app plist includes only currently exercised Calendar, Reminders, Contacts, and Notifications purpose strings; HomeKit, Location, and Photo Library purpose strings stay future-only until those capabilities ship.
@@ -275,6 +275,8 @@ Because no available real device was reachable, the following remain release-blo
 - [x] Focused regex secret scan 已於 2026-06-04 重跑，未在 tracked source/docs 中找到明顯 credential。
 
 ## Review notes draft
+
+Submission-ready review note copy lives in `docs/APP_REVIEW_NOTES.md`; keep this section aligned with that file before App Review upload.
 
 - Kairo is a chat-first iOS app that uses only public APIs, App Intents, Share Extension, BGTaskScheduler, official OAuth/API flows, and visible URL handoffs.
 - Shared content enters Kairo only through Share Extension, document/photo pickers, App Intents/Shortcuts, or official OAuth APIs. Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions.

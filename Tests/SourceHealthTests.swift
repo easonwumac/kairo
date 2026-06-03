@@ -407,22 +407,52 @@ final class SourceHealthTests: XCTestCase {
             contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"),
             encoding: .utf8
         )
+        let reviewNotes = try String(
+            contentsOf: root.appendingPathComponent("docs/APP_REVIEW_NOTES.md"),
+            encoding: .utf8
+        )
 
         XCTAssertTrue(entitlements.contains("com.apple.security.application-groups"))
         XCTAssertFalse(entitlements.contains("com.apple.developer.homekit"))
         XCTAssertTrue(readiness.contains("Privacy Labels scope"))
+        XCTAssertTrue(readiness.contains("docs/APP_REVIEW_NOTES.md"))
         XCTAssertTrue(readiness.contains("no collected data"))
         XCTAssertTrue(readiness.contains("no tracking"))
-        XCTAssertTrue(readiness.contains("Local model catalog/download/select/delete are present, but iOS production local inference is not complete."))
-        XCTAssertTrue(readiness.contains("HomeKit is limited to preview/demo/test scaffolding in this beta."))
-        XCTAssertTrue(readiness.contains("Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions."))
-        XCTAssertTrue(readiness.contains("Kairo does not create, edit, install, or reorder Apple Shortcuts silently."))
+
+        let requiredReviewBoundaries = [
+            "Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions.",
+            "On-device deletion is user-triggered for chat history, memory JSON/export content, downloaded local models, saved API keys, OAuth tokens, and metadata-only audit logs.",
+            "Local model catalog/download/select/delete are present, but iOS production local inference is not complete.",
+            "macOS/dev reply checks and benchmark numbers are not iPhone runtime proof.",
+            "HomeKit is limited to preview/demo/test scaffolding in this beta.",
+            "Kairo does not create, edit, install, or reorder Apple Shortcuts silently."
+        ]
+        for boundary in requiredReviewBoundaries {
+            XCTAssertTrue(readiness.contains(boundary), boundary)
+            XCTAssertTrue(reviewNotes.contains(boundary), boundary)
+        }
+
+        let forbiddenReviewClaims = [
+            "iOS production local inference is complete",
+            "live HomeKit control is complete",
+            "reads all apps",
+            "controls arbitrary app UI",
+            "ChatGPT web-session reuse",
+            "silently creates Apple Shortcuts"
+        ]
+        for claim in forbiddenReviewClaims {
+            XCTAssertFalse(reviewNotes.localizedCaseInsensitiveContains(claim), claim)
+        }
     }
 
     func testLocalModelDocsKeepRuntimeProofBoundaryExplicit() throws {
         let root = packageRootURL()
         let localModelFallback = try String(
             contentsOf: root.appendingPathComponent("docs/LOCAL_MODEL_FALLBACK.md"),
+            encoding: .utf8
+        )
+        let readme = try String(
+            contentsOf: root.appendingPathComponent("README.md"),
             encoding: .utf8
         )
         let readiness = try String(
@@ -438,6 +468,9 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(readiness.contains("macOS/dev reply checks and benchmark numbers are not iPhone runtime proof"))
         XCTAssertTrue(readiness.contains("iOS live wiring keeps the local-model reply check and benchmark runtime fail-closed until an App Store-compatible inference engine is implemented."))
         XCTAssertTrue(localModelFallback.contains("iOS live wiring keeps reply checks and benchmarks on the unavailable-runtime path until an App Store-compatible engine is explicitly implemented and verified on device."))
+        XCTAssertTrue(readme.contains("progress/cancel UI, and runtime-unavailable handling are in the beta path"))
+        XCTAssertTrue(readme.contains("remaining blockers are production signed catalog/public-key publication and real-device runtime proof"))
+        XCTAssertFalse(readme.contains("remaining gaps are progress/cancel UI"))
     }
 
     func testIOSLiveEnvironmentDoesNotWireExternalCommandLocalModelRuntime() throws {
