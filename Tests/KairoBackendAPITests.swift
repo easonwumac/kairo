@@ -609,6 +609,26 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(requestedCapabilities, [.notifications])
     }
 
+    func testAccessPermissionStatusFallbackCopyDoesNotBypassSystemPermissions() throws {
+        XCTAssertEqual(
+            CapabilityStatus.denied.accessFallbackMessage,
+            "Permission denied. Re-enable it in iOS Settings; Kairo will not bypass system permissions."
+        )
+        XCTAssertEqual(
+            CapabilityStatus.restricted.accessFallbackMessage,
+            "Permission restricted by iOS policy. Kairo will keep this capability unavailable."
+        )
+        XCTAssertEqual(
+            CapabilityStatus.unsupported.accessFallbackMessage,
+            "This capability is unavailable on this device or build."
+        )
+        XCTAssertEqual(
+            CapabilityStatus.unknown.accessFallbackMessage,
+            "Permission has not been requested yet. Kairo asks only when you start a matching action."
+        )
+        XCTAssertNil(CapabilityStatus.available.accessFallbackMessage)
+    }
+
     private func makeLocalModelSettingsService() async throws -> LocalModelSettingsService {
         let registryURL = temporaryFileURL(named: "install-registry.json")
         let settingsURL = temporaryFileURL(named: "local-model-settings.json")

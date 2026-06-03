@@ -46,6 +46,12 @@ public struct PermissionHubView: View {
                             Text(capability.description)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                            if let fallbackMessage = capability.status.accessFallbackMessage {
+                                Text(fallbackMessage)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityIdentifier("access.capability.\(capability.key.rawValue).status-fallback")
+                            }
                             HStack {
                                 if capability.isMVP {
                                     Text("MVP")

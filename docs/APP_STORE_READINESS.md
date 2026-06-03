@@ -225,6 +225,8 @@ Purpose-string alignment:
 
 ## Real-device beta sign-off
 
+Authoritative physical-device sign-off log: `docs/REAL_DEVICE_BETA_SIGNOFF.md`.
+
 Current `devicectl` check on 2026-06-04 found real devices listed but unavailable:
 
 - `iPad Air 5` (`EDC75137-2987-56F5-A08D-DB0D7A2B8F05`) unavailable.

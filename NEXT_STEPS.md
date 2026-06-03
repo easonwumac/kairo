@@ -7,6 +7,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
 1. Real-device beta sign-off.
    - Current `devicectl` check on 2026-06-04 listed the available test devices as `unavailable`, so no real-device sign-off was completed in this pass.
    - Re-run on a reachable physical iPhone or iPad: Chat / Memory / Access / Settings, Share Extension import, App Intents Ask / Save / Search, chat history restart persistence, local notification / reminder / calendar preview + confirm, and email / message / phone / web / maps handoff preview + confirm.
+   - Record physical-device results in `docs/REAL_DEVICE_BETA_SIGNOFF.md`.
    - Write device results back to `docs/APP_STORE_READINESS.md`; do not substitute simulator or package tests for real-device evidence.
 
 2. Permission-denied and App Review final QA.

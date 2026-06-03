@@ -63,4 +63,19 @@ public enum CapabilityStatus: String, Codable, Sendable {
     case denied
     case restricted
     case unsupported
+
+    public var accessFallbackMessage: String? {
+        switch self {
+        case .denied:
+            return "Permission denied. Re-enable it in iOS Settings; Kairo will not bypass system permissions."
+        case .restricted:
+            return "Permission restricted by iOS policy. Kairo will keep this capability unavailable."
+        case .unsupported:
+            return "This capability is unavailable on this device or build."
+        case .unknown:
+            return "Permission has not been requested yet. Kairo asks only when you start a matching action."
+        case .available:
+            return nil
+        }
+    }
 }

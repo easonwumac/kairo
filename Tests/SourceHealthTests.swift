@@ -480,6 +480,37 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(readme.contains("remaining gaps are progress/cancel UI"))
     }
 
+    func testRealDeviceSignOffDocsRequirePhysicalDeviceEvidence() throws {
+        let root = packageRootURL()
+        let signOff = try String(
+            contentsOf: root.appendingPathComponent("docs/REAL_DEVICE_BETA_SIGNOFF.md"),
+            encoding: .utf8
+        )
+        let readiness = try String(
+            contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"),
+            encoding: .utf8
+        )
+        let nextSteps = try String(
+            contentsOf: root.appendingPathComponent("NEXT_STEPS.md"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(readiness.contains("docs/REAL_DEVICE_BETA_SIGNOFF.md"))
+        XCTAssertTrue(nextSteps.contains("docs/REAL_DEVICE_BETA_SIGNOFF.md"))
+        XCTAssertTrue(signOff.contains("Do not mark any item as passed from simulator runs, package tests, source-health tests, screenshots from `tmp/`, or code inspection alone."))
+        XCTAssertTrue(signOff.contains("Required evidence must come from a reachable physical iPhone or iPad"))
+        XCTAssertTrue(signOff.contains("Simulator, package-test, and XCUITest evidence may be linked as supporting coverage only; it is not real-device sign-off."))
+        XCTAssertTrue(signOff.contains("Blocked - device unavailable"))
+        XCTAssertTrue(signOff.contains("Chat history restart persistence"))
+        XCTAssertTrue(signOff.contains("App Intents Ask"))
+        XCTAssertTrue(signOff.contains("App Intents Save"))
+        XCTAssertTrue(signOff.contains("App Intents Search"))
+        XCTAssertTrue(signOff.contains("Share Extension import"))
+        XCTAssertTrue(signOff.contains("Local notification preview + confirm"))
+        XCTAssertTrue(signOff.contains("Email handoff preview + confirm"))
+        XCTAssertFalse(signOff.contains("| Pass |"))
+    }
+
     func testIOSLiveEnvironmentDoesNotWireExternalCommandLocalModelRuntime() throws {
         let root = packageRootURL()
         let environmentSource = try String(

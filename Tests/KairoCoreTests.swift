@@ -3103,6 +3103,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(rootViewSource.contains("settingsMode: SettingsViewMode = .all"))
         XCTAssertTrue(permissionHubSource.contains("private let skillManagerService: AgentSkillManagerService?"))
         XCTAssertTrue(permissionHubSource.contains("private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?"))
+        XCTAssertTrue(permissionHubSource.contains("capability.status.accessFallbackMessage"))
+        XCTAssertTrue(permissionHubSource.contains(#""access.capability.\(capability.key.rawValue).status-fallback""#))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.catalog()"))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.disableSkill(id: skill.id)"))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.enableSkill(id: skill.id)"))
