@@ -16,6 +16,7 @@ public struct LocalModelRoutingAIProvider: AIProvider {
         let status = await localModelSettingsService.status()
         let context = await localModelSettingsService.routingContext(
             taskClass: Self.taskClass(for: request),
+            privacyModeEnabled: request.privacyMode == .privateChat,
             requiresToolUse: Self.requiresToolUse(request),
             requiresCurrentInfo: Self.requiresCurrentInfo(request),
             contextTokenEstimate: Self.estimatedTokenCount(for: request)

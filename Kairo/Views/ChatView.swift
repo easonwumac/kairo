@@ -211,6 +211,8 @@ public struct ChatView: View {
                 .accessibilityIdentifier("chat.reply-preview")
             }
 
+            privateChatControl
+
             HStack(alignment: .bottom, spacing: 10) {
                 toolMenu
 
@@ -265,6 +267,24 @@ public struct ChatView: View {
         .padding(.bottom, 12)
         .background(Color(.sRGB, white: 0.98, opacity: 0.96))
         .accessibilityIdentifier("chat.composer.surface")
+    }
+
+    private var privateChatControl: some View {
+        Toggle(isOn: Binding(
+            get: { viewModel.isPrivateChatEnabled },
+            set: { viewModel.setPrivateChatEnabled($0) }
+        )) {
+            Label("Private chat", systemImage: viewModel.isPrivateChatEnabled ? "lock.fill" : "lock")
+                .font(.caption.weight(.semibold))
+            Text("No memory context or tools; private prompts do not default to cloud.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .toggleStyle(.switch)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityIdentifier("chat.private-chat.toggle")
     }
 
     private var toolMenu: some View {

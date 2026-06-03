@@ -25,8 +25,12 @@ public actor AgentCore {
         self.integrationRegistry = integrationRegistry
     }
 
-    public func respond(to message: String, attachments: [ChatAttachment] = []) async throws -> AICompletionResponse {
-        let memories = try await memoryStore.search(query: message, limit: 8)
+    public func respond(
+        to message: String,
+        attachments: [ChatAttachment] = [],
+        privacyMode: ChatPrivacyMode = .standard
+    ) async throws -> AICompletionResponse {
+        let memories = privacyMode == .privateChat ? [] : try await memoryStore.search(query: message, limit: 8)
         let skillCatalog = try await skillCatalogProvider.catalog()
         let allowedCapabilities = capabilityRegistry.capabilities
             .filter { $0.status == .available || $0.status == .unknown }
@@ -41,7 +45,10 @@ public actor AgentCore {
             skillCatalog: skillCatalog,
             integrationRegistry: integrationRegistry,
             safetyPolicyEngine: safetyPolicyEngine
-        ).plan(for: AgentToolInvocationRequest(userText: message))
+        ).plan(for: AgentToolInvocationRequest(
+            userText: message,
+            allowsToolUse: privacyMode != .privateChat
+        ))
 
         let request = AICompletionRequest(
             systemPrompt: Self.systemPrompt,
@@ -49,22 +56,31 @@ public actor AgentCore {
             memoryContext: memories,
             allowedCapabilities: allowedCapabilities,
             attachmentContext: attachments,
-            toolContext: toolContext
+            toolContext: toolContext,
+            privacyMode: privacyMode
         )
 
         let response = try await aiProvider.complete(request)
+        let toolCandidates = Self.filteredToolCandidates(
+            toolPlan.candidates,
+            privacyMode: privacyMode
+        )
         let proposedActions = Self.mergeActionPreviews(
             modelActions: response.proposedActions,
-            toolActions: toolPlan.proposedActions
+            toolActions: toolCandidates.compactMap(\.action)
         )
         let safeActions = proposedActions.filter { action in
             safetyPolicyEngine.evaluate(action).allowed
         }
+        let privacyFilteredActions = Self.filteredActions(
+            safeActions,
+            privacyMode: privacyMode
+        )
 
         return AICompletionResponse(
             message: response.message,
-            proposedActions: safeActions,
-            toolCandidates: toolPlan.candidates
+            proposedActions: privacyFilteredActions,
+            toolCandidates: toolCandidates
         )
     }
 
@@ -101,5 +117,28 @@ public actor AgentCore {
         }
 
         return merged
+    }
+
+    private static func filteredActions(
+        _ actions: [AgentAction],
+        privacyMode: ChatPrivacyMode
+    ) -> [AgentAction] {
+        guard privacyMode == .privateChat else {
+            return actions
+        }
+        return actions.filter { $0.kind != .saveMemory }
+    }
+
+    private static func filteredToolCandidates(
+        _ candidates: [AgentToolInvocationCandidate],
+        privacyMode: ChatPrivacyMode
+    ) -> [AgentToolInvocationCandidate] {
+        guard privacyMode == .privateChat else {
+            return candidates
+        }
+        return candidates.filter { candidate in
+            !candidate.requiredCapabilities.contains(.memory)
+            && candidate.action?.kind != .saveMemory
+        }
     }
 }

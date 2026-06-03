@@ -1,5 +1,10 @@
 import Foundation
 
+public enum ChatPrivacyMode: String, Codable, Equatable, Sendable {
+    case standard
+    case privateChat
+}
+
 public struct AICompletionRequest: Codable, Equatable, Sendable {
     public var systemPrompt: String
     public var userPrompt: String
@@ -7,6 +12,7 @@ public struct AICompletionRequest: Codable, Equatable, Sendable {
     public var allowedCapabilities: [CapabilityKey]
     public var attachmentContext: [ChatAttachment]
     public var toolContext: String?
+    public var privacyMode: ChatPrivacyMode
 
     public init(
         systemPrompt: String,
@@ -14,7 +20,8 @@ public struct AICompletionRequest: Codable, Equatable, Sendable {
         memoryContext: [MemoryRecord] = [],
         allowedCapabilities: [CapabilityKey] = [],
         attachmentContext: [ChatAttachment] = [],
-        toolContext: String? = nil
+        toolContext: String? = nil,
+        privacyMode: ChatPrivacyMode = .standard
     ) {
         self.systemPrompt = systemPrompt
         self.userPrompt = userPrompt
@@ -22,6 +29,7 @@ public struct AICompletionRequest: Codable, Equatable, Sendable {
         self.allowedCapabilities = allowedCapabilities
         self.attachmentContext = attachmentContext
         self.toolContext = toolContext
+        self.privacyMode = privacyMode
     }
 }
 

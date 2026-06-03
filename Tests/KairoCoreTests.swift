@@ -23,6 +23,69 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(results.first?.id, memory.id)
     }
 
+    func testAgentCorePrivateChatOmitsMemoryContextAndMemoryWrites() async throws {
+        let store = InMemoryMemoryStore(seed: [
+            MemoryRecord(
+                title: "Launch secret",
+                summary: "launch plan",
+                content: "launch code alpha",
+                source: .manual
+            )
+        ])
+        let saveMemoryAction = AgentAction(
+            kind: .saveMemory,
+            title: "Save Memory",
+            rationale: "Do not expose this in private chat.",
+            payload: .text("launch code alpha"),
+            riskTier: .tier2LowRiskWrite
+        )
+        let provider = CapturingAIProvider(response: AICompletionResponse(
+            message: "Private response",
+            proposedActions: [saveMemoryAction]
+        ))
+        let skillCatalog = AgentSkillCatalog(skills: [
+            AgentSkill(
+                id: "private-memory-writer",
+                displayName: "Private Memory Writer",
+                summary: "Should be filtered in private chat.",
+                kind: .custom,
+                source: .userCreated,
+                installationStatus: .installed,
+                requiredCapabilities: [.memory],
+                action: saveMemoryAction
+            )
+        ])
+        let agent = AgentCore(memoryStore: store, aiProvider: provider, skillCatalog: skillCatalog)
+
+        let response = try await agent.respond(to: "remember launch code alpha", privacyMode: .privateChat)
+        let request = await provider.capturedRequest()
+        let capturedRequest = try XCTUnwrap(request)
+
+        XCTAssertEqual(capturedRequest.privacyMode, .privateChat)
+        XCTAssertTrue(capturedRequest.memoryContext.isEmpty)
+        XCTAssertFalse(response.proposedActions.contains { $0.kind == .saveMemory })
+        XCTAssertTrue(response.toolCandidates.isEmpty)
+    }
+
+    func testAgentCoreStandardChatIncludesMemoryContext() async throws {
+        let memory = MemoryRecord(
+            title: "Project Kairo",
+            summary: "launch plan",
+            content: "launch code alpha",
+            source: .manual
+        )
+        let store = InMemoryMemoryStore(seed: [memory])
+        let provider = CapturingAIProvider(response: AICompletionResponse(message: "Standard response"))
+        let agent = AgentCore(memoryStore: store, aiProvider: provider)
+
+        _ = try await agent.respond(to: "launch")
+        let request = await provider.capturedRequest()
+        let capturedRequest = try XCTUnwrap(request)
+
+        XCTAssertEqual(capturedRequest.privacyMode, .standard)
+        XCTAssertEqual(capturedRequest.memoryContext.map(\.id), [memory.id])
+    }
+
     func testJSONFileMemoryStorePersistsSavedMemory() async throws {
         let fileURL = temporaryFileURL(named: "memory-store.json")
         let memory = MemoryRecord(
@@ -4355,6 +4418,28 @@ private actor MockActionExecutor: ActionExecutor {
         default:
             return ActionExecutionResult(completed: true, message: "Scheduled notification.", createdIdentifier: "notification-id")
         }
+    }
+}
+
+private actor CapturingAIProvider: AIProvider {
+    private(set) var lastRequest: AICompletionRequest?
+    private let response: AICompletionResponse
+
+    init(response: AICompletionResponse) {
+        self.response = response
+    }
+
+    func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
+        lastRequest = request
+        return response
+    }
+
+    func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
+        AIEmbeddingResponse(vector: [])
+    }
+
+    func capturedRequest() -> AICompletionRequest? {
+        lastRequest
     }
 }
 

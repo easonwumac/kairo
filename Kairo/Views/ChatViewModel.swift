@@ -14,7 +14,9 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var actionResultMessage: String?
     @Published public private(set) var replyTarget: ChatMessage?
     @Published public private(set) var providerRouteStatus: ChatProviderRouteStatus
+    @Published public private(set) var privacyMode: ChatPrivacyMode = .standard
     public var canEditProviderRoute: Bool { localModelSettingsService != nil }
+    public var isPrivateChatEnabled: Bool { privacyMode == .privateChat }
 
     private let historyStore: ChatHistoryStore
     private let shareIngestionQueue: ShareIngestionQueue
@@ -147,7 +149,7 @@ public final class ChatViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         do {
-            let response = try await agent.respond(to: text, attachments: attachments)
+            let response = try await agent.respond(to: text, attachments: attachments, privacyMode: privacyMode)
             let assistantMessage = ChatMessage(
                 role: .assistant,
                 text: response.message,
@@ -203,6 +205,11 @@ public final class ChatViewModel: ObservableObject {
         } catch {
             errorMessage = "無法更新模型路由：\(error.localizedDescription)"
         }
+    }
+
+    public func setPrivateChatEnabled(_ enabled: Bool) {
+        privacyMode = enabled ? .privateChat : .standard
+        errorMessage = nil
     }
 
     public func cancelPendingAction() {

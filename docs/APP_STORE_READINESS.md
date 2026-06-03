@@ -70,9 +70,9 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 ### 3. Memory privacy
 
 - [x] Memory Center 可查看、刪除與匯出記憶；manual edit remains outside the current beta scope unless added explicitly.
-- [ ] Private chat 不寫入長期記憶。
+- [x] Private chat 不查詢/帶入 long-term memory context，且會過濾 `saveMemory` action/tool candidates；package tests cover this, not real-device evidence.
 - [x] 刪除記憶會在 JSON store 標記刪除，且 purge path 可從磁碟移除 deleted records；目前沒有 production embedding index。
-- [ ] 敏感資料預設不送雲端。
+- [x] Private chat request metadata sets provider routing privacy mode; without a selected local model it fails closed instead of calling cloud completion. Package tests cover this, not real-device evidence.
 - [x] OpenAI/API key 只存 Keychain。
 
 ### 4. AI action safety

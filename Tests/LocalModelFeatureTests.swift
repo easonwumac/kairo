@@ -1245,6 +1245,29 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(decision, ProviderRouteDecision(route: .cloud, reason: .localIncapable))
     }
 
+    func testLocalModelRoutingProviderFailsClosedForPrivateChatWithoutLocalModel() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .automatic,
+            installedAndSelectedModelID: nil
+        )
+        let cloudProvider = RecordingAIProvider()
+        let provider = LocalModelRoutingAIProvider(
+            cloudProvider: cloudProvider,
+            localModelSettingsService: service
+        )
+        let request = AICompletionRequest(
+            systemPrompt: "system",
+            userPrompt: "Summarize this sensitive note",
+            privacyMode: .privateChat
+        )
+
+        await XCTAssertThrowsErrorAsync(try await provider.complete(request)) { error in
+            XCTAssertEqual(error as? AIProviderError, .unsupported)
+        }
+        let completionCallCount = await cloudProvider.completionCalls()
+        XCTAssertEqual(completionCallCount, 0)
+    }
+
     private func temporaryFileURL(named name: String) -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -1467,6 +1490,10 @@ private actor RecordingAIProvider: AIProvider {
     func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
         _ = request
         return AIEmbeddingResponse(vector: [0])
+    }
+
+    func completionCalls() -> Int {
+        completionCallCount
     }
 }
 
