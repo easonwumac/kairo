@@ -72,7 +72,7 @@ Primary product shape:
 
 2. Run device and App Review verification.
   - 2026-06-03 baseline completed: `swift test`, `xcodegen generate`, and 18 focused simulator smoke tests covering Chat launch, local model catalog/download preview, Shortcut/App Intent demo surfaces, Recipe preview/run, Skill Manager compatibility/search, OAuth readiness, and 9 preview+confirm action paths all passed.
-  - Memory save/search/delete/export, Share Extension import, App Intent registry/type coverage plus Save/Search node runtime, live Skill Manager effective catalog, local model signing-key/checksum/cancel/delete/runtime-unavailable paths, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed no-cloud routing are currently covered by package tests.
+  - Memory save/search/delete/export, Share Extension import, App Intent registry/type coverage plus Ask/Save/Search node runtime, live Skill Manager effective catalog, local model signing-key/checksum/cancel/delete/runtime-unavailable paths, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed no-cloud routing are currently covered by package tests.
   - Remaining sign-off gaps: real-device Chat / Memory / Access / Settings / Share Extension / App Intents smoke.
   - Keep App Intent/Shortcut device QA focused on existing beta nodes.
 

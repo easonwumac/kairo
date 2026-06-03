@@ -799,6 +799,28 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(try output.encodedJSONString().contains(memoryID.uuidString))
     }
 
+    func testShortcutAskNodeReturnsMemoryBackedAnswerForAppIntentFlow() async throws {
+        let memory = MemoryRecord(
+            title: "Kairo Review Notes",
+            summary: "Beta review focus is smoke tests, privacy copy, and confirmation safety.",
+            content: "Prioritize smoke tests, privacy copy, and confirmation safety for beta review.",
+            source: .appIntent
+        )
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore(seed: [memory]))
+
+        let output = try await runtime.run(.ask, input: ShortcutNodeInput(
+            text: "privacy copy",
+            sourceName: "Ask Kairo"
+        ))
+
+        XCTAssertEqual(output.kind, .ask)
+        XCTAssertEqual(output.fields["answer"], memory.summary)
+        XCTAssertEqual(output.memoryMatches.map(\.id), [memory.id])
+        XCTAssertEqual(output.memoryMatches.first?.summary, memory.summary)
+        XCTAssertEqual(output.displayText, memory.summary)
+        XCTAssertTrue(output.proposedActions.isEmpty)
+    }
+
     func testShortcutSearchMemoryNodeReturnsMatchesForDownstreamShortcutSteps() async throws {
         let memory = MemoryRecord(
             title: "Kairo Shortcut Recipes",
