@@ -40,6 +40,7 @@ struct KairoApp: App {
                             let uiTestingEnvironment = try await KairoEnvironment.uiTesting(
                                 resetPersistentState: arguments.contains("--reset-ui-testing-data"),
                                 seedInstalledLocalModel: arguments.contains("--ui-testing-installed-local-model"),
+                                seedInstalledWeatherSkill: arguments.contains("--ui-testing-installed-weather-skill"),
                                 seedExpandedLocalModelCatalog: arguments.contains("--ui-testing-expanded-local-model-catalog")
                             )
                             environment = uiTestingEnvironment

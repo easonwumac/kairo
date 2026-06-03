@@ -504,6 +504,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "access.skill.shortcut-save-shared-text.disable",
                 "access.skill.shortcut-save-shared-text.enable",
                 "access.skill.marketplace-weather-briefing.install",
+                "access.skill.marketplace-weather-briefing.update",
                 "access.skill.marketplace-qwen-oauth-workflow.install",
                 "access.skills.message",
                 "access.skills.manifest-preview",

@@ -340,6 +340,7 @@ extension KairoAppSmokeUITests {
     func relaunchForUITesting(
         initialSection: String? = nil,
         seedInstalledLocalModel: Bool = false,
+        seedInstalledWeatherSkill: Bool = false,
         seedExpandedLocalModelCatalog: Bool = false,
         settingsShortcutDemosOnly: Bool = false
     ) {
@@ -349,6 +350,9 @@ extension KairoAppSmokeUITests {
         app.launchArguments.append("--reset-ui-testing-data")
         if seedInstalledLocalModel {
             app.launchArguments.append("--ui-testing-installed-local-model")
+        }
+        if seedInstalledWeatherSkill {
+            app.launchArguments.append("--ui-testing-installed-weather-skill")
         }
         if seedExpandedLocalModelCatalog {
             app.launchArguments.append("--ui-testing-expanded-local-model-catalog")

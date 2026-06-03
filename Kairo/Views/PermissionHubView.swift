@@ -81,7 +81,7 @@ public struct PermissionHubView: View {
                         skillManagerRow(skill)
                     }
 
-                    if normalizedSkillSearchText.isEmpty, let manifestInstallPreview {
+                    if let manifestInstallPreview {
                         manifestPreview(manifestInstallPreview)
                     }
                 } header: {
@@ -274,11 +274,12 @@ public struct PermissionHubView: View {
             Text(manifestInstallPreview.summary)
                 .font(.caption)
                 .fontWeight(.medium)
-                .accessibilityIdentifier("access.skills.manifest-preview")
+                .accessibilityIdentifier("access.skills.manifest-preview.summary")
 
             Text(manifestPreviewVersionSummary(manifestInstallPreview))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier("access.skills.manifest-preview.version")
 
             Text(manifestInstallPreview.compatibilityReport.summary)
                 .font(.caption2)
@@ -296,11 +297,13 @@ public struct PermissionHubView: View {
                 Text("No changelog provided.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("access.skills.manifest-preview.changelog.empty")
             } else {
                 ForEach(manifestInstallPreview.changelog, id: \.self) { item in
                     Text("- \(item)")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("access.skills.manifest-preview.changelog")
                 }
             }
 
@@ -318,6 +321,8 @@ public struct PermissionHubView: View {
             )
             .accessibilityIdentifier("access.skills.manifest-preview.confirm")
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("access.skills.manifest-preview")
     }
 
     private func manifestPreviewVersionSummary(_ manifestInstallPreview: AgentSkillInstallPreview) -> String {
@@ -362,6 +367,17 @@ public struct PermissionHubView: View {
                     }
                     .accessibilityIdentifier("access.skill.\(skill.id).install")
                 case .installed:
+                    if skill.source == .marketplace, skill.downloadURL != nil {
+                        Button {
+                            Task {
+                                await installSkill(skill)
+                            }
+                        } label: {
+                            Label("Preview Update", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                        .accessibilityIdentifier("access.skill.\(skill.id).update")
+                    }
+
                     Button {
                         Task {
                             await disableSkill(skill)

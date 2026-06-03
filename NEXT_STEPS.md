@@ -23,7 +23,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
 4. Skill Manager / marketplace production hardening.
    - Publish production marketplace trust-store key material and a rotation/revocation runbook; app-side trust keys now carry active/revoked metadata and validity windows.
    - User-created skill drafts now require explicit capability selection and confirmation policy; keep this invariant covered.
-   - Add full UI/e2e coverage for signed skill update flows; remove flow now has user-created draft smoke coverage.
+   - Signed skill update and user-created remove flows now have simulator UI smoke coverage; keep these invariants covered without treating them as real-device sign-off.
    - Preserve the invariant that compatibility-blocked skills never become executable tools.
 
 5. Release hygiene before each commit and submission.

@@ -18,7 +18,7 @@ Kairo 的核心方向是把可操作能力包成可管理的 skills，並讓 mod
 - Chat responses persist and render `toolCandidates` separately from executable `proposedActions`, so users can inspect installed Shortcut/OAuth skill matches without Kairo silently running Apple Shortcuts or account actions.
 - Access shows a Skill Manager section backed by the app environment when available, with local user-created draft creation, marketplace refresh, marketplace install preview, signed manifest preview/import, built-in Shortcut demo skills, and installed, available, and disabled skill states with install/disable/enable/remove affordances.
 - Access disables manifest confirmation when compatibility is blocked. The user still sees why: missing iOS version, entitlement, OAuth provider, or local model download.
-- `KairoEnvironment.uiTesting(resetPersistentState:)` gives XCUITest a deterministic file-backed Skill Manager and static marketplace responses for refresh, install preview, compatibility-blocked install, confirm install, disable/enable, and HomeKit preview flows.
+- `KairoEnvironment.uiTesting(resetPersistentState:)` gives simulator XCUITest a deterministic file-backed Skill Manager and static marketplace responses for refresh, install preview, signed update preview/confirm, compatibility-blocked install, confirm install, disable/enable, and HomeKit preview flows.
 - HomeKit skills still require entitlement, Home authorization, action preview, and explicit confirmation before execution.
 
 ## Skill package requirements
@@ -65,6 +65,6 @@ The management website provides:
 
 ## Near-term implementation order
 
-1. Expand UI/e2e interaction coverage to signed text import, update, remove, and prompt-context availability. Chat now has HomeKit action-preview and Shortcut tool-candidate e2e coverage; Access now covers compatibility-blocked marketplace install.
+1. Expand UI/e2e interaction coverage to signed text import and prompt-context availability. Chat now has HomeKit action-preview and Shortcut tool-candidate e2e coverage; Access now has simulator UI coverage for signed marketplace install/update, compatibility-blocked marketplace install, and user-created remove flows.
 2. Publish the production marketplace trust-store key material and rotation runbook.
 3. Connect compatibility gates to production entitlement inspection and per-provider OAuth readiness details.

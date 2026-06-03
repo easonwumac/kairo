@@ -10,7 +10,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 | Memory | Implemented | Save/search/delete/export exists; deleted JSON records can be purged from disk. |
 | Share Extension ingestion | Implemented | Text/URL/image/PDF/file metadata imports into Chat; extension is queue-only and action-free. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA. |
-| Skill Manager | Scaffolded | Access lifecycle exists; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
+| Skill Manager | Scaffolded | Access lifecycle exists; signed marketplace install/update, compatibility-blocked install, and user-created remove flows have simulator XCUITest smoke coverage; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
 | Email / Messages / Phone / Web / Maps handoffs | Implemented | Visible handoff only, preview + explicit confirmation. |
 | EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist for current scope. |
 | HomeKit | Scaffolded | Preview/demo/test path exists; real HomeKit entitlement/live control is not complete. |
@@ -130,7 +130,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] XCUITest covers chat Apple Maps directions preview and visible handoff confirmation before opening Maps.
 - [x] Marketplace trust store supports key rotation and revocation metadata, including active/revoked state, validity windows, revoked timestamps, and revoked reasons.
 - [x] User-created skills require explicit capability selection and confirmation policy before a disabled local draft can be saved.
-- [ ] Skill remove flow has UI smoke coverage for user-created drafts; signed update preview has package/source coverage, but full update UI/e2e remains release-blocking.
+- [x] Skill remove flow has simulator UI smoke coverage for user-created drafts; signed marketplace update preview/confirm has simulator XCUITest smoke coverage.
 - [x] Chat uses live Skill Manager effective catalog, including disabled and compatibility-blocked skill state.
 
 ### 7. Background tasks

@@ -432,6 +432,34 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertFalse(confirmInstall.isEnabled)
     }
 
+    func testAccessSkillManagerPreviewsSignedMarketplaceSkillUpdate() throws {
+        relaunchForUITesting(initialSection: "access", seedInstalledWeatherSkill: true)
+
+        let searchField = findElement("access.skills.search", direction: .down, maxSwipes: 3)
+        XCTAssertTrue(searchField.waitForExistence(timeout: 5))
+        searchField.tap()
+        searchField.typeText("weather")
+        dismissKeyboardIfPresent()
+
+        let updateWeather = findButton("access.skill.marketplace-weather-briefing.update", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(updateWeather.exists)
+        updateWeather.tap()
+
+        let preview = app.descendants(matching: .any)["access.skills.manifest-preview"]
+        XCTAssertTrue(preview.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["access.skills.manifest-preview.summary"].label.contains("Update Weather Briefing from 2.0.0 to 2.1.0."))
+        XCTAssertTrue(app.staticTexts["access.skills.manifest-preview.version"].label.contains("Installed 2.0.0 -> Incoming 2.1.0"))
+        XCTAssertTrue(app.staticTexts["access.skills.manifest-preview.changelog"].label.contains("Adds storm alerts."))
+
+        let confirmInstall = app.buttons["access.skills.manifest-preview.confirm"]
+        XCTAssertTrue(confirmInstall.exists)
+        XCTAssertTrue(confirmInstall.isEnabled)
+        confirmInstall.tap()
+
+        XCTAssertTrue(findStaticText(containing: "Weather Briefing installed from signed manifest.", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertTrue(findButton("access.skill.marketplace-weather-briefing.disable", direction: .both, maxSwipes: 2).exists)
+    }
+
     func testAccessSkillManagerCreatesLocalUserSkillDraft() throws {
         assertPrimaryDrawerItemsExist()
         selectDrawerSection(identifier: "root.drawer.access", label: "Access")

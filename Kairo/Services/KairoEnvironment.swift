@@ -100,6 +100,7 @@ public struct KairoEnvironment: Sendable {
     public static func uiTesting(
         resetPersistentState: Bool = true,
         seedInstalledLocalModel: Bool = false,
+        seedInstalledWeatherSkill: Bool = false,
         seedExpandedLocalModelCatalog: Bool = false
     ) async throws -> KairoEnvironment {
         let rootDirectory = FileManager.default.temporaryDirectory
@@ -123,6 +124,9 @@ public struct KairoEnvironment: Sendable {
                 installedLocalModelIDs: []
             )
         )
+        if seedInstalledWeatherSkill {
+            try await skillStore.upsert(uiTestingInstalledWeatherSkill(version: "2.0.0"))
+        }
         let marketplaceCatalogService = try uiTestingMarketplaceCatalogService()
         let localModelCatalog: LocalModelCatalog
         if seedExpandedLocalModelCatalog {
@@ -275,9 +279,16 @@ public struct KairoEnvironment: Sendable {
         weatherSkill.version = "2.1.0"
         weatherSkill.author = "Kairo Marketplace"
 
-        let manifest = try AgentSkillManifest.signedForTesting(
+        let manifest = try AgentSkillManifest(
             skill: weatherSkill,
-            packageVersion: "2026.6"
+            packageVersion: "2026.6",
+            checksum: AgentSkillManifest.sha256Hex(for: weatherSkill),
+            signature: AgentSkillManifestSignature(
+                keyID: "kairo-test-key",
+                algorithm: .ed25519,
+                value: "test-signature"
+            ),
+            changelog: ["Adds storm alerts."]
         )
         let manifestJSON = try AgentSkillManifest.encodeJSONString(manifest)
         var qwenWorkflowSkill = AgentSkill.marketplaceTemplate(
@@ -350,6 +361,23 @@ public struct KairoEnvironment: Sendable {
         ])
 
         return AgentSkillMarketplaceCatalogService(indexURL: indexURL, httpClient: httpClient)
+    }
+
+    private static func uiTestingInstalledWeatherSkill(version: String) -> AgentSkill {
+        var skill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API and returns a compact daily plan.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(
+                string: "manifests/weather-briefing.json",
+                relativeTo: AgentSkillMarketplaceCatalogService.defaultIndexURL
+            )!.absoluteURL
+        )
+        skill.version = version
+        skill.author = "Kairo Marketplace"
+        skill.installationStatus = .installed
+        return skill
     }
 
     private static func uiTestingLocalModelCatalogService(catalog: LocalModelCatalog = .kairoDefault) throws -> LocalModelCatalogService {
