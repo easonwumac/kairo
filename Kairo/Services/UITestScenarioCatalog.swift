@@ -113,12 +113,13 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "chat.message.assistant",
                 "chat.tool-candidates",
                 "chat.tool-candidate.shortcut-save-shared-text",
-                "chat.tool-candidate.shortcut-save-shared-text.summary"
+                "chat.tool-candidate.shortcut-save-shared-text.summary",
+                "chat.tool-candidate.shortcut-save-shared-text.risk"
             ],
             assertions: [
                 "A task-extraction request creates an assistant response.",
                 "The response exposes a managed tool candidate strip.",
-                "The Shortcut skill candidate is visible as a handoff/setup path, not an executed Shortcut."
+                "The Shortcut skill candidate is visible as a confirmation-gated handoff/setup path, not an executed Shortcut."
             ]
         ),
         UITestScenario(

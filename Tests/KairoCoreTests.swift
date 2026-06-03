@@ -2470,6 +2470,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(chatActionStripsView.contains("Needs confirmation"))
         XCTAssertTrue(chatActionStripsView.contains("candidate.handoffSummary"))
         XCTAssertTrue(chatActionStripsView.contains(#""chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).summary""#))
+        XCTAssertTrue(chatActionStripsView.contains("toolRiskSummary(for: candidate)"))
+        XCTAssertTrue(chatActionStripsView.contains(#""chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).risk""#))
     }
 
     @MainActor
@@ -2757,6 +2759,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidates") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidate.shortcut-save-shared-text") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidate.shortcut-save-shared-text.summary") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidate.shortcut-save-shared-text.risk") == true)
         let notificationScenarioIdentifiers = catalog.scenario(id: "chat-notification-confirmation")?.requiredAccessibilityIdentifiers ?? []
         XCTAssertTrue(notificationScenarioIdentifiers.contains("chat.proposed-action.sendNotification"))
         XCTAssertTrue(notificationScenarioIdentifiers.contains("chat.action-preview"))
@@ -2918,6 +2921,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("testSettingsPreviewsOAuthCallbackWithoutLeakingCode"))
         XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmNotificationAction"))
         XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.controlHome.risk""#))
+        XCTAssertTrue(smokeTest.contains(#""chat.tool-candidate.shortcut-save-shared-text.risk""#))
         XCTAssertTrue(smokeTest.contains("Needs confirmation"))
         XCTAssertTrue(smokeTest.contains(#""chat.proposed-action.sendNotification""#))
         XCTAssertTrue(smokeTest.contains(#""chat.action-preview""#))

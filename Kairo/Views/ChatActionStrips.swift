@@ -83,6 +83,7 @@ struct ToolCandidatesStrip: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(candidates) { candidate in
+                    let riskSummary = toolRiskSummary(for: candidate)
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 6) {
                             Image(systemName: iconName(for: candidate.skillKind))
@@ -100,6 +101,12 @@ struct ToolCandidatesStrip: View {
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).summary")
+
+                        Text(riskSummary)
+                            .font(.caption2)
+                            .foregroundStyle(toolRiskColor(for: candidate))
+                            .lineLimit(1)
+                            .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).risk")
                     }
                     .font(.caption)
                     .frame(width: 232, alignment: .leading)
@@ -107,12 +114,43 @@ struct ToolCandidatesStrip: View {
                     .padding(.vertical, 8)
                     .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Tool candidate: \(candidate.title), \(candidate.skillKind.settingsTitle). \(candidate.handoffSummary)")
+                    .accessibilityLabel("Tool candidate: \(candidate.title), \(candidate.skillKind.settingsTitle). \(candidate.handoffSummary). \(riskSummary)")
                     .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id)")
                 }
             }
         }
         .accessibilityIdentifier("chat.tool-candidates")
+    }
+
+    private func toolRiskSummary(for candidate: AgentToolInvocationCandidate) -> String {
+        let confirmation = candidate.requiresConfirmation ? "Needs confirmation" : "No write"
+        return "\(toolRiskTierLabel(for: candidate.riskTier)) · \(confirmation)"
+    }
+
+    private func toolRiskTierLabel(for riskTier: ActionRiskTier) -> String {
+        switch riskTier {
+        case .tier0ReadOnly:
+            return "Tier 0"
+        case .tier1Draft:
+            return "Tier 1"
+        case .tier2LowRiskWrite:
+            return "Tier 2"
+        case .tier3HighRiskExternal:
+            return "Tier 3"
+        }
+    }
+
+    private func toolRiskColor(for candidate: AgentToolInvocationCandidate) -> Color {
+        switch candidate.riskTier {
+        case .tier0ReadOnly:
+            return .secondary
+        case .tier1Draft:
+            return .blue
+        case .tier2LowRiskWrite:
+            return .orange
+        case .tier3HighRiskExternal:
+            return .red
+        }
     }
 
     private func iconName(for kind: AgentSkillKind) -> String {

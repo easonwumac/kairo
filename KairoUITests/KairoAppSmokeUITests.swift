@@ -432,7 +432,9 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findElement("chat.tool-candidates", direction: .down).exists)
         XCTAssertTrue(findElement("chat.tool-candidate.shortcut-save-shared-text", direction: .down).exists)
         XCTAssertTrue(findElement("chat.tool-candidate.shortcut-save-shared-text.summary", direction: .down).exists)
+        XCTAssertTrue(findElement("chat.tool-candidate.shortcut-save-shared-text.risk", direction: .down).exists)
         XCTAssertTrue(findStaticText(containing: "Shortcut", direction: .down).exists)
+        XCTAssertTrue(findStaticText(containing: "Needs confirmation", direction: .down).exists)
     }
 
     func testChatCanPreviewAndConfirmNotificationAction() throws {
