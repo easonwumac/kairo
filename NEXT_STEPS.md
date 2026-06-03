@@ -36,4 +36,5 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
    - Run relevant tests, plus `swift test` before release handoff.
    - Run `xcodegen generate` when `xcodegen` is available.
    - Run a focused scan for secrets, tokens, credentials, model weights, tokenizer files, `.gguf`, caches, and generated build artifacts.
+   - Use `docs/APP_STORE_SUBMISSION_CHECKLIST.md` as the final App Review handoff gate.
    - Commit and push each completed, tested small stage.

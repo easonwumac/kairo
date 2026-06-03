@@ -623,6 +623,58 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(catalogReleaseChecklist.localizedCaseInsensitiveContains("api token:"))
     }
 
+    func testAppStoreSubmissionChecklistGatesReleaseEvidence() throws {
+        let root = packageRootURL()
+        let submissionChecklist = try String(
+            contentsOf: root.appendingPathComponent("docs/APP_STORE_SUBMISSION_CHECKLIST.md"),
+            encoding: .utf8
+        )
+        let readiness = try String(
+            contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"),
+            encoding: .utf8
+        )
+        let nextSteps = try String(
+            contentsOf: root.appendingPathComponent("NEXT_STEPS.md"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(readiness.contains("docs/APP_STORE_SUBMISSION_CHECKLIST.md"))
+        XCTAssertTrue(nextSteps.contains("docs/APP_STORE_SUBMISSION_CHECKLIST.md"))
+
+        let requiredDocuments = [
+            "docs/APP_STORE_READINESS.md",
+            "docs/APP_REVIEW_NOTES.md",
+            "docs/PRIVACY_LABELS_CHECKLIST.md",
+            "docs/REAL_DEVICE_BETA_SIGNOFF.md",
+            "docs/CATALOG_RELEASE_CHECKLIST.md",
+            "docs/TRUST_STORE_RUNBOOK.md"
+        ]
+        for document in requiredDocuments {
+            XCTAssertTrue(submissionChecklist.contains(document), document)
+        }
+
+        let requiredGates = [
+            "Real-device sign-off has no `Blocked - device unavailable` rows",
+            "App Review notes do not claim iOS production local inference",
+            "Privacy labels match `Kairo/Resources/PrivacyInfo.xcprivacy`",
+            "Purpose strings match current beta capabilities",
+            "iOS production inference runtime, which remains Planned",
+            "standalone signed catalogs and public trust-store metadata",
+            "Focused scans find no secrets, tokens, private keys, generated credentials, model weights, `.gguf`, tokenizer blobs, model packages, or downloaded caches"
+        ]
+        for gate in requiredGates {
+            XCTAssertTrue(submissionChecklist.contains(gate), gate)
+        }
+
+        XCTAssertTrue(submissionChecklist.contains("Simulator UI smoke, package tests, source-health tests, and screenshots from `tmp/` are support evidence only."))
+        XCTAssertTrue(submissionChecklist.contains("App-side signature verification proves fail-closed validation behavior, not that production catalogs have been published."))
+        XCTAssertTrue(submissionChecklist.contains("macOS/dev local-model reply checks and benchmark adapters are not iPhone runtime proof."))
+        XCTAssertTrue(submissionChecklist.contains("Current deletion proof is on-device only"))
+        XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("production local inference is complete"))
+        XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("live HomeKit control is complete"))
+        XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("silently creates Apple Shortcuts"))
+    }
+
     func testShortcutDemoCatalogStaysSplitAcrossFocusedFiles() throws {
         let root = packageRootURL()
         let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)

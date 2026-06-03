@@ -39,6 +39,8 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 ## App Review Checklist
 
+Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
+
 ### Current release blocker summary
 
 - **Real device blocked:** `devicectl` currently lists paired devices as `unavailable`, so this pass did not produce real-device sign-off.
