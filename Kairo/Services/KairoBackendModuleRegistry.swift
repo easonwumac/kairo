@@ -15,10 +15,12 @@ public enum KairoBackendModuleID: String, CaseIterable, Sendable {
 public struct KairoBackendModuleDescriptor: Equatable, Sendable {
     public let id: KairoBackendModuleID
     public let displayName: String
+    public let boundarySummary: String
 
-    public init(id: KairoBackendModuleID, displayName: String) {
+    public init(id: KairoBackendModuleID, displayName: String, boundarySummary: String) {
         self.id = id
         self.displayName = displayName
+        self.boundarySummary = boundarySummary
     }
 }
 
@@ -31,7 +33,11 @@ public struct KairoBackendModuleRegistry: Equatable, Sendable {
 
     public static let production = KairoBackendModuleRegistry(
         modules: KairoBackendModuleID.allCases.map { id in
-            KairoBackendModuleDescriptor(id: id, displayName: id.productionDisplayName)
+            KairoBackendModuleDescriptor(
+                id: id,
+                displayName: id.productionDisplayName,
+                boundarySummary: id.productionBoundarySummary
+            )
         }
     )
 }
@@ -57,6 +63,29 @@ private extension KairoBackendModuleID {
             return "Settings"
         case .access:
             return "Access"
+        }
+    }
+
+    var productionBoundarySummary: String {
+        switch self {
+        case .chat:
+            return "Agent response orchestration, privacy routing, memory context, and tool/action preview candidates."
+        case .memory:
+            return "Memory list, search, save, delete, export, and purge lifecycle."
+        case .recipes:
+            return "Kairo-owned internal recipe lifecycle and dry-run execution without Apple Shortcut mutation."
+        case .shareImports:
+            return "Share Extension queue import and imported-state updates without extension-side actions."
+        case .deletion:
+            return "User-triggered deletion for chat, memory, credentials, OAuth tokens, local models, and audit metadata."
+        case .localModels:
+            return "Local model catalog status, explicit download state, selection, preference, deletion, and stale cleanup."
+        case .skills:
+            return "Skill catalog, effective tool catalog, manifest preview/install, enable/disable/remove, and user drafts."
+        case .settings:
+            return "OpenAI key and OAuth connector status, authorization sessions, callbacks, dry-runs, and disconnect."
+        case .access:
+            return "Capability permission status reads and explicit permission requests through system services."
         }
     }
 }
