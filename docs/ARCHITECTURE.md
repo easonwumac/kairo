@@ -62,6 +62,19 @@
 
 Live app wiring uses `FileBackedAuditLogger` at `KairoPaths.auditLogURL`. Audit records are metadata-only: action kind, related memory ids, capability keys, cloud/local model use, confirmation state, and result. They do not persist full action payloads, message bodies, tokens, or attachment contents.
 
+## Backend API boundary
+
+SwiftUI views should move toward calling app-facing backend APIs instead of directly coordinating stores, credentials, model services, and audit loggers. `KairoBackendAPI` is the first facade for that split. Its initial `KairoDeletionAPI` groups App Review/privacy deletion use cases behind one Core interface:
+
+- chat thread deletion through `ChatHistoryStore`;
+- memory delete and purge through `MemoryStore`;
+- OpenAI API key deletion through `CredentialStore`;
+- OAuth provider disconnect through `OAuthConnectorLoginCenter`;
+- local model deletion through `LocalModelSettingsService`, fail-closed when unavailable;
+- metadata-only audit log clearing through `AuditLogger`.
+
+The UI pass should bind screens to these backend APIs rather than adding feature logic directly into SwiftUI views.
+
 ## Agent skills
 
 `AgentSkillCatalog` packages usable capabilities as managed skills. A skill can bind to an `AgentAction`, a Shortcut recipe, an OAuth connector, a local model, or a marketplace manifest. Installed skills are included in `CapabilityPromptContextBuilder` so the model sees named tools it may propose, including whether each skill requires confirmation.

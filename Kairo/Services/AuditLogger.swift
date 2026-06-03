@@ -3,6 +3,7 @@ import Foundation
 public protocol AuditLogger: Sendable {
     func record(_ event: AuditEvent) async throws
     func list(limit: Int) async throws -> [AuditEvent]
+    func clear() async throws
 }
 
 public actor InMemoryAuditLogger: AuditLogger {
@@ -19,6 +20,10 @@ public actor InMemoryAuditLogger: AuditLogger {
             .sorted { $0.createdAt > $1.createdAt }
             .prefix(limit)
             .map { $0 }
+    }
+
+    public func clear() async throws {
+        events = []
     }
 }
 
@@ -48,6 +53,13 @@ public actor FileBackedAuditLogger: AuditLogger {
             .sorted { $0.createdAt > $1.createdAt }
             .prefix(limit)
             .map { $0 }
+    }
+
+    public func clear() async throws {
+        events = []
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            try FileManager.default.removeItem(at: fileURL)
+        }
     }
 
     private func loadFromDisk() async throws {

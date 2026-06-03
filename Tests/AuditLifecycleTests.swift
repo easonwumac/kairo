@@ -30,6 +30,30 @@ final class AuditLifecycleTests: XCTestCase {
         XCTAssertFalse(rawText.contains("Remember this private note"))
     }
 
+    func testFileBackedAuditLoggerClearDeletesOnDeviceAuditFile() async throws {
+        let fileURL = temporaryFileURL(named: "audit-log-delete.json")
+        let logger = try await FileBackedAuditLogger(fileURL: fileURL)
+
+        try await logger.record(AuditEvent(
+            actionKind: .sendNotification,
+            capabilityKeys: [.notifications],
+            usedCloudModel: false,
+            requiredConfirmation: true,
+            userConfirmed: true,
+            result: .completed
+        ))
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path))
+
+        try await logger.clear()
+
+        let reloaded = try await FileBackedAuditLogger(fileURL: fileURL)
+        let events = try await reloaded.list(limit: 10)
+
+        XCTAssertTrue(events.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
+    }
+
     func testKairoPathsBuildsAuditLogURLBesideMemoryStore() {
         let paths = KairoPaths(appName: "KairoTests")
 

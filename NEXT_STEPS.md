@@ -11,6 +11,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
 
 2. Permission-denied and App Review final QA.
    - Run real-device fallback checks for denied Calendar / Reminders / Notifications / Contacts permissions.
+   - Keep UI work deferred until backend APIs are stable; metadata-only audit log deletion now has backend API coverage, but user-facing UI wiring remains a UI-pass item if required for submission.
    - Keep HomeKit live control out of beta claims until entitlement, permission copy, fallback UI, confirmation behavior, and real-device evidence are complete.
    - Keep review notes from claiming iOS production local inference, real HomeKit live control, arbitrary cross-app reads/UI control, ChatGPT web-session reuse, or silent Apple Shortcuts creation.
 
