@@ -66,7 +66,7 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 - [x] Calendar / Reminders 使用 EventKit 且有清楚 purpose string；Chat reminder/calendar actions 已使用 EventKit permission + preview + confirmation。
 - [x] Notifications 使用 UserNotifications，明確說明用途，Chat action 需 preview + confirmation 後才排程。
 - [x] Photos / Documents copy is currently Share Extension/user-selected metadata only; beta plist does not include Photo Library permission until PhotosPicker / PHPhotoLibrary access exists.
-- [ ] HomeKit live control remains disabled for beta: current entitlements contain only App Group, so HomeKit must stay preview/demo/test-only until entitlement, purpose copy, permission fallback, and real-device confirmation are complete.
+- [x] HomeKit live control intentionally remains disabled for beta: current entitlements contain only App Group, beta plist omits `NSHomeKitUsageDescription`, and HomeKit must stay preview/demo/test-only until entitlement, purpose copy, permission fallback, and real-device confirmation are complete.
 - [x] Contacts 只在使用者明確要求建立聯絡人時使用 Contacts.framework，且需 runtime permission + preview + confirmation；不讀取或匯出通訊錄。
 - [x] Apple Maps handoff does not require Kairo to read current location; beta plist does not include Location permission until CoreLocation access exists.
 - [x] Access backend API facade resolves capability permission status and forwards explicit permission requests without treating status reads as OS prompt evidence.

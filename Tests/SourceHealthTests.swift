@@ -459,6 +459,9 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(readiness.contains("docs/APP_REVIEW_NOTES.md"))
         XCTAssertTrue(readiness.contains("no collected data"))
         XCTAssertTrue(readiness.contains("no tracking"))
+        XCTAssertTrue(readiness.contains("[x] HomeKit live control intentionally remains disabled for beta"))
+        XCTAssertTrue(readiness.contains("beta plist omits `NSHomeKitUsageDescription`"))
+        XCTAssertFalse(readiness.contains("[ ] HomeKit live control remains disabled for beta"))
 
         let requiredReviewBoundaries = [
             "Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions.",
