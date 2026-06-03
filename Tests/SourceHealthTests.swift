@@ -411,6 +411,10 @@ final class SourceHealthTests: XCTestCase {
             contentsOf: root.appendingPathComponent("docs/APP_REVIEW_NOTES.md"),
             encoding: .utf8
         )
+        let nextSteps = try String(
+            contentsOf: root.appendingPathComponent("NEXT_STEPS.md"),
+            encoding: .utf8
+        )
 
         XCTAssertTrue(entitlements.contains("com.apple.security.application-groups"))
         XCTAssertFalse(entitlements.contains("com.apple.developer.homekit"))
@@ -440,8 +444,11 @@ final class SourceHealthTests: XCTestCase {
             "ChatGPT web-session reuse",
             "silently creates Apple Shortcuts"
         ]
+        let reviewCopySources = [readiness, reviewNotes, nextSteps]
         for claim in forbiddenReviewClaims {
-            XCTAssertFalse(reviewNotes.localizedCaseInsensitiveContains(claim), claim)
+            for source in reviewCopySources {
+                XCTAssertFalse(source.localizedCaseInsensitiveContains(claim), claim)
+            }
         }
     }
 

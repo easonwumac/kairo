@@ -15,7 +15,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
    - Memory lifecycle/export, Kairo-owned internal recipe lifecycle/run, Share Extension queue import, metadata-only audit log deletion, and Settings credential/OAuth management now have backend API coverage; keep future deletion copy limited to on-device data unless a backend account exists.
    - Privacy manifest no-collection/no-tracking, absence of HomeKit entitlement, and review-note boundary copy are now package-tested; recheck labels only if analytics, backend accounts, cloud sync, crash collection, or connector sync is added.
    - Keep HomeKit live control out of beta claims until entitlement, permission copy, fallback UI, confirmation behavior, and real-device evidence are complete.
-   - Keep review notes from claiming iOS production local inference, real HomeKit live control, arbitrary cross-app reads/UI control, ChatGPT web-session reuse, or silent Apple Shortcuts creation.
+   - Keep review notes from claiming iOS production local inference, real HomeKit live control, arbitrary cross-app reads/UI control, reuse of a user's ChatGPT browser session, or silent Apple Shortcuts creation.
 
 3. Local model release hardening.
    - Keep downloads explicitly user-triggered and continue blocking model weights, `.gguf`, tokenizer blobs, caches, and generated artifacts from the repo.
