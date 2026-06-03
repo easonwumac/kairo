@@ -294,6 +294,10 @@ final class SourceHealthTests: XCTestCase {
         let manifest = try XCTUnwrap(
             PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
         )
+        let privacyLabelsChecklist = try String(
+            contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
+            encoding: .utf8
+        )
 
         XCTAssertEqual(manifest["NSPrivacyTracking"] as? Bool, false)
         XCTAssertTrue((manifest["NSPrivacyTrackingDomains"] as? [Any])?.isEmpty == true)
@@ -303,6 +307,15 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertEqual(accessedAPITypes.count, 1)
         XCTAssertEqual(accessedAPITypes.first?["NSPrivacyAccessedAPIType"] as? String, "NSPrivacyAccessedAPICategoryUserDefaults")
         XCTAssertEqual(accessedAPITypes.first?["NSPrivacyAccessedAPITypeReasons"] as? [String], ["CA92.1"])
+        XCTAssertTrue(privacyLabelsChecklist.contains("Tracking: No."))
+        XCTAssertTrue(privacyLabelsChecklist.contains("Data collected: No collected data."))
+        XCTAssertTrue(privacyLabelsChecklist.contains("Tracking domains: None."))
+        XCTAssertTrue(privacyLabelsChecklist.contains("Required Reason API usage: UserDefaults only, reason `CA92.1`."))
+        XCTAssertTrue(privacyLabelsChecklist.contains("no analytics SDK"))
+        XCTAssertTrue(privacyLabelsChecklist.contains("no backend account"))
+        XCTAssertTrue(privacyLabelsChecklist.contains("docs/REAL_DEVICE_BETA_SIGNOFF.md"))
+        XCTAssertFalse(privacyLabelsChecklist.localizedCaseInsensitiveContains("tracking: yes"))
+        XCTAssertFalse(privacyLabelsChecklist.localizedCaseInsensitiveContains("data collected: yes"))
     }
 
     func testBetaInfoPlistPurposeStringsMatchEnabledCapabilities() throws {
@@ -311,6 +324,10 @@ final class SourceHealthTests: XCTestCase {
         let data = try Data(contentsOf: appInfoPlistURL)
         let plist = try XCTUnwrap(
             PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
+        )
+        let privacyLabelsChecklist = try String(
+            contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
+            encoding: .utf8
         )
 
         XCTAssertEqual(
@@ -340,6 +357,13 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertNil(plist["NSHomeKitUsageDescription"])
         XCTAssertNil(plist["NSLocationWhenInUseUsageDescription"])
         XCTAssertNil(plist["NSPhotoLibraryUsageDescription"])
+        XCTAssertTrue(privacyLabelsChecklist.contains("NSCalendarsFullAccessUsageDescription"))
+        XCTAssertTrue(privacyLabelsChecklist.contains("NSUserNotificationsUsageDescription"))
+        XCTAssertTrue(privacyLabelsChecklist.contains("NSContactsUsageDescription"))
+        XCTAssertTrue(privacyLabelsChecklist.contains("Future-only purpose strings must remain absent from the beta plist"))
+        XCTAssertTrue(privacyLabelsChecklist.contains("NSHomeKitUsageDescription"))
+        XCTAssertTrue(privacyLabelsChecklist.contains("NSLocationWhenInUseUsageDescription"))
+        XCTAssertTrue(privacyLabelsChecklist.contains("NSPhotoLibraryUsageDescription"))
     }
 
     func testBetaProjectTargetsDoNotAddDeferredSurfaces() throws {
@@ -419,6 +443,7 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(entitlements.contains("com.apple.security.application-groups"))
         XCTAssertFalse(entitlements.contains("com.apple.developer.homekit"))
         XCTAssertTrue(readiness.contains("Privacy Labels scope"))
+        XCTAssertTrue(readiness.contains("docs/PRIVACY_LABELS_CHECKLIST.md"))
         XCTAssertTrue(readiness.contains("docs/APP_REVIEW_NOTES.md"))
         XCTAssertTrue(readiness.contains("no collected data"))
         XCTAssertTrue(readiness.contains("no tracking"))

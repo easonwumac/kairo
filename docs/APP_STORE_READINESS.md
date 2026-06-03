@@ -214,6 +214,8 @@ Current beta deletion is on-device and user-triggered:
 
 ## Privacy label alignment
 
+Submission checklist: `docs/PRIVACY_LABELS_CHECKLIST.md`.
+
 For the current beta build, App Privacy Labels should state no tracking and no collected data only if the submitted binary keeps the current no-analytics/no-backend-account posture. If any future build adds analytics, telemetry, account sync, cloud memory, or provider-side collection beyond user-configured API calls, update labels and review copy before submission.
 
 Purpose-string alignment:
