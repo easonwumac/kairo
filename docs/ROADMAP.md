@@ -18,8 +18,8 @@ Kairo has moved beyond the initial scaffold stage. The roadmap now prioritizes a
 |---|---|---|
 | App project, app target, share extension target, UI test target | Implemented | Project and targets exist in `project.yml` / `Kairo.xcodeproj`. |
 | Chat-first shell | Implemented | Chat is the primary surface; More manages support screens. |
-| Memory | Scaffolded | Save/search stores exist; delete/export and derived cleanup are beta work. |
-| Share Extension ingestion queue | Scaffolded | Queue exists; import tests and no-heavy-work guarantees need tightening. |
+| Memory | Implemented | Save/search/delete/export stores exist; deleted JSON records can be purged from disk. |
+| Share Extension ingestion queue | Implemented | Text/URL/image/PDF/file metadata imports into Chat; extension stays queue-only and capped. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA. |
 | Kairo Recipes | Implemented | Internal workflows with preview/run/enable/disable and App Intent bridge. |
 | Skill Manager | Scaffolded | File-backed lifecycle and Access UI exist; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
@@ -59,12 +59,12 @@ Do first:
    - Keep macOS/dev reply checks separate from iOS production inference.
 
 5. **Audit and memory lifecycle**
-   - Persist audit metadata by default, not full sensitive payloads.
-   - Add memory delete/export and cleanup for derived summaries, cache, embedding placeholders, and Kairo-owned attachment references.
+   - File-backed metadata-only audit logging is in the beta path.
+   - Memory Center can export/delete active records; JSON store can purge deleted records.
 
 6. **Share Extension beta import**
-   - Main app should reliably see text, URL, image, and file metadata shared into Kairo.
-   - Extension must not run heavy model inference or high-risk actions.
+   - Main app imports text, URL, image, PDF, and file metadata shared into Kairo.
+   - Extension does not run model inference or high-risk actions; it only queues up to 8 attachments per request.
 
 ## Phase 2: Production readiness
 

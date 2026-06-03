@@ -8,7 +8,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 |---|---|---|
 | Chat-first app shell | Implemented | Chat is the primary surface; support screens sit behind More. |
 | Memory | Implemented | Save/search/delete/export exists; deleted JSON records can be purged from disk. |
-| Share Extension ingestion | Scaffolded | Queue/import path exists; extension must not run heavy inference or high-risk actions. |
+| Share Extension ingestion | Implemented | Text/URL/image/PDF/file metadata imports into Chat; extension is queue-only and action-free. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA. |
 | Skill Manager | Scaffolded | Access lifecycle exists; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
 | Email / Messages / Phone / Web / Maps handoffs | Implemented | Visible handoff only, preview + explicit confirmation. |
@@ -78,10 +78,10 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 ### 5. Share Extension
 
-- [ ] Extension 只匯入使用者主動分享的內容。
-- [ ] Extension 不執行高風險 agent action。
-- [ ] Extension 將內容放入 App Group queue，由主 App 讓使用者確認。
-- [ ] Extension 有時間/記憶體限制下的 fallback。
+- [x] Extension 只匯入使用者主動分享的內容。
+- [x] Extension 不執行高風險 agent action。
+- [x] Extension 將內容放入 App Group queue，由主 App 讓使用者確認。
+- [x] Extension 有時間/記憶體限制下的 fallback：每次最多 enqueue 8 個 attachment metadata。
 
 ### 6. Shortcuts / App Intents
 
@@ -184,7 +184,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] Simulator/real-device XCUITest smoke flow passes.
 - [ ] 真機可開啟 Chat / Memory / Access / Settings。
 - [ ] Chat history app 重啟後仍存在。
-- [ ] Share Extension 可匯入文字、URL、圖片、PDF/file metadata。
+- [x] Share Extension 可匯入文字、URL、圖片、PDF/file metadata。
 - [ ] App Intent 可 Ask / Save / Search。
 - [ ] Reminder / Calendar permission flow 可用。
 - [ ] HomeKit control action 只在授權與確認後執行；未授權時顯示 fallback。

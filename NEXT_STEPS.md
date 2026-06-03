@@ -29,7 +29,7 @@ Primary product shape:
 | Chat history | Implemented | JSON-backed persistent chat store exists. |
 | Memory store | Implemented | JSON/in-memory stores support save/search/delete/export; deleted JSON records can be purged from disk. |
 | Settings / Access | Implemented | Current settings, model rows, OAuth readiness, and Skill Manager UI exist. |
-| Share Extension ingestion queue | Scaffolded | Queue and import path exist; beta still needs stronger import tests and no-heavy-work enforcement. |
+| Share Extension ingestion queue | Implemented | Text/URL/image/PDF/file metadata imports into Chat; extension is queue-only and caps each request. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA, not more nodes. |
 | Kairo Recipes | Implemented | Internal recipes, preview/run, enable/disable, and App Intent bridge exist. These are not Apple Shortcuts. |
 | Skill Manager | Scaffolded | File-backed manager and Access UI exist; Chat now uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
@@ -69,9 +69,9 @@ Primary product shape:
    - Never commit weights, tokenizer files, GGUF files, caches, credentials, or generated secrets.
    - Keep iOS production inference marked as Planned until real-device runtime evidence exists.
 
-2. Complete Share Extension beta import path.
-   - Shared text, URL, image, and file metadata should appear in main app pending content.
-   - Extension must not perform heavy model inference or high-risk actions.
+2. Run device and App Review verification.
+   - Real-device smoke: Chat, Memory, Access, Settings, Share Extension, App Intents.
+   - Keep App Intent/Shortcut device QA focused on existing beta nodes.
 
 3. Finish remaining privacy review notes.
    - Account deletion remains backend-dependent.

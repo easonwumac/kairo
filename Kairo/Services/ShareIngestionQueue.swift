@@ -8,6 +8,14 @@ public protocol ShareIngestionQueue: Sendable {
     func delete(id: UUID) async throws
 }
 
+public enum ShareExtensionIngestionPolicy {
+    public static let maxAttachmentsPerRequest = 8
+
+    public static func limitedAttachments(_ attachments: [ChatAttachment]) -> [ChatAttachment] {
+        Array(attachments.prefix(maxAttachmentsPerRequest))
+    }
+}
+
 public actor InMemoryShareIngestionQueue: ShareIngestionQueue {
     private var items: [UUID: ShareIngestionItem]
 

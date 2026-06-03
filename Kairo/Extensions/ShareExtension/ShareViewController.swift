@@ -23,7 +23,9 @@ public final class ShareViewController: UIViewController {
         }
 
         Task {
-            let attachments = await loadAttachments(from: providers)
+            let attachments = ShareExtensionIngestionPolicy.limitedAttachments(
+                await loadAttachments(from: providers)
+            )
             await enqueue(attachments)
             await MainActor.run { completeRequest() }
         }

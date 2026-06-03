@@ -19,7 +19,7 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 | Chat-first app shell | Implemented | SwiftUI App UI | 否 | Chat 是主畫面；More 管理支援 surfaces。 |
 | Chat history | Implemented | JSON-backed app storage | 否 | 可保存 thread；生產 migration 可後續評估。 |
 | 長期記憶 | Implemented | JSON store / Memory Center export | 使用者管理 | Save/search/delete/export 已有；deleted JSON records 可 purge from disk。 |
-| Share Sheet 匯入 | Scaffolded | Share Extension + App Group queue | 使用者主動 | Queue/import path exists；extension 不做 heavy inference 或 high-risk action。 |
+| Share Sheet 匯入 | Implemented | Share Extension + App Group queue | 使用者主動 | Text/URL/image/PDF/file metadata 進 Chat pending attachments；extension queue-only、最多 8 attachments/request。 |
 | 文件/圖片選取 | Planned | UIDocumentPicker / PhotosPicker | 使用者主動 | 目前主要靠 Share Extension metadata path；picker UX 尚未完成。 |
 | 行事曆 | Implemented | EventKit Calendar | 是 | Chat action 需 preview + confirm；Shortcut nodes 預設產生 draft。 |
 | 提醒事項 | Implemented | EventKit Reminders | 是 | Chat action 需 preview + confirm；Shortcut nodes 預設產生 draft。 |

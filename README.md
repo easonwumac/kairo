@@ -71,7 +71,7 @@ Use these labels throughout the docs:
 |---|---|---|
 | Chat-first app shell | Implemented | Chat is the launch surface; More holds support surfaces. |
 | Memory | Implemented | Save/search/delete/export stores exist; deleted JSON records can be purged from disk. |
-| Share Extension ingestion | Scaffolded | Queue/import path exists; extension must stay lightweight and action-free. |
+| Share Extension ingestion | Implemented | Text/URL/image/PDF/file metadata import into Chat; extension stays queue-only and action-free. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA, not more nodes. |
 | Kairo Recipes | Implemented | Internal Kairo-owned workflows; not silent Apple Shortcuts edits. |
 | Skill Manager | Scaffolded | Access UI and file-backed lifecycle exist; Chat now uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
