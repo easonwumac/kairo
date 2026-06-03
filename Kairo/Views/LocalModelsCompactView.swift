@@ -2,6 +2,8 @@
 import SwiftUI
 
 struct LocalModelsCompactView: View {
+    private let starterModelRowLimit = 2
+
     let localModelStatus: LocalModelSettingsStatus
     let localModelStatusMessage: String?
     let localModelStatusMessageModelID: String?
@@ -35,13 +37,13 @@ struct LocalModelsCompactView: View {
                 selectedModelSummary
 
                 VStack(alignment: .leading, spacing: 10) {
-                    if localModelStatus.settingsRows.isEmpty {
+                    if visibleStarterModelRows.isEmpty {
                         Text("尚未載入 local model catalog。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
-                    ForEach(localModelStatus.settingsRows) { row in
+                    ForEach(visibleStarterModelRows) { row in
                         compactLocalModelRow(row)
                     }
 
@@ -57,7 +59,7 @@ struct LocalModelsCompactView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
-            .padding(.top, 18)
+            .padding(.top, 16)
             .padding(.bottom, 32)
             .accessibilityIdentifier("settings.models.local")
         }
@@ -126,7 +128,7 @@ struct LocalModelsCompactView: View {
                 .accessibilityLabel("Refresh Catalog")
             }
         }
-        .padding(10)
+        .padding(9)
         .background(Color.white.opacity(0.86), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -158,7 +160,7 @@ struct LocalModelsCompactView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(10)
+        .padding(9)
         .background(Color.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -203,9 +205,13 @@ struct LocalModelsCompactView: View {
         return localModelStatus.availableModels.first { installedModelIDs.contains($0.id) }
     }
 
+    private var visibleStarterModelRows: [LocalModelSettingsRow] {
+        Array(localModelStatus.settingsRows.prefix(starterModelRowLimit))
+    }
+
     @ViewBuilder
     private func compactLocalModelRow(_ row: LocalModelSettingsRow) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(row.displayName)
                     .font(compactModelNameFont)
@@ -291,7 +297,7 @@ struct LocalModelsCompactView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(8)
+        .padding(7)
         .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -302,16 +308,16 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactButtonGridColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 84), spacing: 6, alignment: .leading)]
+        [GridItem(.adaptive(minimum: 78), spacing: 5, alignment: .leading)]
     }
 
-    private var compactModelNameFont: Font { .system(size: 10, weight: .semibold) }
+    private var compactModelNameFont: Font { .system(size: 9, weight: .semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 9) }
+    private var compactModelMetadataFont: Font { .system(size: 8) }
 
-    private var compactModelStatusFont: Font { .system(size: 9, weight: .semibold) }
+    private var compactModelStatusFont: Font { .system(size: 8, weight: .semibold) }
 
-    private var compactButtonLabelFont: Font { .system(size: 9, weight: .semibold) }
+    private var compactButtonLabelFont: Font { .system(size: 8, weight: .semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {
@@ -363,8 +369,8 @@ struct LocalModelsCompactView: View {
                 .imageScale(.small)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 5)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .foregroundStyle(tint)
                 .background(tint.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))

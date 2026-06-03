@@ -10,8 +10,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     private var app: XCUIApplication!
     private let localModelExpectations = [
         ("qwen3-5-0-8b-q4-k-m", "Qwen3.5 0.8B Q4_K_M"),
-        ("llama3-2-1b-instruct-q4-k-m", "Llama 3.2 1B Instruct Q4_K_M"),
-        ("smollm2-1-7b-instruct-q4-k-m", "SmolLM2 1.7B Instruct Q4_K_M")
+        ("llama3-2-1b-instruct-q4-k-m", "Llama 3.2 1B Instruct Q4_K_M")
     ]
 
     override func setUpWithError() throws {
@@ -684,7 +683,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["settings.models.refresh-catalog"].exists)
         let localModelsToVerify = verifyAllLocalModels
             ? localModelExpectations
-            : Array(localModelExpectations.prefix(3))
+            : Array(localModelExpectations.prefix(2))
         XCTAssertTrue(app.staticTexts["settings.models.\(localModelsToVerify[0].0).status"].label.contains("可下載"))
         XCTAssertTrue(app.buttons["settings.models.\(localModelsToVerify[0].0).download"].exists)
         for localModel in localModelsToVerify {

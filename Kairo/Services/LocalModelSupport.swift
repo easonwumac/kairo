@@ -309,17 +309,23 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
 }
 
 public extension LocalModelCatalog {
+    static let kairoStarterModelIDs = [
+        "qwen3-5-0-8b-q4-k-m",
+        "llama3-2-1b-instruct-q4-k-m"
+    ]
+
+    static let kairoStarterModels: [LocalModelManifest] = [
+        .qwen35Tiny,
+        .llama32OneBInstruct
+    ]
+
     static let kairoDefault = LocalModelCatalog(
         generatedAt: Date(timeIntervalSince1970: 1_767_225_600),
         signingKeyID: "kairo-default-local-settings",
         signature: "unsigned-settings-placeholder",
         sourceRepository: URL(string: "https://github.com/easonwumac/kairo-models"),
         minimumSafetyPolicyVersion: "2026.1",
-        models: [
-            .qwen35Tiny,
-            .llama32OneBInstruct,
-            .smolLM2TinyInstruct
-        ]
+        models: kairoStarterModels
     )
 }
 
@@ -1714,9 +1720,8 @@ public extension LocalModelManifest {
         [
             parameterCount,
             quantization,
-            "\(Self.formattedBytes(fileSizeBytes)) download",
-            "\(contextWindow / 1000)K context",
-            licenseName
+            "\(Self.formattedBytes(fileSizeBytes))",
+            "\(contextWindow / 1000)K ctx"
         ].joined(separator: " · ")
     }
 

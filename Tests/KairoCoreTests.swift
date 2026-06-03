@@ -1879,7 +1879,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(availableModels.allSatisfy { $0.runtime == .gguf })
         XCTAssertTrue(availableModels.allSatisfy { $0.downloadURL.scheme == "https" })
         XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
-        XCTAssertEqual(availableModels.count, 3)
+        XCTAssertEqual(availableModels.count, 2)
 
         let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
         let mlxBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .mlx })
@@ -1896,15 +1896,15 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(indexHTML.contains("Kairo Model Catalog"))
         XCTAssertTrue(indexHTML.contains("models.json"))
-        XCTAssertTrue(indexHTML.contains("starter set: Qwen3.5 0.8B plus two popular alternatives"))
+        XCTAssertTrue(indexHTML.contains("starter pair: Qwen3.5 0.8B plus one popular alternative"))
         XCTAssertTrue(indexHTML.contains("Llama 3.2 1B"))
-        XCTAssertTrue(indexHTML.contains("SmolLM2 1.7B"))
-        XCTAssertTrue(indexHTML.contains("font-size: 15px"))
+        XCTAssertFalse(indexHTML.contains("SmolLM2 1.7B"))
+        XCTAssertTrue(indexHTML.contains("font-size: 14px"))
         XCTAssertTrue(indexHTML.contains("benchmark profiles"))
         XCTAssertTrue(readme.contains("Do not commit model weights"))
         XCTAssertTrue(readme.contains("kairo-models"))
         XCTAssertTrue(readme.contains("runtime benchmark profiles"))
-        XCTAssertTrue(rootReadme.contains("popular public GGUF models, including Qwen3.5, Llama 3.2, and SmolLM2"))
+        XCTAssertTrue(rootReadme.contains("currently Qwen3.5 0.8B and Llama 3.2 1B"))
         XCTAssertFalse(rootReadme.contains("DeepSeek R1 Distill Qwen"))
     }
 
@@ -2280,15 +2280,18 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains(#""settings.models.compact-list""#))
         XCTAssertTrue(compactView.contains(#""settings.models.selected-summary""#))
         XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).manifest""#))
+        XCTAssertTrue(compactView.contains("private let starterModelRowLimit = 2"))
+        XCTAssertTrue(compactView.contains("ForEach(visibleStarterModelRows)"))
+        XCTAssertFalse(compactView.contains("ForEach(localModelStatus.settingsRows)"))
         XCTAssertTrue(compactView.contains("row.manifestTransparencyText"))
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))
-        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 10, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 9) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 9, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 9, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 84)"))
+        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 9, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 8) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 8, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 8, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 78)"))
         XCTAssertTrue(compactView.contains(".lineLimit(1)"))
         XCTAssertTrue(compactView.contains(".lineLimit(2)"))
         XCTAssertTrue(compactView.contains(".imageScale(.small)"))
@@ -2937,8 +2940,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("settings.models.local"))
         for displayName in [
             "Qwen3.5 0.8B Q4_K_M",
-            "Llama 3.2 1B Instruct Q4_K_M",
-            "SmolLM2 1.7B Instruct Q4_K_M"
+            "Llama 3.2 1B Instruct Q4_K_M"
         ] {
             XCTAssertTrue(smokeTest.contains(displayName), displayName)
         }
@@ -3005,20 +3007,25 @@ final class KairoCoreTests: XCTestCase {
     }
 
     func testDefaultLocalModelCatalogExposesPopularStarterModelsForSettings() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let localModelSupport = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/LocalModelSupport.swift"),
+            encoding: .utf8
+        )
         let catalog = LocalModelCatalog.kairoDefault
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
 
         XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
-        XCTAssertEqual(availableModels.count, 3)
+        XCTAssertTrue(localModelSupport.contains("static let kairoStarterModelIDs"))
+        XCTAssertTrue(localModelSupport.contains("kairoStarterModels"))
+        XCTAssertEqual(availableModels.count, 2)
         XCTAssertEqual(availableModels.map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
-            "llama3-2-1b-instruct-q4-k-m",
-            "smollm2-1-7b-instruct-q4-k-m"
+            "llama3-2-1b-instruct-q4-k-m"
         ])
         XCTAssertEqual(availableModels.map(\.displayName), [
             "Qwen3.5 0.8B Q4_K_M",
-            "Llama 3.2 1B Instruct Q4_K_M",
-            "SmolLM2 1.7B Instruct Q4_K_M"
+            "Llama 3.2 1B Instruct Q4_K_M"
         ])
 
         for model in availableModels {
@@ -3055,9 +3062,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("MLX ref 286 gen tok/s") == true)
         XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("iPhone not verified") == true)
 
-        let smolLM = try XCTUnwrap(availableModels.first { $0.id == "smollm2-1-7b-instruct-q4-k-m" })
-        XCTAssertTrue(smolLM.capabilities.contains(.rewriting))
-        XCTAssertLessThanOrEqual(smolLM.fileSizeBytes, 1_100_000_000)
+        XCTAssertFalse(availableModels.contains { $0.id == "smollm2-1-7b-instruct-q4-k-m" })
     }
 
     func testLocalModelManifestTransparencyTextIsCompactForSettingsList() throws {
@@ -3594,7 +3599,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertFalse(downloadableRow.canDelete)
         XCTAssertTrue(selectedRow.detailText.contains("0.8B"))
         XCTAssertTrue(selectedRow.detailText.contains("Q4"))
-        XCTAssertTrue(selectedRow.detailText.contains("2K context"))
+        XCTAssertTrue(selectedRow.detailText.contains("2K ctx"))
+        XCTAssertFalse(selectedRow.detailText.contains("download"))
+        XCTAssertFalse(selectedRow.detailText.contains("Apache"))
         XCTAssertNil(downloadableRow.benchmarkSummaryText)
     }
 
