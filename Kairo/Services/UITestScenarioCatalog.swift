@@ -423,11 +423,11 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.models.local",
                 "settings.models.qwen3-5-0-8b-q4-k-m.name",
                 "settings.models.llama3-2-1b-instruct-q4-k-m.name",
-                "settings.models.smollm2-1-7b-instruct-q4-k-m.name"
+                "settings.models.trimmed-note"
             ],
             assertions: [
-                "The first Models screen remains focused on Qwen plus a short fallback list.",
-                "Remote catalog entries stay capped to a small popular starter set.",
+                "The first Models screen remains focused on Qwen plus one popular fallback.",
+                "Remote catalog entries stay capped to a two-model starter set.",
                 "Visible models are still downloadable metadata only, not bundled weights.",
                 "The expanded catalog path is deterministic in UI tests."
             ]

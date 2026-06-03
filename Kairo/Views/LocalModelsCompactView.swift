@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct LocalModelsCompactView: View {
-    private let popularModelRowLimit = 3
+    private let popularModelRowLimit = 2
     @State private var pendingDownloadModelID: String?
 
     let localModelStatus: LocalModelSettingsStatus
@@ -26,7 +26,7 @@ struct LocalModelsCompactView: View {
                         .font(compactSectionTitleFont)
                         .accessibilityIdentifier("settings.models.local")
 
-                    Text("Starter set: Qwen first, plus a short popular fallback list. Downloads require approval.")
+                    Text("Starter set: Qwen first, plus one popular fallback. Downloads require approval.")
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -48,12 +48,18 @@ struct LocalModelsCompactView: View {
                     }
 
                     if trimmedModelRowCount > 0 {
-                        Text("Showing \(visibleModelRows.count) popular starter models. Larger catalogs stay in kairo-models for later rollout.")
-                            .font(compactModelMetadataFont)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("settings.models.trimmed-note")
+                        HStack {
+                            Text(trimmedModelSummaryText)
+                                .font(compactModelMetadataFont)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                            Spacer(minLength: 0)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(trimmedModelSummaryText)
+                        .accessibilityIdentifier("settings.models.trimmed-note")
                     }
 
                     if localModelStatusMessageModelID == nil, let localModelStatusMessage {
@@ -64,13 +70,11 @@ struct LocalModelsCompactView: View {
                             .accessibilityIdentifier("settings.models.benchmark-message")
                     }
                 }
-                .accessibilityIdentifier("settings.models.compact-list")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
             .padding(.top, 16)
             .padding(.bottom, 32)
-            .accessibilityIdentifier("settings.models.local")
         }
         .scrollIndicators(.visible)
         .background(Color(.sRGB, white: 0.98, opacity: 1).ignoresSafeArea())
@@ -143,7 +147,7 @@ struct LocalModelsCompactView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(localModelCatalogSourceText)
-        .accessibilityIdentifier("settings.models.catalog-source")
+        .accessibilityIdentifier("settings.models.catalog-card")
     }
 
     private var selectedModelSummary: some View {
@@ -218,6 +222,10 @@ struct LocalModelsCompactView: View {
 
     private var trimmedModelRowCount: Int {
         max(localModelStatus.settingsRows.count - popularModelRowLimit, 0)
+    }
+
+    private var trimmedModelSummaryText: String {
+        "Showing \(visibleModelRows.count) starter models. Larger catalogs stay in kairo-models for later rollout."
     }
 
     @ViewBuilder
@@ -324,20 +332,20 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactButtonGridColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 64), spacing: 4, alignment: .leading)]
+        [GridItem(.adaptive(minimum: 58), spacing: 4, alignment: .leading)]
     }
 
-    private var compactSectionTitleFont: Font { .system(size: 15, weight: .semibold) }
+    private var compactSectionTitleFont: Font { .system(size: 14, weight: .semibold) }
 
-    private var compactSectionHeadingFont: Font { .system(size: 11, weight: .semibold) }
+    private var compactSectionHeadingFont: Font { .system(size: 10, weight: .semibold) }
 
-    private var compactModelNameFont: Font { .system(size: 10, weight: .semibold) }
+    private var compactModelNameFont: Font { .system(size: 9, weight: .semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 8) }
+    private var compactModelMetadataFont: Font { .system(size: 7.5) }
 
-    private var compactModelStatusFont: Font { .system(size: 8, weight: .semibold) }
+    private var compactModelStatusFont: Font { .system(size: 7.5, weight: .semibold) }
 
-    private var compactButtonLabelFont: Font { .system(size: 8, weight: .semibold) }
+    private var compactButtonLabelFont: Font { .system(size: 7.5, weight: .semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {
