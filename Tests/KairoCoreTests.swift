@@ -917,6 +917,39 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(result.summary.contains("2 draft"))
     }
 
+    func testKairoRecipeEngineStaysSplitAcrossSupportFiles() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let modelsSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/KairoRecipeModels.swift"),
+            encoding: .utf8
+        )
+        let storesSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/KairoRecipeStores.swift"),
+            encoding: .utf8
+        )
+        let templatesSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/KairoRecipeTemplates.swift"),
+            encoding: .utf8
+        )
+        let planningSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/KairoRecipePlanning.swift"),
+            encoding: .utf8
+        )
+        let runnerSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/KairoRecipeRunner.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("Kairo/Services/KairoRecipeEngine.swift").path))
+        XCTAssertLessThan(modelsSource.split(separator: "\n").count, 260)
+        XCTAssertLessThan(runnerSource.split(separator: "\n").count, 380)
+        XCTAssertTrue(modelsSource.contains("public struct KairoRecipe"))
+        XCTAssertTrue(storesSource.contains("public actor FileBackedKairoRecipeStore"))
+        XCTAssertTrue(templatesSource.contains("public enum KairoRecipeTemplateFactory"))
+        XCTAssertTrue(planningSource.contains("public struct KairoRecipePlanner"))
+        XCTAssertTrue(runnerSource.contains("public struct KairoRecipeRunner"))
+    }
+
     func testChatMessageDecodesMissingToolCandidatesAsEmptyForOldHistory() throws {
         let json = """
         {
