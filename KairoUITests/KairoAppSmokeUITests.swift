@@ -34,6 +34,25 @@ final class KairoAppSmokeUITests: XCTestCase {
         openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: true, selectFromDrawer: false)
     }
 
+    func testSettingsExpandedModelCatalogCanRevealMoreRows() throws {
+        relaunchForUITesting(initialSection: "models", seedExpandedLocalModelCatalog: true)
+
+        XCTAssertTrue(anyElement("settings.models.screen").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("settings.models.qwen3-5-0-8b-q4-k-m.name").exists)
+        XCTAssertTrue(anyElement("settings.models.llama3-2-1b-instruct-q4-k-m.name").exists)
+        XCTAssertFalse(anyElement("settings.models.smollm2-1-7b-instruct-q4-k-m.name").exists)
+
+        let showMoreIdentifier = "settings.models.show-more"
+        let showMoreByIdentifier = findElement(showMoreIdentifier, direction: .down, maxSwipes: 1)
+        let showMore = showMoreByIdentifier.exists
+            ? showMoreByIdentifier
+            : findButton(labeled: "Show 1 more", direction: .down, maxSwipes: 1)
+        XCTAssertTrue(showMore.exists)
+        showMore.tap()
+
+        XCTAssertTrue(findElement("settings.models.smollm2-1-7b-instruct-q4-k-m.name", direction: .down, maxSwipes: 1).waitForExistence(timeout: 3))
+    }
+
     func testChatComposerSurfaceIsTappableAndSends() throws {
         assertPrimaryDrawerItemsExist()
         selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
@@ -862,13 +881,20 @@ final class KairoAppSmokeUITests: XCTestCase {
         relaunchForUITesting(initialSection: initialSection, seedInstalledLocalModel: true)
     }
 
-    private func relaunchForUITesting(initialSection: String? = nil, seedInstalledLocalModel: Bool = false) {
+    private func relaunchForUITesting(
+        initialSection: String? = nil,
+        seedInstalledLocalModel: Bool = false,
+        seedExpandedLocalModelCatalog: Bool = false
+    ) {
         app.terminate()
         app = XCUIApplication()
         app.launchArguments.append("--ui-testing")
         app.launchArguments.append("--reset-ui-testing-data")
         if seedInstalledLocalModel {
             app.launchArguments.append("--ui-testing-installed-local-model")
+        }
+        if seedExpandedLocalModelCatalog {
+            app.launchArguments.append("--ui-testing-expanded-local-model-catalog")
         }
         if let initialSection {
             app.launchArguments.append("--ui-testing-root-section=\(initialSection)")

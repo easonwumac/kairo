@@ -3,6 +3,7 @@ import SwiftUI
 
 struct LocalModelsCompactView: View {
     private let starterModelRowLimit = 2
+    @State private var showsAllModelRows = false
 
     let localModelStatus: LocalModelSettingsStatus
     let localModelStatusMessage: String?
@@ -37,14 +38,36 @@ struct LocalModelsCompactView: View {
                 selectedModelSummary
 
                 VStack(alignment: .leading, spacing: 10) {
-                    if visibleStarterModelRows.isEmpty {
+                    if visibleModelRows.isEmpty {
                         Text("尚未載入 local model catalog。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
-                    ForEach(visibleStarterModelRows) { row in
+                    ForEach(visibleModelRows) { row in
                         compactLocalModelRow(row)
+                    }
+
+                    if hiddenModelRowCount > 0 || showsAllModelRows {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.18)) {
+                                showsAllModelRows.toggle()
+                            }
+                        } label: {
+                            Label(modelListToggleTitle, systemImage: showsAllModelRows ? "chevron.up" : "chevron.down")
+                                .font(compactButtonLabelFont)
+                                .imageScale(.small)
+                                .lineLimit(1)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 5)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .foregroundStyle(.blue)
+                                .background(Color.blue.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(modelListToggleTitle)
+                        .accessibilityIdentifier("settings.models.show-more")
                     }
 
                     if localModelStatusMessageModelID == nil, let localModelStatusMessage {
@@ -205,8 +228,19 @@ struct LocalModelsCompactView: View {
         return localModelStatus.availableModels.first { installedModelIDs.contains($0.id) }
     }
 
-    private var visibleStarterModelRows: [LocalModelSettingsRow] {
-        Array(localModelStatus.settingsRows.prefix(starterModelRowLimit))
+    private var visibleModelRows: [LocalModelSettingsRow] {
+        if showsAllModelRows {
+            return localModelStatus.settingsRows
+        }
+        return Array(localModelStatus.settingsRows.prefix(starterModelRowLimit))
+    }
+
+    private var hiddenModelRowCount: Int {
+        max(localModelStatus.settingsRows.count - starterModelRowLimit, 0)
+    }
+
+    private var modelListToggleTitle: String {
+        showsAllModelRows ? "Show starter set" : "Show \(hiddenModelRowCount) more"
     }
 
     @ViewBuilder

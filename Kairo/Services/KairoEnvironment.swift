@@ -94,7 +94,8 @@ public struct KairoEnvironment: Sendable {
 
     public static func uiTesting(
         resetPersistentState: Bool = true,
-        seedInstalledLocalModel: Bool = false
+        seedInstalledLocalModel: Bool = false,
+        seedExpandedLocalModelCatalog: Bool = false
     ) async throws -> KairoEnvironment {
         let rootDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("KairoUITesting", isDirectory: true)
@@ -118,7 +119,17 @@ public struct KairoEnvironment: Sendable {
             )
         )
         let marketplaceCatalogService = try uiTestingMarketplaceCatalogService()
-        let localModelCatalogService = try uiTestingLocalModelCatalogService()
+        let localModelCatalog = seedExpandedLocalModelCatalog
+            ? LocalModelCatalog.kairoDefault.mergingRemoteCatalog(LocalModelCatalog(
+                generatedAt: Date(timeIntervalSince1970: 1_767_225_600),
+                signingKeyID: "kairo-ui-testing-expanded-local-models",
+                signature: "unsigned-ui-testing-placeholder",
+                sourceRepository: URL(string: "https://github.com/easonwumac/kairo-models"),
+                minimumSafetyPolicyVersion: LocalModelCatalog.kairoDefault.minimumSafetyPolicyVersion,
+                models: [.smolLM2TinyInstruct]
+            ))
+            : .kairoDefault
+        let localModelCatalogService = try uiTestingLocalModelCatalogService(catalog: localModelCatalog)
         let localModelInstallRegistry = try await FileBackedLocalModelInstallRegistry(
             fileURL: rootDirectory
                 .appendingPathComponent("LocalModels", isDirectory: true)
@@ -142,7 +153,7 @@ public struct KairoEnvironment: Sendable {
                 .appendingPathComponent("settings.json")
         )
         let localModelSettingsService = LocalModelSettingsService(
-            catalog: .kairoDefault,
+            catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
             settingsStore: localModelSettingsStore
         )
@@ -152,12 +163,12 @@ public struct KairoEnvironment: Sendable {
                 .appendingPathComponent("benchmarks.json")
         )
         let localModelBenchmarkService = LocalModelBenchmarkService(
-            catalog: .kairoDefault,
+            catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
             resultStore: localModelBenchmarkStore
         )
         let localModelReplyCheckService = LocalModelReplyCheckService(
-            catalog: .kairoDefault,
+            catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
             runtime: DeterministicLocalModelReplyCheckRuntime(
                 responseText: "Local model reply is alive.",
@@ -191,6 +202,7 @@ public struct KairoEnvironment: Sendable {
             oauthConnectorCallbackStore: oauthCallbackStore,
             agentSkillManagerService: skillManagerService,
             agentSkillMarketplaceCatalogService: marketplaceCatalogService,
+            localModelCatalog: localModelCatalog,
             localModelCatalogService: localModelCatalogService,
             localModelSettingsService: localModelSettingsService,
             localModelBenchmarkService: localModelBenchmarkService,
@@ -297,9 +309,9 @@ public struct KairoEnvironment: Sendable {
         return AgentSkillMarketplaceCatalogService(indexURL: indexURL, httpClient: httpClient)
     }
 
-    private static func uiTestingLocalModelCatalogService() throws -> LocalModelCatalogService {
+    private static func uiTestingLocalModelCatalogService(catalog: LocalModelCatalog = .kairoDefault) throws -> LocalModelCatalogService {
         let indexURL = LocalModelCatalogService.defaultIndexURL
-        let catalogJSON = String(data: try LocalModelCatalog.kairoDefault.encoded(), encoding: .utf8) ?? "{}"
+        let catalogJSON = String(data: try catalog.encoded(), encoding: .utf8) ?? "{}"
         let httpClient = StaticHTTPClient(routes: [
             indexURL: StaticHTTPResponse(body: catalogJSON)
         ])

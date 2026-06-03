@@ -2281,8 +2281,14 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains(#""settings.models.selected-summary""#))
         XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).manifest""#))
         XCTAssertTrue(compactView.contains("private let starterModelRowLimit = 2"))
-        XCTAssertTrue(compactView.contains("ForEach(visibleStarterModelRows)"))
+        XCTAssertTrue(compactView.contains("@State private var showsAllModelRows = false"))
+        XCTAssertTrue(compactView.contains("ForEach(visibleModelRows)"))
         XCTAssertFalse(compactView.contains("ForEach(localModelStatus.settingsRows)"))
+        XCTAssertTrue(compactView.contains("if hiddenModelRowCount > 0 || showsAllModelRows"))
+        XCTAssertTrue(compactView.contains(#""settings.models.show-more""#))
+        XCTAssertTrue(compactView.contains("modelListToggleTitle"))
+        XCTAssertTrue(compactView.contains(#""Show starter set""#))
+        XCTAssertTrue(compactView.contains(#""Show \(hiddenModelRowCount) more""#))
         XCTAssertTrue(compactView.contains("row.manifestTransparencyText"))
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
@@ -2578,6 +2584,18 @@ final class KairoCoreTests: XCTestCase {
                 minimumSafetyPolicyVersion: LocalModelCatalog.kairoDefault.minimumSafetyPolicyVersion
             ).count
         )
+
+        let expandedEnvironment = try await KairoEnvironment.uiTesting(
+            resetPersistentState: true,
+            seedExpandedLocalModelCatalog: true
+        )
+        XCTAssertEqual(expandedEnvironment.localModelCatalog.availableModels(
+            minimumSafetyPolicyVersion: expandedEnvironment.localModelCatalog.minimumSafetyPolicyVersion
+        ).map(\.id), [
+            "qwen3-5-0-8b-q4-k-m",
+            "llama3-2-1b-instruct-q4-k-m",
+            "smollm2-1-7b-instruct-q4-k-m"
+        ])
     }
 
     func testKairoPathsBuildsApplicationSupportMemoryURL() {
@@ -2647,6 +2665,7 @@ final class KairoCoreTests: XCTestCase {
             "settings-api-key-status",
             "settings-oauth-connectors",
             "settings-local-model-benchmark",
+            "settings-local-model-expanded-catalog",
             "settings-local-model-reply-check",
             "settings-shortcut-demo-io",
             "access-homekit-demos"
@@ -2754,6 +2773,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.benchmark"))
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run"))
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.benchmark-message"))
+        let expandedModelsScenarioIdentifiers = catalog.scenario(id: "settings-local-model-expanded-catalog")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(expandedModelsScenarioIdentifiers.contains("settings.models.show-more"))
+        XCTAssertTrue(expandedModelsScenarioIdentifiers.contains("settings.models.smollm2-1-7b-instruct-q4-k-m.name"))
         let replyCheckScenarioIdentifiers = catalog.scenario(id: "settings-local-model-reply-check")?.requiredAccessibilityIdentifiers ?? []
         XCTAssertTrue(replyCheckScenarioIdentifiers.contains("settings.models.local"))
         XCTAssertTrue(replyCheckScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.reply-check"))
@@ -2815,13 +2837,17 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(appInfoPlist.contains("<key>NSContactsUsageDescription</key>"))
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
         XCTAssertTrue(smokeTest.contains("testSettingsLocalModelCatalogListsDownloadableModels"))
+        XCTAssertTrue(smokeTest.contains("testSettingsExpandedModelCatalogCanRevealMoreRows"))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsQwenBenchmarkFlowRequiresDownload"))
         XCTAssertTrue(smokeTest.contains("testSettingsRunsInstalledLocalModelReplyCheck"))
         XCTAssertTrue(smokeTest.contains(#""settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run""#))
         XCTAssertTrue(smokeTest.contains(#""settings.models.qwen3-5-0-8b-q4-k-m.reply-check""#))
+        XCTAssertTrue(smokeTest.contains(#""settings.models.show-more""#))
+        XCTAssertTrue(smokeTest.contains("smollm2-1-7b-instruct-q4-k-m"))
         XCTAssertTrue(smokeTest.contains("請先下載 Qwen3.5 0.8B Q4_K_M 後再跑 benchmark。"))
         XCTAssertTrue(smokeTest.contains("Local model reply is alive."))
         XCTAssertTrue(smokeTest.contains("--ui-testing-installed-local-model"))
+        XCTAssertTrue(smokeTest.contains("--ui-testing-expanded-local-model-catalog"))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsOAuthConnectorReadinessAndBoundaries"))
         XCTAssertTrue(smokeTest.contains("testSettingsPreviewsOAuthCallbackWithoutLeakingCode"))
         XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmNotificationAction"))
