@@ -4,6 +4,8 @@
 
 ## 建議文案
 
+Current beta `Config/KairoApp-Info.plist` should include only capabilities that are actually exercised by the shipping app target:
+
 ```xml
 <key>NSCalendarsUsageDescription</key>
 <string>Kairo 需要行事曆權限，才能在你確認後建立或整理行事曆草稿。</string>
@@ -20,17 +22,23 @@
 <key>NSContactsUsageDescription</key>
 <string>Kairo 只會在你明確要求並確認後，透過 Contacts.framework 建立聯絡人。</string>
 
+<key>NSUserNotificationsUsageDescription</key>
+<string>Kairo 會用通知提醒你 briefing、待確認動作與重要待辦。</string>
+```
+
+## Future-only purpose strings
+
+Do not add these to the beta app plist until the matching capability is implemented and reviewed:
+
+```xml
+<key>NSHomeKitUsageDescription</key>
+<string>Kairo 需要家庭權限，才能在你確認後執行 HomeKit 場景或配件控制。</string>
+
 <key>NSPhotoLibraryUsageDescription</key>
 <string>Kairo 只會處理你選擇的圖片或截圖，用於摘要、OCR、任務抽取與記憶保存。</string>
 
 <key>NSLocationWhenInUseUsageDescription</key>
 <string>Kairo 只會在你要求地點相關協助時使用目前位置。</string>
-
-<key>NSUserNotificationsUsageDescription</key>
-<string>Kairo 會用通知提醒你 briefing、待確認動作與重要待辦。</string>
-
-<key>NSHomeKitUsageDescription</key>
-<string>Kairo 需要家庭權限，才能在你確認後執行 HomeKit 場景或配件控制。</string>
 ```
 
 ## 原則
@@ -39,5 +47,6 @@
 - 權限被拒絕時要有 graceful fallback。
 - 高敏感權限預設不在 onboarding 一次要求。
 - iOS 17+ 的 EventKit full-access requests 需要 `NSCalendarsFullAccessUsageDescription` / `NSRemindersFullAccessUsageDescription`，舊 key 只作為舊系統 fallback。
-- Apple Maps handoff 不需要 Kairo 讀取目前位置；只有未來明確加入定位讀取功能時，才可觸發 Location permission。
-- 目前 beta 沒有 HomeKit entitlement；`NSHomeKitUsageDescription` 只能作為未來 live-control path 的文案草稿，不可在 review notes 宣稱真實 HomeKit live control 已完成。
+- Share Extension 接收使用者分享的圖片/file metadata 不需要 full photo library permission；只有未來加入 PhotosPicker / PHPhotoLibrary 讀取時，才加入 `NSPhotoLibraryUsageDescription`。
+- Apple Maps handoff 不需要 Kairo 讀取目前位置；只有未來明確加入 CoreLocation 讀取功能時，才可加入 `NSLocationWhenInUseUsageDescription` 並觸發 Location permission。
+- 目前 beta 沒有 HomeKit entitlement；`NSHomeKitUsageDescription` 只能作為未來 live-control path 的文案草稿，不可放進 beta plist 或在 review notes 宣稱真實 HomeKit live control 已完成。

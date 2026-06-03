@@ -25,6 +25,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
 4. Skill Manager / marketplace production hardening.
    - Publish production marketplace trust-store key material; `docs/TRUST_STORE_RUNBOOK.md` now defines rotation/revocation metadata and the release gate, and app-side trust keys carry active/revoked metadata and validity windows.
    - User-created skill drafts now require explicit capability selection and confirmation policy; keep this invariant covered.
+   - Skill Manager lifecycle now has a backend API facade for catalog/effective catalog/preview/install/disable/enable/remove/user drafts, including fail-closed behavior when the service is unavailable.
    - Signed skill update and user-created remove flows now have simulator UI smoke coverage; keep these invariants covered without treating them as real-device sign-off.
    - Preserve the invariant that compatibility-blocked skills never become executable tools.
 

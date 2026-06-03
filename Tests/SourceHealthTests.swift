@@ -162,6 +162,35 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertEqual(accessedAPITypes.first?["NSPrivacyAccessedAPITypeReasons"] as? [String], ["CA92.1"])
     }
 
+    func testBetaInfoPlistPurposeStringsMatchEnabledCapabilities() throws {
+        let root = packageRootURL()
+        let appInfoPlistURL = root.appendingPathComponent("Config/KairoApp-Info.plist")
+        let data = try Data(contentsOf: appInfoPlistURL)
+        let plist = try XCTUnwrap(
+            PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
+        )
+
+        XCTAssertEqual(
+            plist["NSCalendarsFullAccessUsageDescription"] as? String,
+            "Kairo 需要完整行事曆權限，才能在你確認後透過 EventKit 建立行事曆事件。"
+        )
+        XCTAssertEqual(
+            plist["NSRemindersFullAccessUsageDescription"] as? String,
+            "Kairo 需要提醒事項完整權限，才能在你確認後透過 EventKit 建立提醒事項。"
+        )
+        XCTAssertEqual(
+            plist["NSContactsUsageDescription"] as? String,
+            "Kairo 只會在你明確要求並確認後，透過 Contacts.framework 建立聯絡人。"
+        )
+        XCTAssertEqual(
+            plist["NSUserNotificationsUsageDescription"] as? String,
+            "Kairo 會用通知提醒你 briefing、待確認動作與重要待辦。"
+        )
+        XCTAssertNil(plist["NSHomeKitUsageDescription"])
+        XCTAssertNil(plist["NSLocationWhenInUseUsageDescription"])
+        XCTAssertNil(plist["NSPhotoLibraryUsageDescription"])
+    }
+
     func testAppReviewCopyAndEntitlementsStayWithinBetaClaims() throws {
         let root = packageRootURL()
         let entitlements = try String(

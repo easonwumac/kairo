@@ -10,7 +10,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 | Memory | Implemented | Save/search/delete/export exists; deleted JSON records can be purged from disk. |
 | Share Extension ingestion | Implemented | Text/URL/image/PDF/file metadata imports into Chat; extension is queue-only and action-free. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA. |
-| Skill Manager | Scaffolded | Access lifecycle exists; signed marketplace install/update, compatibility-blocked install, and user-created remove flows have simulator XCUITest smoke coverage; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
+| Skill Manager | Scaffolded | Access lifecycle exists; backend API facade covers catalog/effective catalog/preview/install/disable/enable/remove/user drafts with fail-closed behavior; signed marketplace install/update, compatibility-blocked install, and user-created remove flows have simulator XCUITest smoke coverage; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
 | Email / Messages / Phone / Web / Maps handoffs | Implemented | Visible handoff only, preview + explicit confirmation. |
 | EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist for current scope. |
 | HomeKit | Scaffolded | Preview/demo/test path exists; real HomeKit entitlement/live control is not complete. |
@@ -45,6 +45,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - **Copy QA scope:** Review notes avoid claiming iOS production local inference, live HomeKit control, private cross-app data reads, arbitrary UI control, ChatGPT web-session reuse, or silent Apple Shortcuts creation.
 - **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking, and package source-health tests parse the privacy manifest plus entitlement/review-note boundaries. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
 - **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
+- **Purpose string scope:** Beta app plist includes only currently exercised Calendar, Reminders, Contacts, and Notifications purpose strings; HomeKit, Location, and Photo Library purpose strings stay future-only until those capabilities ship.
 - **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, unsupported, or invalid signing keys. `docs/TRUST_STORE_RUNBOOK.md` defines the production rotation/revocation gate, but production signed catalogs and release public-key material still need publication in the standalone repos.
 
 ### 1. Public API only
@@ -62,10 +63,10 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 - [x] Calendar / Reminders 使用 EventKit 且有清楚 purpose string；Chat reminder/calendar actions 已使用 EventKit permission + preview + confirmation。
 - [x] Notifications 使用 UserNotifications，明確說明用途，Chat action 需 preview + confirmation 後才排程。
-- [x] Photos / Documents copy is user-selection based; Kairo does not claim full-library or background photo access.
+- [x] Photos / Documents copy is currently Share Extension/user-selected metadata only; beta plist does not include Photo Library permission until PhotosPicker / PHPhotoLibrary access exists.
 - [ ] HomeKit live control remains disabled for beta: current entitlements contain only App Group, so HomeKit must stay preview/demo/test-only until entitlement, purpose copy, permission fallback, and real-device confirmation are complete.
 - [x] Contacts 只在使用者明確要求建立聯絡人時使用 Contacts.framework，且需 runtime permission + preview + confirmation；不讀取或匯出通訊錄。
-- [x] Location copy is limited to user-requested location help; Apple Maps handoff does not require Kairo to read current location.
+- [x] Apple Maps handoff does not require Kairo to read current location; beta plist does not include Location permission until CoreLocation access exists.
 - [ ] Permission-denied fallback UI still needs real-device QA across Calendar / Reminders / Notifications / Contacts.
 
 ### 3. Memory privacy
@@ -132,6 +133,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Marketplace trust store supports key rotation and revocation metadata, including active/revoked state, validity windows, revoked timestamps, and revoked reasons.
 - [x] Marketplace/model catalog trust-store rotation and emergency revocation runbook is documented in `docs/TRUST_STORE_RUNBOOK.md`.
 - [x] User-created skills require explicit capability selection and confirmation policy before a disabled local draft can be saved.
+- [x] Skill Manager backend API facade covers catalog/effective catalog/preview/install/disable/enable/remove/user drafts, unavailable-service fail-closed behavior, and compatibility-blocked marketplace skills staying out of the executable catalog.
 - [x] Skill remove flow has simulator UI smoke coverage for user-created drafts; signed marketplace update preview/confirm has simulator XCUITest smoke coverage.
 - [x] Chat uses live Skill Manager effective catalog, including disabled and compatibility-blocked skill state.
 
@@ -212,9 +214,9 @@ For the current beta build, App Privacy Labels should state no tracking and no c
 Purpose-string alignment:
 
 - Calendar / Reminders / Notifications / Contacts are just-in-time and tied to user-confirmed actions.
-- Photos/Documents are user-selected import surfaces, not background or full-library access claims.
-- Location is not required for Apple Maps handoff; any future location read must remain user-triggered and just-in-time.
-- HomeKit purpose copy must not be exercised in beta until the entitlement/live-control path is complete.
+- Photos/Documents are currently Share Extension/user-selected metadata surfaces, not background or full-library access claims; `NSPhotoLibraryUsageDescription` is not in the beta plist.
+- Location is not required for Apple Maps handoff; `NSLocationWhenInUseUsageDescription` is not in the beta plist, and any future location read must remain user-triggered and just-in-time.
+- HomeKit purpose copy must not be exercised in beta until the entitlement/live-control path is complete; `NSHomeKitUsageDescription` is not in the beta plist.
 
 ## Real-device beta sign-off
 
@@ -256,7 +258,7 @@ Because no available real device was reachable, the following remain release-blo
   - `testChatCanPreviewAndConfirmMessagesHandoff`
   - `testChatCanPreviewAndConfirmPhoneCallHandoff`
   - `testChatCanPreviewAndConfirmWebSearchHandoff`
-- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, App Intent registry/type coverage plus Ask/Save/Search node runtime, local model catalog unknown/revoked/invalid signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup, local model backend API facade status/select/preference/delete/stale-cleanup/fail-closed behavior, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
+- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, App Intent registry/type coverage plus Ask/Save/Search node runtime, local model catalog unknown/revoked/invalid signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup, local model backend API facade status/select/preference/delete/stale-cleanup/fail-closed behavior, Skill Manager backend API facade lifecycle/user-draft/compatibility/fail-closed behavior, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
 - [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
 - [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
 - [x] 不支援的跨 App 操作會顯示安全替代方案。
