@@ -66,6 +66,61 @@ final class SourceHealthTests: XCTestCase {
         )
     }
 
+    func testRepositoryDoesNotContainHighConfidenceSecrets() throws {
+        let root = packageRootURL()
+        let skippedDirectoryNames: Set<String> = [
+            ".git",
+            ".build",
+            ".swiftpm",
+            "DerivedData",
+            "Kairo.xcodeproj",
+            "tmp"
+        ]
+        let privateKeyMarkers = [
+            "-----BEGIN " + "PRIVATE " + "KEY-----",
+            "-----BEGIN " + "RSA " + "PRIVATE " + "KEY-----",
+            "-----BEGIN " + "EC " + "PRIVATE " + "KEY-----",
+            "-----BEGIN " + "OPENSSH " + "PRIVATE " + "KEY-----"
+        ]
+        let tokenPatterns = [
+            #"sk-[A-Za-z0-9_-]{20,}"#,
+            #"ghp_[A-Za-z0-9_]{20,}"#,
+            #"github_pat_[A-Za-z0-9_]{20,}"#,
+            #"AKIA[0-9A-Z]{16}"#
+        ].map { try! NSRegularExpression(pattern: $0) }
+
+        let keys: [URLResourceKey] = [.isDirectoryKey, .isRegularFileKey, .fileSizeKey]
+        let enumerator = FileManager.default.enumerator(
+            at: root,
+            includingPropertiesForKeys: keys,
+            options: [.skipsHiddenFiles]
+        )
+        var matches: [String] = []
+
+        while let fileURL = enumerator?.nextObject() as? URL {
+            let values = try fileURL.resourceValues(forKeys: Set(keys))
+            if values.isDirectory == true, skippedDirectoryNames.contains(fileURL.lastPathComponent) {
+                enumerator?.skipDescendants()
+                continue
+            }
+            guard values.isRegularFile == true else { continue }
+            if let fileSize = values.fileSize, fileSize > 2_000_000 { continue }
+
+            let data = try Data(contentsOf: fileURL)
+            guard let text = String(data: data, encoding: .utf8) else { continue }
+            let range = NSRange(text.startIndex..<text.endIndex, in: text)
+            if privateKeyMarkers.contains(where: text.contains)
+                || tokenPatterns.contains(where: { $0.firstMatch(in: text, range: range) != nil }) {
+                matches.append(fileURL.path.replacingOccurrences(of: root.path + "/", with: ""))
+            }
+        }
+
+        XCTAssertTrue(
+            matches.isEmpty,
+            "Do not commit high-confidence secrets, access tokens, or private keys: \(matches.joined(separator: ", "))"
+        )
+    }
+
     func testLocalModelCoverageLivesInFocusedTestFile() throws {
         let root = packageRootURL()
         let focusedTestsURL = root.appendingPathComponent("Tests/LocalModelFeatureTests.swift")
