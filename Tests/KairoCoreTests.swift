@@ -3344,7 +3344,7 @@ final class KairoCoreTests: XCTestCase {
         let selectedRow = try XCTUnwrap(rows.first { $0.modelID == selectedManifest.id })
         let downloadableRow = try XCTUnwrap(rows.first { $0.modelID == downloadableManifest.id })
 
-        XCTAssertEqual(rows.map(\.modelID), [downloadableManifest.id, selectedManifest.id])
+        XCTAssertEqual(rows.map(\.modelID), [selectedManifest.id, downloadableManifest.id])
         XCTAssertEqual(selectedRow.statusText, "已選用")
         XCTAssertEqual(selectedRow.primaryAction, .selected)
         XCTAssertEqual(downloadableRow.statusText, "可下載")

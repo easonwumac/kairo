@@ -1654,11 +1654,11 @@ public enum LocalModelSettingsPrimaryAction: String, Codable, Equatable, Sendabl
 
     fileprivate var sortPriority: Int {
         switch self {
-        case .download, .retryDownload:
+        case .selected:
             return 0
         case .select:
             return 1
-        case .selected:
+        case .download, .retryDownload:
             return 2
         case .unavailable:
             return 3
