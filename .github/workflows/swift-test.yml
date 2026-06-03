@@ -9,7 +9,7 @@ on:
 jobs:
   swift-test:
     name: swift test
-    runs-on: macos-15
+    runs-on: [self-hosted, macOS]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -1,6 +1,17 @@
 import XCTest
 
 final class SourceHealthTests: XCTestCase {
+    func testSwiftTestWorkflowUsesSelfHostedMacRunner() throws {
+        let root = packageRootURL()
+        let workflow = try String(
+            contentsOf: root.appendingPathComponent(".github/workflows/swift-test.yml"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(workflow.contains("runs-on: [self-hosted, macOS]"))
+        XCTAssertFalse(workflow.contains("runs-on: macos-15"))
+    }
+
     func testLocalModelCoverageLivesInFocusedTestFile() throws {
         let root = packageRootURL()
         let focusedTestsURL = root.appendingPathComponent("Tests/LocalModelFeatureTests.swift")
