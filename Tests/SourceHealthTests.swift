@@ -407,6 +407,10 @@ final class SourceHealthTests: XCTestCase {
             contentsOf: root.appendingPathComponent("Kairo/Services/BackgroundTaskPolicy.swift"),
             encoding: .utf8
         )
+        let backgroundDocs = try String(
+            contentsOf: root.appendingPathComponent("docs/BACKGROUND_TASKS.md"),
+            encoding: .utf8
+        )
 
         XCTAssertEqual(
             Set(plistIdentifiers),
@@ -418,7 +422,15 @@ final class SourceHealthTests: XCTestCase {
         )
         for identifier in plistIdentifiers {
             XCTAssertTrue(policySource.contains(#"identifier: "\#(identifier)""#))
+            XCTAssertTrue(backgroundDocs.contains(identifier))
         }
+        XCTAssertTrue(backgroundDocs.contains("BGTaskSchedulerPermittedIdentifiers"))
+        XCTAssertTrue(backgroundDocs.contains("BackgroundTaskPolicy.defaultTasks"))
+        XCTAssertTrue(backgroundDocs.contains("Widget snapshot must stay future-only until a Widget target ships."))
+        XCTAssertTrue(backgroundDocs.contains("高風險 action 只能走前景 preview + explicit confirmation"))
+        XCTAssertTrue(backgroundDocs.contains("physical-device sign-off"))
+        XCTAssertFalse(backgroundDocs.contains("- [ ]"))
+        XCTAssertFalse(backgroundDocs.contains("app.kairo.refresh"))
     }
 
     func testAppReviewCopyAndEntitlementsStayWithinBetaClaims() throws {

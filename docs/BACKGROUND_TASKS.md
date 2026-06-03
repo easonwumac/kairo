@@ -11,7 +11,7 @@ Kairo 需要善用 iOS 允許的背景能力，但不能宣稱常駐背景 daemo
 - 更新每日 briefing cache。
 - 檢查待匯入 Share queue。
 - 清理過期 memory / attachment metadata。
-- 準備 Widget snapshot。
+- 準備前景開啟時可顯示的輕量 briefing draft；Widget snapshot must stay future-only until a Widget target ships.
 
 限制：
 
@@ -57,19 +57,29 @@ Kairo 需要善用 iOS 允許的背景能力，但不能宣稱常駐背景 daemo
 4. 不依賴背景任務保證準時。
 5. 使用者可以關閉 background refresh / notifications。
 
-## MVP task identifiers
+## Beta task identifiers
 
 ```text
-app.kairo.refresh
-app.kairo.processing.index
-app.kairo.processing.model-verify
-app.kairo.processing.cleanup
+com.kairo.app.refresh
+com.kairo.app.processing.local-model
+com.kairo.app.processing.connectors
 ```
+
+These identifiers are mirrored in `Config/KairoApp-Info.plist` under `BGTaskSchedulerPermittedIdentifiers` and in `BackgroundTaskPolicy.defaultTasks`.
 
 ## Acceptance criteria
 
-- [ ] Background task registry 有明確 task catalog。
-- [ ] 每個 task 有目的、風險、是否可在背景執行的描述。
-- [ ] 不支援背景執行的 task 不會被排程。
-- [ ] Task execution 不會直接執行 tier2/tier3 action。
-- [ ] 文件明確說明 iOS 不保證背景任務準時。
+- [x] Background task registry 有明確 task catalog。
+- [x] 每個 task 有目的、風險、是否可在背景執行的描述。
+- [x] 不支援背景執行的 task 不會被排程。
+- [x] Task planning 不會直接執行 tier2/tier3 action；高風險 action 只能走前景 preview + explicit confirmation。
+- [x] 文件明確說明 iOS 不保證背景任務準時。
+
+Package/source-health evidence:
+
+- `BackgroundTaskPolicy.defaultTasks` defines the beta catalog and bounded runtime limits.
+- `testBackgroundTaskIdentifiersMatchInfoPlist` keeps `BGTaskSchedulerPermittedIdentifiers` aligned with the policy catalog.
+- `testBackgroundTaskPolicySchedulesBoundedRefreshAndRejectsDaemonClaims` rejects continuous background daemon requests.
+- `testBackgroundTaskPolicyDefersOversizedConnectorWork` defers work that exceeds the task budget.
+
+This is package/source evidence only. Real-device background launch behavior, App Group access, permission prompts, App Intents execution, Share Extension import, and persistence still require physical-device sign-off.
