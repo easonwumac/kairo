@@ -573,13 +573,29 @@ final class SourceHealthTests: XCTestCase {
             contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"),
             encoding: .utf8
         )
+        let catalogReleaseChecklist = try String(
+            contentsOf: root.appendingPathComponent("docs/CATALOG_RELEASE_CHECKLIST.md"),
+            encoding: .utf8
+        )
 
         for source in [skillManagement, localModelFallback, nextSteps, readiness] {
             XCTAssertTrue(source.contains("docs/TRUST_STORE_RUNBOOK.md"))
+            XCTAssertTrue(source.contains("docs/CATALOG_RELEASE_CHECKLIST.md"))
         }
         XCTAssertTrue(skillManagement.contains("Publish the production marketplace trust-store key material"))
         XCTAssertTrue(localModelFallback.contains("production signed catalog publication"))
         XCTAssertTrue(localModelFallback.contains("實機 iPhone runtime proof"))
+        XCTAssertTrue(catalogReleaseChecklist.contains("easonwumac/kairo-skills"))
+        XCTAssertTrue(catalogReleaseChecklist.contains("easonwumac/kairo-models"))
+        XCTAssertTrue(catalogReleaseChecklist.contains("publicKeyBase64"))
+        XCTAssertTrue(catalogReleaseChecklist.contains("compatibility-blocked skills remain preview-only"))
+        XCTAssertTrue(catalogReleaseChecklist.contains("App-side trust-store validation is not proof that production catalogs have been published."))
+        XCTAssertTrue(catalogReleaseChecklist.contains("Signed catalog validation is not proof of iPhone local inference."))
+        XCTAssertTrue(catalogReleaseChecklist.contains("must not contain private signing keys"))
+        XCTAssertTrue(catalogReleaseChecklist.contains(".gguf"))
+        XCTAssertFalse(catalogReleaseChecklist.contains("-----BEGIN"))
+        XCTAssertFalse(catalogReleaseChecklist.localizedCaseInsensitiveContains("private signing key:"))
+        XCTAssertFalse(catalogReleaseChecklist.localizedCaseInsensitiveContains("api token:"))
     }
 
     func testShortcutDemoCatalogStaysSplitAcrossFocusedFiles() throws {

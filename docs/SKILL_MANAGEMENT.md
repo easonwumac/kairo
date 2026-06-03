@@ -66,5 +66,5 @@ The management website provides:
 ## Near-term implementation order
 
 1. Expand UI/e2e interaction coverage to signed text import and prompt-context availability. Chat now has HomeKit action-preview and Shortcut tool-candidate e2e coverage; Access now has simulator UI coverage for signed marketplace install/update, compatibility-blocked marketplace install, and user-created remove flows.
-2. Publish the production marketplace trust-store key material; `docs/TRUST_STORE_RUNBOOK.md` now defines the rotation/revocation release gate.
+2. Publish the production marketplace trust-store key material; `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` now define the publication and rotation/revocation release gate.
 3. Connect compatibility gates to production entitlement inspection and per-provider OAuth readiness details.

@@ -46,7 +46,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking, and package source-health tests parse the privacy manifest plus entitlement/review-note boundaries. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
 - **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
 - **Purpose string scope:** Beta app plist includes only currently exercised Calendar, Reminders, Contacts, and Notifications purpose strings; HomeKit, Location, and Photo Library purpose strings stay future-only until those capabilities ship.
-- **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, out-of-window, unsupported, or invalid signing keys. `docs/TRUST_STORE_RUNBOOK.md` defines the production rotation/revocation gate, but production signed catalogs and release public-key material still need publication in the standalone repos.
+- **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, out-of-window, unsupported, or invalid signing keys. `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` define the production publication and rotation/revocation gates, but production signed catalogs and release public-key material still need publication in the standalone repos.
 
 ### 1. Public API only
 

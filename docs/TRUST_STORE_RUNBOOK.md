@@ -61,5 +61,6 @@ Before App Review or beta release handoff:
 - `swift test` must pass.
 - `xcodegen generate` must pass when `xcodegen` is installed.
 - Focused scans must find no secrets, tokens, private keys, generated credentials, model weights, `.gguf`, tokenizer files, or model caches in tracked files.
+- `docs/CATALOG_RELEASE_CHECKLIST.md` must be complete for the standalone skill and model catalog repositories before production catalog publication is claimed.
 - `docs/APP_STORE_READINESS.md` must distinguish app-side signature verification from production catalog publication.
 - Real-device evidence is still required for runtime claims; signed catalog validation is not proof of iPhone local inference.
