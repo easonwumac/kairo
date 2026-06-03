@@ -417,19 +417,18 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
         ),
         UITestScenario(
             id: "settings-local-model-expanded-catalog",
-            title: "Settings Expanded Model Catalog",
-            userGoal: "Open Models with a remote catalog seed and verify Kairo keeps Qwen as the only first-screen model until the user explicitly reveals more downloadable models.",
+            title: "Settings Popular Model Starter Catalog",
+            userGoal: "Open Models with a remote catalog seed and verify Kairo keeps a compact popular starter set visible without flooding the first screen.",
             requiredAccessibilityIdentifiers: [
                 "settings.models.local",
                 "settings.models.qwen3-5-0-8b-q4-k-m.name",
                 "settings.models.llama3-2-1b-instruct-q4-k-m.name",
-                "settings.models.show-more",
                 "settings.models.smollm2-1-7b-instruct-q4-k-m.name"
             ],
             assertions: [
-                "The first Models screen remains focused on Qwen only.",
-                "Extra remote catalog entries are hidden behind a visible Show more control.",
-                "Revealed models are still downloadable metadata only, not bundled weights.",
+                "The first Models screen remains focused on Qwen plus a short fallback list.",
+                "Remote catalog entries stay capped to a small popular starter set.",
+                "Visible models are still downloadable metadata only, not bundled weights.",
                 "The expanded catalog path is deterministic in UI tests."
             ]
         ),

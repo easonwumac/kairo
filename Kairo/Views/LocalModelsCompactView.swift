@@ -2,8 +2,7 @@
 import SwiftUI
 
 struct LocalModelsCompactView: View {
-    private let starterModelRowLimit = 1
-    @State private var showsAllModelRows = false
+    private let popularModelRowLimit = 3
     @State private var pendingDownloadModelID: String?
 
     let localModelStatus: LocalModelSettingsStatus
@@ -24,11 +23,10 @@ struct LocalModelsCompactView: View {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Local Models")
-                        .font(.headline)
-                        .fontWeight(.semibold)
+                        .font(compactSectionTitleFont)
                         .accessibilityIdentifier("settings.models.local")
 
-                    Text("Featured: Qwen first, plus one popular fallback. Downloads require approval.")
+                    Text("Starter set: Qwen first, plus a short popular fallback list. Downloads require approval.")
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -49,26 +47,13 @@ struct LocalModelsCompactView: View {
                         compactLocalModelRow(row)
                     }
 
-                    if hiddenModelRowCount > 0 || showsAllModelRows {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.18)) {
-                                showsAllModelRows.toggle()
-                            }
-                        } label: {
-                            Label(modelListToggleTitle, systemImage: showsAllModelRows ? "chevron.up" : "chevron.down")
-                                .font(compactButtonLabelFont)
-                                .imageScale(.small)
-                                .lineLimit(1)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 5)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .foregroundStyle(.blue)
-                                .background(Color.blue.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel(modelListToggleTitle)
-                        .accessibilityIdentifier("settings.models.show-more")
+                    if trimmedModelRowCount > 0 {
+                        Text("Showing \(visibleModelRows.count) popular starter models. Larger catalogs stay in kairo-models for later rollout.")
+                            .font(compactModelMetadataFont)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("settings.models.trimmed-note")
                     }
 
                     if localModelStatusMessageModelID == nil, let localModelStatusMessage {
@@ -97,8 +82,7 @@ struct LocalModelsCompactView: View {
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Route Preference")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+                        .font(compactSectionHeadingFont)
 
                     Text(localModelStatus.preference.settingsDetailText)
                         .font(compactModelMetadataFont)
@@ -130,8 +114,7 @@ struct LocalModelsCompactView: View {
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Catalog")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+                        .font(compactSectionHeadingFont)
 
                     Text(localModelCatalogSourceText)
                         .font(compactModelMetadataFont)
@@ -230,18 +213,11 @@ struct LocalModelsCompactView: View {
     }
 
     private var visibleModelRows: [LocalModelSettingsRow] {
-        if showsAllModelRows {
-            return localModelStatus.settingsRows
-        }
-        return Array(localModelStatus.settingsRows.prefix(starterModelRowLimit))
+        Array(localModelStatus.settingsRows.prefix(popularModelRowLimit))
     }
 
-    private var hiddenModelRowCount: Int {
-        max(localModelStatus.settingsRows.count - starterModelRowLimit, 0)
-    }
-
-    private var modelListToggleTitle: String {
-        showsAllModelRows ? "Show featured set" : "Show \(hiddenModelRowCount) more popular"
+    private var trimmedModelRowCount: Int {
+        max(localModelStatus.settingsRows.count - popularModelRowLimit, 0)
     }
 
     @ViewBuilder
@@ -265,11 +241,12 @@ struct LocalModelsCompactView: View {
                     .accessibilityIdentifier("settings.models.\(row.modelID).status")
             }
 
-            Text(row.detailText)
+            Text("\(row.detailText) · \(row.runtimeFitText)")
                 .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                .accessibilityIdentifier("settings.models.\(row.modelID).runtime-fit")
 
             Text(row.manifestTransparencyText)
                 .font(compactModelMetadataFont)
@@ -277,13 +254,6 @@ struct LocalModelsCompactView: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .accessibilityIdentifier("settings.models.\(row.modelID).manifest")
-
-            Text(row.runtimeFitText)
-                .font(compactModelMetadataFont)
-                .foregroundStyle(.secondary.opacity(0.85))
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .accessibilityIdentifier("settings.models.\(row.modelID).runtime-fit")
 
             if let benchmarkSummaryText = row.benchmarkSummaryText {
                 Text(benchmarkSummaryText)
@@ -354,16 +324,20 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactButtonGridColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 72), spacing: 4, alignment: .leading)]
+        [GridItem(.adaptive(minimum: 64), spacing: 4, alignment: .leading)]
     }
 
-    private var compactModelNameFont: Font { .system(size: 7, weight: .semibold) }
+    private var compactSectionTitleFont: Font { .system(size: 15, weight: .semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 6) }
+    private var compactSectionHeadingFont: Font { .system(size: 11, weight: .semibold) }
 
-    private var compactModelStatusFont: Font { .system(size: 6, weight: .semibold) }
+    private var compactModelNameFont: Font { .system(size: 10, weight: .semibold) }
 
-    private var compactButtonLabelFont: Font { .system(size: 6, weight: .semibold) }
+    private var compactModelMetadataFont: Font { .system(size: 8) }
+
+    private var compactModelStatusFont: Font { .system(size: 8, weight: .semibold) }
+
+    private var compactButtonLabelFont: Font { .system(size: 8, weight: .semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {
