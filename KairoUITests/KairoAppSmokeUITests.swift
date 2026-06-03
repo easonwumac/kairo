@@ -36,6 +36,25 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findButton(labeled: "Show 1 more popular", direction: .down, maxSwipes: 1).exists)
     }
 
+    func testSettingsLocalModelDownloadRequiresConfirmationPreview() throws {
+        relaunchForUITesting(initialSection: "models")
+
+        let modelID = "qwen3-5-0-8b-q4-k-m"
+        let download = findButton("settings.models.\(modelID).download", direction: .down, maxSwipes: 1)
+        XCTAssertTrue(download.waitForExistence(timeout: 5))
+        download.tap()
+
+        XCTAssertTrue(findElement("settings.models.\(modelID).download-preview", direction: .both, maxSwipes: 1).waitForExistence(timeout: 3))
+        XCTAssertTrue(findStaticText(containing: "Download requires explicit approval.", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Apache-2.0", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("settings.models.\(modelID).download-confirm", direction: .both, maxSwipes: 1).exists)
+
+        let cancel = findButton("settings.models.\(modelID).download-cancel", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(cancel.exists)
+        cancel.tap()
+        XCTAssertFalse(anyElement("settings.models.\(modelID).download-preview").exists)
+    }
+
     func testSettingsExpandedModelCatalogCanRevealMoreRows() throws {
         relaunchForUITesting(initialSection: "models", seedExpandedLocalModelCatalog: true)
 
@@ -399,8 +418,11 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         let summary = findElement("access.skills.search.summary", direction: .both, maxSwipes: 2)
         XCTAssertTrue(summary.waitForExistence(timeout: 5))
-        XCTAssertTrue(summary.label.contains("Showing 1 of"), "Unexpected skill search summary: \(summary.label)")
-        XCTAssertTrue(summary.label.contains("Weather Briefing"), "Unexpected skill search summary: \(summary.label)")
+        let visibleLabels = app.staticTexts.allElementsBoundByIndex.map(\.label)
+        XCTAssertTrue(visibleLabels.contains { $0.contains("Showing 1 of") }, visibleLabels.joined(separator: " | "))
+        XCTAssertTrue(visibleLabels.contains { $0.contains("Weather Briefing") }, visibleLabels.joined(separator: " | "))
+        XCTAssertTrue(findElement("access.skill.marketplace-weather-briefing", direction: .down, maxSwipes: 4).exists)
+        XCTAssertFalse(anyElement("access.skill.shortcut-save-shared-text").exists)
     }
 
     func testAccessShowsHomeKitSecurityDevicePreview() throws {

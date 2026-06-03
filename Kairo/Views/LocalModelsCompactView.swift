@@ -4,6 +4,7 @@ import SwiftUI
 struct LocalModelsCompactView: View {
     private let starterModelRowLimit = 1
     @State private var showsAllModelRows = false
+    @State private var pendingDownloadModelID: String?
 
     let localModelStatus: LocalModelSettingsStatus
     let localModelStatusMessage: String?
@@ -329,6 +330,10 @@ struct LocalModelsCompactView: View {
                 }
             }
 
+            if pendingDownloadModelID == row.modelID {
+                downloadPreview(for: row)
+            }
+
             if localModelStatusMessageModelID == row.modelID, let localModelStatusMessage {
                 Text(localModelStatusMessage)
                     .font(compactModelMetadataFont)
@@ -370,7 +375,7 @@ struct LocalModelsCompactView: View {
                 accessibilityIdentifier: "settings.models.\(row.modelID).download",
                 tint: .blue
             ) {
-                downloadLocalModel(row)
+                pendingDownloadModelID = row.modelID
             }
         case .select:
             compactActionButton(
@@ -392,6 +397,53 @@ struct LocalModelsCompactView: View {
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("settings.models.\(row.modelID).unavailable")
         }
+    }
+
+    private func downloadPreview(for row: LocalModelSettingsRow) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text("Download requires explicit approval.")
+                .font(compactModelStatusFont)
+                .fontWeight(.semibold)
+
+            Text("\(row.displayName) · \(row.detailText)")
+                .font(compactModelMetadataFont)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+
+            Text(row.manifestTransparencyText)
+                .font(compactModelMetadataFont)
+                .foregroundStyle(.secondary.opacity(0.9))
+                .lineLimit(2)
+
+            HStack(spacing: 6) {
+                compactActionButton(
+                    "Confirm Download",
+                    systemImage: "checkmark.circle",
+                    accessibilityIdentifier: "settings.models.\(row.modelID).download-confirm",
+                    tint: .blue
+                ) {
+                    pendingDownloadModelID = nil
+                    downloadLocalModel(row)
+                }
+
+                compactActionButton(
+                    "Cancel",
+                    systemImage: "xmark.circle",
+                    accessibilityIdentifier: "settings.models.\(row.modelID).download-cancel",
+                    tint: .secondary
+                ) {
+                    pendingDownloadModelID = nil
+                }
+            }
+        }
+        .padding(6)
+        .background(Color.blue.opacity(0.055), in: RoundedRectangle(cornerRadius: 7))
+        .overlay {
+            RoundedRectangle(cornerRadius: 7)
+                .stroke(Color.blue.opacity(0.14), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("settings.models.\(row.modelID).download-preview")
     }
 
     private func compactActionButton(
