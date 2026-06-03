@@ -301,6 +301,20 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
+            id: "automations-shortcut-demo-io",
+            title: "Shortcuts Node Demo Contracts",
+            userGoal: "Open Shortcuts and verify Kairo exposes runnable node demo input/output contracts for user-installed Shortcut examples.",
+            requiredAccessibilityIdentifiers: shortcutDemoIdentifiers(prefix: "automations.shortcut-demo", sectionIdentifier: "automations.shortcut-demos"),
+            assertions: [
+                "The Shortcuts screen exposes Shortcut node demo recipes.",
+                "Each demo shows the Kairo node path.",
+                "Each demo shows Shortcut input contract fields.",
+                "Each demo shows output contract fields.",
+                "Each demo exposes sample input without executing Apple Shortcuts.",
+                "The generic node runner shows node kind and JSON input/output contracts for downstream Shortcut steps."
+            ]
+        ),
+        UITestScenario(
             id: "settings-api-key-status",
             title: "Settings Credential Status",
             userGoal: "Open Settings and verify API key plus OAuth connector status is visible without exposing secret values.",
@@ -490,6 +504,18 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         )
     ])
+
+    private static func shortcutDemoIdentifiers(prefix: String, sectionIdentifier: String) -> [String] {
+        var identifiers = ["root.drawer.shortcuts", sectionIdentifier]
+        for recipe in ShortcutDemoCatalog.default.recipes {
+            identifiers.append("\(prefix).\(recipe.id)")
+            identifiers.append("\(prefix).\(recipe.id).steps")
+            identifiers.append("\(prefix).\(recipe.id).input")
+            identifiers.append("\(prefix).\(recipe.id).output")
+            identifiers.append("\(prefix).\(recipe.id).sample")
+        }
+        return identifiers
+    }
 }
 
 public struct UITestScenario: Codable, Equatable, Identifiable, Sendable {

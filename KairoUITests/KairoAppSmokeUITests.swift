@@ -164,6 +164,22 @@ final class KairoAppSmokeUITests: XCTestCase {
         )
     }
 
+    func testShortcutsSurfaceShowsNodeDemoContracts() throws {
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.shortcuts", label: "Shortcuts")
+
+        XCTAssertTrue(findElement("automations.shortcut-demos", direction: .down).exists)
+        verifyShortcutDemoContract(
+            namespace: "automations.shortcut-demo",
+            id: "generic-node-runner",
+            titleText: "Generic Node Runner",
+            stepText: "2 steps: summarize -> extractTasks",
+            inputText: "Input: nodeKind, inputJSON",
+            outputText: "Output: outputJSON, displayText, fields.taskCount, tasks",
+            sampleText: "Shortcut dictionary"
+        )
+    }
+
     func testSettingsShowsOAuthConnectorReadinessAndBoundaries() throws {
         assertPrimaryDrawerItemsExist()
         selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
@@ -679,6 +695,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     private func verifyShortcutDemoContract(
+        namespace: String = "settings.shortcuts.demo",
         id: String,
         titleText: String,
         stepText: String,
@@ -687,14 +704,14 @@ final class KairoAppSmokeUITests: XCTestCase {
         sampleText: String
     ) {
         XCTAssertTrue(findStaticText(containing: titleText, direction: .both, maxSwipes: 10).exists)
-        assertShortcutDemoField(id: id, suffix: "steps", contains: stepText)
-        assertShortcutDemoField(id: id, suffix: "input", contains: inputText)
-        assertShortcutDemoField(id: id, suffix: "output", contains: outputText)
-        assertShortcutDemoField(id: id, suffix: "sample", contains: sampleText)
+        assertShortcutDemoField(namespace: namespace, id: id, suffix: "steps", contains: stepText)
+        assertShortcutDemoField(namespace: namespace, id: id, suffix: "input", contains: inputText)
+        assertShortcutDemoField(namespace: namespace, id: id, suffix: "output", contains: outputText)
+        assertShortcutDemoField(namespace: namespace, id: id, suffix: "sample", contains: sampleText)
     }
 
-    private func assertShortcutDemoField(id: String, suffix: String, contains expectedText: String) {
-        let element = findElement("settings.shortcuts.demo.\(id).\(suffix)", direction: .both, maxSwipes: 2)
+    private func assertShortcutDemoField(namespace: String = "settings.shortcuts.demo", id: String, suffix: String, contains expectedText: String) {
+        let element = findElement("\(namespace).\(id).\(suffix)", direction: .both, maxSwipes: 2)
         XCTAssertTrue(element.exists)
         XCTAssertTrue(element.label.contains(expectedText))
     }

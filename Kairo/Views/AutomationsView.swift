@@ -51,6 +51,17 @@ public struct AutomationsView: View {
                 }
                 .accessibilityIdentifier("automations.shortcut-templates")
 
+                Section("Shortcut Node Demos") {
+                    Text("Use these as user-installed Shortcut node examples. Each demo passes explicit input into Kairo and returns structured output for downstream Shortcut steps.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    ForEach(ShortcutDemoCatalog.default.recipes) { recipe in
+                        shortcutDemoRow(recipe)
+                    }
+                }
+                .accessibilityIdentifier("automations.shortcut-demos")
+
                 Section("Recipes") {
                     if recipes.isEmpty {
                         Text("No internal recipes yet.")
@@ -103,6 +114,43 @@ public struct AutomationsView: View {
                     openURL(installURL)
                 }
                 .accessibilityIdentifier("automations.shortcut-template.\(template.identifier).open")
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func shortcutDemoRow(_ recipe: ShortcutDemoRecipe) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(recipe.title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id)")
+
+            Text(recipe.summary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text(recipe.settingsStepSummary)
+                .font(.caption)
+                .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).steps")
+
+            Text(recipe.settingsInputSummary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).input")
+
+            Text(recipe.settingsOutputSummary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).output")
+
+            if !recipe.settingsSampleInputPreview.isEmpty {
+                Text(recipe.settingsSampleInputPreview)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).sample")
             }
         }
         .padding(.vertical, 4)

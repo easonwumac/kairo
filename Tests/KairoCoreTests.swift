@@ -2328,6 +2328,18 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(automationsView.contains(#""automations.shortcut-template.\(template.identifier).instructions""#))
     }
 
+    func testAutomationsViewSurfacesShortcutDemoNodeContracts() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let automationsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/AutomationsView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(automationsView.contains("ShortcutDemoCatalog.default.recipes"))
+        XCTAssertTrue(automationsView.contains(#""automations.shortcut-demos""#))
+        XCTAssertTrue(automationsView.contains(#""automations.shortcut-demo.\(recipe.id).input""#))
+        XCTAssertTrue(automationsView.contains(#""automations.shortcut-demo.\(recipe.id).output""#))
+        XCTAssertTrue(automationsView.contains("settingsInputSummary"))
+        XCTAssertTrue(automationsView.contains("settingsOutputSummary"))
+    }
+
     func testChatViewDefinesPolishedComposerAccessibilityIdentifiers() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let chatView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatView.swift"), encoding: .utf8)
@@ -2550,6 +2562,7 @@ final class KairoCoreTests: XCTestCase {
             "chat-messages-handoff-confirmation",
             "automations-recipe-center",
             "automations-shortcut-templates",
+            "automations-shortcut-demo-io",
             "settings-api-key-status",
             "settings-oauth-connectors",
             "settings-local-model-benchmark",
@@ -2628,6 +2641,15 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-template.disclaimer"))
         XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-template.run-kairo-recipe-shortcut"))
         XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-template.run-kairo-recipe-shortcut.instructions"))
+        let automationsShortcutDemoScenarioIdentifiers = catalog.scenario(id: "automations-shortcut-demo-io")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(automationsShortcutDemoScenarioIdentifiers.contains("root.drawer.shortcuts"))
+        XCTAssertTrue(automationsShortcutDemoScenarioIdentifiers.contains("automations.shortcut-demos"))
+        for recipe in ShortcutDemoCatalog.default.recipes {
+            XCTAssertTrue(automationsShortcutDemoScenarioIdentifiers.contains("automations.shortcut-demo.\(recipe.id)"), recipe.id)
+            XCTAssertTrue(automationsShortcutDemoScenarioIdentifiers.contains("automations.shortcut-demo.\(recipe.id).input"), recipe.id)
+            XCTAssertTrue(automationsShortcutDemoScenarioIdentifiers.contains("automations.shortcut-demo.\(recipe.id).output"), recipe.id)
+            XCTAssertTrue(automationsShortcutDemoScenarioIdentifiers.contains("automations.shortcut-demo.\(recipe.id).sample"), recipe.id)
+        }
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
