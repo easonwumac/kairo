@@ -20,7 +20,10 @@ struct KairoApp: App {
                     ProgressView("Loading Kairo")
                         .accessibilityIdentifier("root.environment.loading")
                 } else {
-                    RootView(environment: environment)
+                    RootView(
+                        environment: environment,
+                        initialSection: Self.launchInitialSection(arguments: ProcessInfo.processInfo.arguments)
+                    )
                         .id(environmentRevision)
                 }
             }
@@ -34,7 +37,8 @@ struct KairoApp: App {
                     if arguments.contains("--ui-testing") {
                         do {
                             let uiTestingEnvironment = try await KairoEnvironment.uiTesting(
-                                resetPersistentState: arguments.contains("--reset-ui-testing-data")
+                                resetPersistentState: arguments.contains("--reset-ui-testing-data"),
+                                seedInstalledLocalModel: arguments.contains("--ui-testing-installed-local-model")
                             )
                             environment = uiTestingEnvironment
                             environmentRevision += 1
@@ -52,6 +56,13 @@ struct KairoApp: App {
                     }
                 }
         }
+    }
+
+    private static func launchInitialSection(arguments: [String]) -> String? {
+        let prefix = "--ui-testing-root-section="
+        return arguments
+            .first { $0.hasPrefix(prefix) }
+            .map { String($0.dropFirst(prefix.count)) }
     }
 }
 #endif

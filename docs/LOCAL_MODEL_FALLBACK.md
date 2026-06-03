@@ -66,7 +66,7 @@ protocol AIProvider {
 
 ## MVP 策略
 
-第一階段不把模型權重塞進 app 或 repo。Kairo core 已具備多個 2B 參數以下公開 GGUF 模型的遠端下載 manifest entries、install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring，以及 Settings 內的本機模型 catalog/status UI；下一步是 signed production catalog、progress/cancel UI、實機 runtime proof of concept。
+第一階段不把模型權重塞進 app 或 repo。Kairo core 已具備多個 2B 參數以下公開 GGUF 模型的遠端下載 manifest entries、install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring、模型 catalog/status UI、benchmark metadata，以及 local reply-check runtime abstraction；下一步是 signed production catalog、progress/cancel UI、實機 runtime proof of concept。
 
 ## Download pipeline
 
@@ -80,36 +80,15 @@ protocol AIProvider {
 
 The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, and a Refresh Catalog action. A production build still needs a real signed catalog, stronger signature verification, progress/cancellation handling, license text, and stronger size disclosure.
 
-The default development catalog points to 26 public GGUF downloads through Hugging Face, all at 2B parameters or below:
+The default development catalog starts with 6 popular public GGUF downloads through Hugging Face. It is intentionally compact for the first Models UI pass; the standalone `kairo-models` catalog can add more entries later without bundling weights into the app:
 
 - `Qwen3.5 0.8B Q4_K_M`: `AaryanK/Qwen3.5-0.8B-GGUF`, file `Qwen3.5-0.8B.q4_k_m.gguf`, about 527.5 MB.
 - `Qwen3.5 2B Q4_K_M`: `AaryanK/Qwen3.5-2B-GGUF`, file `Qwen3.5-2B.q4_k_m.gguf`, about 1.27 GB.
-- `Qwen3 0.6B Q4_K_M`: `unsloth/Qwen3-0.6B-GGUF`, file `Qwen3-0.6B-Q4_K_M.gguf`, about 396.7 MB.
-- `Qwen3 1.7B Q4_K_M`: `unsloth/Qwen3-1.7B-GGUF`, file `Qwen3-1.7B-Q4_K_M.gguf`, about 1.11 GB.
-- `Qwen2.5 0.5B Instruct Q4_K_M`: `Qwen/Qwen2.5-0.5B-Instruct-GGUF`, file `qwen2.5-0.5b-instruct-q4_k_m.gguf`, about 491.4 MB.
-- `Qwen2.5 1.5B Instruct Q4_K_M`: `Qwen/Qwen2.5-1.5B-Instruct-GGUF`, file `qwen2.5-1.5b-instruct-q4_k_m.gguf`, about 1.12 GB.
-- `Qwen2.5 Math 1.5B Instruct Q4_K_M`: `bartowski/Qwen2.5-Math-1.5B-Instruct-GGUF`, file `Qwen2.5-Math-1.5B-Instruct-Q4_K_M.gguf`, about 986.0 MB.
-- `Qwen2.5-Coder 0.5B Instruct Q4_K_M`: `QuantFactory/Qwen2.5-Coder-0.5B-Instruct-GGUF`, file `Qwen2.5-Coder-0.5B-Instruct.Q4_K_M.gguf`, about 491.4 MB.
-- `Qwen2.5-Coder 1.5B Instruct Q4_K_M`: `Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF`, file `qwen2.5-coder-1.5b-instruct-q4_k_m.gguf`, about 1.12 GB.
 - `Llama 3.2 1B Instruct Q4_K_M`: `bartowski/Llama-3.2-1B-Instruct-GGUF`, file `Llama-3.2-1B-Instruct-Q4_K_M.gguf`, about 807.7 MB.
-- `Granite 3.2 2B Instruct Q4_K_M`: `Mungert/granite-3.2-2b-instruct-GGUF`, file `granite-3.2-2b-instruct-q4_k_m.gguf`, about 1.53 GB.
 - `DeepSeek R1 Distill Qwen 1.5B Q4_K_M`: `QuantFactory/DeepSeek-R1-Distill-Qwen-1.5B-GGUF`, file `DeepSeek-R1-Distill-Qwen-1.5B.Q4_K_M.gguf`, about 1.12 GB.
-- `LFM2.5 1.2B Instruct Q4_K_M`: `LiquidAI/LFM2.5-1.2B-Instruct-GGUF`, file `LFM2.5-1.2B-Instruct-Q4_K_M.gguf`, about 730.9 MB.
-- `H2O Danube2 1.8B Chat Q4_K_M`: `h2oai/h2o-danube2-1.8b-chat-GGUF`, file `h2o-danube2-1.8b-chat-Q4_K_M.gguf`, about 1.11 GB.
-- `OLMo 2 1B Instruct Q4_K_M`: `unsloth/OLMo-2-0425-1B-Instruct-GGUF`, file `OLMo-2-0425-1B-Instruct-Q4_K_M.gguf`, about 935.5 MB.
-- `OpenELM 1.1B Instruct Q4_K_M`: `straino/OpenELM-1_1B-Instruct-Q4_K_M-GGUF`, file `openelm-1_1b-instruct-q4_k_m.gguf`, about 678.1 MB.
-- `Falcon-H1 1.5B Instruct Q4_K_M`: `tiiuae/Falcon-H1-1.5B-Instruct-GGUF`, file `Falcon-H1-1.5B-Instruct-Q4_K_M.gguf`, about 944.8 MB.
-- `SmolLM2 135M Instruct Q4_K_M`: `unsloth/SmolLM2-135M-Instruct-GGUF`, file `SmolLM2-135M-Instruct-Q4_K_M.gguf`, about 105.5 MB.
-- `SmolLM2 360M Instruct Q4_K_M`: `bartowski/SmolLM2-360M-Instruct-GGUF`, file `SmolLM2-360M-Instruct-Q4_K_M.gguf`, about 270.6 MB.
 - `SmolLM2 1.7B Instruct Q4_K_M`: `bartowski/SmolLM2-1.7B-Instruct-GGUF`, file `SmolLM2-1.7B-Instruct-Q4_K_M.gguf`, about 1.06 GB.
-- `TinyLlama 1.1B Chat Q4_K_M`: `TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF`, file `tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf`, about 668.8 MB.
-- `Gemma 3 270M IT Q4_K_M`: `unsloth/gemma-3-270m-it-GGUF`, file `gemma-3-270m-it-Q4_K_M.gguf`, about 253.1 MB.
-- `Gemma 3 1B IT Q4_K_M`: `ggml-org/gemma-3-1b-it-GGUF`, file `gemma-3-1b-it-Q4_K_M.gguf`, about 806.1 MB.
-- `Gemma 2 2B IT Q4_K_M`: `second-state/Gemma-2b-it-GGUF`, file `gemma-2b-it-Q4_K_M.gguf`, about 1.50 GB.
-- `Gemma 4 E2B IT Q4_K_M`: `unsloth/gemma-4-E2B-it-GGUF`, file `gemma-4-E2B-it-Q4_K_M.gguf`, about 3.11 GB.
-- `StableLM 2 Chat 1.6B Q4_K_M`: `RichardErkhov/stabilityai_-_stablelm-2-1_6b-chat-gguf`, file `stablelm-2-1_6b-chat.Q4_K_M.gguf`, about 1.03 GB.
 
-SHA-256 and file size are stored in each manifest and verified after download. Models with noncommercial, custom, or gated license terms, such as StableLM 2 Chat, LFM2.5, and Gemma variants, must keep license text visible and should gain a production license-approval gate in the standalone `kairo-models` catalog before broad rollout.
+SHA-256 and file size are stored in each manifest and verified after download. Models with noncommercial, custom, or gated license terms, should keep license text visible and should gain a production license-approval gate in the standalone `kairo-models` catalog before broad rollout.
 
 Kairo must keep this as an explicit user-triggered download. Do not commit model weights, tokenizer blobs, downloaded `.gguf` files, or cached model artifacts into this repository.
 
@@ -120,10 +99,23 @@ Development-machine benchmark on June 2, 2026, using Apple M5 Pro:
 - `llama.cpp` / GGUF `Qwen3.5-0.8B.q4_k_m.gguf`, Metal, 512 prompt tokens, 128 generated tokens, 5 trials: about 8,810 prompt tok/s and 214 generation tok/s.
 - `llama.cpp` / GGUF with `-ngl 0`, 3 trials: about 433 prompt tok/s and 123 generation tok/s.
 - `mlx-lm` / `mlx-community/Qwen3.5-0.8B-OptiQ-4bit`, 512 prompt tokens, 128 generated tokens, 5 trials: about 10,639 prompt tok/s, 286 generation tok/s, and 1.36 GB peak memory.
+- June 3, 2026 spot check with `mlx_lm.generate --ignore-chat-template`, prompt `Kairo local model is running.`, 16 generated tokens: about 107.8 prompt tok/s, 307.5 generation tok/s, 0.694 GB peak memory, and visible local output `Kairo local model is running.`.
 
 MLX is the stronger Apple Silicon benchmark path for macOS/dev validation. iPhone production support still needs a separate runtime decision and real-device proof for latency, memory, thermal behavior, and App Store-compatible packaging. Do not treat these Mac numbers as iPhone performance.
 
 `LocalModelManifest.benchmarkProfiles` now records the GGUF Metal and MLX reference profiles for `Qwen3.5 0.8B Q4_K_M`. Settings shows the best reference summary as `MLX ref 286 gen tok/s ... iPhone not verified`, while the row still downloads only the GGUF artifact through the explicit user-approved model downloader. The MLX artifact is tracked as benchmark metadata for Apple Silicon validation, not as an in-app iPhone download target in this pass.
+
+## Reply check
+
+`LocalModelReplyCheckService` verifies the local-model execution path separately from benchmark metadata:
+
+- it refuses to run until the target model has an installed registry record;
+- it calls an injected `LocalModelReplyCheckRuntime` and requires non-empty response text;
+- Settings exposes a visible `Run Reply Check` button for each model row;
+- UI tests seed only a deterministic install record and deterministic runtime response, never model weights;
+- live builds use an unavailable runtime placeholder until an App Store-compatible iPhone inference runtime is wired.
+
+This lets Kairo test the reply-check plumbing without bundling Qwen, while still making the missing production runtime explicit.
 
 ## Model catalog backend
 

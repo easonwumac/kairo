@@ -188,7 +188,7 @@ Current nodes:
 8. `Create Daily Briefing` returns briefing text and suggested task drafts.
 9. `Run Kairo Shortcut Node` runs a supported node kind from JSON input and returns structured JSON output.
 10. `Run Kairo Recipe` runs an enabled internal recipe by id and returns structured JSON output.
-11. `Suggest Kairo Recipe` saves a disabled recipe draft for Kairo Automations review.
+11. `Suggest Kairo Recipe` saves a disabled recipe draft for Kairo Shortcuts review.
 12. `List Kairo Recipes` lists enabled recipe ids/titles.
 13. `Run Kairo Daily Briefing` seeds and runs the internal Daily Briefing recipe.
 
@@ -211,7 +211,7 @@ Implemented App Intent types:
 
 `ShortcutTemplateRegistry.default` ships user-installed template metadata for Daily Briefing, Meeting Prep, Share Text to Kairo, Screenshot to Tasks, Action Button Ask Kairo, and generic Run Kairo Recipe. Templates store required App Intent identifiers, recommended internal recipe ids, and manual setup instructions.
 
-Template metadata is not a one-tap install mechanism. The Automations tab states that Kairo creates internal recipes and Apple Shortcuts installation requires user approval.
+Template metadata is not a one-tap install mechanism. The Shortcuts drawer screen states that Kairo creates internal recipes and Apple Shortcuts installation requires user approval.
 
 ## User-visible Shortcut handoff
 

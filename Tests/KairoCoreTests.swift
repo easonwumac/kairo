@@ -1879,7 +1879,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(availableModels.allSatisfy { $0.runtime == .gguf })
         XCTAssertTrue(availableModels.allSatisfy { $0.downloadURL.scheme == "https" })
         XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
-        XCTAssertEqual(availableModels.count, 26)
+        XCTAssertEqual(availableModels.count, 6)
 
         let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
         let mlxBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .mlx })
@@ -1895,7 +1895,7 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(indexHTML.contains("Kairo Model Catalog"))
         XCTAssertTrue(indexHTML.contains("models.json"))
-        XCTAssertTrue(indexHTML.contains("26\n      downloadable GGUF models at 2B parameters or below"))
+        XCTAssertTrue(indexHTML.contains("6\n      starter GGUF models at 2B parameters or below"))
         XCTAssertTrue(indexHTML.contains("benchmark profiles"))
         XCTAssertTrue(readme.contains("Do not commit model weights"))
         XCTAssertTrue(readme.contains("kairo-models"))
@@ -2250,7 +2250,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains("private let localModelBenchmarkService: LocalModelBenchmarkService?"))
         XCTAssertTrue(settingsView.contains("runLocalModelBenchmark(row)"))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).benchmark-run""#))
+        XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).reply-check""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.benchmark-message""#))
+        XCTAssertTrue(settingsView.contains("runLocalModelReplyCheck(row)"))
         XCTAssertTrue(settingsView.contains("請先下載"))
         XCTAssertTrue(settingsView.contains("refreshLocalModelCatalog"))
         XCTAssertTrue(settingsView.contains(#""settings.models.refresh-catalog""#))
@@ -2263,15 +2265,25 @@ final class KairoCoreTests: XCTestCase {
         let automationsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/AutomationsView.swift"), encoding: .utf8)
 
         XCTAssertFalse(rootView.contains("TabView"))
+        XCTAssertTrue(rootView.contains("GeometryReader"))
+        XCTAssertTrue(rootView.contains("let safeAreaInsets = proxy.safeAreaInsets"))
         XCTAssertTrue(rootView.contains(#""root.shell""#))
+        XCTAssertTrue(rootView.contains(#""root.safe-area-header""#))
         XCTAssertTrue(rootView.contains(#""root.drawer.toggle""#))
         XCTAssertTrue(rootView.contains(#""root.drawer""#))
         XCTAssertTrue(rootView.contains(#""root.drawer.close""#))
         XCTAssertTrue(rootView.contains(#""root.drawer.\(section.rawValue)""#))
+        XCTAssertTrue(rootView.contains("rootHeader(topInset: safeAreaInsets.top)"))
+        XCTAssertTrue(rootView.contains("drawer(safeAreaInsets: safeAreaInsets)"))
+        XCTAssertTrue(rootView.contains(".padding(.top, max(safeAreaInsets.top, 0)"))
+        XCTAssertTrue(rootView.contains(".ignoresSafeArea(edges: .top)"))
+        XCTAssertTrue(rootView.contains(".ignoresSafeArea(edges: [.top, .leading, .bottom])"))
+        XCTAssertFalse(rootView.contains(".ignoresSafeArea(edges: .vertical)"))
         XCTAssertTrue(rootView.contains("case chat"))
-        XCTAssertTrue(rootView.contains("case memory"))
-        XCTAssertTrue(rootView.contains("case automations"))
+        XCTAssertTrue(rootView.contains("case skills"))
+        XCTAssertTrue(rootView.contains("case shortcuts"))
         XCTAssertTrue(rootView.contains("case access"))
+        XCTAssertTrue(rootView.contains("case models"))
         XCTAssertTrue(rootView.contains("case settings"))
         XCTAssertTrue(rootView.contains("AutomationsView("))
         XCTAssertTrue(rootView.contains("recipeStore: environment.kairoRecipeStore"))
@@ -2292,6 +2304,47 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(automationsView.contains(#""automations.shortcut-template.disclaimer""#))
         XCTAssertTrue(automationsView.contains(#""automations.shortcut-template.\(template.identifier)""#))
         XCTAssertTrue(automationsView.contains(#""automations.shortcut-template.\(template.identifier).instructions""#))
+    }
+
+    func testChatViewDefinesPolishedComposerAccessibilityIdentifiers() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let chatView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(chatView.contains(#""chat.composer.surface""#))
+        XCTAssertTrue(chatView.contains(#""chat.composer.input-shell""#))
+        XCTAssertTrue(chatView.contains(#""chat.composer.text""#))
+        XCTAssertTrue(chatView.contains(#""chat.composer.send""#))
+        XCTAssertTrue(chatView.contains("minHeight: 52"))
+        XCTAssertTrue(chatView.contains("RoundedRectangle(cornerRadius: 22"))
+        XCTAssertTrue(chatView.contains("shadow(color:"))
+        XCTAssertTrue(chatView.contains(".textSelection(.enabled)"))
+        XCTAssertTrue(chatView.contains(#""chat.message.copy.\(message.id.uuidString)""#))
+        XCTAssertTrue(chatView.contains(#""chat.message.reply.\(message.id.uuidString)""#))
+        XCTAssertTrue(chatView.contains(#""chat.reply-preview""#))
+        XCTAssertTrue(chatView.contains("replyToMessage"))
+    }
+
+    @MainActor
+    func testChatViewModelComposesReplyReferenceWithoutPastingFullMessage() async throws {
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+        )
+        let longMessage = ChatMessage(
+            role: .assistant,
+            text: String(repeating: "This is a long assistant answer. ", count: 12)
+        )
+
+        viewModel.replyToMessage(longMessage)
+        viewModel.composerText = "I want to reply briefly."
+        await viewModel.sendComposerMessage()
+
+        let userMessage = try XCTUnwrap(viewModel.currentThread.messages.first { $0.role == .user })
+        XCTAssertTrue(userMessage.text.contains("Replying to"))
+        XCTAssertTrue(userMessage.text.contains("I want to reply briefly."))
+        XCTAssertLessThan(userMessage.text.count, longMessage.text.count)
+        XCTAssertNil(viewModel.replyTarget)
     }
 
     func testPermissionHubDefinesHomeKitDemoAccessibilityIdentifiers() throws {
@@ -2357,6 +2410,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(environmentSource.contains("localModelBenchmarkService"))
         XCTAssertTrue(environmentSource.contains("FileBackedLocalModelBenchmarkStore(fileURL: paths.localModelBenchmarkResultsURL)"))
         XCTAssertTrue(rootViewSource.contains("localModelBenchmarkService: environment.localModelBenchmarkService"))
+        XCTAssertTrue(environmentSource.contains("localModelReplyCheckService"))
+        XCTAssertTrue(environmentSource.contains("LocalModelReplyCheckService("))
+        XCTAssertTrue(rootViewSource.contains("localModelReplyCheckService: environment.localModelReplyCheckService"))
+        XCTAssertTrue(rootViewSource.contains("mode: .modelsOnly"))
         XCTAssertTrue(permissionHubSource.contains("private let skillManagerService: AgentSkillManagerService?"))
         XCTAssertTrue(permissionHubSource.contains("private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?"))
         XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.catalog()"))
@@ -2459,6 +2516,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(catalog.scenarios.map(\.id), [
             "launch-drawer",
             "chat-send",
+            "chat-message-copy-reply",
             "chat-tool-preview",
             "chat-shortcut-tool-candidate",
             "chat-notification-confirmation",
@@ -2468,25 +2526,31 @@ final class KairoCoreTests: XCTestCase {
             "chat-email-draft-confirmation",
             "chat-map-directions-confirmation",
             "chat-messages-handoff-confirmation",
-            "memory-manual-save",
             "automations-recipe-center",
             "automations-shortcut-templates",
             "settings-api-key-status",
             "settings-oauth-connectors",
             "settings-local-model-benchmark",
+            "settings-local-model-reply-check",
             "settings-shortcut-demo-io",
             "access-homekit-demos"
         ])
+        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.safe-area-header") == true)
         XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.toggle") == true)
         XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer") == true)
         XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.chat") == true)
-        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.memory") == true)
-        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.automations") == true)
+        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.skills") == true)
+        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.shortcuts") == true)
         XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.access") == true)
+        XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.models") == true)
         XCTAssertTrue(catalog.scenario(id: "launch-drawer")?.requiredAccessibilityIdentifiers.contains("root.drawer.settings") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.history.thread") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.new") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
+        let chatCopyReplyScenarioIdentifiers = catalog.scenario(id: "chat-message-copy-reply")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(chatCopyReplyScenarioIdentifiers.contains("chat.message.copy."))
+        XCTAssertTrue(chatCopyReplyScenarioIdentifiers.contains("chat.message.reply."))
+        XCTAssertTrue(chatCopyReplyScenarioIdentifiers.contains("chat.reply-preview"))
         XCTAssertTrue(catalog.scenario(id: "chat-tool-preview")?.requiredAccessibilityIdentifiers.contains("chat.proposed-actions") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-tool-preview")?.requiredAccessibilityIdentifiers.contains("chat.proposed-action.controlHome") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidates") == true)
@@ -2526,12 +2590,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(messageScenarioIdentifiers.contains("chat.action-preview"))
         XCTAssertTrue(messageScenarioIdentifiers.contains("chat.action.confirm"))
         XCTAssertTrue(messageScenarioIdentifiers.contains("chat.action-result"))
-        XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.text") == true)
-        XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.add.save") == true)
-        XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.list") == true)
-        XCTAssertTrue(catalog.scenario(id: "memory-manual-save")?.requiredAccessibilityIdentifiers.contains("memory.record") == true)
         let automationsScenarioIdentifiers = catalog.scenario(id: "automations-recipe-center")?.requiredAccessibilityIdentifiers ?? []
-        XCTAssertTrue(automationsScenarioIdentifiers.contains("root.drawer.automations"))
+        XCTAssertTrue(automationsScenarioIdentifiers.contains("root.drawer.shortcuts"))
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe-center"))
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.seed-samples"))
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.list"))
@@ -2541,7 +2601,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.recipe.daily-briefing.toggle"))
         XCTAssertTrue(automationsScenarioIdentifiers.contains("automations.message"))
         let automationsShortcutScenarioIdentifiers = catalog.scenario(id: "automations-shortcut-templates")?.requiredAccessibilityIdentifiers ?? []
-        XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("root.drawer.automations"))
+        XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("root.drawer.shortcuts"))
         XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-templates"))
         XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-template.disclaimer"))
         XCTAssertTrue(automationsShortcutScenarioIdentifiers.contains("automations.shortcut-template.run-kairo-recipe-shortcut"))
@@ -2549,9 +2609,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.local") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.refresh-catalog") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.models.catalog-source") == true)
         let oauthScenarioIdentifiers = catalog.scenario(id: "settings-oauth-connectors")?.requiredAccessibilityIdentifiers ?? []
         for providerKey in ["google", "microsoft", "notion", "slack", "chatgpt", "github"] {
             XCTAssertTrue(oauthScenarioIdentifiers.contains("settings.oauth.\(providerKey).row"), providerKey)
@@ -2564,17 +2621,16 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.benchmark"))
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run"))
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.benchmark-message"))
+        let replyCheckScenarioIdentifiers = catalog.scenario(id: "settings-local-model-reply-check")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(replyCheckScenarioIdentifiers.contains("settings.models.local"))
+        XCTAssertTrue(replyCheckScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.reply-check"))
+        XCTAssertTrue(replyCheckScenarioIdentifiers.contains("settings.models.benchmark-message"))
         let shortcutDemoScenarioIdentifiers = catalog.scenario(id: "settings-shortcut-demo-io")?.requiredAccessibilityIdentifiers ?? []
         for recipe in ShortcutDemoCatalog.default.recipes {
             XCTAssertTrue(shortcutDemoScenarioIdentifiers.contains("settings.shortcuts.demo.\(recipe.id)"), recipe.id)
             XCTAssertTrue(shortcutDemoScenarioIdentifiers.contains("settings.shortcuts.demo.\(recipe.id).input"), recipe.id)
             XCTAssertTrue(shortcutDemoScenarioIdentifiers.contains("settings.shortcuts.demo.\(recipe.id).output"), recipe.id)
             XCTAssertTrue(shortcutDemoScenarioIdentifiers.contains("settings.shortcuts.demo.\(recipe.id).sample"), recipe.id)
-        }
-        let settingsScenarioIdentifiers = catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers ?? []
-        for modelID in LocalModelCatalog.kairoDefault.models.map(\.id) {
-            XCTAssertTrue(settingsScenarioIdentifiers.contains("settings.models.\(modelID).status"), modelID)
-            XCTAssertTrue(settingsScenarioIdentifiers.contains("settings.models.\(modelID).download"), modelID)
         }
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manager") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.local-create.name") == true)
@@ -2627,8 +2683,12 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("KairoAppSmokeUITests"))
         XCTAssertTrue(smokeTest.contains("testSettingsLocalModelCatalogListsDownloadableModels"))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsQwenBenchmarkFlowRequiresDownload"))
+        XCTAssertTrue(smokeTest.contains("testSettingsRunsInstalledLocalModelReplyCheck"))
         XCTAssertTrue(smokeTest.contains(#""settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run""#))
+        XCTAssertTrue(smokeTest.contains(#""settings.models.qwen3-5-0-8b-q4-k-m.reply-check""#))
         XCTAssertTrue(smokeTest.contains("請先下載 Qwen3.5 0.8B Q4_K_M 後再跑 benchmark。"))
+        XCTAssertTrue(smokeTest.contains("Local model reply is alive."))
+        XCTAssertTrue(smokeTest.contains("--ui-testing-installed-local-model"))
         XCTAssertTrue(smokeTest.contains("testSettingsShowsOAuthConnectorReadinessAndBoundaries"))
         XCTAssertTrue(smokeTest.contains("testSettingsPreviewsOAuthCallbackWithoutLeakingCode"))
         XCTAssertTrue(smokeTest.contains("testChatCanPreviewAndConfirmNotificationAction"))
@@ -2657,7 +2717,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("Prepared Messages handoff."))
         XCTAssertTrue(smokeTest.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
         XCTAssertTrue(smokeTest.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
-        XCTAssertTrue(smokeTest.contains(#""root.drawer.automations""#))
+        XCTAssertTrue(smokeTest.contains(#""root.drawer.shortcuts""#))
+        XCTAssertTrue(smokeTest.contains(#""root.drawer.skills""#))
+        XCTAssertTrue(smokeTest.contains(#""root.drawer.models""#))
         XCTAssertTrue(smokeTest.contains(#""automations.seed-samples""#))
         XCTAssertTrue(smokeTest.contains(#""automations.recipe.daily-briefing.preview""#))
         XCTAssertTrue(smokeTest.contains(#""automations.recipe.daily-briefing.run""#))
@@ -2693,49 +2755,30 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("Input: text, sourceName, variables"))
         XCTAssertTrue(smokeTest.contains("Output: memoryID, fields.taskCount, tasks, reminderDrafts"))
         XCTAssertTrue(smokeTest.contains("Screenshot OCR"))
-        XCTAssertTrue(smokeTest.contains("testMemoryTabCanSaveManualMemory"))
-        XCTAssertTrue(smokeTest.contains("memory.add.text"))
-        XCTAssertTrue(smokeTest.contains("memory.add.save"))
-        XCTAssertTrue(smokeTest.contains("memory.list"))
-        XCTAssertTrue(smokeTest.contains("memory.record"))
         XCTAssertTrue(smokeTest.contains("Refresh Catalog"))
         XCTAssertTrue(smokeTest.contains("github.com/easonwumac/kairo-models"))
         XCTAssertTrue(smokeTest.contains("chat.history.thread"))
         XCTAssertTrue(smokeTest.contains("chat.new"))
+        XCTAssertTrue(smokeTest.contains("testChatMessageReplyPreviewAndCopyControlsExist"))
         XCTAssertTrue(smokeTest.contains("chat.composer.text"))
+        XCTAssertTrue(smokeTest.contains("chat.reply-preview"))
+        XCTAssertTrue(smokeTest.contains("chat.message.copy."))
+        XCTAssertTrue(smokeTest.contains("chat.message.reply."))
         XCTAssertTrue(smokeTest.contains("settings.openai.api-key-status"))
         XCTAssertTrue(smokeTest.contains("settings.oauth.connectors"))
         XCTAssertTrue(smokeTest.contains("settings.shortcuts.demos"))
         XCTAssertTrue(smokeTest.contains("settings.models.local"))
-        XCTAssertTrue(smokeTest.contains("Qwen3.5 0.8B Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Qwen3.5 2B Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Qwen3 0.6B Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Qwen3 1.7B Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Qwen2.5 0.5B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Qwen2.5 1.5B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Qwen2.5 Math 1.5B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Qwen2.5-Coder 0.5B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Qwen2.5-Coder 1.5B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Llama 3.2 1B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Granite 3.2 2B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("DeepSeek R1 Distill Qwen 1.5B Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("LFM2.5 1.2B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("H2O Danube2 1.8B Chat Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("OLMo 2 1B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("OpenELM 1.1B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Falcon-H1 1.5B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("SmolLM2 135M Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("SmolLM2 360M Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("SmolLM2 1.7B Instruct Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("TinyLlama 1.1B Chat Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Gemma 3 270M IT Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Gemma 3 1B IT Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Gemma 2 2B IT Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("Gemma 4 E2B IT Q4_K_M"))
-        XCTAssertTrue(smokeTest.contains("StableLM 2 Chat 1.6B Q4_K_M"))
-        for modelID in LocalModelCatalog.kairoDefault.models.map(\.id) {
-            XCTAssertTrue(smokeTest.contains(#""settings.models.\#(modelID).download""#), modelID)
+        for displayName in [
+            "Qwen3.5 0.8B Q4_K_M",
+            "Qwen3.5 2B Q4_K_M",
+            "Llama 3.2 1B Instruct Q4_K_M",
+            "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
+            "SmolLM2 1.7B Instruct Q4_K_M",
+            "Gemma 3 1B IT Q4_K_M"
+        ] {
+            XCTAssertTrue(smokeTest.contains(displayName), displayName)
         }
+        XCTAssertTrue(smokeTest.contains(#"downloadIdentifier: "settings.models.\(localModel.0).download""#))
         XCTAssertTrue(smokeTest.contains("可下載"))
         XCTAssertTrue(smokeTest.contains("Download"))
         XCTAssertTrue(smokeTest.contains("access.skills.marketplace-refresh"))
@@ -2797,7 +2840,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(available.map(\.id), ["available"])
     }
 
-    func testDefaultLocalModelCatalogExposesPopularTwoBAndSmallerModelsForSettings() throws {
+    func testDefaultLocalModelCatalogExposesPopularStarterModelsForSettings() throws {
         let catalog = LocalModelCatalog.kairoDefault
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
 
@@ -2805,58 +2848,18 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(availableModels.map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
             "qwen3-5-2b-q4-k-m",
-            "qwen3-0-6b-q4-k-m",
-            "qwen3-1-7b-q4-k-m",
-            "qwen2-5-0-5b-instruct-q4-k-m",
-            "qwen2-5-1-5b-instruct-q4-k-m",
-            "qwen2-5-math-1-5b-instruct-q4-k-m",
-            "qwen2-5-coder-0-5b-instruct-q4-k-m",
-            "qwen2-5-coder-1-5b-instruct-q4-k-m",
             "llama3-2-1b-instruct-q4-k-m",
-            "granite3-2-2b-instruct-q4-k-m",
             "deepseek-r1-distill-qwen-1-5b-q4-k-m",
-            "lfm2-5-1-2b-instruct-q4-k-m",
-            "h2o-danube2-1-8b-chat-q4-k-m",
-            "olmo2-0425-1b-instruct-q4-k-m",
-            "openelm-1-1b-instruct-q4-k-m",
-            "falcon-h1-1-5b-instruct-q4-k-m",
-            "smollm2-135m-instruct-q4-k-m",
-            "smollm2-360m-instruct-q4-k-m",
             "smollm2-1-7b-instruct-q4-k-m",
-            "tinyllama-1-1b-chat-q4-k-m",
-            "gemma3-270m-it-q4-k-m",
-            "gemma3-1b-it-q4-k-m",
-            "gemma2-2b-it-q4-k-m",
-            "gemma4-e2b-it-q4-k-m",
-            "stablelm2-chat-1-6b-q4-k-m"
+            "gemma3-1b-it-q4-k-m"
         ])
         XCTAssertEqual(availableModels.map(\.displayName), [
             "Qwen3.5 0.8B Q4_K_M",
             "Qwen3.5 2B Q4_K_M",
-            "Qwen3 0.6B Q4_K_M",
-            "Qwen3 1.7B Q4_K_M",
-            "Qwen2.5 0.5B Instruct Q4_K_M",
-            "Qwen2.5 1.5B Instruct Q4_K_M",
-            "Qwen2.5 Math 1.5B Instruct Q4_K_M",
-            "Qwen2.5-Coder 0.5B Instruct Q4_K_M",
-            "Qwen2.5-Coder 1.5B Instruct Q4_K_M",
             "Llama 3.2 1B Instruct Q4_K_M",
-            "Granite 3.2 2B Instruct Q4_K_M",
             "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
-            "LFM2.5 1.2B Instruct Q4_K_M",
-            "H2O Danube2 1.8B Chat Q4_K_M",
-            "OLMo 2 1B Instruct Q4_K_M",
-            "OpenELM 1.1B Instruct Q4_K_M",
-            "Falcon-H1 1.5B Instruct Q4_K_M",
-            "SmolLM2 135M Instruct Q4_K_M",
-            "SmolLM2 360M Instruct Q4_K_M",
             "SmolLM2 1.7B Instruct Q4_K_M",
-            "TinyLlama 1.1B Chat Q4_K_M",
-            "Gemma 3 270M IT Q4_K_M",
-            "Gemma 3 1B IT Q4_K_M",
-            "Gemma 2 2B IT Q4_K_M",
-            "Gemma 4 E2B IT Q4_K_M",
-            "StableLM 2 Chat 1.6B Q4_K_M"
+            "Gemma 3 1B IT Q4_K_M"
         ])
 
         for model in availableModels {
@@ -2893,15 +2896,12 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("MLX ref 286 gen tok/s") == true)
         XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("iPhone not verified") == true)
 
-        let coderTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-coder-0-5b-instruct-q4-k-m" })
-        let coderSmall = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-coder-1-5b-instruct-q4-k-m" })
-        let stableLM = try XCTUnwrap(availableModels.first { $0.id == "stablelm2-chat-1-6b-q4-k-m" })
-        XCTAssertEqual(coderTiny.contextWindow, 32_768)
-        XCTAssertEqual(coderSmall.contextWindow, 32_768)
-        XCTAssertTrue(coderTiny.capabilities.contains(.rewriting))
-        XCTAssertTrue(coderSmall.capabilities.contains(.extraction))
-        XCTAssertEqual(stableLM.contextWindow, 4_096)
-        XCTAssertLessThanOrEqual(stableLM.fileSizeBytes, 1_100_000_000)
+        let gemma = try XCTUnwrap(availableModels.first { $0.id == "gemma3-1b-it-q4-k-m" })
+        let smolLM = try XCTUnwrap(availableModels.first { $0.id == "smollm2-1-7b-instruct-q4-k-m" })
+        XCTAssertEqual(gemma.licenseName, "Gemma Terms of Use")
+        XCTAssertEqual(gemma.contextWindow, 32_768)
+        XCTAssertTrue(smolLM.capabilities.contains(.rewriting))
+        XCTAssertLessThanOrEqual(smolLM.fileSizeBytes, 1_100_000_000)
     }
 
     func testLocalModelCatalogServiceFetchesStandaloneModelRepoCatalog() async throws {
@@ -3251,6 +3251,64 @@ final class KairoCoreTests: XCTestCase {
         let reloadedStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
         let reloadedResult = await reloadedStore.latestResult(for: "qwen3-5-0-8b-q4-k-m")
         XCTAssertEqual(reloadedResult, result)
+    }
+
+    func testLocalModelReplyCheckRequiresDownloadedModelBeforeRunning() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let service = LocalModelReplyCheckService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            runtime: DeterministicLocalModelReplyCheckRuntime(
+                responseText: "Local model reply is alive.",
+                generationTokensPerSecond: 38
+            )
+        )
+
+        do {
+            _ = try await service.runReplyCheck(
+                modelID: "qwen3-5-0-8b-q4-k-m",
+                prompt: "Reply with one sentence."
+            )
+            XCTFail("Expected reply check to require a downloaded local model.")
+        } catch let error as LocalModelReplyCheckError {
+            XCTAssertEqual(error, .modelNotInstalled("qwen3-5-0-8b-q4-k-m"))
+        }
+    }
+
+    func testLocalModelReplyCheckRunsInstalledQwenThroughInjectedRuntime() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen3-5-0-8b-q4-k-m",
+            version: LocalModelManifest.qwen35Tiny.version,
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
+            sha256: LocalModelManifest.qwen35Tiny.sha256
+        ))
+        let service = LocalModelReplyCheckService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            runtime: DeterministicLocalModelReplyCheckRuntime(
+                responseText: "Local model reply is alive.",
+                generationTokensPerSecond: 38.5
+            )
+        )
+
+        let result = try await service.runReplyCheck(
+            modelID: "qwen3-5-0-8b-q4-k-m",
+            prompt: "Reply with one sentence."
+        )
+
+        XCTAssertEqual(result.modelID, "qwen3-5-0-8b-q4-k-m")
+        XCTAssertEqual(result.modelDisplayName, "Qwen3.5 0.8B Q4_K_M")
+        XCTAssertEqual(result.runtime, .gguf)
+        XCTAssertEqual(result.responseText, "Local model reply is alive.")
+        XCTAssertEqual(result.generationTokensPerSecond, 38.5)
+        XCTAssertTrue(result.summaryText.contains("38.5 gen tok/s"))
+        XCTAssertTrue(result.summaryText.contains("Local model reply is alive."))
     }
 
     func testLocalModelSettingsStatusBuildsSettingsRowsForDownloadSelectAndSelected() throws {

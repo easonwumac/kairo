@@ -15,19 +15,22 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
         UITestScenario(
             id: "launch-drawer",
             title: "Launch and Drawer Navigation",
-            userGoal: "Confirm the app boots full-screen and exposes Chat, Memory, Automations, Access, and Settings through the side drawer.",
+            userGoal: "Confirm the app boots full-screen and exposes Chat, Skills, Shortcuts, Access, Models, and Settings through the side drawer.",
             requiredAccessibilityIdentifiers: [
+                "root.safe-area-header",
                 "root.drawer.toggle",
                 "root.drawer",
                 "root.drawer.chat",
-                "root.drawer.memory",
-                "root.drawer.automations",
+                "root.drawer.skills",
+                "root.drawer.shortcuts",
                 "root.drawer.access",
+                "root.drawer.models",
                 "root.drawer.settings"
             ],
             assertions: [
+                "The primary header is laid out below the device safe area so Dynamic Island and status bar regions do not cover controls.",
                 "The drawer toggle is visible after launch.",
-                "The drawer exposes Chat, Memory, Automations, Access, and Settings navigation without a bottom TabView."
+                "The drawer exposes Chat, Skills, Shortcuts, Access, Models, and Settings navigation without a bottom TabView."
             ]
         ),
         UITestScenario(
@@ -37,15 +40,38 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             requiredAccessibilityIdentifiers: [
                 "chat.history.thread",
                 "chat.new",
+                "chat.composer.surface",
+                "chat.composer.input-shell",
                 "chat.composer.text",
                 "chat.composer.send",
                 "chat.message.user",
                 "chat.message.assistant"
             ],
             assertions: [
+                "The chat composer has a large, visible tap target.",
                 "A chat thread or new chat entry point can open the composer.",
                 "User-entered text appears in the transcript.",
                 "A Kairo assistant response appears after sending."
+            ]
+        ),
+        UITestScenario(
+            id: "chat-message-copy-reply",
+            title: "Chat Message Copy and Reply",
+            userGoal: "Copy or reply to a visible chat message without pasting the whole quoted message into the composer.",
+            requiredAccessibilityIdentifiers: [
+                "chat.message.assistant",
+                "chat.message.copy.",
+                "chat.message.reply.",
+                "chat.reply-preview",
+                "chat.composer.surface",
+                "chat.composer.text",
+                "chat.composer.send"
+            ],
+            assertions: [
+                "Message text supports selection and copying.",
+                "Each message exposes visible Copy and Reply controls.",
+                "Reply creates a compact preview above the composer.",
+                "Sending a reply references the selected message without pasting the full source text into the composer."
             ]
         ),
         UITestScenario(
@@ -234,28 +260,11 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ]
         ),
         UITestScenario(
-            id: "memory-manual-save",
-            title: "Memory Manual Save",
-            userGoal: "Open Memory, save a user-provided memory, and verify it appears in the list.",
-            requiredAccessibilityIdentifiers: [
-                "root.drawer.memory",
-                "memory.add.text",
-                "memory.add.save",
-                "memory.list",
-                "memory.record"
-            ],
-            assertions: [
-                "The Memory tab exposes a manual memory text field.",
-                "The Save button is disabled until the user enters text.",
-                "A saved memory appears visibly in the Memory list."
-            ]
-        ),
-        UITestScenario(
             id: "automations-recipe-center",
-            title: "Automations Recipe Center",
-            userGoal: "Open Automations, add Kairo-owned sample recipes, preview/run a recipe, and toggle it without creating Apple Shortcuts.",
+            title: "Shortcuts Recipe Center",
+            userGoal: "Open Shortcuts, add Kairo-owned sample recipes, preview/run a recipe, and toggle it without creating Apple Shortcuts.",
             requiredAccessibilityIdentifiers: [
-                "root.drawer.automations",
+                "root.drawer.shortcuts",
                 "automations.recipe-center",
                 "automations.seed-samples",
                 "automations.list",
@@ -266,7 +275,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "automations.message"
             ],
             assertions: [
-                "The Automations tab exposes Kairo internal recipes.",
+                "The Shortcuts screen exposes Kairo internal recipes.",
                 "Sample recipes are added by a visible user action.",
                 "Preview and run actions stay within Kairo's recipe runner.",
                 "Enable/disable state is user-visible.",
@@ -275,17 +284,17 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
         ),
         UITestScenario(
             id: "automations-shortcut-templates",
-            title: "Automations Shortcut Templates",
-            userGoal: "Open Automations and verify Kairo explains user-approved Apple Shortcuts template setup for running internal recipes.",
+            title: "Shortcuts Template Guidance",
+            userGoal: "Open Shortcuts and verify Kairo explains user-approved Apple Shortcuts template setup for running internal recipes.",
             requiredAccessibilityIdentifiers: [
-                "root.drawer.automations",
+                "root.drawer.shortcuts",
                 "automations.shortcut-templates",
                 "automations.shortcut-template.disclaimer",
                 "automations.shortcut-template.run-kairo-recipe-shortcut",
                 "automations.shortcut-template.run-kairo-recipe-shortcut.instructions"
             ],
             assertions: [
-                "The Automations tab exposes Shortcut template metadata.",
+                "The Shortcuts screen exposes Shortcut template metadata.",
                 "The UI states that Apple Shortcuts installation requires user approval.",
                 "Run Kairo Recipe template instructions are visible.",
                 "Kairo does not claim silent Apple Shortcut installation."
@@ -300,69 +309,12 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.openai.api-key-field",
                 "settings.openai.save-api-key",
                 "settings.oauth.connectors",
-                "settings.models.local",
-                "settings.models.refresh-catalog",
-                "settings.models.catalog-source",
-                "settings.models.qwen3-5-0-8b-q4-k-m.status",
-                "settings.models.qwen3-5-0-8b-q4-k-m.download",
-                "settings.models.qwen3-5-2b-q4-k-m.status",
-                "settings.models.qwen3-5-2b-q4-k-m.download",
-                "settings.models.qwen3-0-6b-q4-k-m.status",
-                "settings.models.qwen3-0-6b-q4-k-m.download",
-                "settings.models.qwen3-1-7b-q4-k-m.status",
-                "settings.models.qwen3-1-7b-q4-k-m.download",
-                "settings.models.qwen2-5-0-5b-instruct-q4-k-m.status",
-                "settings.models.qwen2-5-0-5b-instruct-q4-k-m.download",
-                "settings.models.qwen2-5-1-5b-instruct-q4-k-m.status",
-                "settings.models.qwen2-5-1-5b-instruct-q4-k-m.download",
-                "settings.models.qwen2-5-math-1-5b-instruct-q4-k-m.status",
-                "settings.models.qwen2-5-math-1-5b-instruct-q4-k-m.download",
-                "settings.models.qwen2-5-coder-0-5b-instruct-q4-k-m.status",
-                "settings.models.qwen2-5-coder-0-5b-instruct-q4-k-m.download",
-                "settings.models.qwen2-5-coder-1-5b-instruct-q4-k-m.status",
-                "settings.models.qwen2-5-coder-1-5b-instruct-q4-k-m.download",
-                "settings.models.llama3-2-1b-instruct-q4-k-m.status",
-                "settings.models.llama3-2-1b-instruct-q4-k-m.download",
-                "settings.models.granite3-2-2b-instruct-q4-k-m.status",
-                "settings.models.granite3-2-2b-instruct-q4-k-m.download",
-                "settings.models.deepseek-r1-distill-qwen-1-5b-q4-k-m.status",
-                "settings.models.deepseek-r1-distill-qwen-1-5b-q4-k-m.download",
-                "settings.models.lfm2-5-1-2b-instruct-q4-k-m.status",
-                "settings.models.lfm2-5-1-2b-instruct-q4-k-m.download",
-                "settings.models.h2o-danube2-1-8b-chat-q4-k-m.status",
-                "settings.models.h2o-danube2-1-8b-chat-q4-k-m.download",
-                "settings.models.olmo2-0425-1b-instruct-q4-k-m.status",
-                "settings.models.olmo2-0425-1b-instruct-q4-k-m.download",
-                "settings.models.openelm-1-1b-instruct-q4-k-m.status",
-                "settings.models.openelm-1-1b-instruct-q4-k-m.download",
-                "settings.models.falcon-h1-1-5b-instruct-q4-k-m.status",
-                "settings.models.falcon-h1-1-5b-instruct-q4-k-m.download",
-                "settings.models.smollm2-135m-instruct-q4-k-m.status",
-                "settings.models.smollm2-135m-instruct-q4-k-m.download",
-                "settings.models.smollm2-360m-instruct-q4-k-m.status",
-                "settings.models.smollm2-360m-instruct-q4-k-m.download",
-                "settings.models.smollm2-1-7b-instruct-q4-k-m.status",
-                "settings.models.smollm2-1-7b-instruct-q4-k-m.download",
-                "settings.models.tinyllama-1-1b-chat-q4-k-m.status",
-                "settings.models.tinyllama-1-1b-chat-q4-k-m.download",
-                "settings.models.gemma3-270m-it-q4-k-m.status",
-                "settings.models.gemma3-270m-it-q4-k-m.download",
-                "settings.models.gemma3-1b-it-q4-k-m.status",
-                "settings.models.gemma3-1b-it-q4-k-m.download",
-                "settings.models.gemma2-2b-it-q4-k-m.status",
-                "settings.models.gemma2-2b-it-q4-k-m.download",
-                "settings.models.gemma4-e2b-it-q4-k-m.status",
-                "settings.models.gemma4-e2b-it-q4-k-m.download",
-                "settings.models.stablelm2-chat-1-6b-q4-k-m.status",
-                "settings.models.stablelm2-chat-1-6b-q4-k-m.download",
                 "settings.shortcuts.demos"
             ],
             assertions: [
                 "API key status is visible.",
                 "API key field is secure and save is disabled until text is entered.",
                 "OAuth connector status list is visible.",
-                "Local model catalog and status rows are visible.",
-                "Local model route preference is visible.",
                 "Shortcut demo recipes are visible."
             ]
         ),
@@ -429,6 +381,25 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "Reference MLX/GGUF benchmark metadata is visible and labelled as not iPhone verified.",
                 "Benchmark execution is a visible user action.",
                 "Benchmark execution fails closed until the model is downloaded."
+            ]
+        ),
+        UITestScenario(
+            id: "settings-local-model-reply-check",
+            title: "Settings Local Model Reply Check",
+            userGoal: "Run a local model reply check against an installed model record and verify Kairo shows a non-empty local response.",
+            requiredAccessibilityIdentifiers: [
+                "settings.models.local",
+                "settings.models.qwen3-5-0-8b-q4-k-m.row",
+                "settings.models.qwen3-5-0-8b-q4-k-m.name",
+                "settings.models.qwen3-5-0-8b-q4-k-m.status",
+                "settings.models.qwen3-5-0-8b-q4-k-m.reply-check",
+                "settings.models.benchmark-message"
+            ],
+            assertions: [
+                "Reply check execution is a visible user action.",
+                "The UI test path seeds only an install record and deterministic runtime, not model weights.",
+                "The reply check reports non-empty response text and generation token speed.",
+                "Production runtime remains explicit and fails closed until a real local inference runtime is wired."
             ]
         ),
         UITestScenario(

@@ -6,39 +6,51 @@ public struct RootView: View {
     @State private var selectedSection: RootSection = .chat
     @State private var isDrawerOpen = false
 
-    public init(environment: KairoEnvironment = .preview()) {
+    public init(environment: KairoEnvironment = .preview(), initialSection: String? = nil) {
         self.environment = environment
+        let section = initialSection.flatMap(RootSection.init(rawValue:)) ?? .chat
+        _selectedSection = State(initialValue: section)
     }
 
     public var body: some View {
-        ZStack(alignment: .topLeading) {
-            Self.fullScreenBackground
-                .ignoresSafeArea()
+        GeometryReader { proxy in
+            let safeAreaInsets = proxy.safeAreaInsets
 
-            shellMarker
+            ZStack(alignment: .topLeading) {
+                Self.fullScreenBackground
+                    .ignoresSafeArea()
 
-            selectedContent
+                shellMarker
+
+                VStack(spacing: 0) {
+                    rootHeader(topInset: safeAreaInsets.top)
+
+                    selectedContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea(edges: .top)
                 .ignoresSafeArea(.keyboard, edges: .bottom)
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    rootHeader
+
+                if isDrawerOpen {
+                    Color.black.opacity(0.28)
+                        .ignoresSafeArea()
+                        .accessibilityIdentifier("root.drawer.scrim")
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.22)) {
+                                isDrawerOpen = false
+                            }
+                        }
                 }
 
-            if isDrawerOpen {
-                Color.black.opacity(0.28)
-                    .ignoresSafeArea()
-                    .accessibilityIdentifier("root.drawer.scrim")
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.22)) {
-                            isDrawerOpen = false
-                        }
-                    }
+                if isDrawerOpen {
+                    drawer(safeAreaInsets: safeAreaInsets)
+                        .transition(.move(edge: .leading))
+                }
             }
-
-            if isDrawerOpen {
-                drawer
-                    .transition(.move(edge: .leading))
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Self.fullScreenBackground.ignoresSafeArea())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Self.fullScreenBackground.ignoresSafeArea())
@@ -73,9 +85,12 @@ public struct RootView: View {
         switch selectedSection {
         case .chat:
             ChatView(environment: environment)
-        case .memory:
-            MemoryCenterView(store: environment.memoryStore)
-        case .automations:
+        case .skills:
+            PermissionHubView(
+                skillManagerService: environment.agentSkillManagerService,
+                marketplaceCatalogService: environment.agentSkillMarketplaceCatalogService
+            )
+        case .shortcuts:
             AutomationsView(
                 recipeStore: environment.kairoRecipeStore,
                 memoryStore: environment.memoryStore,
@@ -86,6 +101,19 @@ public struct RootView: View {
                 skillManagerService: environment.agentSkillManagerService,
                 marketplaceCatalogService: environment.agentSkillMarketplaceCatalogService
             )
+        case .models:
+            SettingsView(
+                settingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
+                mode: .modelsOnly,
+                credentialStore: environment.credentialStore,
+                oauthCallbackStore: environment.oauthConnectorCallbackStore,
+                localModelCatalog: environment.localModelCatalog,
+                localModelCatalogService: environment.localModelCatalogService,
+                localModelSettingsService: environment.localModelSettingsService,
+                localModelDownloader: environment.localModelDownloader,
+                localModelBenchmarkService: environment.localModelBenchmarkService,
+                localModelReplyCheckService: environment.localModelReplyCheckService
+            )
         case .settings:
             SettingsView(
                 settingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
@@ -95,12 +123,13 @@ public struct RootView: View {
                 localModelCatalogService: environment.localModelCatalogService,
                 localModelSettingsService: environment.localModelSettingsService,
                 localModelDownloader: environment.localModelDownloader,
-                localModelBenchmarkService: environment.localModelBenchmarkService
+                localModelBenchmarkService: environment.localModelBenchmarkService,
+                localModelReplyCheckService: environment.localModelReplyCheckService
             )
         }
     }
 
-    private var rootHeader: some View {
+    private func rootHeader(topInset: CGFloat) -> some View {
         HStack(spacing: 12) {
             Button {
                 withAnimation(.easeInOut(duration: 0.22)) {
@@ -123,11 +152,14 @@ public struct RootView: View {
             Spacer()
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.top, max(topInset, 0) + 8)
+        .padding(.bottom, 8)
         .background(.regularMaterial)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("root.safe-area-header")
     }
 
-    private var drawer: some View {
+    private func drawer(safeAreaInsets: EdgeInsets) -> some View {
         ZStack(alignment: .topLeading) {
             drawerMarker
 
@@ -154,7 +186,7 @@ public struct RootView: View {
                     .accessibilityLabel("Close navigation menu")
                     .accessibilityIdentifier("root.drawer.close")
                 }
-                .padding(.top, 18)
+                .padding(.top, max(safeAreaInsets.top, 0) + 14)
 
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(RootSection.allCases) { section in
@@ -170,13 +202,13 @@ public struct RootView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+            .padding(.bottom, max(safeAreaInsets.bottom, 0) + 24)
         }
         .frame(width: 304)
         .frame(maxHeight: .infinity)
         .background(.regularMaterial)
         .shadow(color: .black.opacity(0.18), radius: 22, x: 8, y: 0)
-        .ignoresSafeArea(edges: .vertical)
+        .ignoresSafeArea(edges: [.top, .leading, .bottom])
     }
 
     private var drawerMarker: some View {
@@ -217,9 +249,10 @@ public struct RootView: View {
 
 private enum RootSection: String, CaseIterable, Identifiable {
     case chat
-    case memory
-    case automations
+    case skills
+    case shortcuts
     case access
+    case models
     case settings
 
     var id: String { rawValue }
@@ -228,12 +261,14 @@ private enum RootSection: String, CaseIterable, Identifiable {
         switch self {
         case .chat:
             return "Chat"
-        case .memory:
-            return "Memory"
-        case .automations:
-            return "Automations"
+        case .skills:
+            return "Skills"
+        case .shortcuts:
+            return "Shortcuts"
         case .access:
             return "Access"
+        case .models:
+            return "Models"
         case .settings:
             return "Settings"
         }
@@ -243,12 +278,14 @@ private enum RootSection: String, CaseIterable, Identifiable {
         switch self {
         case .chat:
             return "message"
-        case .memory:
-            return "brain.head.profile"
-        case .automations:
-            return "bolt.badge.automatic"
+        case .skills:
+            return "wrench.and.screwdriver"
+        case .shortcuts:
+            return "square.stack.3d.up"
         case .access:
             return "switch.2"
+        case .models:
+            return "cpu"
         case .settings:
             return "gear"
         }

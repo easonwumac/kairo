@@ -12,6 +12,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public var errorMessage: String?
     @Published public var pendingAction: AgentAction?
     @Published public private(set) var actionResultMessage: String?
+    @Published public private(set) var replyTarget: ChatMessage?
 
     private let historyStore: ChatHistoryStore
     private let shareIngestionQueue: ShareIngestionQueue
@@ -57,6 +58,7 @@ public final class ChatViewModel: ObservableObject {
     public func startNewThread() {
         currentThread = ChatThread(messages: [Self.welcomeMessage])
         composerText = ""
+        replyTarget = nil
         pendingAttachments = []
         errorMessage = nil
     }
@@ -64,6 +66,7 @@ public final class ChatViewModel: ObservableObject {
     public func selectThread(_ thread: ChatThread) {
         currentThread = thread
         composerText = ""
+        replyTarget = nil
         errorMessage = nil
     }
 
@@ -108,11 +111,13 @@ public final class ChatViewModel: ObservableObject {
 
     public func sendComposerMessage() async {
         let text = composerText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard (!text.isEmpty || !pendingAttachments.isEmpty), !isLoading else { return }
+        guard (!text.isEmpty || !pendingAttachments.isEmpty || replyTarget != nil), !isLoading else { return }
         let attachments = pendingAttachments
+        let replyTarget = replyTarget
         composerText = ""
         pendingAttachments = []
-        await send(text.isEmpty ? "Review the attached content." : text, attachments: attachments)
+        self.replyTarget = nil
+        await send(composedMessageText(text: text, replyTarget: replyTarget, hasAttachments: !attachments.isEmpty), attachments: attachments)
     }
 
     public func send(_ text: String, attachments: [ChatAttachment] = []) async {
@@ -150,6 +155,15 @@ public final class ChatViewModel: ObservableObject {
         actionResultMessage = nil
     }
 
+    public func replyToMessage(_ message: ChatMessage) {
+        replyTarget = message
+        errorMessage = nil
+    }
+
+    public func cancelReplyTarget() {
+        replyTarget = nil
+    }
+
     public func cancelPendingAction() {
         pendingAction = nil
     }
@@ -174,6 +188,25 @@ public final class ChatViewModel: ObservableObject {
         } catch {
             errorMessage = "無法儲存聊天紀錄：\(error.localizedDescription)"
         }
+    }
+
+    private func composedMessageText(text: String, replyTarget: ChatMessage?, hasAttachments: Bool) -> String {
+        let fallback = hasAttachments ? "Review the attached content." : "Reply to the selected message."
+        let body = text.isEmpty ? fallback : text
+        guard let replyTarget else {
+            return body
+        }
+        return "Replying to \"\(Self.replyReferenceText(for: replyTarget))\":\n\(body)"
+    }
+
+    public static func replyReferenceText(for message: ChatMessage) -> String {
+        let singleLine = message.text
+            .replacingOccurrences(of: "\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !singleLine.isEmpty else {
+            return "selected message"
+        }
+        return String(singleLine.prefix(140))
     }
 
     public static let welcomeMessage = ChatMessage(

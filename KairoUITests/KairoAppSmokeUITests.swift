@@ -11,58 +11,10 @@ final class KairoAppSmokeUITests: XCTestCase {
     private let localModelExpectations = [
         ("qwen3-5-0-8b-q4-k-m", "Qwen3.5 0.8B Q4_K_M"),
         ("qwen3-5-2b-q4-k-m", "Qwen3.5 2B Q4_K_M"),
-        ("qwen3-0-6b-q4-k-m", "Qwen3 0.6B Q4_K_M"),
-        ("qwen3-1-7b-q4-k-m", "Qwen3 1.7B Q4_K_M"),
-        ("qwen2-5-0-5b-instruct-q4-k-m", "Qwen2.5 0.5B Instruct Q4_K_M"),
-        ("qwen2-5-1-5b-instruct-q4-k-m", "Qwen2.5 1.5B Instruct Q4_K_M"),
-        ("qwen2-5-math-1-5b-instruct-q4-k-m", "Qwen2.5 Math 1.5B Instruct Q4_K_M"),
-        ("qwen2-5-coder-0-5b-instruct-q4-k-m", "Qwen2.5-Coder 0.5B Instruct Q4_K_M"),
-        ("qwen2-5-coder-1-5b-instruct-q4-k-m", "Qwen2.5-Coder 1.5B Instruct Q4_K_M"),
         ("llama3-2-1b-instruct-q4-k-m", "Llama 3.2 1B Instruct Q4_K_M"),
-        ("granite3-2-2b-instruct-q4-k-m", "Granite 3.2 2B Instruct Q4_K_M"),
         ("deepseek-r1-distill-qwen-1-5b-q4-k-m", "DeepSeek R1 Distill Qwen 1.5B Q4_K_M"),
-        ("lfm2-5-1-2b-instruct-q4-k-m", "LFM2.5 1.2B Instruct Q4_K_M"),
-        ("h2o-danube2-1-8b-chat-q4-k-m", "H2O Danube2 1.8B Chat Q4_K_M"),
-        ("olmo2-0425-1b-instruct-q4-k-m", "OLMo 2 1B Instruct Q4_K_M"),
-        ("openelm-1-1b-instruct-q4-k-m", "OpenELM 1.1B Instruct Q4_K_M"),
-        ("falcon-h1-1-5b-instruct-q4-k-m", "Falcon-H1 1.5B Instruct Q4_K_M"),
-        ("smollm2-135m-instruct-q4-k-m", "SmolLM2 135M Instruct Q4_K_M"),
-        ("smollm2-360m-instruct-q4-k-m", "SmolLM2 360M Instruct Q4_K_M"),
         ("smollm2-1-7b-instruct-q4-k-m", "SmolLM2 1.7B Instruct Q4_K_M"),
-        ("tinyllama-1-1b-chat-q4-k-m", "TinyLlama 1.1B Chat Q4_K_M"),
-        ("gemma3-270m-it-q4-k-m", "Gemma 3 270M IT Q4_K_M"),
-        ("gemma3-1b-it-q4-k-m", "Gemma 3 1B IT Q4_K_M"),
-        ("gemma2-2b-it-q4-k-m", "Gemma 2 2B IT Q4_K_M"),
-        ("gemma4-e2b-it-q4-k-m", "Gemma 4 E2B IT Q4_K_M"),
-        ("stablelm2-chat-1-6b-q4-k-m", "StableLM 2 Chat 1.6B Q4_K_M")
-    ]
-    private let localModelDownloadIdentifiers = [
-        "settings.models.qwen3-5-0-8b-q4-k-m.download",
-        "settings.models.qwen3-5-2b-q4-k-m.download",
-        "settings.models.qwen3-0-6b-q4-k-m.download",
-        "settings.models.qwen3-1-7b-q4-k-m.download",
-        "settings.models.qwen2-5-0-5b-instruct-q4-k-m.download",
-        "settings.models.qwen2-5-1-5b-instruct-q4-k-m.download",
-        "settings.models.qwen2-5-math-1-5b-instruct-q4-k-m.download",
-        "settings.models.qwen2-5-coder-0-5b-instruct-q4-k-m.download",
-        "settings.models.qwen2-5-coder-1-5b-instruct-q4-k-m.download",
-        "settings.models.llama3-2-1b-instruct-q4-k-m.download",
-        "settings.models.granite3-2-2b-instruct-q4-k-m.download",
-        "settings.models.deepseek-r1-distill-qwen-1-5b-q4-k-m.download",
-        "settings.models.lfm2-5-1-2b-instruct-q4-k-m.download",
-        "settings.models.h2o-danube2-1-8b-chat-q4-k-m.download",
-        "settings.models.olmo2-0425-1b-instruct-q4-k-m.download",
-        "settings.models.openelm-1-1b-instruct-q4-k-m.download",
-        "settings.models.falcon-h1-1-5b-instruct-q4-k-m.download",
-        "settings.models.smollm2-135m-instruct-q4-k-m.download",
-        "settings.models.smollm2-360m-instruct-q4-k-m.download",
-        "settings.models.smollm2-1-7b-instruct-q4-k-m.download",
-        "settings.models.tinyllama-1-1b-chat-q4-k-m.download",
-        "settings.models.gemma3-270m-it-q4-k-m.download",
-        "settings.models.gemma3-1b-it-q4-k-m.download",
-        "settings.models.gemma2-2b-it-q4-k-m.download",
-        "settings.models.gemma4-e2b-it-q4-k-m.download",
-        "settings.models.stablelm2-chat-1-6b-q4-k-m.download"
+        ("gemma3-1b-it-q4-k-m", "Gemma 3 1B IT Q4_K_M")
     ]
 
     override func setUpWithError() throws {
@@ -83,12 +35,52 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     func testSettingsLocalModelCatalogListsDownloadableModels() throws {
         assertPrimaryDrawerItemsExist()
-        openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: true)
+        openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: true)
+    }
+
+    func testChatComposerSurfaceIsTappableAndSends() throws {
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+
+        XCTAssertTrue(anyElement("chat.composer.surface").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("chat.composer.input-shell").exists)
+
+        let composer = anyElement("chat.composer.text")
+        XCTAssertTrue(composer.exists)
+        composer.tap()
+        composer.typeText("Run the polished composer e2e check")
+        anyElement("chat.composer.send").tap()
+
+        XCTAssertTrue(anyElement("chat.message.user").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
+    }
+
+    func testChatMessageReplyPreviewAndCopyControlsExist() throws {
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+
+        let copyButton = firstHittableButtonIdentifier(beginningWith: "chat.message.copy.")
+        XCTAssertTrue(copyButton.waitForExistence(timeout: 5))
+
+        let replyButton = firstHittableButtonIdentifier(beginningWith: "chat.message.reply.")
+        XCTAssertTrue(replyButton.exists)
+        replyButton.tap()
+
+        XCTAssertTrue(anyElement("chat.reply-preview").waitForExistence(timeout: 3))
+        let composer = anyElement("chat.composer.text")
+        XCTAssertTrue(composer.exists)
+        composer.tap()
+        composer.typeText("Reply smoke check")
+        anyElement("chat.composer.send").tap()
+
+        XCTAssertTrue(findStaticText(containing: "Replying to", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
     }
 
     func testSettingsShowsQwenBenchmarkFlowRequiresDownload() throws {
         assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
+        selectDrawerSection(identifier: "root.drawer.models", label: "Models")
 
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
         XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
@@ -102,6 +94,21 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findElement("settings.models.benchmark-message", direction: .both, maxSwipes: 2).exists)
         XCTAssertTrue(findStaticText(containing: "請先下載 Qwen3.5 0.8B Q4_K_M 後再跑 benchmark。", direction: .both, maxSwipes: 2).exists)
+    }
+
+    func testSettingsRunsInstalledLocalModelReplyCheck() throws {
+        relaunchWithInstalledLocalModelForTesting(initialSection: "models")
+
+        XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
+        XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
+        let replyCheckButton = findButton("settings.models.qwen3-5-0-8b-q4-k-m.reply-check", direction: .down, maxSwipes: 2)
+        XCTAssertTrue(replyCheckButton.exists)
+        replyCheckButton.tap()
+
+        let message = findElement("settings.models.benchmark-message", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(message.exists)
+        XCTAssertTrue(findStaticText(containing: "Local model reply is alive.", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "38.5 gen tok/s", direction: .both, maxSwipes: 1).exists)
     }
 
     func testSettingsShowsShortcutDemoInputOutputContracts() throws {
@@ -223,7 +230,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     func testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe() throws {
         assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.automations", label: "Automations")
+        selectDrawerSection(identifier: "root.drawer.shortcuts", label: "Shortcuts")
 
         XCTAssertTrue(findElement("automations.recipe-center").waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "Kairo internal recipe", direction: .both, maxSwipes: 1).exists)
@@ -255,7 +262,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     func testAutomationsShowsShortcutTemplatesRequireUserApproval() throws {
         assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.automations", label: "Automations")
+        selectDrawerSection(identifier: "root.drawer.shortcuts", label: "Shortcuts")
 
         XCTAssertTrue(findElement("automations.shortcut-templates", direction: .down, maxSwipes: 3).exists)
         XCTAssertTrue(findStaticText(containing: "Apple Shortcuts installation requires user approval", direction: .both, maxSwipes: 1).exists)
@@ -316,25 +323,6 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(enableDraft.exists)
         enableDraft.tap()
         XCTAssertTrue(findButton("access.skill.user-ui-created-skill.disable", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
-    }
-
-    func testMemoryTabCanSaveManualMemory() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.memory", label: "Memory")
-
-        let memoryText = "UI e2e memory note for Shortcut and local model routing"
-        let composer = anyElement("memory.add.text")
-        XCTAssertTrue(composer.waitForExistence(timeout: 5))
-        composer.tap()
-        composer.typeText(memoryText)
-
-        let saveButton = anyElement("memory.add.save")
-        XCTAssertTrue(saveButton.exists)
-        saveButton.tap()
-
-        XCTAssertTrue(anyElement("memory.list").waitForExistence(timeout: 5))
-        XCTAssertTrue(anyElement("memory.record").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "UI e2e memory note", direction: .down).exists)
     }
 
     func testChatShowsHomeKitToolPreviewAction() throws {
@@ -552,18 +540,29 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     private func assertPrimaryDrawerItemsExist() {
+        XCTAssertTrue(anyElement("root.safe-area-header").waitForExistence(timeout: 5))
+        let menuButton = findButton("root.drawer.toggle", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(menuButton.exists)
+        XCTAssertGreaterThan(menuButton.frame.minY, 20)
+
         openDrawer()
         XCTAssertTrue(findButton("root.drawer.chat", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findButton("root.drawer.memory", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findButton("root.drawer.automations", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.skills", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.shortcuts", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findButton("root.drawer.access", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.models", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findButton("root.drawer.settings", direction: .both, maxSwipes: 1).exists)
+        let closeButton = findButton("root.drawer.close", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(closeButton.exists)
+        XCTAssertGreaterThan(closeButton.frame.minY, 20)
         closeDrawerIfOpen()
     }
 
     private func sendChatMessage() {
         selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
+        XCTAssertTrue(anyElement("chat.composer.surface").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("chat.composer.input-shell").exists)
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
         composer.tap()
@@ -635,6 +634,13 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(anyElement("settings.openai.api-key-field").exists)
         XCTAssertTrue(findButton("settings.openai.save-api-key").exists)
         XCTAssertTrue(findElement("settings.oauth.connectors", direction: .down).exists)
+        if verifyAllLocalModels {
+            openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: true)
+        }
+    }
+
+    private func openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: Bool) {
+        selectDrawerSection(identifier: "root.drawer.models", label: "Models")
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
         XCTAssertTrue(findStaticText(containing: "github.com/easonwumac/kairo-models", direction: .down).exists)
         let refreshCatalogButton = findButton(labeled: "Refresh Catalog", direction: .both)
@@ -655,7 +661,6 @@ final class KairoAppSmokeUITests: XCTestCase {
         }
         XCTAssertTrue(findStaticText(containing: "可下載", direction: .both).exists)
         XCTAssertTrue(findButton(labeled: "Download", direction: .both).exists)
-        XCTAssertTrue(findElement("settings.shortcuts.demos", direction: .down).exists)
     }
 
     private func verifyDownloadableLocalModel(id: String, displayName: String, downloadIdentifier: String) {
@@ -800,6 +805,24 @@ final class KairoAppSmokeUITests: XCTestCase {
         let predicate = NSPredicate(format: "label CONTAINS %@", text)
         let staticText = app.staticTexts.containing(predicate).firstMatch
         return find(staticText, direction: direction, maxSwipes: maxSwipes)
+    }
+
+    private func firstHittableButtonIdentifier(beginningWith prefix: String) -> XCUIElement {
+        let query = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix))
+        let hittable = query.allElementsBoundByIndex.first { $0.exists && $0.isHittable }
+        return hittable ?? query.firstMatch
+    }
+
+    private func relaunchWithInstalledLocalModelForTesting(initialSection: String? = nil) {
+        app.terminate()
+        app = XCUIApplication()
+        app.launchArguments.append("--ui-testing")
+        app.launchArguments.append("--reset-ui-testing-data")
+        app.launchArguments.append("--ui-testing-installed-local-model")
+        if let initialSection {
+            app.launchArguments.append("--ui-testing-root-section=\(initialSection)")
+        }
+        app.launch()
     }
 
     private func find(

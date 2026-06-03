@@ -1,6 +1,20 @@
 #if canImport(SwiftUI)
 import SwiftUI
 
+public enum SettingsViewMode: String, Sendable {
+    case all
+    case modelsOnly
+
+    var navigationTitle: String {
+        switch self {
+        case .all:
+            return "Settings"
+        case .modelsOnly:
+            return "Models"
+        }
+    }
+}
+
 public struct SettingsView: View {
     @Environment(\.openURL) private var openURL
 
@@ -17,6 +31,7 @@ public struct SettingsView: View {
     @State private var localModelStatusMessageModelID: String?
 
     private let settingsService: OpenAISettingsService
+    private let mode: SettingsViewMode
     private let credentialStore: any CredentialStore
     private let oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
     private let oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
@@ -24,8 +39,10 @@ public struct SettingsView: View {
     private let localModelSettingsService: LocalModelSettingsService?
     private let localModelDownloader: (any LocalModelDownloader)?
     private let localModelBenchmarkService: LocalModelBenchmarkService?
+    private let localModelReplyCheckService: LocalModelReplyCheckService?
 
     public init(
+        mode: SettingsViewMode = .all,
         credentialStore: any CredentialStore = InMemoryCredentialStore(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
@@ -33,9 +50,11 @@ public struct SettingsView: View {
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
         localModelDownloader: (any LocalModelDownloader)? = nil,
-        localModelBenchmarkService: LocalModelBenchmarkService? = nil
+        localModelBenchmarkService: LocalModelBenchmarkService? = nil,
+        localModelReplyCheckService: LocalModelReplyCheckService? = nil
     ) {
         self.settingsService = OpenAISettingsService(credentialStore: credentialStore)
+        self.mode = mode
         self.credentialStore = credentialStore
         self.oauthClientConfigurations = oauthClientConfigurations
         self.oauthCallbackStore = oauthCallbackStore
@@ -43,12 +62,14 @@ public struct SettingsView: View {
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
         self.localModelBenchmarkService = localModelBenchmarkService
+        self.localModelReplyCheckService = localModelReplyCheckService
         self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
 
     public init(
         settingsService: OpenAISettingsService,
+        mode: SettingsViewMode = .all,
         credentialStore: any CredentialStore,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
@@ -56,9 +77,11 @@ public struct SettingsView: View {
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
         localModelDownloader: (any LocalModelDownloader)? = nil,
-        localModelBenchmarkService: LocalModelBenchmarkService? = nil
+        localModelBenchmarkService: LocalModelBenchmarkService? = nil,
+        localModelReplyCheckService: LocalModelReplyCheckService? = nil
     ) {
         self.settingsService = settingsService
+        self.mode = mode
         self.credentialStore = credentialStore
         self.oauthClientConfigurations = oauthClientConfigurations
         self.oauthCallbackStore = oauthCallbackStore
@@ -66,6 +89,7 @@ public struct SettingsView: View {
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
         self.localModelBenchmarkService = localModelBenchmarkService
+        self.localModelReplyCheckService = localModelReplyCheckService
         self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
@@ -73,50 +97,52 @@ public struct SettingsView: View {
     public var body: some View {
         NavigationStack {
             Form {
-                Section("OpenAI") {
-                    HStack {
-                        Text("API Key")
-                        Spacer()
-                        Text(hasAPIKey ? "已設定" : "未設定")
-                            .foregroundStyle(hasAPIKey ? .green : .secondary)
-                            .accessibilityIdentifier("settings.openai.api-key-status")
-                    }
-
-                    SecureField("sk-...", text: $apiKey)
-                        .textContentType(.password)
-                        .accessibilityIdentifier("settings.openai.api-key-field")
-
-                    HStack {
-                        Button("Save API Key") {
-                            saveAPIKey()
+                if mode == .all {
+                    Section("OpenAI") {
+                        HStack {
+                            Text("API Key")
+                            Spacer()
+                            Text(hasAPIKey ? "已設定" : "未設定")
+                                .foregroundStyle(hasAPIKey ? .green : .secondary)
+                                .accessibilityIdentifier("settings.openai.api-key-status")
                         }
-                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        .accessibilityIdentifier("settings.openai.save-api-key")
 
-                        Spacer()
+                        SecureField("sk-...", text: $apiKey)
+                            .textContentType(.password)
+                            .accessibilityIdentifier("settings.openai.api-key-field")
 
-                        Button("Delete", role: .destructive) {
-                            deleteAPIKey()
+                        HStack {
+                            Button("Save API Key") {
+                                saveAPIKey()
+                            }
+                            .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            .accessibilityIdentifier("settings.openai.save-api-key")
+
+                            Spacer()
+
+                            Button("Delete", role: .destructive) {
+                                deleteAPIKey()
+                            }
+                            .disabled(!hasAPIKey)
+                            .accessibilityIdentifier("settings.openai.delete-api-key")
                         }
-                        .disabled(!hasAPIKey)
-                        .accessibilityIdentifier("settings.openai.delete-api-key")
                     }
+
+                    Section("OAuth Connectors") {
+                        if connectorOptions.isEmpty {
+                            Text("尚未載入 connector 狀態。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        ForEach(connectorOptions) { option in
+                            connectorRow(option)
+                        }
+
+                        oauthCallbackPreviewControls()
+                    }
+                    .accessibilityIdentifier("settings.oauth.connectors")
                 }
-
-                Section("OAuth Connectors") {
-                    if connectorOptions.isEmpty {
-                        Text("尚未載入 connector 狀態。")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    ForEach(connectorOptions) { option in
-                        connectorRow(option)
-                    }
-
-                    oauthCallbackPreviewControls()
-                }
-                .accessibilityIdentifier("settings.oauth.connectors")
 
                 Section("Local Models") {
                     localModelPreferencePicker()
@@ -141,33 +167,35 @@ public struct SettingsView: View {
                 }
                 .accessibilityIdentifier("settings.models.local")
 
-                Section("Shortcut Demos") {
-                    ForEach(ShortcutDemoCatalog.default.recipes) { recipe in
-                        shortcutDemoRow(recipe)
-                    }
-                }
-                .accessibilityIdentifier("settings.shortcuts.demos")
-
-                Section("Privacy") {
-                    Text("API key 只應儲存在 Keychain。Kairo 不應把 secret 寫入 UserDefaults、log 或 analytics。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if statusMessage != nil || connectorStatusMessage != nil {
-                    Section("Status") {
-                        if let statusMessage {
-                            Text(statusMessage)
-                                .font(.caption)
+                if mode == .all {
+                    Section("Shortcut Demos") {
+                        ForEach(ShortcutDemoCatalog.default.recipes) { recipe in
+                            shortcutDemoRow(recipe)
                         }
-                        if let connectorStatusMessage {
-                            Text(connectorStatusMessage)
-                                .font(.caption)
+                    }
+                    .accessibilityIdentifier("settings.shortcuts.demos")
+
+                    Section("Privacy") {
+                        Text("API key 只應儲存在 Keychain。Kairo 不應把 secret 寫入 UserDefaults、log 或 analytics。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if statusMessage != nil || connectorStatusMessage != nil {
+                        Section("Status") {
+                            if let statusMessage {
+                                Text(statusMessage)
+                                    .font(.caption)
+                            }
+                            if let connectorStatusMessage {
+                                Text(connectorStatusMessage)
+                                    .font(.caption)
+                            }
                         }
                     }
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle(mode.navigationTitle)
             .accessibilityIdentifier("settings.form")
             .task { await reloadAllStatus() }
         }
@@ -300,20 +328,20 @@ public struct SettingsView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text(row.displayName)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    .font(.caption)
+                    .fontWeight(.semibold)
                     .accessibilityIdentifier("settings.models.\(row.modelID).name")
 
                 Spacer()
 
                 Text(row.statusText)
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundStyle(localModelStatusColor(for: row.primaryAction))
                     .accessibilityIdentifier("settings.models.\(row.modelID).status")
             }
 
             Text(row.detailText)
-                .font(.caption)
+                .font(.caption2)
                 .foregroundStyle(.secondary)
 
             if let benchmarkSummaryText = row.benchmarkSummaryText {
@@ -323,21 +351,36 @@ public struct SettingsView: View {
                     .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
             }
 
-            HStack(spacing: 12) {
-                localModelAction(for: row)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 12) {
+                    localModelAction(for: row)
 
-                if row.benchmarkSummaryText != nil {
-                    Button("Run Benchmark") {
-                        runLocalModelBenchmark(row)
+                    if row.benchmarkSummaryText != nil {
+                        Button("Run Benchmark") {
+                            runLocalModelBenchmark(row)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .accessibilityIdentifier("settings.models.\(row.modelID).benchmark-run")
                     }
-                    .accessibilityIdentifier("settings.models.\(row.modelID).benchmark-run")
                 }
 
-                if row.canDelete {
-                    Button("Delete", role: .destructive) {
-                        deleteLocalModel(row)
+                HStack(spacing: 12) {
+                    Button("Run Reply Check") {
+                        runLocalModelReplyCheck(row)
                     }
-                    .accessibilityIdentifier("settings.models.\(row.modelID).delete")
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .accessibilityIdentifier("settings.models.\(row.modelID).reply-check")
+
+                    if row.canDelete {
+                        Button("Delete", role: .destructive) {
+                            deleteLocalModel(row)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .accessibilityIdentifier("settings.models.\(row.modelID).delete")
+                    }
                 }
             }
 
@@ -360,11 +403,15 @@ public struct SettingsView: View {
             Button(row.primaryAction.title) {
                 downloadLocalModel(row)
             }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
             .accessibilityIdentifier("settings.models.\(row.modelID).download")
         case .select:
             Button(row.primaryAction.title) {
                 selectLocalModel(row)
             }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
             .accessibilityIdentifier("settings.models.\(row.modelID).select")
         case .selected:
             Label(row.primaryAction.title, systemImage: "checkmark.circle.fill")
@@ -634,6 +681,50 @@ public struct SettingsView: View {
         }
     }
 
+    private func runLocalModelReplyCheck(_ row: LocalModelSettingsRow) {
+        Task {
+            guard let localModelReplyCheckService else {
+                await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
+                    localModelStatusMessage = "尚未設定 local model reply check service。"
+                }
+                return
+            }
+
+            do {
+                await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
+                    localModelStatusMessage = "正在產生 \(row.displayName) local reply。"
+                }
+                let result = try await localModelReplyCheckService.runReplyCheck(
+                    modelID: row.modelID,
+                    minimumSafetyPolicyVersion: localModelCatalog.minimumSafetyPolicyVersion
+                )
+                await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
+                    localModelStatusMessage = "\(row.displayName) reply check：\(result.summaryText)。"
+                }
+            } catch let error as LocalModelReplyCheckError {
+                await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
+                    switch error {
+                    case .modelNotInstalled:
+                        localModelStatusMessage = "請先下載 \(row.displayName) 後再跑 reply check。"
+                    case let .modelUnavailable(modelID):
+                        localModelStatusMessage = "reply check 模型不可用：\(modelID)。"
+                    case let .runtimeUnavailable(reason):
+                        localModelStatusMessage = "本機 reply runtime 尚未接上：\(reason)"
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    localModelStatusMessageModelID = row.modelID
+                    localModelStatusMessage = "reply check 失敗：\(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
     private func deleteLocalModel(_ row: LocalModelSettingsRow) {
         Task {
             guard let localModelSettingsService else {
@@ -681,6 +772,9 @@ public struct SettingsView: View {
                 }
                 if let localModelBenchmarkService {
                     await localModelBenchmarkService.replaceCatalog(mergedCatalog)
+                }
+                if let localModelReplyCheckService {
+                    await localModelReplyCheckService.replaceCatalog(mergedCatalog)
                 }
                 await MainActor.run {
                     localModelCatalog = mergedCatalog

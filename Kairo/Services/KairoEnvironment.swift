@@ -33,6 +33,7 @@ public struct KairoEnvironment: Sendable {
     public let localModelSettingsService: LocalModelSettingsService?
     public let localModelDownloader: (any LocalModelDownloader)?
     public let localModelBenchmarkService: LocalModelBenchmarkService?
+    public let localModelReplyCheckService: LocalModelReplyCheckService?
     public let actionExecutor: any ActionExecutor
 
     public init(
@@ -52,6 +53,7 @@ public struct KairoEnvironment: Sendable {
         localModelSettingsService: LocalModelSettingsService? = nil,
         localModelDownloader: (any LocalModelDownloader)? = nil,
         localModelBenchmarkService: LocalModelBenchmarkService? = nil,
+        localModelReplyCheckService: LocalModelReplyCheckService? = nil,
         actionExecutor: (any ActionExecutor)? = nil
     ) {
         self.memoryStore = memoryStore
@@ -70,6 +72,7 @@ public struct KairoEnvironment: Sendable {
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
         self.localModelBenchmarkService = localModelBenchmarkService
+        self.localModelReplyCheckService = localModelReplyCheckService
         self.actionExecutor = actionExecutor ?? SandboxActionExecutor(memoryStore: memoryStore)
     }
 
@@ -89,7 +92,10 @@ public struct KairoEnvironment: Sendable {
         )
     }
 
-    public static func uiTesting(resetPersistentState: Bool = true) async throws -> KairoEnvironment {
+    public static func uiTesting(
+        resetPersistentState: Bool = true,
+        seedInstalledLocalModel: Bool = false
+    ) async throws -> KairoEnvironment {
         let rootDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("KairoUITesting", isDirectory: true)
         if resetPersistentState {
@@ -118,6 +124,18 @@ public struct KairoEnvironment: Sendable {
                 .appendingPathComponent("LocalModels", isDirectory: true)
                 .appendingPathComponent("install-registry.json")
         )
+        if seedInstalledLocalModel {
+            try await localModelInstallRegistry.upsert(LocalModelInstallRecord(
+                modelID: LocalModelManifest.qwen35Tiny.id,
+                version: LocalModelManifest.qwen35Tiny.version,
+                status: .installed,
+                fileURL: rootDirectory
+                    .appendingPathComponent("LocalModels", isDirectory: true)
+                    .appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf"),
+                installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
+                sha256: LocalModelManifest.qwen35Tiny.sha256
+            ))
+        }
         let localModelSettingsStore = try await FileBackedLocalModelSettingsStore(
             fileURL: rootDirectory
                 .appendingPathComponent("LocalModels", isDirectory: true)
@@ -137,6 +155,14 @@ public struct KairoEnvironment: Sendable {
             catalog: .kairoDefault,
             installRegistry: localModelInstallRegistry,
             resultStore: localModelBenchmarkStore
+        )
+        let localModelReplyCheckService = LocalModelReplyCheckService(
+            catalog: .kairoDefault,
+            installRegistry: localModelInstallRegistry,
+            runtime: DeterministicLocalModelReplyCheckRuntime(
+                responseText: "Local model reply is alive.",
+                generationTokensPerSecond: 38.5
+            )
         )
         let credentialStore = InMemoryCredentialStore()
         let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(
@@ -168,6 +194,7 @@ public struct KairoEnvironment: Sendable {
             localModelCatalogService: localModelCatalogService,
             localModelSettingsService: localModelSettingsService,
             localModelBenchmarkService: localModelBenchmarkService,
+            localModelReplyCheckService: localModelReplyCheckService,
             actionExecutor: SandboxActionExecutor(
                 memoryStore: memoryStore,
                 reminderScheduler: AllowingReminderScheduler(identifier: "ui-testing-reminder-id"),
@@ -311,6 +338,10 @@ public struct KairoEnvironment: Sendable {
             installRegistry: localModelInstallRegistry,
             resultStore: localModelBenchmarkStore
         )
+        let localModelReplyCheckService = LocalModelReplyCheckService(
+            catalog: localModelCatalog,
+            installRegistry: localModelInstallRegistry
+        )
         let credentialStore = KeychainCredentialStore()
         let aiProvider = OpenAIProvider(credentialStore: credentialStore)
         let connectedOAuthProviderKeys = try await connectedOAuthProviderKeys(credentialStore: credentialStore)
@@ -354,6 +385,7 @@ public struct KairoEnvironment: Sendable {
             localModelSettingsService: localModelSettingsService,
             localModelDownloader: localModelDownloader,
             localModelBenchmarkService: localModelBenchmarkService,
+            localModelReplyCheckService: localModelReplyCheckService,
             actionExecutor: actionExecutor
         )
     }

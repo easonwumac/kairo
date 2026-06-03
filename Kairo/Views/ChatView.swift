@@ -1,5 +1,10 @@
 #if canImport(SwiftUI)
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 public struct ChatView: View {
     @StateObject private var viewModel: ChatViewModel
@@ -92,7 +97,11 @@ public struct ChatView: View {
                     LazyVStack(spacing: 12) {
                         ForEach(viewModel.currentThread.messages) { message in
                             VStack(alignment: .leading, spacing: 8) {
-                                ChatBubble(message: message)
+                                ChatBubble(
+                                    message: message,
+                                    onCopy: copyToPasteboard,
+                                    onReply: { viewModel.replyToMessage($0) }
+                                )
                                 if !message.attachments.isEmpty {
                                     AttachmentStrip(attachments: message.attachments)
                                         .padding(.horizontal)
@@ -172,31 +181,102 @@ public struct ChatView: View {
     }
 
     private var composer: some View {
-        HStack(alignment: .bottom, spacing: 10) {
-            TextField("Ask Kairo", text: $viewModel.composerText, axis: .vertical)
-                .lineLimit(1...5)
-                .textFieldStyle(.roundedBorder)
-                .disabled(viewModel.isLoading)
-                .focused($isComposerFocused)
-                .accessibilityIdentifier("chat.composer.text")
-                .onSubmit {
+        VStack(spacing: 8) {
+            if let replyTarget = viewModel.replyTarget {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrowshape.turn.up.left.fill")
+                        .foregroundStyle(.secondary)
+                    Text(ChatViewModel.replyReferenceText(for: replyTarget))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                    Spacer()
+                    Button {
+                        viewModel.cancelReplyTarget()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Cancel reply")
+                    .accessibilityIdentifier("chat.reply-preview.cancel")
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                )
+                .overlay(alignment: .topLeading) {
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Reply preview")
+                        .accessibilityIdentifier("chat.reply-preview")
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Replying to \(ChatViewModel.replyReferenceText(for: replyTarget))")
+                .accessibilityIdentifier("chat.reply-preview")
+            }
+
+            HStack(alignment: .bottom, spacing: 10) {
+                TextField("Ask Kairo", text: $viewModel.composerText, axis: .vertical)
+                    .lineLimit(1...5)
+                    .disabled(viewModel.isLoading)
+                    .focused($isComposerFocused)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 13)
+                    .frame(minHeight: 52, alignment: .center)
+                    .accessibilityIdentifier("chat.composer.text")
+                    .onSubmit {
+                        isComposerFocused = false
+                        Task { await viewModel.sendComposerMessage() }
+                    }
+
+                Button {
                     isComposerFocused = false
                     Task { await viewModel.sendComposerMessage() }
+                } label: {
+                    Image(systemName: viewModel.isLoading ? "hourglass" : "arrow.up")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 42, height: 42)
+                        .background(sendButtonBackground, in: Circle())
                 }
-
-            Button {
-                isComposerFocused = false
-                Task { await viewModel.sendComposerMessage() }
-            } label: {
-                Image(systemName: viewModel.isLoading ? "hourglass" : "arrow.up.circle.fill")
-                    .font(.title2)
+                .disabled((viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading)
+                .accessibilityLabel("Send")
+                .accessibilityIdentifier("chat.composer.send")
             }
-            .disabled((viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading)
-            .accessibilityLabel("Send")
-            .accessibilityIdentifier("chat.composer.send")
+            .padding(.leading, 2)
+            .padding(.trailing, 8)
+            .padding(.vertical, 6)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.black.opacity(0.08), lineWidth: 1)
+            )
+            .overlay(alignment: .topLeading) {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Chat composer input shell")
+                    .accessibilityIdentifier("chat.composer.input-shell")
+            }
+            .shadow(color: .black.opacity(0.08), radius: 18, x: 0, y: 8)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("chat.composer.input-shell")
         }
-        .padding()
-        .background(.regularMaterial)
+        .padding(.horizontal, 14)
+        .padding(.top, 10)
+        .padding(.bottom, 12)
+        .background(Color(.sRGB, white: 0.98, opacity: 0.96))
+        .accessibilityIdentifier("chat.composer.surface")
+    }
+
+    private var sendButtonBackground: Color {
+        let isDisabled = (viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading
+        return isDisabled ? Color.gray.opacity(0.45) : Color.accentColor
     }
 
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
@@ -207,6 +287,17 @@ public struct ChatView: View {
                 proxy.scrollTo(lastID, anchor: .bottom)
             }
         }
+    }
+
+    private func copyToPasteboard(_ text: String) {
+        #if canImport(UIKit)
+        UIPasteboard.general.string = text
+        #elseif canImport(AppKit)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        #else
+        _ = text
+        #endif
     }
 }
 
@@ -372,6 +463,8 @@ private struct ChatHistoryRow: View {
 
 private struct ChatBubble: View {
     let message: ChatMessage
+    let onCopy: (String) -> Void
+    let onReply: (ChatMessage) -> Void
 
     private var isUser: Bool { message.role == .user }
 
@@ -383,9 +476,25 @@ private struct ChatBubble: View {
                 Text(message.text)
                     .font(.body)
                     .foregroundStyle(isUser ? .white : .primary)
+                    .textSelection(.enabled)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(bubbleColor, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .contextMenu {
+                        Button {
+                            onCopy(message.text)
+                        } label: {
+                            Label("Copy", systemImage: "doc.on.doc")
+                        }
+                        .accessibilityIdentifier("chat.message.copy-menu.\(message.id.uuidString)")
+
+                        Button {
+                            onReply(message)
+                        } label: {
+                            Label("Reply", systemImage: "arrowshape.turn.up.left")
+                        }
+                        .accessibilityIdentifier("chat.message.reply-menu.\(message.id.uuidString)")
+                    }
 
                 HStack(spacing: 6) {
                     if message.status == .failed {
@@ -393,6 +502,21 @@ private struct ChatBubble: View {
                             .foregroundStyle(.orange)
                     }
                     Text(message.createdAt, style: .time)
+                    messageActionButton(
+                        title: "Copy",
+                        systemImage: "doc.on.doc",
+                        identifier: "chat.message.copy.\(message.id.uuidString)"
+                    ) {
+                        onCopy(message.text)
+                    }
+
+                    messageActionButton(
+                        title: "Reply",
+                        systemImage: "arrowshape.turn.up.left",
+                        identifier: "chat.message.reply.\(message.id.uuidString)"
+                    ) {
+                        onReply(message)
+                    }
                 }
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -402,7 +526,7 @@ private struct ChatBubble: View {
             if !isUser { Spacer(minLength: 44) }
         }
         .padding(.horizontal)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityLabel(message.text)
         .accessibilityIdentifier(isUser ? "chat.message.user" : "chat.message.assistant")
     }
@@ -411,6 +535,25 @@ private struct ChatBubble: View {
         if isUser { return .accentColor }
         if message.status == .failed { return Color.orange.opacity(0.16) }
         return Color.primary.opacity(0.06)
+    }
+
+    private func messageActionButton(
+        title: String,
+        systemImage: String,
+        identifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .labelStyle(.titleAndIcon)
+                .font(.caption2.weight(.medium))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(Color.primary.opacity(0.06), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title) message")
+        .accessibilityIdentifier(identifier)
     }
 }
 #endif
