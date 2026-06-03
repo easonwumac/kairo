@@ -2784,11 +2784,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("settings.models.local"))
         for displayName in [
             "Qwen3.5 0.8B Q4_K_M",
-            "Qwen3.5 2B Q4_K_M",
             "Llama 3.2 1B Instruct Q4_K_M",
             "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
-            "SmolLM2 1.7B Instruct Q4_K_M",
-            "Gemma 3 1B IT Q4_K_M"
+            "SmolLM2 1.7B Instruct Q4_K_M"
         ] {
             XCTAssertTrue(smokeTest.contains(displayName), displayName)
         }

@@ -330,7 +330,7 @@ public struct SettingsView: View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(row.displayName)
-                    .font(.subheadline)
+                    .font(compactModelNameFont)
                     .fontWeight(.semibold)
                     .lineLimit(2)
                     .accessibilityIdentifier("settings.models.\(row.modelID).name")
@@ -418,6 +418,8 @@ public struct SettingsView: View {
     private var compactButtonGridColumns: [GridItem] {
         [GridItem(.adaptive(minimum: 118), spacing: 8, alignment: .leading)]
     }
+
+    private var compactModelNameFont: Font { .caption }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {

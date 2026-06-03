@@ -10,11 +10,9 @@ final class KairoAppSmokeUITests: XCTestCase {
     private var app: XCUIApplication!
     private let localModelExpectations = [
         ("qwen3-5-0-8b-q4-k-m", "Qwen3.5 0.8B Q4_K_M"),
-        ("qwen3-5-2b-q4-k-m", "Qwen3.5 2B Q4_K_M"),
         ("llama3-2-1b-instruct-q4-k-m", "Llama 3.2 1B Instruct Q4_K_M"),
         ("deepseek-r1-distill-qwen-1-5b-q4-k-m", "DeepSeek R1 Distill Qwen 1.5B Q4_K_M"),
-        ("smollm2-1-7b-instruct-q4-k-m", "SmolLM2 1.7B Instruct Q4_K_M"),
-        ("gemma3-1b-it-q4-k-m", "Gemma 3 1B IT Q4_K_M")
+        ("smollm2-1-7b-instruct-q4-k-m", "SmolLM2 1.7B Instruct Q4_K_M")
     ]
 
     override func setUpWithError() throws {

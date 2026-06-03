@@ -317,11 +317,9 @@ public extension LocalModelCatalog {
         minimumSafetyPolicyVersion: "2026.1",
         models: [
             .qwen35Tiny,
-            .qwen35Small,
             .llama32OneBInstruct,
             .deepSeekR1DistillQwenTiny,
-            .smolLM2TinyInstruct,
-            .gemma3OneBIt
+            .smolLM2TinyInstruct
         ]
     )
 }
