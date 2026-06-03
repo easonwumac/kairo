@@ -366,6 +366,7 @@ public struct KairoEnvironment: Sendable {
     ) async throws -> KairoEnvironment {
         let paths = KairoPaths(appName: appName, appGroupIdentifier: appGroupIdentifier)
         let memoryStore = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
+        let auditLogger = try await FileBackedAuditLogger(fileURL: paths.auditLogURL)
         let chatHistoryStore = try await JSONFileChatHistoryStore(fileURL: paths.chatHistoryStoreURL)
         let shareIngestionQueue = try await JSONFileShareIngestionQueue(fileURL: paths.shareIngestionQueueURL)
         let kairoRecipeStore = try await FileBackedKairoRecipeStore(fileURL: paths.kairoRecipeStoreURL)
@@ -453,7 +454,7 @@ public struct KairoEnvironment: Sendable {
             shareIngestionQueue: shareIngestionQueue,
             kairoRecipeStore: kairoRecipeStore,
             permissionService: SystemPermissionService(),
-            auditLogger: InMemoryAuditLogger(),
+            auditLogger: auditLogger,
             oauthConnectorCallbackStore: oauthCallbackStore,
             agentSkillManagerService: agentSkillManagerService,
             agentSkillMarketplaceCatalogService: agentSkillMarketplaceCatalogService,
@@ -516,6 +517,10 @@ public struct KairoPaths: Sendable {
 
     public var memoryStoreURL: URL {
         applicationSupportDirectory.appendingPathComponent("memory-store.json")
+    }
+
+    public var auditLogURL: URL {
+        applicationSupportDirectory.appendingPathComponent("audit-log.json")
     }
 
     public var chatHistoryStoreURL: URL {

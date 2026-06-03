@@ -70,7 +70,7 @@ Use these labels throughout the docs:
 | Area | Status | Current scope |
 |---|---|---|
 | Chat-first app shell | Implemented | Chat is the launch surface; More holds support surfaces. |
-| Memory | Scaffolded | Save/search stores exist; delete/export and derived cleanup still need work. |
+| Memory | Implemented | Save/search/delete/export stores exist; deleted JSON records can be purged from disk. |
 | Share Extension ingestion | Scaffolded | Queue/import path exists; extension must stay lightweight and action-free. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA, not more nodes. |
 | Kairo Recipes | Implemented | Internal Kairo-owned workflows; not silent Apple Shortcuts edits. |
@@ -82,7 +82,7 @@ Use these labels throughout the docs:
 | Local model catalog/download/select/delete | Implemented | User-triggered downloads and settings exist; model weights are never bundled. |
 | macOS/dev local model runtime adapter | Test-only / Mock | External command validation path for development. |
 | iOS production local model inference | Planned | Not implemented; do not treat macOS/dev reply checks as iPhone runtime proof. |
-| Audit / memory lifecycle hardening | Planned | Persistent redacted audit metadata and memory export/delete cleanup still needed. |
+| Audit / memory lifecycle hardening | Implemented | Live audit logs persist metadata-only events; Memory Center supports export and delete. |
 | Keyboard Extension | Planned | Not built. |
 | Widget | Planned | Not built. |
 | Arbitrary cross-app UI control / background screen watching | Not allowed | No private APIs, hidden tapping, or background screenshots. |

@@ -27,7 +27,7 @@ Primary product shape:
 |---|---|---|
 | Chat-first app shell | Implemented | App now launches into Chat; More manages support surfaces. |
 | Chat history | Implemented | JSON-backed persistent chat store exists. |
-| Memory store | Scaffolded | JSON/in-memory stores exist; delete/export and derived cleanup still need beta hardening. |
+| Memory store | Implemented | JSON/in-memory stores support save/search/delete/export; deleted JSON records can be purged from disk. |
 | Settings / Access | Implemented | Current settings, model rows, OAuth readiness, and Skill Manager UI exist. |
 | Share Extension ingestion queue | Scaffolded | Queue and import path exist; beta still needs stronger import tests and no-heavy-work enforcement. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA, not more nodes. |
@@ -40,7 +40,7 @@ Primary product shape:
 | Local model catalog/download/select/delete | Implemented | User-triggered model catalog, verified downloader, selected model settings, and delete flow exist. |
 | macOS/dev local model reply check | Test-only / Mock | External command adapter is for development validation, not iOS production inference. |
 | iOS production local model runtime | Planned | Do not claim local iPhone inference works until a real runtime is wired and tested. |
-| Audit log persistence | Scaffolded | Audit models exist; live app should persist metadata-only logs with redaction. |
+| Audit log persistence | Implemented | Live app persists file-backed metadata-only audit events. |
 | Keyboard Extension | Planned | Not built. Do not prioritize before beta stabilization. |
 | Widget | Planned | Not built. Do not prioritize before beta stabilization. |
 | Real HomeKit entitlement path | Planned | Requires entitlement, permission copy, device testing, and fallback behavior. |
@@ -69,13 +69,13 @@ Primary product shape:
    - Never commit weights, tokenizer files, GGUF files, caches, credentials, or generated secrets.
    - Keep iOS production inference marked as Planned until real-device runtime evidence exists.
 
-2. Add audit and memory lifecycle hardening.
-   - Persist audit metadata by default, not full sensitive payload.
-   - Add memory delete/export and cleanup for derived summaries/cache/attachment references.
-
-3. Complete Share Extension beta import path.
+2. Complete Share Extension beta import path.
    - Shared text, URL, image, and file metadata should appear in main app pending content.
    - Extension must not perform heavy model inference or high-risk actions.
+
+3. Finish remaining privacy review notes.
+   - Account deletion remains backend-dependent.
+   - App Review copy still needs final data deletion proof/process language.
 
 ## Verification expectations
 

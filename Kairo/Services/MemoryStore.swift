@@ -1,10 +1,29 @@
 import Foundation
 
+public struct MemoryExport: Codable, Equatable, Sendable {
+    public var schemaVersion: Int
+    public var exportedAt: Date
+    public var records: [MemoryRecord]
+
+    public init(
+        schemaVersion: Int = 1,
+        exportedAt: Date = Date(),
+        records: [MemoryRecord]
+    ) {
+        self.schemaVersion = schemaVersion
+        self.exportedAt = exportedAt
+        self.records = records
+    }
+}
+
 public protocol MemoryStore: Sendable {
     func save(_ memory: MemoryRecord) async throws
     func search(query: String, limit: Int) async throws -> [MemoryRecord]
     func list(limit: Int) async throws -> [MemoryRecord]
     func delete(id: UUID) async throws
+    func erase(id: UUID) async throws
+    func purgeDeleted() async throws
+    func export(limit: Int) async throws -> MemoryExport
 }
 
 public actor InMemoryMemoryStore: MemoryStore {
@@ -48,5 +67,17 @@ public actor InMemoryMemoryStore: MemoryStore {
         record.deletedAt = Date()
         record.updatedAt = Date()
         records[id] = record
+    }
+
+    public func erase(id: UUID) async throws {
+        records[id] = nil
+    }
+
+    public func purgeDeleted() async throws {
+        records = records.filter { _, record in record.deletedAt == nil }
+    }
+
+    public func export(limit: Int = 50) async throws -> MemoryExport {
+        MemoryExport(records: try await list(limit: limit))
     }
 }

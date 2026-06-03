@@ -56,6 +56,20 @@ public actor JSONFileMemoryStore: MemoryStore {
         try persist()
     }
 
+    public func erase(id: UUID) async throws {
+        records[id] = nil
+        try persist()
+    }
+
+    public func purgeDeleted() async throws {
+        records = records.filter { _, record in record.deletedAt == nil }
+        try persist()
+    }
+
+    public func export(limit: Int = 50) async throws -> MemoryExport {
+        MemoryExport(records: try await list(limit: limit))
+    }
+
     private func loadFromDisk() async throws {
         let directory = fileURL.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

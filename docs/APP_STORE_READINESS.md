@@ -7,7 +7,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 | Area | Status | Review note |
 |---|---|---|
 | Chat-first app shell | Implemented | Chat is the primary surface; support screens sit behind More. |
-| Memory | Scaffolded | Save/search exists; delete/export and derived cleanup are not beta-complete. |
+| Memory | Implemented | Save/search/delete/export exists; deleted JSON records can be purged from disk. |
 | Share Extension ingestion | Scaffolded | Queue/import path exists; extension must not run heavy inference or high-risk actions. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA. |
 | Skill Manager | Scaffolded | Access lifecycle exists; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
@@ -165,8 +165,9 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 ### 10. Account and deletion
 
 - [ ] 若有 Kairo backend，提供 account deletion。
-- [ ] 提供資料匯出。
-- [ ] 提供資料刪除證明與流程。
+- [x] Memory Center provides user-triggered memory JSON export.
+- [x] Memory Center provides memory delete; JSON store can purge deleted records from disk.
+- [ ] 提供完整資料刪除證明與流程。
 - [ ] Privacy policy 與 App Privacy Labels 一致。
 
 ### 11. Deferred surfaces

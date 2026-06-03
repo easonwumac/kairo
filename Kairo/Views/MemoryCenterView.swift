@@ -5,6 +5,7 @@ public struct MemoryCenterView: View {
     @State private var draft: String = ""
     @State private var memories: [MemoryRecord] = []
     @State private var errorMessage: String?
+    @State private var exportText: String = "{}"
 
     private let store: MemoryStore
 
@@ -16,12 +17,27 @@ public struct MemoryCenterView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Knowledge you approved")
-                            .font(.title2.bold())
-                        Text("Add, search, and review memories Kairo can cite later.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Knowledge you approved")
+                                .font(.title2.bold())
+                            Text("Add, search, and review memories Kairo can cite later.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer(minLength: 0)
+
+                        ShareLink(item: exportText) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.headline.weight(.semibold))
+                                .frame(width: 36, height: 36)
+                                .foregroundStyle(memories.isEmpty ? .secondary : KairoDesign.teal)
+                                .background(Color.white.opacity(0.85), in: Circle())
+                        }
+                        .disabled(memories.isEmpty)
+                        .accessibilityLabel("Export memories")
+                        .accessibilityIdentifier("memory.export.share")
                     }
 
                     KairoGroupedSurface {
@@ -57,18 +73,34 @@ public struct MemoryCenterView: View {
                             .padding(.vertical, 10)
                         } else {
                             ForEach(memories) { memory in
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(memory.title)
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(memory.summary)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(2)
-                                    KairoStatusPill(
-                                        title: memory.source.rawValue,
-                                        systemImage: "doc.text.magnifyingglass",
-                                        tint: KairoDesign.teal
-                                    )
+                                HStack(alignment: .top, spacing: 10) {
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        Text(memory.title)
+                                            .font(.subheadline.weight(.semibold))
+                                        Text(memory.summary)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(2)
+                                        KairoStatusPill(
+                                            title: memory.source.rawValue,
+                                            systemImage: "doc.text.magnifyingglass",
+                                            tint: KairoDesign.teal
+                                        )
+                                    }
+
+                                    Spacer(minLength: 0)
+
+                                    Button(role: .destructive) {
+                                        delete(memory)
+                                    } label: {
+                                        Image(systemName: "trash")
+                                            .font(.subheadline.weight(.semibold))
+                                            .frame(width: 32, height: 32)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .foregroundStyle(KairoDesign.red)
+                                    .accessibilityLabel("Delete memory")
+                                    .accessibilityIdentifier("memory.record.delete")
                                 }
                                 .padding(.vertical, 10)
                                 .accessibilityElement(children: .contain)
@@ -118,11 +150,27 @@ public struct MemoryCenterView: View {
         }
     }
 
+    private func delete(_ memory: MemoryRecord) {
+        Task {
+            do {
+                try await store.delete(id: memory.id)
+                await reload()
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
     private func reload() async {
         do {
             let loaded = try await store.list(limit: 50)
+            let export = try await store.export(limit: 500)
+            let exportText = try Self.exportText(for: export)
             await MainActor.run {
                 memories = loaded
+                self.exportText = exportText
                 errorMessage = nil
             }
         } catch {
@@ -130,6 +178,14 @@ public struct MemoryCenterView: View {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    private static func exportText(for export: MemoryExport) throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(export)
+        return String(data: data, encoding: .utf8) ?? "{}"
     }
 }
 #endif

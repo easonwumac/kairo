@@ -60,6 +60,8 @@
 8. `AuditLogger` 記錄結果。
 9. 可選擇寫入新記憶。
 
+Live app wiring uses `FileBackedAuditLogger` at `KairoPaths.auditLogURL`. Audit records are metadata-only: action kind, related memory ids, capability keys, cloud/local model use, confirmation state, and result. They do not persist full action payloads, message bodies, tokens, or attachment contents.
+
 ## Agent skills
 
 `AgentSkillCatalog` packages usable capabilities as managed skills. A skill can bind to an `AgentAction`, a Shortcut recipe, an OAuth connector, a local model, or a marketplace manifest. Installed skills are included in `CapabilityPromptContextBuilder` so the model sees named tools it may propose, including whether each skill requires confirmation.

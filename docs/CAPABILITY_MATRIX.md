@@ -18,7 +18,7 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 |---|---|---|---|---|
 | Chat-first app shell | Implemented | SwiftUI App UI | 否 | Chat 是主畫面；More 管理支援 surfaces。 |
 | Chat history | Implemented | JSON-backed app storage | 否 | 可保存 thread；生產 migration 可後續評估。 |
-| 長期記憶 | Scaffolded | JSON store / future SwiftData/Core Data | 否 | Save/search 已有；delete/export/derived cleanup 尚未完成。 |
+| 長期記憶 | Implemented | JSON store / Memory Center export | 使用者管理 | Save/search/delete/export 已有；deleted JSON records 可 purge from disk。 |
 | Share Sheet 匯入 | Scaffolded | Share Extension + App Group queue | 使用者主動 | Queue/import path exists；extension 不做 heavy inference 或 high-risk action。 |
 | 文件/圖片選取 | Planned | UIDocumentPicker / PhotosPicker | 使用者主動 | 目前主要靠 Share Extension metadata path；picker UX 尚未完成。 |
 | 行事曆 | Implemented | EventKit Calendar | 是 | Chat action 需 preview + confirm；Shortcut nodes 預設產生 draft。 |
@@ -44,8 +44,8 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 | Local model download/select/delete | Implemented | Explicit download to app storage | 使用者明確觸發 | Verified download/checksum/select/delete exists；不得 commit weights/GGUF/cache。 |
 | macOS/dev local model reply check | Test-only / Mock | External command adapter | 開發者本機 | 用於 dev validation，不是 iOS production runtime。 |
 | iOS production local model inference | Planned | App Store-compatible on-device runtime | 使用者選擇模型 | 尚未完成；不可假裝成功。 |
-| Audit log persistence | Scaffolded | Audit models / future persistent redacted store | 否 | Live app 不應只用 in-memory；預設只存 metadata。 |
-| Memory export/delete lifecycle | Planned | App storage + export UI | 使用者主動 | 要清 derived summaries/cache/embedding placeholder/Kairo-owned attachments。 |
+| Audit log persistence | Implemented | File-backed metadata-only audit log | 否 | Live app persists action kind, capability, memory ids, confirmation/result metadata only。 |
+| Memory export/delete lifecycle | Implemented | App storage + export UI | 使用者主動 | Memory Center 可匯出 active records、刪除記憶；JSON store 可 purge deleted records。 |
 | Keyboard Extension | Planned | Keyboard Extension | 使用者安裝/啟用 | 尚未完成；暫緩。 |
 | Widget | Planned | WidgetKit | 使用者加入 | 尚未完成；暫緩。 |
 | Location direct access | Planned | CoreLocation | 是 | Maps handoff 不需要 Kairo 讀定位；CoreLocation path 未完成。 |
