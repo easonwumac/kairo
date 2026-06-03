@@ -161,8 +161,6 @@ public struct RootView: View {
 
     private func drawer(safeAreaInsets: EdgeInsets) -> some View {
         ZStack(alignment: .topLeading) {
-            drawerMarker
-
             VStack(alignment: .leading, spacing: 18) {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
@@ -209,14 +207,9 @@ public struct RootView: View {
         .background(.regularMaterial)
         .shadow(color: .black.opacity(0.18), radius: 22, x: 8, y: 0)
         .ignoresSafeArea(edges: [.top, .leading, .bottom])
-    }
-
-    private var drawerMarker: some View {
-        Color.clear
-            .frame(width: 1, height: 1)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Kairo navigation drawer")
-            .accessibilityIdentifier("root.drawer")
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Kairo navigation drawer")
+        .accessibilityIdentifier("root.drawer")
     }
 
     private func drawerRow(_ section: RootSection) -> some View {

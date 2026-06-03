@@ -2349,6 +2349,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(automationsView.contains(#""automations.shortcut-demos""#))
         XCTAssertTrue(automationsView.contains(#""automations.shortcut-demo.\(recipe.id).input""#))
         XCTAssertTrue(automationsView.contains(#""automations.shortcut-demo.\(recipe.id).output""#))
+        XCTAssertTrue(automationsView.contains(#""automations.shortcut-demo.\(recipe.id).preview-sample""#))
+        XCTAssertTrue(automationsView.contains("ShortcutDemoRecipeRunner"))
+        XCTAssertTrue(automationsView.contains("previewShortcutDemo"))
         XCTAssertTrue(automationsView.contains("settingsInputSummary"))
         XCTAssertTrue(automationsView.contains("settingsOutputSummary"))
     }
@@ -2675,6 +2678,7 @@ final class KairoCoreTests: XCTestCase {
             XCTAssertTrue(automationsShortcutDemoScenarioIdentifiers.contains("automations.shortcut-demo.\(recipe.id).input"), recipe.id)
             XCTAssertTrue(automationsShortcutDemoScenarioIdentifiers.contains("automations.shortcut-demo.\(recipe.id).output"), recipe.id)
             XCTAssertTrue(automationsShortcutDemoScenarioIdentifiers.contains("automations.shortcut-demo.\(recipe.id).sample"), recipe.id)
+            XCTAssertTrue(automationsShortcutDemoScenarioIdentifiers.contains("automations.shortcut-demo.\(recipe.id).preview-sample"), recipe.id)
         }
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)

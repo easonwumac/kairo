@@ -177,6 +177,13 @@ final class KairoAppSmokeUITests: XCTestCase {
             outputText: "Output: outputJSON, displayText, fields.taskCount, tasks",
             sampleText: "Shortcut dictionary"
         )
+
+        let previewSample = findButton("automations.shortcut-demo.generic-node-runner.preview-sample", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(previewSample.exists)
+        previewSample.tap()
+
+        XCTAssertTrue(findElement("automations.message", direction: .both, maxSwipes: 4).waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Sample Generic Node Runner", direction: .both, maxSwipes: 2).exists)
     }
 
     func testSettingsShowsOAuthConnectorReadinessAndBoundaries() throws {

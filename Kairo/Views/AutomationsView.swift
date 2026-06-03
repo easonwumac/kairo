@@ -188,6 +188,15 @@ public struct AutomationsView: View {
                     .lineLimit(2)
                     .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).sample")
             }
+
+            Button("Preview Sample") {
+                Task { await previewShortcutDemo(recipe) }
+            }
+            .accessibilityLabel("Preview \(recipe.title) Sample")
+            .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).preview-sample")
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(isLoading)
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .contain)
@@ -259,6 +268,20 @@ public struct AutomationsView: View {
             message = "Added \(recipes.count) Kairo internal recipe samples."
         } catch {
             message = "Unable to add Kairo internal recipe samples."
+        }
+    }
+
+    @MainActor
+    private func previewShortcutDemo(_ recipe: ShortcutDemoRecipe) async {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+            let runner = ShortcutDemoRecipeRunner(runtime: runtime)
+            let run = try await runner.runSample(recipe)
+            message = "Sample \(run.displaySummary)"
+        } catch {
+            message = "Unable to preview sample for \(recipe.title)."
         }
     }
 
