@@ -2,6 +2,49 @@ import XCTest
 @testable import KairoCore
 
 final class KairoBackendAPITests: XCTestCase {
+    func testBackendAPIExposesProductionModuleRegistryForCoreComposition() throws {
+        XCTAssertEqual(
+            KairoBackendModuleRegistry.production.modules.map(\.id),
+            KairoBackendModuleID.allCases
+        )
+        XCTAssertEqual(
+            KairoBackendModuleRegistry.production.modules.map(\.displayName),
+            [
+                "Chat",
+                "Memory",
+                "Internal Recipes",
+                "Share Imports",
+                "Data Deletion",
+                "Local Models",
+                "Skill Manager",
+                "Settings",
+                "Access"
+            ]
+        )
+
+        let api = KairoBackendAPI(
+            chat: KairoChatBackendService(agent: AgentCore()),
+            memory: KairoMemoryBackendService(memoryStore: InMemoryMemoryStore()),
+            recipes: KairoRecipeBackendService(recipeStore: InMemoryKairoRecipeStore()),
+            shareImports: KairoShareImportBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
+            deletion: KairoDeletionBackendService(
+                chatHistoryStore: InMemoryChatHistoryStore(),
+                memoryStore: InMemoryMemoryStore(),
+                credentialStore: InMemoryCredentialStore(),
+                auditLogger: InMemoryAuditLogger()
+            ),
+            localModels: KairoLocalModelBackendService(localModelSettingsService: nil),
+            skills: KairoSkillBackendService(agentSkillManagerService: nil),
+            settings: KairoSettingsBackendService(
+                openAISettingsService: OpenAISettingsService(credentialStore: InMemoryCredentialStore()),
+                oauthLoginCenter: OAuthConnectorLoginCenter(credentialStore: InMemoryCredentialStore())
+            ),
+            access: KairoAccessBackendService(permissionService: StubPermissionService())
+        )
+
+        XCTAssertEqual(api.moduleRegistry, KairoBackendModuleRegistry.production)
+    }
+
     func testChatBackendAPIForwardsPrivacyModeThroughAgentCore() async throws {
         let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Private response"))
         let api = KairoChatBackendService(agent: AgentCore(

@@ -64,7 +64,7 @@ Live app wiring uses `FileBackedAuditLogger` at `KairoPaths.auditLogURL`. Audit 
 
 ## Backend API boundary
 
-SwiftUI views should call app-facing backend APIs instead of directly coordinating stores, credentials, model services, share queues, and audit loggers. `KairoBackendAPI` is the facade for that split and currently exposes Chat, Memory, Kairo-owned internal recipes, Share Extension imports, deletion, local models, Skill Manager, Settings/OAuth, and Access permission status/request APIs.
+SwiftUI views should call app-facing backend APIs instead of directly coordinating stores, credentials, model services, share queues, and audit loggers. `KairoBackendAPI` is the facade for that split and currently exposes Chat, Memory, Kairo-owned internal recipes, Share Extension imports, deletion, local models, Skill Manager, Settings/OAuth, and Access permission status/request APIs. `KairoBackendModuleRegistry.production` is the explicit core composition list for these mounted backend modules, so module boundaries can be verified without coupling views to concrete service implementations.
 
 `KairoChatAPI` wraps `AgentCore.respond` behind an app-facing interface that accepts message text, attachments, and `ChatPrivacyMode`. This keeps memory lookup, tool candidate filtering, provider routing, and private-chat fail-closed behavior in Core instead of SwiftUI.
 

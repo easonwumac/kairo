@@ -1,6 +1,7 @@
 import Foundation
 
 public struct KairoBackendAPI: Sendable {
+    public let moduleRegistry: KairoBackendModuleRegistry
     public let chat: any KairoChatAPI
     public let memory: any KairoMemoryAPI
     public let recipes: any KairoRecipeAPI
@@ -12,6 +13,7 @@ public struct KairoBackendAPI: Sendable {
     public let access: any KairoAccessAPI
 
     public init(
+        moduleRegistry: KairoBackendModuleRegistry = .production,
         chat: any KairoChatAPI,
         memory: any KairoMemoryAPI,
         recipes: any KairoRecipeAPI,
@@ -22,6 +24,7 @@ public struct KairoBackendAPI: Sendable {
         settings: any KairoSettingsAPI,
         access: any KairoAccessAPI
     ) {
+        self.moduleRegistry = moduleRegistry
         self.chat = chat
         self.memory = memory
         self.recipes = recipes

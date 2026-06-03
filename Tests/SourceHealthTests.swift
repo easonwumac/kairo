@@ -12,6 +12,60 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(workflow.contains("runs-on: macos-15"))
     }
 
+    func testRepositoryDoesNotContainModelArtifactsOrCaches() throws {
+        let root = packageRootURL()
+        let skippedDirectoryNames: Set<String> = [
+            ".git",
+            ".build",
+            ".swiftpm",
+            "DerivedData",
+            "Kairo.xcodeproj",
+            "tmp"
+        ]
+        let forbiddenExtensions: Set<String> = [
+            "bin",
+            "ggml",
+            "gguf",
+            "mlmodelc",
+            "mlpackage",
+            "onnx",
+            "safetensors"
+        ]
+        let forbiddenNameFragments = [
+            "model-cache",
+            "tokenizer"
+        ]
+
+        let keys: [URLResourceKey] = [.isDirectoryKey, .isRegularFileKey]
+        let enumerator = FileManager.default.enumerator(
+            at: root,
+            includingPropertiesForKeys: keys,
+            options: [.skipsHiddenFiles]
+        )
+        var matches: [String] = []
+
+        while let fileURL = enumerator?.nextObject() as? URL {
+            let values = try fileURL.resourceValues(forKeys: Set(keys))
+            if values.isDirectory == true, skippedDirectoryNames.contains(fileURL.lastPathComponent) {
+                enumerator?.skipDescendants()
+                continue
+            }
+            guard values.isRegularFile == true else { continue }
+
+            let lowercasedName = fileURL.lastPathComponent.lowercased()
+            let lowercasedExtension = fileURL.pathExtension.lowercased()
+            if forbiddenExtensions.contains(lowercasedExtension)
+                || forbiddenNameFragments.contains(where: lowercasedName.contains) {
+                matches.append(fileURL.path.replacingOccurrences(of: root.path + "/", with: ""))
+            }
+        }
+
+        XCTAssertTrue(
+            matches.isEmpty,
+            "Do not commit model weights, tokenizer blobs, generated model packages, or model caches: \(matches.joined(separator: ", "))"
+        )
+    }
+
     func testLocalModelCoverageLivesInFocusedTestFile() throws {
         let root = packageRootURL()
         let focusedTestsURL = root.appendingPathComponent("Tests/LocalModelFeatureTests.swift")
@@ -75,6 +129,7 @@ final class SourceHealthTests: XCTestCase {
         let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)
         let splitFiles = [
             "KairoBackendAPI.swift": "public struct KairoBackendAPI",
+            "KairoBackendModuleRegistry.swift": "public struct KairoBackendModuleRegistry",
             "KairoEnvironment+BackendAPI.swift": "var backendAPI: KairoBackendAPI",
             "KairoChatBackendAPI.swift": "public protocol KairoChatAPI",
             "KairoMemoryBackendAPI.swift": "public protocol KairoMemoryAPI",
