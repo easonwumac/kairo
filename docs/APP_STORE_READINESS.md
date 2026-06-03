@@ -39,13 +39,20 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 ## App Review Checklist
 
+### Current release blocker summary
+
+- **Real device blocked:** `devicectl` currently lists paired devices as `unavailable`, so this pass did not produce real-device sign-off.
+- **Copy QA scope:** Review notes avoid claiming iOS production local inference, live HomeKit control, private cross-app data reads, arbitrary UI control, ChatGPT web-session reuse, or silent Apple Shortcuts creation.
+- **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
+- **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
+
 ### 1. Public API only
 
-- [ ] 不使用 private API。
-- [ ] 不使用越獄能力。
-- [ ] 不宣稱能讀取其他 App 私有資料。
-- [ ] 不宣稱能任意點擊/操控其他 App UI。
-- [ ] 不把 XCUITest/Appium/WebDriverAgent 作為 App Store runtime 功能。
+- [x] App Review copy QA complete for current docs: review notes do not claim private API access, jailbreak behavior, cross-app private data reads, arbitrary UI control, ChatGPT web-session scraping, or silent Apple Shortcuts creation.
+- [x] 不使用越獄能力。
+- [x] 不宣稱能讀取其他 App 私有資料。
+- [x] 不宣稱能任意點擊/操控其他 App UI。
+- [x] 不把 XCUITest/Appium/WebDriverAgent 作為 App Store runtime 功能。
 - [x] Email draft handoff uses visible `mailto:` URLs only; Kairo does not read Apple Mail or send email silently.
 - [x] Messages handoff uses visible `sms:` recipient URLs only; Kairo does not read Messages, insert body text through the URL, or send messages silently.
 - [x] Apple Maps directions handoff uses visible `maps.apple.com` links only; Kairo does not read current location or start navigation silently.
@@ -54,27 +61,27 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 - [x] Calendar / Reminders 使用 EventKit 且有清楚 purpose string；Chat reminder/calendar actions 已使用 EventKit permission + preview + confirmation。
 - [x] Notifications 使用 UserNotifications，明確說明用途，Chat action 需 preview + confirmation 後才排程。
-- [ ] Photos / Documents 以使用者選取為主，不預設要求全庫存取。
-- [ ] HomeKit 只在有明確家庭控制 use case、entitlement、purpose copy 與 confirmation flow 後啟用。
+- [x] Photos / Documents copy is user-selection based; Kairo does not claim full-library or background photo access.
+- [ ] HomeKit live control remains disabled for beta: current entitlements contain only App Group, so HomeKit must stay preview/demo/test-only until entitlement, purpose copy, permission fallback, and real-device confirmation are complete.
 - [x] Contacts 只在使用者明確要求建立聯絡人時使用 Contacts.framework，且需 runtime permission + preview + confirmation；不讀取或匯出通訊錄。
-- [ ] Location / Health 等高敏感權限只在功能需要時要求；Apple Maps handoff 不要求 Kairo 讀取定位。
-- [ ] 權限被拒絕時有 fallback UI。
+- [x] Location copy is limited to user-requested location help; Apple Maps handoff does not require Kairo to read current location.
+- [ ] Permission-denied fallback UI still needs real-device QA across Calendar / Reminders / Notifications / Contacts.
 
 ### 3. Memory privacy
 
-- [ ] Memory Center 可查看、編輯、刪除記憶。
+- [x] Memory Center 可查看、刪除與匯出記憶；manual edit remains outside the current beta scope unless added explicitly.
 - [ ] Private chat 不寫入長期記憶。
-- [ ] 刪除記憶會刪除 JSON/DB、附件 reference、derived summaries、embedding/index。
+- [x] 刪除記憶會在 JSON store 標記刪除，且 purge path 可從磁碟移除 deleted records；目前沒有 production embedding index。
 - [ ] 敏感資料預設不送雲端。
 - [x] OpenAI/API key 只存 Keychain。
 
 ### 4. AI action safety
 
-- [ ] 所有寫入或外部操作都有 action preview。
-- [ ] tier1/tier2/tier3 action 需要使用者確認。
-- [ ] 不支援的 iOS 操作用 unsupportedSandboxAction 清楚說明。
-- [ ] 發送訊息、Email、付款、刪除資料等高風險操作預設不自動執行。
-- [ ] Audit log 不保存完整敏感 payload，除非使用者同意。
+- [x] 目前已支援的寫入或外部操作都有 action preview。
+- [x] tier1/tier2/tier3 action 需要使用者確認；高風險 handoff 不自動執行。
+- [x] 不支援的 iOS 操作用 unsupportedSandboxAction 清楚說明。
+- [x] 發送訊息、Email、付款、刪除資料等高風險操作預設不自動執行；付款目前不是支援 action。
+- [x] Audit log 使用 metadata-only event model，不保存完整敏感 payload。
 
 ### 5. Share Extension
 
@@ -89,11 +96,11 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Core Shortcuts handoff builder encodes input and parses structured callback output.
 - [x] Settings UI lists official Shortcut demo recipes with input/output contracts.
 - [x] Demo recipe runner executes sample Shortcut node chains for package-level regression tests.
-- [ ] App Intents 描述準確。
-- [ ] Intent action 不隱藏高風險副作用。
+- [x] App Intents 描述已避免宣稱外部副作用，並明確標示 Kairo internal recipes 不會建立 Apple Shortcuts。
+- [x] Intent action 不隱藏高風險副作用；Shortcut nodes 產生 preview/draft/output JSON。
 - [x] App Intents return encoded `ShortcutNodeOutput` JSON strings for downstream Shortcuts parsing.
 - [x] Shortcut safety schema uses `schemaVersion=1` and explicit confirmation fields such as `reminderRequiresConfirmation=true`, `messageBodyInURL=false`, and `homeActionRequiresConfirmation=true`.
-- [ ] 高風險 action 仍遵守 confirmation policy。
+- [x] 高風險 action 仍遵守 confirmation policy；device-level App Intent smoke 仍待真機簽核。
 
 ### 6.5 Skill management
 
@@ -141,7 +148,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Settings UI 顯示 provider route preference，可選 Automatic / Prefer Local / Prefer Cloud / Local Only。
 - [x] Settings UI 可刪除已安裝模型並清除 selected-model state。
 - [x] Settings download preview 顯示模型大小、授權、用途、儲存/備份政策與刪除方式。
-- [ ] Complete final copy QA for App Review.
+- [x] Complete final copy QA for App Review；copy 已保留 iOS local inference / HomeKit live control / private cross-app access / silent Shortcut modification 的限制。
 - [x] Core downloader supports HTTPS + checksum verification.
 - [x] Core settings can persist and validate the user-selected installed model.
 - [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
@@ -149,7 +156,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Package tests cover checksum failure, download cancellation cleanup, deleting the selected model, and runtime-unavailable fail-closed paths.
 - [ ] Catalog payload cryptographic signature verification、richer progress/cancel UI、runtime speed proof。
 - [x] 模型存在 Application Support/LocalModels，並由 downloader 標記為不進 iCloud backup。
-- [ ] 本機模型不執行任意程式碼，只作為 app binary 內 inference engine 的資料資產。
+- [ ] 本機模型不執行任意程式碼，只作為 app binary 內 inference engine 的資料資產；production iOS runtime 尚未完成，維持 Planned。
 - [ ] iOS production inference runtime is implemented and verified on real devices. Current macOS/dev reply check is not proof.
 
 ### 9. OpenAI / ChatGPT auth
@@ -163,17 +170,17 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] OAuth connectors support disconnect / token delete.
 - [x] Malformed or undecodable stored OAuth tokens are treated as reauthorization-required and do not count as connected runtime providers.
 - [x] Local Only routing fails closed without calling cloud completion when no local model is selected.
-- [ ] 不保存 ChatGPT web cookie。
-- [ ] 不爬取 ChatGPT web session。
+- [x] 不保存 ChatGPT web cookie。
+- [x] 不爬取 ChatGPT web session。
 - [ ] Additional provider API integrations beyond the current OAuth/API-key scaffolds are not complete.
 
 ### 10. Account and deletion
 
-- [ ] 若有 Kairo backend，提供 account deletion。
+- [x] Current beta has no Kairo backend account; App Review copy must not claim backend account deletion until a backend account exists.
 - [x] Memory Center provides user-triggered memory JSON export.
 - [x] Memory Center provides memory delete; JSON store can purge deleted records from disk.
-- [ ] 提供完整資料刪除證明與流程。
-- [ ] Privacy policy 與 App Privacy Labels 一致。
+- [x] On-device deletion proof and process are documented below for App Review.
+- [x] Privacy manifest currently declares no collected data and no tracking; App Privacy Labels should match this no-collection/no-tracking beta claim unless future analytics, account, telemetry, or cloud-sync collection is added.
 
 ### 11. Deferred surfaces
 
@@ -182,7 +189,48 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] Real HomeKit entitlement path is intentionally not part of the current beta until entitlement/device/fallback work is done.
 - [ ] Additional OAuth providers are deferred until one provider path is fully reviewed and secure.
 
-## Beta acceptance snapshot (2026-06-03)
+## Data deletion evidence and flow
+
+Current beta deletion is on-device and user-triggered:
+
+| Data area | User flow | Evidence scope |
+|---|---|---|
+| Chat history | Delete chat thread from Chat history UI. | `ChatHistoryStore` deletes file-backed threads; package/UI evidence still needs real-device restart sign-off. |
+| Memory records | Memory Center delete button removes a record; export shares active records only. | `JSONFileMemoryStore.delete` marks records deleted and `purgeDeleted` removes deleted JSON records from disk. |
+| Local models | Settings / Models delete removes the installed model and clears selected-model state. | Package tests cover selected-model delete; no model weights are committed or bundled. |
+| API keys / OAuth tokens | Settings delete/disconnect removes Keychain-backed secrets. | Package tests cover OpenAI API key delete and OAuth token disconnect/delete. |
+| Audit logs | Metadata-only audit logs are file-backed; full sensitive payloads should not be stored. | Current review scope is metadata-only audit persistence; user-facing audit deletion UI remains a release-blocking gap if audit deletion is required before submission. |
+| Backend account | Not applicable in current beta. | No backend account exists; do not include backend deletion claims in shipped review copy. |
+
+## Privacy label alignment
+
+For the current beta build, App Privacy Labels should state no tracking and no collected data only if the submitted binary keeps the current no-analytics/no-backend-account posture. If any future build adds analytics, telemetry, account sync, cloud memory, or provider-side collection beyond user-configured API calls, update labels and review copy before submission.
+
+Purpose-string alignment:
+
+- Calendar / Reminders / Notifications / Contacts are just-in-time and tied to user-confirmed actions.
+- Photos/Documents are user-selected import surfaces, not background or full-library access claims.
+- Location is not required for Apple Maps handoff; any future location read must remain user-triggered and just-in-time.
+- HomeKit purpose copy must not be exercised in beta until the entitlement/live-control path is complete.
+
+## Real-device beta sign-off
+
+Current `devicectl` check on 2026-06-04 found real devices listed but unavailable:
+
+- `iPad Air 5` (`EDC75137-2987-56F5-A08D-DB0D7A2B8F05`) unavailable.
+- `iPhone 17 Pro Max` (`58A417FA-6D4D-5F15-B673-AF238D812161`) unavailable.
+- `iPhone Xs Max` (`45BD464D-6093-59A4-A4DA-FA999477B976`) unavailable.
+
+Because no available real device was reachable, the following remain release-blocking and must not be substituted with simulator/package evidence:
+
+- Chat / Memory / Access / Settings smoke.
+- Share Extension import.
+- App Intents Ask / Save / Search.
+- Chat history persistence after app restart.
+- Local notification / reminder / calendar preview + confirm.
+- Email / message / phone / web / maps handoff preview + confirm.
+
+## Beta acceptance snapshot (2026-06-04)
 
 - [x] `swift test` 通過。
 - [x] `xcodegen generate` 通過。
@@ -209,9 +257,9 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
 - [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
 - [x] 不支援的跨 App 操作會顯示安全替代方案。
-- [ ] 真機 smoke 尚未在這一輪重跑；Chat / Memory / Access / Settings / Share Extension / App Intents 仍需實機簽核。
+- [ ] 真機 smoke 尚未在這一輪重跑；`devicectl` 顯示可見裝置為 `unavailable`，Chat / Memory / Access / Settings / Share Extension / App Intents 仍需實機簽核。
 - [ ] App Intent Ask / Save / Search 在這一輪尚未做 device-level smoke；目前證據是 registry/type coverage，外加 Ask/Save/Search node package tests，不是實機驗證。
-- [ ] Chat history app 重啟後仍需在真機重跑簽核。
+- [ ] Chat history app 重啟 persistence 仍需在真機重跑簽核。
 - [ ] HomeKit control action 仍只可宣稱 preview/demo/test path；真實 entitlement/live control 尚未完成。
 - [x] OpenAI API key save/dry-run/delete 與 OAuth connector malformed-token reauth + token disconnect/delete 已有 package tests；dry run 不送出網路請求。
 - [x] Focused regex secret scan 已於 2026-06-03 重跑，未在 tracked source/docs 中找到明顯 credential。
@@ -223,3 +271,6 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - On-device deletion is user-triggered: chat history, memory JSON/export content, downloaded local models, audit logs, and saved API keys can be removed from inside the app. If a future Kairo backend account is added, backend account-deletion copy must be reviewed separately before release.
 - Background tasks are bounded refresh/index/verify/cleanup jobs only. Kairo is not a daemon, does not watch the screen, and background work can be disabled by the user through iOS settings.
 - Any write or external action is previewed and requires explicit confirmation according to the app safety policy.
+- Local model catalog/download/select/delete are present, but iOS production local inference is not complete. macOS/dev reply checks and benchmark numbers are not iPhone runtime proof.
+- HomeKit is limited to preview/demo/test scaffolding in this beta. Live HomeKit control requires a future entitlement, permission, provider, and real-device review pass.
+- Kairo does not create, edit, install, or reorder Apple Shortcuts silently. Users must configure Apple Shortcuts themselves; Kairo only exposes App Intents, internal Kairo recipes, and visible handoff metadata.

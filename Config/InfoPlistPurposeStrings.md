@@ -39,3 +39,5 @@
 - 權限被拒絕時要有 graceful fallback。
 - 高敏感權限預設不在 onboarding 一次要求。
 - iOS 17+ 的 EventKit full-access requests 需要 `NSCalendarsFullAccessUsageDescription` / `NSRemindersFullAccessUsageDescription`，舊 key 只作為舊系統 fallback。
+- Apple Maps handoff 不需要 Kairo 讀取目前位置；只有未來明確加入定位讀取功能時，才可觸發 Location permission。
+- 目前 beta 沒有 HomeKit entitlement；`NSHomeKitUsageDescription` 只能作為未來 live-control path 的文案草稿，不可在 review notes 宣稱真實 HomeKit live control 已完成。
