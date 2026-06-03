@@ -414,7 +414,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
         UITestScenario(
             id: "settings-local-model-expanded-catalog",
             title: "Settings Expanded Model Catalog",
-            userGoal: "Open Models with a remote catalog seed and verify Kairo keeps the starter trio compact until the user explicitly reveals more downloadable models.",
+            userGoal: "Open Models with a remote catalog seed and verify Kairo keeps the featured pair compact until the user explicitly reveals more downloadable models.",
             requiredAccessibilityIdentifiers: [
                 "settings.models.local",
                 "settings.models.qwen3-5-0-8b-q4-k-m.name",
@@ -423,7 +423,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.models.smollm2-1-7b-instruct-q4-k-m.name"
             ],
             assertions: [
-                "The first Models screen remains a compact starter trio.",
+                "The first Models screen remains a compact featured pair.",
                 "Extra remote catalog entries are hidden behind a visible Show more control.",
                 "Revealed models are still downloadable metadata only, not bundled weights.",
                 "The expanded catalog path is deterministic in UI tests."

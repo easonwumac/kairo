@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct LocalModelsCompactView: View {
-    private let starterModelRowLimit = 3
+    private let starterModelRowLimit = 2
     @State private var showsAllModelRows = false
 
     let localModelStatus: LocalModelSettingsStatus
@@ -27,7 +27,7 @@ struct LocalModelsCompactView: View {
                         .fontWeight(.semibold)
                         .accessibilityIdentifier("settings.models.local")
 
-                    Text("Starter set: Qwen, Llama, and Gemma. Downloads require approval.")
+                    Text("Featured: Qwen first, plus a few popular small models. Downloads require approval.")
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -240,7 +240,7 @@ struct LocalModelsCompactView: View {
     }
 
     private var modelListToggleTitle: String {
-        showsAllModelRows ? "Show starter set" : "Show \(hiddenModelRowCount) more popular"
+        showsAllModelRows ? "Show featured set" : "Show \(hiddenModelRowCount) more popular"
     }
 
     @ViewBuilder
@@ -352,13 +352,13 @@ struct LocalModelsCompactView: View {
         [GridItem(.adaptive(minimum: 72), spacing: 4, alignment: .leading)]
     }
 
-    private var compactModelNameFont: Font { .system(size: 8, weight: .semibold) }
+    private var compactModelNameFont: Font { .system(size: 7.5, weight: .semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 7) }
+    private var compactModelMetadataFont: Font { .system(size: 6.5) }
 
-    private var compactModelStatusFont: Font { .system(size: 7, weight: .semibold) }
+    private var compactModelStatusFont: Font { .system(size: 6.5, weight: .semibold) }
 
-    private var compactButtonLabelFont: Font { .system(size: 7, weight: .semibold) }
+    private var compactButtonLabelFont: Font { .system(size: 6.5, weight: .semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {

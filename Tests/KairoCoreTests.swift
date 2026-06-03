@@ -418,6 +418,40 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(plan.proposedActions.isEmpty)
     }
 
+    func testAgentToolInvocationPlannerStaysSplitAcrossSupportFiles() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let plannerSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/AgentToolInvocationPlanner.swift"),
+            encoding: .utf8
+        )
+        let modelsSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/AgentToolInvocationModels.swift"),
+            encoding: .utf8
+        )
+        let matchingSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/AgentToolInvocationSkillMatching.swift"),
+            encoding: .utf8
+        )
+        let actionSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/AgentToolInvocationActionCandidates.swift"),
+            encoding: .utf8
+        )
+        let parsingSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/AgentToolInvocationParsing.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertLessThan(plannerSource.split(separator: "\n").count, 120)
+        XCTAssertTrue(plannerSource.contains("public func plan(for request: AgentToolInvocationRequest)"))
+        XCTAssertTrue(modelsSource.contains("public struct AgentToolInvocationCandidate"))
+        XCTAssertTrue(matchingSource.contains("func candidate(for skill: AgentSkill"))
+        XCTAssertTrue(matchingSource.contains("func candidate(for integration: AppIntegration"))
+        XCTAssertTrue(actionSource.contains("func notificationActionCandidate"))
+        XCTAssertTrue(actionSource.contains("func emailActionCandidate"))
+        XCTAssertTrue(parsingSource.contains("func calendarTitle(from userText: String)"))
+        XCTAssertTrue(parsingSource.contains("func uniqueCandidates"))
+    }
+
     func testAgentCoreAddsDeterministicHomeKitPreviewAction() async throws {
         let agent = AgentCore(
             memoryStore: InMemoryMemoryStore(),
@@ -1944,7 +1978,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(indexHTML.contains("Llama 3.2 1B"))
         XCTAssertTrue(indexHTML.contains("Gemma 3 1B"))
         XCTAssertFalse(indexHTML.contains("SmolLM2 1.7B"))
-        XCTAssertTrue(indexHTML.contains("font-size: 13px"))
+        XCTAssertTrue(indexHTML.contains("font-size: 12px"))
         XCTAssertTrue(indexHTML.contains("benchmark profiles"))
         XCTAssertTrue(readme.contains("Do not commit model weights"))
         XCTAssertTrue(readme.contains("kairo-models"))
@@ -2327,24 +2361,24 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).manifest""#))
         XCTAssertTrue(compactView.contains("row.runtimeFitText"))
         XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).runtime-fit""#))
-        XCTAssertTrue(compactView.contains("private let starterModelRowLimit = 3"))
+        XCTAssertTrue(compactView.contains("private let starterModelRowLimit = 2"))
         XCTAssertTrue(compactView.contains("@State private var showsAllModelRows = false"))
         XCTAssertTrue(compactView.contains("ForEach(visibleModelRows)"))
         XCTAssertFalse(compactView.contains("ForEach(localModelStatus.settingsRows)"))
         XCTAssertTrue(compactView.contains("if hiddenModelRowCount > 0 || showsAllModelRows"))
         XCTAssertTrue(compactView.contains(#""settings.models.show-more""#))
         XCTAssertTrue(compactView.contains("modelListToggleTitle"))
-        XCTAssertTrue(compactView.contains(#""Show starter set""#))
+        XCTAssertTrue(compactView.contains(#""Show featured set""#))
         XCTAssertTrue(compactView.contains(#""Show \(hiddenModelRowCount) more popular""#))
         XCTAssertTrue(compactView.contains("row.manifestTransparencyText"))
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))
-        XCTAssertTrue(compactView.contains("Starter set: Qwen, Llama, and Gemma"))
-        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 8, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 7) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 7, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 7, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("Featured: Qwen first, plus a few popular small models."))
+        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 7.5, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 6.5) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 6.5, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 6.5, weight: .semibold) }"))
         XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 72)"))
         XCTAssertTrue(compactView.contains(".lineLimit(1)"))
         XCTAssertTrue(compactView.contains(".lineLimit(2)"))

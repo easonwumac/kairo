@@ -32,7 +32,9 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     func testSettingsLocalModelCatalogListsDownloadableModels() throws {
         relaunchForUITesting(initialSection: "models")
-        openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: true, selectFromDrawer: false)
+        openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: false, selectFromDrawer: false)
+        XCTAssertFalse(anyElement("settings.models.gemma3-1b-it-q4-k-m.name").exists)
+        XCTAssertTrue(findButton(labeled: "Show 1 more popular", direction: .down, maxSwipes: 1).exists)
     }
 
     func testSettingsExpandedModelCatalogCanRevealMoreRows() throws {
@@ -41,17 +43,18 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(anyElement("settings.models.screen").waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("settings.models.qwen3-5-0-8b-q4-k-m.name").exists)
         XCTAssertTrue(anyElement("settings.models.llama3-2-1b-instruct-q4-k-m.name").exists)
+        XCTAssertFalse(anyElement("settings.models.gemma3-1b-it-q4-k-m.name").exists)
         XCTAssertFalse(anyElement("settings.models.smollm2-1-7b-instruct-q4-k-m.name").exists)
 
         let showMoreIdentifier = "settings.models.show-more"
         let showMoreByIdentifier = findElement(showMoreIdentifier, direction: .down, maxSwipes: 1)
         let showMore = showMoreByIdentifier.exists
             ? showMoreByIdentifier
-            : findButton(labeled: "Show 1 more popular", direction: .down, maxSwipes: 1)
+            : findButton(labeled: "Show 2 more popular", direction: .down, maxSwipes: 1)
         XCTAssertTrue(showMore.exists)
         showMore.tap()
 
-        XCTAssertTrue(findElement("settings.models.smollm2-1-7b-instruct-q4-k-m.name", direction: .down, maxSwipes: 1).waitForExistence(timeout: 3))
+        XCTAssertTrue(findElement("settings.models.smollm2-1-7b-instruct-q4-k-m.name", direction: .down, maxSwipes: 2).waitForExistence(timeout: 3))
     }
 
     func testChatComposerSurfaceIsTappableAndSends() throws {
