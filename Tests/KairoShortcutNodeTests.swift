@@ -50,13 +50,14 @@ final class KairoShortcutNodeTests: XCTestCase {
     func testShortcutDemoCatalogContainsPracticalRecipesWithNodeContracts() throws {
         let catalog = ShortcutDemoCatalog.default
 
-        XCTAssertGreaterThanOrEqual(catalog.recipes.count, 7)
+        XCTAssertGreaterThanOrEqual(catalog.recipes.count, 8)
         XCTAssertEqual(catalog.recipe(id: "daily-briefing")?.steps.map(\.nodeKind), [.dailyBriefing])
         XCTAssertEqual(catalog.recipe(id: "save-shared-text")?.steps.map(\.nodeKind), [.saveMemory, .extractTasks])
         XCTAssertEqual(catalog.recipe(id: "screenshot-to-reminders")?.steps.map(\.nodeKind), [.extractTasks, .createReminderDraft])
         XCTAssertEqual(catalog.recipe(id: "reply-draft-from-shared-text")?.steps.map(\.nodeKind), [.summarize, .draftReply])
         XCTAssertEqual(catalog.recipe(id: "email-triage")?.steps.map(\.nodeKind), [.summarize, .extractTasks, .draftReply])
         XCTAssertEqual(catalog.recipe(id: "meeting-prep-brief")?.steps.map(\.nodeKind), [.searchMemory, .summarize, .extractTasks])
+        XCTAssertEqual(catalog.recipe(id: "request-to-recipe-draft")?.steps.map(\.nodeKind.rawValue), ["createRecipeDraft"])
         XCTAssertEqual(catalog.recipe(id: "generic-node-runner")?.steps.map(\.nodeKind), [.summarize, .extractTasks])
 
         for recipe in catalog.recipes {
@@ -114,6 +115,37 @@ final class KairoShortcutNodeTests: XCTestCase {
         }
     }
 
+    func testShortcutCreateRecipeDraftNodeReturnsDisabledInternalRecipePreview() async throws {
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let kind = try XCTUnwrap(ShortcutNodeKind(rawValue: "createRecipeDraft"))
+        let input = ShortcutNodeInput(
+            text: "每天早上整理今天事情，包含待辦和會議提醒",
+            sourceName: "Automation Idea Shortcut",
+            variables: ["shortcutRecipeID": "request-to-recipe-draft"]
+        )
+
+        let output = try await runtime.run(kind, input: input)
+        let outputJSON = try output.encodedJSONString()
+
+        XCTAssertEqual(output.kind.rawValue, "createRecipeDraft")
+        XCTAssertEqual(output.fields["shortcutRecipeID"], "request-to-recipe-draft")
+        XCTAssertEqual(output.fields["sourceName"], "Automation Idea Shortcut")
+        XCTAssertEqual(output.fields["recipeCount"], "3")
+        XCTAssertEqual(output.fields["recipeID"], "daily-briefing")
+        XCTAssertEqual(output.fields["recipeTitle"], "Daily Briefing")
+        XCTAssertEqual(output.fields["recipeRequiresReview"], "true")
+        XCTAssertEqual(output.fields["recipeStepCount"], "2")
+        XCTAssertEqual(output.fields["recipeRiskTier"], ActionRiskTier.tier1Draft.rawValue)
+        XCTAssertTrue(output.displayText.contains("Review and enable in Kairo"))
+        XCTAssertTrue(output.displayText.contains("does not create Apple Shortcuts"))
+        XCTAssertTrue(output.tasks.isEmpty)
+        XCTAssertTrue(output.reminderDrafts.isEmpty)
+        XCTAssertTrue(output.proposedActions.isEmpty)
+        XCTAssertTrue(outputJSON.contains(#""recipeDrafts""#))
+        XCTAssertTrue(outputJSON.contains(#""isEnabled":false"#))
+        XCTAssertTrue(outputJSON.contains(#""createdBy":"agentSuggested""#))
+    }
+
     func testShortcutDraftReplyNodeReturnsDraftWithoutSending() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let input = ShortcutNodeInput(
@@ -165,15 +197,18 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(emailTriage.settingsStepSummary, "3 steps: summarize -> extractTasks -> draftReply")
         XCTAssertEqual(catalog.recipe(id: "reply-draft-from-shared-text")?.settingsStepSummary, "2 steps: summarize -> draftReply")
         XCTAssertEqual(catalog.recipe(id: "meeting-prep-brief")?.settingsStepSummary, "3 steps: searchMemory -> summarize -> extractTasks")
+        XCTAssertEqual(catalog.recipe(id: "request-to-recipe-draft")?.settingsStepSummary, "1 step: createRecipeDraft")
         XCTAssertTrue(dailyBriefing.settingsContractSummary.contains("Input: text, sourceName, variables"))
         XCTAssertTrue(dailyBriefing.settingsContractSummary.contains("Output: displayText, fields.briefing, fields.taskCount, tasks"))
         XCTAssertTrue(saveSharedText.settingsContractSummary.contains("fields.chainText"))
         XCTAssertTrue(emailTriage.settingsContractSummary.contains("Input: text, sourceName, variables, previousStepOutput"))
         XCTAssertTrue(emailTriage.settingsContractSummary.contains("Output: displayText, fields.summary, fields.chainText, fields.taskCount"))
         XCTAssertTrue(emailTriage.settingsContractSummary.contains("fields.replyDraft"))
+        XCTAssertTrue(catalog.recipe(id: "request-to-recipe-draft")?.settingsContractSummary.contains("recipeDrafts") ?? false)
         XCTAssertTrue(saveSharedText.settingsSampleInputPreview.contains("User research note"))
         XCTAssertTrue(emailTriage.settingsSampleInputPreview.contains("Email from vendor"))
         XCTAssertTrue(catalog.recipe(id: "meeting-prep-brief")?.settingsSampleInputPreview.contains("Kairo launch review") ?? false)
+        XCTAssertTrue(catalog.recipe(id: "request-to-recipe-draft")?.settingsSampleInputPreview.contains("每天早上整理今天事情") ?? false)
     }
 
     func testShortcutDemoTaskNodesAdvertiseChainTextOutput() throws {
@@ -450,6 +485,24 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(run.totalTaskCount, 2)
         XCTAssertEqual(run.totalReminderDraftCount, 2)
         XCTAssertTrue(run.steps[2].output.proposedActions.isEmpty)
+    }
+
+    func testShortcutDemoRecipeRunnerExecutesRecipeDraftSampleWithoutShortcutInstall() async throws {
+        let catalog = ShortcutDemoCatalog.default
+        let recipe = try XCTUnwrap(catalog.recipe(id: "request-to-recipe-draft"))
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let runner = ShortcutDemoRecipeRunner(runtime: runtime)
+
+        let run = try await runner.runSample(recipe)
+
+        XCTAssertEqual(run.recipeID, "request-to-recipe-draft")
+        XCTAssertEqual(run.steps.map(\.nodeKind.rawValue), ["createRecipeDraft"])
+        XCTAssertEqual(run.steps[0].output.fields["recipeID"], "daily-briefing")
+        XCTAssertEqual(run.steps[0].output.fields["recipeRequiresReview"], "true")
+        XCTAssertTrue(run.steps[0].output.displayText.contains("does not create Apple Shortcuts"))
+        XCTAssertEqual(run.totalTaskCount, 0)
+        XCTAssertEqual(run.totalReminderDraftCount, 0)
+        XCTAssertTrue(run.steps[0].output.proposedActions.isEmpty)
     }
 
     func testShortcutDemoRecipeRunnerCanChainPreviousStepTextIntoNextStep() async throws {

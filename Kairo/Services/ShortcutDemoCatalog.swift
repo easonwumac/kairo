@@ -371,6 +371,38 @@ public struct ShortcutDemoCatalog: Codable, Equatable, Sendable {
             ]
         ),
         ShortcutDemoRecipe(
+            id: "request-to-recipe-draft",
+            title: "Request to Recipe Draft",
+            summary: "Turn an explicit automation idea into a disabled Kairo internal recipe draft for review.",
+            triggerSummary: "Share Sheet, Action Button, Siri, or a manual Shortcut that passes an automation request as text.",
+            setupNotes: [
+                "Pass the user's automation request into Create Kairo Recipe Draft.",
+                "Use the returned recipe preview JSON for display or downstream approval steps.",
+                "Review and enable the internal Kairo recipe in Kairo; this does not create Apple Shortcuts."
+            ],
+            steps: [
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Create Kairo Recipe Draft",
+                    nodeKind: .createRecipeDraft,
+                    inputContract: ShortcutNodeContract(
+                        requiredFields: ["text"],
+                        optionalFields: ["sourceName", "variables"],
+                        description: "Natural-language automation request explicitly provided by the user."
+                    ),
+                    outputContract: ShortcutNodeContract(
+                        requiredFields: ["fields.recipeID", "fields.recipeTitle", "fields.recipeStepCount"],
+                        optionalFields: ["fields.recipePreviewJSON", "recipeDrafts", "displayText"],
+                        description: "Disabled Kairo internal recipe draft metadata for review. No Apple Shortcut is created."
+                    ),
+                    sampleInput: ShortcutNodeInput(
+                        text: "每天早上整理今天事情，包含待辦和會議提醒",
+                        sourceName: "Automation Idea Shortcut",
+                        variables: ["shortcutRecipeID": "request-to-recipe-draft"]
+                    )
+                )
+            ]
+        ),
+        ShortcutDemoRecipe(
             id: "generic-node-runner",
             title: "Generic Node Runner",
             summary: "Use one Shortcut action as a reusable Kairo node by passing node kind and JSON input.",

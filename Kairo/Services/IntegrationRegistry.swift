@@ -64,6 +64,7 @@ public struct IntegrationRegistry: Sendable {
                 ShortcutTemplate(identifier: "reply-draft-from-shared-text", title: "Reply Draft from Shared Text", inputSummary: "Email or chat text explicitly shared by the user", outputSummary: "Reply draft text for manual review before sending"),
                 ShortcutTemplate(identifier: "email-triage", title: "Email Triage", inputSummary: "Email thread text explicitly shared by the user", outputSummary: "Summary, follow-up tasks, and reply draft for manual review"),
                 ShortcutTemplate(identifier: "meeting-prep-brief", title: "Meeting Prep Brief", inputSummary: "Meeting title, customer name, memory query, or meeting notes", outputSummary: "Meeting prep brief and task drafts"),
+                ShortcutTemplate(identifier: "request-to-recipe-draft", title: "Request to Recipe Draft", inputSummary: "Natural-language automation request explicitly passed by the user", outputSummary: "Disabled Kairo internal recipe draft preview JSON; no Apple Shortcut is created"),
                 ShortcutTemplate(identifier: "generic-node-runner", title: "Generic Node Runner", inputSummary: "Node kind plus ShortcutNodeInput JSON", outputSummary: "ShortcutNodeOutput JSON for downstream Shortcut steps")
             ] + ShortcutTemplateRegistry.default.templates,
             sandboxNotes: "Shortcuts must be configured or launched by the user. Kairo provides App Intents with structured JSON outputs for downstream Shortcut nodes, but it must not silently drive other apps.",

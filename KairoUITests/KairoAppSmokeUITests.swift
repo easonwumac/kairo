@@ -202,6 +202,14 @@ final class KairoAppSmokeUITests: XCTestCase {
             sampleText: "Kairo launch review"
         )
         verifyShortcutDemoContract(
+            id: "request-to-recipe-draft",
+            titleText: "Request to Recipe Draft",
+            stepText: "1 step: createRecipeDraft",
+            inputText: "Input: text, sourceName, variables",
+            outputText: "Output: fields.recipeID, fields.recipeTitle, fields.recipeStepCount",
+            sampleText: "每天早上整理今天事情"
+        )
+        verifyShortcutDemoContract(
             id: "generic-node-runner",
             titleText: "Generic Node Runner",
             stepText: "2 steps: summarize -> extractTasks",
@@ -215,6 +223,15 @@ final class KairoAppSmokeUITests: XCTestCase {
         relaunchForUITesting(initialSection: "shortcuts")
 
         XCTAssertTrue(findElement("automations.shortcut-demos", direction: .down).exists)
+        verifyShortcutDemoContract(
+            namespace: "automations.shortcut-demo",
+            id: "request-to-recipe-draft",
+            titleText: "Request to Recipe Draft",
+            stepText: "1 step: createRecipeDraft",
+            inputText: "Input: text, sourceName, variables",
+            outputText: "Output: fields.recipeID, fields.recipeTitle, fields.recipeStepCount",
+            sampleText: "每天早上整理今天事情"
+        )
         verifyShortcutDemoContract(
             namespace: "automations.shortcut-demo",
             id: "generic-node-runner",

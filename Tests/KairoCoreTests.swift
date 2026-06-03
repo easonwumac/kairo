@@ -1401,6 +1401,7 @@ final class KairoCoreTests: XCTestCase {
             "shortcut-reply-draft-from-shared-text",
             "shortcut-email-triage",
             "shortcut-meeting-prep-brief",
+            "shortcut-request-to-recipe-draft",
             "shortcut-generic-node-runner"
         ])
         XCTAssertEqual(homeKitSkill.kind, .homeKitControl)

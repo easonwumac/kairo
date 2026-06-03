@@ -7,6 +7,7 @@ public enum ShortcutNodeKind: String, Codable, CaseIterable, Sendable {
     case summarize
     case extractTasks
     case createReminderDraft
+    case createRecipeDraft
     case draftReply
     case dailyBriefing
 }
@@ -70,6 +71,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
     public var memoryMatches: [ShortcutMemoryMatch]
     public var tasks: [ShortcutTaskDraft]
     public var reminderDrafts: [ReminderDraft]
+    public var recipeDrafts: [KairoRecipe]
     public var proposedActions: [AgentAction]
 
     public init(
@@ -80,6 +82,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         memoryMatches: [ShortcutMemoryMatch] = [],
         tasks: [ShortcutTaskDraft] = [],
         reminderDrafts: [ReminderDraft] = [],
+        recipeDrafts: [KairoRecipe] = [],
         proposedActions: [AgentAction] = []
     ) {
         self.kind = kind
@@ -89,7 +92,33 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         self.memoryMatches = memoryMatches
         self.tasks = tasks
         self.reminderDrafts = reminderDrafts
+        self.recipeDrafts = recipeDrafts
         self.proposedActions = proposedActions
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind
+        case displayText
+        case fields
+        case memoryID
+        case memoryMatches
+        case tasks
+        case reminderDrafts
+        case recipeDrafts
+        case proposedActions
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try container.decode(ShortcutNodeKind.self, forKey: .kind)
+        displayText = try container.decode(String.self, forKey: .displayText)
+        fields = try container.decodeIfPresent([String: String].self, forKey: .fields) ?? [:]
+        memoryID = try container.decodeIfPresent(UUID.self, forKey: .memoryID)
+        memoryMatches = try container.decodeIfPresent([ShortcutMemoryMatch].self, forKey: .memoryMatches) ?? []
+        tasks = try container.decodeIfPresent([ShortcutTaskDraft].self, forKey: .tasks) ?? []
+        reminderDrafts = try container.decodeIfPresent([ReminderDraft].self, forKey: .reminderDrafts) ?? []
+        recipeDrafts = try container.decodeIfPresent([KairoRecipe].self, forKey: .recipeDrafts) ?? []
+        proposedActions = try container.decodeIfPresent([AgentAction].self, forKey: .proposedActions) ?? []
     }
 
     public func encodedJSONString() throws -> String {
@@ -127,6 +156,8 @@ public actor ShortcutNodeRuntime {
             return try extractTasks(input)
         case .createReminderDraft:
             return try createReminderDrafts(input)
+        case .createRecipeDraft:
+            return try createRecipeDraft(input)
         case .draftReply:
             return try draftReply(input)
         case .summarize:
@@ -214,6 +245,31 @@ public actor ShortcutNodeRuntime {
             displayText: "Prepared \(reminderDrafts.count) reminder drafts.",
             fields: fields,
             reminderDrafts: reminderDrafts
+        )
+    }
+
+    private func createRecipeDraft(_ input: ShortcutNodeInput) throws -> ShortcutNodeOutput {
+        let text = try validatedText(input.text)
+        let recipes = KairoRecipePlanner().suggestRecipes(
+            for: text,
+            now: Date(timeIntervalSince1970: 0)
+        )
+        let primaryRecipe = recipes[0]
+        var fields = baseFields(for: input)
+        fields["recipeCount"] = String(recipes.count)
+        fields["recipeID"] = primaryRecipe.id
+        fields["recipeTitle"] = primaryRecipe.title
+        fields["recipeStepCount"] = String(primaryRecipe.steps.count)
+        fields["recipeRiskTier"] = primaryRecipe.riskTier.rawValue
+        fields["recipeRequiresReview"] = "true"
+        fields["chainText"] = primaryRecipe.summary
+        fields["recipePreviewJSON"] = recipePreviewJSONString(primaryRecipe)
+
+        return ShortcutNodeOutput(
+            kind: .createRecipeDraft,
+            displayText: "Prepared Kairo recipe draft: \(primaryRecipe.title). Review and enable in Kairo; this does not create Apple Shortcuts.",
+            fields: fields,
+            recipeDrafts: recipes
         )
     }
 
@@ -337,6 +393,17 @@ public actor ShortcutNodeRuntime {
                 guard !title.isEmpty else { return nil }
                 return ShortcutTaskDraft(title: title, notes: "Extracted from Shortcut input.")
             }
+    }
+
+    private func recipePreviewJSONString(_ recipe: KairoRecipe) -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        guard let data = try? encoder.encode(recipe),
+              let string = String(data: data, encoding: .utf8) else {
+            return "{}"
+        }
+        return string
     }
 }
 
