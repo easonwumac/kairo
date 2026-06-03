@@ -4,7 +4,7 @@ import SwiftUI
 public struct RootView: View {
     private let environment: KairoEnvironment
     private let settingsMode: SettingsViewMode
-    @State private var selectedSection: RootSection = .home
+    @State private var selectedSection: RootSection = .chat
     @State private var isMenuPresented = false
 
     public init(
@@ -14,7 +14,7 @@ public struct RootView: View {
     ) {
         self.environment = environment
         self.settingsMode = settingsMode
-        let section = initialSection.flatMap(RootSection.init(rawValue:)) ?? .home
+        let section = initialSection.flatMap(RootSection.init(rawValue:)) ?? .chat
         _selectedSection = State(initialValue: section)
     }
 
@@ -37,7 +37,6 @@ public struct RootView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea(edges: .top)
-                .ignoresSafeArea(.keyboard, edges: .bottom)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Self.fullScreenBackground.ignoresSafeArea())
@@ -77,19 +76,10 @@ public struct RootView: View {
     @ViewBuilder
     private var selectedContent: some View {
         switch selectedSection {
-        case .home:
-            BriefingInboxView(selectSection: { section in
-                selectedSection = section
-            })
         case .chat:
             ChatView(environment: environment)
         case .memory:
             MemoryCenterView(store: environment.memoryStore)
-        case .skills:
-            PermissionHubView(
-                skillManagerService: environment.agentSkillManagerService,
-                marketplaceCatalogService: environment.agentSkillMarketplaceCatalogService
-            )
         case .shortcuts:
             AutomationsView(
                 recipeStore: environment.kairoRecipeStore,
@@ -132,13 +122,13 @@ public struct RootView: View {
 
     private func rootHeader(topInset: CGFloat) -> some View {
         HStack(spacing: 12) {
-            if selectedSection == .home {
+            if selectedSection == .chat {
                 KairoMark(size: 34)
             } else {
                 Button {
-                    selectedSection = .home
+                    selectedSection = .chat
                 } label: {
-                    Label("Home", systemImage: "chevron.left")
+                    Label("Back to Chat", systemImage: "chevron.left")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(KairoDesign.blue)
                         .padding(.horizontal, 10)
@@ -146,8 +136,8 @@ public struct RootView: View {
                         .background(KairoDesign.blue.opacity(0.10), in: Capsule())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Return home")
-                .accessibilityIdentifier("root.home")
+                .accessibilityLabel("Back to Chat")
+                .accessibilityIdentifier("root.back-to-chat")
             }
 
             VStack(alignment: .leading, spacing: 1) {
@@ -197,9 +187,9 @@ public struct RootView: View {
                     HStack(spacing: 12) {
                         KairoMark(size: 44)
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Kairo")
+                            Text("Kairo Chat")
                                 .font(.title3.bold())
-                            Text("Choose what to review, remember, or run.")
+                            Text("Chat stays first. Manage tools only when you need setup.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -227,7 +217,7 @@ public struct RootView: View {
                         }
                     }
 
-                    Text("Kairo uses public APIs, explicit permission, and visible handoff.")
+                    Text("Kairo uses public APIs, explicit permission, and visible handoff. Nothing changes silently.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -252,9 +242,9 @@ public struct RootView: View {
             HStack(spacing: 12) {
                 Image(systemName: section.systemImage)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(section.tint)
-                    .frame(width: 32, height: 32)
-                    .background(section.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(selectedSection == section ? section.tint : .secondary)
+                    .frame(width: 28, height: 28)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(section.title)
@@ -282,77 +272,9 @@ public struct RootView: View {
     }
 }
 
-private struct BriefingInboxView: View {
-    let selectSection: (RootSection) -> Void
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Ready when you are")
-                        .font(.title.bold())
-                    Text("Start with one request. Kairo will ask before anything changes.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.top, 18)
-
-                KairoGroupedSurface {
-                    KairoActionRow(
-                        title: "Ask Kairo",
-                        subtitle: "Chat, summarize, or prepare a draft.",
-                        systemImage: "text.bubble",
-                        tint: KairoDesign.blue,
-                        trailingText: "Start"
-                    ) {
-                        selectSection(.chat)
-                    }
-                    .accessibilityIdentifier("home.ask-kairo")
-
-                    Divider().padding(.leading, 44)
-
-                    KairoActionRow(
-                        title: "Review drafts",
-                        subtitle: "Confirm, edit, or cancel pending actions.",
-                        systemImage: "checklist.checked",
-                        tint: KairoDesign.amber,
-                        trailingText: "3"
-                    ) {
-                        selectSection(.chat)
-                    }
-                    .accessibilityIdentifier("home.review-drafts")
-
-                    Divider().padding(.leading, 44)
-
-                    KairoActionRow(
-                        title: "Memory",
-                        subtitle: "Save or search context you approved.",
-                        systemImage: "books.vertical",
-                        tint: KairoDesign.teal,
-                        trailingText: "Open"
-                    ) {
-                        selectSection(.memory)
-                    }
-                    .accessibilityIdentifier("home.memory")
-                }
-                .accessibilityIdentifier("home.primary-actions")
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 18)
-            .padding(.bottom, 32)
-        }
-        .scrollIndicators(.hidden)
-        .background(KairoDesign.background.ignoresSafeArea())
-        .accessibilityIdentifier("home.briefing-inbox")
-    }
-}
-
 private enum RootSection: String, CaseIterable, Identifiable {
-    case home
     case chat
     case memory
-    case skills
     case shortcuts
     case access
     case models
@@ -362,20 +284,16 @@ private enum RootSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home:
-            return "Kairo"
         case .chat:
-            return "Chat"
+            return "Kairo Chat"
         case .memory:
             return "Memory"
-        case .skills:
-            return "Skills"
         case .shortcuts:
-            return "Automations"
+            return "Workflows"
         case .access:
-            return "Access"
+            return "Phone tools"
         case .models:
-            return "Models"
+            return "AI engine"
         case .settings:
             return "Settings"
         }
@@ -383,20 +301,16 @@ private enum RootSection: String, CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .home:
-            return "Ready"
         case .chat:
-            return "Ask and review"
+            return "Tell Kairo what to do on this phone"
         case .memory:
-            return "Saved context"
-        case .skills:
-            return "Managed tools"
+            return "Approved context"
         case .shortcuts:
-            return "Recipes and templates"
+            return "Reusable Kairo recipes"
         case .access:
-            return "Permissions and skills"
+            return "What Chat can suggest"
         case .models:
-            return "Cloud and local route"
+            return "Cloud and local models"
         case .settings:
             return "Accounts and privacy"
         }
@@ -404,18 +318,14 @@ private enum RootSection: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
-        case .home:
-            return "tray.full"
         case .chat:
-            return "message"
+            return "bubble.left.and.text.bubble.right"
         case .memory:
             return "books.vertical"
-        case .skills:
-            return "wrench.and.screwdriver"
         case .shortcuts:
-            return "square.stack.3d.up"
+            return "list.bullet.rectangle"
         case .access:
-            return "switch.2"
+            return "iphone.gen3"
         case .models:
             return "cpu"
         case .settings:
@@ -425,11 +335,11 @@ private enum RootSection: String, CaseIterable, Identifiable {
 
     var tint: Color {
         switch self {
-        case .home, .memory, .access:
+        case .memory, .access:
             return KairoDesign.teal
         case .chat, .models:
             return KairoDesign.blue
-        case .skills, .shortcuts:
+        case .shortcuts:
             return KairoDesign.amber
         case .settings:
             return KairoDesign.muted

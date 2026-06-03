@@ -242,7 +242,7 @@ public final class ChatViewModel: ObservableObject {
 
     public static let welcomeMessage = ChatMessage(
         role: .assistant,
-        text: "我是 Kairo。你可以直接聊天，我會保留這裡的對話紀錄，並只使用你授權與 iOS sandbox 允許的能力。"
+        text: "我是 Kairo。直接說你想在手機上完成什麼；我會在聊天裡提出可用工具、草稿與確認卡片，不會靜默改動任何東西。"
     )
 }
 #endif

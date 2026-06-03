@@ -79,6 +79,60 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(helperSource.contains("func relaunchForUITesting("))
     }
 
+    func testRootShellIsChatFirstInsteadOfBriefingInboxFirst() throws {
+        let root = packageRootURL()
+        let rootViewSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(rootViewSource.contains("private var selectedSection: RootSection = .chat"))
+        XCTAssertTrue(rootViewSource.contains("?? .chat"))
+        XCTAssertFalse(rootViewSource.contains("BriefingInboxView"))
+        XCTAssertTrue(rootViewSource.contains("Back to Chat"))
+        XCTAssertTrue(rootViewSource.contains("Tell Kairo what to do on this phone"))
+    }
+
+    func testChatSurfaceOwnsToolsAndHidesRouteComplexity() throws {
+        let root = packageRootURL()
+        let chatViewSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Views/ChatView.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(chatViewSource.contains("chat.tools.menu"))
+        XCTAssertTrue(chatViewSource.contains("Ask Kairo to act"))
+        XCTAssertTrue(chatViewSource.contains("Phone tools"))
+        XCTAssertFalse(chatViewSource.contains("chat.session-controls"))
+        XCTAssertFalse(chatViewSource.contains("ChatProviderRouteBar("))
+        XCTAssertFalse(chatViewSource.contains("chatTopControls"))
+    }
+
+    func testRootShellLetsKeyboardLiftChatComposer() throws {
+        let root = packageRootURL()
+        let rootViewSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertFalse(rootViewSource.contains(".ignoresSafeArea(.keyboard, edges: .bottom)"))
+    }
+
+    func testChatActionCopyUsesPlainLanguageRiskLabels() throws {
+        let root = packageRootURL()
+        let actionStripSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Views/ChatActionStrips.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(actionStripSource.contains("Read only"))
+        XCTAssertTrue(actionStripSource.contains("Draft only"))
+        XCTAssertTrue(actionStripSource.contains("Will ask first"))
+        XCTAssertFalse(actionStripSource.contains("Tier 0"))
+        XCTAssertFalse(actionStripSource.contains("Tier 1"))
+        XCTAssertFalse(actionStripSource.contains("No write"))
+    }
+
     func testShortcutDemoCatalogStaysSplitAcrossFocusedFiles() throws {
         let root = packageRootURL()
         let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)

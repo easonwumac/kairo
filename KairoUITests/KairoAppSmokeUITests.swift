@@ -71,17 +71,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
         openCurrentThreadIfNeeded()
 
-        XCTAssertTrue(anyElement("chat.provider-route").waitForExistence(timeout: 5))
-        XCTAssertTrue(anyElement("chat.provider-route.title").exists)
-        XCTAssertTrue(findStaticText(containing: "Route: Automatic", direction: .both, maxSwipes: 1).exists)
-        let routeMenu = findButton("chat.provider-route.preference", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(routeMenu.exists)
-        routeMenu.tap()
-        let cloudRoute = findButton("chat.provider-route.preference.preferCloud", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(cloudRoute.exists)
-        cloudRoute.tap()
-        XCTAssertTrue(findStaticText(containing: "Route: Prefer Cloud", direction: .both, maxSwipes: 1).waitForExistence(timeout: 3))
-
+        XCTAssertTrue(findButton("chat.tools.menu", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(anyElement("chat.composer.surface").waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("chat.composer.input-shell").exists)
 
@@ -518,7 +508,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findElement("chat.proposed-action.controlHome", direction: .down).exists)
         XCTAssertTrue(findElement("chat.proposed-action.controlHome.risk", direction: .down).exists)
         XCTAssertTrue(findStaticText(containing: "Control Home", direction: .down).exists)
-        XCTAssertTrue(findStaticText(containing: "Needs confirmation", direction: .down).exists)
+        XCTAssertTrue(findStaticText(containing: "Will ask first", direction: .down).exists)
     }
 
     func testChatShowsShortcutToolCandidatePreview() throws {
@@ -537,7 +527,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findElement("chat.tool-candidate.shortcut-save-shared-text.summary", direction: .down).exists)
         XCTAssertTrue(findElement("chat.tool-candidate.shortcut-save-shared-text.risk", direction: .down).exists)
         XCTAssertTrue(findStaticText(containing: "Shortcut", direction: .down).exists)
-        XCTAssertTrue(findStaticText(containing: "Needs confirmation", direction: .down).exists)
+        XCTAssertTrue(findStaticText(containing: "Will ask first", direction: .down).exists)
     }
 
     func testChatCanPreviewAndConfirmNotificationAction() throws {

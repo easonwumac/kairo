@@ -83,8 +83,6 @@ public struct ChatView: View {
 
     private var chatSurface: some View {
         VStack(spacing: 0) {
-            chatTopControls
-
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
@@ -173,50 +171,6 @@ public struct ChatView: View {
         }
     }
 
-    private var chatTopControls: some View {
-        HStack(spacing: 10) {
-            ChatProviderRouteBar(
-                status: viewModel.providerRouteStatus,
-                canEdit: viewModel.canEditProviderRoute
-            ) { preference in
-                Task { await viewModel.setProviderRoutePreference(preference) }
-            }
-            .layoutPriority(1)
-
-            compactNewChatButton
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(Color(.sRGB, white: 0.985, opacity: 1))
-        .overlay(alignment: .bottom) {
-            Divider()
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("chat.top-controls")
-    }
-
-    private var compactNewChatButton: some View {
-        Button {
-            viewModel.startNewThread()
-        } label: {
-            HStack(spacing: 5) {
-                Image(systemName: "square.and.pencil")
-                    .imageScale(.small)
-                Text("New")
-                    .lineLimit(1)
-            }
-        }
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(KairoDesign.ink)
-        .padding(.horizontal, 9)
-        .frame(height: 34)
-        .fixedSize(horizontal: true, vertical: false)
-        .background(Color.primary.opacity(0.06), in: Capsule())
-        .buttonStyle(.plain)
-        .accessibilityLabel("New chat")
-        .accessibilityIdentifier("chat.new")
-    }
-
     private var composer: some View {
         VStack(spacing: 8) {
             if let replyTarget = viewModel.replyTarget {
@@ -258,7 +212,9 @@ public struct ChatView: View {
             }
 
             HStack(alignment: .bottom, spacing: 10) {
-                TextField("Ask Kairo", text: $viewModel.composerText, axis: .vertical)
+                toolMenu
+
+                TextField("Ask Kairo to act", text: $viewModel.composerText, axis: .vertical)
                     .lineLimit(1...5)
                     .disabled(viewModel.isLoading)
                     .focused($isComposerFocused)
@@ -309,6 +265,52 @@ public struct ChatView: View {
         .padding(.bottom, 12)
         .background(Color(.sRGB, white: 0.98, opacity: 0.96))
         .accessibilityIdentifier("chat.composer.surface")
+    }
+
+    private var toolMenu: some View {
+        Menu {
+            capabilityPromptButton(
+                title: "Phone tools",
+                systemImage: "iphone.gen3",
+                prompt: "幫我用手機功能完成："
+            )
+            capabilityPromptButton(
+                title: "Reminder or calendar",
+                systemImage: "calendar.badge.plus",
+                prompt: "幫我建立提醒或行程："
+            )
+            capabilityPromptButton(
+                title: "Message or email draft",
+                systemImage: "envelope",
+                prompt: "幫我準備一則回覆草稿："
+            )
+            capabilityPromptButton(
+                title: "Summarize shared content",
+                systemImage: "doc.text.magnifyingglass",
+                prompt: "把我分享的內容整理成重點和待辦。"
+            )
+        } label: {
+            Image(systemName: "plus")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+                .frame(width: 42, height: 42)
+                .background(Color.primary.opacity(0.06), in: Circle())
+        }
+        .accessibilityLabel("Open Chat tools")
+        .accessibilityIdentifier("chat.tools.menu")
+    }
+
+    private func capabilityPromptButton(
+        title: String,
+        systemImage: String,
+        prompt: String
+    ) -> some View {
+        Button {
+            viewModel.composerText = prompt
+            isComposerFocused = true
+        } label: {
+            Label(title, systemImage: systemImage)
+        }
     }
 
     private var sendButtonBackground: Color {

@@ -15,13 +15,13 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
         UITestScenario(
             id: "launch-drawer",
             title: "Launch and Drawer Navigation",
-            userGoal: "Confirm the app boots full-screen and exposes Chat, Skills, Shortcuts, Access, Models, and Settings through the side drawer.",
+            userGoal: "Confirm the app boots into Chat and exposes Phone tools, Workflows, Memory, AI engine, and Settings through the side drawer.",
             requiredAccessibilityIdentifiers: [
                 "root.safe-area-header",
                 "root.drawer.toggle",
                 "root.drawer",
                 "root.drawer.chat",
-                "root.drawer.skills",
+                "root.drawer.memory",
                 "root.drawer.shortcuts",
                 "root.drawer.access",
                 "root.drawer.models",
@@ -30,7 +30,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             assertions: [
                 "The primary header is laid out below the device safe area so Dynamic Island and status bar regions do not cover controls.",
                 "The drawer toggle is visible after launch.",
-                "The drawer exposes Chat, Skills, Shortcuts, Access, Models, and Settings navigation without a bottom TabView."
+                "The drawer keeps Chat as the primary surface and moves tools, workflows, memory, models, and settings into More without a bottom TabView."
             ]
         ),
         UITestScenario(
@@ -39,14 +39,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             userGoal: "Send a message through the chat composer and verify a visible assistant response.",
             requiredAccessibilityIdentifiers: [
                 "chat.history.thread",
-                "chat.new",
-                "chat.provider-route",
-                "chat.provider-route.title",
-                "chat.provider-route.preference",
-                "chat.provider-route.preference.automatic",
-                "chat.provider-route.preference.preferLocal",
-                "chat.provider-route.preference.preferCloud",
-                "chat.provider-route.preference.localOnly",
+                "chat.tools.menu",
                 "chat.composer.surface",
                 "chat.composer.input-shell",
                 "chat.composer.text",
@@ -55,10 +48,9 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "chat.message.assistant"
             ],
             assertions: [
-                "The chat surface shows the current model/provider route before the user sends a prompt.",
-                "The user can switch route preference directly from Chat without opening Settings.",
+                "The chat surface is the launch destination.",
+                "Phone and app abilities live behind the composer tool menu instead of a persistent route strip.",
                 "The chat composer has a large, visible tap target.",
-                "A chat thread or new chat entry point can open the composer.",
                 "User-entered text appears in the transcript.",
                 "A Kairo assistant response appears after sending."
             ]

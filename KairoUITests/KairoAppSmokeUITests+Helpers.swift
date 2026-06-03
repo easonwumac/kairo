@@ -9,7 +9,7 @@ extension KairoAppSmokeUITests {
 
         openDrawer()
         XCTAssertTrue(findButton("root.drawer.chat", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findButton("root.drawer.skills", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.memory", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findButton("root.drawer.shortcuts", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findButton("root.drawer.access", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findButton("root.drawer.models", direction: .both, maxSwipes: 1).exists)

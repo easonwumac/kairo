@@ -45,20 +45,20 @@ struct ProposedActionsStrip: View {
     }
 
     private func actionRiskSummary(for action: AgentAction) -> String {
-        let confirmation = action.requiresConfirmation ? "Needs confirmation" : "No write"
+        let confirmation = action.requiresConfirmation ? "Will ask first" : "No changes"
         return "\(actionRiskTierLabel(for: action.riskTier)) · \(confirmation)"
     }
 
     private func actionRiskTierLabel(for riskTier: ActionRiskTier) -> String {
         switch riskTier {
         case .tier0ReadOnly:
-            return "Tier 0"
+            return "Read only"
         case .tier1Draft:
-            return "Tier 1"
+            return "Draft only"
         case .tier2LowRiskWrite:
-            return "Tier 2"
+            return "Phone change"
         case .tier3HighRiskExternal:
-            return "Tier 3"
+            return "External handoff"
         }
     }
 
@@ -123,20 +123,20 @@ struct ToolCandidatesStrip: View {
     }
 
     private func toolRiskSummary(for candidate: AgentToolInvocationCandidate) -> String {
-        let confirmation = candidate.requiresConfirmation ? "Needs confirmation" : "No write"
+        let confirmation = candidate.requiresConfirmation ? "Will ask first" : "No changes"
         return "\(toolRiskTierLabel(for: candidate.riskTier)) · \(confirmation)"
     }
 
     private func toolRiskTierLabel(for riskTier: ActionRiskTier) -> String {
         switch riskTier {
         case .tier0ReadOnly:
-            return "Tier 0"
+            return "Read only"
         case .tier1Draft:
-            return "Tier 1"
+            return "Draft only"
         case .tier2LowRiskWrite:
-            return "Tier 2"
+            return "Phone change"
         case .tier3HighRiskExternal:
-            return "Tier 3"
+            return "External handoff"
         }
     }
 
