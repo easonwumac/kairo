@@ -2294,6 +2294,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains(#""settings.models.compact-list""#))
         XCTAssertTrue(compactView.contains(#""settings.models.selected-summary""#))
         XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).manifest""#))
+        XCTAssertTrue(compactView.contains("row.runtimeFitText"))
+        XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).runtime-fit""#))
         XCTAssertTrue(compactView.contains("private let starterModelRowLimit = 2"))
         XCTAssertTrue(compactView.contains("@State private var showsAllModelRows = false"))
         XCTAssertTrue(compactView.contains("ForEach(visibleModelRows)"))
@@ -3664,6 +3666,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(
             row.manifestTransparencyText,
             "huggingface.co · GGUF · Apache-2.0 · iOS 17.0/A15+/4 GB · SHA e8e3882 · policy 2026.1"
+        )
+        XCTAssertEqual(
+            row.runtimeFitText,
+            "Download: GGUF · Fit: A15+/4 GB · MLX ref only"
         )
     }
 

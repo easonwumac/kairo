@@ -277,6 +277,13 @@ struct LocalModelsCompactView: View {
                 .truncationMode(.tail)
                 .accessibilityIdentifier("settings.models.\(row.modelID).manifest")
 
+            Text(row.runtimeFitText)
+                .font(compactModelMetadataFont)
+                .foregroundStyle(.secondary.opacity(0.85))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .accessibilityIdentifier("settings.models.\(row.modelID).runtime-fit")
+
             if let benchmarkSummaryText = row.benchmarkSummaryText {
                 Text(benchmarkSummaryText)
                     .font(compactModelMetadataFont)

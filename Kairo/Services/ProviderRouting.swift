@@ -1,0 +1,247 @@
+import Foundation
+
+public struct LocalFallbackProvider: AIProvider {
+    public var installedModelID: String?
+
+    public init(installedModelID: String? = nil) {
+        self.installedModelID = installedModelID
+    }
+
+    public func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
+        let trimmedPrompt = request.userPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefix = installedModelID.map { "Local fallback (\($0))" } ?? "Local fallback"
+        let subject = trimmedPrompt.isEmpty ? "this request" : "\"\(String(trimmedPrompt.prefix(80)))\""
+        return AICompletionResponse(
+            message: "\(prefix) is a placeholder for short private/offline drafts. I can help with \(subject), but local mode cannot browse the web, use tools, or perform account actions.",
+            proposedActions: []
+        )
+    }
+
+    public func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
+        throw AIProviderError.unsupported
+    }
+}
+
+public enum ProviderRoute: String, Codable, Equatable, Sendable {
+    case local
+    case cloud
+    case unavailable
+}
+
+public enum ProviderRoutePreference: String, Codable, Equatable, Sendable {
+    case automatic
+    case preferLocal
+    case preferCloud
+    case localOnly
+
+    public static let settingsChoices: [ProviderRoutePreference] = [
+        .automatic,
+        .preferLocal,
+        .preferCloud,
+        .localOnly
+    ]
+
+    public var settingsTitle: String {
+        switch self {
+        case .automatic:
+            return "Automatic"
+        case .preferLocal:
+            return "Prefer Local"
+        case .preferCloud:
+            return "Prefer Cloud"
+        case .localOnly:
+            return "Local Only"
+        }
+    }
+
+    public var settingsDetailText: String {
+        switch self {
+        case .automatic:
+            return "Routes eligible private/offline work locally when policy requires it."
+        case .preferLocal:
+            return "Uses the selected local model for eligible low-risk work when installed."
+        case .preferCloud:
+            return "Uses the cloud provider when network access is available."
+        case .localOnly:
+            return "Never routes prompts to cloud providers; unsupported local tasks fail closed."
+        }
+    }
+}
+
+public enum ProviderTaskClass: String, Codable, Equatable, Sendable {
+    case drafts
+    case summarization
+    case simpleQuestionAnswer
+    case offlineChat
+    case privacySensitiveLowRisk
+    case complexReasoning
+    case toolUse
+    case webCurrentInfo
+    case longContext
+    case regulatedAdvice
+    case codeExecution
+    case accountAction
+}
+
+public enum ProviderRouteReason: String, Codable, Equatable, Sendable {
+    case offlineSelected
+    case privacySelected
+    case cloudUnavailable
+    case userPreferredLocal
+    case userPreferredCloud
+    case localIncapable
+    case localUnavailable
+    case safetyEscalation
+    case contextTooLong
+    case toolRequired
+    case cloudDefault
+}
+
+public struct ProviderRoutingContext: Codable, Equatable, Sendable {
+    public var preference: ProviderRoutePreference
+    public var networkAvailable: Bool
+    public var privacyModeEnabled: Bool
+    public var offlineModeEnabled: Bool
+    public var taskClass: ProviderTaskClass
+    public var requiresToolUse: Bool
+    public var requiresCurrentInfo: Bool
+    public var contextTokenEstimate: Int
+    public var localModelInstalled: Bool
+    public var localContextWindow: Int
+
+    public init(
+        preference: ProviderRoutePreference = .automatic,
+        networkAvailable: Bool = true,
+        privacyModeEnabled: Bool = false,
+        offlineModeEnabled: Bool = false,
+        taskClass: ProviderTaskClass = .simpleQuestionAnswer,
+        requiresToolUse: Bool = false,
+        requiresCurrentInfo: Bool = false,
+        contextTokenEstimate: Int = 0,
+        localModelInstalled: Bool = false,
+        localContextWindow: Int = 2048
+    ) {
+        self.preference = preference
+        self.networkAvailable = networkAvailable
+        self.privacyModeEnabled = privacyModeEnabled
+        self.offlineModeEnabled = offlineModeEnabled
+        self.taskClass = taskClass
+        self.requiresToolUse = requiresToolUse
+        self.requiresCurrentInfo = requiresCurrentInfo
+        self.contextTokenEstimate = contextTokenEstimate
+        self.localModelInstalled = localModelInstalled
+        self.localContextWindow = localContextWindow
+    }
+}
+
+public struct ProviderRouteDecision: Codable, Equatable, Sendable {
+    public var route: ProviderRoute
+    public var reason: ProviderRouteReason
+
+    public init(route: ProviderRoute, reason: ProviderRouteReason) {
+        self.route = route
+        self.reason = reason
+    }
+}
+
+public struct ProviderRouter: AIProvider {
+    private let cloudProvider: AIProvider
+    private let localProvider: AIProvider
+    private let defaultContext: ProviderRoutingContext
+
+    public init(
+        cloudProvider: AIProvider,
+        localProvider: AIProvider = LocalFallbackProvider(),
+        defaultContext: ProviderRoutingContext = ProviderRoutingContext()
+    ) {
+        self.cloudProvider = cloudProvider
+        self.localProvider = localProvider
+        self.defaultContext = defaultContext
+    }
+
+    public func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
+        try await complete(request, context: defaultContext)
+    }
+
+    public func complete(_ request: AICompletionRequest, context: ProviderRoutingContext) async throws -> AICompletionResponse {
+        switch decision(for: request, context: context).route {
+        case .local:
+            return try await localProvider.complete(request)
+        case .cloud:
+            return try await cloudProvider.complete(request)
+        case .unavailable:
+            throw AIProviderError.unsupported
+        }
+    }
+
+    public func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
+        try await cloudProvider.embed(request)
+    }
+
+    public func decision(for request: AICompletionRequest, context: ProviderRoutingContext) -> ProviderRouteDecision {
+        if context.preference == .preferCloud, context.networkAvailable {
+            return ProviderRouteDecision(route: .cloud, reason: .userPreferredCloud)
+        }
+
+        if context.requiresToolUse || context.taskClass == .toolUse || context.taskClass == .accountAction || context.taskClass == .codeExecution {
+            return cloudOrUnavailable(context: context, reason: .toolRequired)
+        }
+
+        if context.requiresCurrentInfo || context.taskClass == .webCurrentInfo {
+            return cloudOrUnavailable(context: context, reason: .localIncapable)
+        }
+
+        if context.taskClass == .regulatedAdvice || context.taskClass == .complexReasoning {
+            return cloudOrUnavailable(context: context, reason: .safetyEscalation)
+        }
+
+        if context.taskClass == .longContext || context.contextTokenEstimate > context.localContextWindow {
+            return cloudOrUnavailable(context: context, reason: .contextTooLong)
+        }
+
+        let localAllowed = isLocalAllowed(taskClass: context.taskClass)
+        if (context.offlineModeEnabled || !context.networkAvailable) && localAllowed {
+            return localOrUnavailable(context: context, reason: context.offlineModeEnabled ? .offlineSelected : .cloudUnavailable)
+        }
+
+        if context.privacyModeEnabled && localAllowed {
+            return localOrUnavailable(context: context, reason: .privacySelected)
+        }
+
+        if (context.preference == .preferLocal || context.preference == .localOnly) && localAllowed {
+            return localOrUnavailable(context: context, reason: .userPreferredLocal)
+        }
+
+        if context.preference == .localOnly {
+            return ProviderRouteDecision(route: .unavailable, reason: .localIncapable)
+        }
+
+        return cloudOrUnavailable(context: context, reason: .cloudDefault)
+    }
+
+    private func isLocalAllowed(taskClass: ProviderTaskClass) -> Bool {
+        switch taskClass {
+        case .drafts, .summarization, .simpleQuestionAnswer, .offlineChat, .privacySensitiveLowRisk:
+            return true
+        case .complexReasoning, .toolUse, .webCurrentInfo, .longContext, .regulatedAdvice, .codeExecution, .accountAction:
+            return false
+        }
+    }
+
+    private func localOrUnavailable(context: ProviderRoutingContext, reason: ProviderRouteReason) -> ProviderRouteDecision {
+        guard context.localModelInstalled else {
+            if context.preference == .localOnly || context.offlineModeEnabled || context.privacyModeEnabled || !context.networkAvailable {
+                return ProviderRouteDecision(route: .unavailable, reason: .localUnavailable)
+            }
+            return cloudOrUnavailable(context: context, reason: .localUnavailable)
+        }
+        return ProviderRouteDecision(route: .local, reason: reason)
+    }
+
+    private func cloudOrUnavailable(context: ProviderRoutingContext, reason: ProviderRouteReason) -> ProviderRouteDecision {
+        guard context.networkAvailable, !context.offlineModeEnabled, !context.privacyModeEnabled, context.preference != .localOnly else {
+            return ProviderRouteDecision(route: .unavailable, reason: reason)
+        }
+        return ProviderRouteDecision(route: .cloud, reason: reason)
+    }
+}

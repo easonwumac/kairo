@@ -4,6 +4,10 @@ public extension LocalModelSettingsRow {
     var manifestTransparencyText: String {
         manifest.manifestTransparencyText
     }
+
+    var runtimeFitText: String {
+        manifest.runtimeFitText
+    }
 }
 
 public extension LocalModelManifest {
@@ -18,6 +22,14 @@ public extension LocalModelManifest {
         ].joined(separator: " · ")
     }
 
+    var runtimeFitText: String {
+        [
+            "Download: \(runtime.settingsDisplayName)",
+            "Fit: \(minDeviceClass)+/\(formattedRAMRequirement)",
+            mlxReferenceText
+        ].joined(separator: " · ")
+    }
+
     private var downloadSourceHost: String {
         downloadURL.host() ?? "unknown"
     }
@@ -27,6 +39,13 @@ public extension LocalModelManifest {
             return "\(Int(minRAMGB)) GB"
         }
         return String(format: "%.1f GB", minRAMGB)
+    }
+
+    private var mlxReferenceText: String {
+        let hasReferenceOnlyMLX = benchmarkProfiles.contains { profile in
+            profile.runtime == .mlx && profile.isReferenceOnlyForIOS && !profile.supportsInAppDownload
+        }
+        return hasReferenceOnlyMLX ? "MLX ref only" : "Device test pending"
     }
 }
 
