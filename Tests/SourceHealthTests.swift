@@ -451,6 +451,8 @@ final class SourceHealthTests: XCTestCase {
         let requiredReviewBoundaries = [
             "Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions.",
             "On-device deletion is user-triggered for chat history, memory JSON/export content, downloaded local models, saved API keys, OAuth tokens, and metadata-only audit logs.",
+            "For the current beta, App Privacy Labels should remain no tracking and no collected data.",
+            "The submitted binary has no analytics SDK, no backend account, no cloud memory sync, and no crash/telemetry collection provider.",
             "Local model catalog/download/select/delete are present, but iOS production local inference is not complete.",
             "macOS/dev reply checks and benchmark numbers are not iPhone runtime proof.",
             "HomeKit is limited to preview/demo/test scaffolding in this beta.",
