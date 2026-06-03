@@ -2,6 +2,26 @@
 
 Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App Store 允許的公開 API、使用者授權、App sandbox、App Intents、Shortcuts、Share Extension、通知、BackgroundTasks、官方 OAuth/API 整合與本機模型資產。
 
+## Feature state for beta review
+
+| Area | Status | Review note |
+|---|---|---|
+| Chat-first app shell | Implemented | Chat is the primary surface; support screens sit behind More. |
+| Memory | Scaffolded | Save/search exists; delete/export and derived cleanup are not beta-complete. |
+| Share Extension ingestion | Scaffolded | Queue/import path exists; extension must not run heavy inference or high-risk actions. |
+| App Intents / Shortcut nodes | Implemented | Existing nodes need schema/safety hardening before adding more. |
+| Skill Manager | Scaffolded | Access lifecycle exists; Chat still needs live effective catalog wiring. |
+| Email / Messages / Phone / Web / Maps handoffs | Implemented | Visible handoff only, preview + explicit confirmation. |
+| EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist for current scope. |
+| HomeKit | Scaffolded | Preview/demo/test path exists; real HomeKit entitlement/live control is not complete. |
+| OAuth provider APIs | Scaffolded | Auth/callback/status scaffold exists; real provider API integrations are not complete. |
+| Local model catalog/download/select/delete | Implemented | User-triggered model management exists; no model weights are bundled. |
+| macOS/dev local model reply check | Test-only / Mock | External command validation only; not iOS runtime proof. |
+| iOS production local model inference runtime | Planned | Must remain unavailable until real device/runtime evidence exists. |
+| Keyboard Extension | Planned | Not built for beta. |
+| Widget | Planned | Not built for beta. |
+| Cross-app UI clicking / background screen watching / private app data reads | Not allowed | Must not appear in product or review claims. |
+
 ## 上架定位
 
 推薦描述：
@@ -86,7 +106,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Skill manager rejects signed manifest downgrades and allows same/newer versions.
 - [x] Skill update UI shows installed version, incoming version, and changelog.
 - [x] Official Shortcut demo recipes are exposed as built-in installed skills and persist disabled state.
-- [x] Deterministic tool invocation planner maps installed skills/OAuth connector metadata to preview candidates, stores chat-visible `toolCandidates`, and sends action-backed skills through safety filtering before chat display.
+- [x] Deterministic tool invocation planner maps provided skill/OAuth connector catalog snapshots to preview candidates, stores chat-visible `toolCandidates`, and sends action-backed skills through safety filtering before chat display.
 - [x] Skill marketplace website shows permissions, risk tier, version, author, and changelog before install.
 - [x] Standalone skill update repository exists for catalog and manifest updates.
 - [x] Production app settings fetch the standalone skill update repository catalog.
@@ -103,6 +123,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] Marketplace trust store supports production key rotation and revocation metadata.
 - [ ] User-created skills require explicit capability selection and confirmation policy.
 - [ ] Skill update/remove flows are covered by UI/e2e tests.
+- [ ] Chat uses live Skill Manager effective catalog, including disabled and compatibility-blocked skill state.
 
 ### 7. Background tasks
 
@@ -118,13 +139,14 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Settings UI 顯示本機模型 catalog/status rows 與 download/select affordances。
 - [x] Settings UI 顯示 provider route preference，可選 Automatic / Prefer Local / Prefer Cloud / Local Only。
 - [x] Settings UI 可刪除已安裝模型並清除 selected-model state。
-- [ ] 顯示模型大小、授權、用途、刪除方式。
+- [ ] 顯示模型大小、授權、用途、刪除方式，並完成 copy QA for App Review.
 - [x] Core downloader supports HTTPS + checksum verification.
 - [x] Core settings can persist and validate the user-selected installed model.
 - [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
 - [ ] Production signed catalog、progress/cancel UI、runtime speed proof。
 - [ ] 模型存在 Application Support，不進 iCloud backup，或有明確策略。
 - [ ] 本機模型不執行任意程式碼，只作為 app binary 內 inference engine 的資料資產。
+- [ ] iOS production inference runtime is implemented and verified on real devices. Current macOS/dev reply check is not proof.
 
 ### 9. OpenAI / ChatGPT auth
 
@@ -144,6 +166,13 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] 提供資料匯出。
 - [ ] 提供資料刪除證明與流程。
 - [ ] Privacy policy 與 App Privacy Labels 一致。
+
+### 11. Deferred surfaces
+
+- [ ] Keyboard Extension is intentionally not part of the current beta.
+- [ ] Widget is intentionally not part of the current beta.
+- [ ] Real HomeKit entitlement path is intentionally not part of the current beta until entitlement/device/fallback work is done.
+- [ ] Additional OAuth providers are deferred until one provider path is fully reviewed and secure.
 
 ## Beta acceptance criteria
 

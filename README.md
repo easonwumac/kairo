@@ -55,6 +55,38 @@ Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo 
 - App icon source plus GitHub/README visual assets.
 - Privacy manifest, purpose-string notes, capability matrix, App Store readiness docs, and unit tests.
 
+## Current beta feature state
+
+Use these labels throughout the docs:
+
+| Status | Meaning |
+|---|---|
+| Implemented | Usable in the app/core path and covered by tests for the stated scope. |
+| Scaffolded | Code, UI, models, or protocols exist, but beta hardening remains. |
+| Test-only / Mock | Deterministic test/demo path only; not a real runtime capability. |
+| Planned | Accepted direction, not implemented yet. |
+| Not allowed | Outside App Store-safe public API boundaries for this app. |
+
+| Area | Status | Current scope |
+|---|---|---|
+| Chat-first app shell | Implemented | Chat is the launch surface; More holds support surfaces. |
+| Memory | Scaffolded | Save/search stores exist; delete/export and derived cleanup still need work. |
+| Share Extension ingestion | Scaffolded | Queue/import path exists; extension must stay lightweight and action-free. |
+| App Intents / Shortcut nodes | Implemented | Existing nodes need safety/schema hardening before adding more. |
+| Kairo Recipes | Implemented | Internal Kairo-owned workflows; not silent Apple Shortcuts edits. |
+| Skill Manager | Scaffolded | Access UI and file-backed lifecycle exist; Chat live effective catalog wiring is next. |
+| Email / Message / Phone / Web / Maps handoffs | Implemented | Visible handoff only, preview + explicit confirmation. |
+| EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist; Shortcut nodes stay draft/preview oriented. |
+| HomeKit | Scaffolded | Typed preview/action model and test/demo UI exist; real HomeKit entitlement path is not complete. |
+| OAuth provider APIs | Scaffolded | Authorization/callback/status scaffolds exist; real provider read/write integrations are planned. |
+| Local model catalog/download/select/delete | Implemented | User-triggered downloads and settings exist; model weights are never bundled. |
+| macOS/dev local model runtime adapter | Test-only / Mock | External command validation path for development. |
+| iOS production local model inference | Planned | Not implemented; do not treat macOS/dev reply checks as iPhone runtime proof. |
+| Audit / memory lifecycle hardening | Planned | Persistent redacted audit metadata and memory export/delete cleanup still needed. |
+| Keyboard Extension | Planned | Not built. |
+| Widget | Planned | Not built. |
+| Arbitrary cross-app UI control / background screen watching | Not allowed | No private APIs, hidden tapping, or background screenshots. |
+
 ## Visual overview
 
 ![Kairo capability board](Assets/github-capability-board.svg)
@@ -107,14 +139,11 @@ The package is intentionally dependency-free. The iOS app target is described in
 
 ## Product roadmap
 
-1. App target hardening: entitlements, App Group, Share Extension UI, widgets.
-2. Memory and chat persistence migration to SwiftData/Core Data for production apps.
-3. Real provider integrations: OpenAI Responses API, official OAuth connectors, optional backend proxy, and provider-specific app review/security requirements.
-4. Tool/skill execution: package usable iOS capabilities as managed skills, then execute EventKit writes, local notifications, URL/deep-link handoff, Shortcuts/App Intents, documents/photos import.
-5. Bounded background work: BGAppRefreshTask/BGProcessingTask registration, checkpointing, expiration handling, and user-visible rescheduling.
-6. Local model fallback: signed production model catalog, real-device runtime benchmark proof, device gating, progress/cancel UI, and safety policy versioning.
-7. Skill marketplace: signed skill manifests, compatibility-gated install/update/remove flows, and a management website for downloadable skills.
-8. App Store readiness: privacy nutrition labels, review notes, permission prompts, deletion/export flows.
+1. Stabilize the beta flow before adding more surfaces: Chat-first entry, live Skill Manager catalog, existing Shortcut node contracts, Share Extension import, audit/memory lifecycle.
+2. Tighten local model management: explicit downloads, size/license/purpose copy, progress/cancel, delete selected model, Application Support / iCloud backup policy, and runtime-unavailable handling.
+3. Finish production privacy surfaces: metadata-only audit persistence, memory export/delete, account/data deletion notes, and App Store review language.
+4. Add real provider integrations only after beta safety is stable: official OAuth/API connectors, provider scopes, token deletion, and review/security requirements.
+5. Defer Keyboard Extension, Widget, real HomeKit entitlement path, and additional OAuth connectors until the stabilization work is complete.
 
 ## Documentation
 

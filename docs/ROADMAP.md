@@ -1,89 +1,104 @@
 # Roadmap
 
-## Phase 0：專案骨架
+Kairo has moved beyond the initial scaffold stage. The roadmap now prioritizes a stable beta flow over adding more surfaces or more Shortcut nodes.
 
-- 建 repo。
-- 建 docs。
-- 建 Swift source scaffold。
-- 定義 capability matrix。
-- 定義 memory schema。
-- 定義 safety policy。
-- 定義 OpenAI provider abstraction。
+## Status labels
 
-## Phase 1：本機 Agent MVP
+| Status | Meaning |
+|---|---|
+| Implemented | Usable in the app/core path and covered by tests for the stated scope. |
+| Scaffolded | Code, UI, models, or protocols exist, but beta hardening remains. |
+| Test-only / Mock | Deterministic test/demo path only; not a real runtime capability. |
+| Planned | Accepted direction, not implemented yet. |
+| Not allowed | Outside App Store-safe public API boundaries for this app. |
 
-- SwiftUI App shell。
-- Chat screen。
-- Memory Center。
-- SwiftData/Core Data persistence。
-- Keychain credential store。
-- Local search。
-- OpenAI API key 模式。
+## Current state
 
-## Phase 2：iOS 入口
+| Area | Status | Notes |
+|---|---|---|
+| App project, app target, share extension target, UI test target | Implemented | Project and targets exist in `project.yml` / `Kairo.xcodeproj`. |
+| Chat-first shell | Implemented | Chat is the primary surface; More manages support screens. |
+| Memory | Scaffolded | Save/search stores exist; delete/export and derived cleanup are beta work. |
+| Share Extension ingestion queue | Scaffolded | Queue exists; import tests and no-heavy-work guarantees need tightening. |
+| App Intents / Shortcut nodes | Implemented | Existing node set is broad enough for beta; next work is safety/schema consistency. |
+| Kairo Recipes | Implemented | Internal workflows with preview/run/enable/disable and App Intent bridge. |
+| Skill Manager | Scaffolded | File-backed lifecycle and Access UI exist; Chat must use live effective catalog next. |
+| URL handoff previews | Implemented | Email, Messages, Phone, Web Search, and Maps use visible handoff + confirmation. |
+| EventKit / Notifications / Contacts actions | Implemented | Chat preview + confirmation exists for current action scope. |
+| HomeKit | Scaffolded | Typed action model, demo UI, and tests exist; real entitlement/live home path is planned. |
+| OAuth connectors | Scaffolded | Auth/callback/status scaffolds exist; real provider APIs are planned. |
+| Local model catalog/download/select/delete | Implemented | User-triggered catalog/download/settings path exists. |
+| macOS/dev local model runtime adapter | Test-only / Mock | External command validation path only. |
+| iOS production local model inference | Planned | Requires real runtime, device proof, memory/thermal gating, and App Store packaging. |
+| Keyboard Extension | Planned | Deferred. |
+| Widget | Planned | Deferred. |
+| Cross-app UI clicking, background screen watching, private app data reads | Not allowed | Not part of Kairo's App Store-safe scope. |
 
-- Share Extension。
-- App Intents。
-- Shortcuts actions。
-- UserNotifications。
-- EventKit reminders/calendar。
-- Files / Photos picker。
+## Phase 1: Beta stabilization
 
-## Phase 3：安全與權限中心
+Do first:
 
-- Permission Hub。
-- Capability Catalog。
-- Action Preview。
-- Confirmation flow。
-- Audit Log。
-- Memory delete/export。
+1. **Documentation state alignment**
+   - Keep README, NEXT_STEPS, capability matrix, App Store readiness, local model docs, and Shortcut strategy aligned with implementation state.
+   - Every user-facing claim must map to Implemented, Scaffolded, Test-only / Mock, Planned, or Not allowed.
 
-## Phase 4：外部服務
+2. **Chat uses live Skill Manager state**
+   - Chat and `AgentCore` should plan from the effective installed skill catalog, not only `AgentSkillCatalog.default`.
+   - Disabled skills must disappear from Chat tool candidates.
+   - Installed marketplace skills must appear in the effective catalog.
+   - Compatibility-blocked skills must stay preview-only and never become executable tools.
 
-優先選一個：
+3. **Shortcut node hardening**
+   - Do not add more nodes first.
+   - Lock down current safety boundaries: Contacts draft/write, Email draft, Message handoff, Phone handoff, Web Search handoff, Calendar/Reminder drafts, and Home preview.
+   - Keep App Intent JSON output stable for downstream Shortcuts parsing.
 
-- Google Calendar + Gmail
-- 或 Microsoft 365
+4. **Local model beta path**
+   - Keep downloads user-triggered.
+   - Show model size, license, purpose, delete state, progress/cancel, and runtime availability honestly.
+   - Keep macOS/dev reply checks separate from iOS production inference.
 
-加上 OAuth、sync、briefing、draft reply。
+5. **Audit and memory lifecycle**
+   - Persist audit metadata by default, not full sensitive payloads.
+   - Add memory delete/export and cleanup for derived summaries, cache, embedding placeholders, and Kairo-owned attachment references.
 
-## Phase 5：雲端與同步
+6. **Share Extension beta import**
+   - Main app should reliably see text, URL, image, and file metadata shared into Kairo.
+   - Extension must not run heavy model inference or high-risk actions.
 
-- Kairo account。
-- Sign in with Apple。
-- Optional CloudKit sync 或自建 backend。
-- pgvector / object storage。
-- APNs。
-- Rate limit / billing。
+## Phase 2: Production readiness
 
-## Phase 6：進階 Agent
+- Privacy labels and App Store review notes.
+- Real device smoke checks for Chat, Memory, Access, Settings, Share Extension, App Intents, and confirmed actions.
+- Keychain/token deletion and provider disconnect flows.
+- Background task expiration handling and user-visible scheduling boundaries.
+- Data export/delete flows.
 
-- Local embeddings。
-- Sensitive data classifier。
-- More App Intents。
-- Widget。
-- Kairo internal recipe engine：sample recipes、file-backed store、preview/run、enable/disable、Shortcuts drawer screen。
-- App Intents bridge for Kairo Recipes：Shortcuts/Siri/Action Button can call user-approved Kairo recipes without Kairo silently creating Apple Shortcuts。
-- Shortcut template registry：提供 user-installed setup guidance，不做 silent installation。
-- Local model experiments。
+## Phase 3: Integrations after beta safety
 
-## Phase 7：Skill 管理與 marketplace
+Add only after beta stabilization:
 
-- 把可操作能力封裝成 `AgentSkill`。
-- 讓 model prompt context 明確看到 installed skills/tools。
-- `AgentToolInvocationPlanner` 將 user request 映射到 installed skill/OAuth connector preview candidates；chat 會顯示 Shortcut/OAuth tool candidates，action-backed skills 仍走 confirmation-gated safety policy。
-- Skill manifest：signature metadata、SHA-256 checksum、public-key verification、file-backed lifecycle。
-- Live app environment-backed Skill Manager state。
-- Signed manifest JSON import in Access。
-- Skill version downgrade protection。
-- Skill update preview：installed version、incoming version、changelog、confirm before replace。
-- Skill Manager UI：install / disable / enable / remove / inspect permissions。
-- 官方 Shortcut demo recipes 與 HomeKit controls 已映射為 built-in skills，並可透過 file-backed manager 持久化狀態。
-- Compatibility gates：marketplace skills can require minimum iOS version、entitlements、OAuth providers、downloaded local models；missing requirements are preview-only and cannot install。
-- `--ui-testing` deterministic Skill Manager：static marketplace refresh/install preview、compatibility-blocked install、disable/enable、chat action preview、chat Shortcut tool candidate、HomeKit preview e2e source coverage。
-- 使用者可在 Access 建立本機 user-created skill draft；預設 disabled，之後可透過 Skill Manager enable/disable/remove。
-- 使用者可新增自訂 skill manifest。
-- Skill marketplace website：搜尋、分類、權限、風險、版本與下載。
-- 獨立 `kairo-skills` GitHub repo：專門放可更新 skill catalog、manifest、GitHub Pages。
-- Model catalog backend seed：`Website/models` + `LocalModelCatalogService`，準備鏡像到獨立 `kairo-models` repo，讓 app 以可見刷新取得 downloadable model list 與 runtime benchmark metadata。
-- Trust-store key rotation/revocation、production entitlement inspection、per-provider OAuth readiness details。
+- One real OAuth provider API path, such as Google Calendar/Gmail or Microsoft 365.
+- Real HomeKit entitlement path with explicit permission copy and fallback UI.
+- Signed production skill catalog key rotation/revocation.
+- Signed production model catalog with device gating and rollout metadata.
+
+## Deferred work
+
+Do not prioritize until the beta flow above is stable:
+
+- More Shortcut nodes.
+- Keyboard Extension.
+- Widget.
+- CarPlay / car mode.
+- Multiple OAuth connectors.
+- Additional app surfaces.
+
+## Always out of scope
+
+- Private API use.
+- Jailbreak-only features.
+- Arbitrary cross-app UI clicking.
+- Background screen watching.
+- Reading Messages, Apple Mail, Notes, Safari history/cookies, or ChatGPT web sessions.
+- Silent Apple Shortcuts creation or editing.
