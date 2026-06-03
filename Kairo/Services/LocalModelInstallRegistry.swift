@@ -82,9 +82,6 @@ public actor FileBackedLocalModelInstallRegistry {
         guard !staleRecords.isEmpty else { return [] }
 
         for record in staleRecords {
-            if FileManager.default.fileExists(atPath: record.fileURL.path) {
-                try? FileManager.default.removeItem(at: record.fileURL)
-            }
             let partialURL = record.fileURL.appendingPathExtension("download")
             if FileManager.default.fileExists(atPath: partialURL.path) {
                 try? FileManager.default.removeItem(at: partialURL)

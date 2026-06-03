@@ -1123,7 +1123,7 @@ final class LocalModelFeatureTests: XCTestCase {
         let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
         let destinationURL = modelsDirectory.appendingPathComponent("qwen-small-1.0.gguf")
         let partialURL = destinationURL.appendingPathExtension("download")
-        try Data("partial-model".utf8).write(to: destinationURL)
+        try Data("existing-model".utf8).write(to: destinationURL)
         try Data("partial-download".utf8).write(to: partialURL)
         try await registry.upsert(LocalModelInstallRecord(
             modelID: "qwen-small",
@@ -1139,7 +1139,7 @@ final class LocalModelFeatureTests: XCTestCase {
         let cleanedRecord = await registry.record(for: "qwen-small")
         XCTAssertEqual(cleanedModelIDs, ["qwen-small"])
         XCTAssertNil(cleanedRecord)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: destinationURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: destinationURL.path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: partialURL.path))
     }
 
