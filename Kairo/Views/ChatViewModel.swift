@@ -20,7 +20,7 @@ public final class ChatViewModel: ObservableObject {
 
     private let historyStore: ChatHistoryStore
     private let shareIngestionQueue: ShareIngestionQueue
-    private let agent: AgentCore
+    private let chatAPI: any KairoChatAPI
     private let actionExecutor: any ActionExecutor
     private let localModelSettingsService: LocalModelSettingsService?
 
@@ -28,12 +28,13 @@ public final class ChatViewModel: ObservableObject {
         historyStore: ChatHistoryStore = InMemoryChatHistoryStore(),
         shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
         agent: AgentCore = AgentCore(),
+        chatAPI: (any KairoChatAPI)? = nil,
         actionExecutor: any ActionExecutor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore()),
         localModelSettingsService: LocalModelSettingsService? = nil
     ) {
         self.historyStore = historyStore
         self.shareIngestionQueue = shareIngestionQueue
-        self.agent = agent
+        self.chatAPI = chatAPI ?? KairoChatBackendService(agent: agent)
         self.actionExecutor = actionExecutor
         self.localModelSettingsService = localModelSettingsService
         self.currentThread = ChatThread(messages: [Self.welcomeMessage])
@@ -41,20 +42,10 @@ public final class ChatViewModel: ObservableObject {
     }
 
     public convenience init(environment: KairoEnvironment) {
-        let skillCatalogProvider: AgentSkillCatalogProvider
-        if let skillManagerService = environment.agentSkillManagerService {
-            skillCatalogProvider = .skillManager(skillManagerService)
-        } else {
-            skillCatalogProvider = .default
-        }
         self.init(
             historyStore: environment.chatHistoryStore,
             shareIngestionQueue: environment.shareIngestionQueue,
-            agent: AgentCore(
-                memoryStore: environment.memoryStore,
-                aiProvider: environment.aiProvider,
-                skillCatalogProvider: skillCatalogProvider
-            ),
+            chatAPI: environment.backendAPI.chat,
             actionExecutor: environment.actionExecutor,
             localModelSettingsService: environment.localModelSettingsService
         )
@@ -149,7 +140,7 @@ public final class ChatViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         do {
-            let response = try await agent.respond(to: text, attachments: attachments, privacyMode: privacyMode)
+            let response = try await chatAPI.respond(to: text, attachments: attachments, privacyMode: privacyMode)
             let assistantMessage = ChatMessage(
                 role: .assistant,
                 text: response.message,

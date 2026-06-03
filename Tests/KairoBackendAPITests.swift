@@ -2,6 +2,33 @@ import XCTest
 @testable import KairoCore
 
 final class KairoBackendAPITests: XCTestCase {
+    func testChatBackendAPIForwardsPrivacyModeThroughAgentCore() async throws {
+        let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Private response"))
+        let api = KairoChatBackendService(agent: AgentCore(
+            memoryStore: InMemoryMemoryStore(seed: [
+                MemoryRecord(
+                    title: "Private note",
+                    summary: "Should not be queried",
+                    content: "private content",
+                    source: .manual
+                )
+            ]),
+            aiProvider: provider
+        ))
+
+        let response = try await api.respond(
+            to: "summarize private content",
+            attachments: [],
+            privacyMode: .privateChat
+        )
+        let request = await provider.capturedRequest()
+        let capturedRequest = try XCTUnwrap(request)
+
+        XCTAssertEqual(response.message, "Private response")
+        XCTAssertEqual(capturedRequest.privacyMode, .privateChat)
+        XCTAssertTrue(capturedRequest.memoryContext.isEmpty)
+    }
+
     func testDeletionBackendAPIDeletesOnDevicePrivacyDataThroughCoreInterfaces() async throws {
         let threadID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
         let memoryID = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
@@ -77,5 +104,28 @@ final class KairoBackendAPITests: XCTestCase {
         } catch let error as KairoDeletionAPIError {
             XCTAssertEqual(error, .localModelDeletionUnavailable)
         }
+    }
+}
+
+private actor BackendAPICapturingAIProvider: AIProvider {
+    private var lastRequest: AICompletionRequest?
+    private let response: AICompletionResponse
+
+    init(response: AICompletionResponse) {
+        self.response = response
+    }
+
+    func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
+        lastRequest = request
+        return response
+    }
+
+    func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
+        _ = request
+        return AIEmbeddingResponse(vector: [])
+    }
+
+    func capturedRequest() -> AICompletionRequest? {
+        lastRequest
     }
 }

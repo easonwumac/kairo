@@ -64,7 +64,11 @@ Live app wiring uses `FileBackedAuditLogger` at `KairoPaths.auditLogURL`. Audit 
 
 ## Backend API boundary
 
-SwiftUI views should move toward calling app-facing backend APIs instead of directly coordinating stores, credentials, model services, and audit loggers. `KairoBackendAPI` is the first facade for that split. Its initial `KairoDeletionAPI` groups App Review/privacy deletion use cases behind one Core interface:
+SwiftUI views should move toward calling app-facing backend APIs instead of directly coordinating stores, credentials, model services, and audit loggers. `KairoBackendAPI` is the first facade for that split. It starts with `KairoChatAPI` for chat responses and `KairoDeletionAPI` for App Review/privacy deletion use cases.
+
+`KairoChatAPI` wraps `AgentCore.respond` behind an app-facing interface that accepts message text, attachments, and `ChatPrivacyMode`. This keeps memory lookup, tool candidate filtering, provider routing, and private-chat fail-closed behavior in Core instead of SwiftUI.
+
+`KairoDeletionAPI` groups these deletion operations behind one Core interface:
 
 - chat thread deletion through `ChatHistoryStore`;
 - memory delete and purge through `MemoryStore`;

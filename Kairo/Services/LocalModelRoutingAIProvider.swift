@@ -69,10 +69,14 @@ public struct LocalModelRoutingAIProvider: AIProvider {
     }
 
     private static func estimatedTokenCount(for request: AICompletionRequest) -> Int {
-        let textLength = request.systemPrompt.count
-            + request.userPrompt.count
-            + request.memoryContext.reduce(0) { $0 + $1.content.count + $1.summary.count }
-            + request.attachmentContext.reduce(0) { $0 + $1.displayName.count + ($1.textPreview?.count ?? 0) }
+        let promptLength = request.systemPrompt.count + request.userPrompt.count
+        let memoryLength = request.memoryContext.reduce(0) { total, memory in
+            total + memory.content.count + memory.summary.count
+        }
+        let attachmentLength = request.attachmentContext.reduce(0) { total, attachment in
+            total + attachment.displayName.count + (attachment.textPreview?.count ?? 0)
+        }
+        let textLength = promptLength + memoryLength + attachmentLength
         return max(1, textLength / 4)
     }
 
