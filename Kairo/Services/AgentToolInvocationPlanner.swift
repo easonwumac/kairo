@@ -163,7 +163,7 @@ public struct AgentToolInvocationPlanner: Sendable {
                 requiredCapabilities: skill.requiredCapabilities,
                 riskTier: .tier1Draft,
                 requiresConfirmation: true,
-                handoffSummary: "Visible App Intents/Shortcuts handoff; Kairo does not install Apple Shortcuts silently."
+                handoffSummary: shortcutHandoffSummary(for: skill)
             )
         case .oauthConnector:
             guard matchesGenericSkill(skill, normalizedText: normalizedText) else { return nil }
@@ -244,6 +244,17 @@ public struct AgentToolInvocationPlanner: Sendable {
         default:
             return matchesGenericSkill(skill, normalizedText: normalizedText)
         }
+    }
+
+    private func shortcutHandoffSummary(for skill: AgentSkill) -> String {
+        let boundary = "Visible App Intents/Shortcuts handoff; Kairo does not install Apple Shortcuts silently."
+        guard
+            let recipeID = skill.shortcutRecipeID,
+            let recipe = ShortcutDemoCatalog.default.recipe(id: recipeID)
+        else {
+            return boundary
+        }
+        return "\(boundary) \(recipe.settingsStepSummary). \(recipe.settingsInputSummary). \(recipe.settingsOutputSummary)."
     }
 
     private func matchesGenericSkill(_ skill: AgentSkill, normalizedText: String) -> Bool {

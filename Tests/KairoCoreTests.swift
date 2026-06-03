@@ -146,6 +146,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(candidate.riskTier, .tier1Draft)
         XCTAssertTrue(candidate.requiresConfirmation)
         XCTAssertTrue(candidate.handoffSummary.contains("Kairo does not install Apple Shortcuts silently"))
+        XCTAssertTrue(candidate.handoffSummary.contains("2 steps: saveMemory -> extractTasks"))
+        XCTAssertTrue(candidate.handoffSummary.contains("Input: text, sourceName, variables"))
+        XCTAssertTrue(candidate.handoffSummary.contains("Output: memoryID, fields.taskCount"))
         XCTAssertTrue(plan.proposedActions.isEmpty)
     }
 
@@ -163,6 +166,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(emailCandidate.shortcutRecipeID, "email-triage")
         XCTAssertEqual(emailCandidate.riskTier, .tier1Draft)
         XCTAssertTrue(emailCandidate.requiresConfirmation)
+        XCTAssertTrue(emailCandidate.handoffSummary.contains("3 steps: summarize -> extractTasks -> draftReply"))
+        XCTAssertTrue(emailCandidate.handoffSummary.contains("Input: text, sourceName, variables, previousStepOutput"))
+        XCTAssertTrue(emailCandidate.handoffSummary.contains("Output: displayText, fields.summary, fields.chainText"))
 
         let meetingPlan = planner.plan(for: AgentToolInvocationRequest(userText: "Prepare me for the customer meeting from memory notes"))
         let meetingCandidate = try XCTUnwrap(meetingPlan.candidates.first { $0.skillID == "shortcut-meeting-prep-brief" })
@@ -2296,16 +2302,17 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains(#""settings.models.show-more""#))
         XCTAssertTrue(compactView.contains("modelListToggleTitle"))
         XCTAssertTrue(compactView.contains(#""Show starter set""#))
-        XCTAssertTrue(compactView.contains(#""Show \(hiddenModelRowCount) more""#))
+        XCTAssertTrue(compactView.contains(#""Show \(hiddenModelRowCount) more popular""#))
         XCTAssertTrue(compactView.contains("row.manifestTransparencyText"))
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))
-        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 9, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 8) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 8, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 8, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 78)"))
+        XCTAssertTrue(compactView.contains("Starter list: Qwen plus one popular alternative"))
+        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 8, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 7) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 7, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 7, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 72)"))
         XCTAssertTrue(compactView.contains(".lineLimit(1)"))
         XCTAssertTrue(compactView.contains(".lineLimit(2)"))
         XCTAssertTrue(compactView.contains(".imageScale(.small)"))
@@ -2420,6 +2427,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(chatView.contains(#""chat.message.reply.\(message.id.uuidString)""#))
         XCTAssertTrue(chatView.contains(#""chat.reply-preview""#))
         XCTAssertTrue(chatView.contains("replyToMessage"))
+        XCTAssertTrue(chatView.contains("candidate.handoffSummary"))
+        XCTAssertTrue(chatView.contains(#""chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).summary""#))
     }
 
     @MainActor
@@ -2704,6 +2713,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "chat-tool-preview")?.requiredAccessibilityIdentifiers.contains("chat.proposed-action.controlHome") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidates") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidate.shortcut-save-shared-text") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-shortcut-tool-candidate")?.requiredAccessibilityIdentifiers.contains("chat.tool-candidate.shortcut-save-shared-text.summary") == true)
         let notificationScenarioIdentifiers = catalog.scenario(id: "chat-notification-confirmation")?.requiredAccessibilityIdentifiers ?? []
         XCTAssertTrue(notificationScenarioIdentifiers.contains("chat.proposed-action.sendNotification"))
         XCTAssertTrue(notificationScenarioIdentifiers.contains("chat.action-preview"))

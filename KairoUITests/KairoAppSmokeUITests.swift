@@ -46,7 +46,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         let showMoreByIdentifier = findElement(showMoreIdentifier, direction: .down, maxSwipes: 1)
         let showMore = showMoreByIdentifier.exists
             ? showMoreByIdentifier
-            : findButton(labeled: "Show 1 more", direction: .down, maxSwipes: 1)
+            : findButton(labeled: "Show 1 more popular", direction: .down, maxSwipes: 1)
         XCTAssertTrue(showMore.exists)
         showMore.tap()
 
@@ -414,6 +414,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
         XCTAssertTrue(findElement("chat.tool-candidates", direction: .down).exists)
         XCTAssertTrue(findElement("chat.tool-candidate.shortcut-save-shared-text", direction: .down).exists)
+        XCTAssertTrue(findElement("chat.tool-candidate.shortcut-save-shared-text.summary", direction: .down).exists)
         XCTAssertTrue(findStaticText(containing: "Shortcut", direction: .down).exists)
     }
 

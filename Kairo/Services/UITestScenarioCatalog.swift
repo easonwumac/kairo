@@ -111,7 +111,8 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "chat.composer.send",
                 "chat.message.assistant",
                 "chat.tool-candidates",
-                "chat.tool-candidate.shortcut-save-shared-text"
+                "chat.tool-candidate.shortcut-save-shared-text",
+                "chat.tool-candidate.shortcut-save-shared-text.summary"
             ],
             assertions: [
                 "A task-extraction request creates an assistant response.",

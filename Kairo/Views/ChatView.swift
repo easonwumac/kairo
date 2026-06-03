@@ -409,20 +409,31 @@ private struct ToolCandidatesStrip: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(candidates) { candidate in
-                    HStack(spacing: 6) {
-                        Image(systemName: iconName(for: candidate.skillKind))
-                        Text(candidate.title)
-                            .lineLimit(1)
-                        Text(candidate.skillKind.settingsTitle)
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 6) {
+                            Image(systemName: iconName(for: candidate.skillKind))
+                            Text(candidate.title)
+                                .fontWeight(.semibold)
+                                .lineLimit(1)
+                            Text(candidate.skillKind.settingsTitle)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Text(candidate.handoffSummary)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).summary")
                     }
                     .font(.caption)
+                    .frame(width: 232, alignment: .leading)
                     .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(Color.accentColor.opacity(0.10), in: Capsule())
+                    .padding(.vertical, 8)
+                    .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Tool candidate: \(candidate.title), \(candidate.skillKind.settingsTitle)")
+                    .accessibilityLabel("Tool candidate: \(candidate.title), \(candidate.skillKind.settingsTitle). \(candidate.handoffSummary)")
                     .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id)")
                 }
             }

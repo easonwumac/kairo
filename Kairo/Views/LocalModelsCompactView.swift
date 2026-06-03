@@ -27,7 +27,7 @@ struct LocalModelsCompactView: View {
                         .fontWeight(.semibold)
                         .accessibilityIdentifier("settings.models.local")
 
-                    Text("Downloadable, user-approved on-device models. Weights stay outside the app bundle.")
+                    Text("Starter list: Qwen plus one popular alternative. Downloads stay user-approved and outside the app bundle.")
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -37,7 +37,7 @@ struct LocalModelsCompactView: View {
 
                 selectedModelSummary
 
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 8) {
                     if visibleModelRows.isEmpty {
                         Text("尚未載入 local model catalog。")
                             .font(.caption)
@@ -240,13 +240,13 @@ struct LocalModelsCompactView: View {
     }
 
     private var modelListToggleTitle: String {
-        showsAllModelRows ? "Show starter set" : "Show \(hiddenModelRowCount) more"
+        showsAllModelRows ? "Show starter set" : "Show \(hiddenModelRowCount) more popular"
     }
 
     @ViewBuilder
     private func compactLocalModelRow(_ row: LocalModelSettingsRow) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(row.displayName)
                     .font(compactModelNameFont)
                     .fontWeight(.semibold)
@@ -258,8 +258,8 @@ struct LocalModelsCompactView: View {
                 Text(row.statusText)
                     .font(compactModelStatusFont)
                     .foregroundStyle(localModelStatusColor(row.primaryAction))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
                     .background(localModelStatusColor(row.primaryAction).opacity(0.11), in: Capsule())
                     .accessibilityIdentifier("settings.models.\(row.modelID).status")
             }
@@ -286,7 +286,7 @@ struct LocalModelsCompactView: View {
                     .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
             }
 
-            LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 7) {
+            LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 5) {
                 compactLocalModelAction(for: row)
 
                 if row.benchmarkSummaryText != nil {
@@ -331,7 +331,7 @@ struct LocalModelsCompactView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(7)
+        .padding(6)
         .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -342,16 +342,16 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactButtonGridColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 78), spacing: 5, alignment: .leading)]
+        [GridItem(.adaptive(minimum: 72), spacing: 4, alignment: .leading)]
     }
 
-    private var compactModelNameFont: Font { .system(size: 9, weight: .semibold) }
+    private var compactModelNameFont: Font { .system(size: 8, weight: .semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 8) }
+    private var compactModelMetadataFont: Font { .system(size: 7) }
 
-    private var compactModelStatusFont: Font { .system(size: 8, weight: .semibold) }
+    private var compactModelStatusFont: Font { .system(size: 7, weight: .semibold) }
 
-    private var compactButtonLabelFont: Font { .system(size: 8, weight: .semibold) }
+    private var compactButtonLabelFont: Font { .system(size: 7, weight: .semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {
