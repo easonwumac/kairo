@@ -40,6 +40,7 @@ public enum AgentSkillManifestValidationError: Error, Equatable, Sendable {
     case unavailableSkill
     case unknownSigningKey(String)
     case revokedSigningKey(String)
+    case signingKeyPendingPublication(String)
     case signingKeyNotYetValid(String)
     case signingKeyExpired(String)
     case unsupportedSignatureAlgorithm(AgentSkillManifestSignatureAlgorithm)
@@ -271,12 +272,18 @@ public enum AgentSkillTrustedPublicKeyStatus: String, Codable, Equatable, Sendab
     case revoked
 }
 
+public enum AgentSkillTrustedPublicKeyPublicationStatus: String, Codable, Equatable, Sendable {
+    case pendingPublication
+    case published
+}
+
 public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Sendable {
     public var id: String { keyID }
     public var keyID: String
     public var algorithm: AgentSkillManifestSignatureAlgorithm
     public var publicKeyBase64: String
     public var status: AgentSkillTrustedPublicKeyStatus
+    public var publicationStatus: AgentSkillTrustedPublicKeyPublicationStatus
     public var validFrom: Date?
     public var expiresAt: Date?
     public var revokedAt: Date?
@@ -287,6 +294,7 @@ public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Send
         algorithm: AgentSkillManifestSignatureAlgorithm,
         publicKeyBase64: String,
         status: AgentSkillTrustedPublicKeyStatus = .active,
+        publicationStatus: AgentSkillTrustedPublicKeyPublicationStatus = .published,
         validFrom: Date? = nil,
         expiresAt: Date? = nil,
         revokedAt: Date? = nil,
@@ -296,6 +304,7 @@ public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Send
         self.algorithm = algorithm
         self.publicKeyBase64 = publicKeyBase64
         self.status = status
+        self.publicationStatus = publicationStatus
         self.validFrom = validFrom
         self.expiresAt = expiresAt
         self.revokedAt = revokedAt
@@ -307,6 +316,7 @@ public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Send
         case algorithm
         case publicKeyBase64
         case status
+        case publicationStatus
         case validFrom
         case expiresAt
         case revokedAt
@@ -319,6 +329,10 @@ public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Send
         self.algorithm = try container.decode(AgentSkillManifestSignatureAlgorithm.self, forKey: .algorithm)
         self.publicKeyBase64 = try container.decode(String.self, forKey: .publicKeyBase64)
         self.status = try container.decodeIfPresent(AgentSkillTrustedPublicKeyStatus.self, forKey: .status) ?? .active
+        self.publicationStatus = try container.decodeIfPresent(
+            AgentSkillTrustedPublicKeyPublicationStatus.self,
+            forKey: .publicationStatus
+        ) ?? .published
         self.validFrom = try Self.decodeDateIfPresent(from: container, forKey: .validFrom)
         self.expiresAt = try Self.decodeDateIfPresent(from: container, forKey: .expiresAt)
         self.revokedAt = try Self.decodeDateIfPresent(from: container, forKey: .revokedAt)
@@ -331,6 +345,7 @@ public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Send
         try container.encode(algorithm, forKey: .algorithm)
         try container.encode(publicKeyBase64, forKey: .publicKeyBase64)
         try container.encode(status, forKey: .status)
+        try container.encode(publicationStatus, forKey: .publicationStatus)
         try Self.encodeDateIfPresent(validFrom, to: &container, forKey: .validFrom)
         try Self.encodeDateIfPresent(expiresAt, to: &container, forKey: .expiresAt)
         try Self.encodeDateIfPresent(revokedAt, to: &container, forKey: .revokedAt)
@@ -471,6 +486,9 @@ public struct AgentSkillManifest: Codable, Equatable, Sendable {
         }
         guard trustedKey.status == .active else {
             throw AgentSkillManifestValidationError.revokedSigningKey(signature.keyID)
+        }
+        guard trustedKey.publicationStatus == .published else {
+            throw AgentSkillManifestValidationError.signingKeyPendingPublication(signature.keyID)
         }
         if let validFrom = trustedKey.validFrom, currentDate < validFrom {
             throw AgentSkillManifestValidationError.signingKeyNotYetValid(signature.keyID)

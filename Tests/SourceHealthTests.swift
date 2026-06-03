@@ -634,6 +634,8 @@ final class SourceHealthTests: XCTestCase {
             XCTAssertTrue(source.contains("docs/CATALOG_RELEASE_CHECKLIST.md"))
         }
         XCTAssertTrue(skillManagement.contains("Publish the production marketplace trust-store key material"))
+        XCTAssertTrue(skillManagement.contains("publicationStatus"))
+        XCTAssertTrue(skillManagement.contains("pendingPublication"))
         XCTAssertTrue(skillManagement.contains("Static marketplace seed entries and signed manifests carry compatibility requirements"))
         XCTAssertTrue(skillManagement.contains("OAuth/provider readiness, HomeKit entitlement, and minimum iOS version"))
         XCTAssertTrue(skillManagement.contains("package tests cover prompt-context availability through the live effective catalog"))

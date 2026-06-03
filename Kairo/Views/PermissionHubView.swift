@@ -502,6 +502,9 @@ public struct PermissionHubView: View {
         } catch AgentSkillManifestValidationError.revokedSigningKey(_) {
             skillManagerMessage = "Manifest signing key has been revoked."
             manifestInstallPreview = nil
+        } catch AgentSkillManifestValidationError.signingKeyPendingPublication(_) {
+            skillManagerMessage = "Manifest signing key is pending public release."
+            manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.signingKeyNotYetValid(_) {
             skillManagerMessage = "Manifest signing key is not active yet."
             manifestInstallPreview = nil
@@ -543,6 +546,8 @@ public struct PermissionHubView: View {
             skillManagerMessage = "Manifest signature is invalid."
         } catch AgentSkillManifestValidationError.revokedSigningKey(_) {
             skillManagerMessage = "Manifest signing key has been revoked."
+        } catch AgentSkillManifestValidationError.signingKeyPendingPublication(_) {
+            skillManagerMessage = "Manifest signing key is pending public release."
         } catch AgentSkillManifestValidationError.signingKeyNotYetValid(_) {
             skillManagerMessage = "Manifest signing key is not active yet."
         } catch AgentSkillManifestValidationError.signingKeyExpired(_) {
@@ -589,6 +594,9 @@ public struct PermissionHubView: View {
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.revokedSigningKey(_) {
             skillManagerMessage = "Manifest signing key has been revoked."
+            manifestInstallPreview = nil
+        } catch AgentSkillManifestValidationError.signingKeyPendingPublication(_) {
+            skillManagerMessage = "Manifest signing key is pending public release."
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.signingKeyNotYetValid(_) {
             skillManagerMessage = "Manifest signing key is not active yet."

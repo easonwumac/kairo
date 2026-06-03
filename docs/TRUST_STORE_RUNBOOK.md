@@ -17,6 +17,7 @@ Skill marketplace trust keys must include:
 - `algorithm`
 - `publicKeyBase64`
 - `status` as `active` or `revoked`
+- `publicationStatus` as `pendingPublication` or `published`; app-side validation must fail closed while a marketplace release key is still `pendingPublication`
 - `validFrom` when activating a future key
 - `expiresAt` when scheduling retirement
 - `revokedAt` and `revokedReason` when revoking
@@ -37,11 +38,11 @@ Production catalog payloads must include the matching signing key id and a non-e
 ## Planned Rotation
 
 1. Generate the new signing key outside this repository.
-2. Add only the new public key metadata to the relevant trust store. For local model catalogs, keep the key `pendingPublication` until the standalone catalog and public trust metadata are actually published.
+2. Add only the new public key metadata to the relevant trust store. For skill marketplace and local model catalogs, keep the key `pendingPublication` until the standalone catalog and public trust metadata are actually published.
 3. Mark the outgoing key with a retirement window before using the new key for production payloads.
 4. Sign a staging skill manifest or model catalog with the new key.
 5. Verify the staging payload in package tests or a signed-catalog dry run before publishing.
-6. Publish the signed catalog to the standalone repository and flip the local model key to `published` only in the same release handoff that publishes public trust metadata.
+6. Publish the signed catalog to the standalone repository and flip the skill or local model key to `published` only in the same release handoff that publishes public trust metadata.
 7. Refresh the catalog from the app and verify that existing active keys still work and the new key is accepted.
 8. After the rollout window, mark the old key `revoked` with `revokedAt` or `revokedReason` metadata as supported by that trust store.
 
@@ -51,7 +52,7 @@ Production catalog payloads must include the matching signing key id and a non-e
 2. Mark the compromised key `revoked` in the app-side trust store and standalone repository metadata.
 3. Add a clear `revokedReason` without including secrets or private incident details.
 4. Re-sign the marketplace manifest or model catalog with an active replacement key.
-5. Run package tests that cover unknown-key, revoked-key, and invalid-signature rejection.
+5. Run package tests that cover unknown-key, revoked-key, pending-publication-key, and invalid-signature rejection.
 6. Run focused secret and model-artifact scans before commit.
 7. Ship the trust-store update before publishing new downloadable payloads that require the replacement key.
 

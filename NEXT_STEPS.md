@@ -25,7 +25,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
    - Keep iOS production inference runtime marked `Planned` until there is real-device runtime proof.
 
 4. Skill Manager / marketplace production hardening.
-   - Publish production marketplace trust-store key material; `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` now define rotation/revocation metadata and the publication gate, and app-side trust keys carry active/revoked metadata and validity windows.
+   - Publish production marketplace trust-store key material; `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` now define rotation/revocation metadata and the publication gate, and app-side trust keys carry active/revoked metadata, `publicationStatus`, and validity windows.
    - User-created skill drafts now require explicit capability selection and confirmation policy; keep this invariant covered.
    - Skill Manager lifecycle now has a backend API facade for catalog/effective catalog/preview/install/disable/enable/remove/user drafts, including fail-closed behavior when the service is unavailable.
    - Kairo-owned internal recipe lifecycle/run/sample seeding now has a backend API facade; keep the boundary clear that these are internal recipes and do not silently create Apple Shortcuts.

@@ -1849,6 +1849,38 @@ final class KairoCoreTests: XCTestCase {
         }
     }
 
+    func testAgentSkillManifestTrustStoreRejectsPendingPublicationSigningKeys() throws {
+        let downloadableSkill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/weather-briefing.json")!
+        )
+        let signingKey = P256.Signing.PrivateKey()
+        let manifest = try AgentSkillManifest.signedForTesting(
+            skill: downloadableSkill,
+            packageVersion: "2026.6",
+            keyID: "kairo-marketplace-2026",
+            signingKey: signingKey
+        )
+        let pendingKey = AgentSkillTrustedPublicKey(
+            keyID: "kairo-marketplace-2026",
+            algorithm: .p256SHA256,
+            publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString(),
+            publicationStatus: .pendingPublication
+        )
+
+        XCTAssertThrowsError(try manifest.validateForInstall(
+            trustStore: AgentSkillManifestTrustStore(trustedKeys: [pendingKey])
+        )) { error in
+            XCTAssertEqual(
+                error as? AgentSkillManifestValidationError,
+                .signingKeyPendingPublication("kairo-marketplace-2026")
+            )
+        }
+    }
+
     func testAgentSkillTrustStoreDecodesLegacyKeysAsActive() throws {
         let json = """
         {
@@ -1866,6 +1898,7 @@ final class KairoCoreTests: XCTestCase {
         let trustedKey = try XCTUnwrap(trustStore.trustedKey(id: "kairo-marketplace-2026"))
 
         XCTAssertEqual(trustedKey.status, .active)
+        XCTAssertEqual(trustedKey.publicationStatus, .published)
         XCTAssertNil(trustedKey.validFrom)
         XCTAssertNil(trustedKey.expiresAt)
         XCTAssertNil(trustedKey.revokedAt)
@@ -1881,6 +1914,7 @@ final class KairoCoreTests: XCTestCase {
               "algorithm": "p256SHA256",
               "publicKeyBase64": "abc123",
               "status": "revoked",
+              "publicationStatus": "pendingPublication",
               "validFrom": "2026-01-01T00:00:00Z",
               "expiresAt": "2026-06-01T00:00:00Z",
               "revokedAt": "2026-06-02T00:00:00Z",
@@ -1894,6 +1928,7 @@ final class KairoCoreTests: XCTestCase {
         let trustedKey = try XCTUnwrap(trustStore.trustedKey(id: "kairo-marketplace-2025"))
 
         XCTAssertEqual(trustedKey.status, .revoked)
+        XCTAssertEqual(trustedKey.publicationStatus, .pendingPublication)
         XCTAssertEqual(trustedKey.validFrom, ISO8601DateFormatter().date(from: "2026-01-01T00:00:00Z"))
         XCTAssertEqual(trustedKey.expiresAt, ISO8601DateFormatter().date(from: "2026-06-01T00:00:00Z"))
         XCTAssertEqual(trustedKey.revokedAt, ISO8601DateFormatter().date(from: "2026-06-02T00:00:00Z"))
@@ -1902,6 +1937,7 @@ final class KairoCoreTests: XCTestCase {
         let encoded = try JSONEncoder().encode(trustStore)
         let encodedJSON = String(decoding: encoded, as: UTF8.self)
         XCTAssertTrue(encodedJSON.contains(#""revokedAt":"2026-06-02T00:00:00Z""#))
+        XCTAssertTrue(encodedJSON.contains(#""publicationStatus":"pendingPublication""#))
     }
 
     func testAgentSkillManagerUsesTrustStoreWhenProvided() async throws {
@@ -3051,9 +3087,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains("manifestInstallPreview.compatibilityReport.isInstallable"))
         XCTAssertTrue(permissionHubView.contains("AgentSkillInstallError.compatibilityBlocked"))
         XCTAssertTrue(permissionHubView.contains("AgentSkillManifestValidationError.revokedSigningKey"))
+        XCTAssertTrue(permissionHubView.contains("AgentSkillManifestValidationError.signingKeyPendingPublication"))
         XCTAssertTrue(permissionHubView.contains("AgentSkillManifestValidationError.signingKeyNotYetValid"))
         XCTAssertTrue(permissionHubView.contains("AgentSkillManifestValidationError.signingKeyExpired"))
         XCTAssertTrue(permissionHubView.contains("Manifest signing key has been revoked."))
+        XCTAssertTrue(permissionHubView.contains("Manifest signing key is pending public release."))
         XCTAssertTrue(permissionHubView.contains("Manifest signing key is not active yet."))
         XCTAssertTrue(permissionHubView.contains("Manifest signing key has expired."))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-preview.confirm""#))

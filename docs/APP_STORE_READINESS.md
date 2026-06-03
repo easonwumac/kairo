@@ -48,7 +48,7 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 - **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking, and package source-health tests parse the privacy manifest plus entitlement/review-note boundaries. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
 - **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
 - **Purpose string scope:** Beta app plist includes only currently exercised Calendar, Reminders, Contacts, and Notifications purpose strings; HomeKit, Location, and Photo Library purpose strings stay future-only until those capabilities ship.
-- **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, pending-publication, out-of-window, unsupported, or invalid signing keys. Default local model release keys remain `publicationStatus=pendingPublication`. `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` define the production publication and rotation/revocation gates, but production signed catalogs and release public-key material still need publication in the standalone repos.
+- **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, pending-publication, out-of-window, unsupported, or invalid signing keys. Skill marketplace and local model release keys must remain `publicationStatus=pendingPublication` until matching standalone catalogs and public trust metadata are published. `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` define the production publication and rotation/revocation gates, but production signed catalogs and release public-key material still need publication in the standalone repos.
 
 ### 1. Public API only
 
@@ -136,8 +136,8 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 - [x] XCUITest covers chat email draft preview and visible handoff confirmation before opening `mailto:`.
 - [x] XCUITest covers chat Messages handoff preview and visible confirmation before opening `sms:`.
 - [x] XCUITest covers chat Apple Maps directions preview and visible handoff confirmation before opening Maps.
-- [x] Marketplace trust store supports key rotation and revocation metadata, including active/revoked state, validity windows, revoked timestamps, and revoked reasons.
-- [x] Marketplace/model catalog trust stores support rotation and emergency revocation metadata, including active/revoked state, validity windows, revoked timestamps, and revoked reasons; the release runbook is documented in `docs/TRUST_STORE_RUNBOOK.md`.
+- [x] Marketplace trust store supports key rotation, publication, and revocation metadata, including active/revoked state, `publicationStatus`, validity windows, revoked timestamps, and revoked reasons.
+- [x] Marketplace/model catalog trust stores support rotation, pending-publication gating, and emergency revocation metadata, including active/revoked state, validity windows, revoked timestamps, and revoked reasons; the release runbook is documented in `docs/TRUST_STORE_RUNBOOK.md`.
 - [x] User-created skills require explicit capability selection and confirmation policy before a disabled local draft can be saved.
 - [x] Skill Manager backend API facade covers catalog/effective catalog/preview/install/disable/enable/remove/user drafts, unavailable-service fail-closed behavior, and compatibility-blocked marketplace skills staying out of the executable catalog.
 - [x] Skill remove flow has simulator UI smoke coverage for user-created drafts; signed marketplace update preview/confirm has simulator XCUITest smoke coverage.

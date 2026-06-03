@@ -15,8 +15,9 @@ Before marking the Skill marketplace production-ready:
 
 - Publish a signed `skills.json` catalog from `easonwumac/kairo-skills`.
 - Publish every downloadable skill manifest with signature metadata, SHA-256 checksum, version, changelog, author, permissions, risk tier, and compatibility requirements.
-- Publish public trust-store key metadata with `keyID`, `algorithm`, `publicKeyBase64`, `status`, activation window, retirement window, and revocation metadata where applicable.
-- Verify unknown-key, revoked-key, expired-key, downgrade, invalid-signature, checksum, and compatibility-blocked paths fail closed in package tests.
+- Publish public trust-store key metadata with `keyID`, `algorithm`, `publicKeyBase64`, `status`, `publicationStatus`, activation window, retirement window, and revocation metadata where applicable.
+- Keep default app-side marketplace release keys at `publicationStatus=pendingPublication` until the standalone signed catalog and public trust metadata are actually published.
+- Verify unknown-key, revoked-key, pending-publication-key, expired-key, downgrade, invalid-signature, checksum, and compatibility-blocked paths fail closed in package tests.
 - Confirm compatibility-blocked skills remain preview-only and cannot become executable tool candidates.
 - Confirm Access install/update/remove UI smoke coverage is simulator-only support evidence, not real-device sign-off.
 

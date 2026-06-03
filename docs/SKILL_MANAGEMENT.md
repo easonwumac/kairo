@@ -6,7 +6,7 @@ Kairo 的核心方向是把可操作能力包成可管理的 skills，並讓 mod
 
 - `AgentSkill` describes one managed tool package.
 - `AgentSkillCatalog.default` exposes built-in installed skills for HomeKit scene/accessory demos and every official `ShortcutDemoCatalog` recipe, including shared-text capture, screenshot-to-reminders, reply drafting, email triage, meeting prep, daily briefing, and generic node-runner examples.
-- `AgentSkillManifest` validates downloadable marketplace manifests with required signature metadata, a SHA-256 checksum over the skill payload, and optional P-256 public-key verification through `AgentSkillManifestTrustStore`. Trust keys carry active/revoked state, optional validity windows, revocation timestamps, and revocation reasons so production key rotation can fail closed.
+- `AgentSkillManifest` validates downloadable marketplace manifests with required signature metadata, a SHA-256 checksum over the skill payload, and optional P-256 public-key verification through `AgentSkillManifestTrustStore`. Trust keys carry active/revoked state, `publicationStatus`, optional validity windows, revocation timestamps, and revocation reasons so production key rotation can fail closed, including blocking `pendingPublication` release keys until standalone marketplace publication is complete.
 - `AgentSkillManagerService` plus `FileBackedAgentSkillStore` provide install, preview, disable, enable, remove, reload, and version downgrade protection for marketplace/user-created skills.
 - `AgentSkillCompatibilityRequirements`, `AgentSkillRuntimeContext`, and `AgentSkillCompatibilityEvaluator` gate marketplace skills on minimum iOS version, required entitlements, connected OAuth providers, and downloaded local models.
 - `AgentSkillManagerService.createUserSkillDraft(_:)` creates local user-owned skill drafts with stable `user-` ids only after explicit capability selection and confirmation policy are present. These drafts are saved disabled by default, are not marketplace packages, and still need explicit enablement plus future action wiring before they can be used as tools.
@@ -66,7 +66,7 @@ The management website provides:
 
 ## Near-term implementation order
 
-1. Publish the production marketplace trust-store key material; `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` now define the publication and rotation/revocation release gate.
+1. Publish the production marketplace trust-store key material; app-side trust keys now fail closed while `publicationStatus=pendingPublication`, and `docs/TRUST_STORE_RUNBOOK.md` plus `docs/CATALOG_RELEASE_CHECKLIST.md` define the publication and rotation/revocation release gate.
 2. Keep simulator UI smoke coverage for signed marketplace install/update, compatibility-blocked marketplace install, and user-created remove flows; package tests cover prompt-context availability through the live effective catalog.
 3. Run real-device Access sign-off before App Review. Simulator UI smoke and package tests remain support evidence only.
 4. Connect compatibility gates to production entitlement inspection and per-provider OAuth readiness details beyond the current package-tested seed metadata.
