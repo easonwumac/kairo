@@ -130,6 +130,9 @@ struct LocalModelsCompactView: View {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.black.opacity(0.06), lineWidth: 1)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(localModelCatalogSourceText)
+        .accessibilityIdentifier("settings.models.catalog-source")
     }
 
     @ViewBuilder

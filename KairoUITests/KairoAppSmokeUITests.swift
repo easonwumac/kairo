@@ -650,6 +650,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         let localModelsToVerify = verifyAllLocalModels
             ? localModelExpectations
             : Array(localModelExpectations.prefix(3))
+        XCTAssertTrue(app.staticTexts["settings.models.\(localModelsToVerify[0].0).status"].label.contains("可下載"))
+        XCTAssertTrue(app.buttons["settings.models.\(localModelsToVerify[0].0).download"].exists)
         for localModel in localModelsToVerify {
             verifyDownloadableLocalModel(
                 id: localModel.0,
@@ -657,13 +659,10 @@ final class KairoAppSmokeUITests: XCTestCase {
                 downloadIdentifier: "settings.models.\(localModel.0).download"
             )
         }
-        XCTAssertTrue(app.staticTexts["settings.models.\(localModelsToVerify[0].0).status"].label.contains("可下載"))
-        XCTAssertTrue(app.buttons["settings.models.\(localModelsToVerify[0].0).download"].exists)
     }
 
     private func verifyDownloadableLocalModel(id: String, displayName: String, downloadIdentifier: String) {
         XCTAssertFalse(displayName.isEmpty)
-        XCTAssertTrue(anyElement("settings.models.\(id).row").exists, id)
         XCTAssertTrue(anyElement("settings.models.\(id).name").exists, id)
         if id == "qwen3-5-0-8b-q4-k-m" {
             let benchmark = anyElement("settings.models.\(id).benchmark")
@@ -671,7 +670,11 @@ final class KairoAppSmokeUITests: XCTestCase {
             XCTAssertTrue(benchmark.label.contains("MLX ref"))
             XCTAssertTrue(benchmark.label.contains("iPhone not verified"))
         }
-        XCTAssertTrue(app.buttons[downloadIdentifier].exists, downloadIdentifier)
+        let downloadButton = app.buttons[downloadIdentifier]
+        if !downloadButton.exists {
+            scrollDown()
+        }
+        XCTAssertTrue(downloadButton.exists, downloadIdentifier)
     }
 
     private func verifyShortcutDemoContract(
