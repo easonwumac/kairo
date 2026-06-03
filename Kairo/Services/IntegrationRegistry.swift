@@ -56,6 +56,7 @@ public struct IntegrationRegistry: Sendable {
                 "CreateEmailDraftsIntent",
                 "PrepareMessageHandoffIntent",
                 "PreparePhoneCallHandoffIntent",
+                "PrepareWebSearchHandoffIntent",
                 "RunKairoShortcutNodeIntent",
                 "RunKairoRecipeIntent",
                 "SuggestKairoRecipeIntent",
@@ -74,6 +75,7 @@ public struct IntegrationRegistry: Sendable {
                 ShortcutTemplate(identifier: "email-draft-from-shared-text", title: "Email Draft from Shared Text", inputSummary: "Shared or typed email body text plus optional recipient and subject variables", outputSummary: "Email draft JSON and compose action for manual review before sending"),
                 ShortcutTemplate(identifier: "message-reply-handoff", title: "Message Reply Handoff", inputSummary: "Message body plus optional recipient variables explicitly provided by the user", outputSummary: "Messages recipient handoff preview and proposed action for manual review"),
                 ShortcutTemplate(identifier: "phone-call-handoff", title: "Phone Call Handoff", inputSummary: "Phone number plus optional label explicitly provided by the user", outputSummary: "Phone tel: handoff preview and proposed action for manual review"),
+                ShortcutTemplate(identifier: "web-search-handoff", title: "Web Search Handoff", inputSummary: "Search query explicitly provided by the user", outputSummary: "Safari/DuckDuckGo handoff preview and proposed action for manual review"),
                 ShortcutTemplate(identifier: "contact-draft-from-shared-text", title: "Contact Draft from Shared Text", inputSummary: "Contact name plus optional phone, email, and notes explicitly provided by the user", outputSummary: "Contacts.framework draft JSON and proposed action for manual review"),
                 ShortcutTemplate(identifier: "home-action-preview", title: "Home Action Preview", inputSummary: "Home action request plus optional target variables", outputSummary: "HomeKit action preview JSON that still requires Kairo confirmation"),
                 ShortcutTemplate(identifier: "generic-node-runner", title: "Generic Node Runner", inputSummary: "Node kind plus ShortcutNodeInput JSON", outputSummary: "ShortcutNodeOutput JSON for downstream Shortcut steps")

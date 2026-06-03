@@ -37,6 +37,7 @@ public enum AgentActionKind: String, Codable, CaseIterable, Sendable {
     case openMapDirections
     case openMessageHandoff
     case openPhoneCallHandoff
+    case openWebSearchHandoff
     case sendNotification
     case openURL
     case controlHome
@@ -53,6 +54,7 @@ public enum AgentActionPayload: Codable, Equatable, Sendable {
     case mapDirections(MapDirectionsDraft)
     case message(MessageDraft)
     case phoneCall(PhoneCallDraft)
+    case webSearch(WebSearchDraft)
     case notification(NotificationDraft)
     case url(String)
     case homeControl(HomeControlRequest)
@@ -159,6 +161,52 @@ public struct PhoneCallDraft: Codable, Equatable, Sendable {
         self.phoneNumber = phoneNumber
         self.label = label
         self.notes = notes
+    }
+}
+
+public struct WebSearchDraft: Codable, Equatable, Sendable {
+    public var query: String
+    public var searchURL: String
+    public var providerName: String
+
+    public init(query: String, searchURL: String? = nil, providerName: String = "DuckDuckGo") {
+        self.query = query
+        self.searchURL = searchURL ?? Self.defaultSearchURL(for: query)
+        self.providerName = providerName
+    }
+
+    public var urlString: String { searchURL }
+
+    private enum CodingKeys: String, CodingKey {
+        case query
+        case searchURL
+        case urlString
+        case providerName
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        query = try container.decode(String.self, forKey: .query)
+        searchURL = try container.decodeIfPresent(String.self, forKey: .searchURL)
+            ?? container.decodeIfPresent(String.self, forKey: .urlString)
+            ?? Self.defaultSearchURL(for: query)
+        providerName = try container.decodeIfPresent(String.self, forKey: .providerName) ?? "DuckDuckGo"
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(query, forKey: .query)
+        try container.encode(searchURL, forKey: .searchURL)
+        try container.encode(providerName, forKey: .providerName)
+    }
+
+    private static func defaultSearchURL(for query: String) -> String {
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "duckduckgo.com"
+        components.path = "/"
+        components.queryItems = [URLQueryItem(name: "q", value: query)]
+        return components.url?.absoluteString ?? "https://duckduckgo.com/"
     }
 }
 

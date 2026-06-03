@@ -87,6 +87,7 @@ final class SourceHealthTests: XCTestCase {
             "ShortcutDemoRecipeDefinitions.swift": "static let officialRecipes",
             "ShortcutDemoEmailDefinitions.swift": "static let communicationRecipes",
             "ShortcutDemoPhoneDefinitions.swift": "static let phoneRecipes",
+            "ShortcutDemoWebDefinitions.swift": "static let webRecipes",
             "ShortcutDemoContactDefinitions.swift": "static let contactRecipes",
             "ShortcutDemoHomeDefinitions.swift": "static let homeRecipes",
             "ShortcutDemoModels.swift": "public struct ShortcutDemoRecipe",
@@ -112,6 +113,7 @@ final class SourceHealthTests: XCTestCase {
             "ShortcutDemoRecipeDefinitions.swift": 500,
             "ShortcutDemoEmailDefinitions.swift": 260,
             "ShortcutDemoPhoneDefinitions.swift": 100,
+            "ShortcutDemoWebDefinitions.swift": 120,
             "ShortcutDemoContactDefinitions.swift": 100,
             "ShortcutDemoHomeDefinitions.swift": 140,
             "ShortcutDemoRecipeRunner.swift": 120
@@ -120,6 +122,29 @@ final class SourceHealthTests: XCTestCase {
             let source = try String(contentsOf: services.appendingPathComponent(fileName), encoding: .utf8)
             XCTAssertLessThan(source.split(separator: "\n").count, maxLines, fileName)
         }
+    }
+
+    func testShortcutNodeRuntimeModelsStaySplit() throws {
+        let root = packageRootURL()
+        let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)
+        let runtimeURL = services.appendingPathComponent("ShortcutNodeRuntime.swift")
+        let modelsURL = services.appendingPathComponent("ShortcutNodeModels.swift")
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: runtimeURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: modelsURL.path))
+
+        let runtimeSource = try String(contentsOf: runtimeURL, encoding: .utf8)
+        let modelsSource = try String(contentsOf: modelsURL, encoding: .utf8)
+
+        XCTAssertTrue(runtimeSource.contains("public actor ShortcutNodeRuntime"))
+        XCTAssertFalse(runtimeSource.contains("public enum ShortcutNodeKind"))
+        XCTAssertFalse(runtimeSource.contains("public struct ShortcutNodeOutput"))
+        XCTAssertTrue(modelsSource.contains("public enum ShortcutNodeKind"))
+        XCTAssertTrue(modelsSource.contains("public struct ShortcutNodeInput"))
+        XCTAssertTrue(modelsSource.contains("public struct ShortcutNodeOutput"))
+        XCTAssertTrue(modelsSource.contains("public enum ShortcutNodeRuntimeError"))
+        XCTAssertLessThan(runtimeSource.split(separator: "\n").count, 900)
+        XCTAssertLessThan(modelsSource.split(separator: "\n").count, 220)
     }
 
     private func packageRootURL() -> URL {

@@ -164,6 +164,15 @@ public struct SandboxActionCatalog: Sendable {
             supportStatus: .scaffolded
         ),
         SandboxActionDescriptor(
+            kind: .openWebSearchHandoff,
+            displayName: "Open Safari Search Handoff",
+            description: "透過 HTTPS 搜尋 URL 開啟使用者可見的 Safari handoff；不背景瀏覽、不讀取網頁內容。",
+            capability: .web,
+            permissionRequirement: .userInitiated,
+            riskTier: .tier1Draft,
+            supportStatus: .scaffolded
+        ),
+        SandboxActionDescriptor(
             kind: .sendNotification,
             displayName: "Send Notification",
             description: "在通知權限允許後發送本機提醒。",

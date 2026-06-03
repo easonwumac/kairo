@@ -150,6 +150,32 @@ extension AgentToolInvocationPlanner {
         ])
     }
 
+    func isWebSearchHandoffRequest(_ normalizedText: String) -> Bool {
+        let explicitPrefixes = [
+            "search web ",
+            "search the web ",
+            "web search ",
+            "google ",
+            "duckduckgo ",
+            "搜尋網路",
+            "查網路",
+            "網路搜尋"
+        ]
+        if explicitPrefixes.contains(where: { normalizedText.hasPrefix(normalize($0)) }) {
+            return true
+        }
+
+        return containsAny(normalizedText, [
+            "search web for",
+            "search the web for",
+            "web search for",
+            "look up online",
+            "搜尋網路",
+            "查網路",
+            "網路搜尋"
+        ])
+    }
+
     func calendarTitle(from userText: String) -> String {
         var title = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefixes = [
@@ -419,6 +445,32 @@ extension AgentToolInvocationPlanner {
             label: label.isEmpty ? nil : label,
             notes: content.isEmpty ? nil : content
         )
+    }
+
+    func webSearchDraft(from userText: String) -> WebSearchDraft {
+        var query = userText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefixes = [
+            "Search web for",
+            "Search the web for",
+            "Search web",
+            "Search the web",
+            "Web search for",
+            "Web search",
+            "Google",
+            "DuckDuckGo",
+            "Look up online",
+            "搜尋網路",
+            "查網路",
+            "網路搜尋"
+        ]
+
+        for prefix in prefixes where query.lowercased().hasPrefix(prefix.lowercased()) {
+            query.removeFirst(prefix.count)
+            query = query.trimmingCharacters(in: CharacterSet(charactersIn: " \t:-："))
+            break
+        }
+
+        return WebSearchDraft(query: query.isEmpty ? "Kairo search" : query)
     }
 
     func contactDraft(from userText: String) -> ContactDraft {

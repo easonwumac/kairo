@@ -76,6 +76,7 @@ public struct CapabilityPromptContextBuilder: Sendable {
         - tier1Draft, tier2LowRiskWrite, and tier3HighRiskExternal require visible user confirmation before execution.
         - External API/account actions require OAuth connector support and user-granted scopes.
         - URL schemes and universal links are user-visible handoffs, not hidden app control.
+        - Web search handoff only opens a visible HTTPS search URL; Kairo cannot silently browse, scrape pages, or read Safari history/cookies.
         - BGTaskScheduler work is opportunistic and bounded; Kairo cannot run as a daemon.
         - Local model fallback cannot use tools, browse the web, or perform account actions.
         """

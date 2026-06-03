@@ -231,6 +231,15 @@ final class KairoAppSmokeUITests: XCTestCase {
         )
         verifyShortcutDemoContract(
             namespace: "automations.shortcut-demo",
+            id: "web-search-handoff",
+            titleText: "Web Search Handoff",
+            stepText: "1 step: prepareWebSearchHandoff",
+            inputText: "Input: text, sourceName, variables.query",
+            outputText: "Output: fields.webSearchHandoffCount, fields.webSearchQuery, fields.webSearchRequiresConfirmation",
+            sampleText: "SwiftUI App Intents examples"
+        )
+        verifyShortcutDemoContract(
+            namespace: "automations.shortcut-demo",
             id: "contact-draft-from-shared-text",
             titleText: "Contact Draft from Shared Text",
             stepText: "1 step: createContactDraft",
@@ -282,6 +291,13 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findElement("automations.shortcut-demo.phone-call-handoff.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "No call has been placed", direction: .both, maxSwipes: 2).exists)
+
+        let webSearchPreview = findButton("automations.shortcut-demo.web-search-handoff.preview-sample", direction: .both, maxSwipes: 3)
+        XCTAssertTrue(webSearchPreview.exists)
+        webSearchPreview.tap()
+
+        XCTAssertTrue(findElement("automations.shortcut-demo.web-search-handoff.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "No browsing has happened", direction: .both, maxSwipes: 2).exists)
 
         let contactPreview = findButton("automations.shortcut-demo.contact-draft-from-shared-text.preview-sample", direction: .both, maxSwipes: 3)
         XCTAssertTrue(contactPreview.exists)
@@ -593,6 +609,15 @@ final class KairoAppSmokeUITests: XCTestCase {
             actionIdentifier: "chat.proposed-action.openPhoneCallHandoff",
             previewContains: ["Phone Handoff", "0912-345-678", "tel: opens Phone visibly"],
             resultText: "Prepared phone call handoff."
+        )
+    }
+
+    func testChatCanPreviewAndConfirmWebSearchHandoff() throws {
+        verifyChatActionPreview(
+            prompt: "Search web for SwiftUI App Intents examples",
+            actionIdentifier: "chat.proposed-action.openWebSearchHandoff",
+            previewContains: ["Web Search Handoff", "SwiftUI App Intents examples", "Safari opens visibly"],
+            resultText: "Prepared Safari web search handoff."
         )
     }
 

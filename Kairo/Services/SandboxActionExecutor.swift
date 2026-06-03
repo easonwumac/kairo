@@ -174,6 +174,16 @@ public actor SandboxActionExecutor: ActionExecutor {
                 message: opened ? "Prepared phone call handoff. The call still requires user action in Phone." : "Phone call handoff is available only when the app supplies a UI opener.",
                 requiresExternalUI: true
             )
+        case (.openWebSearchHandoff, .webSearch(let draft)):
+            guard let url = Self.webSearchHandoffURL(for: draft) else {
+                return ActionExecutionResult(completed: false, message: "Unsupported or invalid web search handoff request.")
+            }
+            let opened = await urlOpener.open(url)
+            return ActionExecutionResult(
+                completed: opened,
+                message: opened ? "Prepared Safari web search handoff. No browsing has happened inside Kairo." : "Safari web search handoff is available only when the app supplies a UI opener.",
+                requiresExternalUI: true
+            )
         case (.sendNotification, .notification(let draft)):
             guard try await notificationScheduler.requestAuthorization() else {
                 return ActionExecutionResult(completed: false, message: "Notification permission was not granted.")
@@ -255,6 +265,15 @@ public actor SandboxActionExecutor: ActionExecutor {
             return nil
         }
         return URL(string: "tel:\(sanitized)")
+    }
+
+    private static func webSearchHandoffURL(for draft: WebSearchDraft) -> URL? {
+        guard let url = URL(string: draft.searchURL),
+              url.scheme?.lowercased() == "https",
+              url.host?.lowercased() == "duckduckgo.com" else {
+            return nil
+        }
+        return url
     }
 
     private static func sanitizedDialString(from rawValue: String) -> String {

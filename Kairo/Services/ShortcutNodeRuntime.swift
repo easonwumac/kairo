@@ -1,165 +1,5 @@
 import Foundation
 
-public enum ShortcutNodeKind: String, Codable, CaseIterable, Sendable {
-    case ask
-    case saveMemory
-    case searchMemory
-    case summarize
-    case extractTasks
-    case createReminderDraft
-    case createCalendarDraft
-    case createContactDraft
-    case createEmailDraft
-    case prepareMessageHandoff
-    case preparePhoneCallHandoff
-    case createRecipeDraft
-    case draftReply
-    case dailyBriefing
-    case previewHomeAction
-}
-
-public struct ShortcutNodeInput: Codable, Equatable, Sendable {
-    public var text: String
-    public var query: String?
-    public var sourceName: String?
-    public var variables: [String: String]
-    public var limit: Int
-
-    public init(
-        text: String = "",
-        query: String? = nil,
-        sourceName: String? = nil,
-        variables: [String: String] = [:],
-        limit: Int = 10
-    ) {
-        self.text = text
-        self.query = query
-        self.sourceName = sourceName
-        self.variables = variables
-        self.limit = limit
-    }
-
-    public func encodedJSONString() throws -> String {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
-        let data = try encoder.encode(self)
-        return String(data: data, encoding: .utf8) ?? "{}"
-    }
-}
-
-public struct ShortcutTaskDraft: Codable, Equatable, Sendable {
-    public var title: String
-    public var notes: String?
-
-    public init(title: String, notes: String? = nil) {
-        self.title = title
-        self.notes = notes
-    }
-}
-
-public struct ShortcutMemoryMatch: Identifiable, Codable, Equatable, Sendable {
-    public var id: UUID
-    public var title: String
-    public var summary: String
-
-    public init(id: UUID, title: String, summary: String) {
-        self.id = id
-        self.title = title
-        self.summary = summary
-    }
-}
-
-public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
-    public var kind: ShortcutNodeKind
-    public var displayText: String
-    public var fields: [String: String]
-    public var memoryID: UUID?
-    public var memoryMatches: [ShortcutMemoryMatch]
-    public var tasks: [ShortcutTaskDraft]
-    public var reminderDrafts: [ReminderDraft]
-    public var calendarDrafts: [CalendarEventDraft]
-    public var contactDrafts: [ContactDraft]
-    public var emailDrafts: [EmailDraft]
-    public var phoneCallDrafts: [PhoneCallDraft]
-    public var recipeDrafts: [KairoRecipe]
-    public var proposedActions: [AgentAction]
-
-    public init(
-        kind: ShortcutNodeKind,
-        displayText: String,
-        fields: [String: String] = [:],
-        memoryID: UUID? = nil,
-        memoryMatches: [ShortcutMemoryMatch] = [],
-        tasks: [ShortcutTaskDraft] = [],
-        reminderDrafts: [ReminderDraft] = [],
-        calendarDrafts: [CalendarEventDraft] = [],
-        contactDrafts: [ContactDraft] = [],
-        emailDrafts: [EmailDraft] = [],
-        phoneCallDrafts: [PhoneCallDraft] = [],
-        recipeDrafts: [KairoRecipe] = [],
-        proposedActions: [AgentAction] = []
-    ) {
-        self.kind = kind
-        self.displayText = displayText
-        self.fields = fields
-        self.memoryID = memoryID
-        self.memoryMatches = memoryMatches
-        self.tasks = tasks
-        self.reminderDrafts = reminderDrafts
-        self.calendarDrafts = calendarDrafts
-        self.contactDrafts = contactDrafts
-        self.emailDrafts = emailDrafts
-        self.phoneCallDrafts = phoneCallDrafts
-        self.recipeDrafts = recipeDrafts
-        self.proposedActions = proposedActions
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case kind
-        case displayText
-        case fields
-        case memoryID
-        case memoryMatches
-        case tasks
-        case reminderDrafts
-        case calendarDrafts
-        case contactDrafts
-        case emailDrafts
-        case phoneCallDrafts
-        case recipeDrafts
-        case proposedActions
-    }
-
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        kind = try container.decode(ShortcutNodeKind.self, forKey: .kind)
-        displayText = try container.decode(String.self, forKey: .displayText)
-        fields = try container.decodeIfPresent([String: String].self, forKey: .fields) ?? [:]
-        memoryID = try container.decodeIfPresent(UUID.self, forKey: .memoryID)
-        memoryMatches = try container.decodeIfPresent([ShortcutMemoryMatch].self, forKey: .memoryMatches) ?? []
-        tasks = try container.decodeIfPresent([ShortcutTaskDraft].self, forKey: .tasks) ?? []
-        reminderDrafts = try container.decodeIfPresent([ReminderDraft].self, forKey: .reminderDrafts) ?? []
-        calendarDrafts = try container.decodeIfPresent([CalendarEventDraft].self, forKey: .calendarDrafts) ?? []
-        contactDrafts = try container.decodeIfPresent([ContactDraft].self, forKey: .contactDrafts) ?? []
-        emailDrafts = try container.decodeIfPresent([EmailDraft].self, forKey: .emailDrafts) ?? []
-        phoneCallDrafts = try container.decodeIfPresent([PhoneCallDraft].self, forKey: .phoneCallDrafts) ?? []
-        recipeDrafts = try container.decodeIfPresent([KairoRecipe].self, forKey: .recipeDrafts) ?? []
-        proposedActions = try container.decodeIfPresent([AgentAction].self, forKey: .proposedActions) ?? []
-    }
-
-    public func encodedJSONString() throws -> String {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
-        encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(self)
-        return String(data: data, encoding: .utf8) ?? "{}"
-    }
-}
-
-public enum ShortcutNodeRuntimeError: Error, Equatable {
-    case emptyInput
-}
-
 public actor ShortcutNodeRuntime {
     private let memoryStore: MemoryStore
 
@@ -192,6 +32,8 @@ public actor ShortcutNodeRuntime {
             return try prepareMessageHandoff(input)
         case .preparePhoneCallHandoff:
             return try preparePhoneCallHandoff(input)
+        case .prepareWebSearchHandoff:
+            return try prepareWebSearchHandoff(input)
         case .createRecipeDraft:
             return try createRecipeDraft(input)
         case .draftReply:
@@ -455,6 +297,35 @@ public actor ShortcutNodeRuntime {
             displayText: "Phone handoff ready. Review before opening Phone. No call has been placed.",
             fields: fields,
             phoneCallDrafts: [draft],
+            proposedActions: [action]
+        )
+    }
+
+    private func prepareWebSearchHandoff(_ input: ShortcutNodeInput) throws -> ShortcutNodeOutput {
+        let text = try validatedText(input.text)
+        let query = webSearchQuery(from: input, text: text)
+        let urlString = webSearchURLString(for: query)
+        let draft = WebSearchDraft(query: query, searchURL: urlString)
+        let action = AgentAction(
+            kind: .openWebSearchHandoff,
+            title: "Review Safari Search Handoff",
+            rationale: "Shortcut requested a visible web search handoff. Kairo only prepares a URL preview and does not browse, scrape, or read web content silently.",
+            payload: .webSearch(draft),
+            riskTier: .tier1Draft
+        )
+
+        var fields = baseFields(for: input)
+        fields["webSearchHandoffCount"] = "1"
+        fields["webSearchQuery"] = draft.query
+        fields["webSearchURL"] = draft.searchURL
+        fields["webSearchRequiresConfirmation"] = String(action.requiresConfirmation)
+        fields["chainText"] = draft.query
+
+        return ShortcutNodeOutput(
+            kind: .prepareWebSearchHandoff,
+            displayText: "Safari handoff ready. Review before opening Safari. No browsing has happened.",
+            fields: fields,
+            webSearchDrafts: [draft],
             proposedActions: [action]
         )
     }
@@ -895,6 +766,45 @@ public actor ShortcutNodeRuntime {
     private func phoneCallURLPreview(for phoneNumber: String) -> String {
         let sanitized = sanitizedDialString(from: phoneNumber)
         return sanitized.isEmpty ? "tel:" : "tel:\(sanitized)"
+    }
+
+    private func webSearchQuery(from input: ShortcutNodeInput, text: String) -> String {
+        let explicitQuery = input.variables["query"]?.nilIfEmpty
+            ?? input.variables["searchQuery"]?.nilIfEmpty
+            ?? input.variables["q"]?.nilIfEmpty
+            ?? input.query?.nilIfEmpty
+            ?? lineValue(from: text, prefixes: ["query:", "search:", "搜尋:", "查詢:"])
+        if let explicitQuery {
+            return explicitQuery
+        }
+
+        let prefixes = [
+            "search web for ",
+            "search for ",
+            "google ",
+            "搜尋",
+            "查詢"
+        ]
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lowercased = trimmed.lowercased()
+        for prefix in prefixes where lowercased.hasPrefix(prefix) {
+            let query = String(trimmed.dropFirst(prefix.count))
+                .trimmingCharacters(in: CharacterSet(charactersIn: " \t:-"))
+            if !query.isEmpty {
+                return query
+            }
+        }
+
+        return trimmed
+    }
+
+    private func webSearchURLString(for query: String) -> String {
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "duckduckgo.com"
+        components.path = "/"
+        components.queryItems = [URLQueryItem(name: "q", value: query)]
+        return components.url?.absoluteString ?? "https://duckduckgo.com/"
     }
 
     private func sanitizedDialString(from rawValue: String) -> String {

@@ -126,6 +126,12 @@ public struct ActionPreviewView: View {
                 }
                 Text("tel: opens Phone visibly; the call still requires user action.").font(.caption).foregroundStyle(.secondary)
             }
+        case .webSearch(let draft):
+            VStack(alignment: .leading, spacing: 4) {
+                Text(draft.query.isEmpty ? "Web Search Handoff" : draft.query).font(.headline)
+                Text(draft.searchURL).font(.caption.monospaced()).textSelection(.enabled)
+                Text("Safari opens visibly; Kairo does not browse or scrape pages silently.").font(.caption).foregroundStyle(.secondary)
+            }
         case .notification(let draft):
             VStack(alignment: .leading, spacing: 4) {
                 Text(draft.title).font(.headline)

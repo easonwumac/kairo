@@ -1,7 +1,7 @@
 import Foundation
 
 public extension ShortcutDemoCatalog {
-    static let officialRecipes: [ShortcutDemoRecipe] = coreRecipes + communicationRecipes + phoneRecipes + contactRecipes + workflowRecipes + homeRecipes
+    static let officialRecipes: [ShortcutDemoRecipe] = coreRecipes + communicationRecipes + phoneRecipes + webRecipes + contactRecipes + workflowRecipes + homeRecipes
 
     static let coreRecipes: [ShortcutDemoRecipe] = [
         ShortcutDemoRecipe(

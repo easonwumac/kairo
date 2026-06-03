@@ -123,6 +123,21 @@ public struct ShortcutTemplateRegistry: Codable, Equatable, Sendable {
             ]
         ),
         ShortcutTemplate(
+            identifier: "web-search-handoff-shortcut",
+            title: "Web Search Handoff Shortcut",
+            description: "Shortcut template guidance for preparing a visible Safari search from explicit text without browsing silently.",
+            category: .shareSheet,
+            inputSummary: "Search query explicitly provided by the user.",
+            outputSummary: "Safari/DuckDuckGo handoff preview, URL, and proposed action for manual review.",
+            requiredIntentIdentifiers: ["PrepareWebSearchHandoffIntent", "RunKairoShortcutNodeIntent"],
+            recommendedRecipeTemplateID: "web-search-handoff",
+            setupInstructions: [
+                "Create a Share Sheet, Action Button, or manual Shortcut that asks for a search query.",
+                "Pass the query to Prepare Web Search Handoff.",
+                "Show the returned Safari preview; it does not browse silently and requires the user to continue in Safari."
+            ]
+        ),
+        ShortcutTemplate(
             identifier: "contact-draft-shortcut",
             title: "Contact Draft Shortcut",
             description: "Shortcut template guidance for creating a Contacts.framework draft from explicit text without writing Contacts silently.",

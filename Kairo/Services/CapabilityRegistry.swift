@@ -113,6 +113,14 @@ public struct CapabilityRegistry: Sendable {
             isMVP: true
         ),
         Capability(
+            key: .web,
+            displayName: "Web Search Handoff",
+            description: "透過 HTTPS 搜尋 URL 開啟使用者可見的 Safari handoff；不背景瀏覽、不讀取網頁內容。",
+            permission: .userInitiated,
+            status: .available,
+            isMVP: true
+        ),
+        Capability(
             key: .photos,
             displayName: "Photos",
             description: "處理使用者選取的圖片或截圖。",

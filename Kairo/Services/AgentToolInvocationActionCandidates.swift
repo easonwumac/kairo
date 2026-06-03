@@ -171,6 +171,38 @@ extension AgentToolInvocationPlanner {
         )
     }
 
+    func webSearchHandoffActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard !isMapDirectionsRequest(normalizedText),
+              !isEmailDraftRequest(normalizedText),
+              !isMessageHandoffRequest(normalizedText),
+              !isPhoneCallHandoffRequest(normalizedText),
+              !isContactWriteRequest(normalizedText),
+              isWebSearchHandoffRequest(normalizedText) else {
+            return nil
+        }
+
+        let draft = webSearchDraft(from: userText)
+        let action = AgentAction(
+            kind: .openWebSearchHandoff,
+            title: "Open Web Search Handoff",
+            rationale: "User asked Kairo to prepare a visible Safari web search handoff. Kairo only opens a search URL after confirmation and does not browse or scrape pages silently.",
+            payload: .webSearch(draft),
+            riskTier: .tier1Draft
+        )
+
+        return AgentToolInvocationCandidate(
+            id: "action-open-web-search-handoff",
+            title: "Open Web Search Handoff",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.web],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Use a visible Safari/DuckDuckGo search handoff after confirmation; Kairo does not browse silently or read web content in the background.",
+            action: action
+        )
+    }
+
     func contactActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
         guard isContactWriteRequest(normalizedText) else {
             return nil

@@ -302,6 +302,32 @@ public struct PreparePhoneCallHandoffIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct PrepareWebSearchHandoffIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Prepare Web Search Handoff"
+    public static var description = IntentDescription("Prepare a visible Safari search handoff from a query without browsing silently.")
+
+    @Parameter(title: "Query")
+    public var query: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(
+            .prepareWebSearchHandoff,
+            input: ShortcutNodeInput(
+                text: trimmedQuery,
+                sourceName: "Prepare Web Search Handoff",
+                variables: ["query": trimmedQuery]
+            )
+        )
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct RunKairoShortcutNodeIntent: AppIntent {
     public static var title: LocalizedStringResource = "Run Kairo Shortcut Node"
     public static var description = IntentDescription("Run a Kairo Shortcut node from a node kind and ShortcutNodeInput JSON, returning structured JSON output.")

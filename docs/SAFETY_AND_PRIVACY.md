@@ -83,7 +83,7 @@ Audit log 不應保存完整敏感 payload，除非使用者明確允許。
 
 Kairo may map user requests to installed skills or OAuth connector metadata before a model response is shown, but this is only a preview layer. Disabled skills are ignored, local/no-tool routing returns no tool candidates, Shortcut/OAuth matches remain visible handoffs, and action-backed skills still pass through `SafetyPolicyEngine` before any proposed action appears in chat. Chat stores `toolCandidates` separately from `proposedActions`; candidates are inspection/setup hints, not evidence that Kairo ran a Shortcut or touched an external account.
 
-## Reminder, Calendar, Contact, Email, Messages, Maps, and Notification Boundaries
+## Reminder, Calendar, Contact, Email, Messages, Web, Maps, and Notification Boundaries
 
 Kairo may propose a local notification action when the user explicitly asks to be notified or alerted. Scheduling uses only Apple's public `UserNotifications` API, requires runtime notification authorization, and must be shown as an action preview in chat before the user confirms. Kairo must not silently schedule notifications from hidden model output, background monitoring, or unapproved Shortcut installation.
 
@@ -98,6 +98,8 @@ Kairo may propose an email draft handoff when the user explicitly asks to draft,
 Kairo may propose a Messages recipient handoff when the user explicitly asks to text, message, or send an SMS. It builds a typed recipient/body preview and, after confirmation, opens only a visible `sms:` recipient handoff. Apple's SMS link does not carry message body text, so Kairo keeps the body in the preview and must not claim it inserted the text, read Messages, or sent a message silently.
 
 Kairo may propose a Phone call handoff when the user explicitly asks to call or dial a number. It builds a typed number/label preview and, after confirmation, opens only a visible `tel:` handoff. Kairo must not read call history, place calls silently, auto-confirm Phone UI, or claim that a call connected.
+
+Kairo may propose a web search handoff when the user explicitly asks to search the web or look something up online. It builds a typed query preview and, after confirmation, opens only a visible HTTPS search URL in Safari. Kairo must not browse in the background, scrape search results, read Safari history/cookies, or claim that it inspected web pages.
 
 Kairo may propose an Apple Maps directions handoff when the user explicitly asks to navigate, get directions, or open a route to a destination. It builds a typed destination/mode preview and, after confirmation, opens only a visible `maps.apple.com` link. Kairo must not read current location, monitor location in the background, start navigation silently, or claim that Maps navigation has begun.
 

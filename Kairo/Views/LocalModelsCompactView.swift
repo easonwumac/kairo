@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct LocalModelsCompactView: View {
-    private let popularModelRowLimit = 2
+    private let starterModelIDs = LocalModelCatalog.kairoStarterModelIDs
     @State private var pendingDownloadModelID: String?
 
     let localModelStatus: LocalModelSettingsStatus
@@ -26,7 +26,7 @@ struct LocalModelsCompactView: View {
                         .font(compactSectionTitleFont)
                         .accessibilityIdentifier("settings.models.local")
 
-                    Text("Starter list: Qwen + Llama only. Full catalog stays in kairo-models.")
+                    Text("Starter list: Qwen-first, then a few popular small models from kairo-models.")
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -203,15 +203,20 @@ struct LocalModelsCompactView: View {
     }
 
     private var visibleModelRows: [LocalModelSettingsRow] {
-        Array(localModelStatus.settingsRows.prefix(popularModelRowLimit))
+        let starterIDs = Set(starterModelIDs)
+        let starterRows = localModelStatus.settingsRows.filter { starterIDs.contains($0.modelID) }
+        if starterRows.isEmpty {
+            return Array(localModelStatus.settingsRows.prefix(starterModelIDs.count))
+        }
+        return starterRows
     }
 
     private var trimmedModelRowCount: Int {
-        max(localModelStatus.settingsRows.count - popularModelRowLimit, 0)
+        max(localModelStatus.settingsRows.count - visibleModelRows.count, 0)
     }
 
     private var trimmedModelSummaryText: String {
-        "Showing \(visibleModelRows.count) starter models only. Full catalog stays in kairo-models."
+        "Showing \(visibleModelRows.count) starter models only. More downloadable models stay in kairo-models."
     }
 
     private var compactRoutePreferenceMenu: some View {
@@ -371,19 +376,19 @@ struct LocalModelsCompactView: View {
         [GridItem(.adaptive(minimum: 52), spacing: 4, alignment: .leading)]
     }
 
-    private var compactSectionTitleFont: Font { .system(size: 11, weight: .semibold) }
+    private var compactSectionTitleFont: Font { .system(size: 10, weight: .semibold) }
 
-    private var compactSectionHeadingFont: Font { .system(size: 7.5, weight: .semibold) }
+    private var compactSectionHeadingFont: Font { .system(size: 7, weight: .semibold) }
 
-    private var compactModelNameFont: Font { .system(size: 7.5, weight: .semibold) }
+    private var compactModelNameFont: Font { .system(size: 7, weight: .semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 6.5) }
+    private var compactModelMetadataFont: Font { .system(size: 6) }
 
-    private var compactModelStatusFont: Font { .system(size: 6.5, weight: .semibold) }
+    private var compactModelStatusFont: Font { .system(size: 6, weight: .semibold) }
 
-    private var compactButtonLabelFont: Font { .system(size: 6.5, weight: .semibold) }
+    private var compactButtonLabelFont: Font { .system(size: 6, weight: .semibold) }
 
-    private var compactControlValueFont: Font { .system(size: 9, weight: .semibold) }
+    private var compactControlValueFont: Font { .system(size: 8, weight: .semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {

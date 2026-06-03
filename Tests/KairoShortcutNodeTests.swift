@@ -25,6 +25,7 @@ final class KairoShortcutNodeTests: XCTestCase {
                 "CreateEmailDraftsIntent",
                 "PrepareMessageHandoffIntent",
                 "PreparePhoneCallHandoffIntent",
+                "PrepareWebSearchHandoffIntent",
                 "RunKairoShortcutNodeIntent",
                 "RunKairoRecipeIntent",
                 "SuggestKairoRecipeIntent",
@@ -49,6 +50,7 @@ final class KairoShortcutNodeTests: XCTestCase {
         _ = CreateEmailDraftsIntent()
         _ = PrepareMessageHandoffIntent()
         _ = PreparePhoneCallHandoffIntent()
+        _ = PrepareWebSearchHandoffIntent()
         _ = RunKairoShortcutNodeIntent()
         _ = RunKairoRecipeIntent()
         _ = SuggestKairoRecipeIntent()
@@ -68,6 +70,7 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(catalog.recipe(id: "email-triage")?.steps.map(\.nodeKind), [.summarize, .extractTasks, .draftReply])
         XCTAssertEqual(catalog.recipe(id: "message-reply-handoff")?.steps.map(\.nodeKind.rawValue), ["prepareMessageHandoff"])
         XCTAssertEqual(catalog.recipe(id: "phone-call-handoff")?.steps.map(\.nodeKind.rawValue), ["preparePhoneCallHandoff"])
+        XCTAssertEqual(catalog.recipe(id: "web-search-handoff")?.steps.map(\.nodeKind.rawValue), ["prepareWebSearchHandoff"])
         XCTAssertEqual(catalog.recipe(id: "contact-draft-from-shared-text")?.steps.map(\.nodeKind.rawValue), ["createContactDraft"])
         XCTAssertEqual(catalog.recipe(id: "meeting-prep-brief")?.steps.map(\.nodeKind), [.searchMemory, .summarize, .extractTasks])
         XCTAssertEqual(catalog.recipe(id: "request-to-recipe-draft")?.steps.map(\.nodeKind.rawValue), ["createRecipeDraft"])
@@ -318,6 +321,45 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(outputJSON.contains(#""openPhoneCallHandoff""#))
     }
 
+    func testShortcutPrepareWebSearchHandoffNodeReturnsVisibleSafariHandoffWithoutBrowsing() async throws {
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let kind = try XCTUnwrap(ShortcutNodeKind(rawValue: "prepareWebSearchHandoff"))
+        let input = ShortcutNodeInput(
+            text: "Search web for SwiftUI App Intents examples",
+            sourceName: "Search Shortcut",
+            variables: [
+                "shortcutRecipeID": "web-search-handoff",
+                "query": "SwiftUI App Intents examples"
+            ]
+        )
+
+        let output = try await runtime.run(kind, input: input)
+        let draft = try XCTUnwrap(output.webSearchDrafts.first)
+        let action = try XCTUnwrap(output.proposedActions.first)
+        let outputJSON = try output.encodedJSONString()
+
+        XCTAssertEqual(output.kind.rawValue, "prepareWebSearchHandoff")
+        XCTAssertEqual(output.fields["shortcutRecipeID"], "web-search-handoff")
+        XCTAssertEqual(output.fields["sourceName"], "Search Shortcut")
+        XCTAssertEqual(output.fields["webSearchHandoffCount"], "1")
+        XCTAssertEqual(output.fields["webSearchQuery"], "SwiftUI App Intents examples")
+        XCTAssertEqual(output.fields["webSearchURL"], "https://duckduckgo.com/?q=SwiftUI%20App%20Intents%20examples")
+        XCTAssertEqual(output.fields["webSearchRequiresConfirmation"], "true")
+        XCTAssertEqual(output.fields["chainText"], "SwiftUI App Intents examples")
+        XCTAssertEqual(draft.query, "SwiftUI App Intents examples")
+        XCTAssertTrue(output.displayText.contains("Review before opening Safari"))
+        XCTAssertTrue(output.displayText.contains("No browsing has happened"))
+        XCTAssertEqual(action.kind, .openWebSearchHandoff)
+        XCTAssertEqual(action.riskTier, .tier1Draft)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case let .webSearch(actionDraft) = action.payload else {
+            return XCTFail("Expected WebSearchDraft payload.")
+        }
+        XCTAssertEqual(actionDraft, draft)
+        XCTAssertTrue(outputJSON.contains(#""webSearchDrafts""#))
+        XCTAssertTrue(outputJSON.contains(#""openWebSearchHandoff""#))
+    }
+
     func testShortcutCreateContactDraftNodeBuildsDraftWithoutWritingContacts() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let kind = try XCTUnwrap(ShortcutNodeKind(rawValue: "createContactDraft"))
@@ -389,6 +431,7 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(emailTriage.settingsStepSummary, "3 steps: summarize -> extractTasks -> draftReply")
         XCTAssertEqual(catalog.recipe(id: "reply-draft-from-shared-text")?.settingsStepSummary, "2 steps: summarize -> draftReply")
         XCTAssertEqual(catalog.recipe(id: "message-reply-handoff")?.settingsStepSummary, "1 step: prepareMessageHandoff")
+        XCTAssertEqual(catalog.recipe(id: "web-search-handoff")?.settingsStepSummary, "1 step: prepareWebSearchHandoff")
         XCTAssertEqual(catalog.recipe(id: "contact-draft-from-shared-text")?.settingsStepSummary, "1 step: createContactDraft")
         XCTAssertEqual(catalog.recipe(id: "meeting-prep-brief")?.settingsStepSummary, "3 steps: searchMemory -> summarize -> extractTasks")
         XCTAssertEqual(catalog.recipe(id: "request-to-recipe-draft")?.settingsStepSummary, "1 step: createRecipeDraft")
@@ -402,6 +445,8 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(emailTriage.settingsContractSummary.contains("fields.replyDraft"))
         XCTAssertTrue(catalog.recipe(id: "message-reply-handoff")?.settingsContractSummary.contains("proposedActions") ?? false)
         XCTAssertTrue(catalog.recipe(id: "message-reply-handoff")?.settingsContractSummary.contains("fields.messageBodyInURL") ?? false)
+        XCTAssertTrue(catalog.recipe(id: "web-search-handoff")?.settingsContractSummary.contains("webSearchDrafts") ?? false)
+        XCTAssertTrue(catalog.recipe(id: "web-search-handoff")?.settingsContractSummary.contains("fields.webSearchRequiresConfirmation") ?? false)
         XCTAssertTrue(catalog.recipe(id: "contact-draft-from-shared-text")?.settingsContractSummary.contains("contactDrafts") ?? false)
         XCTAssertTrue(catalog.recipe(id: "contact-draft-from-shared-text")?.settingsContractSummary.contains("fields.contactRequiresConfirmation") ?? false)
         XCTAssertTrue(catalog.recipe(id: "request-to-recipe-draft")?.settingsContractSummary.contains("recipeDrafts") ?? false)
@@ -410,6 +455,7 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(saveSharedText.settingsSampleInputPreview.contains("User research note"))
         XCTAssertTrue(emailTriage.settingsSampleInputPreview.contains("Email from vendor"))
         XCTAssertTrue(catalog.recipe(id: "message-reply-handoff")?.settingsSampleInputPreview.contains("Please tell Alex") ?? false)
+        XCTAssertTrue(catalog.recipe(id: "web-search-handoff")?.settingsSampleInputPreview.contains("SwiftUI App Intents examples") ?? false)
         XCTAssertTrue(catalog.recipe(id: "contact-draft-from-shared-text")?.settingsSampleInputPreview.contains("Alex Chen") ?? false)
         XCTAssertTrue(catalog.recipe(id: "meeting-prep-brief")?.settingsSampleInputPreview.contains("Kairo launch review") ?? false)
         XCTAssertTrue(catalog.recipe(id: "request-to-recipe-draft")?.settingsSampleInputPreview.contains("每天早上整理今天事情") ?? false)
@@ -447,6 +493,7 @@ final class KairoShortcutNodeTests: XCTestCase {
             "email-triage-shortcut",
             "message-reply-handoff-shortcut",
             "phone-call-handoff-shortcut",
+            "web-search-handoff-shortcut",
             "contact-draft-shortcut",
             "calendar-draft-shortcut",
             "email-draft-shortcut",
@@ -490,6 +537,13 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(phoneHandoff.setupInstructions.joined(separator: " ").contains("do not place calls silently"))
         XCTAssertTrue(phoneHandoff.setupInstructions.joined(separator: " ").contains("tel:"))
 
+        let webSearchHandoff = try XCTUnwrap(registry.template(id: "web-search-handoff-shortcut"))
+        XCTAssertEqual(webSearchHandoff.category, .shareSheet)
+        XCTAssertEqual(webSearchHandoff.recommendedRecipeTemplateID, "web-search-handoff")
+        XCTAssertTrue(webSearchHandoff.requiredIntentIdentifiers.contains("PrepareWebSearchHandoffIntent"))
+        XCTAssertTrue(webSearchHandoff.setupInstructions.joined(separator: " ").contains("does not browse silently"))
+        XCTAssertTrue(webSearchHandoff.setupInstructions.joined(separator: " ").contains("Safari"))
+
         let contactDraft = try XCTUnwrap(registry.template(id: "contact-draft-shortcut"))
         XCTAssertEqual(contactDraft.category, .shareSheet)
         XCTAssertEqual(contactDraft.recommendedRecipeTemplateID, "contact-draft-from-shared-text")
@@ -522,6 +576,7 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(intentsSource.contains("struct CreateEmailDraftsIntent"))
         XCTAssertTrue(intentsSource.contains("struct PrepareMessageHandoffIntent"))
         XCTAssertTrue(intentsSource.contains("struct PreparePhoneCallHandoffIntent"))
+        XCTAssertTrue(intentsSource.contains("struct PrepareWebSearchHandoffIntent"))
         XCTAssertTrue(intentsSource.contains("FileBackedKairoRecipeStore"))
         XCTAssertTrue(intentsSource.contains("KairoRecipeRunner"))
         XCTAssertTrue(intentsSource.contains("surface: .shortcut"))

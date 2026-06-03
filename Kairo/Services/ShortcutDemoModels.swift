@@ -149,6 +149,10 @@ public struct ShortcutDemoRecipeRun: Codable, Equatable, Sendable {
     public var totalPhoneCallHandoffCount: Int {
         steps.reduce(0) { count, step in count + step.output.phoneCallDrafts.count }
     }
+
+    public var totalWebSearchHandoffCount: Int {
+        steps.reduce(0) { count, step in count + step.output.webSearchDrafts.count }
+    }
 }
 
 public struct ShortcutDemoStepRun: Codable, Equatable, Sendable {

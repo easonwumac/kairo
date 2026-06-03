@@ -426,6 +426,29 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(draft.notes, "0912-345-678")
     }
 
+    func testAgentToolInvocationPlannerSuggestsWebSearchHandoffWithConfirmation() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Search web for SwiftUI App Intents examples"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-open-web-search-handoff" })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.skillKind, .custom)
+        XCTAssertEqual(candidate.requiredCapabilities, [.web])
+        XCTAssertEqual(candidate.riskTier, .tier1Draft)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertTrue(candidate.handoffSummary.contains("Safari"))
+        XCTAssertTrue(candidate.handoffSummary.contains("does not browse silently"))
+        XCTAssertEqual(action.kind, .openWebSearchHandoff)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case let .webSearch(draft) = action.payload else {
+            return XCTFail("Expected web search payload.")
+        }
+        XCTAssertEqual(draft.query, "SwiftUI App Intents examples")
+        XCTAssertEqual(draft.searchURL, "https://duckduckgo.com/?q=SwiftUI%20App%20Intents%20examples")
+    }
+
     func testAgentToolInvocationPlannerRefusesToolUseWhenDisabled() {
         let planner = AgentToolInvocationPlanner(skillCatalog: .default)
 
@@ -480,8 +503,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(actionSource.contains("func notificationActionCandidate"))
         XCTAssertTrue(actionSource.contains("func emailActionCandidate"))
         XCTAssertTrue(actionSource.contains("func phoneCallHandoffActionCandidate"))
+        XCTAssertTrue(actionSource.contains("func webSearchHandoffActionCandidate"))
         XCTAssertTrue(parsingSource.contains("func calendarTitle(from userText: String)"))
         XCTAssertTrue(parsingSource.contains("func isPhoneCallHandoffRequest"))
+        XCTAssertTrue(parsingSource.contains("func isWebSearchHandoffRequest"))
         XCTAssertTrue(parsingSource.contains("func uniqueCandidates"))
     }
 
@@ -652,6 +677,23 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(action.riskTier, .tier1Draft)
         XCTAssertTrue(action.requiresConfirmation)
         XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-open-phone-call-handoff" })
+    }
+
+    func testAgentCoreAddsDeterministicWebSearchPreviewAction() async throws {
+        let agent = AgentCore(
+            memoryStore: InMemoryMemoryStore(),
+            aiProvider: MockAIProvider(),
+            skillCatalog: .default,
+            integrationRegistry: IntegrationRegistry()
+        )
+
+        let response = try await agent.respond(to: "Search web for SwiftUI App Intents examples")
+
+        let action = try XCTUnwrap(response.proposedActions.first { $0.kind == .openWebSearchHandoff })
+        XCTAssertEqual(action.title, "Open Web Search Handoff")
+        XCTAssertEqual(action.riskTier, .tier1Draft)
+        XCTAssertTrue(action.requiresConfirmation)
+        XCTAssertTrue(response.toolCandidates.contains { $0.id == "action-open-web-search-handoff" })
     }
 
 #if canImport(SwiftUI)
@@ -868,6 +910,33 @@ final class KairoCoreTests: XCTestCase {
         let executedActions = await executor.executedActions
         let confirmations = await executor.confirmations
         XCTAssertEqual(executedActions.map(\.kind), [.openPhoneCallHandoff])
+        XCTAssertEqual(confirmations, [true])
+    }
+
+    @MainActor
+    func testChatViewModelConfirmsWebSearchHandoffThroughInjectedExecutor() async throws {
+        let executor = MockActionExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: executor
+        )
+
+        await viewModel.send("Search web for SwiftUI App Intents examples")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .openWebSearchHandoff })
+
+        viewModel.previewAction(action)
+        XCTAssertEqual(viewModel.pendingAction?.kind, .openWebSearchHandoff)
+
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertTrue(viewModel.actionResultMessage?.contains("Prepared Safari web search handoff.") == true)
+        let executedActions = await executor.executedActions
+        let confirmations = await executor.confirmations
+        XCTAssertEqual(executedActions.map(\.kind), [.openWebSearchHandoff])
         XCTAssertEqual(confirmations, [true])
     }
 #endif
@@ -1289,6 +1358,29 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(openedURL.absoluteString, "tel:+15550100")
     }
 
+    func testSandboxActionExecutorOpensWebSearchHandoffThroughInjectedOpenerWithoutBrowsingSilently() async throws {
+        let opener = MockURLOpener()
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), urlOpener: opener)
+        let action = AgentAction(
+            kind: .openWebSearchHandoff,
+            title: "Open Web Search Handoff",
+            rationale: "User confirmed Kairo may open a visible Safari search handoff.",
+            payload: .webSearch(WebSearchDraft(query: "SwiftUI App Intents examples")),
+            riskTier: .tier1Draft
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertTrue(result.requiresExternalUI)
+        XCTAssertEqual(result.message, "Prepared Safari web search handoff. No browsing has happened inside Kairo.")
+        let openedURLs = await opener.openedURLs
+        let openedURL = try XCTUnwrap(openedURLs.first)
+        XCTAssertEqual(openedURL.scheme, "https")
+        XCTAssertEqual(openedURL.host(), "duckduckgo.com")
+        XCTAssertEqual(openedURL.absoluteString, "https://duckduckgo.com/?q=SwiftUI%20App%20Intents%20examples")
+    }
+
     func testSandboxActionExecutorSchedulesNotificationThroughInjectedScheduler() async throws {
         let scheduler = MockNotificationScheduler(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), notificationScheduler: scheduler)
@@ -1502,6 +1594,7 @@ final class KairoCoreTests: XCTestCase {
             "shortcut-email-triage",
             "shortcut-email-draft-from-shared-text",
             "shortcut-phone-call-handoff",
+            "shortcut-web-search-handoff",
             "shortcut-contact-draft-from-shared-text",
             "shortcut-meeting-prep-brief",
             "shortcut-request-to-recipe-draft",
@@ -2314,7 +2407,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).runtime-fit""#))
         XCTAssertTrue(compactView.contains("runtimePills(for: row)"))
         XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).runtime-pill.\(index)""#))
-        XCTAssertTrue(compactView.contains("private let popularModelRowLimit = 2"))
+        XCTAssertTrue(compactView.contains("private let starterModelIDs = LocalModelCatalog.kairoStarterModelIDs"))
         XCTAssertFalse(compactView.contains("@State private var showsAllModelRows"))
         XCTAssertTrue(compactView.contains("@State private var pendingDownloadModelID: String?"))
         XCTAssertTrue(compactView.contains("downloadPreview(for: row)"))
@@ -2324,6 +2417,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains("Download requires explicit approval."))
         XCTAssertTrue(compactView.contains("ForEach(visibleModelRows)"))
         XCTAssertFalse(compactView.contains("ForEach(localModelStatus.settingsRows)"))
+        XCTAssertTrue(compactView.contains("let starterIDs = Set(starterModelIDs)"))
+        XCTAssertTrue(compactView.contains("localModelStatus.settingsRows.filter { starterIDs.contains($0.modelID) }"))
         XCTAssertTrue(compactView.contains("if trimmedModelRowCount > 0"))
         XCTAssertTrue(compactView.contains(#""settings.models.trimmed-note""#))
         XCTAssertFalse(compactView.contains(#""settings.models.show-more""#))
@@ -2332,16 +2427,16 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))
-        XCTAssertTrue(compactView.contains("Starter list: Qwen + Llama only."))
+        XCTAssertTrue(compactView.contains("Starter list: Qwen-first, then a few popular small models from kairo-models."))
         XCTAssertTrue(compactView.contains("compactRoutePreferenceMenu"))
         XCTAssertFalse(compactView.contains("Picker(\"Route Preference\""))
-        XCTAssertTrue(compactView.contains("private var compactSectionTitleFont: Font { .system(size: 11, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactSectionHeadingFont: Font { .system(size: 7.5, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 7.5, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 6.5) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 6.5, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 6.5, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactControlValueFont: Font { .system(size: 9, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactSectionTitleFont: Font { .system(size: 10, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactSectionHeadingFont: Font { .system(size: 7, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 7, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 6) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 6, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 6, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactControlValueFont: Font { .system(size: 8, weight: .semibold) }"))
         XCTAssertTrue(compactView.contains(#""Reply""#))
         XCTAssertFalse(compactView.contains(#""Reply Check""#))
         XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 52)"))
@@ -2976,6 +3071,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmPhoneCallHandoff"))
         XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.openPhoneCallHandoff""#))
         XCTAssertTrue(uiTestSources.contains("Prepared phone call handoff."))
+        XCTAssertTrue(actionPreviewView.contains("Safari opens visibly; Kairo does not browse or scrape pages silently."))
+        XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmWebSearchHandoff"))
+        XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.openWebSearchHandoff""#))
+        XCTAssertTrue(uiTestSources.contains("Prepared Safari web search handoff."))
         XCTAssertTrue(uiTestSources.contains("testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe"))
         XCTAssertTrue(uiTestSources.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
         XCTAssertTrue(uiTestSources.contains(#""root.drawer.shortcuts""#))
@@ -3828,6 +3927,8 @@ private actor MockActionExecutor: ActionExecutor {
             return ActionExecutionResult(completed: true, message: "Prepared Messages handoff.", requiresExternalUI: true)
         case "openPhoneCallHandoff":
             return ActionExecutionResult(completed: true, message: "Prepared phone call handoff.", requiresExternalUI: true)
+        case "openWebSearchHandoff":
+            return ActionExecutionResult(completed: true, message: "Prepared Safari web search handoff.", requiresExternalUI: true)
         case "createCalendarDraft":
             return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: "calendar-event-id")
         case "createReminderDraft":

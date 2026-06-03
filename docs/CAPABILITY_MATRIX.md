@@ -19,6 +19,7 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 | Email draft handoff | `mailto:` URL handoff | 使用者確認 | 否 | 是 | 只建立可見草稿；不讀 Mail DB；不靜默寄信 |
 | Messages recipient handoff | `sms:` URL handoff | 使用者確認 | 否 | 是 | 只開啟可見收件人 handoff；正文留在 Kairo preview；不讀 Messages；不靜默送出 |
 | Phone call handoff | `tel:` URL handoff | 使用者確認 | 否 | 是 | 只開啟可見 Phone handoff；不讀通話紀錄；不靜默撥號 |
+| Web search handoff | HTTPS search URL | 使用者確認 | 否 | 是 | 只開啟可見 Safari/DuckDuckGo 搜尋；不背景瀏覽；不讀取或抓取網頁 |
 | Apple Maps directions handoff | `maps.apple.com` Map Link | 使用者確認 | 否 | 是 | 只開啟可見路線；不讀目前位置；不自動開始導航 |
 | OAuth connectors | 官方 API + OAuth | 是 | 有限 / 後端輔助 | 後續 | Token / scope 安全 |
 | BGTaskScheduler | BGAppRefreshTask / BGProcessingTask | 系統與使用者設定 | 有限、非即時 | 是 | 不可宣稱 daemon |
@@ -54,4 +55,5 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 15. Email draft handoff 只能在使用者明確要求草擬/撰寫 email 時產生 `mailto:` 草稿 handoff；Kairo 不讀 Apple Mail DB、不抓取 mailbox、不靜默寄信。
 16. Messages handoff 只能在使用者明確要求傳訊息/簡訊時產生 `sms:` 收件人 handoff；正文留在 Kairo preview，因 Apple SMS link 不支援正文參數；Kairo 不讀 Messages、不插入正文、不靜默送出。
 17. Phone call handoff 只能在使用者明確要求撥打電話時產生 `tel:` handoff；Kairo 不讀通話紀錄、不靜默撥號、不宣稱電話已接通。
-18. Apple Maps directions handoff 只能在使用者明確要求導航/路線時產生 `maps.apple.com` link；Kairo 不讀目前位置、不追蹤定位、不自動開始導航。
+18. Web search handoff 只能在使用者明確要求搜尋網路時產生 HTTPS search URL；Kairo 不背景瀏覽、不抓取網頁、不讀 Safari history/cookies，也不宣稱已閱讀搜尋結果。
+19. Apple Maps directions handoff 只能在使用者明確要求導航/路線時產生 `maps.apple.com` link；Kairo 不讀目前位置、不追蹤定位、不自動開始導航。
