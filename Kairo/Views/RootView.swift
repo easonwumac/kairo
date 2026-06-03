@@ -82,9 +82,7 @@ public struct RootView: View {
             MemoryCenterView(memoryAPI: environment.backendAPI.memory)
         case .shortcuts:
             AutomationsView(
-                recipeStore: environment.kairoRecipeStore,
-                memoryStore: environment.memoryStore,
-                aiProvider: environment.aiProvider
+                recipeAPI: environment.backendAPI.recipes
             )
         case .access:
             PermissionHubView(

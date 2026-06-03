@@ -12,7 +12,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
 2. Permission-denied and App Review final QA.
    - Run real-device fallback checks for denied Calendar / Reminders / Notifications / Contacts permissions.
    - Access permission status/request handling now has backend API coverage; keep device permission-denied fallback sign-off as real-device-only evidence.
-   - Memory lifecycle/export, metadata-only audit log deletion, and Settings credential/OAuth management now have backend API coverage; keep future deletion copy limited to on-device data unless a backend account exists.
+   - Memory lifecycle/export, Kairo-owned internal recipe lifecycle/run, metadata-only audit log deletion, and Settings credential/OAuth management now have backend API coverage; keep future deletion copy limited to on-device data unless a backend account exists.
    - Privacy manifest no-collection/no-tracking, absence of HomeKit entitlement, and review-note boundary copy are now package-tested; recheck labels only if analytics, backend accounts, cloud sync, crash collection, or connector sync is added.
    - Keep HomeKit live control out of beta claims until entitlement, permission copy, fallback UI, confirmation behavior, and real-device evidence are complete.
    - Keep review notes from claiming iOS production local inference, real HomeKit live control, arbitrary cross-app reads/UI control, ChatGPT web-session reuse, or silent Apple Shortcuts creation.
@@ -27,6 +27,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
    - Publish production marketplace trust-store key material; `docs/TRUST_STORE_RUNBOOK.md` now defines rotation/revocation metadata and the release gate, and app-side trust keys carry active/revoked metadata and validity windows.
    - User-created skill drafts now require explicit capability selection and confirmation policy; keep this invariant covered.
    - Skill Manager lifecycle now has a backend API facade for catalog/effective catalog/preview/install/disable/enable/remove/user drafts, including fail-closed behavior when the service is unavailable.
+   - Kairo-owned internal recipe lifecycle/run/sample seeding now has a backend API facade; keep the boundary clear that these are internal recipes and do not silently create Apple Shortcuts.
    - Signed skill update and user-created remove flows now have simulator UI smoke coverage; keep these invariants covered without treating them as real-device sign-off.
    - Preserve the invariant that compatibility-blocked skills never become executable tools.
 

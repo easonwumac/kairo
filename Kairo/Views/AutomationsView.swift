@@ -4,9 +4,7 @@ import SwiftUI
 public struct AutomationsView: View {
     @Environment(\.openURL) private var openURL
 
-    private let recipeStore: any KairoRecipeStore
-    private let memoryStore: (any MemoryStore)?
-    private let aiProvider: (any AIProvider)?
+    private let recipeAPI: any KairoRecipeAPI
     private let shortcutTemplateRegistry: ShortcutTemplateRegistry
 
     @State private var recipes: [KairoRecipe] = []
@@ -20,9 +18,19 @@ public struct AutomationsView: View {
         aiProvider: (any AIProvider)? = nil,
         shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default
     ) {
-        self.recipeStore = recipeStore
-        self.memoryStore = memoryStore
-        self.aiProvider = aiProvider
+        self.recipeAPI = KairoRecipeBackendService(
+            recipeStore: recipeStore,
+            memoryStore: memoryStore,
+            aiProvider: aiProvider
+        )
+        self.shortcutTemplateRegistry = shortcutTemplateRegistry
+    }
+
+    public init(
+        recipeAPI: any KairoRecipeAPI,
+        shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default
+    ) {
+        self.recipeAPI = recipeAPI
         self.shortcutTemplateRegistry = shortcutTemplateRegistry
     }
 
@@ -259,7 +267,7 @@ public struct AutomationsView: View {
     @MainActor
     private func loadRecipes() async {
         do {
-            recipes = try await recipeStore.listRecipes()
+            recipes = try await recipeAPI.listRecipes()
         } catch {
             message = "Unable to load Kairo internal recipes."
         }
@@ -270,10 +278,7 @@ public struct AutomationsView: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            for recipe in KairoRecipeTemplateFactory.sampleCatalog().recipes {
-                try await recipeStore.save(recipe)
-            }
-            recipes = try await recipeStore.listRecipes()
+            recipes = try await recipeAPI.seedSampleRecipes()
             message = "Added \(recipes.count) Kairo internal recipe samples."
         } catch {
             message = "Unable to add Kairo internal recipe samples."
@@ -305,7 +310,7 @@ public struct AutomationsView: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            let result = try await runner.run(KairoRecipeRunRequest(
+            let result = try await recipeAPI.run(KairoRecipeRunRequest(
                 recipeID: recipe.id,
                 surface: .app,
                 input: recipe.summary,
@@ -323,7 +328,7 @@ public struct AutomationsView: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            let result = try await runner.run(KairoRecipeRunRequest(
+            let result = try await recipeAPI.run(KairoRecipeRunRequest(
                 recipeID: recipe.id,
                 surface: .app,
                 input: recipe.summary,
@@ -346,20 +351,12 @@ public struct AutomationsView: View {
         defer { isLoading = false }
         do {
             let nextEnabled = !recipe.isEnabled
-            try await recipeStore.setEnabled(nextEnabled, id: recipe.id)
-            recipes = try await recipeStore.listRecipes()
+            try await recipeAPI.setEnabled(nextEnabled, id: recipe.id)
+            recipes = try await recipeAPI.listRecipes()
             message = "\(nextEnabled ? "Enabled" : "Disabled") \(recipe.title)."
         } catch {
             message = "Unable to update \(recipe.title)."
         }
-    }
-
-    private var runner: KairoRecipeRunner {
-        KairoRecipeRunner(
-            recipeStore: recipeStore,
-            memoryStore: memoryStore,
-            aiProvider: aiProvider
-        )
     }
 }
 #endif
