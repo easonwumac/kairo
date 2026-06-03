@@ -8,6 +8,10 @@ public extension LocalModelSettingsRow {
     var runtimeFitText: String {
         manifest.runtimeFitText
     }
+
+    var runtimePillTexts: [String] {
+        manifest.runtimePillTexts
+    }
 }
 
 public extension LocalModelManifest {
@@ -28,6 +32,14 @@ public extension LocalModelManifest {
             "Fit: \(minDeviceClass)+/\(formattedRAMRequirement)",
             mlxReferenceText
         ].joined(separator: " · ")
+    }
+
+    var runtimePillTexts: [String] {
+        [
+            "Download \(runtime.settingsDisplayName)",
+            "\(minDeviceClass)+/\(formattedRAMRequirement)",
+            mlxReferenceText
+        ]
     }
 
     private var downloadSourceHost: String {

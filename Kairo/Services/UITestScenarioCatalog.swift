@@ -426,7 +426,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.models.trimmed-note"
             ],
             assertions: [
-                "The first Models screen remains focused on Qwen plus one popular fallback.",
+                "The first Models screen remains focused on Qwen plus one fallback.",
                 "Remote catalog entries stay capped to a two-model starter set.",
                 "Visible models are still downloadable metadata only, not bundled weights.",
                 "The expanded catalog path is deterministic in UI tests."

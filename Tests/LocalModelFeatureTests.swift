@@ -95,6 +95,22 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertFalse(text.contains("Requires:"))
     }
 
+    func testLocalModelRuntimePillsKeepDownloadAndMLXStatusReadable() throws {
+        let qwenTiny = LocalModelManifest.qwen35Tiny
+        let llamaTiny = LocalModelManifest.llama32OneBInstruct
+
+        XCTAssertEqual(qwenTiny.runtimePillTexts, [
+            "Download GGUF",
+            "A15+/4 GB",
+            "MLX ref only"
+        ])
+        XCTAssertEqual(llamaTiny.runtimePillTexts, [
+            "Download GGUF",
+            "A15+/4 GB",
+            "Device test pending"
+        ])
+    }
+
     func testLocalModelCatalogServiceFetchesStandaloneModelRepoCatalog() async throws {
         let indexURL = URL(string: "https://easonwumac.github.io/kairo-models/models.json")!
         let body = remoteModelCatalogJSON(

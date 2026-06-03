@@ -26,7 +26,7 @@ struct LocalModelsCompactView: View {
                         .font(compactSectionTitleFont)
                         .accessibilityIdentifier("settings.models.local")
 
-                    Text("Starter set: Qwen first, plus one popular fallback. Downloads require approval.")
+                    Text("Starter list: Qwen + one fallback. More models stay in kairo-models.")
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -225,12 +225,12 @@ struct LocalModelsCompactView: View {
     }
 
     private var trimmedModelSummaryText: String {
-        "Showing \(visibleModelRows.count) starter models. Larger catalogs stay in kairo-models for later rollout."
+        "Showing \(visibleModelRows.count) starter models. Larger catalogs stay in kairo-models."
     }
 
     @ViewBuilder
     private func compactLocalModelRow(_ row: LocalModelSettingsRow) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(row.displayName)
                     .font(compactModelNameFont)
@@ -243,18 +243,19 @@ struct LocalModelsCompactView: View {
                 Text(row.statusText)
                     .font(compactModelStatusFont)
                     .foregroundStyle(localModelStatusColor(row.primaryAction))
-                    .padding(.horizontal, 5)
+                    .padding(.horizontal, 4)
                     .padding(.vertical, 1)
                     .background(localModelStatusColor(row.primaryAction).opacity(0.11), in: Capsule())
                     .accessibilityIdentifier("settings.models.\(row.modelID).status")
             }
 
-            Text("\(row.detailText) · \(row.runtimeFitText)")
+            Text(row.detailText)
                 .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .accessibilityIdentifier("settings.models.\(row.modelID).runtime-fit")
+
+            runtimePills(for: row)
 
             Text(row.manifestTransparencyText)
                 .font(compactModelMetadataFont)
@@ -272,7 +273,7 @@ struct LocalModelsCompactView: View {
                     .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
             }
 
-            LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 5) {
+            LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 4) {
                 compactLocalModelAction(for: row)
 
                 if row.benchmarkSummaryText != nil {
@@ -321,7 +322,7 @@ struct LocalModelsCompactView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(6)
+        .padding(5)
         .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -331,21 +332,41 @@ struct LocalModelsCompactView: View {
         .accessibilityIdentifier("settings.models.\(row.modelID).row")
     }
 
-    private var compactButtonGridColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 58), spacing: 4, alignment: .leading)]
+    private func runtimePills(for row: LocalModelSettingsRow) -> some View {
+        HStack(spacing: 4) {
+            ForEach(Array(row.runtimePillTexts.enumerated()), id: \.offset) { index, text in
+                Text(text)
+                    .font(compactModelMetadataFont)
+                    .fontWeight(.medium)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.06), in: Capsule())
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("settings.models.\(row.modelID).runtime-pill.\(index)")
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(row.runtimeFitText)
+        .accessibilityIdentifier("settings.models.\(row.modelID).runtime-fit")
     }
 
-    private var compactSectionTitleFont: Font { .system(size: 14, weight: .semibold) }
+    private var compactButtonGridColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: 54), spacing: 4, alignment: .leading)]
+    }
 
-    private var compactSectionHeadingFont: Font { .system(size: 10, weight: .semibold) }
+    private var compactSectionTitleFont: Font { .system(size: 13, weight: .semibold) }
 
-    private var compactModelNameFont: Font { .system(size: 9, weight: .semibold) }
+    private var compactSectionHeadingFont: Font { .system(size: 9, weight: .semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 7.5) }
+    private var compactModelNameFont: Font { .system(size: 8.5, weight: .semibold) }
 
-    private var compactModelStatusFont: Font { .system(size: 7.5, weight: .semibold) }
+    private var compactModelMetadataFont: Font { .system(size: 7) }
 
-    private var compactButtonLabelFont: Font { .system(size: 7.5, weight: .semibold) }
+    private var compactModelStatusFont: Font { .system(size: 7, weight: .semibold) }
+
+    private var compactButtonLabelFont: Font { .system(size: 7, weight: .semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {
@@ -382,7 +403,7 @@ struct LocalModelsCompactView: View {
     }
 
     private func downloadPreview(for row: LocalModelSettingsRow) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 4) {
             Text("Download requires explicit approval.")
                 .font(compactModelStatusFont)
                 .fontWeight(.semibold)
@@ -444,8 +465,8 @@ struct LocalModelsCompactView: View {
                 .imageScale(.small)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 4)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 3)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .foregroundStyle(tint)
                 .background(tint.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))

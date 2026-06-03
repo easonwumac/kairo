@@ -131,6 +131,14 @@ extension KairoAppSmokeUITests {
         XCTAssertFalse(displayName.isEmpty)
         XCTAssertTrue(anyElement("settings.models.\(id).name").exists, id)
         if id == "qwen3-5-0-8b-q4-k-m" {
+            let runtimeFit = anyElement("settings.models.\(id).runtime-fit")
+            XCTAssertTrue(runtimeFit.exists)
+            XCTAssertTrue(runtimeFit.label.contains("Download: GGUF"))
+            XCTAssertTrue(runtimeFit.label.contains("MLX ref only"))
+            XCTAssertTrue(anyElement("settings.models.\(id).runtime-pill.0").exists)
+            XCTAssertTrue(anyElement("settings.models.\(id).runtime-pill.1").exists)
+            XCTAssertTrue(anyElement("settings.models.\(id).runtime-pill.2").exists)
+
             let benchmark = anyElement("settings.models.\(id).benchmark")
             XCTAssertTrue(benchmark.exists)
             XCTAssertTrue(benchmark.label.contains("MLX ref"))
