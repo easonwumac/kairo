@@ -130,18 +130,24 @@ public struct SettingsView: View {
                         .textContentType(.password)
                         .accessibilityIdentifier("settings.openai.api-key-field")
 
-                    HStack {
-                        Button("Save API Key") {
-                            saveAPIKey()
-                        }
-                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        .accessibilityIdentifier("settings.openai.save-api-key")
+                HStack {
+                    Button("Save API Key") {
+                        saveAPIKey()
+                    }
+                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityIdentifier("settings.openai.save-api-key")
 
-                        Spacer()
+                    Button("Dry Run") {
+                        dryRunAPIKey()
+                    }
+                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasAPIKey)
+                    .accessibilityIdentifier("settings.openai.dry-run-api-key")
 
-                        Button("Delete", role: .destructive) {
-                            deleteAPIKey()
-                        }
+                    Spacer()
+
+                    Button("Delete", role: .destructive) {
+                        deleteAPIKey()
+                    }
                         .disabled(!hasAPIKey)
                         .accessibilityIdentifier("settings.openai.delete-api-key")
                     }
@@ -496,6 +502,22 @@ public struct SettingsView: View {
             } catch {
                 await MainActor.run {
                     statusMessage = "刪除失敗：\(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func dryRunAPIKey() {
+        Task {
+            do {
+                let input = apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : apiKey
+                let result = try await settingsService.dryRunAPIKey(input)
+                await MainActor.run {
+                    statusMessage = "OpenAI dry run 完成：\(result.redactedKey) · 未送出網路請求。"
+                }
+            } catch {
+                await MainActor.run {
+                    statusMessage = "Dry run 失敗：\(error.localizedDescription)"
                 }
             }
         }

@@ -2287,6 +2287,30 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertFalse(deletedStatus.hasAPIKey)
     }
 
+    func testOpenAISettingsServiceDryRunRedactsProvidedKeyWithoutSaving() async throws {
+        let credentials = InMemoryCredentialStore()
+        let service = OpenAISettingsService(credentialStore: credentials)
+
+        let result = try await service.dryRunAPIKey(" sk-test-1234567890 ")
+
+        XCTAssertFalse(result.usesSavedKey)
+        XCTAssertEqual(result.redactedKey, "sk-t...7890")
+        XCTAssertTrue(result.message.contains("No network request was sent"))
+        let savedSecret = try await credentials.readSecret(for: CredentialKey.openAIAPIKey)
+        XCTAssertNil(savedSecret)
+    }
+
+    func testOpenAISettingsServiceDryRunUsesSavedKeyWhenInputIsEmpty() async throws {
+        let credentials = InMemoryCredentialStore()
+        try await credentials.saveSecret("sk-live-abcdef1234", for: CredentialKey.openAIAPIKey)
+        let service = OpenAISettingsService(credentialStore: credentials)
+
+        let result = try await service.dryRunAPIKey(nil as String?)
+
+        XCTAssertTrue(result.usesSavedKey)
+        XCTAssertEqual(result.redactedKey, "sk-l...1234")
+    }
+
     func testOAuthConnectorReadinessProvidesSettingsCopyAndActionState() {
         XCTAssertEqual(OAuthConnectorLoginReadiness.connected.settingsStatusText, "已連線")
         XCTAssertEqual(OAuthConnectorLoginReadiness.readyToAuthorize.settingsStatusText, "可授權")

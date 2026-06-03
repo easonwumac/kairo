@@ -340,6 +340,27 @@ final class LocalModelFeatureTests: XCTestCase {
         }
     }
 
+    func testLocalModelRoutingAIProviderDoesNotCallCloudWhenLocalOnlyHasNoModel() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .localOnly,
+            installedAndSelectedModelID: nil
+        )
+        let cloudProvider = RecordingAIProvider()
+        let provider = LocalModelRoutingAIProvider(
+            cloudProvider: cloudProvider,
+            localModelSettingsService: service
+        )
+
+        await XCTAssertThrowsErrorAsync(try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Draft a private reply."
+        ))) { error in
+            XCTAssertEqual(error as? AIProviderError, .unsupported)
+        }
+
+        XCTAssertEqual(await cloudProvider.completionCallCount, 0)
+    }
+
     func testLocalModelSettingsServiceSelectsInstalledModelAndBuildsRoutingContext() async throws {
         let settingsURL = temporaryFileURL(named: "local-model-settings.json")
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
@@ -1240,6 +1261,21 @@ private actor LocalModelCancellingHTTPClient: HTTPClient {
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         _ = request
         throw CancellationError()
+    }
+}
+
+private actor RecordingAIProvider: AIProvider {
+    private(set) var completionCallCount = 0
+
+    func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
+        _ = request
+        completionCallCount += 1
+        return AICompletionResponse(message: "unexpected cloud call")
+    }
+
+    func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
+        _ = request
+        return AIEmbeddingResponse(vector: [0])
     }
 }
 

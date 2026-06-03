@@ -10,6 +10,18 @@ public struct OpenAISettingsStatus: Equatable, Sendable {
     }
 }
 
+public struct OpenAISettingsDryRunResult: Equatable, Sendable {
+    public var usesSavedKey: Bool
+    public var redactedKey: String
+    public var message: String
+
+    public init(usesSavedKey: Bool, redactedKey: String, message: String) {
+        self.usesSavedKey = usesSavedKey
+        self.redactedKey = redactedKey
+        self.message = message
+    }
+}
+
 public actor OpenAISettingsService {
     private let credentialStore: CredentialStore
 
@@ -30,8 +42,42 @@ public actor OpenAISettingsService {
         try await credentialStore.saveSecret(trimmed, for: CredentialKey.openAIAPIKey)
     }
 
+    public func dryRunAPIKey(_ apiKey: String?) async throws -> OpenAISettingsDryRunResult {
+        let trimmedInput = apiKey?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let candidateKey: String
+        let usesSavedKey: Bool
+
+        if let trimmedInput, !trimmedInput.isEmpty {
+            candidateKey = trimmedInput
+            usesSavedKey = false
+        } else if let savedKey = try await credentialStore.readSecret(for: CredentialKey.openAIAPIKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+                  !savedKey.isEmpty {
+            candidateKey = savedKey
+            usesSavedKey = true
+        } else {
+            throw OpenAISettingsError.emptyAPIKey
+        }
+
+        return OpenAISettingsDryRunResult(
+            usesSavedKey: usesSavedKey,
+            redactedKey: Self.redactedKey(candidateKey),
+            message: "Dry run only. No network request was sent."
+        )
+    }
+
     public func deleteAPIKey() async throws {
         try await credentialStore.deleteSecret(for: CredentialKey.openAIAPIKey)
+    }
+
+    private static func redactedKey(_ apiKey: String) -> String {
+        guard apiKey.count > 8 else {
+            return "••••"
+        }
+
+        let prefix = apiKey.prefix(4)
+        let suffix = apiKey.suffix(4)
+        return "\(prefix)...\(suffix)"
     }
 }
 
