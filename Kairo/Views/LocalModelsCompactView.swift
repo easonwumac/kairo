@@ -6,6 +6,7 @@ struct LocalModelsCompactView: View {
     @State private var pendingDownloadModelID: String?
 
     let localModelStatus: LocalModelSettingsStatus
+    let localModelDownloadProgress: LocalModelDownloadProgressState?
     let localModelStatusMessage: String?
     let localModelStatusMessageModelID: String?
     let localModelCatalogSourceText: String
@@ -333,6 +334,10 @@ struct LocalModelsCompactView: View {
                 downloadPreview(for: row)
             }
 
+            if localModelDownloadProgress?.modelID == row.modelID, let progress = localModelDownloadProgress {
+                downloadProgressView(progress)
+            }
+
             if localModelStatusMessageModelID == row.modelID, let localModelStatusMessage {
                 Text(localModelStatusMessage)
                     .font(compactModelMetadataFont)
@@ -479,6 +484,40 @@ struct LocalModelsCompactView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.models.\(row.modelID).download-preview")
+    }
+
+    private func downloadProgressView(_ progress: LocalModelDownloadProgressState) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                ProgressView(value: progress.fractionCompleted)
+                    .progressViewStyle(.linear)
+                    .accessibilityIdentifier("settings.models.\(progress.modelID).download-progress-bar")
+
+                Text(progress.displayText)
+                    .font(compactModelStatusFont)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.blue)
+                    .monospacedDigit()
+                    .accessibilityIdentifier("settings.models.\(progress.modelID).download-progress-text")
+            }
+
+            if progress.allowsCancellation {
+                Text("Keep this screen open while Kairo downloads, verifies checksum, and can clean up if the task is cancelled.")
+                    .font(compactModelMetadataFont)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityIdentifier("settings.models.\(progress.modelID).download-cancel-note")
+            }
+        }
+        .padding(6)
+        .background(Color.orange.opacity(0.055), in: RoundedRectangle(cornerRadius: 7))
+        .overlay {
+            RoundedRectangle(cornerRadius: 7)
+                .stroke(Color.orange.opacity(0.14), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(progress.displayText)
+        .accessibilityIdentifier("settings.models.\(progress.modelID).download-progress")
     }
 
     private func compactActionButton(

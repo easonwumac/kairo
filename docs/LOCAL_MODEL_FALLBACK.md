@@ -80,7 +80,7 @@ protocol AIProvider {
 - writes `downloading`, `installed`, or `failed` records to `FileBackedLocalModelInstallRegistry`;
 - removes partial files when checksum verification fails.
 
-The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, and explicit download approval copy for size, license, storage, backup policy, and allowed offline purposes. A production build still needs a published signed catalog with real release public-key material, richer progress/cancellation UI, and production license-approval gates.
+The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, explicit download approval copy for size, license, storage, backup policy, allowed offline purposes, and visible download progress phases while checksum verification runs. A production build still needs a published signed catalog with real release public-key material, deeper background/resume cancellation polish, and production license-approval gates.
 
 The default development catalog starts with 2 popular public GGUF downloads through Hugging Face. It is intentionally compact for the first Models UI pass; the standalone `kairo-models` catalog can add more entries later without bundling weights into the app:
 

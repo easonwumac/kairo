@@ -30,6 +30,7 @@ public struct SettingsView: View {
     @State private var oauthCallbackPreviewMessage: String?
     @State private var localModelCatalog: LocalModelCatalog
     @State private var localModelStatus: LocalModelSettingsStatus
+    @State private var localModelDownloadProgress: LocalModelDownloadProgressState?
     @State private var localModelStatusMessage: String?
     @State private var localModelStatusMessageModelID: String?
 
@@ -220,6 +221,7 @@ public struct SettingsView: View {
     private var modelsOnlyContent: some View {
         LocalModelsCompactView(
             localModelStatus: localModelStatus,
+            localModelDownloadProgress: localModelDownloadProgress,
             localModelStatusMessage: localModelStatusMessage,
             localModelStatusMessageModelID: localModelStatusMessageModelID,
             localModelCatalogSourceText: localModelCatalogSourceText,
@@ -447,6 +449,19 @@ public struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("settings.models.benchmark-message")
             }
+
+            if localModelDownloadProgress?.modelID == row.modelID, let progress = localModelDownloadProgress {
+                ProgressView(progress.displayText, value: progress.fractionCompleted)
+                    .font(.caption)
+                    .accessibilityIdentifier("settings.models.\(row.modelID).download-progress")
+
+                if progress.allowsCancellation {
+                    Text("Keep Settings open while Kairo downloads and verifies this model; cancellation cleans up partial state.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("settings.models.\(row.modelID).download-cancel-note")
+                }
+            }
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .contain)
@@ -640,16 +655,29 @@ public struct SettingsView: View {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = "正在下載 \(row.displayName)。"
+                    localModelDownloadProgress = LocalModelDownloadProgressState(
+                        modelID: row.modelID,
+                        fractionCompleted: 0.05
+                    )
                 }
-                _ = try await localModelDownloader.download(row.manifest, progress: nil)
+                _ = try await localModelDownloader.download(row.manifest) { fractionCompleted in
+                    Task { @MainActor in
+                        localModelDownloadProgress = LocalModelDownloadProgressState(
+                            modelID: row.modelID,
+                            fractionCompleted: fractionCompleted
+                        )
+                    }
+                }
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
+                    localModelDownloadProgress = nil
                     localModelStatusMessage = "\(row.displayName) 已下載，可選用。"
                 }
                 await reloadLocalModelStatus()
             } catch {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
+                    localModelDownloadProgress = nil
                     localModelStatusMessage = "下載失敗：\(error.localizedDescription)"
                 }
                 await reloadLocalModelStatus()

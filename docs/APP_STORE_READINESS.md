@@ -15,7 +15,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 | EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist for current scope. |
 | HomeKit | Scaffolded | Preview/demo/test path exists; real HomeKit entitlement/live control is not complete. |
 | OAuth provider APIs | Scaffolded | Auth/callback/status scaffold exists; real provider API integrations are not complete. |
-| Local model catalog/download/select/delete | Scaffolded | User-triggered download/select/delete flows exist, no model weights are bundled, download progress/cancellation/checksum/delete/runtime-unavailable paths are package-tested, and remote catalog payload signatures now fail closed against unknown/revoked/invalid signing keys; production signed catalog publication, richer progress UI, and real-device iOS runtime proof are still incomplete. |
+| Local model catalog/download/select/delete | Scaffolded | User-triggered download/select/delete flows exist, no model weights are bundled, download progress/cancellation/checksum/delete/runtime-unavailable paths are package-tested, Settings now shows visible download progress phases, and remote catalog payload signatures now fail closed against unknown/revoked/invalid signing keys; production signed catalog publication, deeper background/resume cancellation polish, and real-device iOS runtime proof are still incomplete. |
 | macOS/dev local model reply check | Test-only / Mock | External command validation only; not iOS runtime proof. |
 | iOS production local model inference runtime | Planned | Must remain unavailable until real device/runtime evidence exists. |
 | Keyboard Extension | Planned | Not built for beta. |
@@ -154,7 +154,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
 - [x] Remote catalog payload signature verification rejects unknown, revoked, unsupported, or invalid P-256 signing keys before accepting download rows.
 - [x] Package tests cover checksum failure, download cancellation cleanup, deleting the selected model, and runtime-unavailable fail-closed paths.
-- [ ] Publish production signed catalog/public key material, richer progress/cancel UI、runtime speed proof。
+- [ ] Publish production signed catalog/public key material, deeper background/resume cancellation polish、runtime speed proof。
 - [x] 模型存在 Application Support/LocalModels，並由 downloader 標記為不進 iCloud backup。
 - [ ] 本機模型不執行任意程式碼，只作為 app binary 內 inference engine 的資料資產；production iOS runtime 尚未完成，維持 Planned。
 - [ ] iOS production inference runtime is implemented and verified on real devices. Current macOS/dev reply check is not proof.
