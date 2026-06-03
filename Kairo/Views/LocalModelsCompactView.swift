@@ -279,7 +279,7 @@ struct LocalModelsCompactView: View {
                 }
 
                 compactActionButton(
-                    "Reply Check",
+                    "Reply",
                     systemImage: "text.bubble",
                     accessibilityIdentifier: "settings.models.\(row.modelID).reply-check",
                     tint: .blue

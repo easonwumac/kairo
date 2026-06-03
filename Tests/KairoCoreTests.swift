@@ -2428,6 +2428,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 8) }"))
         XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 8, weight: .semibold) }"))
         XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 8, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains(#""Reply""#))
+        XCTAssertFalse(compactView.contains(#""Reply Check""#))
         XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 64)"))
         XCTAssertTrue(compactView.contains(".lineLimit(1)"))
         XCTAssertTrue(compactView.contains(".lineLimit(2)"))
