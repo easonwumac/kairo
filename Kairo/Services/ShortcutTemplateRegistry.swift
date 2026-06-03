@@ -93,6 +93,21 @@ public struct ShortcutTemplateRegistry: Codable, Equatable, Sendable {
             ]
         ),
         ShortcutTemplate(
+            identifier: "message-reply-handoff-shortcut",
+            title: "Message Reply Handoff Shortcut",
+            description: "Shortcut template guidance for preparing a visible Messages handoff from explicit text without sending.",
+            category: .shareSheet,
+            inputSummary: "Message body text and optional recipient explicitly provided by the user.",
+            outputSummary: "Messages recipient handoff preview with body text kept in Kairo.",
+            requiredIntentIdentifiers: ["PrepareMessageHandoffIntent", "RunKairoShortcutNodeIntent"],
+            recommendedRecipeTemplateID: "message-reply-handoff",
+            setupInstructions: [
+                "Create a Share Sheet or manual Shortcut that accepts text or asks for a message body.",
+                "Pass the body and optional recipient to Prepare Message Handoff.",
+                "Show the returned preview; do not send messages silently and remember the body remains in Kairo instead of the sms: URL."
+            ]
+        ),
+        ShortcutTemplate(
             identifier: "calendar-draft-shortcut",
             title: "Calendar Draft Shortcut",
             description: "Shortcut template guidance for turning meeting text into a calendar draft without writing EventKit automatically.",
@@ -105,6 +120,21 @@ public struct ShortcutTemplateRegistry: Codable, Equatable, Sendable {
                 "Create a Shortcut that accepts text or asks for a meeting title.",
                 "Pass the text to Create Calendar Drafts, optionally adding startDateISO and endDateISO variables.",
                 "Show the returned calendar draft and require user confirmation before any EventKit calendar write."
+            ]
+        ),
+        ShortcutTemplate(
+            identifier: "email-draft-shortcut",
+            title: "Email Draft Shortcut",
+            description: "Shortcut template guidance for turning selected text into an email draft without sending.",
+            category: .shareSheet,
+            inputSummary: "Email body text plus optional recipient and subject values.",
+            outputSummary: "Email draft JSON and a proposed compose action for manual review.",
+            requiredIntentIdentifiers: ["CreateEmailDraftsIntent", "RunKairoShortcutNodeIntent"],
+            recommendedRecipeTemplateID: "email-draft-from-shared-text",
+            setupInstructions: [
+                "Create a Share Sheet or manual Shortcut that accepts text.",
+                "Pass the text to Create Email Drafts, optionally setting recipient and subject.",
+                "Show the returned email draft and do not send email automatically."
             ]
         ),
         ShortcutTemplate(

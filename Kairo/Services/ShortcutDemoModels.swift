@@ -137,6 +137,10 @@ public struct ShortcutDemoRecipeRun: Codable, Equatable, Sendable {
     public var totalCalendarDraftCount: Int {
         steps.reduce(0) { count, step in count + step.output.calendarDrafts.count }
     }
+
+    public var totalEmailDraftCount: Int {
+        steps.reduce(0) { count, step in count + step.output.emailDrafts.count }
+    }
 }
 
 public struct ShortcutDemoStepRun: Codable, Equatable, Sendable {

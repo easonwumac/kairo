@@ -156,6 +156,70 @@ public struct CreateCalendarDraftsIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct CreateEmailDraftsIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Create Email Drafts"
+    public static var description = IntentDescription("Create email drafts from Shortcut input without sending mail until a later user-reviewed step.")
+
+    @Parameter(title: "Text")
+    public var text: String
+
+    @Parameter(title: "Recipient")
+    public var recipient: String?
+
+    @Parameter(title: "Subject")
+    public var subject: String?
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        var variables: [String: String] = [:]
+        if let recipient = recipient?.trimmingCharacters(in: .whitespacesAndNewlines), !recipient.isEmpty {
+            variables["recipient"] = recipient
+        }
+        if let subject = subject?.trimmingCharacters(in: .whitespacesAndNewlines), !subject.isEmpty {
+            variables["subject"] = subject
+        }
+
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(
+            .createEmailDraft,
+            input: ShortcutNodeInput(text: text, sourceName: "Create Email Drafts", variables: variables)
+        )
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct PrepareMessageHandoffIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Prepare Message Handoff"
+    public static var description = IntentDescription("Prepare a visible Messages recipient handoff without sending a message or putting body text into the sms: URL.")
+
+    @Parameter(title: "Message Body")
+    public var messageBody: String
+
+    @Parameter(title: "Recipient")
+    public var recipient: String?
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        var variables: [String: String] = ["body": messageBody]
+        if let recipient = recipient?.trimmingCharacters(in: .whitespacesAndNewlines), !recipient.isEmpty {
+            variables["recipient"] = recipient
+        }
+
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(
+            .prepareMessageHandoff,
+            input: ShortcutNodeInput(text: messageBody, sourceName: "Prepare Message Handoff", variables: variables)
+        )
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct RunKairoShortcutNodeIntent: AppIntent {
     public static var title: LocalizedStringResource = "Run Kairo Shortcut Node"
     public static var description = IntentDescription("Run a Kairo Shortcut node from a node kind and ShortcutNodeInput JSON, returning structured JSON output.")

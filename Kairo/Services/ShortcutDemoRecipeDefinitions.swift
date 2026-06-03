@@ -1,7 +1,7 @@
 import Foundation
 
 public extension ShortcutDemoCatalog {
-    static let officialRecipes: [ShortcutDemoRecipe] = coreRecipes + homeRecipes
+    static let officialRecipes: [ShortcutDemoRecipe] = coreRecipes + communicationRecipes + workflowRecipes + homeRecipes
 
     static let coreRecipes: [ShortcutDemoRecipe] = [
         ShortcutDemoRecipe(
@@ -148,144 +148,10 @@ public extension ShortcutDemoCatalog {
                     )
                 )
             ]
-        ),
-        ShortcutDemoRecipe(
-            id: "reply-draft-from-shared-text",
-            title: "Reply Draft from Shared Text",
-            summary: "Turn explicitly shared email or chat text into a draft reply without sending anything automatically.",
-            triggerSummary: "Share Sheet from Mail, Messages-compatible exports, Safari, or any app that shares text.",
-            setupNotes: [
-                "Pass shared text to Summarize with Kairo.",
-                "Pass the previous Kairo output to Draft Reply and review the returned text before sending manually."
-            ],
-            steps: [
-                ShortcutDemoStep(
-                    shortcutActionTitle: "Summarize with Kairo",
-                    nodeKind: .summarize,
-                    inputContract: ShortcutNodeContract(
-                        requiredFields: ["text"],
-                        optionalFields: ["sourceName", "variables"],
-                        description: "Email, chat, or support request text explicitly selected by the user."
-                    ),
-                    outputContract: ShortcutNodeContract(
-                        requiredFields: ["displayText", "fields.summary", "fields.chainText"],
-                        description: "Concise context passed into the reply drafting node."
-                    ),
-                    sampleInput: ShortcutNodeInput(
-                        text: """
-                        Customer email:
-                        Can Kairo turn a screenshot into reminders and keep the Shortcut output structured?
-                        """,
-                        sourceName: "Shared Email",
-                        variables: ["shortcutRecipeID": "reply-draft-from-shared-text"]
-                    )
-                ),
-                ShortcutDemoStep(
-                    shortcutActionTitle: "Draft Reply with Kairo",
-                    nodeKind: .draftReply,
-                    inputContract: ShortcutNodeContract(
-                        requiredFields: ["text"],
-                        optionalFields: ["previousStepOutput", "variables"],
-                        description: "Previous Kairo summary or explicit Shortcut input text."
-                    ),
-                    outputContract: ShortcutNodeContract(
-                        requiredFields: ["fields.replyDraft"],
-                        optionalFields: ["fields.replyDraftTone", "displayText"],
-                        description: "Reply draft text only. The Shortcut must still ask the user before sending."
-                    ),
-                    sampleInput: ShortcutNodeInput(
-                        text: "",
-                        sourceName: "Shared Email",
-                        variables: [
-                            "shortcutRecipeID": "reply-draft-from-shared-text",
-                            "kairoInputSource": "previousStepOutput",
-                            "tone": "concise"
-                        ]
-                    )
-                )
-            ]
-        ),
-        ShortcutDemoRecipe(
-            id: "email-triage",
-            title: "Email Triage",
-            summary: "Summarize an email, extract follow-up tasks, and prepare a reply draft without sending.",
-            triggerSummary: "Share Sheet from Mail, a copied email thread, or an Action Button Shortcut that passes selected text.",
-            setupNotes: [
-                "Pass the selected email text to Summarize with Kairo.",
-                "Chain the output through Extract Kairo Tasks and Draft Reply.",
-                "Show task and reply drafts for manual review; do not send or write reminders silently."
-            ],
-            steps: [
-                ShortcutDemoStep(
-                    shortcutActionTitle: "Summarize Email with Kairo",
-                    nodeKind: .summarize,
-                    inputContract: ShortcutNodeContract(
-                        requiredFields: ["text"],
-                        optionalFields: ["sourceName", "variables"],
-                        description: "Email thread text explicitly selected or shared by the user."
-                    ),
-                    outputContract: ShortcutNodeContract(
-                        requiredFields: ["displayText", "fields.summary", "fields.chainText"],
-                        description: "Compact email summary and original text for downstream Kairo nodes."
-                    ),
-                    sampleInput: ShortcutNodeInput(
-                        text: """
-                        Email from vendor:
-                        Please confirm the revised launch timeline by Friday.
-                        Action: Send updated app screenshots
-                        Reminder: Ask legal to review the OAuth wording
-                        """,
-                        sourceName: "Shared Email",
-                        variables: ["shortcutRecipeID": "email-triage"]
-                    )
-                ),
-                ShortcutDemoStep(
-                    shortcutActionTitle: "Extract Follow-up Tasks",
-                    nodeKind: .extractTasks,
-                    inputContract: ShortcutNodeContract(
-                        requiredFields: ["text"],
-                        optionalFields: ["previousStepOutput", "variables"],
-                        description: "Email summary or original text passed from the previous Kairo node."
-                    ),
-                    outputContract: ShortcutNodeContract(
-                        requiredFields: ["fields.taskCount", "fields.chainText"],
-                        optionalFields: ["tasks", "reminderDrafts"],
-                        description: "Follow-up task drafts plus chain text for reply drafting."
-                    ),
-                    sampleInput: ShortcutNodeInput(
-                        text: "",
-                        sourceName: "Shared Email",
-                        variables: [
-                            "shortcutRecipeID": "email-triage",
-                            "kairoInputSource": "previousStepOutput"
-                        ]
-                    )
-                ),
-                ShortcutDemoStep(
-                    shortcutActionTitle: "Draft Email Reply",
-                    nodeKind: .draftReply,
-                    inputContract: ShortcutNodeContract(
-                        requiredFields: ["text"],
-                        optionalFields: ["previousStepOutput", "variables"],
-                        description: "Email text chained from the task extraction node."
-                    ),
-                    outputContract: ShortcutNodeContract(
-                        requiredFields: ["fields.replyDraft"],
-                        optionalFields: ["fields.replyDraftTone", "displayText"],
-                        description: "Reply draft only. Shortcuts must still require visible user review before sending."
-                    ),
-                    sampleInput: ShortcutNodeInput(
-                        text: "",
-                        sourceName: "Shared Email",
-                        variables: [
-                            "shortcutRecipeID": "email-triage",
-                            "kairoInputSource": "previousStepOutput",
-                            "tone": "clear"
-                        ]
-                    )
-                )
-            ]
-        ),
+        )
+    ]
+
+    static let workflowRecipes: [ShortcutDemoRecipe] = [
         ShortcutDemoRecipe(
             id: "meeting-prep-brief",
             title: "Meeting Prep Brief",

@@ -260,6 +260,15 @@ final class KairoAppSmokeUITests: XCTestCase {
         )
         verifyShortcutDemoContract(
             namespace: "automations.shortcut-demo",
+            id: "email-draft-from-shared-text",
+            titleText: "Email Draft from Shared Text",
+            stepText: "1 step: createEmailDraft",
+            inputText: "Input: text, sourceName, variables.recipient, variables.subject",
+            outputText: "Output: fields.emailDraftCount, fields.emailSubject, fields.emailRequiresConfirmation",
+            sampleText: "ops@example.com"
+        )
+        verifyShortcutDemoContract(
+            namespace: "automations.shortcut-demo",
             id: "generic-node-runner",
             titleText: "Generic Node Runner",
             stepText: "2 steps: summarize -> extractTasks",
@@ -281,6 +290,13 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findElement("automations.shortcut-demo.meeting-text-to-calendar-draft.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "1 calendar drafts", direction: .both, maxSwipes: 2).exists)
+
+        let emailPreview = findButton("automations.shortcut-demo.email-draft-from-shared-text.preview-sample", direction: .both, maxSwipes: 3)
+        XCTAssertTrue(emailPreview.exists)
+        emailPreview.tap()
+
+        XCTAssertTrue(findElement("automations.shortcut-demo.email-draft-from-shared-text.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "1 email drafts", direction: .both, maxSwipes: 2).exists)
     }
 
     func testSettingsShowsOAuthConnectorReadinessAndBoundaries() throws {

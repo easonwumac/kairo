@@ -65,6 +65,7 @@ final class SourceHealthTests: XCTestCase {
         let splitFiles = [
             "ShortcutDemoCatalog.swift": "public struct ShortcutDemoCatalog",
             "ShortcutDemoRecipeDefinitions.swift": "static let officialRecipes",
+            "ShortcutDemoEmailDefinitions.swift": "static let communicationRecipes",
             "ShortcutDemoHomeDefinitions.swift": "static let homeRecipes",
             "ShortcutDemoModels.swift": "public struct ShortcutDemoRecipe",
             "ShortcutDemoRecipeRunner.swift": "public actor ShortcutDemoRecipeRunner"
@@ -87,6 +88,7 @@ final class SourceHealthTests: XCTestCase {
             "ShortcutDemoCatalog.swift": 80,
             "ShortcutDemoModels.swift": 220,
             "ShortcutDemoRecipeDefinitions.swift": 500,
+            "ShortcutDemoEmailDefinitions.swift": 260,
             "ShortcutDemoHomeDefinitions.swift": 140,
             "ShortcutDemoRecipeRunner.swift": 120
         ]

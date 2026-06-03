@@ -288,7 +288,9 @@ public struct AutomationsView: View {
             let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
             let runner = ShortcutDemoRecipeRunner(runtime: runtime)
             let run = try await runner.runSample(recipe)
-            let previewMessage = "Sample \(run.displaySummary)"
+            let finalOutput = run.steps.last?.output.displayText.trimmingCharacters(in: .whitespacesAndNewlines)
+            let finalOutputSummary = finalOutput?.isEmpty == false ? " \(finalOutput ?? "")" : ""
+            let previewMessage = "Sample \(run.displaySummary)\(finalOutputSummary)"
             shortcutDemoPreviewMessages[recipe.id] = previewMessage
             message = previewMessage
         } catch {

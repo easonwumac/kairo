@@ -130,6 +130,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("shortcut-screenshot-to-reminders"))
         XCTAssertTrue(context.contains("shortcut-reply-draft-from-shared-text"))
         XCTAssertTrue(context.contains("shortcut-email-triage"))
+        XCTAssertTrue(context.contains("shortcut-email-draft-from-shared-text"))
         XCTAssertTrue(context.contains("shortcut-meeting-prep-brief"))
         XCTAssertTrue(context.contains("requiresConfirmation=true"))
     }
@@ -169,6 +170,12 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(emailCandidate.handoffSummary.contains("3 steps: summarize -> extractTasks -> draftReply"))
         XCTAssertTrue(emailCandidate.handoffSummary.contains("Input: text, sourceName, variables, previousStepOutput"))
         XCTAssertTrue(emailCandidate.handoffSummary.contains("Output: displayText, fields.summary, fields.chainText"))
+
+        let emailDraftPlan = planner.plan(for: AgentToolInvocationRequest(userText: "write an email draft from this shared text"))
+        let emailDraftCandidate = try XCTUnwrap(emailDraftPlan.candidates.first { $0.skillID == "shortcut-email-draft-from-shared-text" })
+        XCTAssertEqual(emailDraftCandidate.shortcutRecipeID, "email-draft-from-shared-text")
+        XCTAssertEqual(emailDraftCandidate.riskTier, .tier1Draft)
+        XCTAssertTrue(emailDraftCandidate.requiresConfirmation)
 
         let meetingPlan = planner.plan(for: AgentToolInvocationRequest(userText: "Prepare me for the customer meeting from memory notes"))
         let meetingCandidate = try XCTUnwrap(meetingPlan.candidates.first { $0.skillID == "shortcut-meeting-prep-brief" })
@@ -1399,7 +1406,9 @@ final class KairoCoreTests: XCTestCase {
             "shortcut-save-shared-text",
             "shortcut-screenshot-to-reminders",
             "shortcut-reply-draft-from-shared-text",
+            "shortcut-message-reply-handoff",
             "shortcut-email-triage",
+            "shortcut-email-draft-from-shared-text",
             "shortcut-meeting-prep-brief",
             "shortcut-request-to-recipe-draft",
             "shortcut-meeting-text-to-calendar-draft",
