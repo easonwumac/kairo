@@ -70,6 +70,37 @@ final class SourceHealthTests: XCTestCase {
         }
     }
 
+    func testBackendAPIFacadesStaySplitAcrossFocusedFiles() throws {
+        let root = packageRootURL()
+        let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)
+        let splitFiles = [
+            "KairoBackendAPI.swift": "public struct KairoBackendAPI",
+            "KairoEnvironment+BackendAPI.swift": "var backendAPI: KairoBackendAPI",
+            "KairoChatBackendAPI.swift": "public protocol KairoChatAPI",
+            "KairoMemoryBackendAPI.swift": "public protocol KairoMemoryAPI",
+            "KairoRecipeBackendAPI.swift": "public protocol KairoRecipeAPI",
+            "KairoShareImportBackendAPI.swift": "public protocol KairoShareImportAPI",
+            "KairoDeletionBackendAPI.swift": "public protocol KairoDeletionAPI",
+            "KairoLocalModelBackendAPI.swift": "public protocol KairoLocalModelAPI",
+            "KairoSkillBackendAPI.swift": "public protocol KairoSkillAPI",
+            "KairoSettingsBackendAPI.swift": "public protocol KairoSettingsAPI",
+            "KairoAccessBackendAPI.swift": "public protocol KairoAccessAPI"
+        ]
+
+        for (fileName, requiredSymbol) in splitFiles {
+            let sourceURL = services.appendingPathComponent(fileName)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: sourceURL.path), fileName)
+            let source = try String(contentsOf: sourceURL, encoding: .utf8)
+            XCTAssertTrue(source.contains(requiredSymbol), fileName)
+            XCTAssertLessThan(source.split(separator: "\n").count, 140, fileName)
+        }
+
+        let backendAPI = try String(contentsOf: services.appendingPathComponent("KairoBackendAPI.swift"), encoding: .utf8)
+        XCTAssertFalse(backendAPI.contains("public struct KairoChatBackendService"))
+        XCTAssertFalse(backendAPI.contains("public struct KairoSettingsBackendService"))
+        XCTAssertFalse(backendAPI.contains("public extension KairoEnvironment"))
+    }
+
     func testUITestHelpersStaySplitFromSmokeScenarios() throws {
         let root = packageRootURL()
         let uiTests = root.appendingPathComponent("KairoUITests", isDirectory: true)
