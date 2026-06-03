@@ -328,8 +328,48 @@ public extension LocalModelCatalog {
     )
 }
 
+public enum LocalModelCatalogSigningKeyStatus: String, Codable, Equatable, Sendable {
+    case active
+    case revoked
+}
+
+public struct LocalModelTrustedSigningKey: Codable, Equatable, Identifiable, Sendable {
+    public var id: String { keyID }
+    public var keyID: String
+    public var algorithm: String
+    public var status: LocalModelCatalogSigningKeyStatus
+    public var revokedReason: String?
+
+    public init(
+        keyID: String,
+        algorithm: String,
+        status: LocalModelCatalogSigningKeyStatus,
+        revokedReason: String? = nil
+    ) {
+        self.keyID = keyID
+        self.algorithm = algorithm
+        self.status = status
+        self.revokedReason = revokedReason
+    }
+}
+
+public struct LocalModelCatalogTrustStore: Codable, Equatable, Sendable {
+    public var trustedKeys: [LocalModelTrustedSigningKey]
+
+    public init(trustedKeys: [LocalModelTrustedSigningKey]) {
+        self.trustedKeys = trustedKeys
+    }
+
+    public func trustedKey(id: String) -> LocalModelTrustedSigningKey? {
+        trustedKeys.first { $0.keyID == id }
+    }
+}
+
 public enum LocalModelCatalogServiceError: Error, Equatable {
     case invalidJSON
+    case missingSignature
+    case unknownSigningKey(String)
+    case revokedSigningKey(String)
     case unsafeDownloadURL(modelID: String, url: String)
     case invalidChecksum(modelID: String, sha256: String)
 }
@@ -337,16 +377,34 @@ public enum LocalModelCatalogServiceError: Error, Equatable {
 public struct LocalModelCatalogService: Sendable {
     public static let defaultIndexURL = URL(string: "https://easonwumac.github.io/kairo-models/models.json")!
     public static let defaultStandaloneRepository = LocalModelCatalogService(indexURL: defaultIndexURL)
+    public static let defaultTrustStore = LocalModelCatalogTrustStore(
+        trustedKeys: [
+            LocalModelTrustedSigningKey(
+                keyID: "kairo-models-2025",
+                algorithm: "p256-sha256",
+                status: .revoked,
+                revokedReason: "Superseded by the 2026 release signing key."
+            ),
+            LocalModelTrustedSigningKey(
+                keyID: "kairo-models-2026",
+                algorithm: "p256-sha256",
+                status: .active
+            )
+        ]
+    )
 
     private let indexURL: URL
     private let httpClient: any HTTPClient
+    private let trustStore: LocalModelCatalogTrustStore
 
     public init(
         indexURL: URL = Self.defaultIndexURL,
-        httpClient: any HTTPClient = URLSessionHTTPClient()
+        httpClient: any HTTPClient = URLSessionHTTPClient(),
+        trustStore: LocalModelCatalogTrustStore = Self.defaultTrustStore
     ) {
         self.indexURL = indexURL
         self.httpClient = httpClient
+        self.trustStore = trustStore
     }
 
     public func fetchCatalog() async throws -> LocalModelCatalog {
@@ -374,6 +432,16 @@ public struct LocalModelCatalogService: Sendable {
     }
 
     private func validate(_ catalog: LocalModelCatalog) throws {
+        guard !catalog.signature.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw LocalModelCatalogServiceError.missingSignature
+        }
+        guard let trustedKey = trustStore.trustedKey(id: catalog.signingKeyID) else {
+            throw LocalModelCatalogServiceError.unknownSigningKey(catalog.signingKeyID)
+        }
+        guard trustedKey.status == .active else {
+            throw LocalModelCatalogServiceError.revokedSigningKey(catalog.signingKeyID)
+        }
+
         for model in catalog.models {
             guard model.downloadURL.scheme?.lowercased() == "https" else {
                 throw LocalModelCatalogServiceError.unsafeDownloadURL(

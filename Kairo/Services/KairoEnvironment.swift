@@ -357,7 +357,21 @@ public struct KairoEnvironment: Sendable {
         let httpClient = StaticHTTPClient(routes: [
             indexURL: StaticHTTPResponse(body: catalogJSON)
         ])
-        return LocalModelCatalogService(indexURL: indexURL, httpClient: httpClient)
+        var trustedKeys = LocalModelCatalogService.defaultTrustStore.trustedKeys
+        if !trustedKeys.contains(where: { $0.keyID == catalog.signingKeyID }) {
+            trustedKeys.append(
+                LocalModelTrustedSigningKey(
+                    keyID: catalog.signingKeyID,
+                    algorithm: "fixture-placeholder",
+                    status: .active
+                )
+            )
+        }
+        return LocalModelCatalogService(
+            indexURL: indexURL,
+            httpClient: httpClient,
+            trustStore: LocalModelCatalogTrustStore(trustedKeys: trustedKeys)
+        )
     }
 
     public static func live(

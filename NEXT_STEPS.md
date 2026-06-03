@@ -37,7 +37,7 @@ Primary product shape:
 | EventKit / Notifications / Contacts actions | Implemented | Chat actions preview before confirmed writes; Shortcut nodes should remain draft-only unless confirmed by Kairo. |
 | HomeKit action model | Scaffolded | Typed action model and demo/test preview exist; real HomeKit entitlement and live home control are not complete. |
 | OAuth connector core | Scaffolded | Authorization/callback/status scaffolds exist; real provider API integrations are not complete. |
-| Local model catalog/download/select/delete | Scaffolded | User-triggered catalog/download/select/delete flows exist, and download progress/cancellation state is unit-tested, but user-visible progress/cancel UI polish, signed catalog metadata, and real-device iOS runtime proof are still missing. |
+| Local model catalog/download/select/delete | Scaffolded | User-triggered catalog/download/select/delete flows exist; catalog unknown/revoked signing keys now fail closed in tests; download progress/cancellation/checksum/delete/runtime-unavailable paths are package-tested; richer progress UI, cryptographic catalog signature verification, and real-device iOS runtime proof are still missing. |
 | macOS/dev local model reply check | Test-only / Mock | External command adapter is for development validation, not iOS production inference. |
 | iOS production local model runtime | Planned | Do not claim local iPhone inference works until a real runtime is wired and tested. |
 | Audit log persistence | Implemented | Live app persists file-backed metadata-only audit events. |
@@ -65,13 +65,14 @@ Primary product shape:
 1. Tighten local model beta path.
    - Keep downloads user-triggered.
    - Size, license, purpose, storage, backup policy, delete state, and runtime-unavailable copy are covered in the beta Settings path.
-   - Remaining gaps: user-visible progress/cancel UI polish, production signed catalog, and real-device iOS runtime proof.
+   - Catalog trust metadata now rejects unknown/revoked signing keys before accepting remote rows.
+   - Remaining gaps: richer progress/cancel UI polish, cryptographic catalog signature verification, and real-device iOS runtime proof.
    - Never commit weights, tokenizer files, GGUF files, caches, credentials, or generated secrets.
    - Keep iOS production inference marked as Planned until real-device runtime evidence exists.
 
 2. Run device and App Review verification.
-  - 2026-06-03 baseline completed: `swift test`, `xcodegen generate`, `testLaunchDrawerChatAndSettingsSmokeFlow`, focused simulator smoke for Recipe / Skill Manager / OAuth readiness, and 9 preview+confirm action paths all passed.
-  - Memory save/search/delete/export, Share Extension import, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector token disconnect/delete, and Local Only fail-closed no-cloud routing are currently covered by package tests.
+  - 2026-06-03 baseline completed: `swift test`, `xcodegen generate`, and 18 focused simulator smoke tests covering Chat launch, local model catalog/download preview, Shortcut/App Intent demo surfaces, Recipe preview/run, Skill Manager compatibility/search, OAuth readiness, and 9 preview+confirm action paths all passed.
+  - Memory save/search/delete/export, Share Extension import, App Intent registry/type coverage plus Save/Search node runtime, live Skill Manager effective catalog, local model signing-key/checksum/cancel/delete/runtime-unavailable paths, OpenAI API key save/dry-run/delete, OAuth connector token disconnect/delete, and Local Only fail-closed no-cloud routing are currently covered by package tests.
   - Remaining sign-off gaps: real-device Chat / Memory / Access / Settings / Share Extension / App Intents smoke.
   - Keep App Intent/Shortcut device QA focused on existing beta nodes.
 

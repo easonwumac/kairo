@@ -15,7 +15,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 | EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist for current scope. |
 | HomeKit | Scaffolded | Preview/demo/test path exists; real HomeKit entitlement/live control is not complete. |
 | OAuth provider APIs | Scaffolded | Auth/callback/status scaffold exists; real provider API integrations are not complete. |
-| Local model catalog/download/select/delete | Scaffolded | User-triggered download/select/delete flows exist, no model weights are bundled, and download progress/cancellation state is package-tested; user-visible progress/cancel UI polish, signed catalog metadata, and real-device iOS runtime proof are still incomplete. |
+| Local model catalog/download/select/delete | Scaffolded | User-triggered download/select/delete flows exist, no model weights are bundled, download progress/cancellation/checksum/delete/runtime-unavailable paths are package-tested, and remote catalog metadata now fails closed on unknown/revoked signing keys; cryptographic catalog signature verification, richer progress UI, and real-device iOS runtime proof are still incomplete. |
 | macOS/dev local model reply check | Test-only / Mock | External command validation only; not iOS runtime proof. |
 | iOS production local model inference runtime | Planned | Must remain unavailable until real device/runtime evidence exists. |
 | Keyboard Extension | Planned | Not built for beta. |
@@ -145,7 +145,9 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Core downloader supports HTTPS + checksum verification.
 - [x] Core settings can persist and validate the user-selected installed model.
 - [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
-- [ ] Production signed catalog、progress/cancel UI、runtime speed proof。
+- [x] Remote catalog metadata rejects unknown/revoked signing keys before accepting download rows.
+- [x] Package tests cover checksum failure, download cancellation cleanup, deleting the selected model, and runtime-unavailable fail-closed paths.
+- [ ] Catalog payload cryptographic signature verification、richer progress/cancel UI、runtime speed proof。
 - [x] 模型存在 Application Support/LocalModels，並由 downloader 標記為不進 iCloud backup。
 - [ ] 本機模型不執行任意程式碼，只作為 app binary 內 inference engine 的資料資產。
 - [ ] iOS production inference runtime is implemented and verified on real devices. Current macOS/dev reply check is not proof.
@@ -156,11 +158,13 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Core OAuth login center reports connector status and builds configured authorization sessions.
 - [x] Settings UI lists OAuth connector readiness without exposing token values.
 - [x] App registers `kairo://` and previews OAuth callbacks with redacted code metadata only.
-- [ ] 支援 API key 或官方 OAuth/connector。
+- [x] OpenAI API key can be saved / dry-run tested / deleted from Settings.
+- [x] Live app stores API keys and OAuth token sets in Keychain-backed credential storage.
+- [x] OAuth connectors support disconnect / token delete.
+- [x] Local Only routing fails closed without calling cloud completion when no local model is selected.
 - [ ] 不保存 ChatGPT web cookie。
 - [ ] 不爬取 ChatGPT web session。
-- [ ] Token 存 Keychain。
-- [ ] 可登出並刪除 tokens。
+- [ ] Additional provider API integrations beyond the current OAuth/API-key scaffolds are not complete.
 
 ### 10. Account and deletion
 
@@ -183,6 +187,10 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] `xcodegen generate` 通過。
 - [x] Focused simulator XCUITest smoke 通過：
   - `testLaunchDrawerChatAndSettingsSmokeFlow`
+  - `testSettingsLocalModelCatalogListsDownloadableModels`
+  - `testSettingsLocalModelDownloadRequiresConfirmationPreview`
+  - `testSettingsShowsShortcutDemoInputOutputContracts`
+  - `testShortcutsSurfaceShowsNodeDemoContracts`
   - `testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe`
   - `testAccessSkillManagerBlocksIncompatibleMarketplaceSkillInstall`
   - `testAccessSkillManagerSearchFiltersSkills`
@@ -196,12 +204,12 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
   - `testChatCanPreviewAndConfirmMessagesHandoff`
   - `testChatCanPreviewAndConfirmPhoneCallHandoff`
   - `testChatCanPreviewAndConfirmWebSearchHandoff`
-- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, local model download progress/cancellation state, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
+- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, App Intent registry/type coverage plus Save/Search node runtime, local model catalog unknown/revoked signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable state, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
 - [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
 - [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
 - [x] 不支援的跨 App 操作會顯示安全替代方案。
 - [ ] 真機 smoke 尚未在這一輪重跑；Chat / Memory / Access / Settings / Share Extension / App Intents 仍需實機簽核。
-- [ ] App Intent Ask / Save / Search 在這一輪尚未做 device-level smoke；目前證據是 package tests 與 source coverage，不是實機驗證。
+- [ ] App Intent Ask / Save / Search 在這一輪尚未做 device-level smoke；目前證據是 registry/type coverage，外加 Save/Search node package tests，不是實機驗證。
 - [ ] Chat history app 重啟後仍需在真機重跑簽核。
 - [ ] HomeKit control action 仍只可宣稱 preview/demo/test path；真實 entitlement/live control 尚未完成。
 - [x] OpenAI API key save/dry-run/delete 與 OAuth connector token disconnect/delete 已有 package tests；dry run 不送出網路請求。

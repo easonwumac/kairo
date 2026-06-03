@@ -162,6 +162,79 @@ final class LocalModelFeatureTests: XCTestCase {
         }
     }
 
+    func testLocalModelCatalogServiceRejectsCatalogWhenSigningKeyIsUnknown() async throws {
+        let body = remoteModelCatalogJSON(
+            signingKeyID: "unknown-key",
+            signature: "signed-catalog-placeholder",
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "qwen-small",
+                    displayName: "Qwen Small"
+                )
+            ]
+        )
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: body)
+        let service = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: httpClient,
+            trustStore: LocalModelCatalogTrustStore(
+                trustedKeys: [
+                    LocalModelTrustedSigningKey(
+                        keyID: "release-2026-q2",
+                        algorithm: "p256-sha256",
+                        status: .active
+                    )
+                ]
+            )
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected unknown signing key to be rejected.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .unknownSigningKey("unknown-key"))
+        }
+    }
+
+    func testLocalModelCatalogServiceRejectsCatalogWhenSigningKeyIsRevoked() async throws {
+        let body = remoteModelCatalogJSON(
+            signingKeyID: "release-2026-q1",
+            signature: "signed-catalog-placeholder",
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "qwen-small",
+                    displayName: "Qwen Small"
+                )
+            ]
+        )
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: body)
+        let service = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: httpClient,
+            trustStore: LocalModelCatalogTrustStore(
+                trustedKeys: [
+                    LocalModelTrustedSigningKey(
+                        keyID: "release-2026-q1",
+                        algorithm: "p256-sha256",
+                        status: .revoked
+                    ),
+                    LocalModelTrustedSigningKey(
+                        keyID: "release-2026-q2",
+                        algorithm: "p256-sha256",
+                        status: .active
+                    )
+                ]
+            )
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected revoked signing key to be rejected.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .revokedSigningKey("release-2026-q1"))
+        }
+    }
+
     func testLocalModelCatalogMergesRemoteModelsWithoutDroppingBuiltInFallbacks() {
         let builtIn = LocalModelCatalog(
             generatedAt: Date(timeIntervalSince1970: 1),
@@ -565,6 +638,35 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(reloadedResult, result)
     }
 
+    func testLocalModelBenchmarkServiceSurfacesRuntimeUnavailableReason() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen3-5-0-8b-q4-k-m",
+            version: LocalModelManifest.qwen35Tiny.version,
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
+            sha256: LocalModelManifest.qwen35Tiny.sha256
+        ))
+        let resultStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
+        let service = LocalModelBenchmarkService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            resultStore: resultStore,
+            engine: UnavailableLocalModelBenchmarkEngine(reason: "Runtime not shipped in this beta.")
+        )
+
+        do {
+            _ = try await service.runBenchmark(modelID: "qwen3-5-0-8b-q4-k-m")
+            XCTFail("Expected unavailable runtime to fail closed.")
+        } catch let error as LocalModelBenchmarkError {
+            XCTAssertEqual(error, .runtimeUnavailable("Runtime not shipped in this beta."))
+        }
+    }
+
     func testLocalModelReplyCheckRequiresDownloadedModelBeforeRunning() async throws {
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
         let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
@@ -621,6 +723,32 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(result.generationTokensPerSecond, 38.5)
         XCTAssertTrue(result.summaryText.contains("38.5 gen tok/s"))
         XCTAssertTrue(result.summaryText.contains("Local model reply is alive."))
+    }
+
+    func testLocalModelReplyCheckSurfacesRuntimeUnavailableReason() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen3-5-0-8b-q4-k-m",
+            version: LocalModelManifest.qwen35Tiny.version,
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
+            sha256: LocalModelManifest.qwen35Tiny.sha256
+        ))
+        let service = LocalModelReplyCheckService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            runtime: UnavailableLocalModelReplyCheckRuntime(reason: "Runtime not shipped in this beta.")
+        )
+
+        do {
+            _ = try await service.runReplyCheck(modelID: "qwen3-5-0-8b-q4-k-m")
+            XCTFail("Expected unavailable reply runtime to fail closed.")
+        } catch let error as LocalModelReplyCheckError {
+            XCTAssertEqual(error, .runtimeUnavailable("Runtime not shipped in this beta."))
+        }
     }
 
     func testLocalModelExternalCommandRuntimeRunsDownloadedQwenThroughLlamaCLI() async throws {
@@ -1173,6 +1301,8 @@ final class LocalModelFeatureTests: XCTestCase {
     }
 
     private func remoteModelCatalogJSON(
+        signingKeyID: String = "kairo-models-2026",
+        signature: String = "signed-catalog-placeholder",
         minimumSafetyPolicyVersion: String = "2026.1",
         modelsJSON: [String]
     ) -> String {
@@ -1180,8 +1310,8 @@ final class LocalModelFeatureTests: XCTestCase {
         {
           "schemaVersion": 1,
           "generatedAt": "2026-06-02T00:00:00Z",
-          "signingKeyID": "kairo-models-2026",
-          "signature": "signed-catalog-placeholder",
+          "signingKeyID": "\(signingKeyID)",
+          "signature": "\(signature)",
           "sourceRepository": "https://github.com/easonwumac/kairo-models",
           "minimumSafetyPolicyVersion": "\(minimumSafetyPolicyVersion)",
           "models": [
