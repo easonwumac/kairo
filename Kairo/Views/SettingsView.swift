@@ -31,6 +31,7 @@ public struct SettingsView: View {
     @State private var localModelCatalog: LocalModelCatalog
     @State private var localModelStatus: LocalModelSettingsStatus
     @State private var localModelDownloadProgress: LocalModelDownloadProgressState?
+    @State private var localModelDownloadTask: Task<Void, Never>?
     @State private var localModelStatusMessage: String?
     @State private var localModelStatusMessageModelID: String?
 
@@ -229,6 +230,7 @@ public struct SettingsView: View {
             setLocalModelPreference: { setLocalModelPreference($0) },
             refreshLocalModelCatalog: refreshLocalModelCatalog,
             downloadLocalModel: { downloadLocalModel($0) },
+            cancelLocalModelDownload: { cancelLocalModelDownload($0) },
             selectLocalModel: { selectLocalModel($0) },
             runLocalModelBenchmark: { runLocalModelBenchmark($0) },
             runLocalModelReplyCheck: { runLocalModelReplyCheck($0) },
@@ -451,15 +453,11 @@ public struct SettingsView: View {
             }
 
             if localModelDownloadProgress?.modelID == row.modelID, let progress = localModelDownloadProgress {
-                ProgressView(progress.displayText, value: progress.fractionCompleted)
-                    .font(.caption)
-                    .accessibilityIdentifier("settings.models.\(row.modelID).download-progress")
-
-                if progress.allowsCancellation {
-                    Text("Keep Settings open while Kairo downloads and verifies this model; cancellation cleans up partial state.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("settings.models.\(row.modelID).download-cancel-note")
+                LocalModelDownloadProgressInlineView(
+                    progress: progress,
+                    modelID: row.modelID
+                ) {
+                    cancelLocalModelDownload(row)
                 }
             }
         }
@@ -634,23 +632,25 @@ public struct SettingsView: View {
     }
 
     private func downloadLocalModel(_ row: LocalModelSettingsRow) {
-        Task {
-            guard localModelSettingsService != nil else {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "尚未設定 local model settings service。"
-                }
-                return
-            }
+        if let progress = localModelDownloadProgress {
+            localModelStatusMessageModelID = progress.modelID
+            localModelStatusMessage = "已有模型下載進行中，請先完成或取消目前下載。"
+            return
+        }
 
-            guard let localModelDownloader else {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "尚未設定 local model downloader。"
-                }
-                return
-            }
+        guard localModelSettingsService != nil else {
+            localModelStatusMessageModelID = row.modelID
+            localModelStatusMessage = "尚未設定 local model settings service。"
+            return
+        }
 
+        guard let localModelDownloader else {
+            localModelStatusMessageModelID = row.modelID
+            localModelStatusMessage = "尚未設定 local model downloader。"
+            return
+        }
+
+        let task = Task {
             do {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
@@ -668,21 +668,30 @@ public struct SettingsView: View {
                         )
                     }
                 }
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelDownloadProgress = nil
-                    localModelStatusMessage = "\(row.displayName) 已下載，可選用。"
-                }
+                await MainActor.run { finishLocalModelDownload(row, message: "\(row.displayName) 已下載，可選用。") }
+                await reloadLocalModelStatus()
+            } catch LocalModelDownloadError.cancelled {
+                await MainActor.run { finishLocalModelDownload(row, message: "\(row.displayName) 下載已取消，partial state 已清理。") }
                 await reloadLocalModelStatus()
             } catch {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelDownloadProgress = nil
-                    localModelStatusMessage = "下載失敗：\(error.localizedDescription)"
-                }
+                await MainActor.run { finishLocalModelDownload(row, message: "下載失敗：\(error.localizedDescription)") }
                 await reloadLocalModelStatus()
             }
         }
+        localModelDownloadTask = task
+    }
+
+    private func cancelLocalModelDownload(_ row: LocalModelSettingsRow) {
+        localModelDownloadTask?.cancel()
+        localModelStatusMessageModelID = row.modelID
+        localModelStatusMessage = "正在取消 \(row.displayName) 下載。"
+    }
+
+    private func finishLocalModelDownload(_ row: LocalModelSettingsRow, message: String) {
+        localModelStatusMessageModelID = row.modelID
+        localModelDownloadProgress = nil
+        localModelDownloadTask = nil
+        localModelStatusMessage = message
     }
 
     private func selectLocalModel(_ row: LocalModelSettingsRow) {

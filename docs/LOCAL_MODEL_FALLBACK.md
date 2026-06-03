@@ -67,7 +67,7 @@ protocol AIProvider {
 
 ## MVP 策略
 
-第一階段不把模型權重塞進 app 或 repo。Kairo core 只保留 Qwen3.5 0.8B 和 Llama 3.2 1B 這組 compact starter catalog，並具備 install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring、模型 catalog/status UI、benchmark metadata、local reply-check runtime abstraction，以及 macOS/dev 外部 CLI reply/benchmark adapter；下一步是 signed production catalog、progress/cancel UI、實機 iPhone runtime proof of concept。
+第一階段不把模型權重塞進 app 或 repo。Kairo core 只保留 Qwen3.5 0.8B 和 Llama 3.2 1B 這組 compact starter catalog，並具備 install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring、模型 catalog/status UI、foreground progress/cancel UI、benchmark metadata、local reply-check runtime abstraction，以及 macOS/dev 外部 CLI reply/benchmark adapter；下一步是 signed production catalog、deeper background/resume cancellation polish、實機 iPhone runtime proof of concept。
 
 ## Download pipeline
 
@@ -80,7 +80,7 @@ protocol AIProvider {
 - writes `downloading`, `installed`, or `failed` records to `FileBackedLocalModelInstallRegistry`;
 - removes partial files when checksum verification fails.
 
-The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, explicit download approval copy for size, license, storage, backup policy, allowed offline purposes, and visible download progress phases while checksum verification runs. A production build still needs a published signed catalog with real release public-key material, deeper background/resume cancellation polish, and production license-approval gates.
+The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, explicit download approval copy for size, license, storage, backup policy, allowed offline purposes, visible download progress phases, and an explicit foreground cancel control while checksum verification runs. A production build still needs a published signed catalog with real release public-key material, deeper background/resume cancellation polish, and production license-approval gates.
 
 The default development catalog starts with 2 popular public GGUF downloads through Hugging Face. It is intentionally compact for the first Models UI pass; the standalone `kairo-models` catalog can add more entries later without bundling weights into the app:
 

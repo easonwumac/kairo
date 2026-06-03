@@ -2563,6 +2563,10 @@ final class KairoCoreTests: XCTestCase {
     func testSettingsViewDefinesLocalModelSectionAccessibilityIdentifiers() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
+        let progressView = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Views/LocalModelDownloadProgressInlineView.swift"),
+            encoding: .utf8
+        )
 
         XCTAssertTrue(settingsView.contains("Local Models"))
         XCTAssertTrue(settingsView.contains(#""settings.models.local""#))
@@ -2577,8 +2581,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).delete""#))
         XCTAssertTrue(settingsView.contains("LocalModelDownloadProgressState"))
         XCTAssertTrue(settingsView.contains("localModelDownloadProgress"))
-        XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).download-progress""#))
-        XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).download-cancel-note""#))
+        XCTAssertTrue(settingsView.contains("localModelDownloadTask"))
+        XCTAssertTrue(settingsView.contains("cancelLocalModelDownload(row)"))
+        XCTAssertTrue(settingsView.contains("LocalModelDownloadProgressInlineView("))
+        XCTAssertTrue(progressView.contains(#""settings.models.\(modelID).download-progress""#))
+        XCTAssertTrue(progressView.contains(#""settings.models.\(modelID).download-active-cancel""#))
         XCTAssertTrue(settingsView.contains("localModelDownloader.download(row.manifest) { fractionCompleted in"))
         XCTAssertTrue(settingsView.contains("row.benchmarkSummaryText"))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).benchmark""#))
@@ -2623,11 +2630,13 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).download-confirm""#))
         XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).download-cancel""#))
         XCTAssertTrue(compactView.contains("localModelDownloadProgress"))
-        XCTAssertTrue(compactView.contains("downloadProgressView(progress)"))
+        XCTAssertTrue(compactView.contains("downloadProgressView(progress, row: row)"))
+        XCTAssertTrue(compactView.contains("cancelLocalModelDownload"))
         XCTAssertTrue(compactView.contains(#""settings.models.\(progress.modelID).download-progress""#))
         XCTAssertTrue(compactView.contains(#""settings.models.\(progress.modelID).download-progress-bar""#))
         XCTAssertTrue(compactView.contains(#""settings.models.\(progress.modelID).download-progress-text""#))
         XCTAssertTrue(compactView.contains(#""settings.models.\(progress.modelID).download-cancel-note""#))
+        XCTAssertTrue(compactView.contains(#""settings.models.\(progress.modelID).download-active-cancel""#))
         XCTAssertTrue(compactView.contains("Download requires explicit approval."))
         XCTAssertTrue(compactView.contains("ForEach(visibleModelRows)"))
         XCTAssertFalse(compactView.contains("ForEach(localModelStatus.settingsRows)"))

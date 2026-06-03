@@ -17,7 +17,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
 3. Local model release hardening.
    - Keep downloads explicitly user-triggered and continue blocking model weights, `.gguf`, tokenizer blobs, caches, and generated artifacts from the repo.
    - Publish the production signed catalog and real release public-key material; app-side catalog payload signature verification now fails closed for unknown, revoked, unsupported, or invalid keys.
-   - Polish deeper background/resume cancellation behavior; Settings now shows foreground download progress phases.
+   - Polish deeper background/resume cancellation behavior; Settings now shows foreground download progress phases and an explicit cancel control.
    - Keep iOS production inference runtime marked `Planned` until there is real-device runtime proof.
 
 4. Skill Manager / marketplace production hardening.

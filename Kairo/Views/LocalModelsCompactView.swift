@@ -14,6 +14,7 @@ struct LocalModelsCompactView: View {
     let setLocalModelPreference: (ProviderRoutePreference) -> Void
     let refreshLocalModelCatalog: () -> Void
     let downloadLocalModel: (LocalModelSettingsRow) -> Void
+    let cancelLocalModelDownload: (LocalModelSettingsRow) -> Void
     let selectLocalModel: (LocalModelSettingsRow) -> Void
     let runLocalModelBenchmark: (LocalModelSettingsRow) -> Void
     let runLocalModelReplyCheck: (LocalModelSettingsRow) -> Void
@@ -335,7 +336,7 @@ struct LocalModelsCompactView: View {
             }
 
             if localModelDownloadProgress?.modelID == row.modelID, let progress = localModelDownloadProgress {
-                downloadProgressView(progress)
+                downloadProgressView(progress, row: row)
             }
 
             if localModelStatusMessageModelID == row.modelID, let localModelStatusMessage {
@@ -486,7 +487,7 @@ struct LocalModelsCompactView: View {
         .accessibilityIdentifier("settings.models.\(row.modelID).download-preview")
     }
 
-    private func downloadProgressView(_ progress: LocalModelDownloadProgressState) -> some View {
+    private func downloadProgressView(_ progress: LocalModelDownloadProgressState, row: LocalModelSettingsRow) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 ProgressView(value: progress.fractionCompleted)
@@ -502,11 +503,23 @@ struct LocalModelsCompactView: View {
             }
 
             if progress.allowsCancellation {
-                Text("Keep this screen open while Kairo downloads, verifies checksum, and can clean up if the task is cancelled.")
-                    .font(compactModelMetadataFont)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .accessibilityIdentifier("settings.models.\(progress.modelID).download-cancel-note")
+                HStack(spacing: 6) {
+                    Text("Keep this screen open while Kairo downloads, verifies checksum, and can clean up if the task is cancelled.")
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .accessibilityIdentifier("settings.models.\(progress.modelID).download-cancel-note")
+
+                    compactActionButton(
+                        "Cancel Download",
+                        systemImage: "xmark.circle",
+                        accessibilityIdentifier: "settings.models.\(progress.modelID).download-active-cancel",
+                        tint: .secondary,
+                        role: .cancel
+                    ) {
+                        cancelLocalModelDownload(row)
+                    }
+                }
             }
         }
         .padding(6)
