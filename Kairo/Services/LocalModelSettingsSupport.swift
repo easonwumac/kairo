@@ -10,6 +10,52 @@ public struct LocalModelSettings: Codable, Equatable, Sendable {
     }
 }
 
+public enum LocalModelDownloadPhase: String, Codable, Equatable, Sendable {
+    case preparing
+    case downloading
+    case verifying
+
+    public var statusPrefix: String {
+        switch self {
+        case .preparing:
+            return "準備下載"
+        case .downloading:
+            return "下載中"
+        case .verifying:
+            return "驗證中"
+        }
+    }
+}
+
+public struct LocalModelDownloadProgressState: Equatable, Sendable {
+    public let modelID: String
+    public let fractionCompleted: Double
+    public let phase: LocalModelDownloadPhase
+
+    public init(modelID: String, fractionCompleted: Double) {
+        let clampedFraction = min(max(fractionCompleted, 0), 1)
+        self.modelID = modelID
+        self.fractionCompleted = clampedFraction
+        switch clampedFraction {
+        case ..<0.2:
+            self.phase = .preparing
+        case ..<0.9:
+            self.phase = .downloading
+        default:
+            self.phase = .verifying
+        }
+    }
+
+    public var allowsCancellation: Bool {
+        true
+    }
+
+    public var displayText: String {
+        let percentage = Int((fractionCompleted * 100).rounded())
+        return "\(phase.statusPrefix) \(percentage)%"
+    }
+}
+
 public struct LocalModelSettingsStatus: Equatable, Sendable {
     public var selectedModelID: String?
     public var selectedModel: LocalModelManifest?

@@ -5,6 +5,7 @@ public enum LocalModelDownloadError: Error, Equatable {
     case checksumMismatch(expected: String, actual: String)
     case unsupportedManifest(String)
     case downloadUnavailable
+    case cancelled
 }
 
 public protocol LocalModelDownloader: Sendable {
@@ -33,7 +34,7 @@ public actor VerifiedLocalModelDownloader: LocalModelDownloader {
         let destinationURL = installedModelURL(for: manifest)
         let temporaryURL = destinationURL.appendingPathExtension("download")
 
-        progress?(0)
+        progress?(0.05)
         try await installRegistry.upsert(LocalModelInstallRecord(
             modelID: manifest.id,
             version: manifest.version,
@@ -45,12 +46,14 @@ public actor VerifiedLocalModelDownloader: LocalModelDownloader {
 
         do {
             let request = URLRequest(url: manifest.downloadURL)
+            progress?(0.55)
             let (data, response) = try await httpClient.data(for: request)
             guard (200..<300).contains(response.statusCode) else {
                 let bodyPreview = String(data: data.prefix(300), encoding: .utf8) ?? ""
                 throw HTTPClientError.unacceptableStatusCode(response.statusCode, bodyPreview)
             }
 
+            progress?(0.9)
             let actualChecksum = Self.sha256Hex(data)
             guard actualChecksum == manifest.sha256.lowercased() else {
                 throw LocalModelDownloadError.checksumMismatch(expected: manifest.sha256, actual: actualChecksum)
@@ -76,8 +79,17 @@ public actor VerifiedLocalModelDownloader: LocalModelDownloader {
                 lastVerifiedAt: Date()
             )
             try await installRegistry.upsert(record)
-            progress?(1)
+            progress?(1.0)
             return destinationURL
+        } catch is CancellationError {
+            if FileManager.default.fileExists(atPath: temporaryURL.path) {
+                try? FileManager.default.removeItem(at: temporaryURL)
+            }
+            if FileManager.default.fileExists(atPath: destinationURL.path) {
+                try? FileManager.default.removeItem(at: destinationURL)
+            }
+            try await installRegistry.delete(modelID: manifest.id)
+            throw LocalModelDownloadError.cancelled
         } catch {
             if FileManager.default.fileExists(atPath: temporaryURL.path) {
                 try? FileManager.default.removeItem(at: temporaryURL)
@@ -124,6 +136,8 @@ public actor VerifiedLocalModelDownloader: LocalModelDownloader {
         switch error {
         case let LocalModelDownloadError.checksumMismatch(expected, actual):
             return "Checksum mismatch. Expected \(expected), got \(actual)."
+        case LocalModelDownloadError.cancelled:
+            return "Download cancelled by user."
         case let HTTPClientError.unacceptableStatusCode(statusCode, _):
             return "HTTP status \(statusCode)."
         default:

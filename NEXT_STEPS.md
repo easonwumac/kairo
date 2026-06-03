@@ -37,7 +37,7 @@ Primary product shape:
 | EventKit / Notifications / Contacts actions | Implemented | Chat actions preview before confirmed writes; Shortcut nodes should remain draft-only unless confirmed by Kairo. |
 | HomeKit action model | Scaffolded | Typed action model and demo/test preview exist; real HomeKit entitlement and live home control are not complete. |
 | OAuth connector core | Scaffolded | Authorization/callback/status scaffolds exist; real provider API integrations are not complete. |
-| Local model catalog/download/select/delete | Scaffolded | User-triggered catalog/download/select/delete flows exist, but progress/cancel UI, signed catalog metadata, and real-device iOS runtime proof are still missing. |
+| Local model catalog/download/select/delete | Scaffolded | User-triggered catalog/download/select/delete flows exist, and download progress/cancellation state is unit-tested, but user-visible progress/cancel UI polish, signed catalog metadata, and real-device iOS runtime proof are still missing. |
 | macOS/dev local model reply check | Test-only / Mock | External command adapter is for development validation, not iOS production inference. |
 | iOS production local model runtime | Planned | Do not claim local iPhone inference works until a real runtime is wired and tested. |
 | Audit log persistence | Implemented | Live app persists file-backed metadata-only audit events. |
@@ -65,7 +65,7 @@ Primary product shape:
 1. Tighten local model beta path.
    - Keep downloads user-triggered.
    - Size, license, purpose, storage, backup policy, delete state, and runtime-unavailable copy are covered in the beta Settings path.
-   - Remaining gaps: progress/cancel UI, production signed catalog, and real-device iOS runtime proof.
+   - Remaining gaps: user-visible progress/cancel UI polish, production signed catalog, and real-device iOS runtime proof.
    - Never commit weights, tokenizer files, GGUF files, caches, credentials, or generated secrets.
    - Keep iOS production inference marked as Planned until real-device runtime evidence exists.
 

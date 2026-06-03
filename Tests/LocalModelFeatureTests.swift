@@ -871,6 +871,70 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertNotNil(record?.lastVerifiedAt)
     }
 
+    func testLocalModelDownloadProgressStateMapsPhasesAndCancellationSupport() {
+        let preparing = LocalModelDownloadProgressState(modelID: "qwen-small", fractionCompleted: 0.05)
+        let downloading = LocalModelDownloadProgressState(modelID: "qwen-small", fractionCompleted: 0.5)
+        let verifying = LocalModelDownloadProgressState(modelID: "qwen-small", fractionCompleted: 0.95)
+
+        XCTAssertEqual(preparing.phase, .preparing)
+        XCTAssertEqual(downloading.phase, .downloading)
+        XCTAssertEqual(verifying.phase, .verifying)
+        XCTAssertTrue(preparing.allowsCancellation)
+        XCTAssertEqual(verifying.displayText, "驗證中 95%")
+    }
+
+    func testVerifiedLocalModelDownloaderReportsProgressMilestones() async throws {
+        let registryURL = temporaryFileURL(named: "install-registry.json")
+        let modelsDirectory = registryURL.deletingLastPathComponent().appendingPathComponent("Models", isDirectory: true)
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let downloader = VerifiedLocalModelDownloader(
+            httpClient: LocalModelMockHTTPClient(statusCode: 200, body: "model-bytes"),
+            installRegistry: registry,
+            modelsDirectory: modelsDirectory
+        )
+        let manifest = makeLocalModelManifest(
+            id: "qwen-small",
+            version: "1.0",
+            sha256: "357e5d6fafa34d27360fec24b4326d3534905e33c6acdee60198fb078b7b79e5"
+        )
+
+        let progressRecorder = ProgressRecorder()
+        _ = try await downloader.download(manifest) { progress in
+            progressRecorder.append(progress)
+        }
+
+        let progressValues = progressRecorder.values()
+        XCTAssertEqual(progressValues, [0.05, 0.55, 0.9, 1.0])
+    }
+
+    func testVerifiedLocalModelDownloaderCancelsAndCleansUpPartialState() async throws {
+        let registryURL = temporaryFileURL(named: "install-registry.json")
+        let modelsDirectory = registryURL.deletingLastPathComponent().appendingPathComponent("Models", isDirectory: true)
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let downloader = VerifiedLocalModelDownloader(
+            httpClient: LocalModelCancellingHTTPClient(),
+            installRegistry: registry,
+            modelsDirectory: modelsDirectory
+        )
+        let manifest = makeLocalModelManifest(
+            id: "qwen-small",
+            version: "1.0",
+            sha256: "357e5d6fafa34d27360fec24b4326d3534905e33c6acdee60198fb078b7b79e5"
+        )
+
+        do {
+            _ = try await downloader.download(manifest, progress: nil)
+            XCTFail("Expected download cancellation to throw.")
+        } catch let error as LocalModelDownloadError {
+            XCTAssertEqual(error, .cancelled)
+        }
+
+        let record = await registry.record(for: manifest.id)
+        XCTAssertNil(record)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: modelsDirectory.appendingPathComponent("qwen-small-1.0.gguf").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: modelsDirectory.appendingPathComponent("qwen-small-1.0.gguf.download").path))
+    }
+
     func testVerifiedLocalModelDownloaderExcludesModelDirectoryAndInstalledFileFromBackup() async throws {
         let registryURL = temporaryFileURL(named: "install-registry.json")
         let modelsDirectory = registryURL.deletingLastPathComponent().appendingPathComponent("Models", isDirectory: true)
@@ -1169,6 +1233,30 @@ private actor LocalModelMockHTTPClient: HTTPClient {
             throw LocalModelMockHTTPClientError.missingRequest
         }
         return capturedRequest
+    }
+}
+
+private actor LocalModelCancellingHTTPClient: HTTPClient {
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        _ = request
+        throw CancellationError()
+    }
+}
+
+private final class ProgressRecorder: @unchecked Sendable {
+    private var storage: [Double] = []
+    private let lock = NSLock()
+
+    func append(_ value: Double) {
+        lock.lock()
+        defer { lock.unlock() }
+        storage.append(value)
+    }
+
+    func values() -> [Double] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
     }
 }
 
