@@ -175,8 +175,16 @@ final class SourceHealthTests: XCTestCase {
             "Kairo 需要完整行事曆權限，才能在你確認後透過 EventKit 建立行事曆事件。"
         )
         XCTAssertEqual(
+            plist["NSCalendarsUsageDescription"] as? String,
+            "Kairo 需要行事曆權限，才能在你確認後建立或整理行事曆草稿。"
+        )
+        XCTAssertEqual(
             plist["NSRemindersFullAccessUsageDescription"] as? String,
             "Kairo 需要提醒事項完整權限，才能在你確認後透過 EventKit 建立提醒事項。"
+        )
+        XCTAssertEqual(
+            plist["NSRemindersUsageDescription"] as? String,
+            "Kairo 需要提醒事項權限，才能在你確認後建立與整理待辦提醒。"
         )
         XCTAssertEqual(
             plist["NSContactsUsageDescription"] as? String,

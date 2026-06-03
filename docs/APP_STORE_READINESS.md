@@ -269,7 +269,7 @@ Because no available real device was reachable, the following remain release-blo
 - [ ] Chat history app 重啟 persistence 仍需在真機重跑簽核。
 - [ ] HomeKit control action 仍只可宣稱 preview/demo/test path；真實 entitlement/live control 尚未完成。
 - [x] OpenAI API key save/dry-run/delete 與 OAuth connector malformed-token reauth + token disconnect/delete 已有 package tests；dry run 不送出網路請求。
-- [x] Focused regex secret scan 已於 2026-06-03 重跑，未在 tracked source/docs 中找到明顯 credential。
+- [x] Focused regex secret scan 已於 2026-06-04 重跑，未在 tracked source/docs 中找到明顯 credential。
 
 ## Review notes draft
 
