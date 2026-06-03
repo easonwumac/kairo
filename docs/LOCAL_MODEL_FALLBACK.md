@@ -4,7 +4,7 @@ Kairo 的模型策略不是只依賴雲端。目標狀態是在手機端放一�
 
 ## Current beta boundary
 
-Current beta supports catalog, explicit user-triggered download, select, delete, progress/cancel UI, checksum verification, trust-store verification, and macOS/dev reply-check plumbing. It does not yet ship an App Store-compatible iPhone production inference runtime. Treat all macOS/dev benchmark and reply-check output as development validation only, not iPhone runtime proof.
+Current beta supports catalog, explicit user-triggered download, select, delete, progress/cancel UI, checksum verification, trust-store verification, and macOS/dev reply-check plumbing. It does not yet ship an App Store-compatible iPhone production inference runtime. iOS live wiring keeps reply checks and benchmarks on the unavailable-runtime path until an App Store-compatible engine is explicitly implemented and verified on device. Treat all macOS/dev benchmark and reply-check output as development validation only, not iPhone runtime proof.
 
 ## 目標
 

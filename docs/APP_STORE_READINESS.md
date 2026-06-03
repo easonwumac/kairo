@@ -165,7 +165,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Package tests cover checksum failure, download cancellation cleanup, stale interrupted-download cleanup after restart/status reload, deleting the selected model, and runtime-unavailable fail-closed paths.
 - [ ] Publish production signed catalog/public key material and runtime speed proof。
 - [x] 模型存在 Application Support/LocalModels，並由 downloader 標記為不進 iCloud backup。
-- [ ] 本機模型不執行任意程式碼，只作為 app binary 內 inference engine 的資料資產；production iOS runtime 尚未完成，維持 Planned。
+- [x] iOS live wiring keeps the local-model reply check and benchmark runtime fail-closed until an App Store-compatible inference engine is implemented.
 - [ ] iOS production inference runtime is implemented and verified on real devices. Current macOS/dev reply check is not proof.
 
 ### 9. OpenAI / ChatGPT auth

@@ -264,6 +264,29 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(localModelFallback.contains("not iPhone runtime proof"))
         XCTAssertTrue(readiness.contains("| iOS production local model inference runtime | Planned |"))
         XCTAssertTrue(readiness.contains("macOS/dev reply checks and benchmark numbers are not iPhone runtime proof"))
+        XCTAssertTrue(readiness.contains("iOS live wiring keeps the local-model reply check and benchmark runtime fail-closed until an App Store-compatible inference engine is implemented."))
+        XCTAssertTrue(localModelFallback.contains("iOS live wiring keeps reply checks and benchmarks on the unavailable-runtime path until an App Store-compatible engine is explicitly implemented and verified on device."))
+    }
+
+    func testIOSLiveEnvironmentDoesNotWireExternalCommandLocalModelRuntime() throws {
+        let root = packageRootURL()
+        let environmentSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/KairoEnvironment.swift"),
+            encoding: .utf8
+        )
+
+        let macOSRuntimeStart = try XCTUnwrap(environmentSource.range(of: "#if os(macOS)"))
+        let fallbackStart = try XCTUnwrap(environmentSource.range(of: "#else", range: macOSRuntimeStart.upperBound..<environmentSource.endIndex))
+        let conditionalEnd = try XCTUnwrap(environmentSource.range(of: "#endif", range: fallbackStart.upperBound..<environmentSource.endIndex))
+        let macOSRuntimeBlock = String(environmentSource[macOSRuntimeStart.upperBound..<fallbackStart.lowerBound])
+        let nonMacOSRuntimeBlock = String(environmentSource[fallbackStart.upperBound..<conditionalEnd.lowerBound])
+
+        XCTAssertTrue(macOSRuntimeBlock.contains("LocalModelExternalCommandRuntime"))
+        XCTAssertTrue(macOSRuntimeBlock.contains("ProcessLocalModelCommandRunner()"))
+        XCTAssertTrue(nonMacOSRuntimeBlock.contains("LocalModelBenchmarkService("))
+        XCTAssertTrue(nonMacOSRuntimeBlock.contains("LocalModelReplyCheckService("))
+        XCTAssertFalse(nonMacOSRuntimeBlock.contains("LocalModelExternalCommandRuntime"))
+        XCTAssertFalse(nonMacOSRuntimeBlock.contains("ProcessLocalModelCommandRunner()"))
     }
 
     func testTrustStoreRunbookDocumentsRotationWithoutPrivateArtifacts() throws {
