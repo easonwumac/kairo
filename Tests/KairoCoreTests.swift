@@ -2259,18 +2259,22 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.models.catalog-source""#))
     }
 
-    func testSettingsViewUsesCompactFullScreenLayoutForModelsOnlyMode() throws {
+    func testSettingsViewDelegatesCompactModelsOnlyLayout() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
+        let settingsViewURL = root.appendingPathComponent("Kairo/Views/SettingsView.swift")
+        let compactViewURL = root.appendingPathComponent("Kairo/Views/LocalModelsCompactView.swift")
+        let settingsView = try String(contentsOf: settingsViewURL, encoding: .utf8)
+        let compactView = try String(contentsOf: compactViewURL, encoding: .utf8)
 
         XCTAssertTrue(settingsView.contains("if mode == .modelsOnly"))
-        XCTAssertTrue(settingsView.contains("modelsOnlyContent"))
-        XCTAssertTrue(settingsView.contains(#""settings.models.screen""#))
-        XCTAssertTrue(settingsView.contains(#""settings.models.compact-list""#))
-        XCTAssertTrue(settingsView.contains("compactLocalModelRow"))
-        XCTAssertTrue(settingsView.contains("private var compactModelNameFont: Font { .caption }"))
-        XCTAssertTrue(settingsView.contains(".font(compactModelNameFont)"))
-        XCTAssertTrue(settingsView.contains(".buttonStyle(.plain)"))
+        XCTAssertTrue(settingsView.contains("LocalModelsCompactView("))
+        XCTAssertLessThan(settingsView.split(separator: "\n").count, 1_050)
+        XCTAssertTrue(compactView.contains("struct LocalModelsCompactView"))
+        XCTAssertTrue(compactView.contains(#""settings.models.screen""#))
+        XCTAssertTrue(compactView.contains(#""settings.models.compact-list""#))
+        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .caption }"))
+        XCTAssertTrue(compactView.contains(".font(compactModelNameFont)"))
+        XCTAssertTrue(compactView.contains(".buttonStyle(.plain)"))
     }
 
     func testRootViewDefinesAutomationsRecipeCenterAccessibilityIdentifiers() throws {
@@ -2769,7 +2773,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("Input: text, sourceName, variables"))
         XCTAssertTrue(smokeTest.contains("Output: memoryID, fields.taskCount, tasks, reminderDrafts"))
         XCTAssertTrue(smokeTest.contains("Screenshot OCR"))
-        XCTAssertTrue(smokeTest.contains("Refresh Catalog"))
+        XCTAssertTrue(smokeTest.contains("settings.models.refresh-catalog"))
         XCTAssertTrue(smokeTest.contains("github.com/easonwumac/kairo-models"))
         XCTAssertTrue(smokeTest.contains("chat.history.thread"))
         XCTAssertTrue(smokeTest.contains("chat.new"))

@@ -641,12 +641,12 @@ final class KairoAppSmokeUITests: XCTestCase {
         if selectFromDrawer {
             selectDrawerSection(identifier: "root.drawer.models", label: "Models")
         }
-        XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
-        XCTAssertTrue(findStaticText(containing: "github.com/easonwumac/kairo-models", direction: .down).exists)
-        let refreshCatalogButton = findButton(labeled: "Refresh Catalog", direction: .both)
-        XCTAssertTrue(refreshCatalogButton.exists)
-        scrollTowardTop(maxSwipes: 8)
-        XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
+        XCTAssertTrue(anyElement("settings.models.screen").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("settings.models.local").exists)
+        let catalogSource = anyElement("settings.models.catalog-source")
+        XCTAssertTrue(catalogSource.exists)
+        XCTAssertTrue(catalogSource.label.contains("github.com/easonwumac/kairo-models"))
+        XCTAssertTrue(app.buttons["settings.models.refresh-catalog"].exists)
         let localModelsToVerify = verifyAllLocalModels
             ? localModelExpectations
             : Array(localModelExpectations.prefix(3))
@@ -657,19 +657,21 @@ final class KairoAppSmokeUITests: XCTestCase {
                 downloadIdentifier: "settings.models.\(localModel.0).download"
             )
         }
-        XCTAssertTrue(findStaticText(containing: "可下載", direction: .both).exists)
-        XCTAssertTrue(findButton(labeled: "Download", direction: .both).exists)
+        XCTAssertTrue(app.staticTexts["settings.models.\(localModelsToVerify[0].0).status"].label.contains("可下載"))
+        XCTAssertTrue(app.buttons["settings.models.\(localModelsToVerify[0].0).download"].exists)
     }
 
     private func verifyDownloadableLocalModel(id: String, displayName: String, downloadIdentifier: String) {
         XCTAssertFalse(displayName.isEmpty)
-        XCTAssertTrue(findElement("settings.models.\(id).name", direction: .both, maxSwipes: 6).exists)
+        XCTAssertTrue(anyElement("settings.models.\(id).row").exists, id)
+        XCTAssertTrue(anyElement("settings.models.\(id).name").exists, id)
         if id == "qwen3-5-0-8b-q4-k-m" {
-            XCTAssertTrue(findElement("settings.models.\(id).benchmark", direction: .both, maxSwipes: 2).exists)
-            XCTAssertTrue(findStaticText(containing: "MLX ref", direction: .both).exists)
-            XCTAssertTrue(findStaticText(containing: "iPhone not verified", direction: .both).exists)
+            let benchmark = anyElement("settings.models.\(id).benchmark")
+            XCTAssertTrue(benchmark.exists)
+            XCTAssertTrue(benchmark.label.contains("MLX ref"))
+            XCTAssertTrue(benchmark.label.contains("iPhone not verified"))
         }
-        XCTAssertTrue(findButton(downloadIdentifier, direction: .both, maxSwipes: 2).exists)
+        XCTAssertTrue(app.buttons[downloadIdentifier].exists, downloadIdentifier)
     }
 
     private func verifyShortcutDemoContract(
