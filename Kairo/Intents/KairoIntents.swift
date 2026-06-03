@@ -156,6 +156,47 @@ public struct CreateCalendarDraftsIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct CreateContactDraftsIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Create Contact Drafts"
+    public static var description = IntentDescription("Create contact drafts from Shortcut input without writing Contacts until a later user-confirmed action.")
+
+    @Parameter(title: "Text")
+    public var text: String
+
+    @Parameter(title: "Name")
+    public var name: String?
+
+    @Parameter(title: "Phone")
+    public var phone: String?
+
+    @Parameter(title: "Email")
+    public var email: String?
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        var variables: [String: String] = [:]
+        if let name = name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            variables["name"] = name
+        }
+        if let phone = phone?.trimmingCharacters(in: .whitespacesAndNewlines), !phone.isEmpty {
+            variables["phone"] = phone
+        }
+        if let email = email?.trimmingCharacters(in: .whitespacesAndNewlines), !email.isEmpty {
+            variables["email"] = email
+        }
+
+        let runtime = try await ShortcutNodeRuntime.live()
+        let output = try await runtime.run(
+            .createContactDraft,
+            input: ShortcutNodeInput(text: text, sourceName: "Create Contact Drafts", variables: variables)
+        )
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct CreateEmailDraftsIntent: AppIntent {
     public static var title: LocalizedStringResource = "Create Email Drafts"
     public static var description = IntentDescription("Create email drafts from Shortcut input without sending mail until a later user-reviewed step.")

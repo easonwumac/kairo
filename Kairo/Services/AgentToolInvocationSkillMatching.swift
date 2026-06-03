@@ -113,6 +113,8 @@ extension AgentToolInvocationPlanner {
             return containsAny(normalizedText, ["email triage", "triage", "inbox", "vendor email", "follow-up", "follow up", "mail tasks", "郵件整理", "信件整理", "分類", "追蹤"])
         case "email-draft-from-shared-text":
             return containsAny(normalizedText, ["email draft", "compose email", "mail draft", "write email", "send draft", "email body", "郵件草稿", "信件草稿", "寫信", "回信草稿"])
+        case "contact-draft-from-shared-text":
+            return containsAny(normalizedText, ["contact draft", "create contact", "save contact", "business card", "phone number", "通訊錄", "聯絡人", "名片", "電話"])
         case "meeting-prep-brief":
             return containsAny(normalizedText, ["meeting", "meeting prep", "prepare meeting", "customer meeting", "calendar", "會議", "開會", "會前", "準備"])
         default:

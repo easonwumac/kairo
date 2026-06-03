@@ -108,6 +108,21 @@ public struct ShortcutTemplateRegistry: Codable, Equatable, Sendable {
             ]
         ),
         ShortcutTemplate(
+            identifier: "contact-draft-shortcut",
+            title: "Contact Draft Shortcut",
+            description: "Shortcut template guidance for creating a Contacts.framework draft from explicit text without writing Contacts silently.",
+            category: .shareSheet,
+            inputSummary: "Name plus optional phone, email, and notes explicitly provided by the user.",
+            outputSummary: "Contact draft JSON and a proposed Contacts.framework action for Kairo review.",
+            requiredIntentIdentifiers: ["CreateContactDraftsIntent", "RunKairoShortcutNodeIntent"],
+            recommendedRecipeTemplateID: "contact-draft-from-shared-text",
+            setupInstructions: [
+                "Create a Share Sheet or manual Shortcut that accepts contact text.",
+                "Pass name, phone, email, and notes into Create Contact Drafts.",
+                "Show the returned draft; do not write Contacts silently and require Kairo preview and confirmation before any Contacts.framework write."
+            ]
+        ),
+        ShortcutTemplate(
             identifier: "calendar-draft-shortcut",
             title: "Calendar Draft Shortcut",
             description: "Shortcut template guidance for turning meeting text into a calendar draft without writing EventKit automatically.",

@@ -131,6 +131,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("shortcut-reply-draft-from-shared-text"))
         XCTAssertTrue(context.contains("shortcut-email-triage"))
         XCTAssertTrue(context.contains("shortcut-email-draft-from-shared-text"))
+        XCTAssertTrue(context.contains("shortcut-contact-draft-from-shared-text"))
         XCTAssertTrue(context.contains("shortcut-meeting-prep-brief"))
         XCTAssertTrue(context.contains("requiresConfirmation=true"))
     }
@@ -1409,6 +1410,7 @@ final class KairoCoreTests: XCTestCase {
             "shortcut-message-reply-handoff",
             "shortcut-email-triage",
             "shortcut-email-draft-from-shared-text",
+            "shortcut-contact-draft-from-shared-text",
             "shortcut-meeting-prep-brief",
             "shortcut-request-to-recipe-draft",
             "shortcut-meeting-text-to-calendar-draft",

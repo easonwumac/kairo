@@ -8,6 +8,7 @@ public enum ShortcutNodeKind: String, Codable, CaseIterable, Sendable {
     case extractTasks
     case createReminderDraft
     case createCalendarDraft
+    case createContactDraft
     case createEmailDraft
     case prepareMessageHandoff
     case createRecipeDraft
@@ -76,6 +77,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
     public var tasks: [ShortcutTaskDraft]
     public var reminderDrafts: [ReminderDraft]
     public var calendarDrafts: [CalendarEventDraft]
+    public var contactDrafts: [ContactDraft]
     public var emailDrafts: [EmailDraft]
     public var recipeDrafts: [KairoRecipe]
     public var proposedActions: [AgentAction]
@@ -89,6 +91,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         tasks: [ShortcutTaskDraft] = [],
         reminderDrafts: [ReminderDraft] = [],
         calendarDrafts: [CalendarEventDraft] = [],
+        contactDrafts: [ContactDraft] = [],
         emailDrafts: [EmailDraft] = [],
         recipeDrafts: [KairoRecipe] = [],
         proposedActions: [AgentAction] = []
@@ -101,6 +104,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         self.tasks = tasks
         self.reminderDrafts = reminderDrafts
         self.calendarDrafts = calendarDrafts
+        self.contactDrafts = contactDrafts
         self.emailDrafts = emailDrafts
         self.recipeDrafts = recipeDrafts
         self.proposedActions = proposedActions
@@ -115,6 +119,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         case tasks
         case reminderDrafts
         case calendarDrafts
+        case contactDrafts
         case emailDrafts
         case recipeDrafts
         case proposedActions
@@ -130,6 +135,7 @@ public struct ShortcutNodeOutput: Codable, Equatable, Sendable {
         tasks = try container.decodeIfPresent([ShortcutTaskDraft].self, forKey: .tasks) ?? []
         reminderDrafts = try container.decodeIfPresent([ReminderDraft].self, forKey: .reminderDrafts) ?? []
         calendarDrafts = try container.decodeIfPresent([CalendarEventDraft].self, forKey: .calendarDrafts) ?? []
+        contactDrafts = try container.decodeIfPresent([ContactDraft].self, forKey: .contactDrafts) ?? []
         emailDrafts = try container.decodeIfPresent([EmailDraft].self, forKey: .emailDrafts) ?? []
         recipeDrafts = try container.decodeIfPresent([KairoRecipe].self, forKey: .recipeDrafts) ?? []
         proposedActions = try container.decodeIfPresent([AgentAction].self, forKey: .proposedActions) ?? []
@@ -172,6 +178,8 @@ public actor ShortcutNodeRuntime {
             return try createReminderDrafts(input)
         case .createCalendarDraft:
             return try createCalendarDraft(input)
+        case .createContactDraft:
+            return try createContactDraft(input)
         case .createEmailDraft:
             return try createEmailDraft(input)
         case .prepareMessageHandoff:
@@ -295,6 +303,47 @@ public actor ShortcutNodeRuntime {
             displayText: "Prepared 1 calendar draft. Review before writing to EventKit.",
             fields: fields,
             calendarDrafts: [draft]
+        )
+    }
+
+    private func createContactDraft(_ input: ShortcutNodeInput) throws -> ShortcutNodeOutput {
+        let text = try validatedText(input.text)
+        let nameParts = contactNameParts(from: input, text: text)
+        let draft = ContactDraft(
+            givenName: nameParts.given,
+            familyName: nameParts.family,
+            phoneNumbers: uniqueStrings(
+                contactValues(from: input.variables, keys: ["phone", "phoneNumber", "mobile", "contactPhone"])
+                    + contactValues(from: text, prefixes: ["phone:", "tel:", "mobile:", "電話:", "手機:"])
+            ),
+            emailAddresses: uniqueStrings(
+                contactValues(from: input.variables, keys: ["email", "emailAddress", "contactEmail"])
+                    + contactValues(from: text, prefixes: ["email:", "mail:", "電子郵件:", "信箱:"])
+            ),
+            notes: contactNotes(from: input, text: text)
+        )
+        let action = AgentAction(
+            kind: .createContactDraft,
+            title: "Review Contact Draft",
+            rationale: "Shortcut requested a Contacts.framework draft. Kairo returns structured draft data and requires visible confirmation before any Contacts write.",
+            payload: .contact(draft),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        var fields = baseFields(for: input)
+        fields["contactDraftCount"] = "1"
+        fields["contactDisplayName"] = draft.displayName
+        fields["contactPhoneCount"] = String(draft.phoneNumbers.count)
+        fields["contactEmailCount"] = String(draft.emailAddresses.count)
+        fields["contactRequiresConfirmation"] = String(action.requiresConfirmation)
+        fields["chainText"] = draft.displayName
+
+        return ShortcutNodeOutput(
+            kind: .createContactDraft,
+            displayText: "Prepared 1 contact draft. Review before writing to Contacts.",
+            fields: fields,
+            contactDrafts: [draft],
+            proposedActions: [action]
         )
     }
 
@@ -657,6 +706,45 @@ public actor ShortcutNodeRuntime {
             return []
         }
         return splitRecipients(value)
+    }
+
+    private func contactNameParts(from input: ShortcutNodeInput, text: String) -> (given: String, family: String) {
+        if let given = input.variables["givenName"]?.nilIfEmpty {
+            return (given, input.variables["familyName"]?.nilIfEmpty ?? "")
+        }
+
+        let rawName = input.variables["name"]?.nilIfEmpty
+            ?? input.variables["contactName"]?.nilIfEmpty
+            ?? lineValue(from: text, prefixes: ["name:", "contact:", "姓名:", "名字:"])
+            ?? title(for: text)
+        let parts = rawName
+            .split(separator: " ")
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard let first = parts.first else {
+            return (rawName, "")
+        }
+        return (first, parts.dropFirst().joined(separator: " "))
+    }
+
+    private func contactValues(from variables: [String: String], keys: [String]) -> [String] {
+        keys
+            .compactMap { variables[$0]?.nilIfEmpty }
+            .flatMap(splitRecipients)
+    }
+
+    private func contactValues(from text: String, prefixes: [String]) -> [String] {
+        guard let value = lineValue(from: text, prefixes: prefixes) else {
+            return []
+        }
+        return splitRecipients(value)
+    }
+
+    private func contactNotes(from input: ShortcutNodeInput, text: String) -> String? {
+        input.variables["notes"]?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            ?? input.variables["contactNotes"]?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            ?? lineValue(from: text, prefixes: ["notes:", "note:", "備註:"])
     }
 
     private func messageBody(from input: ShortcutNodeInput, text: String) -> String {

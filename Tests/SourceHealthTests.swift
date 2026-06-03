@@ -66,6 +66,7 @@ final class SourceHealthTests: XCTestCase {
             "ShortcutDemoCatalog.swift": "public struct ShortcutDemoCatalog",
             "ShortcutDemoRecipeDefinitions.swift": "static let officialRecipes",
             "ShortcutDemoEmailDefinitions.swift": "static let communicationRecipes",
+            "ShortcutDemoContactDefinitions.swift": "static let contactRecipes",
             "ShortcutDemoHomeDefinitions.swift": "static let homeRecipes",
             "ShortcutDemoModels.swift": "public struct ShortcutDemoRecipe",
             "ShortcutDemoRecipeRunner.swift": "public actor ShortcutDemoRecipeRunner"
@@ -89,6 +90,7 @@ final class SourceHealthTests: XCTestCase {
             "ShortcutDemoModels.swift": 220,
             "ShortcutDemoRecipeDefinitions.swift": 500,
             "ShortcutDemoEmailDefinitions.swift": 260,
+            "ShortcutDemoContactDefinitions.swift": 100,
             "ShortcutDemoHomeDefinitions.swift": 140,
             "ShortcutDemoRecipeRunner.swift": 120
         ]

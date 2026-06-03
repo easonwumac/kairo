@@ -195,6 +195,22 @@ final class KairoAppSmokeUITests: XCTestCase {
             sampleText: "Email from vendor"
         )
         verifyShortcutDemoContract(
+            id: "message-reply-handoff",
+            titleText: "Message Reply Handoff",
+            stepText: "1 step: prepareMessageHandoff",
+            inputText: "Input: text, sourceName, variables.recipient, variables.body",
+            outputText: "Output: fields.messageHandoffCount, fields.messageBodyInURL, fields.messageRequiresConfirmation",
+            sampleText: "Please tell Alex"
+        )
+        verifyShortcutDemoContract(
+            id: "contact-draft-from-shared-text",
+            titleText: "Contact Draft from Shared Text",
+            stepText: "1 step: createContactDraft",
+            inputText: "Input: text, sourceName, variables.name, variables.phone, variables.email, variables.notes",
+            outputText: "Output: fields.contactDraftCount, fields.contactDisplayName, fields.contactRequiresConfirmation",
+            sampleText: "Alex Chen"
+        )
+        verifyShortcutDemoContract(
             id: "meeting-prep-brief",
             titleText: "Meeting Prep Brief",
             stepText: "3 steps: searchMemory -> summarize -> extractTasks",
@@ -269,6 +285,24 @@ final class KairoAppSmokeUITests: XCTestCase {
         )
         verifyShortcutDemoContract(
             namespace: "automations.shortcut-demo",
+            id: "message-reply-handoff",
+            titleText: "Message Reply Handoff",
+            stepText: "1 step: prepareMessageHandoff",
+            inputText: "Input: text, sourceName, variables.recipient, variables.body",
+            outputText: "Output: fields.messageHandoffCount, fields.messageBodyInURL, fields.messageRequiresConfirmation",
+            sampleText: "Please tell Alex"
+        )
+        verifyShortcutDemoContract(
+            namespace: "automations.shortcut-demo",
+            id: "contact-draft-from-shared-text",
+            titleText: "Contact Draft from Shared Text",
+            stepText: "1 step: createContactDraft",
+            inputText: "Input: text, sourceName, variables.name, variables.phone, variables.email, variables.notes",
+            outputText: "Output: fields.contactDraftCount, fields.contactDisplayName, fields.contactRequiresConfirmation",
+            sampleText: "Alex Chen"
+        )
+        verifyShortcutDemoContract(
+            namespace: "automations.shortcut-demo",
             id: "generic-node-runner",
             titleText: "Generic Node Runner",
             stepText: "2 steps: summarize -> extractTasks",
@@ -297,6 +331,20 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findElement("automations.shortcut-demo.email-draft-from-shared-text.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "1 email drafts", direction: .both, maxSwipes: 2).exists)
+
+        let messagePreview = findButton("automations.shortcut-demo.message-reply-handoff.preview-sample", direction: .both, maxSwipes: 3)
+        XCTAssertTrue(messagePreview.exists)
+        messagePreview.tap()
+
+        XCTAssertTrue(findElement("automations.shortcut-demo.message-reply-handoff.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Messages handoff ready", direction: .both, maxSwipes: 2).exists)
+
+        let contactPreview = findButton("automations.shortcut-demo.contact-draft-from-shared-text.preview-sample", direction: .both, maxSwipes: 3)
+        XCTAssertTrue(contactPreview.exists)
+        contactPreview.tap()
+
+        XCTAssertTrue(findElement("automations.shortcut-demo.contact-draft-from-shared-text.preview-result", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Review before writing to Contacts", direction: .both, maxSwipes: 2).exists)
     }
 
     func testSettingsShowsOAuthConnectorReadinessAndBoundaries() throws {
