@@ -67,7 +67,7 @@ protocol AIProvider {
 
 ## MVP 策略
 
-第一階段不把模型權重塞進 app 或 repo。Kairo core 只保留 Qwen3.5 0.8B 和 Llama 3.2 1B 這組 compact starter catalog，並具備 install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring、模型 catalog/status UI、foreground progress/cancel UI、stale interrupted-download cleanup、benchmark metadata、local reply-check runtime abstraction，以及 macOS/dev 外部 CLI reply/benchmark adapter；`docs/TRUST_STORE_RUNBOOK.md` 已補上 signed catalog rotation/revocation release gate，下一步仍是 production signed catalog publication、production license-approval gates、實機 iPhone runtime proof of concept。
+第一階段不把模型權重塞進 app 或 repo。Kairo core 只保留 Qwen3.5 0.8B 和 Llama 3.2 1B 這組 compact starter catalog，並具備 install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring、模型 catalog/status UI、foreground progress/cancel UI、license-approval preview、stale interrupted-download cleanup、benchmark metadata、local reply-check runtime abstraction，以及 macOS/dev 外部 CLI reply/benchmark adapter；`docs/TRUST_STORE_RUNBOOK.md` 已補上 signed catalog rotation/revocation release gate，下一步仍是 production signed catalog publication、實機 iPhone runtime proof of concept。
 
 ## Download pipeline
 
@@ -81,14 +81,14 @@ protocol AIProvider {
 - removes partial files when checksum verification fails;
 - removes stale `downloading` records and `.download` partial files on Settings status reload when no foreground download task is active.
 
-The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, explicit download approval copy for size, license, storage, backup policy, allowed offline purposes, visible download progress phases, an explicit foreground cancel control while checksum verification runs, and cleanup for stale interrupted download state after reload. The trust-store rotation/revocation release gate is documented in `docs/TRUST_STORE_RUNBOOK.md`; a production build still needs a published signed catalog with real release public-key material and production license-approval gates.
+The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, explicit download approval copy for size, license, license approval, storage, backup policy, allowed offline purposes, visible download progress phases, an explicit foreground cancel control while checksum verification runs, and cleanup for stale interrupted download state after reload. The trust-store rotation/revocation release gate is documented in `docs/TRUST_STORE_RUNBOOK.md`; a production build still needs a published signed catalog with real release public-key material.
 
 The default development catalog starts with 2 popular public GGUF downloads through Hugging Face. It is intentionally compact for the first Models UI pass; the standalone `kairo-models` catalog can add more entries later without bundling weights into the app:
 
 - `Qwen3.5 0.8B Q4_K_M`: `AaryanK/Qwen3.5-0.8B-GGUF`, file `Qwen3.5-0.8B.q4_k_m.gguf`, about 527.5 MB.
 - `Llama 3.2 1B Instruct Q4_K_M`: `bartowski/Llama-3.2-1B-Instruct-GGUF`, file `Llama-3.2-1B-Instruct-Q4_K_M.gguf`, about 807.7 MB.
 
-SHA-256 and file size are stored in each manifest and verified after download. Models with noncommercial, custom, or gated license terms, should keep license text visible and should gain a production license-approval gate in the standalone `kairo-models` catalog before broad rollout.
+SHA-256 and file size are stored in each manifest and verified after download. Models with noncommercial, custom, or gated license terms must keep license text visible; Settings now shows a license-approval preview before download confirmation, and the standalone `kairo-models` catalog should keep license metadata reviewed before broad rollout.
 
 Kairo must keep this as an explicit user-triggered download. Do not commit model weights, tokenizer blobs, downloaded `.gguf` files, or cached model artifacts into this repository.
 

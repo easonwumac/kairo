@@ -446,6 +446,12 @@ struct LocalModelsCompactView: View {
                 .foregroundStyle(.secondary.opacity(0.9))
                 .lineLimit(2)
 
+            Text(row.licenseApprovalText)
+                .font(compactModelMetadataFont)
+                .foregroundStyle(.secondary.opacity(0.9))
+                .lineLimit(2)
+                .accessibilityIdentifier("settings.models.\(row.modelID).license-approval")
+
             Text(row.storagePolicyText)
                 .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary.opacity(0.9))

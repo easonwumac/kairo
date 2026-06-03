@@ -993,6 +993,10 @@ final class LocalModelFeatureTests: XCTestCase {
             "User-triggered download · 503.1 MB · Apache-2.0"
         )
         XCTAssertEqual(
+            row.licenseApprovalText,
+            "License approval required · Apache-2.0 · www.apache.org"
+        )
+        XCTAssertEqual(
             row.storagePolicyText,
             "Stored in Application Support/LocalModels · Excluded from iCloud backup"
         )

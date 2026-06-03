@@ -2728,6 +2728,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertFalse(compactView.contains(#""settings.models.show-more""#))
         XCTAssertFalse(compactView.contains("modelListToggleTitle"))
         XCTAssertTrue(compactView.contains("row.manifestTransparencyText"))
+        XCTAssertTrue(compactView.contains("row.licenseApprovalText"))
+        XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).license-approval""#))
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))

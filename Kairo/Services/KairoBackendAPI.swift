@@ -3,10 +3,16 @@ import Foundation
 public struct KairoBackendAPI: Sendable {
     public let chat: any KairoChatAPI
     public let deletion: any KairoDeletionAPI
+    public let localModels: any KairoLocalModelAPI
 
-    public init(chat: any KairoChatAPI, deletion: any KairoDeletionAPI) {
+    public init(
+        chat: any KairoChatAPI,
+        deletion: any KairoDeletionAPI,
+        localModels: any KairoLocalModelAPI
+    ) {
         self.chat = chat
         self.deletion = deletion
+        self.localModels = localModels
     }
 }
 
@@ -106,6 +112,60 @@ public struct KairoDeletionBackendService: KairoDeletionAPI {
     }
 }
 
+public protocol KairoLocalModelAPI: Sendable {
+    func status() async throws -> LocalModelSettingsStatus
+    func selectModel(id: String) async throws
+    func clearSelectedModel() async throws
+    func setPreference(_ preference: ProviderRoutePreference) async throws
+    @discardableResult
+    func cleanupStaleDownloadingRecords() async throws -> [String]
+    func deleteModel(id: String) async throws
+}
+
+public enum KairoLocalModelAPIError: Error, Equatable {
+    case unavailable
+}
+
+public struct KairoLocalModelBackendService: KairoLocalModelAPI {
+    private let localModelSettingsService: LocalModelSettingsService?
+
+    public init(localModelSettingsService: LocalModelSettingsService?) {
+        self.localModelSettingsService = localModelSettingsService
+    }
+
+    public func status() async throws -> LocalModelSettingsStatus {
+        try await service().status()
+    }
+
+    public func selectModel(id: String) async throws {
+        try await service().selectModel(id: id)
+    }
+
+    public func clearSelectedModel() async throws {
+        try await service().clearSelectedModel()
+    }
+
+    public func setPreference(_ preference: ProviderRoutePreference) async throws {
+        try await service().setPreference(preference)
+    }
+
+    @discardableResult
+    public func cleanupStaleDownloadingRecords() async throws -> [String] {
+        try await service().cleanupStaleDownloadingRecords()
+    }
+
+    public func deleteModel(id: String) async throws {
+        try await service().deleteModel(id: id)
+    }
+
+    private func service() throws -> LocalModelSettingsService {
+        guard let localModelSettingsService else {
+            throw KairoLocalModelAPIError.unavailable
+        }
+        return localModelSettingsService
+    }
+}
+
 public extension KairoEnvironment {
     var backendAPI: KairoBackendAPI {
         let skillCatalogProvider: AgentSkillCatalogProvider
@@ -126,6 +186,9 @@ public extension KairoEnvironment {
                 memoryStore: memoryStore,
                 credentialStore: credentialStore,
                 auditLogger: auditLogger,
+                localModelSettingsService: localModelSettingsService
+            ),
+            localModels: KairoLocalModelBackendService(
                 localModelSettingsService: localModelSettingsService
             )
         )

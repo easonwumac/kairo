@@ -9,6 +9,10 @@ public extension LocalModelSettingsRow {
         manifest.downloadApprovalText
     }
 
+    var licenseApprovalText: String {
+        manifest.licenseApprovalText
+    }
+
     var storagePolicyText: String {
         manifest.storagePolicyText
     }
@@ -40,6 +44,10 @@ public extension LocalModelManifest {
 
     var downloadApprovalText: String {
         "User-triggered download · \(formattedDownloadSize) · \(licenseName)"
+    }
+
+    var licenseApprovalText: String {
+        "License approval required · \(licenseName) · \(licenseURL.host() ?? licenseURL.absoluteString)"
     }
 
     var storagePolicyText: String {
