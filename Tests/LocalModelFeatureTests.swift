@@ -1116,6 +1116,33 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: modelsDirectory.appendingPathComponent("qwen-small-1.0.gguf.download").path))
     }
 
+    func testLocalModelInstallRegistryCleansUpStaleDownloadingRecordsAfterRestart() async throws {
+        let registryURL = temporaryFileURL(named: "install-registry.json")
+        let modelsDirectory = registryURL.deletingLastPathComponent().appendingPathComponent("Models", isDirectory: true)
+        try FileManager.default.createDirectory(at: modelsDirectory, withIntermediateDirectories: true)
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let destinationURL = modelsDirectory.appendingPathComponent("qwen-small-1.0.gguf")
+        let partialURL = destinationURL.appendingPathExtension("download")
+        try Data("partial-model".utf8).write(to: destinationURL)
+        try Data("partial-download".utf8).write(to: partialURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen-small",
+            version: "1.0",
+            status: .downloading,
+            fileURL: destinationURL,
+            installedSizeBytes: 0,
+            sha256: "357e5d6fafa34d27360fec24b4326d3534905e33c6acdee60198fb078b7b79e5"
+        ))
+
+        let cleanedModelIDs = try await registry.cleanupStaleDownloadingRecords()
+
+        let cleanedRecord = await registry.record(for: "qwen-small")
+        XCTAssertEqual(cleanedModelIDs, ["qwen-small"])
+        XCTAssertNil(cleanedRecord)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destinationURL.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: partialURL.path))
+    }
+
     func testVerifiedLocalModelDownloaderExcludesModelDirectoryAndInstalledFileFromBackup() async throws {
         let registryURL = temporaryFileURL(named: "install-registry.json")
         let modelsDirectory = registryURL.deletingLastPathComponent().appendingPathComponent("Models", isDirectory: true)

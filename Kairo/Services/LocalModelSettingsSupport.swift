@@ -401,6 +401,11 @@ public actor LocalModelSettingsService {
         try await settingsStore.save(settings)
     }
 
+    @discardableResult
+    public func cleanupStaleDownloadingRecords() async throws -> [String] {
+        try await installRegistry.cleanupStaleDownloadingRecords()
+    }
+
     public func deleteModel(id: String) async throws {
         let record = await installRegistry.record(for: id)
         if let record, FileManager.default.fileExists(atPath: record.fileURL.path) {

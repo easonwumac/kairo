@@ -76,6 +76,25 @@ public actor FileBackedLocalModelInstallRegistry {
         try persist()
     }
 
+    @discardableResult
+    public func cleanupStaleDownloadingRecords() throws -> [String] {
+        let staleRecords = records.values.filter { $0.status == .downloading }
+        guard !staleRecords.isEmpty else { return [] }
+
+        for record in staleRecords {
+            if FileManager.default.fileExists(atPath: record.fileURL.path) {
+                try? FileManager.default.removeItem(at: record.fileURL)
+            }
+            let partialURL = record.fileURL.appendingPathExtension("download")
+            if FileManager.default.fileExists(atPath: partialURL.path) {
+                try? FileManager.default.removeItem(at: partialURL)
+            }
+            records[record.modelID] = nil
+        }
+        try persist()
+        return staleRecords.map(\.modelID).sorted()
+    }
+
     private func loadFromDisk() async throws {
         let directory = fileURL.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

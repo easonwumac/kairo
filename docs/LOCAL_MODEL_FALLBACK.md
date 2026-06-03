@@ -67,7 +67,7 @@ protocol AIProvider {
 
 ## MVP 策略
 
-第一階段不把模型權重塞進 app 或 repo。Kairo core 只保留 Qwen3.5 0.8B 和 Llama 3.2 1B 這組 compact starter catalog，並具備 install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring、模型 catalog/status UI、foreground progress/cancel UI、benchmark metadata、local reply-check runtime abstraction，以及 macOS/dev 外部 CLI reply/benchmark adapter；`docs/TRUST_STORE_RUNBOOK.md` 已補上 signed catalog rotation/revocation release gate，下一步仍是 production signed catalog publication、deeper background/resume cancellation polish、實機 iPhone runtime proof of concept。
+第一階段不把模型權重塞進 app 或 repo。Kairo core 只保留 Qwen3.5 0.8B 和 Llama 3.2 1B 這組 compact starter catalog，並具備 install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring、模型 catalog/status UI、foreground progress/cancel UI、stale interrupted-download cleanup、benchmark metadata、local reply-check runtime abstraction，以及 macOS/dev 外部 CLI reply/benchmark adapter；`docs/TRUST_STORE_RUNBOOK.md` 已補上 signed catalog rotation/revocation release gate，下一步仍是 production signed catalog publication、production license-approval gates、實機 iPhone runtime proof of concept。
 
 ## Download pipeline
 
@@ -78,9 +78,10 @@ protocol AIProvider {
 - verifies SHA-256 before moving the file into `KairoPaths.localModelsDirectory`;
 - stores downloads under `Application Support/LocalModels` and marks the directory plus installed model file as excluded from iCloud backup;
 - writes `downloading`, `installed`, or `failed` records to `FileBackedLocalModelInstallRegistry`;
-- removes partial files when checksum verification fails.
+- removes partial files when checksum verification fails;
+- removes stale `downloading` records and `.download` partial files on Settings status reload when no foreground download task is active.
 
-The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, explicit download approval copy for size, license, storage, backup policy, allowed offline purposes, visible download progress phases, and an explicit foreground cancel control while checksum verification runs. The trust-store rotation/revocation release gate is documented in `docs/TRUST_STORE_RUNBOOK.md`; a production build still needs a published signed catalog with real release public-key material, deeper background/resume cancellation polish, and production license-approval gates.
+The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, explicit download approval copy for size, license, storage, backup policy, allowed offline purposes, visible download progress phases, an explicit foreground cancel control while checksum verification runs, and cleanup for stale interrupted download state after reload. The trust-store rotation/revocation release gate is documented in `docs/TRUST_STORE_RUNBOOK.md`; a production build still needs a published signed catalog with real release public-key material and production license-approval gates.
 
 The default development catalog starts with 2 popular public GGUF downloads through Hugging Face. It is intentionally compact for the first Models UI pass; the standalone `kairo-models` catalog can add more entries later without bundling weights into the app:
 

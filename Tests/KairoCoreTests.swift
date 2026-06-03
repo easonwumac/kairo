@@ -2663,6 +2663,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains("localModelDownloadTask"))
         XCTAssertTrue(settingsView.contains("cancelLocalModelDownload(row)"))
         XCTAssertTrue(settingsView.contains("LocalModelDownloadProgressInlineView("))
+        XCTAssertTrue(settingsView.contains("localModelDownloadTask == nil"))
+        XCTAssertTrue(settingsView.contains("cleanupStaleDownloadingRecords()"))
         XCTAssertTrue(progressView.contains(#""settings.models.\(modelID).download-progress""#))
         XCTAssertTrue(progressView.contains(#""settings.models.\(modelID).download-active-cancel""#))
         XCTAssertTrue(settingsView.contains("localModelDownloader.download(row.manifest) { fractionCompleted in"))

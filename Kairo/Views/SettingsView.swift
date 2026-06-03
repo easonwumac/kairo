@@ -960,6 +960,22 @@ public struct SettingsView: View {
     private func reloadLocalModelStatus() async {
         let status: LocalModelSettingsStatus
         if let localModelSettingsService {
+            if localModelDownloadTask == nil {
+                do {
+                    let cleanedModelIDs = try await localModelSettingsService.cleanupStaleDownloadingRecords()
+                    if !cleanedModelIDs.isEmpty {
+                        await MainActor.run {
+                            localModelStatusMessageModelID = nil
+                            localModelStatusMessage = "已清理未完成的 local model download state。"
+                        }
+                    }
+                } catch {
+                    await MainActor.run {
+                        localModelStatusMessageModelID = nil
+                        localModelStatusMessage = "清理未完成 local model download state 失敗：\(error.localizedDescription)"
+                    }
+                }
+            }
             status = await localModelSettingsService.status(
                 minimumSafetyPolicyVersion: localModelCatalog.minimumSafetyPolicyVersion
             )
