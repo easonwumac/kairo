@@ -9,6 +9,7 @@ public struct PermissionHubView: View {
     @State private var isRefreshingMarketplace = false
     @State private var localSkillName = ""
     @State private var localSkillSummary = ""
+    @State private var skillSearchText = ""
     @State private var skillCatalog: AgentSkillCatalog
 
     private let registry = CapabilityRegistry()
@@ -62,7 +63,10 @@ public struct PermissionHubView: View {
                 }
 
                 Section {
-                    manifestImportControls()
+                    skillSearchControls()
+                    if normalizedSkillSearchText.isEmpty {
+                        manifestImportControls()
+                    }
 
                     if let skillManagerMessage {
                         Text(skillManagerMessage)
@@ -71,11 +75,11 @@ public struct PermissionHubView: View {
                             .accessibilityIdentifier("access.skills.message")
                     }
 
-                    ForEach(skillCatalog.skills) { skill in
+                    ForEach(filteredSkills) { skill in
                         skillManagerRow(skill)
                     }
 
-                    if let manifestInstallPreview {
+                    if normalizedSkillSearchText.isEmpty, let manifestInstallPreview {
                         manifestPreview(manifestInstallPreview)
                     }
                 } header: {
@@ -154,6 +158,20 @@ public struct PermissionHubView: View {
             }
             .disabled(manifestImportText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .accessibilityIdentifier("access.skills.manifest-import.button")
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func skillSearchControls() -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            TextField("Search skills", text: $skillSearchText)
+                .accessibilityIdentifier("access.skills.search")
+
+            Text(skillSearchSummary)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("access.skills.search.summary")
         }
         .padding(.vertical, 4)
     }
@@ -291,7 +309,7 @@ public struct PermissionHubView: View {
 
             Text(skill.managementSummary)
                 .font(.caption)
-                .accessibilityIdentifier("access.skill.\(skill.id)")
+                .accessibilityIdentifier("access.skill.\(skill.id).summary")
 
             HStack {
                 Button {
@@ -343,6 +361,45 @@ public struct PermissionHubView: View {
             .font(.caption)
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("access.skill.\(skill.id)")
+    }
+
+    private var filteredSkills: [AgentSkill] {
+        let query = normalizedSkillSearchText
+        guard !query.isEmpty else {
+            return skillCatalog.skills
+        }
+        return skillCatalog.skills.filter { skillMatchesSearch($0, query: query) }
+    }
+
+    private var normalizedSkillSearchText: String {
+        skillSearchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private var skillSearchSummary: String {
+        let total = skillCatalog.skills.count
+        let filtered = filteredSkills.count
+        if normalizedSkillSearchText.isEmpty {
+            return "Showing all \(total) skills."
+        }
+        if filtered == 1, let skill = filteredSkills.first {
+            return "Showing 1 of \(total) skills: \(skill.displayName)."
+        }
+        return "Showing \(filtered) of \(total) skills."
+    }
+
+    private func skillMatchesSearch(_ skill: AgentSkill, query: String) -> Bool {
+        [
+            skill.id,
+            skill.displayName,
+            skill.summary,
+            skill.kind.settingsTitle,
+            skill.source.rawValue,
+            skill.installationStatus.rawValue
+        ]
+            .map { $0.lowercased() }
+            .contains { $0.contains(query) }
     }
 
     @MainActor

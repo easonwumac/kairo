@@ -80,11 +80,10 @@ protocol AIProvider {
 
 The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, and a Refresh Catalog action. A production build still needs a real signed catalog, stronger signature verification, progress/cancellation handling, license text, and stronger size disclosure.
 
-The default development catalog starts with 3 popular public GGUF downloads through Hugging Face. It is intentionally compact for the first Models UI pass; the standalone `kairo-models` catalog can add more entries later without bundling weights into the app:
+The default development catalog starts with 2 popular public GGUF downloads through Hugging Face. It is intentionally compact for the first Models UI pass; the standalone `kairo-models` catalog can add more entries later without bundling weights into the app:
 
 - `Qwen3.5 0.8B Q4_K_M`: `AaryanK/Qwen3.5-0.8B-GGUF`, file `Qwen3.5-0.8B.q4_k_m.gguf`, about 527.5 MB.
 - `Llama 3.2 1B Instruct Q4_K_M`: `bartowski/Llama-3.2-1B-Instruct-GGUF`, file `Llama-3.2-1B-Instruct-Q4_K_M.gguf`, about 807.7 MB.
-- `Gemma 3 1B IT Q4_K_M`: `ggml-org/gemma-3-1b-it-GGUF`, file `gemma-3-1b-it-Q4_K_M.gguf`, about 806.1 MB.
 
 SHA-256 and file size are stored in each manifest and verified after download. Models with noncommercial, custom, or gated license terms, should keep license text visible and should gain a production license-approval gate in the standalone `kairo-models` catalog before broad rollout.
 

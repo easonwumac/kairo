@@ -1990,7 +1990,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(availableModels.allSatisfy { $0.runtime == .gguf })
         XCTAssertTrue(availableModels.allSatisfy { $0.downloadURL.scheme == "https" })
         XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
-        XCTAssertEqual(availableModels.count, 3)
+        XCTAssertEqual(availableModels.count, 2)
 
         let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
         let mlxBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .mlx })
@@ -2007,16 +2007,16 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(indexHTML.contains("Kairo Model Catalog"))
         XCTAssertTrue(indexHTML.contains("models.json"))
-        XCTAssertTrue(indexHTML.contains("starter trio: Qwen3.5 0.8B, Llama 3.2 1B, and Gemma 3 1B"))
+        XCTAssertTrue(indexHTML.contains("starter pair: Qwen3.5 0.8B and Llama 3.2 1B"))
         XCTAssertTrue(indexHTML.contains("Llama 3.2 1B"))
-        XCTAssertTrue(indexHTML.contains("Gemma 3 1B"))
+        XCTAssertFalse(indexHTML.contains("Gemma 3 1B"))
         XCTAssertFalse(indexHTML.contains("SmolLM2 1.7B"))
         XCTAssertTrue(indexHTML.contains("font-size: 12px"))
         XCTAssertTrue(indexHTML.contains("benchmark profiles"))
         XCTAssertTrue(readme.contains("Do not commit model weights"))
         XCTAssertTrue(readme.contains("kairo-models"))
         XCTAssertTrue(readme.contains("runtime benchmark profiles"))
-        XCTAssertTrue(rootReadme.contains("currently Qwen3.5 0.8B, Llama 3.2 1B, and Gemma 3 1B"))
+        XCTAssertTrue(rootReadme.contains("currently Qwen3.5 0.8B and Llama 3.2 1B"))
         XCTAssertFalse(rootReadme.contains("DeepSeek R1 Distill Qwen"))
     }
 
@@ -2403,7 +2403,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).manifest""#))
         XCTAssertTrue(compactView.contains("row.runtimeFitText"))
         XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).runtime-fit""#))
-        XCTAssertTrue(compactView.contains("private let starterModelRowLimit = 2"))
+        XCTAssertTrue(compactView.contains("private let starterModelRowLimit = 1"))
         XCTAssertTrue(compactView.contains("@State private var showsAllModelRows = false"))
         XCTAssertTrue(compactView.contains("ForEach(visibleModelRows)"))
         XCTAssertFalse(compactView.contains("ForEach(localModelStatus.settingsRows)"))
@@ -2416,11 +2416,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))
-        XCTAssertTrue(compactView.contains("Featured: Qwen first, plus a few popular small models."))
-        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 7.5, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 6.5) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 6.5, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 6.5, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("Featured: Qwen first, plus one popular fallback."))
+        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 7, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 6) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 6, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 6, weight: .semibold) }"))
         XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 72)"))
         XCTAssertTrue(compactView.contains(".lineLimit(1)"))
         XCTAssertTrue(compactView.contains(".lineLimit(2)"))
@@ -2608,6 +2608,11 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(permissionHubView.contains("Skill Manager"))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manager""#))
+        XCTAssertTrue(permissionHubView.contains("skillSearchText"))
+        XCTAssertTrue(permissionHubView.contains("filteredSkills"))
+        XCTAssertTrue(permissionHubView.contains("skillMatchesSearch"))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.search""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.search.summary""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.local-create.name""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.local-create.summary""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.local-create.button""#))
@@ -2730,7 +2735,6 @@ final class KairoCoreTests: XCTestCase {
         ).map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
             "llama3-2-1b-instruct-q4-k-m",
-            "gemma3-1b-it-q4-k-m",
             "smollm2-1-7b-instruct-q4-k-m"
         ])
     }
@@ -2934,6 +2938,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.user-ui-created-skill") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.user-ui-created-skill.enable") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.marketplace-refresh") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.search") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.search.summary") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.text") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.manifest-import.button") == true)
@@ -3120,8 +3126,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("settings.models.local"))
         for displayName in [
             "Qwen3.5 0.8B Q4_K_M",
-            "Llama 3.2 1B Instruct Q4_K_M",
-            "Gemma 3 1B IT Q4_K_M"
+            "Llama 3.2 1B Instruct Q4_K_M"
         ] {
             XCTAssertTrue(smokeTest.contains(displayName), displayName)
         }
@@ -3140,6 +3145,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains("access.skill.shortcut-generic-node-runner"))
         XCTAssertTrue(smokeTest.contains("verifySkillManagerInteractionFlow()"))
         XCTAssertTrue(smokeTest.contains("testAccessSkillManagerCreatesLocalUserSkillDraft"))
+        XCTAssertTrue(smokeTest.contains("testAccessSkillManagerSearchFiltersSkills"))
+        XCTAssertTrue(smokeTest.contains(#""access.skills.search""#))
+        XCTAssertTrue(smokeTest.contains(#""access.skills.search.summary""#))
         XCTAssertTrue(smokeTest.contains(#""access.skills.local-create.name""#))
         XCTAssertTrue(smokeTest.contains(#""access.skills.local-create.summary""#))
         XCTAssertTrue(smokeTest.contains(#""access.skills.local-create.button""#))
@@ -3200,16 +3208,14 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
         XCTAssertTrue(localModelCatalogSource.contains("static let kairoStarterModelIDs"))
         XCTAssertTrue(localModelCatalogSource.contains("kairoStarterModels"))
-        XCTAssertEqual(availableModels.count, 3)
+        XCTAssertEqual(availableModels.count, 2)
         XCTAssertEqual(availableModels.map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
-            "llama3-2-1b-instruct-q4-k-m",
-            "gemma3-1b-it-q4-k-m"
+            "llama3-2-1b-instruct-q4-k-m"
         ])
         XCTAssertEqual(availableModels.map(\.displayName), [
             "Qwen3.5 0.8B Q4_K_M",
-            "Llama 3.2 1B Instruct Q4_K_M",
-            "Gemma 3 1B IT Q4_K_M"
+            "Llama 3.2 1B Instruct Q4_K_M"
         ])
 
         for model in availableModels {

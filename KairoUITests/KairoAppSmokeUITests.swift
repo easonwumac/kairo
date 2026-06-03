@@ -10,8 +10,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     private var app: XCUIApplication!
     private let localModelExpectations = [
         ("qwen3-5-0-8b-q4-k-m", "Qwen3.5 0.8B Q4_K_M"),
-        ("llama3-2-1b-instruct-q4-k-m", "Llama 3.2 1B Instruct Q4_K_M"),
-        ("gemma3-1b-it-q4-k-m", "Gemma 3 1B IT Q4_K_M")
+        ("llama3-2-1b-instruct-q4-k-m", "Llama 3.2 1B Instruct Q4_K_M")
     ]
 
     override func setUpWithError() throws {
@@ -33,7 +32,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     func testSettingsLocalModelCatalogListsDownloadableModels() throws {
         relaunchForUITesting(initialSection: "models")
         openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: false, selectFromDrawer: false)
-        XCTAssertFalse(anyElement("settings.models.gemma3-1b-it-q4-k-m.name").exists)
+        XCTAssertFalse(anyElement("settings.models.llama3-2-1b-instruct-q4-k-m.name").exists)
         XCTAssertTrue(findButton(labeled: "Show 1 more popular", direction: .down, maxSwipes: 1).exists)
     }
 
@@ -42,8 +41,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(anyElement("settings.models.screen").waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("settings.models.qwen3-5-0-8b-q4-k-m.name").exists)
-        XCTAssertTrue(anyElement("settings.models.llama3-2-1b-instruct-q4-k-m.name").exists)
-        XCTAssertFalse(anyElement("settings.models.gemma3-1b-it-q4-k-m.name").exists)
+        XCTAssertFalse(anyElement("settings.models.llama3-2-1b-instruct-q4-k-m.name").exists)
         XCTAssertFalse(anyElement("settings.models.smollm2-1-7b-instruct-q4-k-m.name").exists)
 
         let showMoreIdentifier = "settings.models.show-more"
@@ -54,6 +52,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(showMore.exists)
         showMore.tap()
 
+        XCTAssertTrue(findElement("settings.models.llama3-2-1b-instruct-q4-k-m.name", direction: .down, maxSwipes: 2).waitForExistence(timeout: 3))
         XCTAssertTrue(findElement("settings.models.smollm2-1-7b-instruct-q4-k-m.name", direction: .down, maxSwipes: 2).waitForExistence(timeout: 3))
     }
 
@@ -387,6 +386,21 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(enableDraft.exists)
         enableDraft.tap()
         XCTAssertTrue(findButton("access.skill.user-ui-created-skill.disable", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+    }
+
+    func testAccessSkillManagerSearchFiltersSkills() throws {
+        relaunchForUITesting(initialSection: "access")
+
+        let searchField = findElement("access.skills.search", direction: .down, maxSwipes: 3)
+        XCTAssertTrue(searchField.waitForExistence(timeout: 5))
+        searchField.tap()
+        searchField.typeText("weather")
+        dismissKeyboardIfPresent()
+
+        let summary = findElement("access.skills.search.summary", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(summary.waitForExistence(timeout: 5))
+        XCTAssertTrue(summary.label.contains("Showing 1 of"), "Unexpected skill search summary: \(summary.label)")
+        XCTAssertTrue(summary.label.contains("Weather Briefing"), "Unexpected skill search summary: \(summary.label)")
     }
 
     func testAccessShowsHomeKitSecurityDevicePreview() throws {
@@ -736,7 +750,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["settings.models.refresh-catalog"].exists)
         let localModelsToVerify = verifyAllLocalModels
             ? localModelExpectations
-            : Array(localModelExpectations.prefix(2))
+            : Array(localModelExpectations.prefix(1))
         XCTAssertTrue(app.staticTexts["settings.models.\(localModelsToVerify[0].0).status"].label.contains("可下載"))
         XCTAssertTrue(app.buttons["settings.models.\(localModelsToVerify[0].0).download"].exists)
         for localModel in localModelsToVerify {
@@ -980,6 +994,14 @@ final class KairoAppSmokeUITests: XCTestCase {
         let keyboard = app.keyboards.firstMatch
         guard keyboard.exists else {
             return
+        }
+
+        let returnButton = keyboard.buttons["Return"]
+        if returnButton.exists {
+            returnButton.tap()
+            if keyboard.waitForNonExistence(timeout: 2) {
+                return
+            }
         }
 
         app.swipeDown()
