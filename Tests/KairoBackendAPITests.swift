@@ -55,6 +55,43 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(api.moduleRegistry, KairoBackendModuleRegistry.production)
     }
 
+    func testBackendModuleComposerMountsModulesFromDependencyContainer() async throws {
+        let skillManagerService = try await makeAgentSkillManagerService()
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
+            chatHistoryStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            kairoRecipeStore: InMemoryKairoRecipeStore(),
+            permissionService: StubPermissionService(),
+            auditLogger: InMemoryAuditLogger(),
+            agentSkillManagerService: skillManagerService
+        )
+        let registry = KairoBackendModuleRegistry(modules: [
+            KairoBackendModuleDescriptor(
+                id: .chat,
+                displayName: "Mounted Chat",
+                boundarySummary: "Test-only backend module registry."
+            )
+        ])
+
+        let api = KairoBackendModuleComposer(dependencies: environment)
+            .makeBackendAPI(moduleRegistry: registry)
+
+        XCTAssertEqual(api.moduleRegistry, registry)
+        let response = try await api.chat.respond(to: "compose", attachments: [], privacyMode: .standard)
+        XCTAssertEqual(response.message, "Composer response")
+        _ = try await api.skills.catalog()
+
+        do {
+            _ = try await api.localModels.status()
+            XCTFail("Expected unmounted local model service to fail closed.")
+        } catch let error as KairoLocalModelAPIError {
+            XCTAssertEqual(error, .unavailable)
+        }
+    }
+
     func testChatBackendAPIForwardsPrivacyModeThroughAgentCore() async throws {
         let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Private response"))
         let api = KairoChatBackendService(agent: AgentCore(

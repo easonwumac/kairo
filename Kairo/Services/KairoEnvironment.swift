@@ -21,7 +21,7 @@ private enum KairoEnvironmentError: Error {
     case invalidUITestingLocalModelURL
 }
 
-public struct KairoEnvironment: Sendable {
+public struct KairoEnvironment: KairoBackendDependencies {
     public let memoryStore: MemoryStore
     public let credentialStore: CredentialStore
     public let aiProvider: AIProvider
