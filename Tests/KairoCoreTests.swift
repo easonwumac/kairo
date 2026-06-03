@@ -1879,7 +1879,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(availableModels.allSatisfy { $0.runtime == .gguf })
         XCTAssertTrue(availableModels.allSatisfy { $0.downloadURL.scheme == "https" })
         XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
-        XCTAssertEqual(availableModels.count, 6)
+        XCTAssertEqual(availableModels.count, 4)
 
         let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
         let mlxBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .mlx })
@@ -1895,7 +1895,7 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(indexHTML.contains("Kairo Model Catalog"))
         XCTAssertTrue(indexHTML.contains("models.json"))
-        XCTAssertTrue(indexHTML.contains("6\n      starter GGUF models at 2B parameters or below"))
+        XCTAssertTrue(indexHTML.contains("4\n      starter GGUF models at 2B parameters or below"))
         XCTAssertTrue(indexHTML.contains("benchmark profiles"))
         XCTAssertTrue(readme.contains("Do not commit model weights"))
         XCTAssertTrue(readme.contains("kairo-models"))
@@ -2257,6 +2257,20 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains("refreshLocalModelCatalog"))
         XCTAssertTrue(settingsView.contains(#""settings.models.refresh-catalog""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.catalog-source""#))
+    }
+
+    func testSettingsViewUsesCompactFullScreenLayoutForModelsOnlyMode() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(settingsView.contains("if mode == .modelsOnly"))
+        XCTAssertTrue(settingsView.contains("modelsOnlyContent"))
+        XCTAssertTrue(settingsView.contains(#""settings.models.screen""#))
+        XCTAssertTrue(settingsView.contains(#""settings.models.compact-list""#))
+        XCTAssertTrue(settingsView.contains("compactLocalModelRow"))
+        XCTAssertTrue(settingsView.contains("private var compactModelNameFont: Font { .caption }"))
+        XCTAssertTrue(settingsView.contains(".font(compactModelNameFont)"))
+        XCTAssertTrue(settingsView.contains(".buttonStyle(.plain)"))
     }
 
     func testRootViewDefinesAutomationsRecipeCenterAccessibilityIdentifiers() throws {
@@ -2847,19 +2861,15 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
         XCTAssertEqual(availableModels.map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
-            "qwen3-5-2b-q4-k-m",
             "llama3-2-1b-instruct-q4-k-m",
             "deepseek-r1-distill-qwen-1-5b-q4-k-m",
-            "smollm2-1-7b-instruct-q4-k-m",
-            "gemma3-1b-it-q4-k-m"
+            "smollm2-1-7b-instruct-q4-k-m"
         ])
         XCTAssertEqual(availableModels.map(\.displayName), [
             "Qwen3.5 0.8B Q4_K_M",
-            "Qwen3.5 2B Q4_K_M",
             "Llama 3.2 1B Instruct Q4_K_M",
             "DeepSeek R1 Distill Qwen 1.5B Q4_K_M",
-            "SmolLM2 1.7B Instruct Q4_K_M",
-            "Gemma 3 1B IT Q4_K_M"
+            "SmolLM2 1.7B Instruct Q4_K_M"
         ])
 
         for model in availableModels {
@@ -2896,10 +2906,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("MLX ref 286 gen tok/s") == true)
         XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("iPhone not verified") == true)
 
-        let gemma = try XCTUnwrap(availableModels.first { $0.id == "gemma3-1b-it-q4-k-m" })
         let smolLM = try XCTUnwrap(availableModels.first { $0.id == "smollm2-1-7b-instruct-q4-k-m" })
-        XCTAssertEqual(gemma.licenseName, "Gemma Terms of Use")
-        XCTAssertEqual(gemma.contextWindow, 32_768)
         XCTAssertTrue(smolLM.capabilities.contains(.rewriting))
         XCTAssertLessThanOrEqual(smolLM.fileSizeBytes, 1_100_000_000)
     }

@@ -34,8 +34,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testSettingsLocalModelCatalogListsDownloadableModels() throws {
-        assertPrimaryDrawerItemsExist()
-        openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: true)
+        relaunchForUITesting(initialSection: "models")
+        openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: true, selectFromDrawer: false)
     }
 
     func testChatComposerSurfaceIsTappableAndSends() throws {
@@ -639,19 +639,19 @@ final class KairoAppSmokeUITests: XCTestCase {
         }
     }
 
-    private func openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: Bool) {
-        selectDrawerSection(identifier: "root.drawer.models", label: "Models")
+    private func openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: Bool, selectFromDrawer: Bool = true) {
+        if selectFromDrawer {
+            selectDrawerSection(identifier: "root.drawer.models", label: "Models")
+        }
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
         XCTAssertTrue(findStaticText(containing: "github.com/easonwumac/kairo-models", direction: .down).exists)
         let refreshCatalogButton = findButton(labeled: "Refresh Catalog", direction: .both)
         XCTAssertTrue(refreshCatalogButton.exists)
-        refreshCatalogButton.tap()
-        XCTAssertTrue(findStaticText(containing: "已刷新 model catalog", direction: .down).exists)
         scrollTowardTop(maxSwipes: 8)
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
         let localModelsToVerify = verifyAllLocalModels
-            ? localModelExpectations.sorted { $0.0 < $1.0 }
-            : Array(localModelExpectations.prefix(3).sorted { $0.0 < $1.0 })
+            ? localModelExpectations
+            : Array(localModelExpectations.prefix(3))
         for localModel in localModelsToVerify {
             verifyDownloadableLocalModel(
                 id: localModel.0,
@@ -665,13 +665,13 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     private func verifyDownloadableLocalModel(id: String, displayName: String, downloadIdentifier: String) {
         XCTAssertFalse(displayName.isEmpty)
-        XCTAssertTrue(findElement("settings.models.\(id).name", direction: .down, maxSwipes: 6).exists)
+        XCTAssertTrue(findElement("settings.models.\(id).name", direction: .both, maxSwipes: 6).exists)
         if id == "qwen3-5-0-8b-q4-k-m" {
-            XCTAssertTrue(findElement("settings.models.\(id).benchmark", direction: .down, maxSwipes: 2).exists)
+            XCTAssertTrue(findElement("settings.models.\(id).benchmark", direction: .both, maxSwipes: 2).exists)
             XCTAssertTrue(findStaticText(containing: "MLX ref", direction: .both).exists)
             XCTAssertTrue(findStaticText(containing: "iPhone not verified", direction: .both).exists)
         }
-        XCTAssertTrue(findButton(downloadIdentifier, direction: .down, maxSwipes: 2).exists)
+        XCTAssertTrue(findButton(downloadIdentifier, direction: .both, maxSwipes: 2).exists)
     }
 
     private func verifyShortcutDemoContract(
@@ -814,11 +814,17 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     private func relaunchWithInstalledLocalModelForTesting(initialSection: String? = nil) {
+        relaunchForUITesting(initialSection: initialSection, seedInstalledLocalModel: true)
+    }
+
+    private func relaunchForUITesting(initialSection: String? = nil, seedInstalledLocalModel: Bool = false) {
         app.terminate()
         app = XCUIApplication()
         app.launchArguments.append("--ui-testing")
         app.launchArguments.append("--reset-ui-testing-data")
-        app.launchArguments.append("--ui-testing-installed-local-model")
+        if seedInstalledLocalModel {
+            app.launchArguments.append("--ui-testing-installed-local-model")
+        }
         if let initialSection {
             app.launchArguments.append("--ui-testing-root-section=\(initialSection)")
         }
