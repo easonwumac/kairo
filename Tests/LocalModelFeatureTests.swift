@@ -191,6 +191,39 @@ final class LocalModelFeatureTests: XCTestCase {
         } catch let error as LocalModelCatalogServiceError {
             XCTAssertEqual(error, .invalidSignature)
         }
+
+        let expiredCatalog = try signedRemoteModelCatalogJSON(
+            signingKeyID: "kairo-models-expired",
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "llama-small",
+                    displayName: "Llama Small"
+                )
+            ],
+            trustKeyOverride: { signingKey, signingKeyID in
+                LocalModelTrustedSigningKey(
+                    keyID: signingKeyID,
+                    algorithm: "p256-sha256",
+                    status: .active,
+                    publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString(),
+                    validUntil: Date(timeIntervalSince1970: 1_600_000_000)
+                )
+            }
+        )
+        let expiredHTTPClient = LocalModelMockHTTPClient(statusCode: 200, body: expiredCatalog.json)
+        let expiredService = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: expiredHTTPClient,
+            trustStore: expiredCatalog.trustStore,
+            currentDate: { Date(timeIntervalSince1970: 1_700_000_000) }
+        )
+
+        do {
+            _ = try await expiredService.fetchCatalog()
+            XCTFail("Expected expired signing key window to fail closed.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .invalidSignature)
+        }
     }
 
     func testLocalModelCatalogServiceRejectsCatalogWhenSigningKeyIsUnknown() async throws {
@@ -263,6 +296,98 @@ final class LocalModelFeatureTests: XCTestCase {
             XCTFail("Expected revoked signing key to be rejected.")
         } catch let error as LocalModelCatalogServiceError {
             XCTAssertEqual(error, .revokedSigningKey("release-2026-q1"))
+        }
+    }
+
+    func testLocalModelCatalogTrustStoreDecodesRotationMetadata() throws {
+        let json = """
+        {
+          "trustedKeys": [
+            {
+              "keyID": "kairo-models-2026",
+              "algorithm": "p256-sha256",
+              "status": "revoked",
+              "publicKeyBase64": "abc123",
+              "validFrom": "2026-01-01T00:00:00Z",
+              "validUntil": "2026-12-31T00:00:00Z",
+              "revokedAt": "2026-06-04T00:00:00Z",
+              "revokedReason": "Rotated to kairo-models-2026-q3."
+            }
+          ]
+        }
+        """
+
+        let trustStore = try JSONDecoder().decode(LocalModelCatalogTrustStore.self, from: Data(json.utf8))
+        let trustedKey = try XCTUnwrap(trustStore.trustedKey(id: "kairo-models-2026"))
+        let formatter = ISO8601DateFormatter()
+
+        XCTAssertEqual(trustedKey.status, .revoked)
+        XCTAssertEqual(trustedKey.publicKeyBase64, "abc123")
+        XCTAssertEqual(trustedKey.validFrom, formatter.date(from: "2026-01-01T00:00:00Z"))
+        XCTAssertEqual(trustedKey.validUntil, formatter.date(from: "2026-12-31T00:00:00Z"))
+        XCTAssertEqual(trustedKey.revokedAt, formatter.date(from: "2026-06-04T00:00:00Z"))
+        XCTAssertEqual(trustedKey.revokedReason, "Rotated to kairo-models-2026-q3.")
+
+        let encodedJSON = String(data: try JSONEncoder().encode(trustStore), encoding: .utf8) ?? ""
+        XCTAssertTrue(encodedJSON.contains(#""validFrom":"2026-01-01T00:00:00Z""#))
+        XCTAssertTrue(encodedJSON.contains(#""validUntil":"2026-12-31T00:00:00Z""#))
+        XCTAssertTrue(encodedJSON.contains(#""revokedAt":"2026-06-04T00:00:00Z""#))
+    }
+
+    func testLocalModelCatalogTrustStoreDecodesLegacyKeysAsActive() throws {
+        let json = """
+        {
+          "trustedKeys": [
+            {
+              "keyID": "legacy-model-key",
+              "algorithm": "p256-sha256"
+            }
+          ]
+        }
+        """
+
+        let trustStore = try JSONDecoder().decode(LocalModelCatalogTrustStore.self, from: Data(json.utf8))
+        let trustedKey = try XCTUnwrap(trustStore.trustedKey(id: "legacy-model-key"))
+
+        XCTAssertEqual(trustedKey.status, .active)
+        XCTAssertEqual(trustedKey.publicKeyBase64, "")
+        XCTAssertNil(trustedKey.validFrom)
+        XCTAssertNil(trustedKey.validUntil)
+        XCTAssertNil(trustedKey.revokedAt)
+        XCTAssertNil(trustedKey.revokedReason)
+    }
+
+    func testLocalModelCatalogServiceRejectsOutOfWindowSigningKeys() async throws {
+        let signedCatalog = try signedRemoteModelCatalogJSON(
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "qwen-small",
+                    displayName: "Qwen Small"
+                )
+            ],
+            trustKeyOverride: { signingKey, signingKeyID in
+                LocalModelTrustedSigningKey(
+                    keyID: signingKeyID,
+                    algorithm: "p256-sha256",
+                    status: .active,
+                    publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString(),
+                    validFrom: Date(timeIntervalSince1970: 1_800_000_000)
+                )
+            }
+        )
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+        let service = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: httpClient,
+            trustStore: signedCatalog.trustStore,
+            currentDate: { Date(timeIntervalSince1970: 1_700_000_000) }
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected future signing key window to fail closed.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .invalidSignature)
         }
     }
 
@@ -1409,7 +1534,8 @@ final class LocalModelFeatureTests: XCTestCase {
     private func signedRemoteModelCatalogJSON(
         signingKeyID: String = "kairo-models-2026",
         minimumSafetyPolicyVersion: String = "2026.1",
-        modelsJSON: [String]
+        modelsJSON: [String],
+        trustKeyOverride: ((P256.Signing.PrivateKey, String) -> LocalModelTrustedSigningKey)? = nil
     ) throws -> (json: String, trustStore: LocalModelCatalogTrustStore) {
         let signingKey = P256.Signing.PrivateKey()
         let unsignedJSON = remoteModelCatalogJSON(
@@ -1425,7 +1551,7 @@ final class LocalModelFeatureTests: XCTestCase {
             signingKey: signingKey
         )
         let trustStore = LocalModelCatalogTrustStore(trustedKeys: [
-            LocalModelTrustedSigningKey(
+            trustKeyOverride?(signingKey, signingKeyID) ?? LocalModelTrustedSigningKey(
                 keyID: signingKeyID,
                 algorithm: "p256-sha256",
                 status: .active,

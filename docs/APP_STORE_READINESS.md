@@ -46,7 +46,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking, and package source-health tests parse the privacy manifest plus entitlement/review-note boundaries. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
 - **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
 - **Purpose string scope:** Beta app plist includes only currently exercised Calendar, Reminders, Contacts, and Notifications purpose strings; HomeKit, Location, and Photo Library purpose strings stay future-only until those capabilities ship.
-- **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, unsupported, or invalid signing keys. `docs/TRUST_STORE_RUNBOOK.md` defines the production rotation/revocation gate, but production signed catalogs and release public-key material still need publication in the standalone repos.
+- **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, out-of-window, unsupported, or invalid signing keys. `docs/TRUST_STORE_RUNBOOK.md` defines the production rotation/revocation gate, but production signed catalogs and release public-key material still need publication in the standalone repos.
 
 ### 1. Public API only
 
@@ -131,7 +131,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] XCUITest covers chat Messages handoff preview and visible confirmation before opening `sms:`.
 - [x] XCUITest covers chat Apple Maps directions preview and visible handoff confirmation before opening Maps.
 - [x] Marketplace trust store supports key rotation and revocation metadata, including active/revoked state, validity windows, revoked timestamps, and revoked reasons.
-- [x] Marketplace/model catalog trust-store rotation and emergency revocation runbook is documented in `docs/TRUST_STORE_RUNBOOK.md`.
+- [x] Marketplace/model catalog trust stores support rotation and emergency revocation metadata, including active/revoked state, validity windows, revoked timestamps, and revoked reasons; the release runbook is documented in `docs/TRUST_STORE_RUNBOOK.md`.
 - [x] User-created skills require explicit capability selection and confirmation policy before a disabled local draft can be saved.
 - [x] Skill Manager backend API facade covers catalog/effective catalog/preview/install/disable/enable/remove/user drafts, unavailable-service fail-closed behavior, and compatibility-blocked marketplace skills staying out of the executable catalog.
 - [x] Skill remove flow has simulator UI smoke coverage for user-created drafts; signed marketplace update preview/confirm has simulator XCUITest smoke coverage.
@@ -157,7 +157,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Core downloader supports HTTPS + checksum verification.
 - [x] Core settings can persist and validate the user-selected installed model.
 - [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
-- [x] Remote catalog payload signature verification rejects unknown, revoked, unsupported, or invalid P-256 signing keys before accepting download rows.
+- [x] Remote catalog payload signature verification rejects unknown, revoked, out-of-window, unsupported, or invalid P-256 signing keys before accepting download rows.
 - [x] Package tests cover checksum failure, download cancellation cleanup, stale interrupted-download cleanup after restart/status reload, deleting the selected model, and runtime-unavailable fail-closed paths.
 - [ ] Publish production signed catalog/public key material and runtime speed proof。
 - [x] 模型存在 Application Support/LocalModels，並由 downloader 標記為不進 iCloud backup。
@@ -173,6 +173,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] OpenAI API key can be saved / dry-run tested / deleted from Settings.
 - [x] Live app stores API keys and OAuth token sets in Keychain-backed credential storage.
 - [x] OAuth connectors support disconnect / token delete.
+- [x] Settings backend API facade covers OpenAI key status/save/dry-run/delete and OAuth login options/session/callback preview/disconnect without exposing raw secrets or authorization codes.
 - [x] Malformed or undecodable stored OAuth tokens are treated as reauthorization-required and do not count as connected runtime providers.
 - [x] Local Only routing fails closed without calling cloud completion when no local model is selected.
 - [x] 不保存 ChatGPT web cookie。
@@ -258,7 +259,7 @@ Because no available real device was reachable, the following remain release-blo
   - `testChatCanPreviewAndConfirmMessagesHandoff`
   - `testChatCanPreviewAndConfirmPhoneCallHandoff`
   - `testChatCanPreviewAndConfirmWebSearchHandoff`
-- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, App Intent registry/type coverage plus Ask/Save/Search node runtime, local model catalog unknown/revoked/invalid signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup, local model backend API facade status/select/preference/delete/stale-cleanup/fail-closed behavior, Skill Manager backend API facade lifecycle/user-draft/compatibility/fail-closed behavior, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
+- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, App Intent registry/type coverage plus Ask/Save/Search node runtime, local model catalog unknown/revoked/invalid signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup, local model backend API facade status/select/preference/delete/stale-cleanup/fail-closed behavior, Skill Manager backend API facade lifecycle/user-draft/compatibility/fail-closed behavior, Settings backend API facade OpenAI/OAuth secret-redaction behavior, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
 - [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
 - [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
 - [x] 不支援的跨 App 操作會顯示安全替代方案。

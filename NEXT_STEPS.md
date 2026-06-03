@@ -11,14 +11,14 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
 
 2. Permission-denied and App Review final QA.
    - Run real-device fallback checks for denied Calendar / Reminders / Notifications / Contacts permissions.
-   - Metadata-only audit log deletion now has backend API coverage and a Settings / Privacy clear action; keep future deletion copy limited to on-device data unless a backend account exists.
+   - Metadata-only audit log deletion and Settings credential/OAuth management now have backend API coverage; keep future deletion copy limited to on-device data unless a backend account exists.
    - Privacy manifest no-collection/no-tracking, absence of HomeKit entitlement, and review-note boundary copy are now package-tested; recheck labels only if analytics, backend accounts, cloud sync, crash collection, or connector sync is added.
    - Keep HomeKit live control out of beta claims until entitlement, permission copy, fallback UI, confirmation behavior, and real-device evidence are complete.
    - Keep review notes from claiming iOS production local inference, real HomeKit live control, arbitrary cross-app reads/UI control, ChatGPT web-session reuse, or silent Apple Shortcuts creation.
 
 3. Local model release hardening.
    - Keep downloads explicitly user-triggered and continue blocking model weights, `.gguf`, tokenizer blobs, caches, and generated artifacts from the repo.
-   - Publish the production signed catalog and real release public-key material; app-side catalog payload signature verification now fails closed for unknown, revoked, unsupported, or invalid keys, and `docs/TRUST_STORE_RUNBOOK.md` now defines the rotation/revocation release gate.
+   - Publish the production signed catalog and real release public-key material; app-side catalog payload signature verification now fails closed for unknown, revoked, out-of-window, unsupported, or invalid keys, and `docs/TRUST_STORE_RUNBOOK.md` now defines the rotation/revocation release gate.
    - Settings now shows foreground download progress/cancel, cleans stale interrupted download state on status reload, requires an explicit license-approval preview before download confirmation, and local model management now has a backend API facade for status/select/preference/delete/stale cleanup.
    - Keep iOS production inference runtime marked `Planned` until there is real-device runtime proof.
 

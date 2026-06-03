@@ -376,6 +376,9 @@ public struct LocalModelTrustedSigningKey: Codable, Equatable, Identifiable, Sen
     public var algorithm: String
     public var status: LocalModelCatalogSigningKeyStatus
     public var publicKeyBase64: String
+    public var validFrom: Date?
+    public var validUntil: Date?
+    public var revokedAt: Date?
     public var revokedReason: String?
 
     public init(
@@ -383,13 +386,80 @@ public struct LocalModelTrustedSigningKey: Codable, Equatable, Identifiable, Sen
         algorithm: String,
         status: LocalModelCatalogSigningKeyStatus,
         publicKeyBase64: String = "",
+        validFrom: Date? = nil,
+        validUntil: Date? = nil,
+        revokedAt: Date? = nil,
         revokedReason: String? = nil
     ) {
         self.keyID = keyID
         self.algorithm = algorithm
         self.status = status
         self.publicKeyBase64 = publicKeyBase64
+        self.validFrom = validFrom
+        self.validUntil = validUntil
+        self.revokedAt = revokedAt
         self.revokedReason = revokedReason
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case keyID
+        case algorithm
+        case status
+        case publicKeyBase64
+        case validFrom
+        case validUntil
+        case revokedAt
+        case revokedReason
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.keyID = try container.decode(String.self, forKey: .keyID)
+        self.algorithm = try container.decode(String.self, forKey: .algorithm)
+        self.status = try container.decodeIfPresent(LocalModelCatalogSigningKeyStatus.self, forKey: .status) ?? .active
+        self.publicKeyBase64 = try container.decodeIfPresent(String.self, forKey: .publicKeyBase64) ?? ""
+        self.validFrom = try Self.decodeDateIfPresent(from: container, forKey: .validFrom)
+        self.validUntil = try Self.decodeDateIfPresent(from: container, forKey: .validUntil)
+        self.revokedAt = try Self.decodeDateIfPresent(from: container, forKey: .revokedAt)
+        self.revokedReason = try container.decodeIfPresent(String.self, forKey: .revokedReason)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(keyID, forKey: .keyID)
+        try container.encode(algorithm, forKey: .algorithm)
+        try container.encode(status, forKey: .status)
+        try container.encode(publicKeyBase64, forKey: .publicKeyBase64)
+        try Self.encodeDateIfPresent(validFrom, to: &container, forKey: .validFrom)
+        try Self.encodeDateIfPresent(validUntil, to: &container, forKey: .validUntil)
+        try Self.encodeDateIfPresent(revokedAt, to: &container, forKey: .revokedAt)
+        try container.encodeIfPresent(revokedReason, forKey: .revokedReason)
+    }
+
+    private static func decodeDateIfPresent(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) throws -> Date? {
+        if let dateString = try? container.decodeIfPresent(String.self, forKey: key) {
+            guard let date = ISO8601DateFormatter().date(from: dateString) else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: key,
+                    in: container,
+                    debugDescription: "Expected ISO-8601 date string."
+                )
+            }
+            return date
+        }
+        return try container.decodeIfPresent(Date.self, forKey: key)
+    }
+
+    private static func encodeDateIfPresent(
+        _ date: Date?,
+        to container: inout KeyedEncodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) throws {
+        guard let date else { return }
+        try container.encode(ISO8601DateFormatter().string(from: date), forKey: key)
     }
 }
 
@@ -440,15 +510,18 @@ public struct LocalModelCatalogService: Sendable {
     private let indexURL: URL
     private let httpClient: any HTTPClient
     private let trustStore: LocalModelCatalogTrustStore
+    private let currentDate: @Sendable () -> Date
 
     public init(
         indexURL: URL = Self.defaultIndexURL,
         httpClient: any HTTPClient = URLSessionHTTPClient(),
-        trustStore: LocalModelCatalogTrustStore = Self.defaultTrustStore
+        trustStore: LocalModelCatalogTrustStore = Self.defaultTrustStore,
+        currentDate: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.indexURL = indexURL
         self.httpClient = httpClient
         self.trustStore = trustStore
+        self.currentDate = currentDate
     }
 
     public func fetchCatalog() async throws -> LocalModelCatalog {
@@ -485,6 +558,7 @@ public struct LocalModelCatalogService: Sendable {
         guard trustedKey.status == .active else {
             throw LocalModelCatalogServiceError.revokedSigningKey(catalog.signingKeyID)
         }
+        try validateTrustWindow(for: trustedKey)
         try validateSignature(for: catalog, trustedKey: trustedKey)
 
         for model in catalog.models {
@@ -500,6 +574,16 @@ public struct LocalModelCatalogService: Sendable {
                     sha256: model.sha256
                 )
             }
+        }
+    }
+
+    private func validateTrustWindow(for trustedKey: LocalModelTrustedSigningKey) throws {
+        let now = currentDate()
+        if let validFrom = trustedKey.validFrom, now < validFrom {
+            throw LocalModelCatalogServiceError.invalidSignature
+        }
+        if let validUntil = trustedKey.validUntil, now > validUntil {
+            throw LocalModelCatalogServiceError.invalidSignature
         }
     }
 

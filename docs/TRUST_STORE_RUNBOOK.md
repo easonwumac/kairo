@@ -27,9 +27,11 @@ Local model catalog trust keys must include:
 - `algorithm`
 - `publicKeyBase64`
 - `status` as `active` or `revoked`
-- `revokedReason` when revoking
+- `validFrom` when activating a future key
+- `validUntil` when scheduling retirement
+- `revokedAt` and `revokedReason` when revoking
 
-Production catalog payloads must include the matching signing key id and a non-empty signature. App-side validation must fail closed for missing signatures, unknown keys, revoked keys, unsupported algorithms, invalid signatures, non-HTTPS model URLs, and invalid checksums.
+Production catalog payloads must include the matching signing key id and a non-empty signature. App-side validation must fail closed for missing signatures, unknown keys, revoked keys, out-of-window keys, unsupported algorithms, invalid signatures, non-HTTPS model URLs, and invalid checksums.
 
 ## Planned Rotation
 
