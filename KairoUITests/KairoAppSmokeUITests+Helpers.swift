@@ -1,0 +1,397 @@
+import XCTest
+
+extension KairoAppSmokeUITests {
+    func assertPrimaryDrawerItemsExist() {
+        XCTAssertTrue(anyElement("root.safe-area-header").waitForExistence(timeout: 5))
+        let menuButton = findButton("root.drawer.toggle", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(menuButton.exists)
+        XCTAssertGreaterThan(menuButton.frame.minY, 20)
+
+        openDrawer()
+        XCTAssertTrue(findButton("root.drawer.chat", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.skills", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.shortcuts", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.access", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.models", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.settings", direction: .both, maxSwipes: 1).exists)
+        let closeButton = findButton("root.drawer.close", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(closeButton.exists)
+        XCTAssertGreaterThan(closeButton.frame.minY, 20)
+        closeDrawerIfOpen()
+    }
+
+    func sendChatMessage() {
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+        XCTAssertTrue(anyElement("chat.composer.surface").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("chat.composer.input-shell").exists)
+        let composer = anyElement("chat.composer.text")
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        composer.tap()
+        composer.typeText("Run the Kairo UI smoke test")
+        anyElement("chat.composer.send").tap()
+
+        XCTAssertTrue(anyElement("chat.message.user").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
+        dismissKeyboardIfPresent()
+    }
+
+    func openAccessAndVerifyHomeKitDemos() {
+        selectDrawerSection(identifier: "root.drawer.access", label: "Access")
+        scrollTowardTop()
+        XCTAssertTrue(findButton("access.skills.marketplace-refresh", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skills.manifest-import", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skills.manifest-import.text", direction: .down).exists)
+        XCTAssertTrue(findButton("access.skills.manifest-import.button", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skill.homekit-evening-scene", direction: .down).exists)
+        XCTAssertTrue(findButton("access.skill.homekit-evening-scene.manage", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skill.shortcut-save-shared-text", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skill.shortcut-screenshot-to-reminders", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skill.shortcut-reply-draft-from-shared-text", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skill.shortcut-email-triage", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skill.shortcut-meeting-prep-brief", direction: .down).exists)
+        XCTAssertTrue(findElement("access.skill.shortcut-generic-node-runner", direction: .down).exists)
+        XCTAssertTrue(findElement("access.homekit.demos", direction: .down).exists)
+        XCTAssertTrue(findElement("access.homekit.demo.evening-scene", direction: .down).exists)
+        XCTAssertTrue(findButton("access.homekit.demo.evening-scene.confirm", direction: .down).exists)
+    }
+
+    func verifySkillManagerInteractionFlow() {
+        selectDrawerSection(identifier: "root.drawer.access", label: "Access")
+
+        let refreshMarketplace = findButton("access.skills.marketplace-refresh")
+        XCTAssertTrue(refreshMarketplace.exists)
+        refreshMarketplace.tap()
+
+        let disableShortcut = findButton("access.skill.shortcut-save-shared-text.disable")
+        XCTAssertTrue(disableShortcut.exists)
+        disableShortcut.tap()
+        XCTAssertTrue(findButton("access.skill.shortcut-save-shared-text.enable").waitForExistence(timeout: 5))
+
+        let enableShortcut = findButton("access.skill.shortcut-save-shared-text.enable")
+        XCTAssertTrue(enableShortcut.exists)
+        enableShortcut.tap()
+        XCTAssertTrue(findButton("access.skill.shortcut-save-shared-text.disable").waitForExistence(timeout: 5))
+
+        let installWeather = findButton("access.skill.marketplace-weather-briefing.install")
+        XCTAssertTrue(installWeather.exists)
+        installWeather.tap()
+        XCTAssertTrue(findElement("access.skills.message").exists)
+        XCTAssertTrue(findElement("access.skills.manifest-preview").exists)
+        XCTAssertTrue(findStaticText(containing: "Install Weather Briefing 2.1.0.").exists)
+
+        let confirmInstall = findButton("access.skills.manifest-preview.confirm")
+        XCTAssertTrue(confirmInstall.exists)
+        confirmInstall.tap()
+        XCTAssertTrue(findButton("access.skill.marketplace-weather-briefing.disable").waitForExistence(timeout: 5))
+
+        let previewHomeKit = findButton("access.homekit.demo.evening-scene.confirm")
+        XCTAssertTrue(previewHomeKit.exists)
+        previewHomeKit.tap()
+        XCTAssertTrue(findStaticText(containing: "Confirm before Kairo runs the HomeKit scene.").exists)
+    }
+
+    func openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: Bool) {
+        selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
+        XCTAssertTrue(findElement("settings.openai.api-key-status").exists)
+        XCTAssertTrue(anyElement("settings.openai.api-key-field").exists)
+        XCTAssertTrue(findButton("settings.openai.save-api-key").exists)
+        XCTAssertTrue(findElement("settings.oauth.connectors", direction: .down).exists)
+        if verifyAllLocalModels {
+            openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: true)
+        }
+    }
+
+    func openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: Bool, selectFromDrawer: Bool = true) {
+        if selectFromDrawer {
+            selectDrawerSection(identifier: "root.drawer.models", label: "Models")
+        }
+        XCTAssertTrue(anyElement("settings.models.screen").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("settings.models.local").exists)
+        let catalogSource = anyElement("settings.models.catalog-source")
+        XCTAssertTrue(catalogSource.exists)
+        XCTAssertTrue(catalogSource.label.contains("github.com/easonwumac/kairo-models"))
+        XCTAssertTrue(findStaticText(containing: "No downloaded model selected yet.", direction: .both).exists)
+        XCTAssertTrue(app.buttons["settings.models.refresh-catalog"].exists)
+        let localModelsToVerify = verifyAllLocalModels
+            ? localModelExpectations
+            : Array(localModelExpectations.prefix(2))
+        XCTAssertTrue(app.staticTexts["settings.models.\(localModelsToVerify[0].0).status"].label.contains("可下載"))
+        XCTAssertTrue(app.buttons["settings.models.\(localModelsToVerify[0].0).download"].exists)
+        for localModel in localModelsToVerify {
+            verifyDownloadableLocalModel(
+                id: localModel.0,
+                displayName: localModel.1,
+                downloadIdentifier: "settings.models.\(localModel.0).download"
+            )
+        }
+    }
+
+    func verifyDownloadableLocalModel(id: String, displayName: String, downloadIdentifier: String) {
+        XCTAssertFalse(displayName.isEmpty)
+        XCTAssertTrue(anyElement("settings.models.\(id).name").exists, id)
+        if id == "qwen3-5-0-8b-q4-k-m" {
+            let benchmark = anyElement("settings.models.\(id).benchmark")
+            XCTAssertTrue(benchmark.exists)
+            XCTAssertTrue(benchmark.label.contains("MLX ref"))
+            XCTAssertTrue(benchmark.label.contains("iPhone not verified"))
+
+            let manifest = anyElement("settings.models.\(id).manifest")
+            XCTAssertTrue(manifest.exists)
+            XCTAssertTrue(manifest.label.contains("huggingface.co"))
+            XCTAssertTrue(manifest.label.contains("GGUF"))
+            XCTAssertTrue(manifest.label.contains("Apache-2.0"))
+            XCTAssertTrue(manifest.label.contains("SHA e8e3882"))
+        }
+        let downloadButton = app.buttons[downloadIdentifier]
+        if !downloadButton.exists {
+            scrollDown()
+        }
+        XCTAssertTrue(downloadButton.exists, downloadIdentifier)
+    }
+
+    func verifyShortcutDemoContract(
+        namespace: String = "settings.shortcuts.demo",
+        id: String,
+        titleText: String,
+        stepText: String,
+        inputText: String,
+        outputText: String,
+        sampleText: String
+    ) {
+        XCTAssertTrue(findStaticText(containing: titleText, direction: .both, maxSwipes: 10).exists)
+        assertShortcutDemoField(namespace: namespace, id: id, suffix: "steps", contains: stepText)
+        assertShortcutDemoField(namespace: namespace, id: id, suffix: "input", contains: inputText)
+        assertShortcutDemoField(namespace: namespace, id: id, suffix: "output", contains: outputText)
+        assertShortcutDemoField(namespace: namespace, id: id, suffix: "sample", contains: sampleText)
+    }
+
+    func assertShortcutDemoField(namespace: String = "settings.shortcuts.demo", id: String, suffix: String, contains expectedText: String) {
+        let element = findElement("\(namespace).\(id).\(suffix)", direction: .both, maxSwipes: 4)
+        XCTAssertTrue(element.exists)
+        XCTAssertTrue(element.label.contains(expectedText))
+    }
+
+    func verifyOAuthConnector(
+        providerKey: String,
+        displayName: String,
+        detailText: String,
+        expectsBackendExchange: Bool
+    ) {
+        XCTAssertFalse(providerKey.isEmpty)
+        XCTAssertTrue(findStaticText(containing: displayName, direction: .both, maxSwipes: 6).exists)
+        XCTAssertTrue(findStaticText(containing: "需要 Client 設定", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: detailText, direction: .both, maxSwipes: 2).exists)
+
+        if expectsBackendExchange {
+            XCTAssertTrue(findStaticText(containing: "需要後端 token exchange。", direction: .both, maxSwipes: 1).exists)
+        }
+    }
+
+    func selectDrawerSection(identifier: String, label: String) {
+        dismissKeyboardIfPresent()
+        openDrawer()
+        let button = drawerButton(identifier: identifier, label: label)
+        XCTAssertTrue(button.waitForExistence(timeout: 5))
+        button.tap()
+    }
+
+    func openDrawer() {
+        if anyElement("root.drawer").waitForExistence(timeout: 0.5) {
+            return
+        }
+
+        let toggle = anyElement("root.drawer.toggle")
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        toggle.tap()
+        XCTAssertTrue(anyElement("root.drawer").waitForExistence(timeout: 5))
+    }
+
+    func closeDrawerIfOpen() {
+        guard anyElement("root.drawer").exists else {
+            return
+        }
+
+        let close = app.buttons["root.drawer.close"]
+        if close.exists {
+            close.tap()
+        } else {
+            anyElement("root.drawer.toggle").tap()
+        }
+        _ = anyElement("root.drawer").waitForNonExistence(timeout: 3)
+    }
+
+    func drawerButton(identifier: String, label: String) -> XCUIElement {
+        let identifiedButton = app.buttons[identifier]
+        if identifiedButton.exists {
+            return identifiedButton
+        }
+
+        return app.buttons[label]
+    }
+
+    func openCurrentThreadIfNeeded() {
+        if anyElement("chat.composer.text").waitForExistence(timeout: 1) {
+            return
+        }
+
+        let historyThread = anyElement("chat.history.thread")
+        if historyThread.waitForExistence(timeout: 2) {
+            historyThread.tap()
+            return
+        }
+
+        let newChat = anyElement("chat.new")
+        if newChat.waitForExistence(timeout: 2) {
+            newChat.tap()
+        }
+    }
+
+    func findButton(
+        _ identifier: String,
+        direction: SearchDirection = .both,
+        maxSwipes: Int = 8
+    ) -> XCUIElement {
+        let button = app.buttons[identifier]
+        return find(button, direction: direction, maxSwipes: maxSwipes)
+    }
+
+    func findElement(
+        _ identifier: String,
+        direction: SearchDirection = .both,
+        maxSwipes: Int = 8
+    ) -> XCUIElement {
+        let element = anyElement(identifier)
+        return find(element, direction: direction, maxSwipes: maxSwipes)
+    }
+
+    func findButton(
+        labeled label: String,
+        direction: SearchDirection = .both,
+        maxSwipes: Int = 8
+    ) -> XCUIElement {
+        let button = app.buttons[label]
+        return find(button, direction: direction, maxSwipes: maxSwipes)
+    }
+
+    func findStaticText(
+        containing text: String,
+        direction: SearchDirection = .both,
+        maxSwipes: Int = 8
+    ) -> XCUIElement {
+        let predicate = NSPredicate(format: "label CONTAINS %@", text)
+        let staticText = app.staticTexts.containing(predicate).firstMatch
+        return find(staticText, direction: direction, maxSwipes: maxSwipes)
+    }
+
+    func firstHittableButtonIdentifier(beginningWith prefix: String) -> XCUIElement {
+        let query = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix))
+        let hittable = query.allElementsBoundByIndex.first { $0.exists && $0.isHittable }
+        return hittable ?? query.firstMatch
+    }
+
+    func relaunchWithInstalledLocalModelForTesting(initialSection: String? = nil) {
+        relaunchForUITesting(initialSection: initialSection, seedInstalledLocalModel: true)
+    }
+
+    func relaunchForUITesting(
+        initialSection: String? = nil,
+        seedInstalledLocalModel: Bool = false,
+        seedExpandedLocalModelCatalog: Bool = false
+    ) {
+        app.terminate()
+        app = XCUIApplication()
+        app.launchArguments.append("--ui-testing")
+        app.launchArguments.append("--reset-ui-testing-data")
+        if seedInstalledLocalModel {
+            app.launchArguments.append("--ui-testing-installed-local-model")
+        }
+        if seedExpandedLocalModelCatalog {
+            app.launchArguments.append("--ui-testing-expanded-local-model-catalog")
+        }
+        if let initialSection {
+            app.launchArguments.append("--ui-testing-root-section=\(initialSection)")
+        }
+        app.launch()
+    }
+
+    func find(
+        _ element: XCUIElement,
+        direction: SearchDirection,
+        maxSwipes: Int
+    ) -> XCUIElement {
+        if element.waitForExistence(timeout: 0.3) {
+            return element
+        }
+
+        if direction == .down || direction == .both {
+            for _ in 0..<maxSwipes {
+                scrollDown()
+                if element.waitForExistence(timeout: 0.3) {
+                    return element
+                }
+            }
+        }
+
+        if direction == .up || direction == .both {
+            for _ in 0..<maxSwipes {
+                scrollUp()
+                if element.waitForExistence(timeout: 0.3) {
+                    return element
+                }
+            }
+        }
+
+        return element
+    }
+
+    func anyElement(_ identifier: String) -> XCUIElement {
+        app.descendants(matching: .any)[identifier]
+    }
+
+    func scrollTowardTop(maxSwipes: Int = 4) {
+        for _ in 0..<maxSwipes {
+            scrollUp()
+        }
+    }
+
+    func dismissKeyboardIfPresent() {
+        let keyboard = app.keyboards.firstMatch
+        guard keyboard.exists else {
+            return
+        }
+
+        let returnButton = keyboard.buttons["Return"]
+        if returnButton.exists {
+            returnButton.tap()
+            if keyboard.waitForNonExistence(timeout: 2) {
+                return
+            }
+        }
+
+        app.swipeDown()
+        _ = keyboard.waitForNonExistence(timeout: 3)
+    }
+
+    func scrollDown() {
+        scrollingSurface().swipeUp()
+    }
+
+    func scrollUp() {
+        scrollingSurface().swipeDown()
+    }
+
+    func scrollingSurface() -> XCUIElement {
+        let collectionView = app.collectionViews.firstMatch
+        if collectionView.exists {
+            return collectionView
+        }
+
+        let scrollView = app.scrollViews.firstMatch
+        if scrollView.exists {
+            return scrollView
+        }
+
+        return app
+    }
+}

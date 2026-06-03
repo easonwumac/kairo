@@ -39,6 +39,61 @@ final class SourceHealthTests: XCTestCase {
         }
     }
 
+    func testUITestHelpersStaySplitFromSmokeScenarios() throws {
+        let root = packageRootURL()
+        let uiTests = root.appendingPathComponent("KairoUITests", isDirectory: true)
+        let smokeURL = uiTests.appendingPathComponent("KairoAppSmokeUITests.swift")
+        let helpersURL = uiTests.appendingPathComponent("KairoAppSmokeUITests+Helpers.swift")
+
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: helpersURL.path),
+            "Reusable UI navigation/search helpers should live outside the smoke scenario file."
+        )
+
+        let smokeSource = try String(contentsOf: smokeURL, encoding: .utf8)
+        let helperSource = try String(contentsOf: helpersURL, encoding: .utf8)
+        XCTAssertLessThan(smokeSource.split(separator: "\n").count, 720, "Keep smoke scenarios readable.")
+        XCTAssertTrue(helperSource.contains("extension KairoAppSmokeUITests"))
+        XCTAssertTrue(helperSource.contains("func openAccessAndVerifyHomeKitDemos()"))
+        XCTAssertTrue(helperSource.contains("func findStaticText("))
+        XCTAssertTrue(helperSource.contains("func relaunchForUITesting("))
+    }
+
+    func testShortcutDemoCatalogStaysSplitAcrossFocusedFiles() throws {
+        let root = packageRootURL()
+        let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)
+        let splitFiles = [
+            "ShortcutDemoCatalog.swift": "public struct ShortcutDemoCatalog",
+            "ShortcutDemoRecipeDefinitions.swift": "static let officialRecipes",
+            "ShortcutDemoModels.swift": "public struct ShortcutDemoRecipe",
+            "ShortcutDemoRecipeRunner.swift": "public actor ShortcutDemoRecipeRunner"
+        ]
+
+        for (fileName, requiredSymbol) in splitFiles {
+            let sourceURL = services.appendingPathComponent(fileName)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: sourceURL.path), fileName)
+            let source = try String(contentsOf: sourceURL, encoding: .utf8)
+            XCTAssertTrue(source.contains(requiredSymbol), fileName)
+        }
+
+        let catalogSource = try String(
+            contentsOf: services.appendingPathComponent("ShortcutDemoCatalog.swift"),
+            encoding: .utf8
+        )
+        XCTAssertFalse(catalogSource.contains("daily-briefing"))
+
+        let lineBudgets = [
+            "ShortcutDemoCatalog.swift": 80,
+            "ShortcutDemoModels.swift": 220,
+            "ShortcutDemoRecipeDefinitions.swift": 500,
+            "ShortcutDemoRecipeRunner.swift": 120
+        ]
+        for (fileName, maxLines) in lineBudgets {
+            let source = try String(contentsOf: services.appendingPathComponent(fileName), encoding: .utf8)
+            XCTAssertLessThan(source.split(separator: "\n").count, maxLines, fileName)
+        }
+    }
+
     private func packageRootURL() -> URL {
         var url = URL(fileURLWithPath: #filePath)
         while url.lastPathComponent != "Tests" {
