@@ -109,8 +109,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testSettingsShowsShortcutDemoInputOutputContracts() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
+        relaunchForUITesting(initialSection: "settings")
 
         XCTAssertTrue(findElement("settings.shortcuts.demos", direction: .down).exists)
         verifyShortcutDemoContract(
@@ -164,8 +163,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testShortcutsSurfaceShowsNodeDemoContracts() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.shortcuts", label: "Shortcuts")
+        relaunchForUITesting(initialSection: "shortcuts")
 
         XCTAssertTrue(findElement("automations.shortcut-demos", direction: .down).exists)
         verifyShortcutDemoContract(
