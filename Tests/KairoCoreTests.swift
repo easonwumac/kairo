@@ -3096,16 +3096,16 @@ final class KairoCoreTests: XCTestCase {
 
     func testDefaultLocalModelCatalogExposesPopularStarterModelsForSettings() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let localModelSupport = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/LocalModelSupport.swift"),
+        let localModelCatalogSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/LocalModelCatalog.swift"),
             encoding: .utf8
         )
         let catalog = LocalModelCatalog.kairoDefault
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
 
         XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
-        XCTAssertTrue(localModelSupport.contains("static let kairoStarterModelIDs"))
-        XCTAssertTrue(localModelSupport.contains("kairoStarterModels"))
+        XCTAssertTrue(localModelCatalogSource.contains("static let kairoStarterModelIDs"))
+        XCTAssertTrue(localModelCatalogSource.contains("kairoStarterModels"))
         XCTAssertEqual(availableModels.count, 2)
         XCTAssertEqual(availableModels.map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
