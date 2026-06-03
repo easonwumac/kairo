@@ -62,7 +62,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(anyElement("settings.models.qwen3-5-0-8b-q4-k-m.name").exists)
         XCTAssertTrue(anyElement("settings.models.llama3-2-1b-instruct-q4-k-m.name").exists)
         XCTAssertTrue(findElement("settings.models.trimmed-note", direction: .down, maxSwipes: 2).waitForExistence(timeout: 3))
-        XCTAssertFalse(findElement("settings.models.smollm2-1-7b-instruct-q4-k-m.name", direction: .down, maxSwipes: 2).waitForExistence(timeout: 1))
+        XCTAssertFalse(findElement("settings.models.remote-catalog-test-model-q4-k-m.name", direction: .down, maxSwipes: 2).waitForExistence(timeout: 1))
         XCTAssertFalse(anyElement("settings.models.show-more").exists)
     }
 

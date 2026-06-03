@@ -601,6 +601,149 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertTrue(result.summaryText.contains("Local model reply is alive."))
     }
 
+    func testLocalModelExternalCommandRuntimeRunsDownloadedQwenThroughLlamaCLI() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen3-5-0-8b-q4-k-m",
+            version: LocalModelManifest.qwen35Tiny.version,
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
+            sha256: LocalModelManifest.qwen35Tiny.sha256
+        ))
+        let commandRunner = LocalModelFakeCommandRunner(result: LocalModelCommandRunResult(
+            stdout: "Local model reply is alive.\n",
+            stderr: """
+            llama_perf_context_print: prompt eval time = 80.00 ms / 16 tokens (5.00 ms per token, 200.00 tokens per second)
+            llama_perf_context_print: eval time = 1200.00 ms / 48 runs (25.00 ms per token, 40.00 tokens per second)
+            """,
+            exitCode: 0,
+            durationSeconds: 1.2
+        ))
+        let runtime = LocalModelExternalCommandRuntime(
+            configuration: .llamaCLI(
+                executableURL: URL(fileURLWithPath: "/tmp/llama-cli"),
+                defaultGeneratedTokenTarget: 48
+            ),
+            commandRunner: commandRunner
+        )
+        let replyService = LocalModelReplyCheckService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            runtime: runtime
+        )
+
+        let reply = try await replyService.runReplyCheck(
+            modelID: "qwen3-5-0-8b-q4-k-m",
+            prompt: "Reply with one sentence."
+        )
+
+        XCTAssertEqual(reply.modelID, "qwen3-5-0-8b-q4-k-m")
+        XCTAssertEqual(reply.runtime, .gguf)
+        XCTAssertEqual(reply.runtimePackage, "llama.cpp CLI")
+        XCTAssertEqual(reply.responseText, "Local model reply is alive.")
+        XCTAssertEqual(reply.generatedTokens, 48)
+        XCTAssertEqual(reply.generationTokensPerSecond, 40, accuracy: 0.1)
+        XCTAssertTrue(reply.notes.contains("does not bundle weights"))
+
+        let firstInvocation = try await commandRunner.invocation(at: 0)
+        XCTAssertEqual(firstInvocation.executableURL.path, "/tmp/llama-cli")
+        XCTAssertEqual(firstInvocation.arguments, [
+            "-m",
+            modelURL.path,
+            "-p",
+            "Reply with one sentence.",
+            "-n",
+            "48",
+            "--no-display-prompt"
+        ])
+
+        let benchmarkStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
+        let benchmarkService = LocalModelBenchmarkService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            resultStore: benchmarkStore,
+            engine: runtime
+        )
+        let benchmark = try await benchmarkService.runBenchmark(
+            modelID: "qwen3-5-0-8b-q4-k-m",
+            prompt: "Benchmark Kairo local drafting.",
+            generatedTokenTarget: 32
+        )
+
+        XCTAssertEqual(benchmark.runtime, .gguf)
+        XCTAssertEqual(benchmark.runtimePackage, "llama.cpp CLI")
+        XCTAssertEqual(benchmark.promptTokens, 16)
+        XCTAssertEqual(benchmark.generatedTokens, 48)
+        XCTAssertEqual(benchmark.promptTokensPerSecond, 200, accuracy: 0.1)
+        XCTAssertEqual(benchmark.generationTokensPerSecond, 40, accuracy: 0.1)
+        XCTAssertFalse(benchmark.isReferenceOnlyForIOS)
+        let secondInvocation = try await commandRunner.invocation(at: 1)
+        XCTAssertEqual(secondInvocation.arguments, [
+            "-m",
+            modelURL.path,
+            "-p",
+            "Benchmark Kairo local drafting.",
+            "-n",
+            "32",
+            "--no-display-prompt"
+        ])
+    }
+
+    func testLocalModelExternalCommandRuntimeBuildsQwenMLXReferenceCommand() async throws {
+        let modelURL = temporaryFileURL(named: "qwen3-5-0-8b-mlx")
+        let commandRunner = LocalModelFakeCommandRunner(result: LocalModelCommandRunResult(
+            stdout: """
+            Prompt: 8 tokens, 512.0 tokens-per-sec
+            Generation: 24 tokens, 286.0 tokens-per-sec
+            Qwen MLX response is alive.
+            """,
+            stderr: "",
+            exitCode: 0,
+            durationSeconds: 0.2
+        ))
+        let runtime = LocalModelExternalCommandRuntime(
+            configuration: .mlxLMGenerate(
+                pythonExecutableURL: URL(fileURLWithPath: "/usr/bin/python3"),
+                defaultGeneratedTokenTarget: 24
+            ),
+            commandRunner: commandRunner
+        )
+        let result = try await runtime.generateReply(
+            model: .qwen35Tiny,
+            installRecord: LocalModelInstallRecord(
+                modelID: LocalModelManifest.qwen35Tiny.id,
+                version: LocalModelManifest.qwen35Tiny.version,
+                status: .installed,
+                fileURL: modelURL,
+                installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
+                sha256: LocalModelManifest.qwen35Tiny.sha256
+            ),
+            prompt: "Ping Kairo."
+        )
+
+        XCTAssertEqual(result.runtime, .mlx)
+        XCTAssertEqual(result.runtimePackage, "mlx-lm")
+        XCTAssertEqual(result.responseText, "Qwen MLX response is alive.")
+        XCTAssertEqual(result.generatedTokens, 24)
+        XCTAssertEqual(result.generationTokensPerSecond, 286, accuracy: 0.1)
+
+        let invocation = try await commandRunner.invocation(at: 0)
+        XCTAssertEqual(invocation.arguments, [
+            "-m",
+            "mlx_lm.generate",
+            "--model",
+            "mlx-community/Qwen3.5-0.8B-OptiQ-4bit",
+            "--prompt",
+            "Ping Kairo.",
+            "--max-tokens",
+            "24"
+        ])
+    }
+
     func testLocalModelSettingsStatusBuildsSettingsRowsForDownloadSelectAndSelected() throws {
         let selectedManifest = makeLocalModelManifest(id: "qwen-small", safetyPolicyVersion: "2026.2")
         let downloadableManifest = makeLocalModelManifest(id: "llama-draft", safetyPolicyVersion: "2026.2")
@@ -987,4 +1130,43 @@ private actor LocalModelMockHTTPClient: HTTPClient {
 
 private enum LocalModelMockHTTPClientError: Error {
     case missingRequest
+}
+
+private actor LocalModelFakeCommandRunner: LocalModelCommandRunner {
+    private let result: LocalModelCommandRunResult
+    private var invocations: [Invocation] = []
+
+    init(result: LocalModelCommandRunResult) {
+        self.result = result
+    }
+
+    func run(
+        executableURL: URL,
+        arguments: [String],
+        timeoutSeconds: Double
+    ) async throws -> LocalModelCommandRunResult {
+        invocations.append(Invocation(
+            executableURL: executableURL,
+            arguments: arguments,
+            timeoutSeconds: timeoutSeconds
+        ))
+        return result
+    }
+
+    func invocation(at index: Int) throws -> Invocation {
+        guard invocations.indices.contains(index) else {
+            throw LocalModelFakeCommandRunnerError.missingInvocation(index)
+        }
+        return invocations[index]
+    }
+
+    struct Invocation: Equatable, Sendable {
+        var executableURL: URL
+        var arguments: [String]
+        var timeoutSeconds: Double
+    }
+}
+
+private enum LocalModelFakeCommandRunnerError: Error {
+    case missingInvocation(Int)
 }

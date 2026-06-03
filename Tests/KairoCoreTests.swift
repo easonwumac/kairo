@@ -2014,7 +2014,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(indexHTML.contains("Llama 3.2 1B"))
         XCTAssertFalse(indexHTML.contains("Gemma 3 1B"))
         XCTAssertFalse(indexHTML.contains("SmolLM2 1.7B"))
-        XCTAssertTrue(indexHTML.contains("font-size: 10px"))
+        XCTAssertTrue(indexHTML.contains("font-size: 9px"))
         XCTAssertTrue(indexHTML.contains("benchmark profiles"))
         XCTAssertTrue(readme.contains("Do not commit model weights"))
         XCTAssertTrue(readme.contains("kairo-models"))
@@ -2426,16 +2426,16 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))
-        XCTAssertTrue(compactView.contains("Starter list: Qwen + one fallback."))
+        XCTAssertTrue(compactView.contains("Starter: Qwen + Llama."))
         XCTAssertTrue(compactView.contains("private var compactSectionTitleFont: Font { .system(size: 13, weight: .semibold) }"))
         XCTAssertTrue(compactView.contains("private var compactSectionHeadingFont: Font { .system(size: 9, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 8.5, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 7) }"))
-        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 7, weight: .semibold) }"))
-        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 7, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelNameFont: Font { .system(size: 9, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelMetadataFont: Font { .system(size: 8) }"))
+        XCTAssertTrue(compactView.contains("private var compactModelStatusFont: Font { .system(size: 8, weight: .semibold) }"))
+        XCTAssertTrue(compactView.contains("private var compactButtonLabelFont: Font { .system(size: 8, weight: .semibold) }"))
         XCTAssertTrue(compactView.contains(#""Reply""#))
         XCTAssertFalse(compactView.contains(#""Reply Check""#))
-        XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 54)"))
+        XCTAssertTrue(compactView.contains("GridItem(.adaptive(minimum: 52)"))
         XCTAssertTrue(compactView.contains(".lineLimit(1)"))
         XCTAssertTrue(compactView.contains(".lineLimit(2)"))
         XCTAssertTrue(compactView.contains(".imageScale(.small)"))
@@ -2749,7 +2749,7 @@ final class KairoCoreTests: XCTestCase {
         ).map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
             "llama3-2-1b-instruct-q4-k-m",
-            "smollm2-1-7b-instruct-q4-k-m"
+            "remote-catalog-test-model-q4-k-m"
         ])
     }
 
@@ -3021,7 +3021,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains(#""settings.models.\(modelID).download-cancel""#))
         XCTAssertTrue(uiTestSources.contains(#""settings.models.qwen3-5-0-8b-q4-k-m.reply-check""#))
         XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(anyElement("settings.models.show-more").exists)"#))
-        XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(findElement("settings.models.smollm2-1-7b-instruct-q4-k-m.name""#))
+        XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(findElement("settings.models.remote-catalog-test-model-q4-k-m.name""#))
         XCTAssertTrue(uiTestSources.contains("請先下載 Qwen3.5 0.8B Q4_K_M 後再跑 benchmark。"))
         XCTAssertTrue(uiTestSources.contains("Local model reply is alive."))
         XCTAssertTrue(uiTestSources.contains("--ui-testing-installed-local-model"))

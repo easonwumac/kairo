@@ -16,6 +16,10 @@ public enum KairoSharedAppStorage {
     }
 }
 
+private enum KairoEnvironmentError: Error {
+    case invalidUITestingLocalModelURL
+}
+
 public struct KairoEnvironment: Sendable {
     public let memoryStore: MemoryStore
     public let credentialStore: CredentialStore
@@ -119,16 +123,19 @@ public struct KairoEnvironment: Sendable {
             )
         )
         let marketplaceCatalogService = try uiTestingMarketplaceCatalogService()
-        let localModelCatalog = seedExpandedLocalModelCatalog
-            ? LocalModelCatalog.kairoDefault.mergingRemoteCatalog(LocalModelCatalog(
+        let localModelCatalog: LocalModelCatalog
+        if seedExpandedLocalModelCatalog {
+            localModelCatalog = try LocalModelCatalog.kairoDefault.mergingRemoteCatalog(LocalModelCatalog(
                 generatedAt: Date(timeIntervalSince1970: 1_767_225_600),
                 signingKeyID: "kairo-ui-testing-expanded-local-models",
                 signature: "unsigned-ui-testing-placeholder",
                 sourceRepository: URL(string: "https://github.com/easonwumac/kairo-models"),
                 minimumSafetyPolicyVersion: LocalModelCatalog.kairoDefault.minimumSafetyPolicyVersion,
-                models: [.smolLM2TinyInstruct]
+                models: [uiTestingRemoteCatalogModel()]
             ))
-            : .kairoDefault
+        } else {
+            localModelCatalog = .kairoDefault
+        }
         let localModelCatalogService = try uiTestingLocalModelCatalogService(catalog: localModelCatalog)
         let localModelInstallRegistry = try await FileBackedLocalModelInstallRegistry(
             fileURL: rootDirectory
@@ -215,6 +222,41 @@ public struct KairoEnvironment: Sendable {
                 urlOpener: AllowingURLOpener(),
                 notificationScheduler: AllowingNotificationScheduler(identifier: "ui-testing-notification-id")
             )
+        )
+    }
+
+    private static func uiTestingRemoteCatalogModel() throws -> LocalModelManifest {
+        guard let licenseURL = URL(string: "https://www.apache.org/licenses/LICENSE-2.0"),
+              let downloadURL = URL(string: "https://example.com/kairo/remote-catalog-test-model-q4_k_m.gguf")
+        else {
+            throw KairoEnvironmentError.invalidUITestingLocalModelURL
+        }
+
+        return LocalModelManifest(
+            id: "remote-catalog-test-model-q4-k-m",
+            displayName: "Remote Catalog Test Model Q4_K_M",
+            family: "Remote Catalog Test",
+            version: "1.0",
+            parameterCount: "1B",
+            quantization: "Q4_K_M",
+            runtime: .gguf,
+            fileSizeBytes: 640_000_000,
+            installedSizeBytes: 1_000 * 1024 * 1024,
+            contextWindow: 8_192,
+            tokenizerID: "remote-catalog-test-tokenizer",
+            licenseName: "Apache-2.0",
+            licenseURL: licenseURL,
+            minOSVersion: "17.0",
+            minDeviceClass: "A15",
+            minRAMGB: 4,
+            supportedLocales: ["en", "zh-Hant"],
+            capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat],
+            disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
+            downloadURL: downloadURL,
+            sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            createdAt: Date(timeIntervalSince1970: 1_767_225_600),
+            updatedAt: Date(timeIntervalSince1970: 1_767_225_600),
+            safetyPolicyVersion: "2026.1"
         )
     }
 
@@ -345,6 +387,25 @@ public struct KairoEnvironment: Sendable {
             modelsDirectory: paths.localModelsDirectory
         )
         let localModelBenchmarkStore = try await FileBackedLocalModelBenchmarkStore(fileURL: paths.localModelBenchmarkResultsURL)
+        #if os(macOS)
+        let localModelCommandRuntime = LocalModelExternalCommandRuntime(
+            configuration: .llamaCLI(
+                executableURL: URL(fileURLWithPath: "/opt/homebrew/bin/llama-cli")
+            ),
+            commandRunner: ProcessLocalModelCommandRunner()
+        )
+        let localModelBenchmarkService = LocalModelBenchmarkService(
+            catalog: localModelCatalog,
+            installRegistry: localModelInstallRegistry,
+            resultStore: localModelBenchmarkStore,
+            engine: localModelCommandRuntime
+        )
+        let localModelReplyCheckService = LocalModelReplyCheckService(
+            catalog: localModelCatalog,
+            installRegistry: localModelInstallRegistry,
+            runtime: localModelCommandRuntime
+        )
+        #else
         let localModelBenchmarkService = LocalModelBenchmarkService(
             catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
@@ -354,6 +415,7 @@ public struct KairoEnvironment: Sendable {
             catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry
         )
+        #endif
         let credentialStore = KeychainCredentialStore()
         let aiProvider = LocalModelRoutingAIProvider(
             cloudProvider: OpenAIProvider(credentialStore: credentialStore),

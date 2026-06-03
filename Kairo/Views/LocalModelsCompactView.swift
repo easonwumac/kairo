@@ -26,7 +26,7 @@ struct LocalModelsCompactView: View {
                         .font(compactSectionTitleFont)
                         .accessibilityIdentifier("settings.models.local")
 
-                    Text("Starter list: Qwen + one fallback. More models stay in kairo-models.")
+                    Text("Starter: Qwen + Llama. More models stay in kairo-models.")
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -72,8 +72,8 @@ struct LocalModelsCompactView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
+            .padding(.horizontal, 14)
+            .padding(.top, 14)
             .padding(.bottom, 32)
         }
         .scrollIndicators(.visible)
@@ -82,8 +82,8 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactLocalModelControls: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Route Preference")
                         .font(compactSectionHeadingFont)
@@ -94,7 +94,7 @@ struct LocalModelsCompactView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Spacer(minLength: 12)
+                Spacer(minLength: 10)
 
                 Picker("Route Preference", selection: Binding(
                     get: { localModelStatus.preference },
@@ -115,7 +115,7 @@ struct LocalModelsCompactView: View {
 
             Divider()
 
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Catalog")
                         .font(compactSectionHeadingFont)
@@ -127,7 +127,7 @@ struct LocalModelsCompactView: View {
                         .accessibilityIdentifier("settings.models.catalog-source")
                 }
 
-                Spacer(minLength: 12)
+                Spacer(minLength: 10)
 
                 compactActionButton(
                     "Refresh",
@@ -139,7 +139,7 @@ struct LocalModelsCompactView: View {
                 .accessibilityLabel("Refresh Catalog")
             }
         }
-        .padding(9)
+        .padding(8)
         .background(Color.white.opacity(0.86), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -151,7 +151,7 @@ struct LocalModelsCompactView: View {
     }
 
     private var selectedModelSummary: some View {
-        HStack(alignment: .center, spacing: 10) {
+        HStack(alignment: .center, spacing: 8) {
             Image(systemName: selectedModelSummaryIconName)
                 .font(.subheadline)
                 .foregroundStyle(selectedModelSummaryIconColor)
@@ -171,7 +171,7 @@ struct LocalModelsCompactView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(9)
+        .padding(8)
         .background(Color.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -225,20 +225,20 @@ struct LocalModelsCompactView: View {
     }
 
     private var trimmedModelSummaryText: String {
-        "Showing \(visibleModelRows.count) starter models. Larger catalogs stay in kairo-models."
+        "Showing \(visibleModelRows.count) popular starter models. Larger catalogs stay in kairo-models."
     }
 
     @ViewBuilder
     private func compactLocalModelRow(_ row: LocalModelSettingsRow) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(row.displayName)
                     .font(compactModelNameFont)
                     .fontWeight(.semibold)
                     .lineLimit(2)
                     .accessibilityIdentifier("settings.models.\(row.modelID).name")
 
-                Spacer(minLength: 8)
+                Spacer(minLength: 6)
 
                 Text(row.statusText)
                     .font(compactModelStatusFont)
@@ -278,7 +278,7 @@ struct LocalModelsCompactView: View {
 
                 if row.benchmarkSummaryText != nil {
                     compactActionButton(
-                        "Benchmark",
+                        "Speed",
                         systemImage: "speedometer",
                         accessibilityIdentifier: "settings.models.\(row.modelID).benchmark-run",
                         tint: .blue
@@ -353,20 +353,20 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactButtonGridColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 54), spacing: 4, alignment: .leading)]
+        [GridItem(.adaptive(minimum: 52), spacing: 4, alignment: .leading)]
     }
 
     private var compactSectionTitleFont: Font { .system(size: 13, weight: .semibold) }
 
     private var compactSectionHeadingFont: Font { .system(size: 9, weight: .semibold) }
 
-    private var compactModelNameFont: Font { .system(size: 8.5, weight: .semibold) }
+    private var compactModelNameFont: Font { .system(size: 9, weight: .semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 7) }
+    private var compactModelMetadataFont: Font { .system(size: 8) }
 
-    private var compactModelStatusFont: Font { .system(size: 7, weight: .semibold) }
+    private var compactModelStatusFont: Font { .system(size: 8, weight: .semibold) }
 
-    private var compactButtonLabelFont: Font { .system(size: 7, weight: .semibold) }
+    private var compactButtonLabelFont: Font { .system(size: 8, weight: .semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {
@@ -465,7 +465,7 @@ struct LocalModelsCompactView: View {
                 .imageScale(.small)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
-                .padding(.horizontal, 5)
+                .padding(.horizontal, 4)
                 .padding(.vertical, 3)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .foregroundStyle(tint)

@@ -17,10 +17,11 @@ Kairo 的模型策略不是只依賴雲端。手機端可以放一個超輕量 f
 
 ## 候選模型
 
-可以研究：
+初期只保留少數熱門、可下載的小模型，避免 app UI 和 core catalog 一開始就變成長清單。後續可在獨立 `kairo-models` catalog 研究：
 
 - Qwen 3 / Qwen 3.5 0.6B～0.8B 等級模型。
-- Phi / Gemma / SmolLM 等小模型。
+- Llama 3.2 1B 等小型 instruct 模型。
+- Phi / Gemma / SmolLM 等小模型作為未來遠端 catalog 候選，不預設進 starter。
 - Apple Foundation Models（若部署目標與 API 條件允許）。
 - Core ML 轉換後的小型 LLM 或 classifier。
 
@@ -66,7 +67,7 @@ protocol AIProvider {
 
 ## MVP 策略
 
-第一階段不把模型權重塞進 app 或 repo。Kairo core 已具備多個 2B 參數以下公開 GGUF 模型的遠端下載 manifest entries、install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring、模型 catalog/status UI、benchmark metadata，以及 local reply-check runtime abstraction；下一步是 signed production catalog、progress/cancel UI、實機 runtime proof of concept。
+第一階段不把模型權重塞進 app 或 repo。Kairo core 只保留 Qwen3.5 0.8B 和 Llama 3.2 1B 這組 compact starter catalog，並具備 install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring、模型 catalog/status UI、benchmark metadata、local reply-check runtime abstraction，以及 macOS/dev 外部 CLI reply/benchmark adapter；下一步是 signed production catalog、progress/cancel UI、實機 iPhone runtime proof of concept。
 
 ## Download pipeline
 
@@ -108,11 +109,14 @@ MLX is the stronger Apple Silicon benchmark path for macOS/dev validation. iPhon
 
 - it refuses to run until the target model has an installed registry record;
 - it calls an injected `LocalModelReplyCheckRuntime` and requires non-empty response text;
+- `LocalModelExternalCommandRuntime` can run a downloaded GGUF through an injected external command runner, parse prompt/generation token speeds, and feed both Reply Check and Benchmark results;
+- macOS/dev live wiring uses `/opt/homebrew/bin/llama-cli` when available, so a developer can validate a user-downloaded Qwen GGUF without bundling model weights;
+- the same adapter can build an `mlx_lm.generate` command from the Qwen MLX benchmark profile for Apple Silicon reference validation, but MLX artifacts are not the in-app iPhone download target in this pass;
 - Settings exposes a visible `Run Reply Check` button for each model row;
 - UI tests seed only a deterministic install record and deterministic runtime response, never model weights;
-- live builds use an unavailable runtime placeholder until an App Store-compatible iPhone inference runtime is wired.
+- iOS live builds still use an unavailable runtime placeholder until an App Store-compatible iPhone inference runtime is wired.
 
-This lets Kairo test the reply-check plumbing without bundling Qwen, while still making the missing production runtime explicit.
+This lets Kairo test real reply-check plumbing on a development machine without bundling Qwen, while still making the missing production iPhone runtime explicit.
 
 ## Model catalog backend
 
