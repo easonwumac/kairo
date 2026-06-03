@@ -230,6 +230,35 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertNil(plist["NSPhotoLibraryUsageDescription"])
     }
 
+    func testBetaProjectTargetsDoNotAddDeferredSurfaces() throws {
+        let root = packageRootURL()
+        let project = try String(contentsOf: root.appendingPathComponent("project.yml"), encoding: .utf8)
+        let appEntitlements = try String(
+            contentsOf: root.appendingPathComponent("Config/KairoApp.entitlements"),
+            encoding: .utf8
+        )
+        let shareEntitlements = try String(
+            contentsOf: root.appendingPathComponent("Config/KairoShareExtension.entitlements"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(project.contains("  KairoApp:"))
+        XCTAssertTrue(project.contains("  KairoShareExtension:"))
+        XCTAssertTrue(project.contains("  KairoCoreTests:"))
+        XCTAssertTrue(project.contains("  KairoUITests:"))
+        XCTAssertFalse(project.contains("Keyboard"))
+        XCTAssertFalse(project.contains("Widget"))
+        XCTAssertFalse(project.localizedCaseInsensitiveContains("carplay"))
+        XCTAssertFalse(project.contains("com.apple.developer.homekit"))
+        XCTAssertFalse(project.contains("com.apple.developer.carplay"))
+
+        for entitlements in [appEntitlements, shareEntitlements] {
+            XCTAssertTrue(entitlements.contains("com.apple.security.application-groups"))
+            XCTAssertFalse(entitlements.contains("com.apple.developer.homekit"))
+            XCTAssertFalse(entitlements.contains("com.apple.developer.carplay"))
+        }
+    }
+
     func testBackgroundTaskIdentifiersMatchInfoPlist() throws {
         let root = packageRootURL()
         let appInfoPlistURL = root.appendingPathComponent("Config/KairoApp-Info.plist")

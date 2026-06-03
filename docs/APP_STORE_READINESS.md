@@ -194,10 +194,10 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 ### 11. Deferred surfaces
 
-- [ ] Keyboard Extension is intentionally not part of the current beta.
-- [ ] Widget is intentionally not part of the current beta.
-- [ ] Real HomeKit entitlement path is intentionally not part of the current beta until entitlement/device/fallback work is done.
-- [ ] Additional OAuth providers are deferred until one provider path is fully reviewed and secure.
+- [x] Keyboard Extension is intentionally not part of the current beta; project target/source-health checks keep it out of beta builds.
+- [x] Widget is intentionally not part of the current beta; project target/source-health checks keep it out of beta builds.
+- [x] Real HomeKit entitlement path is intentionally not part of the current beta until entitlement/device/fallback work is done; beta entitlements remain App Group only.
+- [x] Additional OAuth providers are deferred until one provider path is fully reviewed and secure.
 
 ## Data deletion evidence and flow
 
