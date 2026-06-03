@@ -128,11 +128,11 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 ### 7. Background tasks
 
-- [ ] 不宣稱常駐 daemon。
-- [ ] 只用合法 background modes / BGTaskScheduler。
-- [ ] Background work 可被 iOS 延遲或取消。
-- [ ] 所有 background work 有 expiration handling。
-- [ ] 使用者可關閉提醒、sync、background refresh。
+- [x] 不宣稱常駐 daemon。
+- [x] 只用合法 background modes / BGTaskScheduler。
+- [x] Background work 可被 iOS 延遲或取消。
+- [x] 所有 background work 有 expiration handling。
+- [x] 使用者可關閉提醒、sync、background refresh。
 
 ### 8. Model downloads
 
@@ -205,8 +205,12 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] Chat history app 重啟後仍需在真機重跑簽核。
 - [ ] HomeKit control action 仍只可宣稱 preview/demo/test path；真實 entitlement/live control 尚未完成。
 - [x] OpenAI API key save/dry-run/delete 已有 package tests；dry run 不送出網路請求。
-- [ ] Secret scan 尚未在這一輪重跑，App Review 前仍需補做。
+- [x] Focused regex secret scan 已於 2026-06-03 重跑，未在 tracked source/docs 中找到明顯 credential。
 
 ## Review notes draft
 
-Kairo uses only public APIs and user-selected data. It cannot and does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions. Shared content enters Kairo only through Share Extension, document/photo pickers, App Intents/Shortcuts, or official OAuth APIs. Any write or external action is previewed and requires user confirmation according to the app safety policy.
+- Kairo is a chat-first iOS app that uses only public APIs, App Intents, Share Extension, BGTaskScheduler, official OAuth/API flows, and visible URL handoffs.
+- Shared content enters Kairo only through Share Extension, document/photo pickers, App Intents/Shortcuts, or official OAuth APIs. Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions.
+- On-device deletion is user-triggered: chat history, memory JSON/export content, downloaded local models, audit logs, and saved API keys can be removed from inside the app. If a future Kairo backend account is added, backend account-deletion copy must be reviewed separately before release.
+- Background tasks are bounded refresh/index/verify/cleanup jobs only. Kairo is not a daemon, does not watch the screen, and background work can be disabled by the user through iOS settings.
+- Any write or external action is previewed and requires explicit confirmation according to the app safety policy.
