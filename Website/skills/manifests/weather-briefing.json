@@ -4,7 +4,7 @@
     "Improves hourly summary.",
     "Documents approved provider API boundaries."
   ],
-  "checksum": "61a08accb69bac02b2ae9efba1acd7bcd62917a75f087154485bd405d19ddf5c",
+  "checksum": "48c8b83f70a4f9c4deec6932b57e876083a6071706d09c157d17f0e751f8e033",
   "checksumAlgorithm": "sha256",
   "packageVersion": "2026.6",
   "signature": {
@@ -14,6 +14,7 @@
   },
   "skill": {
     "author": "Kairo Marketplace",
+    "confirmationPolicy": "previewRequired",
     "displayName": "Weather Briefing",
     "downloadURL": "https://raw.githubusercontent.com/easonwumac/kairo-skills/main/manifests/weather-briefing.json",
     "id": "marketplace-weather-briefing",
@@ -27,4 +28,3 @@
     "version": "2.1.0"
   }
 }
-

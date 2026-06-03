@@ -4,7 +4,7 @@
     "Includes demo inputs for daily briefing nodes.",
     "Documents callback payload expectations."
   ],
-  "checksum": "1b56480fe8021ab8a05a2d7de2a9b777b92b5fca2ef7e8ed0c7be1e86504f29e",
+  "checksum": "21f5cdd9e97a1949af1011da9d8f675c1fa2d868e1e583610e7abbdce431d845",
   "checksumAlgorithm": "sha256",
   "packageVersion": "2026.6",
   "signature": {
@@ -14,6 +14,7 @@
   },
   "skill": {
     "author": "Kairo Marketplace",
+    "confirmationPolicy": "previewRequired",
     "displayName": "Shortcut Daily Briefing Kit",
     "downloadURL": "https://raw.githubusercontent.com/easonwumac/kairo-skills/main/manifests/shortcut-daily-briefing.json",
     "id": "marketplace-shortcut-daily-briefing",
@@ -27,4 +28,3 @@
     "version": "1.2.0"
   }
 }
-

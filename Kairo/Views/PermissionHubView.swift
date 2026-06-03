@@ -9,6 +9,8 @@ public struct PermissionHubView: View {
     @State private var isRefreshingMarketplace = false
     @State private var localSkillName = ""
     @State private var localSkillSummary = ""
+    @State private var localSkillCapability: CapabilityKey = .appIntents
+    @State private var localSkillConfirmationPolicy: AgentSkillConfirmationPolicy = .previewRequired
     @State private var skillSearchText = ""
     @State private var skillCatalog: AgentSkillCatalog
 
@@ -124,6 +126,20 @@ public struct PermissionHubView: View {
                 .lineLimit(2...4)
                 .accessibilityIdentifier("access.skills.local-create.summary")
 
+            Picker("Capability", selection: $localSkillCapability) {
+                ForEach(CapabilityKey.allCases, id: \.self) { capability in
+                    Text(capability.rawValue).tag(capability)
+                }
+            }
+            .accessibilityIdentifier("access.skills.local-create.capability")
+
+            Picker("Confirmation", selection: $localSkillConfirmationPolicy) {
+                ForEach(AgentSkillConfirmationPolicy.allCases, id: \.self) { policy in
+                    Text(policy.settingsTitle).tag(policy)
+                }
+            }
+            .accessibilityIdentifier("access.skills.local-create.confirmation-policy")
+
             Button {
                 Task {
                     await createLocalSkillDraft()
@@ -182,7 +198,8 @@ public struct PermissionHubView: View {
             displayName: localSkillName,
             summary: localSkillSummary,
             kind: .custom,
-            requiredCapabilities: [.appIntents]
+            requiredCapabilities: [localSkillCapability],
+            confirmationPolicy: localSkillConfirmationPolicy
         )
 
         guard let skillManagerService else {
@@ -191,10 +208,16 @@ public struct PermissionHubView: View {
                 skillCatalog = skillCatalog.replacing(draft)
                 localSkillName = ""
                 localSkillSummary = ""
+                localSkillCapability = .appIntents
+                localSkillConfirmationPolicy = .previewRequired
                 manifestInstallPreview = nil
                 skillManagerMessage = "\(draft.displayName) saved as a disabled local draft."
             } catch AgentSkillDraftError.emptyDisplayName {
                 skillManagerMessage = "Skill name is required."
+            } catch AgentSkillDraftError.missingCapabilitySelection {
+                skillManagerMessage = "Choose at least one capability."
+            } catch AgentSkillDraftError.missingConfirmationPolicy {
+                skillManagerMessage = "Choose a confirmation policy."
             } catch {
                 skillManagerMessage = "Unable to create local skill draft."
             }
@@ -206,10 +229,16 @@ public struct PermissionHubView: View {
             skillCatalog = try await skillManagerService.catalog()
             localSkillName = ""
             localSkillSummary = ""
+            localSkillCapability = .appIntents
+            localSkillConfirmationPolicy = .previewRequired
             manifestInstallPreview = nil
             skillManagerMessage = "\(draft.displayName) saved as a disabled local draft."
         } catch AgentSkillDraftError.emptyDisplayName {
             skillManagerMessage = "Skill name is required."
+        } catch AgentSkillDraftError.missingCapabilitySelection {
+            skillManagerMessage = "Choose at least one capability."
+        } catch AgentSkillDraftError.missingConfirmationPolicy {
+            skillManagerMessage = "Choose a confirmation policy."
         } catch {
             skillManagerMessage = "Unable to create local skill draft."
         }
@@ -218,6 +247,8 @@ public struct PermissionHubView: View {
     private func previewLocalSkillDraft(from request: AgentSkillDraftRequest) throws -> AgentSkill {
         let trimmedName = request.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { throw AgentSkillDraftError.emptyDisplayName }
+        guard !request.requiredCapabilities.isEmpty else { throw AgentSkillDraftError.missingCapabilitySelection }
+        guard let confirmationPolicy = request.confirmationPolicy else { throw AgentSkillDraftError.missingConfirmationPolicy }
 
         let trimmedSummary = request.summary.trimmingCharacters(in: .whitespacesAndNewlines)
         let fallbackID = "user-\(trimmedName.lowercased().replacingOccurrences(of: " ", with: "-"))"
@@ -232,6 +263,7 @@ public struct PermissionHubView: View {
             shortcutRecipeID: request.shortcutRecipeID,
             version: "local-draft",
             author: "User",
+            confirmationPolicy: confirmationPolicy,
             compatibilityRequirements: request.compatibilityRequirements
         )
     }

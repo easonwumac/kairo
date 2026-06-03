@@ -1605,10 +1605,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(homeKitSkill.kind, .homeKitControl)
         XCTAssertEqual(homeKitSkill.installationStatus, .installed)
         XCTAssertEqual(homeKitSkill.action?.kind, .controlHome)
-        XCTAssertTrue(homeKitSkill.managementSummary.contains("Requires confirmation"))
+        XCTAssertTrue(homeKitSkill.managementSummary.contains("Preview + confirmation required"))
         XCTAssertEqual(lockSkill.kind, .homeKitControl)
         XCTAssertEqual(lockSkill.action?.riskTier, .tier3HighRiskExternal)
-        XCTAssertTrue(lockSkill.managementSummary.contains("Requires confirmation"))
+        XCTAssertTrue(lockSkill.managementSummary.contains("Preview + confirmation required"))
         XCTAssertEqual(shortcutSkill.kind, .shortcutWorkflow)
         XCTAssertTrue(marketplaceSkill.canDownload)
         XCTAssertEqual(marketplaceSkill.source, .marketplace)
@@ -2054,6 +2054,7 @@ final class KairoCoreTests: XCTestCase {
             summary: "Drafts a visible inbox triage plan from approved OAuth connector data.",
             kind: .custom,
             requiredCapabilities: [.externalConnectors],
+            confirmationPolicy: .previewRequired,
             compatibilityRequirements: AgentSkillCompatibilityRequirements(
                 requiredOAuthProviderKeys: ["google"]
             )
@@ -2063,6 +2064,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(draft.source, .userCreated)
         XCTAssertEqual(draft.installationStatus, .disabled)
         XCTAssertEqual(draft.requiredCapabilities, [.externalConnectors])
+        XCTAssertEqual(draft.confirmationPolicy, .previewRequired)
         XCTAssertEqual(draft.compatibilityRequirements.requiredOAuthProviderKeys, ["google"])
 
         let catalog = try await service.catalog()
@@ -2084,7 +2086,8 @@ final class KairoCoreTests: XCTestCase {
             displayName: "Daily Skill",
             summary: "A user-created local skill draft.",
             kind: .custom,
-            requiredCapabilities: [.appIntents]
+            requiredCapabilities: [.appIntents],
+            confirmationPolicy: .previewRequired
         )
 
         let first = try await service.createUserSkillDraft(request)
@@ -2097,6 +2100,54 @@ final class KairoCoreTests: XCTestCase {
             "user-daily-skill",
             "user-daily-skill-2"
         ])
+    }
+
+    func testAgentSkillManagerRequiresUserDraftCapabilitySelection() async throws {
+        let storeURL = temporaryFileURL(named: "missing-user-skill-capabilities.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default)
+
+        let request = AgentSkillDraftRequest(
+            displayName: "Unsafe Empty Capability Skill",
+            summary: "Should not be saved without explicit capability selection.",
+            kind: .custom,
+            requiredCapabilities: [],
+            confirmationPolicy: .previewRequired
+        )
+
+        do {
+            _ = try await service.createUserSkillDraft(request)
+            XCTFail("Expected user-created skill draft without capabilities to be rejected.")
+        } catch {
+            XCTAssertEqual(error as? AgentSkillDraftError, .missingCapabilitySelection)
+        }
+
+        let catalog = try await service.catalog()
+        XCTAssertFalse(catalog.skills.contains { $0.displayName == "Unsafe Empty Capability Skill" })
+    }
+
+    func testAgentSkillManagerRequiresUserDraftConfirmationPolicy() async throws {
+        let storeURL = temporaryFileURL(named: "missing-user-skill-confirmation-policy.json")
+        let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
+        let service = AgentSkillManagerService(store: store, builtInCatalog: .default)
+
+        let request = AgentSkillDraftRequest(
+            displayName: "Missing Confirmation Policy Skill",
+            summary: "Should not be saved without explicit confirmation policy.",
+            kind: .custom,
+            requiredCapabilities: [.appIntents],
+            confirmationPolicy: nil
+        )
+
+        do {
+            _ = try await service.createUserSkillDraft(request)
+            XCTFail("Expected user-created skill draft without confirmation policy to be rejected.")
+        } catch {
+            XCTAssertEqual(error as? AgentSkillDraftError, .missingConfirmationPolicy)
+        }
+
+        let catalog = try await service.catalog()
+        XCTAssertFalse(catalog.skills.contains { $0.displayName == "Missing Confirmation Policy Skill" })
     }
 
     func testFileBackedAgentSkillManagerPersistsInstallDisableEnableAndRemoveLifecycle() async throws {
@@ -2742,6 +2793,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains(#""access.skills.search.summary""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.local-create.name""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.local-create.summary""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.local-create.capability""#))
+        XCTAssertTrue(permissionHubView.contains(#""access.skills.local-create.confirmation-policy""#))
+        XCTAssertTrue(permissionHubView.contains("localSkillCapability"))
+        XCTAssertTrue(permissionHubView.contains("localSkillConfirmationPolicy"))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.local-create.button""#))
         XCTAssertTrue(permissionHubView.contains("createUserSkillDraft"))
         XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id)""#))

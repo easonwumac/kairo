@@ -22,7 +22,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
 
 4. Skill Manager / marketplace production hardening.
    - Add production trust-store key rotation and revocation metadata.
-   - Require explicit capability selection and confirmation policy for user-created skills.
+   - User-created skill drafts now require explicit capability selection and confirmation policy; keep this invariant covered.
    - Add UI/e2e coverage for skill update and remove flows.
    - Preserve the invariant that compatibility-blocked skills never become executable tools.
 

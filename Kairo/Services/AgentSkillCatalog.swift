@@ -20,6 +20,20 @@ public enum AgentSkillInstallationStatus: String, Codable, Equatable, Sendable {
     case disabled
 }
 
+public enum AgentSkillConfirmationPolicy: String, Codable, CaseIterable, Equatable, Sendable {
+    case previewRequired
+    case manualSetupOnly
+
+    public var settingsTitle: String {
+        switch self {
+        case .previewRequired:
+            return "Preview + confirmation required"
+        case .manualSetupOnly:
+            return "Manual setup only"
+        }
+    }
+}
+
 public struct AgentSkillCompatibilityRequirements: Codable, Equatable, Sendable {
     public var minimumIOSVersion: String?
     public var requiredEntitlements: [String]
@@ -244,6 +258,7 @@ public struct AgentSkill: Codable, Equatable, Identifiable, Sendable {
     public var downloadURL: URL?
     public var version: String
     public var author: String
+    public var confirmationPolicy: AgentSkillConfirmationPolicy
     public var compatibilityRequirements: AgentSkillCompatibilityRequirements
 
     public init(
@@ -259,6 +274,7 @@ public struct AgentSkill: Codable, Equatable, Identifiable, Sendable {
         downloadURL: URL? = nil,
         version: String = "1.0",
         author: String = "Kairo",
+        confirmationPolicy: AgentSkillConfirmationPolicy = .previewRequired,
         compatibilityRequirements: AgentSkillCompatibilityRequirements = .empty
     ) {
         self.id = id
@@ -273,6 +289,7 @@ public struct AgentSkill: Codable, Equatable, Identifiable, Sendable {
         self.downloadURL = downloadURL
         self.version = version
         self.author = author
+        self.confirmationPolicy = confirmationPolicy
         self.compatibilityRequirements = compatibilityRequirements
     }
 
@@ -289,6 +306,7 @@ public struct AgentSkill: Codable, Equatable, Identifiable, Sendable {
         case downloadURL
         case version
         case author
+        case confirmationPolicy
         case compatibilityRequirements
     }
 
@@ -306,6 +324,10 @@ public struct AgentSkill: Codable, Equatable, Identifiable, Sendable {
         self.downloadURL = try container.decodeIfPresent(URL.self, forKey: .downloadURL)
         self.version = try container.decode(String.self, forKey: .version)
         self.author = try container.decode(String.self, forKey: .author)
+        self.confirmationPolicy = try container.decodeIfPresent(
+            AgentSkillConfirmationPolicy.self,
+            forKey: .confirmationPolicy
+        ) ?? .previewRequired
         self.compatibilityRequirements = try container.decodeIfPresent(
             AgentSkillCompatibilityRequirements.self,
             forKey: .compatibilityRequirements
@@ -326,6 +348,7 @@ public struct AgentSkill: Codable, Equatable, Identifiable, Sendable {
         try container.encodeIfPresent(downloadURL, forKey: .downloadURL)
         try container.encode(version, forKey: .version)
         try container.encode(author, forKey: .author)
+        try container.encode(confirmationPolicy, forKey: .confirmationPolicy)
         if !compatibilityRequirements.isEmpty {
             try container.encode(compatibilityRequirements, forKey: .compatibilityRequirements)
         }
@@ -337,8 +360,7 @@ public struct AgentSkill: Codable, Equatable, Identifiable, Sendable {
 
     public var managementSummary: String {
         let capabilityList = requiredCapabilities.map(\.rawValue).joined(separator: ", ")
-        let confirmation = action?.requiresConfirmation == true ? "Requires confirmation" : "No external write"
-        return "\(installationStatus.settingsTitle) · \(kind.settingsTitle) · \(confirmation) · capabilities: \(capabilityList)"
+        return "\(installationStatus.settingsTitle) · \(kind.settingsTitle) · \(confirmationPolicy.settingsTitle) · capabilities: \(capabilityList)"
     }
 
     public static func marketplaceTemplate(
@@ -380,6 +402,7 @@ public struct AgentSkillDraftRequest: Codable, Equatable, Sendable {
     public var summary: String
     public var kind: AgentSkillKind
     public var requiredCapabilities: [CapabilityKey]
+    public var confirmationPolicy: AgentSkillConfirmationPolicy?
     public var shortcutRecipeID: String?
     public var compatibilityRequirements: AgentSkillCompatibilityRequirements
 
@@ -388,6 +411,7 @@ public struct AgentSkillDraftRequest: Codable, Equatable, Sendable {
         summary: String,
         kind: AgentSkillKind = .custom,
         requiredCapabilities: [CapabilityKey] = [.appIntents],
+        confirmationPolicy: AgentSkillConfirmationPolicy? = nil,
         shortcutRecipeID: String? = nil,
         compatibilityRequirements: AgentSkillCompatibilityRequirements = .empty
     ) {
@@ -395,6 +419,7 @@ public struct AgentSkillDraftRequest: Codable, Equatable, Sendable {
         self.summary = summary
         self.kind = kind
         self.requiredCapabilities = requiredCapabilities
+        self.confirmationPolicy = confirmationPolicy
         self.shortcutRecipeID = shortcutRecipeID
         self.compatibilityRequirements = compatibilityRequirements
     }
@@ -402,6 +427,8 @@ public struct AgentSkillDraftRequest: Codable, Equatable, Sendable {
 
 public enum AgentSkillDraftError: Error, Equatable, Sendable {
     case emptyDisplayName
+    case missingCapabilitySelection
+    case missingConfirmationPolicy
 }
 
 public struct AgentSkillCatalog: Codable, Equatable, Sendable {
@@ -651,6 +678,12 @@ public struct AgentSkillManagerService: Sendable {
         guard !trimmedName.isEmpty else {
             throw AgentSkillDraftError.emptyDisplayName
         }
+        guard !request.requiredCapabilities.isEmpty else {
+            throw AgentSkillDraftError.missingCapabilitySelection
+        }
+        guard let confirmationPolicy = request.confirmationPolicy else {
+            throw AgentSkillDraftError.missingConfirmationPolicy
+        }
 
         let trimmedSummary = request.summary.trimmingCharacters(in: .whitespacesAndNewlines)
         let currentCatalog = try await catalog()
@@ -666,6 +699,7 @@ public struct AgentSkillManagerService: Sendable {
             shortcutRecipeID: request.shortcutRecipeID,
             version: "local-draft",
             author: "User",
+            confirmationPolicy: confirmationPolicy,
             compatibilityRequirements: request.compatibilityRequirements
         )
         try await store.upsert(skill)

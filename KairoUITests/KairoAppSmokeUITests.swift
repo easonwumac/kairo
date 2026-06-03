@@ -447,6 +447,8 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         let summaryField = findElement("access.skills.local-create.summary", direction: .both)
         XCTAssertTrue(summaryField.exists)
+        XCTAssertTrue(findElement("access.skills.local-create.capability", direction: .both).exists)
+        XCTAssertTrue(findElement("access.skills.local-create.confirmation-policy", direction: .both).exists)
         dismissKeyboardIfPresent()
 
         let createButton = findButton("access.skills.local-create.button", direction: .both)
