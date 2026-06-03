@@ -5,12 +5,20 @@ public struct ChatProviderRouteStatus: Equatable, Sendable {
     public var detail: String
     public var badge: String
     public var warning: String?
+    public var preference: ProviderRoutePreference?
 
-    public init(title: String, detail: String, badge: String, warning: String? = nil) {
+    public init(
+        title: String,
+        detail: String,
+        badge: String,
+        warning: String? = nil,
+        preference: ProviderRoutePreference? = nil
+    ) {
         self.title = title
         self.detail = detail
         self.badge = badge
         self.warning = warning
+        self.preference = preference
     }
 }
 
@@ -38,12 +46,23 @@ public enum ChatProviderRouteStatusBuilder {
         }
 
         let detail: String
-        if status.localModelInstalled, let selectedModelName {
-            detail = "Selected local model: \(selectedModelName). Eligible private/offline work can route locally; tools and current info stay cloud or visible handoff."
-        } else if selectedModelName != nil {
-            detail = "Selected local model is not installed yet. Download it before local routing can answer."
-        } else {
-            detail = "No local model selected. General chat uses the configured cloud provider when policy allows."
+        switch status.preference {
+        case .preferCloud:
+            detail = "Cloud routing is preferred for chat. Local models stay available only after switching route preference."
+        case .localOnly:
+            if status.localModelInstalled, let selectedModelName {
+                detail = "Local Only uses \(selectedModelName) for eligible local work. Tools and current info fail closed."
+            } else {
+                detail = "Local Only is active. Download and select a local model before chat can answer locally."
+            }
+        case .automatic, .preferLocal:
+            if status.localModelInstalled, let selectedModelName {
+                detail = "Selected local model: \(selectedModelName). Eligible private/offline work can route locally; tools and current info stay cloud or visible handoff."
+            } else if selectedModelName != nil {
+                detail = "Selected local model is not installed yet. Download it before local routing can answer."
+            } else {
+                detail = "No local model selected. General chat uses the configured cloud provider when policy allows."
+            }
         }
 
         let warning: String?
@@ -59,7 +78,23 @@ public enum ChatProviderRouteStatusBuilder {
             title: "Route: \(status.preference.settingsTitle)",
             detail: detail,
             badge: badge,
-            warning: warning
+            warning: warning,
+            preference: status.preference
         )
+    }
+}
+
+public extension ProviderRoutePreference {
+    var chatControlTitle: String {
+        switch self {
+        case .automatic:
+            return "Auto"
+        case .preferLocal:
+            return "Local"
+        case .preferCloud:
+            return "Cloud"
+        case .localOnly:
+            return "Only"
+        }
     }
 }

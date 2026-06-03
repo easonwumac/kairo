@@ -45,6 +45,11 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(anyElement("chat.provider-route.detail").exists)
         XCTAssertTrue(anyElement("chat.provider-route.badge").exists)
         XCTAssertTrue(findStaticText(containing: "Route: Automatic", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(anyElement("chat.provider-route.preference").exists)
+        let cloudRoute = findButton("chat.provider-route.preference.preferCloud", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(cloudRoute.exists)
+        cloudRoute.tap()
+        XCTAssertTrue(findStaticText(containing: "Route: Prefer Cloud", direction: .both, maxSwipes: 1).waitForExistence(timeout: 3))
 
         XCTAssertTrue(anyElement("chat.composer.surface").waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("chat.composer.input-shell").exists)

@@ -2378,14 +2378,20 @@ final class KairoCoreTests: XCTestCase {
     func testChatViewDefinesPolishedComposerAccessibilityIdentifiers() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let chatView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatView.swift"), encoding: .utf8)
+        let routeBarView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatProviderRouteBar.swift"), encoding: .utf8)
 
         XCTAssertTrue(chatView.contains(#""chat.composer.surface""#))
-        XCTAssertTrue(chatView.contains(#""chat.provider-route""#))
-        XCTAssertTrue(chatView.contains(#""chat.provider-route.title""#))
-        XCTAssertTrue(chatView.contains(#""chat.provider-route.detail""#))
-        XCTAssertTrue(chatView.contains(#""chat.provider-route.badge""#))
-        XCTAssertTrue(chatView.contains(#""chat.provider-route.warning""#))
-        XCTAssertTrue(chatView.contains("providerRouteBar"))
+        XCTAssertTrue(chatView.contains("ChatProviderRouteBar("))
+        XCTAssertLessThan(chatView.split(separator: "\n").count, 610)
+        XCTAssertTrue(routeBarView.contains("struct ChatProviderRouteBar"))
+        XCTAssertTrue(routeBarView.contains(#""chat.provider-route""#))
+        XCTAssertTrue(routeBarView.contains(#""chat.provider-route.title""#))
+        XCTAssertTrue(routeBarView.contains(#""chat.provider-route.detail""#))
+        XCTAssertTrue(routeBarView.contains(#""chat.provider-route.badge""#))
+        XCTAssertTrue(routeBarView.contains(#""chat.provider-route.warning""#))
+        XCTAssertTrue(routeBarView.contains(#""chat.provider-route.preference""#))
+        XCTAssertTrue(routeBarView.contains(#""chat.provider-route.preference.\(preference.rawValue)""#))
+        XCTAssertTrue(routeBarView.contains("preference.chatControlTitle"))
         XCTAssertTrue(chatView.contains(#""chat.composer.input-shell""#))
         XCTAssertTrue(chatView.contains(#""chat.composer.text""#))
         XCTAssertTrue(chatView.contains(#""chat.composer.send""#))
@@ -2417,6 +2423,15 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(viewModel.providerRouteStatus.title, "Route: Prefer Local")
         XCTAssertTrue(viewModel.providerRouteStatus.detail.contains("Qwen Small Test"))
         XCTAssertNil(viewModel.providerRouteStatus.warning)
+
+        await viewModel.setProviderRoutePreference(.preferCloud)
+
+        XCTAssertEqual(viewModel.providerRouteStatus.title, "Route: Prefer Cloud")
+        XCTAssertEqual(viewModel.providerRouteStatus.badge, "Cloud")
+        XCTAssertEqual(viewModel.providerRouteStatus.preference, .preferCloud)
+        let persistedStatus = await service.status()
+        XCTAssertEqual(persistedStatus.preference, .preferCloud)
+        XCTAssertNil(viewModel.errorMessage)
     }
 
     @MainActor
@@ -2648,6 +2663,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.title") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.detail") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.badge") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.preference") == true)
+        XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.provider-route.preference.preferCloud") == true)
         XCTAssertTrue(catalog.scenario(id: "chat-send")?.requiredAccessibilityIdentifiers.contains("chat.composer.text") == true)
         let chatCopyReplyScenarioIdentifiers = catalog.scenario(id: "chat-message-copy-reply")?.requiredAccessibilityIdentifiers ?? []
         XCTAssertTrue(chatCopyReplyScenarioIdentifiers.contains("chat.message.copy."))
@@ -2906,7 +2923,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(smokeTest.contains(#""chat.provider-route.title""#))
         XCTAssertTrue(smokeTest.contains(#""chat.provider-route.detail""#))
         XCTAssertTrue(smokeTest.contains(#""chat.provider-route.badge""#))
+        XCTAssertTrue(smokeTest.contains(#""chat.provider-route.preference""#))
+        XCTAssertTrue(smokeTest.contains(#""chat.provider-route.preference.preferCloud""#))
         XCTAssertTrue(smokeTest.contains("Route: Automatic"))
+        XCTAssertTrue(smokeTest.contains("Route: Prefer Cloud"))
         XCTAssertTrue(smokeTest.contains("chat.composer.text"))
         XCTAssertTrue(smokeTest.contains("chat.reply-preview"))
         XCTAssertTrue(smokeTest.contains("chat.message.copy."))

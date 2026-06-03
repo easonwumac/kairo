@@ -14,6 +14,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var actionResultMessage: String?
     @Published public private(set) var replyTarget: ChatMessage?
     @Published public private(set) var providerRouteStatus: ChatProviderRouteStatus
+    public var canEditProviderRoute: Bool { localModelSettingsService != nil }
 
     private let historyStore: ChatHistoryStore
     private let shareIngestionQueue: ShareIngestionQueue
@@ -178,6 +179,20 @@ public final class ChatViewModel: ObservableObject {
             return
         }
         providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: await localModelSettingsService.status())
+    }
+
+    public func setProviderRoutePreference(_ preference: ProviderRoutePreference) async {
+        guard let localModelSettingsService else {
+            errorMessage = "目前聊天環境無法更新模型路由。"
+            return
+        }
+        do {
+            try await localModelSettingsService.setPreference(preference)
+            await refreshProviderRouteStatus()
+            errorMessage = nil
+        } catch {
+            errorMessage = "無法更新模型路由：\(error.localizedDescription)"
+        }
     }
 
     public func cancelPendingAction() {
