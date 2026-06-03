@@ -430,12 +430,22 @@ struct LocalModelsCompactView: View {
                 .font(compactModelStatusFont)
                 .fontWeight(.semibold)
 
-            Text("\(row.displayName) · \(row.detailText)")
+            Text("\(row.displayName) · \(row.downloadApprovalText)")
                 .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
 
             Text(row.manifestTransparencyText)
+                .font(compactModelMetadataFont)
+                .foregroundStyle(.secondary.opacity(0.9))
+                .lineLimit(2)
+
+            Text(row.storagePolicyText)
+                .font(compactModelMetadataFont)
+                .foregroundStyle(.secondary.opacity(0.9))
+                .lineLimit(2)
+
+            Text(row.purposeBoundaryText)
                 .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary.opacity(0.9))
                 .lineLimit(2)

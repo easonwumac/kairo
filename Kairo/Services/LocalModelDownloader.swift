@@ -29,6 +29,7 @@ public actor VerifiedLocalModelDownloader: LocalModelDownloader {
     public func download(_ manifest: LocalModelManifest, progress: (@Sendable (Double) -> Void)? = nil) async throws -> URL {
         try validate(manifest)
         try FileManager.default.createDirectory(at: modelsDirectory, withIntermediateDirectories: true)
+        try LocalModelStoragePolicy.applyBackupExclusion(to: modelsDirectory)
         let destinationURL = installedModelURL(for: manifest)
         let temporaryURL = destinationURL.appendingPathExtension("download")
 
@@ -63,6 +64,7 @@ public actor VerifiedLocalModelDownloader: LocalModelDownloader {
                 try FileManager.default.removeItem(at: destinationURL)
             }
             try FileManager.default.moveItem(at: temporaryURL, to: destinationURL)
+            try LocalModelStoragePolicy.applyBackupExclusion(to: destinationURL)
 
             let record = LocalModelInstallRecord(
                 modelID: manifest.id,

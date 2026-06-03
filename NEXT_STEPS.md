@@ -64,6 +64,8 @@ Primary product shape:
 
 1. Tighten local model beta path.
    - Keep downloads user-triggered.
+   - Size, license, purpose, storage, backup policy, delete state, and runtime-unavailable copy are covered in the beta Settings path.
+   - Remaining gaps: progress/cancel UI, production signed catalog, and real-device iOS runtime proof.
    - Never commit weights, tokenizer files, GGUF files, caches, credentials, or generated secrets.
    - Keep iOS production inference marked as Planned until real-device runtime evidence exists.
 

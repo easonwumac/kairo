@@ -55,7 +55,7 @@ Do first:
 
 4. **Local model beta path**
    - Keep downloads user-triggered.
-   - Show model size, license, purpose, delete state, progress/cancel, and runtime availability honestly.
+   - Show model size, license, purpose, delete state, storage/backup policy, progress/cancel, and runtime availability honestly.
    - Keep macOS/dev reply checks separate from iOS production inference.
 
 5. **Audit and memory lifecycle**

@@ -140,7 +140,7 @@ The package is intentionally dependency-free. The iOS app target is described in
 ## Product roadmap
 
 1. Stabilize the beta flow before adding more surfaces: Chat-first entry, live Skill Manager catalog, existing Shortcut node contracts, Share Extension import, audit/memory lifecycle.
-2. Tighten local model management: explicit downloads, size/license/purpose copy, progress/cancel, delete selected model, Application Support / iCloud backup policy, and runtime-unavailable handling.
+2. Tighten local model management: explicit downloads, size/license/purpose/storage copy, delete selected model, and runtime-unavailable handling are in the beta path; remaining gaps are progress/cancel UI, production signed catalog, and real-device runtime proof.
 3. Finish production privacy surfaces: metadata-only audit persistence, memory export/delete, account/data deletion notes, and App Store review language.
 4. Add real provider integrations only after beta safety is stable: official OAuth/API connectors, provider scopes, token deletion, and review/security requirements.
 5. Defer Keyboard Extension, Widget, real HomeKit entitlement path, and additional OAuth connectors until the stabilization work is complete.

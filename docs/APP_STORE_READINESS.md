@@ -140,12 +140,13 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [x] Settings UI 顯示本機模型 catalog/status rows 與 download/select affordances。
 - [x] Settings UI 顯示 provider route preference，可選 Automatic / Prefer Local / Prefer Cloud / Local Only。
 - [x] Settings UI 可刪除已安裝模型並清除 selected-model state。
-- [ ] 顯示模型大小、授權、用途、刪除方式，並完成 copy QA for App Review.
+- [x] Settings download preview 顯示模型大小、授權、用途、儲存/備份政策與刪除方式。
+- [ ] Complete final copy QA for App Review.
 - [x] Core downloader supports HTTPS + checksum verification.
 - [x] Core settings can persist and validate the user-selected installed model.
 - [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
 - [ ] Production signed catalog、progress/cancel UI、runtime speed proof。
-- [ ] 模型存在 Application Support，不進 iCloud backup，或有明確策略。
+- [x] 模型存在 Application Support/LocalModels，並由 downloader 標記為不進 iCloud backup。
 - [ ] 本機模型不執行任意程式碼，只作為 app binary 內 inference engine 的資料資產。
 - [ ] iOS production inference runtime is implemented and verified on real devices. Current macOS/dev reply check is not proof.
 

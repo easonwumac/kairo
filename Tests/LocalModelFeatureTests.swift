@@ -800,6 +800,27 @@ final class LocalModelFeatureTests: XCTestCase {
         )
     }
 
+    func testLocalModelSettingsRowExposesDownloadStorageAndPurposePolicy() throws {
+        let row = LocalModelSettingsRow(
+            model: LocalModelManifest.qwen35Tiny,
+            installRecord: nil,
+            isSelected: false
+        )
+
+        XCTAssertEqual(
+            row.downloadApprovalText,
+            "User-triggered download · 503.1 MB · Apache-2.0"
+        )
+        XCTAssertEqual(
+            row.storagePolicyText,
+            "Stored in Application Support/LocalModels · Excluded from iCloud backup"
+        )
+        XCTAssertEqual(
+            row.purposeBoundaryText,
+            "Offline chat, drafts, summaries, and Q&A only · no tools, web, account actions, or regulated advice"
+        )
+    }
+
     func testLocalModelSettingsRowsPreserveCatalogOrderForEqualActions() {
         let qwenManifest = makeLocalModelManifest(id: "qwen-small", safetyPolicyVersion: "2026.2")
         let llamaManifest = makeLocalModelManifest(id: "llama-draft", safetyPolicyVersion: "2026.2")
@@ -848,6 +869,29 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(record?.installedSizeBytes, Int64("model-bytes".utf8.count))
         XCTAssertEqual(record?.sha256, manifest.sha256)
         XCTAssertNotNil(record?.lastVerifiedAt)
+    }
+
+    func testVerifiedLocalModelDownloaderExcludesModelDirectoryAndInstalledFileFromBackup() async throws {
+        let registryURL = temporaryFileURL(named: "install-registry.json")
+        let modelsDirectory = registryURL.deletingLastPathComponent().appendingPathComponent("Models", isDirectory: true)
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let downloader = VerifiedLocalModelDownloader(
+            httpClient: LocalModelMockHTTPClient(statusCode: 200, body: "model-bytes"),
+            installRegistry: registry,
+            modelsDirectory: modelsDirectory
+        )
+        let manifest = makeLocalModelManifest(
+            id: "qwen-small",
+            version: "1.0",
+            sha256: "357e5d6fafa34d27360fec24b4326d3534905e33c6acdee60198fb078b7b79e5"
+        )
+
+        let installedURL = try await downloader.download(manifest, progress: nil)
+
+        let directoryValues = try modelsDirectory.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        let fileValues = try installedURL.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        XCTAssertEqual(directoryValues.isExcludedFromBackup, true)
+        XCTAssertEqual(fileValues.isExcludedFromBackup, true)
     }
 
     func testVerifiedLocalModelDownloaderFailsClosedWhenChecksumDoesNotMatch() async throws {

@@ -5,6 +5,18 @@ public extension LocalModelSettingsRow {
         manifest.manifestTransparencyText
     }
 
+    var downloadApprovalText: String {
+        manifest.downloadApprovalText
+    }
+
+    var storagePolicyText: String {
+        manifest.storagePolicyText
+    }
+
+    var purposeBoundaryText: String {
+        manifest.purposeBoundaryText
+    }
+
     var runtimeFitText: String {
         manifest.runtimeFitText
     }
@@ -26,6 +38,18 @@ public extension LocalModelManifest {
         ].joined(separator: " · ")
     }
 
+    var downloadApprovalText: String {
+        "User-triggered download · \(formattedDownloadSize) · \(licenseName)"
+    }
+
+    var storagePolicyText: String {
+        LocalModelStoragePolicy.displayText
+    }
+
+    var purposeBoundaryText: String {
+        "Offline chat, drafts, summaries, and Q&A only · no tools, web, account actions, or regulated advice"
+    }
+
     var runtimeFitText: String {
         [
             "Download: \(runtime.settingsDisplayName)",
@@ -40,6 +64,20 @@ public extension LocalModelManifest {
             "\(minDeviceClass)+/\(formattedRAMRequirement)",
             mlxReferenceText
         ]
+    }
+
+    private var formattedDownloadSize: String {
+        let units = ["B", "KB", "MB", "GB"]
+        var value = Double(fileSizeBytes)
+        var unitIndex = 0
+        while value >= 1024, unitIndex < units.count - 1 {
+            value /= 1024
+            unitIndex += 1
+        }
+        if unitIndex == 0 {
+            return "\(Int(value)) \(units[unitIndex])"
+        }
+        return String(format: "%.1f %@", value, units[unitIndex])
     }
 
     private var downloadSourceHost: String {
@@ -58,6 +96,15 @@ public extension LocalModelManifest {
             profile.runtime == .mlx && profile.isReferenceOnlyForIOS && !profile.supportsInAppDownload
         }
         return hasReferenceOnlyMLX ? "MLX ref only" : "Device test pending"
+    }
+}
+
+public enum LocalModelStoragePolicy {
+    public static let directoryDisplayName = "Application Support/LocalModels"
+    public static let displayText = "Stored in \(directoryDisplayName) · Excluded from iCloud backup"
+
+    public static func applyBackupExclusion(to url: URL) throws {
+        try (url as NSURL).setResourceValue(true, forKey: URLResourceKey.isExcludedFromBackupKey)
     }
 }
 

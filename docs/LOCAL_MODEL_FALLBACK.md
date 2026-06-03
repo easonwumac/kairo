@@ -76,10 +76,11 @@ protocol AIProvider {
 - downloads from the manifest URL through an injected `HTTPClient`;
 - rejects unsupported manifests and non-2xx HTTP responses;
 - verifies SHA-256 before moving the file into `KairoPaths.localModelsDirectory`;
+- stores downloads under `Application Support/LocalModels` and marks the directory plus installed model file as excluded from iCloud backup;
 - writes `downloading`, `installed`, or `failed` records to `FileBackedLocalModelInstallRegistry`;
 - removes partial files when checksum verification fails.
 
-The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, and a Refresh Catalog action. A production build still needs a real signed catalog, stronger signature verification, progress/cancellation handling, license text, and stronger size disclosure.
+The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, and explicit download approval copy for size, license, storage, backup policy, and allowed offline purposes. A production build still needs a real signed catalog, stronger signature verification, progress/cancellation handling, and production license-approval gates.
 
 The default development catalog starts with 2 popular public GGUF downloads through Hugging Face. It is intentionally compact for the first Models UI pass; the standalone `kairo-models` catalog can add more entries later without bundling weights into the app:
 
