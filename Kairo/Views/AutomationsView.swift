@@ -47,9 +47,10 @@ public struct AutomationsView: View {
                     Button("Add Sample Recipes") {
                         Task { await seedSampleRecipes() }
                     }
+                    .accessibilityLabel("Add Sample Recipes")
+                    .accessibilityIdentifier("automations.seed-samples")
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .accessibilityIdentifier("automations.seed-samples")
                 }
                 .accessibilityIdentifier("automations.recipe-center")
 
@@ -102,6 +103,7 @@ public struct AutomationsView: View {
             .padding(.top, 20)
             .padding(.bottom, 32)
         }
+        .scrollIndicators(.hidden)
         .background(Color(.sRGB, white: 0.98, opacity: 1).ignoresSafeArea())
         .task {
             await loadRecipes()

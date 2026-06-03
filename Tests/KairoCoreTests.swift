@@ -2276,6 +2276,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains(#""settings.models.screen""#))
         XCTAssertTrue(compactView.contains(#""settings.models.compact-list""#))
         XCTAssertTrue(compactView.contains(#""settings.models.selected-summary""#))
+        XCTAssertTrue(compactView.contains(#""settings.models.\(row.modelID).manifest""#))
+        XCTAssertTrue(compactView.contains("row.manifestTransparencyText"))
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains("is downloaded. Select it to use local routing."))
@@ -2354,6 +2356,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(automationsView.contains("ScrollView"))
         XCTAssertTrue(automationsView.contains("automationSectionHeader"))
         XCTAssertTrue(automationsView.contains("automationSection("))
+        XCTAssertTrue(automationsView.contains(".scrollIndicators(.hidden)"))
         XCTAssertTrue(automationsView.contains("Color(.sRGB, white: 0.98, opacity: 1).ignoresSafeArea()"))
         XCTAssertFalse(automationsView.contains("Form {"))
         XCTAssertFalse(automationsView.contains("automationPanel"))
@@ -3397,6 +3400,21 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(selectedRow.detailText.contains("Q4"))
         XCTAssertTrue(selectedRow.detailText.contains("2K context"))
         XCTAssertNil(downloadableRow.benchmarkSummaryText)
+    }
+
+    func testLocalModelSettingsRowBuildsManifestTransparencyText() throws {
+        let row = LocalModelSettingsRow(
+            model: LocalModelManifest.qwen35Tiny,
+            installRecord: nil,
+            isSelected: false
+        )
+
+        XCTAssertTrue(row.manifestTransparencyText.contains("Source: huggingface.co"))
+        XCTAssertTrue(row.manifestTransparencyText.contains("Runtime: GGUF"))
+        XCTAssertTrue(row.manifestTransparencyText.contains("License: Apache-2.0"))
+        XCTAssertTrue(row.manifestTransparencyText.contains("Requires: iOS 17.0, A15+, 4 GB RAM"))
+        XCTAssertTrue(row.manifestTransparencyText.contains("SHA-256: e8e3882"))
+        XCTAssertTrue(row.manifestTransparencyText.contains("Safety: 2026.1"))
     }
 
     func testLocalModelSettingsRowsPreserveCatalogOrderForEqualActions() {

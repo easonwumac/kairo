@@ -230,6 +230,12 @@ struct LocalModelsCompactView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            Text(row.manifestTransparencyText)
+                .font(.caption2)
+                .foregroundStyle(.secondary.opacity(0.85))
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("settings.models.\(row.modelID).manifest")
+
             if let benchmarkSummaryText = row.benchmarkSummaryText {
                 Text(benchmarkSummaryText)
                     .font(.caption2)

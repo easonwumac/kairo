@@ -242,14 +242,17 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.shortcuts", label: "Shortcuts")
+        relaunchForUITesting(initialSection: "shortcuts")
 
         XCTAssertTrue(findElement("automations.recipe-center").waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "Kairo internal recipe", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "does not create Apple Shortcuts", direction: .both, maxSwipes: 1).exists)
 
-        let seedSamples = findButton("automations.seed-samples", direction: .both, maxSwipes: 1)
+        scrollTowardTop(maxSwipes: 2)
+        let identifiedSeedSamples = app.buttons["automations.seed-samples"]
+        let seedSamples = identifiedSeedSamples.exists
+            ? identifiedSeedSamples
+            : findButton(labeled: "Add Sample Recipes", direction: .both, maxSwipes: 2)
         XCTAssertTrue(seedSamples.exists)
         seedSamples.tap()
 
@@ -685,6 +688,13 @@ final class KairoAppSmokeUITests: XCTestCase {
             XCTAssertTrue(benchmark.exists)
             XCTAssertTrue(benchmark.label.contains("MLX ref"))
             XCTAssertTrue(benchmark.label.contains("iPhone not verified"))
+
+            let manifest = anyElement("settings.models.\(id).manifest")
+            XCTAssertTrue(manifest.exists)
+            XCTAssertTrue(manifest.label.contains("Source: huggingface.co"))
+            XCTAssertTrue(manifest.label.contains("Runtime: GGUF"))
+            XCTAssertTrue(manifest.label.contains("License: Apache-2.0"))
+            XCTAssertTrue(manifest.label.contains("SHA-256: e8e3882"))
         }
         let downloadButton = app.buttons[downloadIdentifier]
         if !downloadButton.exists {
