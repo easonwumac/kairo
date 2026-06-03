@@ -94,12 +94,13 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "chat.composer.send",
                 "chat.message.assistant",
                 "chat.proposed-actions",
-                "chat.proposed-action.controlHome"
+                "chat.proposed-action.controlHome",
+                "chat.proposed-action.controlHome.risk"
             ],
             assertions: [
                 "A HomeKit request creates an assistant response.",
                 "The response exposes a proposed action strip.",
-                "The HomeKit action preview is visible and remains confirmation-gated."
+                "The HomeKit action preview is visible with a risk and confirmation summary."
             ]
         ),
         UITestScenario(

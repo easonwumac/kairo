@@ -412,7 +412,9 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
         XCTAssertTrue(findElement("chat.proposed-actions", direction: .down).exists)
         XCTAssertTrue(findElement("chat.proposed-action.controlHome", direction: .down).exists)
+        XCTAssertTrue(findElement("chat.proposed-action.controlHome.risk", direction: .down).exists)
         XCTAssertTrue(findStaticText(containing: "Control Home", direction: .down).exists)
+        XCTAssertTrue(findStaticText(containing: "Needs confirmation", direction: .down).exists)
     }
 
     func testChatShowsShortcutToolCandidatePreview() throws {

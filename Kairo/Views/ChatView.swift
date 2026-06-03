@@ -377,28 +377,68 @@ private struct ProposedActionsStrip: View {
             HStack(spacing: 8) {
                 ForEach(actions) { action in
                     if let descriptor = catalog.descriptor(for: action.kind) {
-                        Button {
-                            onSelect(action)
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: descriptor.supportStatus == .unsupportedBySandbox ? "exclamationmark.triangle" : "checkmark.circle")
-                                Text(descriptor.displayName)
-                                CapabilityChipView(descriptor: descriptor)
+                        let riskSummary = actionRiskSummary(for: action)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Button {
+                                onSelect(action)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: descriptor.supportStatus == .unsupportedBySandbox ? "exclamationmark.triangle" : "checkmark.circle")
+                                    Text(descriptor.displayName)
+                                    CapabilityChipView(descriptor: descriptor)
+                                }
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("Action preview: \(descriptor.displayName), \(descriptor.supportStatus.displayName), \(riskSummary)")
+                            .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
+
+                            Text(riskSummary)
+                                .font(.caption2)
+                                .foregroundStyle(actionRiskColor(for: action))
+                                .lineLimit(1)
+                                .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue).risk")
                         }
-                        .buttonStyle(.plain)
                         .font(.caption)
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(Color.primary.opacity(0.06), in: Capsule())
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Action preview: \(descriptor.displayName), \(descriptor.supportStatus.displayName)")
-                        .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
+                        .padding(.vertical, 8)
+                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                 }
             }
         }
         .accessibilityIdentifier("chat.proposed-actions")
+    }
+
+    private func actionRiskSummary(for action: AgentAction) -> String {
+        let confirmation = action.requiresConfirmation ? "Needs confirmation" : "No write"
+        return "\(actionRiskTierLabel(for: action.riskTier)) · \(confirmation)"
+    }
+
+    private func actionRiskTierLabel(for riskTier: ActionRiskTier) -> String {
+        switch riskTier {
+        case .tier0ReadOnly:
+            return "Tier 0"
+        case .tier1Draft:
+            return "Tier 1"
+        case .tier2LowRiskWrite:
+            return "Tier 2"
+        case .tier3HighRiskExternal:
+            return "Tier 3"
+        }
+    }
+
+    private func actionRiskColor(for action: AgentAction) -> Color {
+        switch action.riskTier {
+        case .tier0ReadOnly:
+            return .secondary
+        case .tier1Draft:
+            return .blue
+        case .tier2LowRiskWrite:
+            return .orange
+        case .tier3HighRiskExternal:
+            return .red
+        }
     }
 }
 
