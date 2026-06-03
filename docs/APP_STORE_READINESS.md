@@ -15,7 +15,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 | EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist for current scope. |
 | HomeKit | Scaffolded | Preview/demo/test path exists; real HomeKit entitlement/live control is not complete. |
 | OAuth provider APIs | Scaffolded | Auth/callback/status scaffold exists; real provider API integrations are not complete. |
-| Local model catalog/download/select/delete | Implemented | User-triggered model management exists; no model weights are bundled. |
+| Local model catalog/download/select/delete | Scaffolded | User-triggered download/select/delete flows exist and no model weights are bundled, but progress/cancel UI, signed catalog metadata, and real-device iOS runtime proof are still incomplete. |
 | macOS/dev local model reply check | Test-only / Mock | External command validation only; not iOS runtime proof. |
 | iOS production local model inference runtime | Planned | Must remain unavailable until real device/runtime evidence exists. |
 | Keyboard Extension | Planned | Not built for beta. |
@@ -177,21 +177,35 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] Real HomeKit entitlement path is intentionally not part of the current beta until entitlement/device/fallback work is done.
 - [ ] Additional OAuth providers are deferred until one provider path is fully reviewed and secure.
 
-## Beta acceptance criteria
+## Beta acceptance snapshot (2026-06-03)
 
-- [ ] `swift test` 通過。
-- [x] Core UI e2e smoke scenarios and XCUITest target are scaffolded.
-- [ ] Simulator/real-device XCUITest smoke flow passes.
-- [ ] 真機可開啟 Chat / Memory / Access / Settings。
-- [ ] Chat history app 重啟後仍存在。
-- [x] Share Extension 可匯入文字、URL、圖片、PDF/file metadata。
-- [ ] App Intent 可 Ask / Save / Search。
-- [ ] Reminder / Calendar permission flow 可用。
-- [ ] HomeKit control action 只在授權與確認後執行；未授權時顯示 fallback。
-- [ ] OpenAI API key 可存入/刪除 Keychain。
-- [ ] 無 API key 時有本機 fallback 或清楚錯誤。
-- [ ] 不支援的跨 App 操作會顯示安全替代方案。
-- [ ] Secret scan 無真實 credential。
+- [x] `swift test` 通過。
+- [x] `xcodegen generate` 通過。
+- [x] Focused simulator XCUITest smoke 通過：
+  - `testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe`
+  - `testAccessSkillManagerBlocksIncompatibleMarketplaceSkillInstall`
+  - `testAccessSkillManagerSearchFiltersSkills`
+  - `testSettingsShowsOAuthConnectorReadinessAndBoundaries`
+  - `testChatCanPreviewAndConfirmNotificationAction`
+  - `testChatCanPreviewAndConfirmReminderAction`
+  - `testChatCanPreviewAndConfirmCalendarAction`
+  - `testChatCanPreviewAndConfirmContactAction`
+  - `testChatCanPreviewAndConfirmEmailDraftHandoff`
+  - `testChatCanPreviewAndConfirmMapDirectionsHandoff`
+  - `testChatCanPreviewAndConfirmMessagesHandoff`
+  - `testChatCanPreviewAndConfirmPhoneCallHandoff`
+  - `testChatCanPreviewAndConfirmWebSearchHandoff`
+- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, live Skill Manager effective catalog, and OpenAI API key save/delete.
+- [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
+- [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
+- [x] 不支援的跨 App 操作會顯示安全替代方案。
+- [ ] Full `testLaunchDrawerChatAndSettingsSmokeFlow` 尚未成為穩定的 sign-off gate；目前在 simulator 仍因 Access 清單捲動範圍過大而不適合拿來當上架前唯一 smoke。
+- [ ] 真機 smoke 尚未在這一輪重跑；Chat / Memory / Access / Settings / Share Extension / App Intents 仍需實機簽核。
+- [ ] App Intent Ask / Save / Search 在這一輪尚未做 device-level smoke；目前證據是 package tests 與 source coverage，不是實機驗證。
+- [ ] Chat history app 重啟後仍需在真機重跑簽核。
+- [ ] HomeKit control action 仍只可宣稱 preview/demo/test path；真實 entitlement/live control 尚未完成。
+- [ ] OpenAI API key save/delete 已有 package test；dry-run、本機 fallback 與 local-only safety 仍待下一階段 hardening 驗證。
+- [ ] Secret scan 尚未在這一輪重跑，App Review 前仍需補做。
 
 ## Review notes draft
 

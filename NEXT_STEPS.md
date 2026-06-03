@@ -37,7 +37,7 @@ Primary product shape:
 | EventKit / Notifications / Contacts actions | Implemented | Chat actions preview before confirmed writes; Shortcut nodes should remain draft-only unless confirmed by Kairo. |
 | HomeKit action model | Scaffolded | Typed action model and demo/test preview exist; real HomeKit entitlement and live home control are not complete. |
 | OAuth connector core | Scaffolded | Authorization/callback/status scaffolds exist; real provider API integrations are not complete. |
-| Local model catalog/download/select/delete | Implemented | User-triggered model catalog, verified downloader, selected model settings, and delete flow exist. |
+| Local model catalog/download/select/delete | Scaffolded | User-triggered catalog/download/select/delete flows exist, but progress/cancel UI, signed catalog metadata, and real-device iOS runtime proof are still missing. |
 | macOS/dev local model reply check | Test-only / Mock | External command adapter is for development validation, not iOS production inference. |
 | iOS production local model runtime | Planned | Do not claim local iPhone inference works until a real runtime is wired and tested. |
 | Audit log persistence | Implemented | Live app persists file-backed metadata-only audit events. |
@@ -57,7 +57,7 @@ Primary product shape:
   - Enabled and installed marketplace skills can appear.
   - Compatibility-blocked installed skills do not become executable tools.
 - Shortcut node safety schema is versioned with `schemaVersion=1`.
-  - Contact, Email, Message, Phone, Web Search, Calendar, Reminder, and Home preview boundaries are covered by tests.
+  - Contact, Email, Message, Phone, Web Search, Calendar, Reminder, Notification, and Home preview boundaries are covered by tests.
   - `docs/SHORTCUTS_STRATEGY.md` and App Store docs describe the beta safety contract.
 
 ## Immediate implementation commits
@@ -70,8 +70,10 @@ Primary product shape:
    - Keep iOS production inference marked as Planned until real-device runtime evidence exists.
 
 2. Run device and App Review verification.
-   - Real-device smoke: Chat, Memory, Access, Settings, Share Extension, App Intents.
-   - Keep App Intent/Shortcut device QA focused on existing beta nodes.
+  - 2026-06-03 baseline completed: `swift test`, `xcodegen generate`, focused simulator smoke for Recipe / Skill Manager / OAuth readiness, and 9 preview+confirm action paths all passed.
+  - Memory save/search/delete/export, Share Extension import, live Skill Manager effective catalog, and OpenAI API key save/delete are currently covered by package tests.
+  - Remaining sign-off gaps: full `testLaunchDrawerChatAndSettingsSmokeFlow` stabilization, real-device Chat / Memory / Access / Settings / Share Extension / App Intents smoke, and a fresh secret scan.
+  - Keep App Intent/Shortcut device QA focused on existing beta nodes.
 
 3. Finish remaining privacy review notes.
    - Account deletion remains backend-dependent.
