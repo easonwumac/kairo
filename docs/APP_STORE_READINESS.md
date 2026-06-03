@@ -195,7 +195,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
   - `testChatCanPreviewAndConfirmMessagesHandoff`
   - `testChatCanPreviewAndConfirmPhoneCallHandoff`
   - `testChatCanPreviewAndConfirmWebSearchHandoff`
-- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, local model download progress/cancellation state, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, and Local Only fail-closed routing without cloud completion calls.
+- [x] Package tests currently cover Memory save/search/delete/export, Share Extension import, local model download progress/cancellation state, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
 - [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
 - [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
 - [x] 不支援的跨 App 操作會顯示安全替代方案。
@@ -204,7 +204,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 - [ ] App Intent Ask / Save / Search 在這一輪尚未做 device-level smoke；目前證據是 package tests 與 source coverage，不是實機驗證。
 - [ ] Chat history app 重啟後仍需在真機重跑簽核。
 - [ ] HomeKit control action 仍只可宣稱 preview/demo/test path；真實 entitlement/live control 尚未完成。
-- [x] OpenAI API key save/dry-run/delete 已有 package tests；dry run 不送出網路請求。
+- [x] OpenAI API key save/dry-run/delete 與 OAuth connector token disconnect/delete 已有 package tests；dry run 不送出網路請求。
 - [x] Focused regex secret scan 已於 2026-06-03 重跑，未在 tracked source/docs 中找到明顯 credential。
 
 ## Review notes draft

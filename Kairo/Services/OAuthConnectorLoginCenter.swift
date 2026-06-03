@@ -211,6 +211,10 @@ public actor OAuthConnectorLoginCenter {
         return preview
     }
 
+    public func disconnect(providerKey: String) async throws {
+        try await credentialStore.deleteSecret(for: CredentialKey.oauthTokenSet(providerKey: providerKey))
+    }
+
     private enum TokenState {
         case valid(OAuthTokenSet)
         case invalid

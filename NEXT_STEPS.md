@@ -71,7 +71,7 @@ Primary product shape:
 
 2. Run device and App Review verification.
   - 2026-06-03 baseline completed: `swift test`, `xcodegen generate`, focused simulator smoke for Recipe / Skill Manager / OAuth readiness, and 9 preview+confirm action paths all passed.
-  - Memory save/search/delete/export, Share Extension import, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, and Local Only fail-closed no-cloud routing are currently covered by package tests.
+  - Memory save/search/delete/export, Share Extension import, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector token disconnect/delete, and Local Only fail-closed no-cloud routing are currently covered by package tests.
   - Remaining sign-off gaps: full `testLaunchDrawerChatAndSettingsSmokeFlow` stabilization and real-device Chat / Memory / Access / Settings / Share Extension / App Intents smoke.
   - Keep App Intent/Shortcut device QA focused on existing beta nodes.
 

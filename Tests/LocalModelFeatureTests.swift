@@ -358,7 +358,8 @@ final class LocalModelFeatureTests: XCTestCase {
             XCTAssertEqual(error as? AIProviderError, .unsupported)
         }
 
-        XCTAssertEqual(await cloudProvider.completionCallCount, 0)
+        let completionCallCount = await cloudProvider.completionCallCount
+        XCTAssertEqual(completionCallCount, 0)
     }
 
     func testLocalModelSettingsServiceSelectsInstalledModelAndBuildsRoutingContext() async throws {

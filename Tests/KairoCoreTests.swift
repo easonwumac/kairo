@@ -2348,6 +2348,8 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(settingsView.contains("OAuth Connectors"))
         XCTAssertTrue(settingsView.contains(#""settings.oauth.connectors""#))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).disconnect""#))
+        XCTAssertTrue(settingsView.contains("disconnectConnector(option)"))
         XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).row""#))
         XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).name""#))
         XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).status""#))
@@ -3492,6 +3494,44 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(connectedGitHub.readiness, .connected)
         XCTAssertEqual(connectedGitHub.grantedScopes, ["repo"])
         XCTAssertTrue(connectedGitHub.requiresBackendTokenExchange)
+    }
+
+    func testOAuthConnectorLoginCenterDisconnectDeletesStoredTokensAndResetsReadiness() async throws {
+        let registry = IntegrationRegistry()
+        let credentials = InMemoryCredentialStore()
+        let githubAuth = OAuthConnectorAuthorizationService(
+            metadata: try XCTUnwrap(registry.integration(for: "github")?.oauth),
+            clientID: "github-client",
+            redirectURI: "kairo://oauth/github/callback",
+            credentialStore: credentials,
+            scopes: ["repo"]
+        )
+        try await githubAuth.storeTokens(OAuthTokenSet(accessToken: "dummy", scopes: ["repo"]))
+
+        let center = OAuthConnectorLoginCenter(
+            registry: registry,
+            credentialStore: credentials,
+            clientConfigurations: [
+                "github": OAuthConnectorClientConfiguration(
+                    clientID: "github-client",
+                    redirectURI: "kairo://oauth/github/callback",
+                    scopes: ["repo"]
+                )
+            ]
+        )
+
+        let connectedOptions = try await center.loginOptions()
+        let connectedOption = try XCTUnwrap(connectedOptions.first { $0.providerKey == "github" })
+        XCTAssertEqual(connectedOption.readiness, .connected)
+
+        try await center.disconnect(providerKey: "github")
+
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "github"))
+        let disconnectedOptions = try await center.loginOptions()
+        let disconnectedOption = try XCTUnwrap(disconnectedOptions.first { $0.providerKey == "github" })
+        XCTAssertNil(storedRaw)
+        XCTAssertEqual(disconnectedOption.readiness, .readyToAuthorize)
+        XCTAssertTrue(disconnectedOption.canStartAuthorization)
     }
 
     func testOAuthConnectorLoginCenterBuildsAuthorizationSessionFromClientConfiguration() async throws {

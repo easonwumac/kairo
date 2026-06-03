@@ -273,16 +273,27 @@ public struct SettingsView: View {
                     .accessibilityIdentifier("settings.oauth.\(option.providerKey).backend-exchange")
             }
 
-            if option.canStartAuthorization {
-                Button("Authorize") {
-                    authorizeConnector(option)
+        if option.canStartAuthorization || option.readiness == .connected {
+            HStack {
+                if option.canStartAuthorization {
+                    Button("Authorize") {
+                        authorizeConnector(option)
+                    }
+                    .accessibilityIdentifier("settings.oauth.\(option.providerKey).authorize")
                 }
-                .accessibilityIdentifier("settings.oauth.\(option.providerKey).authorize")
-            } else if option.readiness == .needsClientConfiguration {
-                Text("尚未設定 iOS OAuth client。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+
+                if option.readiness == .connected || option.readiness == .needsReauthorization {
+                    Button("Disconnect", role: .destructive) {
+                        disconnectConnector(option)
+                    }
+                    .accessibilityIdentifier("settings.oauth.\(option.providerKey).disconnect")
+                }
             }
+        } else if option.readiness == .needsClientConfiguration {
+            Text("尚未設定 iOS OAuth client。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .contain)
@@ -535,6 +546,22 @@ public struct SettingsView: View {
             } catch {
                 await MainActor.run {
                     connectorStatusMessage = "授權啟動失敗：\(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func disconnectConnector(_ option: OAuthConnectorLoginOption) {
+        Task {
+            do {
+                try await connectorLoginCenter().disconnect(providerKey: option.providerKey)
+                await reloadConnectorOptions()
+                await MainActor.run {
+                    connectorStatusMessage = "\(option.displayName) 已登出並刪除儲存 token。"
+                }
+            } catch {
+                await MainActor.run {
+                    connectorStatusMessage = "刪除 OAuth token 失敗：\(error.localizedDescription)"
                 }
             }
         }
