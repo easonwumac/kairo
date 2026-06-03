@@ -80,7 +80,7 @@ protocol AIProvider {
 - writes `downloading`, `installed`, or `failed` records to `FileBackedLocalModelInstallRegistry`;
 - removes partial files when checksum verification fails.
 
-The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, and explicit download approval copy for size, license, storage, backup policy, and allowed offline purposes. A production build still needs a real signed catalog, stronger signature verification, progress/cancellation handling, and production license-approval gates.
+The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, and explicit download approval copy for size, license, storage, backup policy, and allowed offline purposes. A production build still needs a published signed catalog with real release public-key material, richer progress/cancellation UI, and production license-approval gates.
 
 The default development catalog starts with 2 popular public GGUF downloads through Hugging Face. It is intentionally compact for the first Models UI pass; the standalone `kairo-models` catalog can add more entries later without bundling weights into the app:
 
@@ -135,6 +135,8 @@ The model catalog backend should:
 Current service behavior:
 
 - decodes `LocalModelCatalog` JSON with `sourceRepository` metadata;
+- verifies the canonical catalog payload with P-256/SHA-256 signature data from the trust store before accepting remote model rows;
+- rejects unknown, revoked, unsupported, or invalid signing keys and fails closed when production key material is absent or mismatched;
 - rejects remote catalog entries whose model download URL is not HTTPS;
 - rejects entries missing a 64-character SHA-256 checksum;
 - merges remote entries over matching built-in model IDs while preserving built-in fallback models that the remote catalog omits;

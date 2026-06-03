@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 public enum LocalModelCapability: String, Codable, Equatable, Sendable, CaseIterable {
     case drafts
@@ -305,6 +306,42 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
         encoder.dateEncodingStrategy = .iso8601
         return try encoder.encode(self)
     }
+
+    public func signingPayloadData() throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(LocalModelCatalogSigningPayload(
+            schemaVersion: schemaVersion,
+            generatedAt: generatedAt,
+            signingKeyID: signingKeyID,
+            sourceRepository: sourceRepository,
+            minimumSafetyPolicyVersion: minimumSafetyPolicyVersion,
+            models: models
+        ))
+    }
+
+    public static func signedForTesting(
+        catalog: LocalModelCatalog,
+        keyID: String,
+        signingKey: P256.Signing.PrivateKey
+    ) throws -> LocalModelCatalog {
+        var signedCatalog = catalog
+        signedCatalog.signingKeyID = keyID
+        signedCatalog.signature = ""
+        let signature = try signingKey.signature(for: signedCatalog.signingPayloadData())
+        signedCatalog.signature = signature.derRepresentation.base64EncodedString()
+        return signedCatalog
+    }
+}
+
+private struct LocalModelCatalogSigningPayload: Codable, Equatable, Sendable {
+    public var schemaVersion: Int
+    public var generatedAt: Date
+    public var signingKeyID: String
+    public var sourceRepository: URL?
+    public var minimumSafetyPolicyVersion: String
+    public var models: [LocalModelManifest]
 }
 
 public extension LocalModelCatalog {
@@ -338,17 +375,20 @@ public struct LocalModelTrustedSigningKey: Codable, Equatable, Identifiable, Sen
     public var keyID: String
     public var algorithm: String
     public var status: LocalModelCatalogSigningKeyStatus
+    public var publicKeyBase64: String
     public var revokedReason: String?
 
     public init(
         keyID: String,
         algorithm: String,
         status: LocalModelCatalogSigningKeyStatus,
+        publicKeyBase64: String = "",
         revokedReason: String? = nil
     ) {
         self.keyID = keyID
         self.algorithm = algorithm
         self.status = status
+        self.publicKeyBase64 = publicKeyBase64
         self.revokedReason = revokedReason
     }
 }
@@ -370,6 +410,8 @@ public enum LocalModelCatalogServiceError: Error, Equatable {
     case missingSignature
     case unknownSigningKey(String)
     case revokedSigningKey(String)
+    case unsupportedSignatureAlgorithm(String)
+    case invalidSignature
     case unsafeDownloadURL(modelID: String, url: String)
     case invalidChecksum(modelID: String, sha256: String)
 }
@@ -383,12 +425,14 @@ public struct LocalModelCatalogService: Sendable {
                 keyID: "kairo-models-2025",
                 algorithm: "p256-sha256",
                 status: .revoked,
+                publicKeyBase64: "",
                 revokedReason: "Superseded by the 2026 release signing key."
             ),
             LocalModelTrustedSigningKey(
                 keyID: "kairo-models-2026",
                 algorithm: "p256-sha256",
-                status: .active
+                status: .active,
+                publicKeyBase64: ""
             )
         ]
     )
@@ -441,6 +485,7 @@ public struct LocalModelCatalogService: Sendable {
         guard trustedKey.status == .active else {
             throw LocalModelCatalogServiceError.revokedSigningKey(catalog.signingKeyID)
         }
+        try validateSignature(for: catalog, trustedKey: trustedKey)
 
         for model in catalog.models {
             guard model.downloadURL.scheme?.lowercased() == "https" else {
@@ -455,6 +500,33 @@ public struct LocalModelCatalogService: Sendable {
                     sha256: model.sha256
                 )
             }
+        }
+    }
+
+    private func validateSignature(
+        for catalog: LocalModelCatalog,
+        trustedKey: LocalModelTrustedSigningKey
+    ) throws {
+        guard trustedKey.algorithm == "p256-sha256" else {
+            throw LocalModelCatalogServiceError.unsupportedSignatureAlgorithm(trustedKey.algorithm)
+        }
+        guard
+            let publicKeyData = Data(base64Encoded: trustedKey.publicKeyBase64),
+            let signatureData = Data(base64Encoded: catalog.signature)
+        else {
+            throw LocalModelCatalogServiceError.invalidSignature
+        }
+
+        do {
+            let publicKey = try P256.Signing.PublicKey(derRepresentation: publicKeyData)
+            let signature = try P256.Signing.ECDSASignature(derRepresentation: signatureData)
+            guard publicKey.isValidSignature(signature, for: try catalog.signingPayloadData()) else {
+                throw LocalModelCatalogServiceError.invalidSignature
+            }
+        } catch let error as LocalModelCatalogServiceError {
+            throw error
+        } catch {
+            throw LocalModelCatalogServiceError.invalidSignature
         }
     }
 }

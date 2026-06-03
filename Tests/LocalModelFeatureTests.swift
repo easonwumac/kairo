@@ -1,5 +1,6 @@
 import XCTest
 import Foundation
+import CryptoKit
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -113,7 +114,7 @@ final class LocalModelFeatureTests: XCTestCase {
 
     func testLocalModelCatalogServiceFetchesStandaloneModelRepoCatalog() async throws {
         let indexURL = URL(string: "https://easonwumac.github.io/kairo-models/models.json")!
-        let body = remoteModelCatalogJSON(
+        let signedCatalog = try signedRemoteModelCatalogJSON(
             minimumSafetyPolicyVersion: "2026.2",
             modelsJSON: [
                 remoteModelManifestJSON(
@@ -123,8 +124,12 @@ final class LocalModelFeatureTests: XCTestCase {
                 )
             ]
         )
-        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: body)
-        let service = LocalModelCatalogService(indexURL: indexURL, httpClient: httpClient)
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+        let service = LocalModelCatalogService(
+            indexURL: indexURL,
+            httpClient: httpClient,
+            trustStore: signedCatalog.trustStore
+        )
 
         let catalog = try await service.fetchCatalog()
         let request = try await httpClient.lastRequest()
@@ -139,7 +144,7 @@ final class LocalModelFeatureTests: XCTestCase {
     }
 
     func testLocalModelCatalogServiceRejectsUnsafeRemoteModelDownloads() async throws {
-        let body = remoteModelCatalogJSON(
+        let signedCatalog = try signedRemoteModelCatalogJSON(
             modelsJSON: [
                 remoteModelManifestJSON(
                     id: "unsafe-model",
@@ -148,10 +153,11 @@ final class LocalModelFeatureTests: XCTestCase {
                 )
             ]
         )
-        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: body)
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
         let service = LocalModelCatalogService(
             indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
-            httpClient: httpClient
+            httpClient: httpClient,
+            trustStore: signedCatalog.trustStore
         )
 
         do {
@@ -159,6 +165,31 @@ final class LocalModelFeatureTests: XCTestCase {
             XCTFail("Expected unsafe model catalog to be rejected.")
         } catch let error as LocalModelCatalogServiceError {
             XCTAssertEqual(error, .unsafeDownloadURL(modelID: "unsafe-model", url: "http://example.com/unsafe.gguf"))
+        }
+    }
+
+    func testLocalModelCatalogServiceRejectsInvalidCatalogSignature() async throws {
+        var signedCatalog = try signedRemoteModelCatalogJSON(
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "qwen-small",
+                    displayName: "Qwen Small"
+                )
+            ]
+        )
+        signedCatalog.json = signedCatalog.json.replacingOccurrences(of: "Qwen Small", with: "Tampered Qwen")
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+        let service = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: httpClient,
+            trustStore: signedCatalog.trustStore
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected invalid catalog signature to be rejected.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .invalidSignature)
         }
     }
 
@@ -1319,6 +1350,35 @@ final class LocalModelFeatureTests: XCTestCase {
           ]
         }
         """
+    }
+
+    private func signedRemoteModelCatalogJSON(
+        signingKeyID: String = "kairo-models-2026",
+        minimumSafetyPolicyVersion: String = "2026.1",
+        modelsJSON: [String]
+    ) throws -> (json: String, trustStore: LocalModelCatalogTrustStore) {
+        let signingKey = P256.Signing.PrivateKey()
+        let unsignedJSON = remoteModelCatalogJSON(
+            signingKeyID: signingKeyID,
+            signature: "",
+            minimumSafetyPolicyVersion: minimumSafetyPolicyVersion,
+            modelsJSON: modelsJSON
+        )
+        let unsignedCatalog = try LocalModelCatalog.decode(Data(unsignedJSON.utf8))
+        let signedCatalog = try LocalModelCatalog.signedForTesting(
+            catalog: unsignedCatalog,
+            keyID: signingKeyID,
+            signingKey: signingKey
+        )
+        let trustStore = LocalModelCatalogTrustStore(trustedKeys: [
+            LocalModelTrustedSigningKey(
+                keyID: signingKeyID,
+                algorithm: "p256-sha256",
+                status: .active,
+                publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
+            )
+        ])
+        return (String(data: try signedCatalog.encoded(), encoding: .utf8) ?? "{}", trustStore)
     }
 
     private func remoteModelManifestJSON(

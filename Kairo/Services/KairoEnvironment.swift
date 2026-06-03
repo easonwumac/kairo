@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 public enum KairoSharedAppStorage {
     public static let appName = "Kairo"
@@ -353,19 +354,27 @@ public struct KairoEnvironment: Sendable {
 
     private static func uiTestingLocalModelCatalogService(catalog: LocalModelCatalog = .kairoDefault) throws -> LocalModelCatalogService {
         let indexURL = LocalModelCatalogService.defaultIndexURL
-        let catalogJSON = String(data: try catalog.encoded(), encoding: .utf8) ?? "{}"
+        let signingKey = P256.Signing.PrivateKey()
+        let signedCatalog = try LocalModelCatalog.signedForTesting(
+            catalog: catalog,
+            keyID: catalog.signingKeyID,
+            signingKey: signingKey
+        )
+        let catalogJSON = String(data: try signedCatalog.encoded(), encoding: .utf8) ?? "{}"
         let httpClient = StaticHTTPClient(routes: [
             indexURL: StaticHTTPResponse(body: catalogJSON)
         ])
         var trustedKeys = LocalModelCatalogService.defaultTrustStore.trustedKeys
-        if !trustedKeys.contains(where: { $0.keyID == catalog.signingKeyID }) {
-            trustedKeys.append(
-                LocalModelTrustedSigningKey(
-                    keyID: catalog.signingKeyID,
-                    algorithm: "fixture-placeholder",
-                    status: .active
-                )
-            )
+        let fixtureKey = LocalModelTrustedSigningKey(
+            keyID: signedCatalog.signingKeyID,
+            algorithm: "p256-sha256",
+            status: .active,
+            publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
+        )
+        if let index = trustedKeys.firstIndex(where: { $0.keyID == signedCatalog.signingKeyID }) {
+            trustedKeys[index] = fixtureKey
+        } else {
+            trustedKeys.append(fixtureKey)
         }
         return LocalModelCatalogService(
             indexURL: indexURL,
