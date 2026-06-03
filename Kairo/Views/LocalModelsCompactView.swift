@@ -17,7 +17,7 @@ struct LocalModelsCompactView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Local Models")
                         .font(.headline)
@@ -67,7 +67,7 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactLocalModelControls: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Route Preference")
@@ -126,7 +126,7 @@ struct LocalModelsCompactView: View {
                 .accessibilityLabel("Refresh Catalog")
             }
         }
-        .padding(12)
+        .padding(10)
         .background(Color.white.opacity(0.86), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -158,7 +158,7 @@ struct LocalModelsCompactView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(12)
+        .padding(10)
         .background(Color.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -205,7 +205,7 @@ struct LocalModelsCompactView: View {
 
     @ViewBuilder
     private func compactLocalModelRow(_ row: LocalModelSettingsRow) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(row.displayName)
                     .font(compactModelNameFont)
@@ -227,19 +227,22 @@ struct LocalModelsCompactView: View {
             Text(row.detailText)
                 .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(1)
+                .truncationMode(.tail)
 
             Text(row.manifestTransparencyText)
                 .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary.opacity(0.85))
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(2)
+                .truncationMode(.tail)
                 .accessibilityIdentifier("settings.models.\(row.modelID).manifest")
 
             if let benchmarkSummaryText = row.benchmarkSummaryText {
                 Text(benchmarkSummaryText)
                     .font(compactModelMetadataFont)
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
                     .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
             }
 
@@ -288,7 +291,7 @@ struct LocalModelsCompactView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
+        .padding(8)
         .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -299,16 +302,16 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactButtonGridColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 92), spacing: 6, alignment: .leading)]
+        [GridItem(.adaptive(minimum: 84), spacing: 6, alignment: .leading)]
     }
 
-    private var compactModelNameFont: Font { .system(size: 11, weight: .semibold) }
+    private var compactModelNameFont: Font { .system(size: 10, weight: .semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 10) }
+    private var compactModelMetadataFont: Font { .system(size: 9) }
 
-    private var compactModelStatusFont: Font { .system(size: 10, weight: .semibold) }
+    private var compactModelStatusFont: Font { .system(size: 9, weight: .semibold) }
 
-    private var compactButtonLabelFont: Font { .system(size: 10, weight: .semibold) }
+    private var compactButtonLabelFont: Font { .system(size: 9, weight: .semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {
