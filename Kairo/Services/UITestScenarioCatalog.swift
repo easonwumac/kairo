@@ -15,7 +15,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
         UITestScenario(
             id: "launch-drawer",
             title: "Launch and Drawer Navigation",
-            userGoal: "Confirm the app boots into Chat and exposes Phone tools, Workflows, Memory, AI engine, and Settings through the side drawer.",
+            userGoal: "Confirm the app boots into Chat and exposes Phone tools, Workflows, Memory, AI setup, and Settings through the sections sheet.",
             requiredAccessibilityIdentifiers: [
                 "root.safe-area-header",
                 "root.drawer.toggle",
@@ -30,7 +30,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             assertions: [
                 "The primary header is laid out below the device safe area so Dynamic Island and status bar regions do not cover controls.",
                 "The drawer toggle is visible after launch.",
-                "The drawer keeps Chat as the primary surface and moves tools, workflows, memory, models, and settings into More without a bottom TabView."
+                "The sections sheet keeps Chat as the primary surface and moves phone tools, workflows, memory, AI setup, and settings out of a bottom TabView."
             ]
         ),
         UITestScenario(
@@ -484,8 +484,8 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
         ),
         UITestScenario(
             id: "access-homekit-demos",
-            title: "Access HomeKit Preview Demos",
-            userGoal: "Open Access and verify HomeKit examples are visible as preview-only, sandbox-safe demos.",
+            title: "Phone Tools HomeKit Preview Demos",
+            userGoal: "Open Phone tools and verify HomeKit examples are visible as preview-only, sandbox-safe demos.",
             requiredAccessibilityIdentifiers: [
                 "root.drawer.access",
                 "access.skills.manager",

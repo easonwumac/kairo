@@ -127,7 +127,7 @@ public struct RootView: View {
                 Button {
                     selectedSection = .chat
                 } label: {
-                    Label(KairoL10n.string("root.backToChat"), systemImage: "chevron.left")
+                    Label(KairoL10n.string("root.backToChat"), systemImage: "house")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(KairoDesign.blue)
                         .padding(.horizontal, 10)
@@ -154,7 +154,7 @@ public struct RootView: View {
             Button {
                 isMenuPresented = true
             } label: {
-                Label(KairoL10n.string("root.menu"), systemImage: "ellipsis.circle")
+                Label(KairoL10n.string("root.menu"), systemImage: "line.3.horizontal.circle")
                     .labelStyle(.iconOnly)
                     .font(.title3.weight(.semibold))
                     .frame(width: 42, height: 42)
@@ -345,9 +345,9 @@ private enum RootSection: String, CaseIterable, Identifiable {
         case .memory:
             return "brain.head.profile"
         case .shortcuts:
-            return "rectangle.stack.badge.play"
+            return "point.topleft.down.curvedto.point.bottomright.up"
         case .access:
-            return "wand.and.stars"
+            return "iphone"
         case .models:
             return "cpu"
         case .settings:

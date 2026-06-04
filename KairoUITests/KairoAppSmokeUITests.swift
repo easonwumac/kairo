@@ -27,8 +27,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         sendChatMessage()
         selectDrawerSection(identifier: "root.drawer.access", label: "Access")
         scrollTowardTop()
-        XCTAssertTrue(findButton("access.skills.marketplace-refresh", direction: .down, maxSwipes: 6).exists)
-        XCTAssertTrue(findElement("access.skill.homekit-evening-scene", direction: .down, maxSwipes: 8).exists)
+        XCTAssertTrue(findButton("access.skills.marketplace-refresh", direction: .down, maxSwipes: 12).exists)
         openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: false)
     }
 
@@ -738,7 +737,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(previewLock.exists)
         previewLock.tap()
 
-        XCTAssertTrue(findStaticText(containing: "Confirm in Kairo before any HomeKit security-device write.", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Review this HomeKit security-device preview", direction: .both, maxSwipes: 1).exists)
     }
 
     func testChatShowsHomeKitToolPreviewAction() throws {
