@@ -678,6 +678,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         verifyChatActionPreview(
             prompt: "Draft an email to alex@example.com subject Kairo update body Please review the roadmap.",
             actionIdentifier: "chat.proposed-action.composeEmailDraft",
+            reviewIdentifier: "chat.handoff.review-action",
+            reviewBannerIdentifier: "chat.handoff.review-banner",
             previewContains: ["Compose Email Draft", "alex@example.com", "Kairo update"],
             resultText: "Opened visible Mail draft handoff. No email has been sent."
         )
@@ -687,6 +689,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         verifyChatActionPreview(
             prompt: "Drive to Apple Park",
             actionIdentifier: "chat.proposed-action.openMapDirections",
+            reviewIdentifier: "chat.handoff.review-action",
+            reviewBannerIdentifier: "chat.handoff.review-banner",
             previewContains: ["Open Apple Maps Directions", "Apple Park"],
             resultText: "Opened visible Apple Maps handoff. Navigation still requires user action in Maps."
         )
@@ -696,6 +700,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         verifyChatActionPreview(
             prompt: "Text 0912-345-678 body I am running late.",
             actionIdentifier: "chat.proposed-action.openMessageHandoff",
+            reviewIdentifier: "chat.handoff.review-action",
+            reviewBannerIdentifier: "chat.handoff.review-banner",
             previewContains: ["Open Messages Handoff", "0912-345-678", "I am running late.", "Body stays in Kairo preview"],
             resultText: "Opened visible Messages recipient handoff. No message has been sent"
         )
@@ -705,6 +711,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         verifyChatActionPreview(
             prompt: "Call 0912-345-678",
             actionIdentifier: "chat.proposed-action.openPhoneCallHandoff",
+            reviewIdentifier: "chat.handoff.review-action",
+            reviewBannerIdentifier: "chat.handoff.review-banner",
             previewContains: ["Phone Handoff", "0912-345-678", "tel: opens Phone visibly"],
             resultText: "Opened visible Phone handoff. No call has been placed"
         )
@@ -714,6 +722,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         verifyChatActionPreview(
             prompt: "Search web for SwiftUI App Intents examples",
             actionIdentifier: "chat.proposed-action.openWebSearchHandoff",
+            reviewIdentifier: "chat.handoff.review-action",
+            reviewBannerIdentifier: "chat.handoff.review-banner",
             previewContains: ["Web Search Handoff", "SwiftUI App Intents examples", "Safari opens visibly"],
             resultText: "Opened visible Safari web search handoff. No browsing has happened inside Kairo."
         )

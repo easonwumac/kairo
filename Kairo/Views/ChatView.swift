@@ -184,6 +184,14 @@ public struct ChatView: View {
                 .padding(.top, 8)
             }
 
+            if let handoffReviewAction = viewModel.handoffReviewAction {
+                HandoffActionReviewBanner(action: handoffReviewAction) {
+                    viewModel.reviewHandoffAction()
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+            }
+
             if !viewModel.pendingAttachments.isEmpty {
                 AttachmentTray(attachments: viewModel.pendingAttachments) { id in
                     viewModel.removeAttachment(id: id)

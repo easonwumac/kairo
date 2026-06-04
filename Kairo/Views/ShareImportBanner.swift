@@ -118,4 +118,43 @@ struct CalendarActionReviewBanner: View {
         .accessibilityIdentifier("chat.calendar.review-banner")
     }
 }
+
+struct HandoffActionReviewBanner: View {
+    let action: AgentAction
+    let review: () -> Void
+    private let catalog = SandboxActionCatalog()
+
+    var body: some View {
+        let displayName = catalog.descriptor(for: action.kind)?.displayName ?? action.title
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Label("已準備可見 handoff", systemImage: "arrow.up.forward.app")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                Text("\(displayName)：需確認後才會開啟系統 App")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 8)
+            Button(action: review) {
+                Text("Review Handoff")
+                    .font(.caption.weight(.bold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(Color.accentColor, in: Capsule())
+                    .foregroundStyle(.white)
+            }
+            .accessibilityIdentifier("chat.handoff.review-action")
+        }
+        .padding(12)
+        .background(KairoDesign.amber.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(KairoDesign.amber.opacity(0.22), lineWidth: 1)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.handoff.review-banner")
+    }
+}
 #endif

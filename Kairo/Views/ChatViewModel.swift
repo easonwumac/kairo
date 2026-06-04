@@ -12,6 +12,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var shareImportPreview: String?
     @Published public private(set) var shareImportReviewAction: AgentAction?
     @Published public private(set) var calendarReviewAction: AgentAction?
+    @Published public private(set) var handoffReviewAction: AgentAction?
     @Published public var composerText: String = ""
     @Published public var errorMessage: String?
     @Published public var pendingAction: AgentAction?
@@ -91,6 +92,7 @@ public final class ChatViewModel: ObservableObject {
         shareImportPreview = nil
         shareImportReviewAction = nil
         calendarReviewAction = nil
+        handoffReviewAction = nil
         errorMessage = nil
     }
 
@@ -178,7 +180,7 @@ public final class ChatViewModel: ObservableObject {
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
             await persistCurrentThread()
             calendarReviewAction = firstCalendarActionFromLatestAssistantMessage()
-            previewFirstHandoffActionFromLatestAssistantMessage()
+            handoffReviewAction = firstHandoffActionFromLatestAssistantMessage()
         } catch {
             let userFacingMessage = Self.userFacingChatErrorMessage(for: error)
             let failedMessage = ChatMessage(
@@ -201,6 +203,9 @@ public final class ChatViewModel: ObservableObject {
         if calendarReviewAction?.id == action.id {
             calendarReviewAction = nil
         }
+        if handoffReviewAction?.id == action.id {
+            handoffReviewAction = nil
+        }
         actionResultMessage = nil
         actionResultSucceeded = nil
     }
@@ -212,6 +217,11 @@ public final class ChatViewModel: ObservableObject {
 
     public func reviewCalendarAction() {
         guard let action = calendarReviewAction else { return }
+        previewAction(action)
+    }
+
+    public func reviewHandoffAction() {
+        guard let action = handoffReviewAction else { return }
         previewAction(action)
     }
 
@@ -307,13 +317,12 @@ public final class ChatViewModel: ObservableObject {
         return latestActions.first { $0.kind == .createCalendarDraft }
     }
 
-    private func previewFirstHandoffActionFromLatestAssistantMessage() {
-        guard pendingAction == nil else { return }
+    private func firstHandoffActionFromLatestAssistantMessage() -> AgentAction? {
         let latestActions = currentThread.messages
             .reversed()
             .first { $0.role == .assistant && !$0.proposedActions.isEmpty }?
             .proposedActions ?? []
-        pendingAction = latestActions.first { action in
+        return latestActions.first { action in
             switch action.kind {
             case .composeEmailDraft, .openMapDirections, .openMessageHandoff, .openPhoneCallHandoff, .openWebSearchHandoff:
                 return true

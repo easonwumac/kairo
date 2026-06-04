@@ -72,8 +72,12 @@ final class ChatHandoffActionAuditTests: XCTestCase {
             file: file,
             line: line
         )
-        XCTAssertEqual(viewModel.pendingAction?.id, action.id, file: file, line: line)
+        XCTAssertNil(viewModel.pendingAction, file: file, line: line)
+        XCTAssertEqual(viewModel.handoffReviewAction?.id, action.id, file: file, line: line)
 
+        viewModel.reviewHandoffAction()
+        XCTAssertEqual(viewModel.pendingAction?.id, action.id, file: file, line: line)
+        XCTAssertNil(viewModel.handoffReviewAction, file: file, line: line)
         await viewModel.confirmPendingAction()
 
         XCTAssertNil(viewModel.pendingAction, file: file, line: line)
