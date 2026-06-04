@@ -435,12 +435,6 @@ struct LocalModelsCompactView: View {
                     .accessibilityIdentifier("settings.models.\(row.modelID).status")
             }
 
-            Text(row.detailText)
-                .font(compactModelMetadataFont)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-
             HStack(alignment: .center, spacing: 8) {
                 compactLocalModelAction(for: row)
                 Spacer(minLength: 0)

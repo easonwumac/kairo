@@ -306,11 +306,21 @@ Stage 31 makes Workflows preview-first again:
 - More-actions controls use an adaptive grid so management buttons remain tidy
   on phone widths.
 
+Stage 32 makes starter models action-first:
+
+- Starter model rows now keep the first layer to model name, install/download
+  state, and the primary action.
+- Download approval still shows license, storage, manifest, and purpose boundary
+  at the moment of consent, but catalog detail text no longer competes with the
+  route decision.
+- Runtime fit, manifest transparency, speed checks, reply checks, catalog
+  source, and cleanup stay behind Advanced diagnostics.
+
 ## Next UI stages
 
-1. AI Setup and Settings
-   - Continue tightening starter model rows after simulator smoke confirms which
-     local-model states users need on the first screen.
+1. Settings
+   - Continue tightening connection setup rows after smoke confirms which account
+     states users need on the first screen.
 
 2. Action Preview
    - Continue tuning action-specific summaries after smoke coverage shows which
