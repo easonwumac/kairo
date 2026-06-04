@@ -323,6 +323,10 @@
 "chat.composer.placeholder" = "Ask Kairo to act";
 "chat.composer.send" = "Send";
 "chat.composer.inputShell" = "Chat composer input shell";
+"chat.briefing.shared" = "2 shared";
+"chat.briefing.reviews" = "3 reviews";
+"chat.briefing.memoryReady" = "Memory ready";
+"chat.briefing.noSilentWrites" = "No silent writes";
 "chat.attachment.remove" = "Remove attachment";
 "chat.private.title" = "Private chat";
 "chat.private.detail" = "No memory context or tools; private prompts do not default to cloud.";
