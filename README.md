@@ -295,3 +295,7 @@ The package is intentionally dependency-light. Core logic lives in `KairoCore` s
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+Third-party runtime and local-model license handling is tracked in
+[`Kairo/Resources/ThirdPartyNotices.md`](Kairo/Resources/ThirdPartyNotices.md)
+and [`docs/LOCAL_MODEL_LICENSE_COMPLIANCE.md`](docs/LOCAL_MODEL_LICENSE_COMPLIANCE.md).
