@@ -53,7 +53,7 @@ public struct ActionPreviewView: View {
                     if let descriptor {
                         CapabilityChipView(descriptor: descriptor)
                     }
-                    KairoStatusPill(title: action.riskTier.rawValue, systemImage: "gauge.medium", tint: riskColor)
+                    KairoStatusPill(title: riskLabel, systemImage: "gauge.medium", tint: riskColor)
                 }
 
                 if let descriptor {
@@ -105,6 +105,19 @@ public struct ActionPreviewView: View {
             return KairoDesign.amber
         case .tier3HighRiskExternal:
             return KairoDesign.red
+        }
+    }
+
+    private var riskLabel: String {
+        switch action.riskTier {
+        case .tier0ReadOnly:
+            return "Read only"
+        case .tier1Draft:
+            return "Draft or handoff"
+        case .tier2LowRiskWrite:
+            return "Creates phone data"
+        case .tier3HighRiskExternal:
+            return "External account action"
         }
     }
 
