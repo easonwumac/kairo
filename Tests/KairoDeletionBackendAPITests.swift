@@ -78,4 +78,26 @@ final class KairoDeletionBackendAPITests: XCTestCase {
             XCTAssertEqual(error, .localModelDeletionUnavailable)
         }
     }
+
+    func testDeletionBackendAPIDeletesLocalModelThroughSettingsService() async throws {
+        let localModelSettingsService = try await makeBackendTestLocalModelSettingsService()
+        let deletionAPI = KairoDeletionBackendService(
+            chatHistoryStore: InMemoryChatHistoryStore(),
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            auditLogger: InMemoryAuditLogger(),
+            localModelSettingsService: localModelSettingsService
+        )
+
+        try await localModelSettingsService.selectModel(id: "qwen-small")
+        var status = await localModelSettingsService.status()
+        XCTAssertEqual(status.selectedModelID, "qwen-small")
+        XCTAssertTrue(status.installedModels.contains { $0.modelID == "qwen-small" })
+
+        try await deletionAPI.deleteLocalModel(id: "qwen-small")
+
+        status = await localModelSettingsService.status()
+        XCTAssertNil(status.selectedModelID)
+        XCTAssertFalse(status.installedModels.contains { $0.modelID == "qwen-small" })
+    }
 }

@@ -1,6 +1,29 @@
 import Foundation
 @testable import KairoCore
 
+actor BackendAPICapturingAIProvider: AIProvider {
+    private var lastRequest: AICompletionRequest?
+    private let response: AICompletionResponse
+
+    init(response: AICompletionResponse) {
+        self.response = response
+    }
+
+    func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
+        lastRequest = request
+        return response
+    }
+
+    func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
+        _ = request
+        return AIEmbeddingResponse(vector: [])
+    }
+
+    func capturedRequest() -> AICompletionRequest? {
+        lastRequest
+    }
+}
+
 func makeBackendTestAgentSkillManagerService(
     runtimeContext: AgentSkillRuntimeContext = .permissive
 ) async throws -> AgentSkillManagerService {

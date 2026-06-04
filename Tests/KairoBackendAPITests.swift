@@ -92,33 +92,6 @@ final class KairoBackendAPITests: XCTestCase {
         }
     }
 
-    func testChatBackendAPIForwardsPrivacyModeThroughAgentCore() async throws {
-        let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Private response"))
-        let api = KairoChatBackendService(agent: AgentCore(
-            memoryStore: InMemoryMemoryStore(seed: [
-                MemoryRecord(
-                    title: "Private note",
-                    summary: "Should not be queried",
-                    content: "private content",
-                    source: .manual
-                )
-            ]),
-            aiProvider: provider
-        ))
-
-        let response = try await api.respond(
-            to: "summarize private content",
-            attachments: [],
-            privacyMode: .privateChat
-        )
-        let request = await provider.capturedRequest()
-        let capturedRequest = try XCTUnwrap(request)
-
-        XCTAssertEqual(response.message, "Private response")
-        XCTAssertEqual(capturedRequest.privacyMode, .privateChat)
-        XCTAssertTrue(capturedRequest.memoryContext.isEmpty)
-    }
-
     func testMemoryBackendAPIForwardsLifecycleAndExportThroughStore() async throws {
         let memoryID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
         let store = InMemoryMemoryStore()
@@ -251,27 +224,4 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertTrue(remaining.isEmpty)
     }
 
-}
-
-private actor BackendAPICapturingAIProvider: AIProvider {
-    private var lastRequest: AICompletionRequest?
-    private let response: AICompletionResponse
-
-    init(response: AICompletionResponse) {
-        self.response = response
-    }
-
-    func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
-        lastRequest = request
-        return response
-    }
-
-    func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
-        _ = request
-        return AIEmbeddingResponse(vector: [])
-    }
-
-    func capturedRequest() -> AICompletionRequest? {
-        lastRequest
-    }
 }
