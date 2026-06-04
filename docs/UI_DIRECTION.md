@@ -297,17 +297,22 @@ Stage 30 makes Skill Manager action-first again:
 - Marketplace updates remain first-level because they are review actions, while
   lower-frequency management stays progressive.
 
+Stage 31 makes Workflows preview-first again:
+
+- Saved workflow rows now keep only title, enabled state, Preview, and More
+  actions on the first layer.
+- Recipe summary, risk, review status, Run, and Enable/Pause move behind More
+  actions so users start by previewing instead of reading a dense recipe brief.
+- More-actions controls use an adaptive grid so management buttons remain tidy
+  on phone widths.
+
 ## Next UI stages
 
-1. Workflows
-   - Continue tuning saved recipe cards only after runtime smoke confirms the
-     current recipe-first order.
-
-2. AI Setup and Settings
+1. AI Setup and Settings
    - Continue tightening starter model rows after simulator smoke confirms which
      local-model states users need on the first screen.
 
-3. Action Preview
+2. Action Preview
    - Continue tuning action-specific summaries after smoke coverage shows which
      destination or permission states are still ambiguous.
 
