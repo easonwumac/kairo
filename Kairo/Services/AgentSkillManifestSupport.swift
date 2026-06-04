@@ -247,6 +247,12 @@ public struct AgentSkillMarketplaceCatalogService: Sendable {
                 manifestURL: manifestURL.absoluteString
             )
         }
+        guard isTrustedManifestURL(manifestURL) else {
+            throw AgentSkillMarketplaceCatalogError.invalidManifestURL(
+                skillID: entry.id,
+                manifestURL: manifestURL.absoluteString
+            )
+        }
 
         return AgentSkill(
             id: entry.id,
@@ -270,6 +276,18 @@ public struct AgentSkillMarketplaceCatalogService: Sendable {
                 throw AgentSkillMarketplaceCatalogError.duplicateSkillID(skill.id)
             }
         }
+    }
+
+    private func isTrustedManifestURL(_ manifestURL: URL) -> Bool {
+        guard
+            manifestURL.scheme?.lowercased() == indexURL.scheme?.lowercased(),
+            manifestURL.host?.lowercased() == indexURL.host?.lowercased()
+        else {
+            return false
+        }
+
+        let indexDirectoryPath = indexURL.deletingLastPathComponent().standardized.path
+        return manifestURL.standardized.path.hasPrefix(indexDirectoryPath + "/")
     }
 }
 
