@@ -20,12 +20,12 @@ final class ChatCalendarActionAuditTests: XCTestCase {
         await viewModel.send("建立行程：週五 10:00 Kairo roadmap review")
         let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
         let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createCalendarDraft })
+        XCTAssertEqual(viewModel.pendingAction?.id, action.id)
         guard case let .calendarEvent(draft) = action.payload else {
             return XCTFail("Expected calendar event payload.")
         }
         XCTAssertEqual(draft.title, "週五 10:00 Kairo roadmap review")
 
-        viewModel.previewAction(action)
         await viewModel.confirmPendingAction()
 
         XCTAssertNil(viewModel.pendingAction)

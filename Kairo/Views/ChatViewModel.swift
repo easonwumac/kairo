@@ -168,6 +168,7 @@ public final class ChatViewModel: ObservableObject {
             )
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
             await persistCurrentThread()
+            previewFirstCalendarActionFromLatestAssistantMessage()
         } catch {
             let userFacingMessage = Self.userFacingChatErrorMessage(for: error)
             let failedMessage = ChatMessage(
@@ -259,6 +260,15 @@ public final class ChatViewModel: ObservableObject {
             .first { $0.role == .assistant && !$0.proposedActions.isEmpty }?
             .proposedActions ?? []
         pendingAction = latestActions.first { $0.kind == .createReminderDraft }
+    }
+
+    private func previewFirstCalendarActionFromLatestAssistantMessage() {
+        guard pendingAction == nil else { return }
+        let latestActions = currentThread.messages
+            .reversed()
+            .first { $0.role == .assistant && !$0.proposedActions.isEmpty }?
+            .proposedActions ?? []
+        pendingAction = latestActions.first { $0.kind == .createCalendarDraft }
     }
 
     private func composedMessageText(text: String, replyTarget: ChatMessage?, hasAttachments: Bool) -> String {
