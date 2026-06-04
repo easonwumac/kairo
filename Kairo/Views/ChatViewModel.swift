@@ -88,9 +88,7 @@ public final class ChatViewModel: ObservableObject {
         currentThread = ChatThread(messages: [Self.welcomeMessage])
         composerText = ""
         replyTarget = nil
-        pendingAttachments = []
-        shareImportNotice = nil
-        shareImportPreview = nil
+        clearShareImportState()
         errorMessage = nil
         clearTransientActionState()
     }
@@ -99,6 +97,7 @@ public final class ChatViewModel: ObservableObject {
         currentThread = thread
         composerText = ""
         replyTarget = nil
+        clearShareImportState()
         errorMessage = nil
         clearTransientActionState()
     }
@@ -110,6 +109,7 @@ public final class ChatViewModel: ObservableObject {
             threads = try await historyStore.listThreads(limit: 50)
             if currentThread.id == thread.id {
                 currentThread = threads.first ?? ChatThread(messages: [Self.welcomeMessage])
+                clearShareImportState()
                 clearTransientActionState()
             }
             errorMessage = nil
@@ -295,6 +295,12 @@ public final class ChatViewModel: ObservableObject {
         handoffReviewAction = nil
         actionResultMessage = nil
         actionResultSucceeded = nil
+    }
+
+    private func clearShareImportState() {
+        pendingAttachments = []
+        shareImportNotice = nil
+        shareImportPreview = nil
     }
 
     private static func actionResultMessage(for result: ActionExecutionResult, action: AgentAction, source: PendingActionSource?) -> String {

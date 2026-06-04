@@ -19,6 +19,27 @@ final class ShareImportReviewStateTests: XCTestCase {
     }
 
     @MainActor
+    func testShareImportStateClearsWhenUserSwitchesThread() async throws {
+        let viewModel = makeShareImportViewModel()
+
+        await viewModel.importPendingShares()
+        XCTAssertFalse(viewModel.pendingAttachments.isEmpty)
+        XCTAssertNotNil(viewModel.shareImportNotice)
+        XCTAssertNotNil(viewModel.shareImportPreview)
+
+        let otherThread = ChatThread(messages: [
+            ChatMessage(role: .user, text: "Different conversation")
+        ])
+        viewModel.selectThread(otherThread)
+
+        XCTAssertTrue(viewModel.pendingAttachments.isEmpty)
+        XCTAssertNil(viewModel.shareImportNotice)
+        XCTAssertNil(viewModel.shareImportPreview)
+        XCTAssertNil(viewModel.shareImportReviewAction)
+        XCTAssertFalse(viewModel.canSendImportedShareToChat)
+    }
+
+    @MainActor
     private func makeShareImportViewModel() -> ChatViewModel {
         let builder = ShareAttachmentBuilder()
         let sharedItem = ShareIngestionItem(
