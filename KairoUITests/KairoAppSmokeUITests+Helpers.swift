@@ -161,6 +161,16 @@ extension KairoAppSmokeUITests {
         XCTAssertTrue(anyElement("settings.openai.api-key-status").waitForExistence(timeout: 2))
     }
 
+    func openPrivacyCleanupIfNeeded() {
+        if anyElement("settings.privacy.clear-audit-log").exists {
+            return
+        }
+        let toggle = findButton("settings.privacy.toggle", direction: .down, maxSwipes: 4)
+        XCTAssertTrue(toggle.exists)
+        tapElement(toggle)
+        XCTAssertTrue(findElement("settings.privacy.clear-audit-log", direction: .down, maxSwipes: 2).waitForExistence(timeout: 2))
+    }
+
     func openMemoryAddContextIfNeeded() {
         if anyElement("memory.add.text").exists {
             return

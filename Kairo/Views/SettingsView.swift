@@ -36,6 +36,7 @@ public struct SettingsView: View {
     @State var localModelStatusMessageModelID: String?
     @State private var privacyStatusMessage: String?
     @State private var showConnectionSetup = false
+    @State private var showPrivacyControls = false
 
     private let settingsService: OpenAISettingsService
     private let mode: SettingsViewMode
@@ -320,54 +321,79 @@ public struct SettingsView: View {
 
     private var privacySettingsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            settingsSectionHeader(
-                title: KairoL10n.string("settings.privacy.section"),
-                subtitle: KairoL10n.string("settings.privacy.detail")
-            )
-
             KairoGroupedSurface {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label {
-                        Text(KairoL10n.string("settings.privacy.keychainBoundary"))
+                    Button {
+                        withAnimation(.snappy(duration: 0.2)) {
+                            showPrivacyControls.toggle()
+                        }
+                    } label: {
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: "lock.shield.fill")
+                                .font(.headline)
+                                .foregroundStyle(KairoDesign.teal)
+                                .frame(width: 28, height: 28)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(KairoL10n.string("settings.privacy.section"))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(KairoDesign.ink)
+                                Text(KairoL10n.string("settings.privacy.detail"))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+
+                            Spacer(minLength: 8)
+
+                            Image(systemName: showPrivacyControls ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(KairoDesign.teal)
+                                .frame(width: 32, height: 32)
+                                .background(KairoDesign.teal.opacity(0.10), in: Circle())
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(showPrivacyControls ? KairoL10n.string("settings.privacy.hide") : KairoL10n.string("settings.privacy.show"))
+                    .accessibilityIdentifier("settings.privacy.toggle")
+
+                    if showPrivacyControls {
+                        Divider()
+
+                        Label {
+                            Text(KairoL10n.string("settings.privacy.keychainBoundary"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } icon: {
+                            Image(systemName: "lock.shield.fill")
+                                .foregroundStyle(KairoDesign.teal)
+                        }
+
+                        Button(role: .destructive) {
+                            clearAuditLog()
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "trash.fill")
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(width: 24, height: 24)
+
+                                Text(KairoL10n.string("settings.privacy.clearAuditLog"))
+                                    .font(.subheadline.weight(.semibold))
+
+                                Spacer(minLength: 8)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.privacy.clear-audit-log")
+
+                        Text(KairoL10n.string("settings.privacy.auditLogDetail"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
-                    } icon: {
-                        Image(systemName: "lock.shield.fill")
-                            .foregroundStyle(KairoDesign.teal)
+                            .accessibilityIdentifier("settings.privacy.audit-log-detail")
                     }
-
-                    Divider()
-
-                    HStack(spacing: 10) {
-                        Image(systemName: "trash.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(width: 24, height: 24)
-
-                        Text(KairoL10n.string("settings.privacy.clearAuditLog"))
-                            .font(.subheadline.weight(.semibold))
-
-                        Spacer(minLength: 8)
-                    }
-                    .foregroundStyle(.red)
-                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        clearAuditLog()
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityAction {
-                        clearAuditLog()
-                    }
-                    .accessibilityIdentifier("settings.privacy.clear-audit-log")
-
-                    Text(KairoL10n.string("settings.privacy.auditLogDetail"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("settings.privacy.audit-log-detail")
-
                 }
             }
 

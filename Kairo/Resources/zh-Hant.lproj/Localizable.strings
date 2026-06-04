@@ -624,6 +624,8 @@
 "settings.oauth.callback.authorizationCodeReceived" = "%@ 已收到 authorization code（%lld 字元）；%@。";
 "settings.privacy.section" = "隱私";
 "settings.privacy.detail" = "檢查 Kairo 本機保存的內容，並清除 audit metadata。";
+"settings.privacy.show" = "顯示隱私清理";
+"settings.privacy.hide" = "隱藏隱私清理";
 "settings.privacy.keychainBoundary" = "API key 只應儲存在 Keychain。Kairo 不應把 secret 寫入 UserDefaults、log 或 analytics。";
 "settings.privacy.clearAuditLog" = "清除 Audit Log";
 "settings.privacy.auditLogDetail" = "清除本機 metadata-only audit log。這不會刪除 chat history、memories、API keys、OAuth tokens 或已下載模型。";

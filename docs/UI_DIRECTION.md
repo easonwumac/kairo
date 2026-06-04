@@ -215,6 +215,16 @@ Stage 21 makes AI Setup answer-route-first:
 - Existing route and selected-model identifiers remain in the card so current
   smoke coverage can continue to target behavior rather than copy.
 
+Stage 22 makes Settings support-first:
+
+- Settings keeps the answer-routing overview and connection setup as the first
+  job, while destructive privacy cleanup starts collapsed behind its own
+  disclosure.
+- Cloud key and OAuth setup remain reachable after opening connection setup, but
+  audit-log cleanup no longer appears as an always-visible first-level action.
+- The cleanup toggle has a stable identifier so smoke coverage can verify the
+  progressive control without asserting layout copy.
+
 ## Next UI stages
 
 1. Memory Center

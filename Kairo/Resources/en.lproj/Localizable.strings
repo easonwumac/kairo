@@ -624,6 +624,8 @@
 "settings.oauth.callback.authorizationCodeReceived" = "%@ authorization code received (%lld chars); %@.";
 "settings.privacy.section" = "Privacy";
 "settings.privacy.detail" = "Review what Kairo stores locally and clear audit metadata.";
+"settings.privacy.show" = "Show privacy cleanup";
+"settings.privacy.hide" = "Hide privacy cleanup";
 "settings.privacy.keychainBoundary" = "API keys should only be stored in Keychain. Kairo should not write secrets to UserDefaults, logs, or analytics.";
 "settings.privacy.clearAuditLog" = "Clear Audit Log";
 "settings.privacy.auditLogDetail" = "Clears the local metadata-only audit log. It does not delete chat history, memories, API keys, OAuth tokens, or downloaded models.";
