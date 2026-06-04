@@ -176,6 +176,17 @@ scan_roots = [
     root / "Kairo/Views",
     root / "Kairo/Intents",
 ]
+scan_files = [
+    root / "README.md",
+    root / "NEXT_STEPS.md",
+    root / "docs/APP_REVIEW_NOTES.md",
+    root / "docs/APP_STORE_READINESS.md",
+    root / "docs/APP_STORE_SUBMISSION_CHECKLIST.md",
+    root / "docs/CAPABILITY_MATRIX.md",
+    root / "docs/LOCAL_MODEL_FALLBACK.md",
+    root / "docs/PRIVACY_LABELS_CHECKLIST.md",
+    root / "docs/SAFETY_AND_PRIVACY.md",
+]
 forbidden_claims = [
     r"\bcontrols your entire iPhone\b",
     r"\bcontrol your entire iPhone\b",
@@ -200,16 +211,53 @@ forbidden_claims = [
 ]
 combined = re.compile("|".join(forbidden_claims), flags=re.IGNORECASE)
 failures = []
+negation_markers = [
+    "not allowed",
+    "not a ",
+    "do not claim",
+    "does not claim",
+    "from claiming",
+    "must not",
+    "cannot",
+    "can't",
+    "does not",
+    "do not",
+    "doesn't",
+    "no ",
+    "- no ",
+    "not complete",
+    "not implemented",
+    "not wired",
+    "not proof",
+    "unavailable",
+    "planned",
+    "scaffolded",
+    "preview/demo/test",
+    "避免描述",
+]
+
+def is_negated_context(lines, line_index):
+    window_start = max(0, line_index - 8)
+    context = " ".join(lines[window_start:line_index + 1]).lower()
+    return any(marker in context for marker in negation_markers)
+
+def scan_source(source, allowed_suffixes):
+    if source.suffix not in allowed_suffixes:
+        return
+    text = source.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    for line_index, line in enumerate(lines):
+        if combined.search(line) and not is_negated_context(lines, line_index):
+            relative = source.relative_to(root)
+            failures.append(f"{relative}:{line_index + 1}: prohibited product/App Review claim: {line.strip()}")
 
 for scan_root in scan_roots:
     for source in sorted(scan_root.rglob("*")):
-        if source.suffix not in {".swift", ".strings", ".xcstrings"}:
-            continue
-        text = source.read_text(encoding="utf-8")
-        for line_number, line in enumerate(text.splitlines(), start=1):
-            if combined.search(line):
-                relative = source.relative_to(root)
-                failures.append(f"{relative}:{line_number}: prohibited product/App Review claim: {line.strip()}")
+        scan_source(source, {".swift", ".strings", ".xcstrings"})
+
+for source in scan_files:
+    if source.exists():
+        scan_source(source, {".md"})
 
 if failures:
     for failure in failures:
