@@ -235,6 +235,15 @@ Stage 23 makes Skill library rows action-first:
 - Skill action buttons use an adaptive compact grid so longer labels can wrap
   cleanly on phone widths instead of being squeezed into a single row.
 
+Stage 24 makes Workflows preview-first:
+
+- Saved workflow rows now keep Preview and status as the first-level decision,
+  with Run and Enable/Pause moved behind a per-recipe More actions disclosure.
+- This reinforces the product rule that workflows are reviewed before execution
+  instead of presenting run controls as equally primary.
+- Existing run and toggle identifiers stay reachable after expansion so smoke
+  tests still verify behavior rather than copy.
+
 ## Next UI stages
 
 1. Memory Center

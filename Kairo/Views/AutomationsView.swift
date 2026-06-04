@@ -12,6 +12,7 @@ public struct AutomationsView: View {
     @State private var shortcutDemoPreviewMessages: [String: String] = [:]
     @State private var isLoading = false
     @State private var showAdvancedWorkflowReferences = false
+    @State private var expandedRecipeActions: Set<String> = []
 
     public init(
         recipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
@@ -365,7 +366,6 @@ public struct AutomationsView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
                     .lineLimit(2)
-                    .accessibilityIdentifier("automations.recipe.\(recipe.id)")
                 Spacer()
                 KairoStatusPill(
                     title: recipe.isEnabled ? KairoL10n.string("automations.recipe.enabled") : KairoL10n.string("automations.recipe.disabled"),
@@ -373,6 +373,8 @@ public struct AutomationsView: View {
                     tint: recipe.isEnabled ? KairoDesign.green : KairoDesign.ink.opacity(0.55)
                 )
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("automations.recipe.\(recipe.id)")
 
             Text(recipe.summary)
                 .font(.caption)
@@ -402,33 +404,71 @@ public struct AutomationsView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(!recipe.isEnabled || isLoading)
                 .accessibilityIdentifier("automations.recipe.\(recipe.id).preview")
-
-                Button {
-                    Task { await run(recipe) }
-                } label: {
-                    Label(KairoL10n.string("automations.recipe.run"), systemImage: "play.circle")
-                        .frame(maxWidth: .infinity)
-                }
-                .disabled(!recipe.isEnabled || isLoading)
-                .accessibilityIdentifier("automations.recipe.\(recipe.id).run")
-                .buttonStyle(.bordered)
-
-                Button {
-                    Task { await toggle(recipe) }
-                } label: {
-                    Label(
-                        recipe.isEnabled ? KairoL10n.string("automations.recipe.disable") : KairoL10n.string("automations.recipe.enable"),
-                        systemImage: recipe.isEnabled ? "pause.circle" : "play.circle.fill"
-                    )
-                    .frame(maxWidth: .infinity)
-                }
-                .disabled(isLoading)
-                .accessibilityIdentifier("automations.recipe.\(recipe.id).toggle")
-                .buttonStyle(.bordered)
             }
+
+            DisclosureGroup(isExpanded: Binding(
+                get: { isRecipeActionsExpanded(recipe.id) },
+                set: { setRecipeActionsExpanded($0, recipeID: recipe.id) }
+            )) {
+                HStack(spacing: 8) {
+                    Button {
+                        Task { await run(recipe) }
+                    } label: {
+                        Label(KairoL10n.string("automations.recipe.run"), systemImage: "play.circle")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(!recipe.isEnabled || isLoading)
+                    .accessibilityIdentifier("automations.recipe.\(recipe.id).run")
+                    .buttonStyle(.bordered)
+
+                    Button {
+                        Task { await toggle(recipe) }
+                    } label: {
+                        Label(
+                            recipe.isEnabled ? KairoL10n.string("automations.recipe.disable") : KairoL10n.string("automations.recipe.enable"),
+                            systemImage: recipe.isEnabled ? "pause.circle" : "play.circle.fill"
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                    .disabled(isLoading)
+                    .accessibilityIdentifier("automations.recipe.\(recipe.id).toggle")
+                    .buttonStyle(.bordered)
+                }
+                .padding(.top, 8)
+                .accessibilityIdentifier("automations.recipe.\(recipe.id).actions")
+            } label: {
+                Label(
+                    KairoL10n.string("automations.recipe.moreActions"),
+                    systemImage: "ellipsis.circle"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .accessibilityIdentifier("automations.recipe.\(recipe.id).more-actions")
+            .tint(KairoDesign.blue)
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .contain)
+    }
+
+    private func isRecipeActionsExpanded(_ recipeID: String) -> Bool {
+        expandedRecipeActions.contains(recipeID)
+    }
+
+    private func toggleRecipeActions(_ recipeID: String) {
+        setRecipeActionsExpanded(!isRecipeActionsExpanded(recipeID), recipeID: recipeID)
+    }
+
+    private func setRecipeActionsExpanded(_ isExpanded: Bool, recipeID: String) {
+        var nextExpandedRecipeActions = expandedRecipeActions
+        if isExpanded {
+            nextExpandedRecipeActions.insert(recipeID)
+        } else {
+            nextExpandedRecipeActions.remove(recipeID)
+        }
+        expandedRecipeActions = nextExpandedRecipeActions
     }
 
     @MainActor

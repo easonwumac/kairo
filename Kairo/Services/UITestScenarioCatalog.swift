@@ -296,6 +296,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "automations.list",
                 "automations.recipe.daily-briefing",
                 "automations.recipe.daily-briefing.preview",
+                "automations.recipe.daily-briefing.more-actions",
                 "automations.recipe.daily-briefing.run",
                 "automations.recipe.daily-briefing.toggle",
                 "automations.message"

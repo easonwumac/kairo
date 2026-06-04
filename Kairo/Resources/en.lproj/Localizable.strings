@@ -218,7 +218,7 @@
 "automations.shortcutDemos.previewSample" = "Preview Sample";
 "automations.shortcutDemos.previewSampleAccessibility" = "Preview %@ Sample";
 "automations.recipes.section" = "Your saved workflows";
-"automations.recipes.detail" = "Preview, run, or pause each workflow from one review card.";
+"automations.recipes.detail" = "Preview first, then open more actions only when you are ready to run or pause.";
 "automations.recipes.empty" = "No internal recipes yet.";
 "automations.recipes.empty.detail" = "Add the starter set, then preview one workflow before running it.";
 "automations.status.section" = "Status";
@@ -227,6 +227,7 @@
 "automations.recipe.risk" = "Risk: %@";
 "automations.recipe.reviewThenRun" = "Preview first";
 "automations.recipe.preview" = "Preview";
+"automations.recipe.moreActions" = "More actions";
 "automations.recipe.run" = "Run";
 "automations.recipe.enable" = "Enable";
 "automations.recipe.disable" = "Disable";

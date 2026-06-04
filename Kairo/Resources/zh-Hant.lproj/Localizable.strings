@@ -218,7 +218,7 @@
 "automations.shortcutDemos.previewSample" = "預覽範例";
 "automations.shortcutDemos.previewSampleAccessibility" = "預覽 %@ 範例";
 "automations.recipes.section" = "你的已儲存流程";
-"automations.recipes.detail" = "每個流程都能在同一張卡片中預覽、執行或暫停。";
+"automations.recipes.detail" = "先預覽；準備執行或暫停時，再打開更多操作。";
 "automations.recipes.empty" = "還沒有 internal recipes。";
 "automations.recipes.empty.detail" = "先加入 starter set，再預覽一個流程後才執行。";
 "automations.status.section" = "狀態";
@@ -227,6 +227,7 @@
 "automations.recipe.risk" = "風險：%@";
 "automations.recipe.reviewThenRun" = "先預覽";
 "automations.recipe.preview" = "預覽";
+"automations.recipe.moreActions" = "更多操作";
 "automations.recipe.run" = "執行";
 "automations.recipe.enable" = "啟用";
 "automations.recipe.disable" = "停用";

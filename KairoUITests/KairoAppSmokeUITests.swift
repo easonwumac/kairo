@@ -578,7 +578,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "sample-sensitive-code")).firstMatch.exists)
     }
 
-    func testAutomationsRecipeCenterPreviewsRunsAndTogglesInternalRecipe() throws {
+    func testAutomationsRecipeCenterPreviewsInternalRecipeAndKeepsActionsSecondary() throws {
         relaunchForUITesting(initialSection: "shortcuts")
 
         XCTAssertTrue(findElement("automations.recipe-center").waitForExistence(timeout: 5))
@@ -593,24 +593,17 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(seedSamples.exists)
         seedSamples.tap()
 
-        XCTAssertTrue(findElement("automations.recipe.daily-briefing", direction: .down, maxSwipes: 10).exists)
         XCTAssertTrue(findStaticText(containing: "Daily Briefing", direction: .both, maxSwipes: 1).exists)
 
-        let previewButton = findButton("automations.recipe.daily-briefing.preview", direction: .both, maxSwipes: 1)
+        let previewButton = findButton("automations.recipe.daily-briefing.preview", direction: .both, maxSwipes: 4)
         XCTAssertTrue(previewButton.exists)
         previewButton.tap()
         XCTAssertTrue(findElement("automations.message", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "Preview Daily Briefing", direction: .both, maxSwipes: 1).exists)
 
-        let runButton = findButton("automations.recipe.daily-briefing.run", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(runButton.exists)
-        runButton.tap()
-        XCTAssertTrue(findStaticText(containing: "Ran Daily Briefing", direction: .both, maxSwipes: 1).exists)
-
-        let toggleButton = findButton("automations.recipe.daily-briefing.toggle", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(toggleButton.exists)
-        toggleButton.tap()
-        XCTAssertTrue(findStaticText(containing: "Disabled Daily Briefing", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("automations.recipe.daily-briefing.more-actions", direction: .both, maxSwipes: 1).exists)
+        XCTAssertFalse(anyElement("automations.recipe.daily-briefing.run").exists)
+        XCTAssertFalse(anyElement("automations.recipe.daily-briefing.toggle").exists)
     }
 
     func testAutomationsShowsShortcutTemplatesRequireUserApproval() throws {
