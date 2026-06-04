@@ -141,54 +141,76 @@ extension KairoAppSmokeUITests {
         }
         XCTAssertTrue(anyElement("settings.models.screen").waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("settings.models.local").exists)
-        let catalogSource = anyElement("settings.models.catalog-source")
-        XCTAssertTrue(catalogSource.exists)
-        XCTAssertTrue(catalogSource.label.contains("github.com/easonwumac/kairo-models"))
         XCTAssertTrue(findStaticText(containing: "No downloaded model selected yet.", direction: .both).exists)
-        XCTAssertTrue(app.buttons["settings.models.refresh-catalog"].exists)
         let localModelsToVerify = verifyAllLocalModels
             ? localModelExpectations
             : Array(localModelExpectations.prefix(2))
         XCTAssertTrue(app.staticTexts["settings.models.\(localModelsToVerify[0].0).status"].label.contains("Downloadable"))
         XCTAssertTrue(app.buttons["settings.models.\(localModelsToVerify[0].0).download"].exists)
         for localModel in localModelsToVerify {
-            verifyDownloadableLocalModel(
+            verifyDownloadableLocalModelSummary(
                 id: localModel.0,
                 displayName: localModel.1,
                 downloadIdentifier: "settings.models.\(localModel.0).download"
             )
         }
+
+        openAdvancedModelDiagnosticsIfNeeded()
+        let catalogSource = anyElement("settings.models.catalog-source")
+        XCTAssertTrue(catalogSource.exists)
+        XCTAssertTrue(catalogSource.label.contains("github.com/easonwumac/kairo-models"))
+        XCTAssertTrue(app.buttons["settings.models.refresh-catalog"].exists)
+        if localModelsToVerify.contains(where: { $0.0 == "qwen3-5-0-8b-q4-k-m" }) {
+            verifyQwenLocalModelDiagnostics()
+        }
     }
 
-    func verifyDownloadableLocalModel(id: String, displayName: String, downloadIdentifier: String) {
-        XCTAssertFalse(displayName.isEmpty)
-        XCTAssertTrue(anyElement("settings.models.\(id).name").exists, id)
-        if id == "qwen3-5-0-8b-q4-k-m" {
-            let runtimeFit = anyElement("settings.models.\(id).runtime-fit")
-            XCTAssertTrue(runtimeFit.exists)
-            XCTAssertTrue(runtimeFit.label.contains("Download: GGUF"))
-            XCTAssertTrue(runtimeFit.label.contains("MLX ref only"))
-            XCTAssertTrue(anyElement("settings.models.\(id).runtime-pill.0").exists)
-            XCTAssertTrue(anyElement("settings.models.\(id).runtime-pill.1").exists)
-            XCTAssertTrue(anyElement("settings.models.\(id).runtime-pill.2").exists)
-
-            let benchmark = anyElement("settings.models.\(id).benchmark")
-            XCTAssertTrue(benchmark.exists)
-            XCTAssertTrue(benchmark.label.contains("MLX ref"))
-            XCTAssertTrue(benchmark.label.contains("iPhone not verified"))
-
-            let manifest = anyElement("settings.models.\(id).manifest")
-            XCTAssertTrue(manifest.exists)
-            XCTAssertTrue(manifest.label.contains("huggingface.co"))
-            XCTAssertTrue(manifest.label.contains("GGUF"))
-            XCTAssertTrue(manifest.label.contains("Apache-2.0"))
-            XCTAssertTrue(manifest.label.contains("SHA e8e3882"))
+    func openAdvancedModelDiagnosticsIfNeeded() {
+        if anyElement("settings.models.catalog-source").exists {
+            return
         }
+        let diagnostics = findButton("settings.models.advanced-diagnostics.toggle", direction: .down, maxSwipes: 6)
+        if diagnostics.exists {
+            tapElement(diagnostics)
+        } else {
+            let labeledDiagnostics = findButton(labeled: "Show advanced diagnostics", direction: .down, maxSwipes: 2)
+            XCTAssertTrue(labeledDiagnostics.exists)
+            tapElement(labeledDiagnostics)
+        }
+        XCTAssertTrue(anyElement("settings.models.catalog-source").waitForExistence(timeout: 3))
+    }
+
+    func verifyDownloadableLocalModelSummary(id: String, displayName: String, downloadIdentifier: String) {
+        XCTAssertFalse(displayName.isEmpty)
+        XCTAssertTrue(findElement("settings.models.\(id).name", direction: .both, maxSwipes: 4).exists, id)
         let downloadButton = app.buttons[downloadIdentifier]
         if !downloadButton.exists {
             scrollDown()
         }
         XCTAssertTrue(downloadButton.exists, downloadIdentifier)
+    }
+
+    func verifyQwenLocalModelDiagnostics() {
+        let id = "qwen3-5-0-8b-q4-k-m"
+        let runtimeFit = findElement("settings.models.\(id).runtime-fit", direction: .down, maxSwipes: 6)
+        XCTAssertTrue(runtimeFit.exists)
+        XCTAssertTrue(runtimeFit.label.contains("Download: GGUF"))
+        XCTAssertTrue(runtimeFit.label.contains("MLX ref only"))
+        XCTAssertTrue(findElement("settings.models.\(id).runtime-pill.0", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findElement("settings.models.\(id).runtime-pill.1", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findElement("settings.models.\(id).runtime-pill.2", direction: .both, maxSwipes: 1).exists)
+
+        let benchmark = findElement("settings.models.\(id).benchmark", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(benchmark.exists)
+        XCTAssertTrue(benchmark.label.contains("MLX ref"))
+        XCTAssertTrue(benchmark.label.contains("iPhone not verified"))
+
+        let manifest = findElement("settings.models.\(id).manifest", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(manifest.exists)
+        XCTAssertTrue(manifest.label.contains("huggingface.co"))
+        XCTAssertTrue(manifest.label.contains("GGUF"))
+        XCTAssertTrue(manifest.label.contains("Apache-2.0"))
+        XCTAssertTrue(manifest.label.contains("SHA e8e3882"))
     }
 
     func verifyShortcutDemoContract(

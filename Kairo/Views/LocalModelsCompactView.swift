@@ -4,6 +4,7 @@ import SwiftUI
 struct LocalModelsCompactView: View {
     private let starterModelIDs = LocalModelCatalog.kairoStarterModelIDs
     @State private var pendingDownloadModelID: String?
+    @State private var showAdvancedDiagnostics = false
 
     let localModelStatus: LocalModelSettingsStatus
     let localModelDownloadProgress: LocalModelDownloadProgressState?
@@ -25,44 +26,13 @@ struct LocalModelsCompactView: View {
             VStack(alignment: .leading, spacing: 14) {
                 modelOverviewCard
 
-                compactLocalModelControls
+                routePreferenceCard
 
                 selectedModelSummary
 
-                VStack(alignment: .leading, spacing: 8) {
-                    if visibleModelRows.isEmpty {
-                        Text(KairoL10n.string("settings.models.emptyCatalog"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                modelStarterSection
 
-                    ForEach(visibleModelRows) { row in
-                        compactLocalModelRow(row)
-                    }
-
-                    if trimmedModelRowCount > 0 {
-                        HStack {
-                            Text(trimmedModelSummaryText)
-                                .font(compactModelMetadataFont)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                                .fixedSize(horizontal: false, vertical: true)
-
-                            Spacer(minLength: 0)
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel(trimmedModelSummaryText)
-                        .accessibilityIdentifier("settings.models.trimmed-note")
-                    }
-
-                    if localModelStatusMessageModelID == nil, let localModelStatusMessage {
-                        Text(localModelStatusMessage)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 4)
-                            .accessibilityIdentifier("settings.models.benchmark-message")
-                    }
-                }
+                advancedDiagnosticsSection
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
@@ -72,6 +42,219 @@ struct LocalModelsCompactView: View {
         .scrollIndicators(.visible)
         .background(Color(.sRGB, white: 0.98, opacity: 1).ignoresSafeArea())
         .accessibilityIdentifier("settings.models.screen")
+    }
+
+    private var modelStarterSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if visibleModelRows.isEmpty {
+                Text(KairoL10n.string("settings.models.emptyCatalog"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            ForEach(visibleModelRows) { row in
+                compactLocalModelRow(row)
+            }
+
+            if trimmedModelRowCount > 0 {
+                HStack {
+                    Text(trimmedModelSummaryText)
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Spacer(minLength: 0)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(trimmedModelSummaryText)
+                .accessibilityIdentifier("settings.models.trimmed-note")
+            }
+
+            if localModelStatusMessageModelID == nil, let localModelStatusMessage {
+                Text(localModelStatusMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+                    .accessibilityIdentifier("settings.models.benchmark-message")
+            }
+        }
+    }
+
+    private var advancedDiagnosticsSection: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showAdvancedDiagnostics.toggle()
+                    }
+                } label: {
+                    HStack(alignment: .center, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(KairoL10n.string("settings.models.advanced.section"))
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+
+                            Text(KairoL10n.string("settings.models.advanced.detail"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: showAdvancedDiagnostics ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                            .frame(width: 36, height: 36)
+                            .background(KairoDesign.blue.opacity(0.10), in: Circle())
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(showAdvancedDiagnostics ? KairoL10n.string("settings.models.advanced.hide") : KairoL10n.string("settings.models.advanced.show"))
+                .accessibilityIdentifier("settings.models.advanced-diagnostics.toggle")
+
+                if showAdvancedDiagnostics {
+                    Divider()
+
+                    catalogDiagnosticsCard
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(visibleModelRows) { row in
+                            compactModelDiagnostics(for: row)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var catalogDiagnosticsCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(KairoL10n.string("settings.models.catalog"))
+                    .font(compactSectionHeadingFont)
+
+                Text(localModelCatalogSourceText)
+                    .font(compactModelMetadataFont)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityIdentifier("settings.models.catalog-source")
+            }
+
+            compactActionButton(
+                KairoL10n.string("settings.models.refresh"),
+                systemImage: "arrow.clockwise",
+                accessibilityIdentifier: "settings.models.refresh-catalog",
+                tint: .blue,
+                action: refreshLocalModelCatalog
+            )
+            .accessibilityLabel(KairoL10n.string("settings.models.refreshCatalog"))
+        }
+        .padding(12)
+        .background(Color.white.opacity(0.86), in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(localModelCatalogSourceText)
+        .accessibilityIdentifier("settings.models.catalog-card")
+    }
+
+    private func compactModelDiagnostics(for row: LocalModelSettingsRow) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                Text(row.displayName)
+                    .font(compactModelNameFont)
+                    .fontWeight(.semibold)
+                    .lineLimit(2)
+
+                Spacer(minLength: 0)
+            }
+
+            runtimePills(for: row)
+
+            Text(row.manifestTransparencyText)
+                .font(compactModelMetadataFont)
+                .foregroundStyle(.secondary.opacity(0.85))
+                .lineLimit(2)
+                .truncationMode(.tail)
+                .accessibilityIdentifier("settings.models.\(row.modelID).manifest")
+
+            if let benchmarkSummaryText = row.benchmarkSummaryText {
+                Text(benchmarkSummaryText)
+                    .font(compactModelMetadataFont)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
+            }
+
+            LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 8) {
+                if row.benchmarkSummaryText != nil {
+                    compactActionButton(
+                        KairoL10n.string("settings.models.speed"),
+                        systemImage: "speedometer",
+                        accessibilityIdentifier: "settings.models.\(row.modelID).benchmark-run",
+                        tint: .blue
+                    ) {
+                        runLocalModelBenchmark(row)
+                    }
+                }
+
+                compactActionButton(
+                    KairoL10n.string("settings.models.reply"),
+                    systemImage: "text.bubble",
+                    accessibilityIdentifier: "settings.models.\(row.modelID).reply-check",
+                    tint: .blue
+                ) {
+                    runLocalModelReplyCheck(row)
+                }
+
+                if row.canDelete {
+                    compactActionButton(
+                        KairoL10n.string("settings.models.delete"),
+                        systemImage: "trash",
+                        accessibilityIdentifier: "settings.models.\(row.modelID).delete",
+                        tint: .red,
+                        role: .destructive
+                    ) {
+                        deleteLocalModel(row)
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .background(Color.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private var routePreferenceCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(KairoL10n.string("settings.models.routePreference"))
+                    .font(compactSectionHeadingFont)
+
+                Text(localModelStatus.preference.settingsDetailText)
+                    .font(compactModelMetadataFont)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            compactRoutePreferenceMenu
+        }
+        .padding(12)
+        .background(Color.white.opacity(0.86), in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("settings.models.route-card")
     }
 
     private var modelOverviewCard: some View {
@@ -103,57 +286,6 @@ struct LocalModelsCompactView: View {
                 }
             }
         }
-    }
-
-    private var compactLocalModelControls: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 8) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(KairoL10n.string("settings.models.routePreference"))
-                        .font(compactSectionHeadingFont)
-
-                    Text(localModelStatus.preference.settingsDetailText)
-                        .font(compactModelMetadataFont)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                compactRoutePreferenceMenu
-            }
-
-            Divider()
-
-            VStack(alignment: .leading, spacing: 8) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(KairoL10n.string("settings.models.catalog"))
-                        .font(compactSectionHeadingFont)
-
-                    Text(localModelCatalogSourceText)
-                        .font(compactModelMetadataFont)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .accessibilityIdentifier("settings.models.catalog-source")
-                }
-
-                compactActionButton(
-                    KairoL10n.string("settings.models.refresh"),
-                    systemImage: "arrow.clockwise",
-                    accessibilityIdentifier: "settings.models.refresh-catalog",
-                    tint: .blue,
-                    action: refreshLocalModelCatalog
-                )
-                .accessibilityLabel(KairoL10n.string("settings.models.refreshCatalog"))
-            }
-        }
-        .padding(12)
-        .background(Color.white.opacity(0.86), in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(localModelCatalogSourceText)
-        .accessibilityIdentifier("settings.models.catalog-card")
     }
 
     private var selectedModelSummary: some View {
@@ -295,59 +427,9 @@ struct LocalModelsCompactView: View {
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
 
-            runtimePills(for: row)
-
-            Text(row.manifestTransparencyText)
-                .font(compactModelMetadataFont)
-                .foregroundStyle(.secondary.opacity(0.85))
-                .lineLimit(2)
-                .truncationMode(.tail)
-                .accessibilityIdentifier("settings.models.\(row.modelID).manifest")
-                .accessibilityHidden(true)
-
-            if let benchmarkSummaryText = row.benchmarkSummaryText {
-                Text(benchmarkSummaryText)
-                    .font(compactModelMetadataFont)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
-            }
-
-            LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
                 compactLocalModelAction(for: row)
-
-                if row.benchmarkSummaryText != nil {
-                    compactActionButton(
-                        KairoL10n.string("settings.models.speed"),
-                        systemImage: "speedometer",
-                        accessibilityIdentifier: "settings.models.\(row.modelID).benchmark-run",
-                        tint: .blue
-                    ) {
-                        runLocalModelBenchmark(row)
-                    }
-                }
-
-                compactActionButton(
-                    KairoL10n.string("settings.models.reply"),
-                    systemImage: "text.bubble",
-                    accessibilityIdentifier: "settings.models.\(row.modelID).reply-check",
-                    tint: .blue
-                ) {
-                    runLocalModelReplyCheck(row)
-                }
-
-                if row.canDelete {
-                    compactActionButton(
-                        KairoL10n.string("settings.models.delete"),
-                        systemImage: "trash",
-                        accessibilityIdentifier: "settings.models.\(row.modelID).delete",
-                        tint: .red,
-                        role: .destructive
-                    ) {
-                        deleteLocalModel(row)
-                    }
-                }
+                Spacer(minLength: 0)
             }
 
             if pendingDownloadModelID == row.modelID {

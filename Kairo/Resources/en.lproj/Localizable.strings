@@ -686,6 +686,10 @@
 "settings.models.compact.downloadedSelectForRouting" = "%@ is downloaded. Select it to use local routing.";
 "settings.models.compact.noDownloadedModel" = "No downloaded model selected yet.";
 "settings.models.compact.trimmed" = "Showing %lld starter models only. More downloadable models stay in kairo-models.";
+"settings.models.advanced.section" = "Advanced diagnostics";
+"settings.models.advanced.detail" = "Catalog refresh, runtime fit, manifest details, and dev checks stay here until troubleshooting is needed.";
+"settings.models.advanced.show" = "Show advanced diagnostics";
+"settings.models.advanced.hide" = "Hide advanced diagnostics";
 "settings.models.download.approvalRequired" = "Download requires explicit approval.";
 "settings.models.download.confirm" = "Confirm Download";
 "settings.models.download.cancel" = "Cancel";

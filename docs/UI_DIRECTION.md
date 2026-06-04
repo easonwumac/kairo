@@ -139,6 +139,16 @@ Stage 13 makes Settings setup-on-demand:
 - The same controls and identifiers remain available after expansion, so setup
   workflows stay testable without turning Settings into the product homepage.
 
+Stage 14 makes AI setup route-first:
+
+- AI Setup now opens with answer route, selected model state, and starter model
+  actions instead of catalog metadata and dev checks.
+- Catalog refresh, manifest transparency, runtime fit, speed tests, reply checks,
+  and destructive model cleanup live behind Advanced diagnostics.
+- Download approval still shows license, storage, and manifest details at the
+  moment of consent, keeping safety visible without making diagnostics the main
+  product path.
+
 ## Next UI stages
 
 1. Memory Center
@@ -154,8 +164,8 @@ Stage 13 makes Settings setup-on-demand:
      the most common workflow states.
 
 4. AI Setup and Settings
-   - Continue moving local-model diagnostics behind explicit advanced
-     affordances after simulator smoke confirms the new first screen.
+   - Continue tightening route-state language after simulator smoke confirms
+     which local-model states users need on the first screen.
 
 5. Action Preview
    - Continue tuning checklist labels after broader smoke coverage shows which

@@ -231,16 +231,17 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
         XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
-        XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.benchmark", direction: .down, maxSwipes: 2).exists)
-        XCTAssertTrue(findStaticText(containing: "MLX ref", direction: .both).exists)
-        XCTAssertTrue(findStaticText(containing: "iPhone not verified", direction: .both).exists)
+        openAdvancedModelDiagnosticsIfNeeded()
+        verifyQwenLocalModelDiagnostics()
 
-        let benchmarkButton = findButton("settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run", direction: .down, maxSwipes: 2)
+        let benchmarkButton = findButton("settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run", direction: .both, maxSwipes: 4)
         XCTAssertTrue(benchmarkButton.exists)
         benchmarkButton.tap()
 
-        XCTAssertTrue(findElement("settings.models.benchmark-message", direction: .both, maxSwipes: 2).exists)
-        XCTAssertTrue(findStaticText(containing: "Download Qwen3.5 0.8B Q4_K_M before running a benchmark.", direction: .both, maxSwipes: 2).exists)
+        let message = findElement("settings.models.benchmark-message", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(message.exists)
+        XCTAssertTrue(message.label.contains("Download Qwen3.5 0.8B Q4_K_M"), message.label)
+        XCTAssertTrue(message.label.localizedCaseInsensitiveContains("benchmark"), message.label)
     }
 
     func testSettingsRunsInstalledLocalModelReplyCheck() throws {
@@ -248,6 +249,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
         XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
+        openAdvancedModelDiagnosticsIfNeeded()
         let replyCheckButton = findButton("settings.models.qwen3-5-0-8b-q4-k-m.reply-check", direction: .down, maxSwipes: 2)
         XCTAssertTrue(replyCheckButton.exists)
         replyCheckButton.tap()
@@ -272,6 +274,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
         XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
+        openAdvancedModelDiagnosticsIfNeeded()
         let replyCheckButton = findButton("settings.models.qwen3-5-0-8b-q4-k-m.reply-check", direction: .down, maxSwipes: 2)
         XCTAssertTrue(replyCheckButton.exists)
         replyCheckButton.tap()
