@@ -7,8 +7,9 @@ final class KairoRecipeLifecycleTests: XCTestCase {
 
         let dailyBriefing = try XCTUnwrap(catalog.recipe(id: "daily-briefing"))
         let sharedTextToTasks = try XCTUnwrap(catalog.recipe(id: "shared-text-to-tasks"))
-        let keyboardTodoCapture = try XCTUnwrap(catalog.recipe(id: "keyboard-todo-capture"))
+        let recipeIDs = Set(catalog.recipes.map(\.id))
 
+        XCTAssertEqual(recipeIDs, ["daily-briefing", "meeting-prep", "shared-text-to-tasks"])
         XCTAssertEqual(dailyBriefing.title, "Daily Briefing")
         XCTAssertEqual(dailyBriefing.createdBy, .template)
         XCTAssertEqual(dailyBriefing.triggerHint, .dailyTime(hour: 8, minute: 30))
@@ -18,8 +19,15 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertTrue(dailyBriefing.steps.contains { $0.kind == .askKairo })
         XCTAssertTrue(sharedTextToTasks.steps.contains { $0.kind == .extractTasks })
         XCTAssertTrue(sharedTextToTasks.steps.contains { $0.kind == .createReminderDraft })
-        XCTAssertTrue(keyboardTodoCapture.requiredCapabilities.contains(.keyboard))
+        XCTAssertFalse(catalog.recipes.contains { $0.requiredCapabilities.contains(.keyboard) })
         XCTAssertFalse(catalog.recipes.contains { $0.title.contains("Apple Shortcut") })
+    }
+
+    func testRecipePlannerDoesNotSuggestPausedKeyboardRecipeSurface() throws {
+        let recipes = KairoRecipePlanner().suggestRecipes(for: "Capture keyboard todo")
+
+        XCTAssertFalse(recipes.contains { $0.requiredCapabilities.contains(.keyboard) })
+        XCTAssertFalse(recipes.contains { $0.triggerHint == .keyboard })
     }
 
     func testFileBackedKairoRecipeStorePersistsAndTogglesInternalRecipes() async throws {

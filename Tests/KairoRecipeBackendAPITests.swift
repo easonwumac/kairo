@@ -62,8 +62,9 @@ final class KairoRecipeBackendAPITests: XCTestCase {
 
         let samples = try await api.seedSampleRecipes()
 
-        XCTAssertEqual(Set(samples.map(\.id)), ["daily-briefing", "meeting-prep", "shared-text-to-tasks", "keyboard-todo-capture"])
+        XCTAssertEqual(Set(samples.map(\.id)), ["daily-briefing", "meeting-prep", "shared-text-to-tasks"])
         XCTAssertTrue(samples.allSatisfy { $0.createdBy == .template })
         XCTAssertTrue(samples.allSatisfy(\.isEnabled))
+        XCTAssertFalse(samples.contains { $0.requiredCapabilities.contains(.keyboard) })
     }
 }

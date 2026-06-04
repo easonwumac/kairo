@@ -16,9 +16,6 @@ public struct KairoRecipePlanner: Sendable {
         if containsAny(normalized, ["todo", "待辦", "reminder", "提醒"]) {
             recipes.append(suggested(KairoRecipeTemplateFactory.sharedTextToTasks(now: now)))
         }
-        if containsAny(normalized, ["keyboard", "鍵盤"]) {
-            recipes.append(suggested(KairoRecipeTemplateFactory.keyboardTodoCapture(now: now)))
-        }
         if containsAny(normalized, ["home", "homekit", "燈", "門鎖", "冷氣"]) {
             recipes.append(suggested(homeStateSummary(now: now)))
         }

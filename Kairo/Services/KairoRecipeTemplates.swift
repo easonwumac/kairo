@@ -5,8 +5,7 @@ public enum KairoRecipeTemplateFactory {
         KairoRecipeCatalog(recipes: [
             dailyBriefing(now: now),
             meetingPrep(now: now),
-            sharedTextToTasks(now: now),
-            keyboardTodoCapture(now: now)
+            sharedTextToTasks(now: now)
         ])
     }
 
@@ -106,33 +105,4 @@ public enum KairoRecipeTemplateFactory {
         )
     }
 
-    public static func keyboardTodoCapture(now: Date = Date(timeIntervalSince1970: 0)) -> KairoRecipe {
-        KairoRecipe(
-            id: "keyboard-todo-capture",
-            title: "Keyboard Todo Capture",
-            summary: "Turn selected keyboard context into Kairo-owned draft queue items.",
-            createdAt: now,
-            updatedAt: now,
-            createdBy: .template,
-            triggerHint: .keyboard,
-            steps: [
-                KairoRecipeStep(
-                    id: "extract",
-                    title: "Extract keyboard tasks",
-                    kind: .extractTasks,
-                    input: .keyboardContext
-                ),
-                KairoRecipeStep(
-                    id: "queue-draft",
-                    title: "Queue task draft",
-                    kind: .enqueueActionDraft,
-                    input: .previousStepOutput
-                )
-            ],
-            requiredCapabilities: [.keyboard, .reminders],
-            riskTier: .tier1Draft,
-            cloudPolicy: .localOnly,
-            isEnabled: true
-        )
-    }
 }
