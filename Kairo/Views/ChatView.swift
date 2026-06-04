@@ -8,6 +8,7 @@ import AppKit
 
 public struct ChatView: View {
     @StateObject private var viewModel: ChatViewModel
+    @State private var showMoreFocusStarts = false
     @FocusState private var isComposerFocused: Bool
 
     public init(environment: KairoEnvironment = .preview()) {
@@ -75,21 +76,54 @@ public struct ChatView: View {
                     applyPrompt(KairoL10n.string("chat.tools.summarizeSharedContent.prompt"))
                 }
 
-                HStack(spacing: 8) {
-                    ChatFocusChip(
-                        title: KairoL10n.string("chat.focus.plan.title"),
-                        systemImage: "calendar.badge.plus",
-                        tint: KairoDesign.amber
-                    ) {
-                        applyPrompt(KairoL10n.string("chat.tools.reminderCalendar.prompt"))
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showMoreFocusStarts.toggle()
                     }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: showMoreFocusStarts ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
 
-                    ChatFocusChip(
-                        title: KairoL10n.string("chat.focus.reply.title"),
-                        systemImage: "envelope.open",
-                        tint: KairoDesign.violet
-                    ) {
-                        applyPrompt(KairoL10n.string("chat.tools.messageEmailDraft.prompt"))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(KairoL10n.string("chat.focus.more.title"))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                            Text(KairoL10n.string("chat.focus.more.subtitle"))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 9)
+                    .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("chat.focus.more.toggle")
+
+                if showMoreFocusStarts {
+                    HStack(spacing: 8) {
+                        ChatFocusChip(
+                            title: KairoL10n.string("chat.focus.plan.title"),
+                            systemImage: "calendar.badge.plus",
+                            tint: KairoDesign.amber
+                        ) {
+                            applyPrompt(KairoL10n.string("chat.tools.reminderCalendar.prompt"))
+                        }
+
+                        ChatFocusChip(
+                            title: KairoL10n.string("chat.focus.reply.title"),
+                            systemImage: "envelope.open",
+                            tint: KairoDesign.violet
+                        ) {
+                            applyPrompt(KairoL10n.string("chat.tools.messageEmailDraft.prompt"))
+                        }
                     }
                 }
             }

@@ -410,6 +410,15 @@ Stage 42 makes Workflows action-first:
 - Saved workflow rows, preview-first controls, and advanced Shortcut references
   keep their existing progressive disclosure.
 
+Stage 43 makes Chat start with one action:
+
+- The new-chat focus panel now gives the shared-content starter a single primary
+  CTA instead of showing three equal starter prompts at once.
+- Planning and reply prompts move behind More starts, preserving useful
+  shortcuts without making the first screen read like a demo launcher.
+- The composer and route controls remain unchanged so the everyday chat path
+  stays stable while the first layer gets quieter.
+
 ## Next UI stages
 
 1. Product surface audit

@@ -472,6 +472,8 @@
 "chat.focus.safety" = "Review first";
 "chat.focus.shared.title" = "Organize shared content";
 "chat.focus.shared.subtitle" = "Summarize notes, links, files, or screenshots.";
+"chat.focus.more.title" = "More starts";
+"chat.focus.more.subtitle" = "Plan a next step or draft a reply.";
 "chat.focus.plan.title" = "Plan";
 "chat.focus.plan.subtitle" = "Draft the next step before anything is saved.";
 "chat.focus.reply.title" = "Reply";
