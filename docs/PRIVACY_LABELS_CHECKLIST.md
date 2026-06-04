@@ -43,7 +43,7 @@ Future-only purpose strings must remain absent from the beta plist until the cor
 
 Current deletion proof is on-device and user-triggered only:
 
-- Chat history: delete a thread from Chat history; package/UI evidence exists, but restart persistence still needs real-device sign-off.
+- Chat history: delete a thread from Chat history; `JSONFileChatHistoryStore.purgeDeletedThreads` removes deleted file-backed threads from disk, while restart persistence still needs real-device sign-off.
 - Memory records: Memory Center delete/export covers active records, and `JSONFileMemoryStore.purgeDeleted` removes deleted JSON records from disk.
 - Local models: Settings / Models delete removes installed model files and clears selected-model state; no model weights are bundled or committed.
 - API keys and OAuth tokens: Settings delete/disconnect removes Keychain-backed secrets; malformed token handling requires reauthorization instead of silently treating stale credentials as connected.

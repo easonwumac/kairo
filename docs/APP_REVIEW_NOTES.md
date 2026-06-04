@@ -8,7 +8,7 @@ On-device deletion is user-triggered for chat history, memory JSON/export conten
 
 Data deletion flow for the current beta:
 
-- Chat history: users delete a chat thread from Chat history.
+- Chat history: users delete a chat thread from Chat history; deleted file-backed threads can be purged from disk through the deletion backend.
 - Memory records: users delete individual memories from Memory Center; exports include active records only, and deleted JSON records can be purged from disk.
 - Local models: users delete downloaded models from Settings / Models, which also clears selected-model state when needed.
 - API keys and OAuth tokens: users delete OpenAI API keys or disconnect OAuth connectors from Settings; secrets are stored in Keychain-backed storage.

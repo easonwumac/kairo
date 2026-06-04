@@ -1,4 +1,5 @@
 import XCTest
+import Foundation
 @testable import KairoCore
 
 final class KairoDeletionBackendAPITests: XCTestCase {
@@ -44,6 +45,7 @@ final class KairoDeletionBackendAPITests: XCTestCase {
         ))
 
         try await deletionAPI.deleteChatThread(id: threadID)
+        try await deletionAPI.purgeDeletedChatThreads()
         try await deletionAPI.deleteMemory(id: memoryID)
         try await deletionAPI.purgeDeletedMemories()
         try await deletionAPI.deleteOpenAIAPIKey()
@@ -99,5 +101,41 @@ final class KairoDeletionBackendAPITests: XCTestCase {
         status = await localModelSettingsService.status()
         XCTAssertNil(status.selectedModelID)
         XCTAssertFalse(status.installedModels.contains { $0.modelID == "qwen-small" })
+    }
+
+    func testDeletionBackendAPIPurgesDeletedChatHistoryFromDisk() async throws {
+        let threadID = UUID(uuidString: "44444444-4444-4444-4444-444444444444")!
+        let fileURL = temporaryFileURL(named: "chat-history-deletion-proof.json")
+        let chatStore = try await JSONFileChatHistoryStore(fileURL: fileURL)
+        let deletionAPI = KairoDeletionBackendService(
+            chatHistoryStore: chatStore,
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            auditLogger: InMemoryAuditLogger()
+        )
+
+        try await chatStore.saveThread(ChatThread(id: threadID, messages: [
+            ChatMessage(role: .user, text: "Delete this private launch note")
+        ]))
+
+        try await deletionAPI.deleteChatThread(id: threadID)
+        var rawText = try String(contentsOf: fileURL, encoding: .utf8)
+        XCTAssertTrue(rawText.contains(threadID.uuidString))
+        XCTAssertTrue(rawText.contains("Delete this private launch note"))
+
+        try await deletionAPI.purgeDeletedChatThreads()
+
+        let deletedThread = try await chatStore.thread(id: threadID)
+        rawText = try String(contentsOf: fileURL, encoding: .utf8)
+        XCTAssertNil(deletedThread)
+        XCTAssertFalse(rawText.contains(threadID.uuidString))
+        XCTAssertFalse(rawText.contains("Delete this private launch note"))
+    }
+
+    private func temporaryFileURL(named name: String) -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("KairoDeletionBackendAPITests-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory.appendingPathComponent(name)
     }
 }
