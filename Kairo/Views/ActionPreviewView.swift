@@ -124,10 +124,6 @@ public struct ActionPreviewView: View {
                             Text(KairoL10n.string("chat.action.preview.field.payload"))
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(KairoDesign.ink)
-                            Text(KairoL10n.string("chat.action.preview.payloadDetail"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
                         }
 
                         Spacer(minLength: 8)
@@ -144,7 +140,11 @@ public struct ActionPreviewView: View {
 
                 if showPayloadDetails {
                     Divider()
-                    VStack(alignment: .leading, spacing: 0) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(KairoL10n.string("chat.action.preview.payloadDetail"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                         actionPayloadPreview
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -183,15 +183,9 @@ public struct ActionPreviewView: View {
                         .frame(width: 24, height: 24)
                         .background(KairoDesign.teal.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(KairoL10n.string("chat.action.preview.safetyDetails"))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(KairoDesign.ink)
-                        Text(KairoL10n.string("chat.action.preview.safetyDetails.detail"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    Text(KairoL10n.string("chat.action.preview.safetyDetails"))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
 
                     Spacer(minLength: 8)
 
@@ -207,6 +201,11 @@ public struct ActionPreviewView: View {
 
             if showSafetyDetails {
                 Divider()
+
+                Text(KairoL10n.string("chat.action.preview.safetyDetails.detail"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if let descriptor {
                     checklistRow(

@@ -616,6 +616,15 @@ Stage 64 makes Access advanced setup rows quieter:
 - Manifest import, HomeKit demo, preview confirmation, and existing Access smoke
   identifiers keep their current paths.
 
+Stage 65 makes Chat action preview easier to confirm:
+
+- The action preview first layer now keeps the outcome, destination, risk,
+  confirmation state, and primary buttons as the visible decision path.
+- Payload and safety rows no longer show explanatory copy while collapsed; exact
+  payload guidance, capability, and rationale remain available after expansion.
+- Confirm/cancel actions, payload details, safety disclosure, and existing chat
+  action preview identifiers keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit
