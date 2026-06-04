@@ -318,6 +318,8 @@
 "chat.action.preview.roomLabel" = "Room: %@";
 "chat.action.preview.commandLabel" = "Command: %@";
 "chat.action.preview.valueLabel" = "Value: %@";
+"chat.action.preview.value.bool.true" = "On";
+"chat.action.preview.value.bool.false" = "Off";
 "chat.action.preview.alternativeLabel" = "Alternative: %@";
 "chat.action.preview.mode.driving" = "Driving";
 "chat.action.preview.mode.walking" = "Walking";

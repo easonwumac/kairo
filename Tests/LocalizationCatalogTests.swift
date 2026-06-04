@@ -91,6 +91,8 @@ final class LocalizationCatalogTests: XCTestCase {
             "chat.action.reviewHandoff",
             "chat.action.preview.title",
             "chat.action.preview.confirm",
+            "chat.action.preview.value.bool.true",
+            "chat.action.preview.value.bool.false",
             "chat.action.support.implemented",
             "chat.action.support.needsConfirmation",
             "chat.action.support.plannedIntegration",

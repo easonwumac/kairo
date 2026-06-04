@@ -318,6 +318,8 @@
 "chat.action.preview.roomLabel" = "Room：%@";
 "chat.action.preview.commandLabel" = "Command：%@";
 "chat.action.preview.valueLabel" = "Value：%@";
+"chat.action.preview.value.bool.true" = "開";
+"chat.action.preview.value.bool.false" = "關";
 "chat.action.preview.alternativeLabel" = "替代方案：%@";
 "chat.action.preview.mode.driving" = "開車";
 "chat.action.preview.mode.walking" = "步行";

@@ -290,7 +290,7 @@ private extension HomeControlValue {
     var displayValue: String {
         switch self {
         case .bool(let value):
-            return value ? "true" : "false"
+            return KairoL10n.string(value ? "chat.action.preview.value.bool.true" : "chat.action.preview.value.bool.false")
         case .double(let value):
             return String(value)
         case .string(let value):
