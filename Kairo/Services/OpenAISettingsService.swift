@@ -81,6 +81,13 @@ public actor OpenAISettingsService {
     }
 }
 
-public enum OpenAISettingsError: Error, Equatable {
+public enum OpenAISettingsError: LocalizedError, Equatable {
     case emptyAPIKey
+
+    public var errorDescription: String? {
+        switch self {
+        case .emptyAPIKey:
+            return "OpenAI API key is empty. Paste an API key before saving or running a dry run."
+        }
+    }
 }

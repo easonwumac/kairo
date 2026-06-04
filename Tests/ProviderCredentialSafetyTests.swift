@@ -44,6 +44,24 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertEqual(result.redactedKey, "sk-l...1234")
     }
 
+    func testOpenAISettingsServiceEmptyKeyErrorIsUserReadable() async throws {
+        let service = OpenAISettingsService(credentialStore: InMemoryCredentialStore())
+
+        do {
+            try await service.saveAPIKey("   ")
+            XCTFail("Expected empty API key save to fail.")
+        } catch {
+            XCTAssertEqual(error.localizedDescription, "OpenAI API key is empty. Paste an API key before saving or running a dry run.")
+        }
+
+        do {
+            _ = try await service.dryRunAPIKey(nil as String?)
+            XCTFail("Expected empty API key dry run to fail.")
+        } catch {
+            XCTAssertEqual(error.localizedDescription, "OpenAI API key is empty. Paste an API key before saving or running a dry run.")
+        }
+    }
+
     func testOAuthConnectorReadinessProvidesSettingsCopyAndActionState() {
         XCTAssertEqual(OAuthConnectorLoginReadiness.connected.settingsStatusText, "已連線")
         XCTAssertEqual(OAuthConnectorLoginReadiness.readyToAuthorize.settingsStatusText, "可授權")
