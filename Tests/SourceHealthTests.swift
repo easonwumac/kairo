@@ -687,7 +687,6 @@ final class SourceHealthTests: XCTestCase {
         )
         let privacyManifest = try propertyListDictionary(at: root.appendingPathComponent("Kairo/Resources/PrivacyInfo.xcprivacy"))
         let appInfoPlist = try propertyListDictionary(at: root.appendingPathComponent("Config/KairoApp-Info.plist"))
-
         XCTAssertEqual(privacyManifest["NSPrivacyTracking"] as? Bool, false)
         XCTAssertTrue((privacyManifest["NSPrivacyTrackingDomains"] as? [Any])?.isEmpty == true)
         XCTAssertTrue((privacyManifest["NSPrivacyCollectedDataTypes"] as? [Any])?.isEmpty == true)
@@ -729,7 +728,6 @@ final class SourceHealthTests: XCTestCase {
             XCTAssertTrue(checklist.contains(boundary), boundary)
             XCTAssertTrue(reviewNotes.contains(boundary), boundary)
         }
-
         XCTAssertTrue(checklist.contains("Backend account deletion: not applicable in the current beta"))
         XCTAssertTrue(reviewNotes.contains("Backend account deletion: not applicable in the current beta"))
         XCTAssertTrue(checklist.contains("Audit logs: Settings / Privacy exposes Clear Audit Log"))
