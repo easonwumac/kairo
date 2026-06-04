@@ -495,6 +495,8 @@ public enum LocalModelCatalogServiceError: Error, Equatable {
     case unknownSigningKey(String)
     case revokedSigningKey(String)
     case signingKeyPendingPublication(String)
+    case signingKeyNotYetValid(String)
+    case signingKeyExpired(String)
     case unsupportedSignatureAlgorithm(String)
     case invalidSignature
     case unsafeDownloadURL(modelID: String, url: String)
@@ -600,10 +602,10 @@ public struct LocalModelCatalogService: Sendable {
     private func validateTrustWindow(for trustedKey: LocalModelTrustedSigningKey) throws {
         let now = currentDate()
         if let validFrom = trustedKey.validFrom, now < validFrom {
-            throw LocalModelCatalogServiceError.invalidSignature
+            throw LocalModelCatalogServiceError.signingKeyNotYetValid(trustedKey.keyID)
         }
         if let validUntil = trustedKey.validUntil, now > validUntil {
-            throw LocalModelCatalogServiceError.invalidSignature
+            throw LocalModelCatalogServiceError.signingKeyExpired(trustedKey.keyID)
         }
     }
 

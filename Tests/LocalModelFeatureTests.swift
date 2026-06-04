@@ -222,7 +222,7 @@ final class LocalModelFeatureTests: XCTestCase {
             _ = try await expiredService.fetchCatalog()
             XCTFail("Expected expired signing key window to fail closed.")
         } catch let error as LocalModelCatalogServiceError {
-            XCTAssertEqual(error, .invalidSignature)
+            XCTAssertEqual(error, .signingKeyExpired("kairo-models-expired"))
         }
     }
 
@@ -438,7 +438,7 @@ final class LocalModelFeatureTests: XCTestCase {
             _ = try await service.fetchCatalog()
             XCTFail("Expected future signing key window to fail closed.")
         } catch let error as LocalModelCatalogServiceError {
-            XCTAssertEqual(error, .invalidSignature)
+            XCTAssertEqual(error, .signingKeyNotYetValid("kairo-models-2026"))
         }
     }
 
