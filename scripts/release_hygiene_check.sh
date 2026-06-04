@@ -9,6 +9,7 @@ Runs Kairo release hygiene checks:
   - swift test
   - xcodegen generate when installed
   - git diff --check
+  - App Review boundary scan
   - focused secret scan
   - model artifact scan
   - optional GitHub Actions exact-HEAD gate with --require-ci
@@ -80,6 +81,83 @@ fi
 echo
 echo "== git diff --check =="
 git diff --check
+
+echo
+echo "== App Review boundary scan =="
+python3 - <<'PY'
+import plistlib
+import sys
+from pathlib import Path
+
+root = Path.cwd()
+
+def load_plist(relative_path):
+    with (root / relative_path).open("rb") as file:
+        return plistlib.load(file)
+
+failures = []
+
+privacy = load_plist("Kairo/Resources/PrivacyInfo.xcprivacy")
+if privacy.get("NSPrivacyTracking") is not False:
+    failures.append("PrivacyInfo.xcprivacy must keep NSPrivacyTracking=false for the current no-tracking beta claim.")
+if privacy.get("NSPrivacyCollectedDataTypes") != []:
+    failures.append("PrivacyInfo.xcprivacy must keep NSPrivacyCollectedDataTypes empty unless privacy labels are updated.")
+if privacy.get("NSPrivacyTrackingDomains") != []:
+    failures.append("PrivacyInfo.xcprivacy must keep NSPrivacyTrackingDomains empty unless tracking is intentionally added.")
+
+app_info = load_plist("Config/KairoApp-Info.plist")
+deferred_purpose_keys = [
+    "NSHomeKitUsageDescription",
+    "NSLocationAlwaysAndWhenInUseUsageDescription",
+    "NSLocationWhenInUseUsageDescription",
+    "NSPhotoLibraryAddUsageDescription",
+    "NSPhotoLibraryUsageDescription",
+]
+for key in deferred_purpose_keys:
+    if key in app_info:
+        failures.append(f"{key} must stay out of the beta app plist until that public API path ships.")
+
+required_purpose_keys = [
+    "NSCalendarsFullAccessUsageDescription",
+    "NSContactsUsageDescription",
+    "NSRemindersFullAccessUsageDescription",
+    "NSUserNotificationsUsageDescription",
+]
+for key in required_purpose_keys:
+    value = app_info.get(key)
+    if not isinstance(value, str) or not value.strip():
+        failures.append(f"{key} is required for the currently shipped confirmation-based capability.")
+
+allowed_entitlement_keys = {"com.apple.security.application-groups"}
+for relative_path in ["Config/KairoApp.entitlements", "Config/KairoShareExtension.entitlements"]:
+    entitlements = load_plist(relative_path)
+    unexpected = sorted(set(entitlements) - allowed_entitlement_keys)
+    if unexpected:
+        failures.append(f"{relative_path} contains unexpected beta entitlement keys: {', '.join(unexpected)}")
+    app_groups = entitlements.get("com.apple.security.application-groups")
+    if app_groups != ["group.app.kairo.shared"]:
+        failures.append(f"{relative_path} must use only the shared Kairo App Group entitlement.")
+
+project = (root / "project.yml").read_text(encoding="utf-8")
+deferred_target_names = [
+    "Keyboard",
+    "Widget",
+    "CarPlay",
+    "CarMode",
+    "HomeKitExtension",
+]
+for target_name in deferred_target_names:
+    if f"  {target_name}:" in project or f"  Kairo{target_name}:" in project:
+        failures.append(f"project.yml must not add deferred beta target {target_name}.")
+
+if failures:
+    for failure in failures:
+        print(f"- {failure}", file=sys.stderr)
+    sys.exit(1)
+
+print("App Review boundary scan passed.")
+
+PY
 
 echo
 echo "== focused secret scan =="
