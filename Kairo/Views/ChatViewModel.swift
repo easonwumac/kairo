@@ -169,6 +169,7 @@ public final class ChatViewModel: ObservableObject {
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
             await persistCurrentThread()
             previewFirstCalendarActionFromLatestAssistantMessage()
+            previewFirstHandoffActionFromLatestAssistantMessage()
         } catch {
             let userFacingMessage = Self.userFacingChatErrorMessage(for: error)
             let failedMessage = ChatMessage(
@@ -269,6 +270,22 @@ public final class ChatViewModel: ObservableObject {
             .first { $0.role == .assistant && !$0.proposedActions.isEmpty }?
             .proposedActions ?? []
         pendingAction = latestActions.first { $0.kind == .createCalendarDraft }
+    }
+
+    private func previewFirstHandoffActionFromLatestAssistantMessage() {
+        guard pendingAction == nil else { return }
+        let latestActions = currentThread.messages
+            .reversed()
+            .first { $0.role == .assistant && !$0.proposedActions.isEmpty }?
+            .proposedActions ?? []
+        pendingAction = latestActions.first { action in
+            switch action.kind {
+            case .composeEmailDraft, .openMapDirections, .openMessageHandoff, .openPhoneCallHandoff, .openWebSearchHandoff:
+                return true
+            default:
+                return false
+            }
+        }
     }
 
     private func composedMessageText(text: String, replyTarget: ChatMessage?, hasAttachments: Bool) -> String {
