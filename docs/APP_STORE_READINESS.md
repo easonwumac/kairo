@@ -43,7 +43,7 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 
 ### Current release blocker summary
 
-- **Real device blocked:** `xcrun devicectl list devices` on 2026-06-04 08:55 CST listed all paired physical devices as `unavailable`, so this pass did not produce real-device sign-off.
+- **Real device blocked:** `xcrun devicectl list devices` on 2026-06-04 08:57 CST listed all paired physical devices as `unavailable`, so this pass did not produce real-device sign-off.
 - **Copy QA scope:** Review notes avoid claiming iOS production local inference, live HomeKit control, private cross-app data reads, arbitrary UI control, reuse of a user's ChatGPT browser session, or silent Apple Shortcuts creation.
 - **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking, and package source-health tests parse the privacy manifest plus entitlement/review-note boundaries. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
 - **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
@@ -231,7 +231,7 @@ Purpose-string alignment:
 
 Authoritative physical-device sign-off log: `docs/REAL_DEVICE_BETA_SIGNOFF.md`.
 
-Current `devicectl` check on 2026-06-04 08:55 CST found real devices listed but unavailable:
+Current `devicectl` check on 2026-06-04 08:57 CST found real devices listed but unavailable:
 
 - `iPad Air 5` (`EDC75137-2987-56F5-A08D-DB0D7A2B8F05`) unavailable.
 - `iPhone 17 Pro Max` (`58A417FA-6D4D-5F15-B673-AF238D812161`) unavailable.
