@@ -540,6 +540,7 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
     case invalidModelID(String)
     case missingCapabilities(modelID: String)
     case invalidSizeMetadata(modelID: String, fileSizeBytes: Int64, installedSizeBytes: Int64)
+    case unsupportedRuntime(modelID: String, runtime: LocalModelRuntime)
     case duplicateModelID(String)
     case unsafeDownloadURL(modelID: String, url: String)
     case invalidChecksum(modelID: String, sha256: String)
@@ -572,6 +573,8 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
             return "Model catalog must declare at least one capability for \(modelID)."
         case .invalidSizeMetadata(let modelID, let fileSizeBytes, let installedSizeBytes):
             return "Model catalog has invalid size metadata for \(modelID): file=\(fileSizeBytes), installed=\(installedSizeBytes)."
+        case .unsupportedRuntime(let modelID, let runtime):
+            return "Model catalog uses unsupported runtime for \(modelID): \(runtime.rawValue)."
         case .duplicateModelID(let modelID):
             return "Model catalog contains a duplicate model id: \(modelID)."
         case .unsafeDownloadURL(let modelID, let url):
@@ -683,6 +686,12 @@ public struct LocalModelCatalogService: Sendable {
                     modelID: model.id,
                     fileSizeBytes: model.fileSizeBytes,
                     installedSizeBytes: model.installedSizeBytes
+                )
+            }
+            guard model.runtime == .gguf else {
+                throw LocalModelCatalogServiceError.unsupportedRuntime(
+                    modelID: model.id,
+                    runtime: model.runtime
                 )
             }
             guard Self.isValidSHA256Hex(model.sha256) else {

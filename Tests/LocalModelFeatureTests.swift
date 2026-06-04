@@ -311,6 +311,59 @@ final class LocalModelFeatureTests: XCTestCase {
         }
     }
 
+    func testLocalModelCatalogServiceRejectsUnsupportedRuntime() async throws {
+        let unknownRuntimeManifest = remoteModelManifestJSON(
+            id: "unknown-runtime-model",
+            displayName: "Unknown Runtime Model"
+        ).replacingOccurrences(
+            of: #""runtime": "gguf""#,
+            with: #""runtime": "unknown""#
+        )
+        let mlxRuntimeManifest = remoteModelManifestJSON(
+            id: "mlx-runtime-model",
+            displayName: "MLX Runtime Model"
+        ).replacingOccurrences(
+            of: #""runtime": "gguf""#,
+            with: #""runtime": "mlx""#
+        )
+
+        for (manifestJSON, expectedError) in [
+            (
+                unknownRuntimeManifest,
+                LocalModelCatalogServiceError.unsupportedRuntime(
+                    modelID: "unknown-runtime-model",
+                    runtime: .unknown
+                )
+            ),
+            (
+                mlxRuntimeManifest,
+                LocalModelCatalogServiceError.unsupportedRuntime(
+                    modelID: "mlx-runtime-model",
+                    runtime: .mlx
+                )
+            )
+        ] {
+            let signedCatalog = try signedRemoteModelCatalogJSON(
+                modelsJSON: [
+                    manifestJSON
+                ]
+            )
+            let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+            let service = LocalModelCatalogService(
+                indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+                httpClient: httpClient,
+                trustStore: signedCatalog.trustStore
+            )
+
+            do {
+                _ = try await service.fetchCatalog()
+                XCTFail("Expected unsupported model runtimes to fail closed.")
+            } catch let error as LocalModelCatalogServiceError {
+                XCTAssertEqual(error, expectedError)
+            }
+        }
+    }
+
     func testLocalModelCatalogServiceRejectsNonHexChecksum() async throws {
         let invalidChecksum = String(repeating: "z", count: 64)
         let manifestJSON = remoteModelManifestJSON(
