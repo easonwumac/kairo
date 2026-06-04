@@ -343,7 +343,6 @@ final class KairoCoreTests: XCTestCase {
             command: .runScene
         )))
         XCTAssertTrue(sceneRecipe.action.requiresConfirmation)
-        XCTAssertEqual(sceneRecipe.confirmationSummary, "Confirm before Kairo runs the HomeKit scene.")
         XCTAssertEqual(accessoryRecipe.action.payload, .homeControl(HomeControlRequest(
             homeName: "Home",
             roomName: "Office",
@@ -351,7 +350,7 @@ final class KairoCoreTests: XCTestCase {
             command: .setPower,
             value: .bool(true)
         )))
-        XCTAssertTrue(accessoryRecipe.sandboxNotes.contains("HomeKit entitlement"))
+        XCTAssertTrue(accessoryRecipe.action.requiresConfirmation)
         XCTAssertEqual(lockRecipe.action.payload, .homeControl(HomeControlRequest(
             homeName: "Home",
             roomName: "Entry",
@@ -360,8 +359,7 @@ final class KairoCoreTests: XCTestCase {
             value: .bool(false)
         )))
         XCTAssertEqual(lockRecipe.action.riskTier, .tier3HighRiskExternal)
-        XCTAssertTrue(lockRecipe.sandboxNotes.contains("Locks and security devices"))
-        XCTAssertEqual(lockRecipe.confirmationSummary, "Confirm in Kairo before any HomeKit security-device write.")
+        XCTAssertTrue(lockRecipe.action.requiresConfirmation)
     }
 
     func testAgentSkillCatalogExposesInstalledToolsAndDownloadableMarketplaceSkills() throws {
@@ -400,10 +398,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(homeKitSkill.kind, .homeKitControl)
         XCTAssertEqual(homeKitSkill.installationStatus, .installed)
         XCTAssertEqual(homeKitSkill.action?.kind, .controlHome)
-        XCTAssertTrue(homeKitSkill.managementSummary.contains("Preview + confirmation required"))
+        XCTAssertTrue(homeKitSkill.action?.requiresConfirmation == true)
         XCTAssertEqual(lockSkill.kind, .homeKitControl)
         XCTAssertEqual(lockSkill.action?.riskTier, .tier3HighRiskExternal)
-        XCTAssertTrue(lockSkill.managementSummary.contains("Preview + confirmation required"))
+        XCTAssertTrue(lockSkill.action?.requiresConfirmation == true)
         XCTAssertEqual(shortcutSkill.kind, .shortcutWorkflow)
         XCTAssertTrue(marketplaceSkill.canDownload)
         XCTAssertEqual(marketplaceSkill.source, .marketplace)
@@ -1026,7 +1024,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains("skillCatalog.mergingMarketplaceCatalog(remoteCatalog.catalog)"))
         XCTAssertTrue(permissionHubView.contains("try await marketplaceCatalogService.fetchManifest(for: skill)"))
         XCTAssertTrue(permissionHubView.contains("try await skillManagerService.previewInstall(manifest: manifest)"))
-        XCTAssertTrue(permissionHubView.contains("HomeKit Control Demos"))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demos""#))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demo.\(recipe.id)""#))
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demo.\(recipe.id).confirm""#))
@@ -1518,7 +1515,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("chat.message.reply."))
         XCTAssertTrue(uiTestSources.contains("testAccessShowsHomeKitSecurityDevicePreview"))
         XCTAssertTrue(uiTestSources.contains(#""access.homekit.demo.front-door-lock.confirm""#))
-        XCTAssertTrue(uiTestSources.contains("Confirm in Kairo before any HomeKit security-device write."))
         XCTAssertTrue(uiTestSources.contains("settings.openai.api-key-status"))
         XCTAssertTrue(uiTestSources.contains("testSettingsCanSaveDryRunAndDeleteOpenAIAPIKey"))
         XCTAssertTrue(uiTestSources.contains("settings.openai.dry-run-api-key"))

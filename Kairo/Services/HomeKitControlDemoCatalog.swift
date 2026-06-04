@@ -15,13 +15,13 @@ public struct HomeKitControlDemoCatalog: Codable, Equatable, Sendable {
         HomeKitControlDemoRecipe(
             id: "evening-scene",
             title: "Evening Scene",
-            summary: "Preview a confirmed HomeKit scene handoff for winding down the living room.",
-            sandboxNotes: "HomeKit entitlement, Home authorization, and explicit user confirmation are required before execution.",
+            summary: "Preview a HomeKit scene request for winding down the living room.",
+            sandboxNotes: "Live HomeKit scene execution is not enabled in this beta; entitlement, Home authorization, provider wiring, and real-device proof are required first.",
             action: AgentAction(
                 id: UUID(uuidString: "11111111-1111-4111-8111-111111111111")!,
                 kind: .controlHome,
-                title: "Run Evening Wind Down",
-                rationale: "User confirmed Kairo may run a HomeKit scene.",
+                title: "Preview Evening Wind Down",
+                rationale: "Kairo prepared a HomeKit scene preview; live execution is not enabled in this beta.",
                 payload: .homeControl(HomeControlRequest(
                     homeName: "Home",
                     roomName: "Living Room",
@@ -34,13 +34,13 @@ public struct HomeKitControlDemoCatalog: Codable, Equatable, Sendable {
         HomeKitControlDemoRecipe(
             id: "desk-lamp",
             title: "Desk Lamp",
-            summary: "Preview a confirmed HomeKit accessory write for a focused work setup.",
-            sandboxNotes: "HomeKit entitlement, Home authorization, and visible confirmation protect accessory writes.",
+            summary: "Preview a HomeKit accessory request for a focused work setup.",
+            sandboxNotes: "Live HomeKit accessory writes are not enabled in this beta; entitlement, Home authorization, provider wiring, and real-device proof are required first.",
             action: AgentAction(
                 id: UUID(uuidString: "22222222-2222-4222-8222-222222222222")!,
                 kind: .controlHome,
-                title: "Turn On Desk Lamp",
-                rationale: "User confirmed Kairo may update a HomeKit accessory.",
+                title: "Preview Desk Lamp Power",
+                rationale: "Kairo prepared a HomeKit accessory preview; live writes are not enabled in this beta.",
                 payload: .homeControl(HomeControlRequest(
                     homeName: "Home",
                     roomName: "Office",
@@ -54,13 +54,13 @@ public struct HomeKitControlDemoCatalog: Codable, Equatable, Sendable {
         HomeKitControlDemoRecipe(
             id: "front-door-lock",
             title: "Front Door Lock Guard",
-            summary: "Preview a security-device HomeKit write without executing it automatically.",
-            sandboxNotes: "Locks and security devices stay high risk: HomeKit entitlement, Home authorization, visible preview, and explicit in-app confirmation are required.",
+            summary: "Preview a security-device HomeKit request without executing it.",
+            sandboxNotes: "Locks and security devices stay preview-only in this beta; HomeKit entitlement, Home authorization, provider wiring, visible preview, explicit confirmation, and real-device proof are required before live control.",
             action: AgentAction(
                 id: UUID(uuidString: "33333333-3333-4333-8333-333333333333")!,
                 kind: .controlHome,
                 title: "Preview Front Door Lock Change",
-                rationale: "User reviewed a high-risk HomeKit security-device action before any write.",
+                rationale: "Kairo prepared a high-risk HomeKit security-device preview; live writes are not enabled in this beta.",
                 payload: .homeControl(HomeControlRequest(
                     homeName: "Home",
                     roomName: "Entry",
@@ -107,18 +107,18 @@ public struct HomeKitControlDemoRecipe: Codable, Equatable, Identifiable, Sendab
 
     public var confirmationSummary: String {
         guard case let .homeControl(request) = action.payload else {
-            return "Confirm before Kairo runs this HomeKit action."
+            return "Review this HomeKit preview; live control is not enabled in this beta."
         }
 
         switch request.command {
         case .runScene:
-            return "Confirm before Kairo runs the HomeKit scene."
+            return "Review this HomeKit scene preview; live scene execution is not enabled in this beta."
         case .setPower, .setBrightness, .setTargetTemperature:
             let securityKeywords = ["lock", "door", "garage", "alarm", "camera"]
             if securityKeywords.contains(where: { request.targetName.localizedCaseInsensitiveContains($0) }) {
-                return "Confirm in Kairo before any HomeKit security-device write."
+                return "Review this HomeKit security-device preview; live security writes are not enabled in this beta."
             }
-            return "Confirm before Kairo writes to the HomeKit accessory."
+            return "Review this HomeKit accessory preview; live accessory writes are not enabled in this beta."
         }
     }
 }

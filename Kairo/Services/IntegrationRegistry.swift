@@ -102,9 +102,9 @@ public struct IntegrationRegistry: Sendable {
             surfaces: [.homeKit, .shortcuts],
             requiredCapabilities: [.homeKit],
             shortcutTemplates: [
-                ShortcutTemplate(identifier: "home-scene-confirm", title: "Confirm Home Scene", inputSummary: "Scene or accessory target supplied by the user or Shortcut", outputSummary: "HomeKit control preview and confirmation result")
+                ShortcutTemplate(identifier: "home-scene-confirm", title: "Preview Home Scene", inputSummary: "Scene or accessory target supplied by the user or Shortcut", outputSummary: "HomeKit preview JSON; live control is not enabled in this beta")
             ],
-            sandboxNotes: "HomeKit requires the HomeKit entitlement, user Home authorization, and visible confirmation before Kairo runs a scene or writes an accessory characteristic. Kairo cannot control homes outside granted HomeKit access.",
+            sandboxNotes: "Current beta HomeKit support is preview/demo scaffolding only. Live HomeKit control requires a future entitlement, user Home authorization, provider wiring, visible confirmation, and real-device proof.",
             status: .scaffolded
         ),
         AppIntegration(

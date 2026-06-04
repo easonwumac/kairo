@@ -87,6 +87,7 @@
 "access.skills.message.enableFailed" = "Unable to enable %@.";
 "access.skills.message.removed" = "%@ removed from manager.";
 "access.skills.message.removeFailed" = "Unable to remove %@.";
+"access.homekit.demos.title" = "HomeKit Preview Demos";
 "root.section.models.title" = "AI engine";
 "root.section.models.subtitle" = "Cloud and local models";
 "root.section.settings.title" = "Settings";
@@ -192,7 +193,7 @@
 "chat.action.executor.permission.notificationDenied" = "Notification permission was not granted.";
 "chat.action.executor.permission.homeKitDenied" = "HomeKit permission was not granted.";
 "chat.action.executor.scheduledNotification" = "Scheduled notification.";
-"chat.action.executor.executedHomeKit" = "Executed HomeKit control.";
+"chat.action.executor.executedHomeKit" = "HomeKit preview completed.";
 "chat.action.executor.unsupportedSandbox" = "Unsupported by iOS sandbox: %@.%@";
 "chat.action.executor.unsupportedSandbox.safeAlternative" = " Safe alternative: %@";
 "chat.action.executor.externalAPIRequiresOAuth" = "External API actions require an OAuth connector integration.";
@@ -263,7 +264,7 @@
 "chat.action.displayName.sendNotification" = "Send Notification";
 "chat.action.displayName.scheduleNotification" = "Schedule Local Notification";
 "chat.action.displayName.openURL" = "Open URL";
-"chat.action.displayName.controlHome" = "Control Home";
+"chat.action.displayName.controlHome" = "Preview Home Action";
 "chat.action.displayName.externalAPI" = "External API Request";
 "chat.action.displayName.unsupported" = "Unsupported iOS Action";
 "chat.action.description.answer" = "Answers questions and organizes context without touching external data.";
@@ -278,7 +279,7 @@
 "chat.action.description.openWeb" = "Opens a visible Safari search URL. Kairo will not browse in the background or read page content.";
 "chat.action.description.sendNotification" = "Schedules a local notification after notification permission is allowed.";
 "chat.action.description.openURL" = "Opens a visible URL or deep link.";
-"chat.action.description.controlHome" = "Runs HomeKit scenes or accessory control only after user authorization and confirmation.";
+"chat.action.description.controlHome" = "Previews HomeKit scene or accessory requests only. Live HomeKit control remains unavailable in this beta until entitlement, provider, and real-device proof are complete.";
 "chat.action.description.externalAPI" = "Runs actions through official APIs authorized by the user with OAuth.";
 "chat.action.description.unsupported" = "Clearly marks actions blocked by iOS sandbox, public APIs, or current permissions without claiming they can run.";
 "chat.action.rationale.notification" = "User asked Kairo to prepare a local notification through the public UserNotifications API.";
@@ -303,7 +304,7 @@
 "chat.action.reminder.defaultNotes" = "Drafted from a Kairo chat request.";
 "chat.option.reviewFirst" = "Review first";
 "chat.option.visibleHandoff" = "Visible handoff";
-"chat.tool.summary.homeKitSkill" = "Preview the installed HomeKit skill; HomeKit permission and visible confirmation are required before execution.";
+"chat.tool.summary.homeKitSkill" = "Preview the installed HomeKit skill; live HomeKit control is not enabled in this beta.";
 "chat.tool.summary.oauthSkill" = "Use the installed OAuth connector through official OAuth/API access; private app data is unavailable.";
 "chat.tool.summary.managedSkill" = "Use the installed managed skill package through Kairo's confirmation flow.";
 "chat.tool.summary.integration" = "Use %@ through official OAuth/API connector metadata; private app data is unavailable and account writes require confirmation.";

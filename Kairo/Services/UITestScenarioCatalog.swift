@@ -484,8 +484,8 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
         ),
         UITestScenario(
             id: "access-homekit-demos",
-            title: "Access HomeKit Control Demos",
-            userGoal: "Open Access and verify HomeKit control examples are visible as confirmed, sandbox-safe demos.",
+            title: "Access HomeKit Preview Demos",
+            userGoal: "Open Access and verify HomeKit examples are visible as preview-only, sandbox-safe demos.",
             requiredAccessibilityIdentifiers: [
                 "root.drawer.access",
                 "access.skills.manager",
@@ -533,9 +533,9 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "A marketplace skill can show a signed manifest preview and confirm install.",
                 "A marketplace skill with missing OAuth/model prerequisites is compatibility-blocked.",
                 "HomeKit demo section is visible.",
-                "A scene control demo is visible.",
+                "A scene preview demo is visible.",
                 "A high-risk lock demo is visible.",
-                "The demos expose confirmation before execution."
+                "The demos state that live HomeKit control is not enabled in this beta."
             ]
         )
     ])

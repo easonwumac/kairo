@@ -147,7 +147,7 @@ public struct CapabilityRegistry: Sendable {
         Capability(
             key: .homeKit,
             displayName: "HomeKit",
-            description: "在 HomeKit 權限與使用者確認後執行家庭場景或配件控制。",
+            description: "目前 beta 僅提供 HomeKit 動作預覽；live control 仍需 entitlement、provider 與真機驗證。",
             permission: .runtimePrompt,
             status: .unknown,
             isMVP: false

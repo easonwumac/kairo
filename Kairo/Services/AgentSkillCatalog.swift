@@ -512,7 +512,7 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
         AgentSkill(
             id: "homekit-evening-scene",
             displayName: "Evening HomeKit Scene",
-            summary: "Run the Evening Wind Down HomeKit scene after visible confirmation.",
+            summary: "Preview the Evening Wind Down HomeKit scene; live control is not enabled in this beta.",
             kind: .homeKitControl,
             source: .builtIn,
             installationStatus: .installed,
@@ -521,8 +521,8 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
         ),
         AgentSkill(
             id: "homekit-desk-lamp",
-            displayName: "Desk Lamp HomeKit Control",
-            summary: "Turn on the office desk lamp after visible confirmation.",
+            displayName: "Desk Lamp HomeKit Preview",
+            summary: "Preview an office desk lamp HomeKit action; live accessory control is not enabled in this beta.",
             kind: .homeKitControl,
             source: .builtIn,
             installationStatus: .installed,
@@ -532,7 +532,7 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
         AgentSkill(
             id: "homekit-front-door-lock",
             displayName: "Front Door Lock Guard",
-            summary: "Preview a HomeKit security-device write; locks always require in-app confirmation.",
+            summary: "Preview a HomeKit security-device request; locks stay preview-only in this beta.",
             kind: .homeKitControl,
             source: .builtIn,
             installationStatus: .installed,
@@ -815,7 +815,7 @@ public extension AgentSkillKind {
     var settingsTitle: String {
         switch self {
         case .homeKitControl:
-            return "HomeKit Control"
+            return "HomeKit Preview"
         case .shortcutWorkflow:
             return "Shortcut Workflow"
         case .oauthConnector:

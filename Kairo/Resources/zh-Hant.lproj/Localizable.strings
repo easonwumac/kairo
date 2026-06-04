@@ -87,6 +87,7 @@
 "access.skills.message.enableFailed" = "無法啟用 %@。";
 "access.skills.message.removed" = "%@ 已從 manager 移除。";
 "access.skills.message.removeFailed" = "無法移除 %@。";
+"access.homekit.demos.title" = "HomeKit 預覽 Demos";
 "root.section.models.title" = "AI 引擎";
 "root.section.models.subtitle" = "Cloud 與 local models";
 "root.section.settings.title" = "設定";
@@ -192,7 +193,7 @@
 "chat.action.executor.permission.notificationDenied" = "Notifications 權限未允許。";
 "chat.action.executor.permission.homeKitDenied" = "HomeKit 權限未允許。";
 "chat.action.executor.scheduledNotification" = "已排程通知。";
-"chat.action.executor.executedHomeKit" = "已執行 HomeKit 控制。";
+"chat.action.executor.executedHomeKit" = "HomeKit 預覽已完成。";
 "chat.action.executor.unsupportedSandbox" = "iOS sandbox 不支援：%@。%@";
 "chat.action.executor.unsupportedSandbox.safeAlternative" = " 可行替代方式：%@";
 "chat.action.executor.externalAPIRequiresOAuth" = "外部 API 動作需要 OAuth connector 整合。";
@@ -263,7 +264,7 @@
 "chat.action.displayName.sendNotification" = "送出通知";
 "chat.action.displayName.scheduleNotification" = "排程本機通知";
 "chat.action.displayName.openURL" = "開啟 URL";
-"chat.action.displayName.controlHome" = "控制 Home";
+"chat.action.displayName.controlHome" = "預覽 Home 動作";
 "chat.action.displayName.externalAPI" = "外部 API 請求";
 "chat.action.displayName.unsupported" = "iOS 目前不支援的操作";
 "chat.action.description.answer" = "回答問題並整理上下文，不觸碰外部資料。";
@@ -278,7 +279,7 @@
 "chat.action.description.openWeb" = "開啟可見的 Safari 搜尋 URL；Kairo 不會背景瀏覽或讀取網頁內容。";
 "chat.action.description.sendNotification" = "在通知權限允許後排程本機通知。";
 "chat.action.description.openURL" = "開啟可見的 URL 或 deep link。";
-"chat.action.description.controlHome" = "只在使用者授權並確認後執行 HomeKit 場景或配件控制。";
+"chat.action.description.controlHome" = "只預覽 HomeKit 場景或配件請求。此 beta 尚未啟用 live HomeKit control，仍需要 entitlement、provider 與真機證據。";
 "chat.action.description.externalAPI" = "透過使用者 OAuth 授權的官方 API 執行動作。";
 "chat.action.description.unsupported" = "清楚標示被 iOS sandbox、公開 API 或目前權限擋下的操作，不宣稱可執行。";
 "chat.action.rationale.notification" = "使用者要求 Kairo 透過公開 UserNotifications API 準備本機通知。";
@@ -303,7 +304,7 @@
 "chat.action.reminder.defaultNotes" = "由 Kairo chat request 建立的草稿。";
 "chat.option.reviewFirst" = "先檢查";
 "chat.option.visibleHandoff" = "可見 handoff";
-"chat.tool.summary.homeKitSkill" = "預覽已安裝的 HomeKit skill；執行前需要 HomeKit 權限與可見確認。";
+"chat.tool.summary.homeKitSkill" = "預覽已安裝的 HomeKit skill；此 beta 尚未啟用 live HomeKit control。";
 "chat.tool.summary.oauthSkill" = "透過官方 OAuth/API 存取使用已安裝的 OAuth connector；無法讀取 private app data。";
 "chat.tool.summary.managedSkill" = "透過 Kairo 的確認流程使用已安裝的 managed skill package。";
 "chat.tool.summary.integration" = "透過官方 OAuth/API connector metadata 使用 %@；無法讀取 private app data，帳號寫入也需要確認。";

@@ -106,7 +106,7 @@ public struct PermissionHubView: View {
                             .foregroundStyle(.secondary)
                     }
                 } header: {
-                    Text("HomeKit Control Demos")
+                    Text(KairoL10n.string("access.homekit.demos.title"))
                         .accessibilityIdentifier("access.homekit.demos")
                 }
             }
