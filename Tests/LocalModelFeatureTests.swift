@@ -333,6 +333,31 @@ final class LocalModelFeatureTests: XCTestCase {
         }
     }
 
+    func testLocalModelCatalogServiceRejectsReferenceUnsignedCatalogStatus() async throws {
+        let signedCatalog = try signedRemoteModelCatalogJSON(
+            catalogSignatureStatus: "referenceUnsigned",
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "qwen-small",
+                    displayName: "Qwen Small"
+                )
+            ]
+        )
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+        let service = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: httpClient,
+            trustStore: signedCatalog.trustStore
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected reference catalog status to fail closed.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .nonProductionCatalogSignatureStatus("referenceUnsigned"))
+        }
+    }
+
     func testDefaultLocalModelCatalogTrustStoreKeepsReleaseKeysPendingPublication() throws {
         let trustStore = LocalModelCatalogService.defaultTrustStore
         let activeReleaseKey = try XCTUnwrap(trustStore.trustedKey(id: "kairo-models-2026"))
@@ -1584,6 +1609,7 @@ final class LocalModelFeatureTests: XCTestCase {
     }
 
     private func remoteModelCatalogJSON(
+        catalogSignatureStatus: String = "productionSigned",
         signingKeyID: String = "kairo-models-2026",
         signature: String = "signed-catalog-placeholder",
         minimumSafetyPolicyVersion: String = "2026.1",
@@ -1591,6 +1617,7 @@ final class LocalModelFeatureTests: XCTestCase {
     ) -> String {
         """
         {
+          "catalogSignatureStatus": "\(catalogSignatureStatus)",
           "schemaVersion": 1,
           "generatedAt": "2026-06-02T00:00:00Z",
           "signingKeyID": "\(signingKeyID)",
@@ -1605,6 +1632,7 @@ final class LocalModelFeatureTests: XCTestCase {
     }
 
     private func signedRemoteModelCatalogJSON(
+        catalogSignatureStatus: String = "productionSigned",
         signingKeyID: String = "kairo-models-2026",
         minimumSafetyPolicyVersion: String = "2026.1",
         modelsJSON: [String],
@@ -1612,6 +1640,7 @@ final class LocalModelFeatureTests: XCTestCase {
     ) throws -> (json: String, trustStore: LocalModelCatalogTrustStore) {
         let signingKey = P256.Signing.PrivateKey()
         let unsignedJSON = remoteModelCatalogJSON(
+            catalogSignatureStatus: catalogSignatureStatus,
             signingKeyID: signingKeyID,
             signature: "",
             minimumSafetyPolicyVersion: minimumSafetyPolicyVersion,

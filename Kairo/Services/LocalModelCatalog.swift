@@ -232,6 +232,7 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
 }
 
 public struct LocalModelCatalog: Codable, Equatable, Sendable {
+    public var catalogSignatureStatus: LocalModelCatalogSignatureStatus
     public var schemaVersion: Int
     public var generatedAt: Date
     public var signingKeyID: String
@@ -241,6 +242,7 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
     public var models: [LocalModelManifest]
 
     public init(
+        catalogSignatureStatus: LocalModelCatalogSignatureStatus = .productionSigned,
         schemaVersion: Int = 1,
         generatedAt: Date = Date(),
         signingKeyID: String,
@@ -249,6 +251,7 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
         minimumSafetyPolicyVersion: String,
         models: [LocalModelManifest]
     ) {
+        self.catalogSignatureStatus = catalogSignatureStatus
         self.schemaVersion = schemaVersion
         self.generatedAt = generatedAt
         self.signingKeyID = signingKeyID
@@ -277,6 +280,7 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
         }
 
         return LocalModelCatalog(
+            catalogSignatureStatus: remoteCatalog.catalogSignatureStatus,
             schemaVersion: max(schemaVersion, remoteCatalog.schemaVersion),
             generatedAt: remoteCatalog.generatedAt,
             signingKeyID: remoteCatalog.signingKeyID,
@@ -312,6 +316,7 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
         encoder.outputFormatting = [.sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
         return try encoder.encode(LocalModelCatalogSigningPayload(
+            catalogSignatureStatus: catalogSignatureStatus,
             schemaVersion: schemaVersion,
             generatedAt: generatedAt,
             signingKeyID: signingKeyID,
@@ -319,6 +324,32 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
             minimumSafetyPolicyVersion: minimumSafetyPolicyVersion,
             models: models
         ))
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case catalogSignatureStatus
+        case schemaVersion
+        case generatedAt
+        case signingKeyID
+        case signature
+        case sourceRepository
+        case minimumSafetyPolicyVersion
+        case models
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.catalogSignatureStatus = try container.decodeIfPresent(
+            LocalModelCatalogSignatureStatus.self,
+            forKey: .catalogSignatureStatus
+        ) ?? .productionSigned
+        self.schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        self.generatedAt = try container.decode(Date.self, forKey: .generatedAt)
+        self.signingKeyID = try container.decode(String.self, forKey: .signingKeyID)
+        self.signature = try container.decode(String.self, forKey: .signature)
+        self.sourceRepository = try container.decodeIfPresent(URL.self, forKey: .sourceRepository)
+        self.minimumSafetyPolicyVersion = try container.decode(String.self, forKey: .minimumSafetyPolicyVersion)
+        self.models = try container.decode([LocalModelManifest].self, forKey: .models)
     }
 
     public static func signedForTesting(
@@ -336,12 +367,18 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
 }
 
 private struct LocalModelCatalogSigningPayload: Codable, Equatable, Sendable {
+    public var catalogSignatureStatus: LocalModelCatalogSignatureStatus
     public var schemaVersion: Int
     public var generatedAt: Date
     public var signingKeyID: String
     public var sourceRepository: URL?
     public var minimumSafetyPolicyVersion: String
     public var models: [LocalModelManifest]
+}
+
+public enum LocalModelCatalogSignatureStatus: String, Codable, Equatable, Sendable {
+    case productionSigned
+    case referenceUnsigned
 }
 
 public extension LocalModelCatalog {
@@ -499,6 +536,7 @@ public enum LocalModelCatalogServiceError: Error, Equatable {
     case signingKeyExpired(String)
     case unsupportedSignatureAlgorithm(String)
     case invalidSignature
+    case nonProductionCatalogSignatureStatus(String)
     case unsafeDownloadURL(modelID: String, url: String)
     case invalidChecksum(modelID: String, sha256: String)
 }
@@ -570,6 +608,11 @@ public struct LocalModelCatalogService: Sendable {
     private func validate(_ catalog: LocalModelCatalog) throws {
         guard !catalog.signature.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw LocalModelCatalogServiceError.missingSignature
+        }
+        guard catalog.catalogSignatureStatus == .productionSigned else {
+            throw LocalModelCatalogServiceError.nonProductionCatalogSignatureStatus(
+                catalog.catalogSignatureStatus.rawValue
+            )
         }
         guard let trustedKey = trustStore.trustedKey(id: catalog.signingKeyID) else {
             throw LocalModelCatalogServiceError.unknownSigningKey(catalog.signingKeyID)
