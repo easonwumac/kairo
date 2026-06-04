@@ -48,4 +48,47 @@ final class ChatMemorySuggestionTests: XCTestCase {
         let saved = try await memoryStore.list(limit: 10)
         XCTAssertTrue(saved.isEmpty)
     }
+
+    func testAgentCoreUsesRecentMemoriesToAvoidDuplicateSaveSuggestionsWhenSearchMisses() async throws {
+        let existingMemory = MemoryRecord(
+            title: "Planning preference",
+            summary: "I prefer morning standups for Kairo planning",
+            content: "I prefer morning standups for Kairo planning",
+            source: .chat
+        )
+        let memoryStore = SearchMissMemoryStore(recentMemories: [existingMemory])
+        let agent = AgentCore(memoryStore: memoryStore, aiProvider: MockAIProvider())
+
+        let response = try await agent.respond(to: "Please remember that I prefer morning standups for Kairo planning.")
+
+        XCTAssertFalse(response.proposedActions.contains { $0.kind == .saveMemory })
+    }
+}
+
+private actor SearchMissMemoryStore: MemoryStore {
+    private let recentMemories: [MemoryRecord]
+
+    init(recentMemories: [MemoryRecord]) {
+        self.recentMemories = recentMemories
+    }
+
+    func save(_ memory: MemoryRecord) async throws {}
+
+    func search(query: String, limit: Int) async throws -> [MemoryRecord] {
+        return []
+    }
+
+    func list(limit: Int) async throws -> [MemoryRecord] {
+        return recentMemories
+    }
+
+    func delete(id: UUID) async throws {}
+
+    func erase(id: UUID) async throws {}
+
+    func purgeDeleted() async throws {}
+
+    func export(limit: Int) async throws -> MemoryExport {
+        MemoryExport(records: recentMemories)
+    }
 }

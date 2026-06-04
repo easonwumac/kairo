@@ -34,6 +34,10 @@ public actor AgentCore {
         privacyMode: ChatPrivacyMode = .standard
     ) async throws -> AICompletionResponse {
         let memories = privacyMode == .privateChat ? [] : try await memoryStore.search(query: message, limit: 8)
+        let memoryDedupContext = privacyMode == .privateChat ? [] : Self.mergedMemoryContext(
+            relevantMemories: memories,
+            recentMemories: try await memoryStore.list(limit: 50)
+        )
         let skillCatalog = try await skillCatalogProvider.catalog()
         let allowedCapabilities = capabilityRegistry.capabilities
             .filter { $0.status == .available || $0.status == .unknown }
@@ -74,7 +78,7 @@ public actor AgentCore {
             toolActions: toolCandidates.compactMap(\.action)
         )
         if privacyMode != .privateChat,
-           let memoryAction = memoryCandidateExtractor.proposedSaveMemoryAction(from: message, memoryContext: memories) {
+           let memoryAction = memoryCandidateExtractor.proposedSaveMemoryAction(from: message, memoryContext: memoryDedupContext) {
             proposedActions = Self.mergeActionPreviews(modelActions: proposedActions, toolActions: [memoryAction])
         }
         let safeActions = proposedActions.filter { action in
@@ -137,6 +141,19 @@ public actor AgentCore {
             merged.append(action)
         }
 
+        return merged
+    }
+
+    private static func mergedMemoryContext(
+        relevantMemories: [MemoryRecord],
+        recentMemories: [MemoryRecord]
+    ) -> [MemoryRecord] {
+        var merged: [MemoryRecord] = []
+        var seenIDs: Set<UUID> = []
+        for memory in relevantMemories + recentMemories where !seenIDs.contains(memory.id) {
+            merged.append(memory)
+            seenIDs.insert(memory.id)
+        }
         return merged
     }
 
