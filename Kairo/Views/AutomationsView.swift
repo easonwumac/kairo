@@ -13,7 +13,6 @@ public struct AutomationsView: View {
     @State private var isLoading = false
     @State private var showWorkflowDetails = false
     @State private var showAdvancedWorkflowReferences = false
-    @State private var expandedRecipeActions: Set<String> = []
 
     public init(
         recipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
@@ -402,6 +401,25 @@ public struct AutomationsView: View {
             .accessibilityIdentifier("automations.recipe.\(recipe.id)")
 
             HStack(spacing: 8) {
+                KairoStatusPill(
+                    title: KairoL10n.string("automations.recipe.risk", recipe.riskTier.rawValue),
+                    systemImage: "shield.lefthalf.filled",
+                    tint: KairoDesign.amber
+                )
+                KairoStatusPill(
+                    title: KairoL10n.string("automations.recipe.reviewThenRun"),
+                    systemImage: "doc.text.magnifyingglass",
+                    tint: KairoDesign.blue
+                )
+            }
+
+            Text(recipe.summary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 8)], spacing: 8) {
                 Button {
                     Task { await preview(recipe) }
                 } label: {
@@ -411,91 +429,34 @@ public struct AutomationsView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(!recipe.isEnabled || isLoading)
                 .accessibilityIdentifier("automations.recipe.\(recipe.id).preview")
-            }
 
-            DisclosureGroup(isExpanded: Binding(
-                get: { isRecipeActionsExpanded(recipe.id) },
-                set: { setRecipeActionsExpanded($0, recipeID: recipe.id) }
-            )) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(recipe.summary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    HStack(spacing: 8) {
-                        KairoStatusPill(
-                            title: KairoL10n.string("automations.recipe.risk", recipe.riskTier.rawValue),
-                            systemImage: "shield.lefthalf.filled",
-                            tint: KairoDesign.amber
-                        )
-                        KairoStatusPill(
-                            title: KairoL10n.string("automations.recipe.reviewThenRun"),
-                            systemImage: "doc.text.magnifyingglass",
-                            tint: KairoDesign.blue
-                        )
-                    }
-
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 8)], spacing: 8) {
-                        Button {
-                            Task { await run(recipe) }
-                        } label: {
-                            Label(KairoL10n.string("automations.recipe.run"), systemImage: "play.circle")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .disabled(!recipe.isEnabled || isLoading)
-                        .accessibilityIdentifier("automations.recipe.\(recipe.id).run")
-                        .buttonStyle(.bordered)
-
-                        Button {
-                            Task { await toggle(recipe) }
-                        } label: {
-                            Label(
-                                recipe.isEnabled ? KairoL10n.string("automations.recipe.disable") : KairoL10n.string("automations.recipe.enable"),
-                                systemImage: recipe.isEnabled ? "pause.circle" : "play.circle.fill"
-                            )
-                            .frame(maxWidth: .infinity)
-                        }
-                        .disabled(isLoading)
-                        .accessibilityIdentifier("automations.recipe.\(recipe.id).toggle")
-                        .buttonStyle(.bordered)
-                    }
-                    .accessibilityIdentifier("automations.recipe.\(recipe.id).actions")
+                Button {
+                    Task { await run(recipe) }
+                } label: {
+                    Label(KairoL10n.string("automations.recipe.run"), systemImage: "play.circle")
+                        .frame(maxWidth: .infinity)
                 }
-                .padding(.top, 8)
-            } label: {
-                Label(
-                    KairoL10n.string("automations.recipe.moreActions"),
-                    systemImage: "ellipsis.circle"
-                )
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(KairoDesign.ink)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
+                .disabled(!recipe.isEnabled || isLoading)
+                .accessibilityIdentifier("automations.recipe.\(recipe.id).run")
+                .buttonStyle(.bordered)
+
+                Button {
+                    Task { await toggle(recipe) }
+                } label: {
+                    Label(
+                        recipe.isEnabled ? KairoL10n.string("automations.recipe.disable") : KairoL10n.string("automations.recipe.enable"),
+                        systemImage: recipe.isEnabled ? "pause.circle" : "play.circle.fill"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .disabled(isLoading)
+                .accessibilityIdentifier("automations.recipe.\(recipe.id).toggle")
+                .buttonStyle(.bordered)
             }
-            .accessibilityIdentifier("automations.recipe.\(recipe.id).more-actions")
-            .tint(KairoDesign.blue)
+            .accessibilityIdentifier("automations.recipe.\(recipe.id).actions")
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .contain)
-    }
-
-    private func isRecipeActionsExpanded(_ recipeID: String) -> Bool {
-        expandedRecipeActions.contains(recipeID)
-    }
-
-    private func toggleRecipeActions(_ recipeID: String) {
-        setRecipeActionsExpanded(!isRecipeActionsExpanded(recipeID), recipeID: recipeID)
-    }
-
-    private func setRecipeActionsExpanded(_ isExpanded: Bool, recipeID: String) {
-        var nextExpandedRecipeActions = expandedRecipeActions
-        if isExpanded {
-            nextExpandedRecipeActions.insert(recipeID)
-        } else {
-            nextExpandedRecipeActions.remove(recipeID)
-        }
-        expandedRecipeActions = nextExpandedRecipeActions
     }
 
     @MainActor

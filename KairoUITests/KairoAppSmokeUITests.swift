@@ -583,7 +583,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "sample-sensitive-code")).firstMatch.exists)
     }
 
-    func testAutomationsRecipeCenterPreviewsInternalRecipeAndKeepsActionsSecondary() throws {
+    func testAutomationsRecipeCenterPreviewsInternalRecipeAndShowsActionsDirectly() throws {
         relaunchForUITesting(initialSection: "shortcuts")
 
         XCTAssertTrue(findElement("automations.recipe-center").waitForExistence(timeout: 5))
@@ -607,9 +607,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findElement("automations.message", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "Preview Daily Briefing", direction: .both, maxSwipes: 1).exists)
 
-        XCTAssertTrue(findButton("automations.recipe.daily-briefing.more-actions", direction: .both, maxSwipes: 1).exists)
-        XCTAssertFalse(anyElement("automations.recipe.daily-briefing.run").exists)
-        XCTAssertFalse(anyElement("automations.recipe.daily-briefing.toggle").exists)
+        XCTAssertTrue(findButton("automations.recipe.daily-briefing.run", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("automations.recipe.daily-briefing.toggle", direction: .both, maxSwipes: 1).exists)
     }
 
     func testAutomationsShowsShortcutTemplatesRequireUserApproval() throws {

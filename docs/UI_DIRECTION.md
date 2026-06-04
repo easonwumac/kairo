@@ -714,6 +714,15 @@ Stage 74 makes Chat tool suggestions scan-first:
 - Tool candidate, risk, summary, proposed action, and existing Chat smoke
   identifiers keep their current paths.
 
+Stage 75 makes workflow cards action-direct:
+
+- Saved workflow cards no longer hide Run and Enable/Pause behind a More
+  actions disclosure.
+- Each workflow now shows title, enabled state, risk, preview-first status,
+  short summary, Preview, Run, and Enable/Pause in one card layer.
+- Recipe center, saved workflow, preview, run, toggle, message, and existing
+  Automations smoke flows keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit

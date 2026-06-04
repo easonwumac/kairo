@@ -241,7 +241,6 @@
 "automations.recipe.risk" = "Risk: %@";
 "automations.recipe.reviewThenRun" = "Preview first";
 "automations.recipe.preview" = "Preview";
-"automations.recipe.moreActions" = "More actions";
 "automations.recipe.run" = "Run";
 "automations.recipe.enable" = "Enable";
 "automations.recipe.disable" = "Disable";

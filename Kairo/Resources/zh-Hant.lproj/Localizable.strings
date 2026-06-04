@@ -241,7 +241,6 @@
 "automations.recipe.risk" = "風險：%@";
 "automations.recipe.reviewThenRun" = "先預覽";
 "automations.recipe.preview" = "預覽";
-"automations.recipe.moreActions" = "更多操作";
 "automations.recipe.run" = "執行";
 "automations.recipe.enable" = "啟用";
 "automations.recipe.disable" = "停用";
