@@ -539,6 +539,14 @@ Stage 56 makes Settings route overview terse:
 - Connection setup, API key editing, OAuth connector controls, privacy cleanup,
   and model controls keep their existing progressive paths.
 
+Stage 57 makes Memory overview terse:
+
+- Memory no longer opens the library header with explanatory subtitle copy.
+- Library details is now a compact first-layer disclosure label; memory purpose,
+  library status, user-approved boundary, and export appear only after expansion.
+- Find context, Add context, records, per-record Details, Delete, and search
+  behavior keep their existing progressive paths.
+
 ## Next UI stages
 
 1. Product surface audit

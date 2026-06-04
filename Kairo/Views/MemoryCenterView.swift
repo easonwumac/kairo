@@ -211,10 +211,6 @@ public struct MemoryCenterView: View {
                     Text(KairoL10n.string("memory.title"))
                         .font(.title2.weight(.bold))
                         .foregroundStyle(KairoDesign.ink)
-                    Text(KairoL10n.string("memory.subtitle"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Button {
@@ -227,10 +223,6 @@ public struct MemoryCenterView: View {
                             Text(KairoL10n.string("memory.details.title"))
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(KairoDesign.ink)
-                            Text(KairoL10n.string("memory.details.subtitle"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
                         }
 
                         Spacer(minLength: 8)
@@ -246,6 +238,16 @@ public struct MemoryCenterView: View {
                 .accessibilityIdentifier("memory.details.toggle")
 
                 if showLibraryDetails {
+                    Text(KairoL10n.string("memory.subtitle"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(KairoL10n.string("memory.details.subtitle"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
                     HStack(spacing: 8) {
                         KairoStatusPill(
                             title: KairoL10n.string(
