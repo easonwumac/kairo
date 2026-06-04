@@ -696,7 +696,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "Create Reminder", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "Send prototype link", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "Creates phone data", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Creates reminder", direction: .both, maxSwipes: 1).exists)
         XCTAssertFalse(findStaticText(containing: "tier2LowRiskWrite", direction: .both, maxSwipes: 1).exists)
         let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
         XCTAssertTrue(confirm.exists)
@@ -729,7 +729,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             prompt: "幫我安排週五 10:00 Kairo roadmap review 會議",
             actionIdentifier: "chat.proposed-action.createCalendarDraft",
             reviewIdentifier: "chat.calendar.review-action",
-            previewContains: ["Create Calendar Event", "Kairo roadmap review"],
+            previewContains: ["Create Calendar Event", "Kairo roadmap review", "Creates calendar event"],
             resultText: "Created calendar event. Kairo roadmap review"
         )
     }

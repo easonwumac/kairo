@@ -109,13 +109,27 @@ public struct ActionPreviewView: View {
     }
 
     private var riskLabel: String {
+        switch action.kind {
+        case .saveMemory:
+            return "Saves memory"
+        case .createReminderDraft:
+            return "Creates reminder"
+        case .createCalendarDraft:
+            return "Creates calendar event"
+        case .createContactDraft:
+            return "Creates contact"
+        case .sendNotification:
+            return "Schedules notification"
+        default:
+            break
+        }
         switch action.riskTier {
         case .tier0ReadOnly:
             return "Read only"
         case .tier1Draft:
             return "Draft or handoff"
         case .tier2LowRiskWrite:
-            return "Creates phone data"
+            return "Writes local data"
         case .tier3HighRiskExternal:
             return "External account action"
         }
