@@ -476,6 +476,16 @@ Stage 49 makes Chat starter terse:
   available after expansion, but the first screen reads less like onboarding
   copy.
 
+Stage 50 makes Settings setup direct and terse:
+
+- Connection setup now opens with the essential setup controls visible by
+  default, while still allowing users to collapse the section.
+- Connection details is a compact disclosure label on the first layer; setup
+  rationale, cloud-key status, and connected-account status appear only after
+  expansion.
+- The existing API key editor, OAuth connector controls, and privacy cleanup
+  stay in the setup section without adding first-layer explanatory copy.
+
 ## Next UI stages
 
 1. Product surface audit

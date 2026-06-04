@@ -35,7 +35,7 @@ public struct SettingsView: View {
     @State var localModelStatusMessage: String?
     @State var localModelStatusMessageModelID: String?
     @State private var privacyStatusMessage: String?
-    @State private var showConnectionSetup = false
+    @State private var showConnectionSetup = true
     @State private var showConnectionDetails = false
     @State private var showAPIKeyEditor = false
     @State private var expandedOAuthConnectorDetails: Set<String> = []
@@ -173,10 +173,6 @@ public struct SettingsView: View {
                             Text(KairoL10n.string("settings.connection.section"))
                                 .font(.headline.weight(.semibold))
                                 .foregroundStyle(KairoDesign.ink)
-                            Text(KairoL10n.string("settings.connection.detail"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
                         }
 
                         Spacer(minLength: 8)
@@ -206,10 +202,6 @@ public struct SettingsView: View {
                             Text(KairoL10n.string("settings.connection.details.title"))
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(KairoDesign.ink)
-                            Text(KairoL10n.string("settings.connection.details.subtitle"))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
                         }
 
                         Spacer(minLength: 0)
@@ -224,17 +216,29 @@ public struct SettingsView: View {
                 .accessibilityIdentifier("settings.connection.details.toggle")
 
                 if showConnectionDetails {
-                    HStack(spacing: 8) {
-                        KairoStatusPill(
-                            title: hasAPIKey ? KairoL10n.string("settings.openai.status.configured") : KairoL10n.string("settings.openai.status.notConfigured"),
-                            systemImage: "key.fill",
-                            tint: hasAPIKey ? KairoDesign.green : KairoDesign.amber
-                        )
-                        KairoStatusPill(
-                            title: KairoL10n.string("settings.routing.connectedAccounts", Int64(connectedConnectorCount)),
-                            systemImage: "person.crop.circle.badge.checkmark",
-                            tint: connectedConnectorCount > 0 ? KairoDesign.green : KairoDesign.violet
-                        )
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(KairoL10n.string("settings.connection.detail"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        HStack(spacing: 8) {
+                            KairoStatusPill(
+                                title: hasAPIKey ? KairoL10n.string("settings.openai.status.configured") : KairoL10n.string("settings.openai.status.notConfigured"),
+                                systemImage: "key.fill",
+                                tint: hasAPIKey ? KairoDesign.green : KairoDesign.amber
+                            )
+                            KairoStatusPill(
+                                title: KairoL10n.string("settings.routing.connectedAccounts", Int64(connectedConnectorCount)),
+                                systemImage: "person.crop.circle.badge.checkmark",
+                                tint: connectedConnectorCount > 0 ? KairoDesign.green : KairoDesign.violet
+                            )
+                        }
+
+                        Text(KairoL10n.string("settings.connection.details.subtitle"))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 

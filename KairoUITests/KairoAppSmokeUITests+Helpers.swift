@@ -145,8 +145,9 @@ extension KairoAppSmokeUITests {
 
     func openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: Bool) {
         selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
+        scrollTowardTop()
         openConnectionSetupIfNeeded()
-        XCTAssertTrue(findElement("settings.openai.api-key-status").exists)
+        XCTAssertTrue(findElement("settings.openai.editor-toggle", direction: .down, maxSwipes: 8).exists)
         openAPIKeyEditorIfNeeded()
         XCTAssertTrue(anyElement("settings.openai.api-key-field").exists)
         XCTAssertTrue(findButton("settings.openai.save-api-key").exists)
@@ -163,21 +164,14 @@ extension KairoAppSmokeUITests {
         let setup = findButton(labeled: "Show connection setup", direction: .both, maxSwipes: 3)
         XCTAssertTrue(setup.exists)
         tapElement(setup)
-        guard !anyElement("settings.openai.api-key-status").waitForExistence(timeout: 2) else {
-            return
-        }
-
-        let identifiedSetup = findElement("settings.connection.toggle", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(identifiedSetup.exists)
-        tapElement(identifiedSetup)
-        XCTAssertTrue(anyElement("settings.openai.api-key-status").waitForExistence(timeout: 2))
+        XCTAssertTrue(findElement("settings.openai.editor-toggle", direction: .down, maxSwipes: 8).waitForExistence(timeout: 5))
     }
 
     func openAPIKeyEditorIfNeeded() {
         if anyElement("settings.openai.api-key-field").exists {
             return
         }
-        let editor = findButton("settings.openai.editor-toggle", direction: .both, maxSwipes: 2)
+        let editor = findElement("settings.openai.editor-toggle", direction: .both, maxSwipes: 2)
         XCTAssertTrue(editor.exists)
         tapElement(editor)
         XCTAssertTrue(anyElement("settings.openai.api-key-field").waitForExistence(timeout: 2))
