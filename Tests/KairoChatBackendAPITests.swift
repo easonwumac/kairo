@@ -8,21 +8,12 @@ final class KairoChatBackendAPITests: XCTestCase {
         let httpClient = ChatBackendCapturingHTTPClient(body: #"{"output_text":"Live provider response"}"#)
         let api = KairoChatBackendService(agent: AgentCore(
             memoryStore: InMemoryMemoryStore(seed: [
-                MemoryRecord(
-                    title: "Tone",
-                    summary: "Prefers concise Traditional Chinese replies",
-                    content: "Keep answers short.",
-                    source: .manual
-                )
+                MemoryRecord(title: "Tone", summary: "Prefers concise Traditional Chinese replies", content: "Keep answers short.", source: .manual)
             ]),
             aiProvider: OpenAIProvider(credentialStore: credentials, httpClient: httpClient)
         ))
 
-        let response = try await api.respond(
-            to: "Tone",
-            attachments: [],
-            privacyMode: .standard
-        )
+        let response = try await api.respond(to: "Tone", attachments: [], privacyMode: .standard)
 
         XCTAssertEqual(response.message, "Live provider response")
         XCTAssertEqual(response.memoryContextCount, 1)
@@ -61,9 +52,10 @@ final class KairoChatBackendAPITests: XCTestCase {
 
     @MainActor
     func testChatViewModelSurfacesLocalOnlyUnavailableAsFailedMessage() async throws {
+        let reason = KairoL10n.string("chat.error.localInference.reason.localOnlyNoModel")
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
-            agent: AgentCore(aiProvider: FailingChatBackendAIProvider(error: AIProviderError.localInferenceUnavailable("Local Only is active but no downloaded model is selected.")))
+            agent: AgentCore(aiProvider: FailingChatBackendAIProvider(error: AIProviderError.localInferenceUnavailable(reason)))
         )
 
         await viewModel.send("Draft a private reply")
@@ -71,8 +63,7 @@ final class KairoChatBackendAPITests: XCTestCase {
         let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
         XCTAssertEqual(assistantMessage.role, .assistant)
         XCTAssertEqual(assistantMessage.status, .failed)
-        let expected = KairoL10n.string("chat.error.localInferenceUnavailable", "Local Only is active but no downloaded model is selected.")
-        XCTAssertEqual(assistantMessage.text, expected)
+        XCTAssertEqual(assistantMessage.text, KairoL10n.string("chat.error.localInferenceUnavailable", reason))
         XCTAssertEqual(viewModel.errorMessage, assistantMessage.text)
     }
 
@@ -80,21 +71,12 @@ final class KairoChatBackendAPITests: XCTestCase {
         let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Private response"))
         let api = KairoChatBackendService(agent: AgentCore(
             memoryStore: InMemoryMemoryStore(seed: [
-                MemoryRecord(
-                    title: "Private note",
-                    summary: "Should not be queried",
-                    content: "private content",
-                    source: .manual
-                )
+                MemoryRecord(title: "Private note", summary: "Should not be queried", content: "private content", source: .manual)
             ]),
             aiProvider: provider
         ))
 
-        let response = try await api.respond(
-            to: "summarize private content",
-            attachments: [],
-            privacyMode: .privateChat
-        )
+        let response = try await api.respond(to: "summarize private content", attachments: [], privacyMode: .privateChat)
         let request = await provider.capturedRequest()
         let capturedRequest = try XCTUnwrap(request)
 

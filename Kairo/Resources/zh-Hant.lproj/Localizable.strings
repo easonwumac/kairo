@@ -103,6 +103,10 @@
 "chat.error.openAIKeyMissing" = "OpenAI API key 尚未設定。請到 Settings 儲存 API key，或切換到可用的 local-only fallback 後再試。";
 "chat.error.localOnlyUnsupported" = "目前選用的 local-only fallback 無法完成這類請求。請切回 cloud provider 或選擇支援的本機模型。";
 "chat.error.localInferenceUnavailable" = "%@ Chat 已停止，不會假裝 iPhone 本機推論已可用。請切回 Cloud 或先下載並選擇支援的本機模型。";
+"chat.error.localInference.reason.localOnlyNoModel" = "Local Only 已啟用，但尚未選擇已下載的 model。";
+"chat.error.localInference.reason.localOnlyRuntimeUnavailable" = "Local Only 已啟用，但此 beta 尚未提供 iOS production local inference。";
+"chat.error.localInference.reason.privateNoModel" = "此私密或離線請求尚未選擇已下載的 local model。";
+"chat.error.localInference.reason.routeUnavailable" = "目前選擇的 local route 還不能在 iPhone 上完成這個請求。";
 "chat.error.requestFailed" = "OpenAI 回覆失敗：%@";
 "chat.error.genericReplyFailed" = "Kairo 暫時無法回覆：%@";
 "chat.provider.route.title" = "路由：%@";

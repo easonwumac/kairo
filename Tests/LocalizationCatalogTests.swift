@@ -96,6 +96,10 @@ final class LocalizationCatalogTests: XCTestCase {
             "chat.action.result.web.success",
             "chat.error.openAIKeyMissing",
             "chat.error.localInferenceUnavailable",
+            "chat.error.localInference.reason.localOnlyNoModel",
+            "chat.error.localInference.reason.localOnlyRuntimeUnavailable",
+            "chat.error.localInference.reason.privateNoModel",
+            "chat.error.localInference.reason.routeUnavailable",
             "chat.provider.warning.openAIKeyMissing"
         ]
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)

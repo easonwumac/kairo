@@ -102,14 +102,14 @@ public struct LocalModelRoutingAIProvider: AIProvider {
         decision: ProviderRouteDecision
     ) -> String {
         if status.preference == .localOnly && !status.localModelInstalled {
-            return "Local Only is active but no downloaded model is selected."
+            return KairoL10n.string("chat.error.localInference.reason.localOnlyNoModel")
         }
         if status.preference == .localOnly && status.localModelInstalled {
-            return "Local Only is active, but iOS production local inference is unavailable in this beta."
+            return KairoL10n.string("chat.error.localInference.reason.localOnlyRuntimeUnavailable")
         }
         if decision.reason == .localUnavailable {
-            return "No downloaded local model is selected for this private/offline request."
+            return KairoL10n.string("chat.error.localInference.reason.privateNoModel")
         }
-        return "The selected local route cannot complete this request on iPhone yet."
+        return KairoL10n.string("chat.error.localInference.reason.routeUnavailable")
     }
 }

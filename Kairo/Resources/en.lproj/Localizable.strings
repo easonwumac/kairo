@@ -103,6 +103,10 @@
 "chat.error.openAIKeyMissing" = "OpenAI API key is not saved. Save a key in Settings, or switch to an available local route before trying again.";
 "chat.error.localOnlyUnsupported" = "The selected local-only route cannot complete this request. Switch back to the cloud provider or choose a supported local model.";
 "chat.error.localInferenceUnavailable" = "%@ Chat stopped instead of pretending iPhone local inference is available. Switch back to Cloud, or download and select a supported local model first.";
+"chat.error.localInference.reason.localOnlyNoModel" = "Local Only is active but no downloaded model is selected.";
+"chat.error.localInference.reason.localOnlyRuntimeUnavailable" = "Local Only is active, but iOS production local inference is unavailable in this beta.";
+"chat.error.localInference.reason.privateNoModel" = "No downloaded local model is selected for this private or offline request.";
+"chat.error.localInference.reason.routeUnavailable" = "The selected local route cannot complete this request on iPhone yet.";
 "chat.error.requestFailed" = "OpenAI reply failed: %@";
 "chat.error.genericReplyFailed" = "Kairo cannot reply right now: %@";
 "chat.provider.route.title" = "Route: %@";

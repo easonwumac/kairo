@@ -899,7 +899,9 @@ final class LocalModelFeatureTests: XCTestCase {
             systemPrompt: "Test",
             userPrompt: "Draft a private reply."
         ))) { error in
-            XCTAssertEqual(error as? AIProviderError, .localInferenceUnavailable("Local Only is active but no downloaded model is selected."))
+            XCTAssertEqual(error as? AIProviderError, .localInferenceUnavailable(
+                KairoL10n.string("chat.error.localInference.reason.localOnlyNoModel")
+            ))
         }
     }
 
@@ -918,7 +920,9 @@ final class LocalModelFeatureTests: XCTestCase {
             systemPrompt: "Test",
             userPrompt: "Draft a private reply."
         ))) { error in
-            XCTAssertEqual(error as? AIProviderError, .localInferenceUnavailable("Local Only is active but no downloaded model is selected."))
+            XCTAssertEqual(error as? AIProviderError, .localInferenceUnavailable(
+                KairoL10n.string("chat.error.localInference.reason.localOnlyNoModel")
+            ))
         }
 
         let completionCallCount = await cloudProvider.completionCallCount
@@ -1752,7 +1756,9 @@ final class LocalModelFeatureTests: XCTestCase {
         )
 
         await XCTAssertThrowsErrorAsync(try await provider.complete(request)) { error in
-            XCTAssertEqual(error as? AIProviderError, .localInferenceUnavailable("No downloaded local model is selected for this private/offline request."))
+            XCTAssertEqual(error as? AIProviderError, .localInferenceUnavailable(
+                KairoL10n.string("chat.error.localInference.reason.privateNoModel")
+            ))
         }
         let completionCallCount = await cloudProvider.completionCalls()
         XCTAssertEqual(completionCallCount, 0)
