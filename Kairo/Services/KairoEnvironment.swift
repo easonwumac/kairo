@@ -109,6 +109,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
         seedInstalledWeatherSkill: Bool = false,
         seedExpandedLocalModelCatalog: Bool = false,
         seedSharedTaskText: Bool = false,
+        selectInstalledLocalModel: Bool = false,
+        localModelRoutePreference: ProviderRoutePreference? = nil,
         installedLocalModelFileURL: URL? = nil,
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
@@ -194,6 +196,12 @@ public struct KairoEnvironment: KairoBackendDependencies {
             installRegistry: localModelInstallRegistry,
             settingsStore: localModelSettingsStore
         )
+        if selectInstalledLocalModel {
+            try await localModelSettingsService.selectModel(id: LocalModelManifest.qwen35Tiny.id)
+        }
+        if let localModelRoutePreference {
+            try await localModelSettingsService.setPreference(localModelRoutePreference)
+        }
         let localModelBenchmarkStore = try await FileBackedLocalModelBenchmarkStore(
             fileURL: rootDirectory
                 .appendingPathComponent("LocalModels", isDirectory: true)

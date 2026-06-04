@@ -358,13 +358,17 @@ extension KairoAppSmokeUITests {
 
     func relaunchWithLiveLocalModelRuntimeForTesting(
         initialSection: String? = nil,
-        modelFilePath: String
+        modelFilePath: String,
+        selectLocalModel: Bool = false,
+        localRoutePreference: String? = nil
     ) {
         relaunchForUITesting(
             initialSection: initialSection,
             seedInstalledLocalModel: true,
             liveLocalModelRuntime: true,
-            localModelFilePath: modelFilePath
+            localModelFilePath: modelFilePath,
+            selectLocalModel: selectLocalModel,
+            localRoutePreference: localRoutePreference
         )
     }
 
@@ -376,7 +380,9 @@ extension KairoAppSmokeUITests {
         seedSharedTaskText: Bool = false,
         settingsShortcutDemosOnly: Bool = false,
         liveLocalModelRuntime: Bool = false,
-        localModelFilePath: String? = nil
+        localModelFilePath: String? = nil,
+        selectLocalModel: Bool = false,
+        localRoutePreference: String? = nil
     ) {
         app.terminate()
         app = XCUIApplication()
@@ -403,6 +409,12 @@ extension KairoAppSmokeUITests {
         }
         if let localModelFilePath {
             app.launchArguments.append("--ui-testing-local-model-file=\(localModelFilePath)")
+        }
+        if selectLocalModel {
+            app.launchArguments.append("--ui-testing-select-local-model")
+        }
+        if let localRoutePreference {
+            app.launchArguments.append("--ui-testing-local-route-preference=\(localRoutePreference)")
         }
         if let initialSection {
             app.launchArguments.append("--ui-testing-root-section=\(initialSection)")

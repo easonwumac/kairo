@@ -43,6 +43,8 @@ struct KairoApp: App {
                                 seedInstalledWeatherSkill: arguments.contains("--ui-testing-installed-weather-skill"),
                                 seedExpandedLocalModelCatalog: arguments.contains("--ui-testing-expanded-local-model-catalog"),
                                 seedSharedTaskText: arguments.contains("--ui-testing-seed-shared-task"),
+                                selectInstalledLocalModel: arguments.contains("--ui-testing-select-local-model"),
+                                localModelRoutePreference: Self.uiTestingLocalModelRoutePreference(arguments: arguments),
                                 installedLocalModelFileURL: Self.uiTestingLocalModelFileURL(arguments: arguments),
                                 localModelReplyCheckRuntimeOverride: Self.uiTestingLocalModelReplyRuntime(arguments: arguments),
                                 localModelBenchmarkEngineOverride: Self.uiTestingLocalModelBenchmarkEngine(arguments: arguments)
@@ -84,6 +86,14 @@ struct KairoApp: App {
             return nil
         }
         return URL(fileURLWithPath: String(argument.dropFirst(prefix.count)))
+    }
+
+    private static func uiTestingLocalModelRoutePreference(arguments: [String]) -> ProviderRoutePreference? {
+        let prefix = "--ui-testing-local-route-preference="
+        guard let argument = arguments.first(where: { $0.hasPrefix(prefix) }) else {
+            return nil
+        }
+        return ProviderRoutePreference(rawValue: String(argument.dropFirst(prefix.count)))
     }
 
     private static func uiTestingLocalModelReplyRuntime(arguments: [String]) -> (any LocalModelReplyCheckRuntime)? {

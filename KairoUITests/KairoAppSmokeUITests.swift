@@ -282,6 +282,38 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertFalse(finalLabel.contains("Local model reply is alive."), finalLabel)
     }
 
+    func testChatRepliesThroughSelectedQwenLocalRuntime() throws {
+        let modelPath = ProcessInfo.processInfo.environment["KAIRO_QWEN_GGUF_PATH"]
+            ?? Self.defaultQwenGGUFPath()
+        guard FileManager.default.fileExists(atPath: modelPath) else {
+            throw XCTSkip("KAIRO_QWEN_GGUF_PATH does not point to a local Qwen GGUF file.")
+        }
+
+        relaunchWithLiveLocalModelRuntimeForTesting(
+            initialSection: "chat",
+            modelFilePath: modelPath,
+            selectLocalModel: true,
+            localRoutePreference: "localOnly"
+        )
+
+        openCurrentThreadIfNeeded()
+        XCTAssertTrue(anyElement("chat.provider-route").waitForExistence(timeout: 5))
+
+        let composer = anyElement("chat.composer.text")
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        composer.tap()
+        composer.typeText("Summarize this in one short sentence: Kairo local chat runtime smoke test.")
+        anyElement("chat.composer.send").tap()
+
+        let assistantMessage = waitForAssistantMessageExcludingInitialWelcome(timeout: 240)
+        let reply = assistantMessage.label
+        XCTAssertFalse(reply.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        XCTAssertFalse(reply.localizedCaseInsensitiveContains("Preview/test provider response"), reply)
+        XCTAssertFalse(reply.localizedCaseInsensitiveContains("Local fallback"), reply)
+        XCTAssertFalse(reply.localizedCaseInsensitiveContains("local inference is unavailable"), reply)
+        XCTAssertFalse(reply.localizedCaseInsensitiveContains("OpenAI API key is not saved"), reply)
+    }
+
     private static func defaultQwenGGUFPath() -> String {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -303,6 +335,26 @@ final class KairoAppSmokeUITests: XCTestCase {
             RunLoop.current.run(until: Date().addingTimeInterval(1))
         }
         return currentLabel
+    }
+
+    private func waitForAssistantMessageExcludingInitialWelcome(timeout: TimeInterval) -> XCUIElement {
+        let deadline = Date().addingTimeInterval(timeout)
+        var lastAssistant = app.otherElements.matching(identifier: "chat.message.assistant").firstMatch
+        while Date() < deadline {
+            let assistants = app.otherElements.matching(identifier: "chat.message.assistant").allElementsBoundByIndex
+            if let candidate = assistants.last(where: { element in
+                element.exists
+                    && !element.label.localizedCaseInsensitiveContains("welcome")
+                    && !element.label.localizedCaseInsensitiveContains("environment loaded")
+            }) {
+                return candidate
+            }
+            if let last = assistants.last {
+                lastAssistant = last
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(1))
+        }
+        return lastAssistant
     }
 
     func testSettingsShowsShortcutDemoInputOutputContracts() throws {
