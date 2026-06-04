@@ -348,12 +348,17 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.openai.api-key-status",
                 "settings.openai.api-key-field",
                 "settings.openai.save-api-key",
+                "settings.openai.dry-run-api-key",
+                "settings.openai.delete-api-key",
+                "settings.openai.status-message",
                 "settings.oauth.connectors",
                 "settings.shortcuts.demos"
             ],
             assertions: [
-                "API key status is visible.",
+                "API key status is visible before and after save/delete.",
                 "API key field is secure and save is disabled until text is entered.",
+                "API key dry-run shows a redacted key and does not send a network request.",
+                "API key delete returns Settings to the unset state.",
                 "OAuth connector status list is visible.",
                 "Shortcut demo recipes are visible."
             ]

@@ -57,6 +57,38 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertFalse(anyElement("settings.models.\(modelID).download-preview").exists)
     }
 
+    func testSettingsCanSaveDryRunAndDeleteOpenAIAPIKey() throws {
+        relaunchForUITesting(initialSection: "settings")
+        XCTAssertTrue(anyElement("settings.form").waitForExistence(timeout: 5))
+        let initialStatus = anyElement("settings.openai.api-key-status")
+        XCTAssertTrue(initialStatus.waitForExistence(timeout: 5))
+        XCTAssertTrue(initialStatus.label.contains("未設定"), initialStatus.label)
+        let field = anyElement("settings.openai.api-key-field")
+        XCTAssertTrue(field.exists)
+        field.tap()
+        field.typeText("ui-test-api-key-1234567890")
+        dismissKeyboardIfPresent()
+        let save = findButton("settings.openai.save-api-key", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(save.exists)
+        save.tap()
+        XCTAssertTrue(findStaticText(containing: "已設定", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
+        let savedStatus = anyElement("settings.openai.api-key-status")
+        XCTAssertTrue(savedStatus.label.contains("已設定"), savedStatus.label)
+        let dryRun = findButton("settings.openai.dry-run-api-key", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(dryRun.exists)
+        dryRun.tap()
+        let dryRunMessage = findElement("settings.openai.status-message", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(dryRunMessage.waitForExistence(timeout: 5))
+        XCTAssertTrue(dryRunMessage.label.contains("OpenAI dry run 完成：ui-t...7890"), dryRunMessage.label)
+        XCTAssertTrue(dryRunMessage.label.contains("未送出網路請求"), dryRunMessage.label)
+        let delete = findButton("settings.openai.delete-api-key", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(delete.exists)
+        delete.tap()
+        XCTAssertTrue(findStaticText(containing: "未設定", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
+        let deletedStatus = anyElement("settings.openai.api-key-status")
+        XCTAssertTrue(deletedStatus.label.contains("未設定"), deletedStatus.label)
+    }
+
     func testSettingsExpandedModelCatalogKeepsPopularStarterRowsVisible() throws {
         relaunchForUITesting(initialSection: "models", seedExpandedLocalModelCatalog: true)
 

@@ -138,26 +138,30 @@ public struct SettingsView: View {
                         .textContentType(.password)
                         .accessibilityIdentifier("settings.openai.api-key-field")
 
-                HStack {
-                    Button("Save API Key") {
-                        saveAPIKey()
+                    HStack {
+                        Button("Save API Key") {
+                            saveAPIKey()
+                        }
+                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .accessibilityIdentifier("settings.openai.save-api-key")
+
+                        Button("Dry Run") {
+                            dryRunAPIKey()
+                        }
+                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasAPIKey)
+                        .accessibilityIdentifier("settings.openai.dry-run-api-key")
                     }
-                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .accessibilityIdentifier("settings.openai.save-api-key")
 
-                    Button("Dry Run") {
-                        dryRunAPIKey()
-                    }
-                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasAPIKey)
-                    .accessibilityIdentifier("settings.openai.dry-run-api-key")
-
-                    Spacer()
-
-                    Button("Delete", role: .destructive) {
+                    Button("Delete API Key", role: .destructive) {
                         deleteAPIKey()
                     }
-                        .disabled(!hasAPIKey)
-                        .accessibilityIdentifier("settings.openai.delete-api-key")
+                    .disabled(!hasAPIKey)
+                    .accessibilityIdentifier("settings.openai.delete-api-key")
+
+                    if let statusMessage {
+                        Text(statusMessage)
+                            .font(.caption)
+                            .accessibilityIdentifier("settings.openai.status-message")
                     }
                 }
 
@@ -225,12 +229,8 @@ public struct SettingsView: View {
                 }
                 .accessibilityIdentifier("settings.privacy")
 
-                if statusMessage != nil || connectorStatusMessage != nil {
+                if connectorStatusMessage != nil {
                     Section("Status") {
-                        if let statusMessage {
-                            Text(statusMessage)
-                                .font(.caption)
-                        }
                         if let connectorStatusMessage {
                             Text(connectorStatusMessage)
                                 .font(.caption)

@@ -270,6 +270,7 @@ Because no available real device was reachable, the following remain release-blo
   - `testChatCanPreviewAndConfirmMessagesHandoff`
   - `testChatCanPreviewAndConfirmPhoneCallHandoff`
   - `testChatCanPreviewAndConfirmWebSearchHandoff`
+  - `testSettingsCanSaveDryRunAndDeleteOpenAIAPIKey`
 - [x] Package tests currently cover Memory save/search/delete/export plus backend API lifecycle/export facade, Kairo-owned internal recipe backend API lifecycle/run/sample seeding, Share Extension import plus backend API queue-import/mark-imported facade, App Intent registry/type coverage plus Ask/Save/Search node runtime, Access permission backend API status/request forwarding, local model catalog unknown/revoked/pending-publication/out-of-window/invalid signing-key gating, local model download progress/cancellation/checksum/delete/runtime-unavailable/stale-state cleanup, local model backend API facade status/select/preference/delete/stale-cleanup/fail-closed behavior, Skill Manager backend API facade lifecycle/user-draft/compatibility/fail-closed behavior, Settings backend API facade OpenAI/OAuth secret-redaction behavior, live Skill Manager effective catalog, OpenAI API key save/dry-run/delete, OAuth connector malformed-token reauth + token disconnect/delete, and Local Only fail-closed routing without cloud completion calls.
 - [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
 - [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
@@ -278,7 +279,7 @@ Because no available real device was reachable, the following remain release-blo
 - [ ] App Intent Ask / Save / Search 在這一輪尚未做 device-level smoke；目前證據是 registry/type coverage，外加 Ask/Save/Search node package tests，不是實機驗證。
 - [ ] Chat history app 重啟 persistence 仍需在真機重跑簽核。
 - [ ] HomeKit control action 仍只可宣稱 preview/demo/test path；真實 entitlement/live control 尚未完成。
-- [x] OpenAI API key save/dry-run/delete 與 OAuth connector malformed-token reauth + token disconnect/delete 已有 package tests；dry run 不送出網路請求。
+- [x] OpenAI API key save/dry-run/delete 與 OAuth connector malformed-token reauth + token disconnect/delete 已有 package tests；OpenAI API key save/dry-run/delete 另有 focused simulator XCUITest smoke，dry run 不送出網路請求。
 - [x] Focused regex secret scan 已於 2026-06-04 重跑，未在 tracked source/docs 中找到明顯 credential。
 
 ## Review notes draft
