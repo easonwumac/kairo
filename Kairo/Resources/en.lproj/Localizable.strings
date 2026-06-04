@@ -541,10 +541,6 @@
 "chat.action.preview.payloadDetail" = "Open only if you want to inspect the exact draft or handoff payload.";
 "chat.action.preview.payload.show" = "Show content details";
 "chat.action.preview.payload.hide" = "Hide content details";
-"chat.action.preview.safetyDetails" = "Safety details";
-"chat.action.preview.safetyDetails.detail" = "Capability and rationale stay available without crowding the confirm decision.";
-"chat.action.preview.safetyDetails.show" = "Show safety details";
-"chat.action.preview.safetyDetails.hide" = "Hide safety details";
 "chat.action.preview.confirmation.required" = "Kairo will ask here before anything changes.";
 "chat.action.preview.confirmation.unavailable" = "This action cannot run in the iOS sandbox.";
 "chat.action.preview.destination.reminders" = "Reminders";

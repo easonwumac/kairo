@@ -723,6 +723,16 @@ Stage 75 makes workflow cards action-direct:
 - Recipe center, saved workflow, preview, run, toggle, message, and existing
   Automations smoke flows keep their current paths.
 
+Stage 76 makes Action Preview safety scan-first:
+
+- The confirmation checklist no longer hides capability and rationale behind a
+  Safety details disclosure.
+- Confirmation, capability, and rationale are visible in one review layer,
+  while exact payload inspection remains available behind the content details
+  toggle.
+- Action preview, payload details, confirmation, cancel, and existing Chat
+  confirmation smoke flows keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit
