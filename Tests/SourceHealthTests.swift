@@ -598,7 +598,7 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(rootViewSource.contains("Tell Kairo what to do on this phone"))
     }
 
-    func testChatSurfaceOwnsToolsAndHidesRouteComplexity() throws {
+    func testChatSurfaceOwnsToolsAndShowsCompactRouteStatus() throws {
         let root = packageRootURL()
         let chatViewSource = try String(
             contentsOf: root.appendingPathComponent("Kairo/Views/ChatView.swift"),
@@ -608,8 +608,8 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(chatViewSource.contains("chat.tools.menu"))
         XCTAssertTrue(chatViewSource.contains("Ask Kairo to act"))
         XCTAssertTrue(chatViewSource.contains("Phone tools"))
+        XCTAssertTrue(chatViewSource.contains("ChatProviderRouteBar("))
         XCTAssertFalse(chatViewSource.contains("chat.session-controls"))
-        XCTAssertFalse(chatViewSource.contains("ChatProviderRouteBar("))
         XCTAssertFalse(chatViewSource.contains("chatTopControls"))
     }
 

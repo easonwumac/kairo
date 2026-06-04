@@ -198,6 +198,16 @@ public struct ChatView: View {
                 }
             }
 
+            ChatProviderRouteBar(
+                status: viewModel.providerRouteStatus,
+                canEdit: viewModel.canEditProviderRoute,
+                setPreference: { preference in
+                    Task { await viewModel.setProviderRoutePreference(preference) }
+                }
+            )
+            .padding(.horizontal, 14)
+            .padding(.top, 8)
+
             composer
         }
         .sheet(item: $viewModel.pendingAction) { action in
