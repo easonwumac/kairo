@@ -345,7 +345,7 @@ private enum RootSection: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     static var primaryTabs: [RootSection] {
-        [.chat, .memory, .shortcuts, .access, .models]
+        [.chat, .memory, .shortcuts]
     }
 
     var title: String {

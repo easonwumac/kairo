@@ -30,7 +30,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             assertions: [
                 "The primary header is laid out below the device safe area so Dynamic Island and status bar regions do not cover controls.",
                 "The drawer toggle is visible after launch.",
-                "The sections sheet keeps Chat as the primary surface and moves phone tools, workflows, memory, AI setup, and settings out of a bottom TabView."
+                "The top strip keeps Chat, Memory, and Workflows as the primary jobs while the sections sheet keeps phone tools, AI setup, and settings available as support rooms."
             ]
         ),
         UITestScenario(

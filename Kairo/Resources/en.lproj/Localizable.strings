@@ -8,8 +8,8 @@
 "root.menu.privacyNote" = "Kairo uses public APIs, explicit permission, and visible handoff. Nothing changes silently.";
 "root.menu.accessibility" = "Kairo navigation menu";
 "root.menu.group.primary" = "Home";
-"root.menu.group.agent" = "Capabilities";
-"root.menu.group.system" = "System";
+"root.menu.group.agent" = "Support rooms";
+"root.menu.group.system" = "Setup";
 "root.environment.loading" = "Loading Kairo";
 "root.environment.liveLoadFailed" = "Kairo could not load the live app environment. Restart the app and try again.";
 "root.environment.uiTestingLoadFailed" = "Kairo could not load the UI testing environment.";

@@ -179,6 +179,16 @@ Stage 17 makes Workflows recipe-action-first:
 - Advanced references remain reachable, but implementation catalogs no longer
   compete with the recipe job on first load.
 
+Stage 18 makes root navigation job-first:
+
+- The top navigation strip now only exposes Chat, Memory, and Workflows as
+  first-level jobs.
+- Phone Tools, AI Setup, and Settings remain available in Sections, but they no
+  longer compete with Chat as equal top-level destinations.
+- The drawer now labels those destinations as support rooms and setup, matching
+  the product spine: ask in Chat, use supporting rooms only when the job needs
+  them.
+
 ## Next UI stages
 
 1. Memory Center
