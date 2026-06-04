@@ -111,6 +111,7 @@ public struct ProviderRoutingContext: Codable, Equatable, Sendable {
     public var requiresCurrentInfo: Bool
     public var contextTokenEstimate: Int
     public var localModelInstalled: Bool
+    public var localRuntimeAvailable: Bool
     public var localContextWindow: Int
 
     public init(
@@ -123,6 +124,7 @@ public struct ProviderRoutingContext: Codable, Equatable, Sendable {
         requiresCurrentInfo: Bool = false,
         contextTokenEstimate: Int = 0,
         localModelInstalled: Bool = false,
+        localRuntimeAvailable: Bool = false,
         localContextWindow: Int = 2048
     ) {
         self.preference = preference
@@ -134,6 +136,7 @@ public struct ProviderRoutingContext: Codable, Equatable, Sendable {
         self.requiresCurrentInfo = requiresCurrentInfo
         self.contextTokenEstimate = contextTokenEstimate
         self.localModelInstalled = localModelInstalled
+        self.localRuntimeAvailable = localRuntimeAvailable
         self.localContextWindow = localContextWindow
     }
 }
@@ -233,7 +236,7 @@ public struct ProviderRouter: AIProvider {
     }
 
     private func localOrUnavailable(context: ProviderRoutingContext, reason: ProviderRouteReason) -> ProviderRouteDecision {
-        guard context.localModelInstalled else {
+        guard context.localModelInstalled && context.localRuntimeAvailable else {
             if context.preference == .localOnly || context.offlineModeEnabled || context.privacyModeEnabled || !context.networkAvailable {
                 return ProviderRouteDecision(route: .unavailable, reason: .localUnavailable)
             }

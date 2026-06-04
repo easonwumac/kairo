@@ -230,7 +230,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
                 localProvider: LocalModelRuntimeAIProvider(
                     localModelSettingsService: localModelSettingsService,
                     runtime: localModelReplyRuntime
-                )
+                ),
+                localRuntimeAvailable: true
             )
         } else {
             aiProvider = MockAIProvider()
@@ -563,7 +564,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
             localProvider: LocalModelRuntimeAIProvider(
                 localModelSettingsService: localModelSettingsService,
                 runtime: localModelReplyRuntime
-            )
+            ),
+            localRuntimeAvailable: localModelChatRuntimeAvailable
         )
         let connectedOAuthProviderKeys = try await connectedOAuthProviderKeys(credentialStore: credentialStore)
         let runtimeContext = AgentSkillRuntimeContext.current(

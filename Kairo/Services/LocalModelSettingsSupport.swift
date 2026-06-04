@@ -429,6 +429,7 @@ public actor LocalModelSettingsService {
         requiresToolUse: Bool = false,
         requiresCurrentInfo: Bool = false,
         contextTokenEstimate: Int = 0,
+        localRuntimeAvailable: Bool = false,
         minimumSafetyPolicyVersion: String = "2026.1"
     ) async -> ProviderRoutingContext {
         let modelStatus = await status(minimumSafetyPolicyVersion: minimumSafetyPolicyVersion)
@@ -442,6 +443,7 @@ public actor LocalModelSettingsService {
             requiresCurrentInfo: requiresCurrentInfo,
             contextTokenEstimate: contextTokenEstimate,
             localModelInstalled: modelStatus.localModelInstalled,
+            localRuntimeAvailable: localRuntimeAvailable,
             localContextWindow: modelStatus.selectedModel?.contextWindow ?? 2048
         )
     }

@@ -876,7 +876,8 @@ final class LocalModelFeatureTests: XCTestCase {
             localProvider: LocalModelRuntimeAIProvider(
                 localModelSettingsService: service,
                 runtime: runtime
-            )
+            ),
+            localRuntimeAvailable: true
         )
 
         let response = try await provider.complete(AICompletionRequest(
@@ -900,7 +901,8 @@ final class LocalModelFeatureTests: XCTestCase {
             localProvider: LocalModelRuntimeAIProvider(
                 localModelSettingsService: service,
                 runtime: UnavailableLocalModelReplyCheckRuntime(reason: "runtime unavailable for test")
-            )
+            ),
+            localRuntimeAvailable: true
         )
 
         await XCTAssertThrowsErrorAsync(try await provider.complete(AICompletionRequest(
@@ -914,6 +916,31 @@ final class LocalModelFeatureTests: XCTestCase {
         }
         let completionCallCount = await cloudProvider.completionCalls()
         XCTAssertEqual(completionCallCount, 0)
+    }
+
+    func testLocalModelRoutingAIProviderFallsBackToCloudWhenPreferLocalRuntimeUnavailable() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .preferLocal,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let cloudProvider = RecordingAIProvider()
+        let provider = LocalModelRoutingAIProvider(
+            cloudProvider: cloudProvider,
+            localModelSettingsService: service,
+            localProvider: LocalModelRuntimeAIProvider(
+                localModelSettingsService: service,
+                runtime: UnavailableLocalModelReplyCheckRuntime(reason: "runtime unavailable for test")
+            ),
+            localRuntimeAvailable: false
+        )
+
+        _ = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Draft a private reply."
+        ))
+
+        let completionCallCount = await cloudProvider.completionCalls()
+        XCTAssertEqual(completionCallCount, 1)
     }
 
     func testLocalModelRoutingAIProviderKeepsToolRequestsOnCloudWhenPreferLocal() async throws {
@@ -1801,7 +1828,8 @@ final class LocalModelFeatureTests: XCTestCase {
         let context = ProviderRoutingContext(
             networkAvailable: false,
             taskClass: .summarization,
-            localModelInstalled: true
+            localModelInstalled: true,
+            localRuntimeAvailable: true
         )
 
         let decision = router.decision(for: request, context: context)
@@ -1829,7 +1857,8 @@ final class LocalModelFeatureTests: XCTestCase {
             offlineModeEnabled: true,
             taskClass: .toolUse,
             requiresToolUse: true,
-            localModelInstalled: true
+            localModelInstalled: true,
+            localRuntimeAvailable: true
         )
 
         let decision = router.decision(for: request, context: context)
@@ -1853,7 +1882,8 @@ final class LocalModelFeatureTests: XCTestCase {
             networkAvailable: true,
             taskClass: .webCurrentInfo,
             requiresCurrentInfo: true,
-            localModelInstalled: true
+            localModelInstalled: true,
+            localRuntimeAvailable: true
         )
 
         let decision = router.decision(for: request, context: context)

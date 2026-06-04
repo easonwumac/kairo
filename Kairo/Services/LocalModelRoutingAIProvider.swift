@@ -4,15 +4,18 @@ public struct LocalModelRoutingAIProvider: AIProvider {
     private let cloudProvider: any AIProvider
     private let localModelSettingsService: LocalModelSettingsService
     private let localProvider: any AIProvider
+    private let localRuntimeAvailable: Bool
 
     public init(
         cloudProvider: any AIProvider,
         localModelSettingsService: LocalModelSettingsService,
-        localProvider: (any AIProvider)? = nil
+        localProvider: (any AIProvider)? = nil,
+        localRuntimeAvailable: Bool = false
     ) {
         self.cloudProvider = cloudProvider
         self.localModelSettingsService = localModelSettingsService
         self.localProvider = localProvider ?? LocalFallbackProvider()
+        self.localRuntimeAvailable = localRuntimeAvailable
     }
 
     public func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
@@ -22,7 +25,8 @@ public struct LocalModelRoutingAIProvider: AIProvider {
             privacyModeEnabled: request.privacyMode == .privateChat,
             requiresToolUse: Self.requiresToolUse(request),
             requiresCurrentInfo: Self.requiresCurrentInfo(request),
-            contextTokenEstimate: Self.estimatedTokenCount(for: request)
+            contextTokenEstimate: Self.estimatedTokenCount(for: request),
+            localRuntimeAvailable: localRuntimeAvailable
         )
         let router = ProviderRouter(
             cloudProvider: cloudProvider,
