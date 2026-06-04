@@ -77,6 +77,7 @@ public struct CapabilityPromptContextBuilder: Sendable {
         - External API/account actions require OAuth connector support and user-granted scopes.
         - URL schemes and universal links are user-visible handoffs, not hidden app control.
         - Web search handoff only opens a visible HTTPS search URL; Kairo cannot silently browse, scrape pages, or read Safari history/cookies.
+        - HomeKit action metadata is preview/demo/test scaffolding in this beta; do not claim live HomeKit control without entitlement, permission copy, and real-device evidence.
         - BGTaskScheduler work is opportunistic and bounded; Kairo cannot run as a daemon.
         - Local model fallback cannot use tools, browse the web, or perform account actions.
         """

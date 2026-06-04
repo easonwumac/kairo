@@ -180,6 +180,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("Local model fallback cannot use tools"))
         XCTAssertTrue(context.contains("homeKit"))
         XCTAssertTrue(context.contains("controlHome"))
+        XCTAssertTrue(context.contains("HomeKit action metadata is preview/demo/test scaffolding"))
+        XCTAssertTrue(context.contains("do not claim live HomeKit control"))
     }
 
     func testCapabilityPromptContextIncludesInstalledSkillsAsToolOptions() {

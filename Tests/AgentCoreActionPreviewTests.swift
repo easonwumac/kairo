@@ -2,6 +2,12 @@ import XCTest
 @testable import KairoCore
 
 final class AgentCoreActionPreviewTests: XCTestCase {
+    func testAgentCoreSystemPromptKeepsHomeKitLiveControlOutOfExecutableClaims() {
+        XCTAssertFalse(AgentCore.systemPrompt.contains("HomeKit 家庭控制"))
+        XCTAssertTrue(AgentCore.systemPrompt.contains("HomeKit 在目前 beta 只限 preview/demo/test scaffolding"))
+        XCTAssertTrue(AgentCore.systemPrompt.contains("不要聲稱真實 HomeKit live control 已可用或已完成"))
+    }
+
     func testAgentCoreAddsDeterministicHomeKitPreviewAction() async throws {
         let response = try await makeAgent().respond(to: "Turn on the desk lamp")
 
