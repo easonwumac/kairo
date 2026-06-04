@@ -68,6 +68,7 @@
 "automations.message.runFailed" = "無法執行 %@。";
 "automations.message.toggleResult" = "%@ %@。";
 "automations.message.toggleFailed" = "無法更新 %@。";
+"recipes.localFallback.output" = "Kairo local fallback：%@";
 "chat.share.action.extractReminders" = "抽出提醒事項";
 "chat.share.action.summarize" = "摘要分享內容";
 "chat.share.action.sendToChat" = "送進 Chat";
@@ -175,6 +176,7 @@
 "chat.provider.localFallback.emptyRequest" = "這個請求";
 "chat.provider.localFallback.quotedRequest" = "「%@」";
 "chat.provider.localFallback.response" = "%@ 是短篇 private/offline 草稿的 placeholder。Kairo 可以協助處理 %@，但 local mode 不能瀏覽網頁、使用工具或執行帳號動作。";
+"chat.provider.localFallback.toolsUnavailable" = "Local model fallback 不能使用工具、瀏覽網頁或執行帳號動作。";
 "chat.action.accessibility.preview" = "動作預覽：%@，%@，%@";
 "chat.option.accessibility.suggested" = "建議選項：%@，%@。%@。%@";
 "chat.action.confirmation.willAskFirst" = "會先詢問";

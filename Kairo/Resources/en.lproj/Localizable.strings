@@ -68,6 +68,7 @@
 "automations.message.runFailed" = "Unable to run %@.";
 "automations.message.toggleResult" = "%@ %@.";
 "automations.message.toggleFailed" = "Unable to update %@.";
+"recipes.localFallback.output" = "Kairo local fallback: %@";
 "chat.share.action.extractReminders" = "Extract reminders";
 "chat.share.action.summarize" = "Summarize";
 "chat.share.action.sendToChat" = "Send to Chat";
@@ -175,6 +176,7 @@
 "chat.provider.localFallback.emptyRequest" = "this request";
 "chat.provider.localFallback.quotedRequest" = "\"%@\"";
 "chat.provider.localFallback.response" = "%@ is a placeholder for short private/offline drafts. I can help with %@, but local mode cannot browse the web, use tools, or perform account actions.";
+"chat.provider.localFallback.toolsUnavailable" = "Local model fallback cannot use tools, browse the web, or perform account actions.";
 "chat.action.accessibility.preview" = "Action preview: %@, %@, %@";
 "chat.option.accessibility.suggested" = "Suggested option: %@, %@. %@. %@";
 "chat.action.confirmation.willAskFirst" = "Will ask first";

@@ -124,6 +124,39 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertTrue(result.summary.contains("2 draft"))
     }
 
+    func testKairoRecipeRunnerUsesLocalizedLocalFallbackWhenAskStepHasNoProvider() async throws {
+        let recipe = KairoRecipe(
+            id: "ask-local-fallback",
+            title: "Ask Local Fallback",
+            summary: "Draft a local-only recipe answer.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "ask",
+                    title: "Ask Kairo",
+                    kind: .askKairo,
+                    input: .literal("Summarize today's plan")
+                )
+            ],
+            requiredCapabilities: [],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let runner = KairoRecipeRunner(recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]))
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .app,
+            input: nil,
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.stepResults.first?.outputText, KairoL10n.string("recipes.localFallback.output", "Summarize today's plan"))
+    }
+
     func testKairoRecipeEngineStaysSplitAcrossSupportFiles() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let modelsSource = try String(

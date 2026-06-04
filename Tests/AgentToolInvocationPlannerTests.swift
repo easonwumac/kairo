@@ -339,7 +339,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
 
         XCTAssertTrue(plan.candidates.isEmpty)
         XCTAssertEqual(plan.proposedActions, [])
-        XCTAssertTrue(plan.unsupportedMessage?.contains("Local model fallback cannot use tools") == true)
+        XCTAssertEqual(plan.unsupportedMessage, KairoL10n.string("chat.provider.localFallback.toolsUnavailable"))
     }
 
     func testAgentToolInvocationPlannerIgnoresDisabledSkills() {

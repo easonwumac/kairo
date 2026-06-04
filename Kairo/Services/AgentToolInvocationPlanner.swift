@@ -19,7 +19,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         guard request.allowsToolUse else {
             return AgentToolInvocationPlan(
                 candidates: [],
-                unsupportedMessage: "Local model fallback cannot use tools, browse the web, or perform account actions."
+                unsupportedMessage: KairoL10n.string("chat.provider.localFallback.toolsUnavailable")
             )
         }
 

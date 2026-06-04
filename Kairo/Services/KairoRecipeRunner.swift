@@ -132,7 +132,7 @@ public struct KairoRecipeRunner: Sendable {
                 ))
                 output = response.message
             } else {
-                output = "Kairo local fallback: \(prompt)"
+                output = KairoL10n.string("recipes.localFallback.output", prompt)
             }
             return (KairoRecipeStepResult(stepID: step.id, summary: step.title, outputText: output, success: true), [])
 

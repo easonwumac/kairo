@@ -199,7 +199,9 @@ final class LocalizationCatalogTests: XCTestCase {
             "chat.provider.localFallback.named",
             "chat.provider.localFallback.emptyRequest",
             "chat.provider.localFallback.quotedRequest",
-            "chat.provider.localFallback.response"
+            "chat.provider.localFallback.response",
+            "chat.provider.localFallback.toolsUnavailable",
+            "recipes.localFallback.output"
         ]
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let english = try localizedStrings(at: root.appendingPathComponent("Kairo/Resources/en.lproj/Localizable.strings"))
