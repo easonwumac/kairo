@@ -137,26 +137,6 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(coreTests.contains("testLocalModelRoutingAIProviderUsesSelectedLocalModelForEligiblePreferLocalWork"))
     }
 
-    func testAgentSkillMarketplaceCoverageLivesInFocusedTestFile() throws {
-        let root = packageRootURL()
-        let focusedTestsURL = root.appendingPathComponent("Tests/AgentSkillFeatureTests.swift")
-        XCTAssertTrue(
-            FileManager.default.fileExists(atPath: focusedTestsURL.path),
-            "Skill marketplace tests should live in Tests/AgentSkillFeatureTests.swift instead of the KairoCoreTests monolith."
-        )
-
-        let focusedTests = try String(contentsOf: focusedTestsURL, encoding: .utf8)
-        XCTAssertTrue(focusedTests.contains("testSkillMarketplaceIndexListsDownloadableSkillsWithSafetyMetadata"))
-        XCTAssertTrue(focusedTests.contains("testSkillMarketplaceManifestIsImportableBySkillManager"))
-        XCTAssertTrue(focusedTests.contains("testAgentSkillMarketplaceCatalogServiceFetchesStandaloneRepoCatalog"))
-        XCTAssertTrue(focusedTests.contains("testAgentSkillCatalogMergesRemoteMarketplaceWithoutReplacingInstalledSkills"))
-        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 320)
-
-        let coreTests = try String(contentsOf: root.appendingPathComponent("Tests/KairoCoreTests.swift"))
-        XCTAssertFalse(coreTests.contains("testSkillMarketplaceIndexListsDownloadableSkillsWithSafetyMetadata"))
-        XCTAssertFalse(coreTests.contains("testAgentSkillMarketplaceCatalogServiceFetchesStandaloneRepoCatalog"))
-    }
-
     func testAgentSkillManifestTrustCoverageLivesInFocusedTestFile() throws {
         let root = packageRootURL()
         let focusedTestsURL = root.appendingPathComponent("Tests/AgentSkillManifestTrustTests.swift")

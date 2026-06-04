@@ -235,6 +235,12 @@ public struct AgentSkillMarketplaceCatalogService: Sendable {
                 manifestURL: entry.manifestURL
             )
         }
+        guard manifestURL.scheme?.lowercased() == "https" else {
+            throw AgentSkillMarketplaceCatalogError.invalidManifestURL(
+                skillID: entry.id,
+                manifestURL: manifestURL.absoluteString
+            )
+        }
 
         return AgentSkill(
             id: entry.id,

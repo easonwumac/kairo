@@ -241,6 +241,53 @@ final class AgentSkillFeatureTests: XCTestCase {
         }
     }
 
+    func testAgentSkillMarketplaceCatalogServiceRejectsNonHTTPSManifestURL() async throws {
+        let body = """
+        {
+          "marketplaceVersion": "2026.6",
+          "sourceRepository": "https://github.com/easonwumac/kairo-skills",
+          "generatedAt": "2026-06-02T00:00:00Z",
+          "catalogSignatureStatus": "productionSigned",
+          "skills": [
+            {
+              "id": "marketplace-weather-briefing",
+              "displayName": "Weather Briefing",
+              "summary": "Summarizes weather through an approved provider API.",
+              "version": "2.1.0",
+              "author": "Kairo Marketplace",
+              "category": "External API",
+              "kind": "custom",
+              "permissions": ["externalConnectors"],
+              "riskTier": "Tier 3: external data request",
+              "requiresConfirmation": true,
+              "installSurface": "Access Skill Manager",
+              "manifestURL": "http://example.com/weather-briefing.json",
+              "screenshots": ["assets/weather-briefing-card.svg"],
+              "changelog": ["Adds storm alerts."]
+            }
+          ]
+        }
+        """
+        let httpClient = AgentSkillMockHTTPClient(statusCode: 200, body: body)
+        let service = AgentSkillMarketplaceCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-skills/skills.json")!,
+            httpClient: httpClient
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected non-HTTPS marketplace manifest URL to fail closed.")
+        } catch let error as AgentSkillMarketplaceCatalogError {
+            XCTAssertEqual(
+                error,
+                .invalidManifestURL(
+                    skillID: "marketplace-weather-briefing",
+                    manifestURL: "http://example.com/weather-briefing.json"
+                )
+            )
+        }
+    }
+
     func testAgentSkillMarketplaceCatalogServiceFetchesManifestForDownloadableSkill() async throws {
         let skill = AgentSkill.marketplaceTemplate(
             id: "marketplace-weather-briefing",
