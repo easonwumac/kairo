@@ -6,7 +6,7 @@ Shared content enters Kairo only through Share Extension, document/photo pickers
 
 On-device deletion is user-triggered for chat history, memory JSON/export content, downloaded local models, saved API keys, OAuth tokens, and metadata-only audit logs. If a future Kairo backend account is added, backend account-deletion copy must be reviewed separately before release.
 
-For the current beta, App Privacy Labels should remain no tracking and no collected data. The submitted binary has no analytics SDK, no backend account, no cloud memory sync, and no crash/telemetry collection provider. If any of those are added later, the privacy labels and this review copy must be updated before submission.
+For the current beta, App Privacy Labels should remain no tracking and no collected data. The submitted binary has no analytics SDK, no backend account, no cloud memory sync, no crash/telemetry collection provider, and no provider-side sync beyond explicit user-configured API calls. If any of those are added later, the privacy labels and this review copy must be updated before submission.
 
 Background tasks are bounded refresh/index/verify/cleanup jobs only. Kairo is not a daemon, does not watch the screen, and background work can be disabled by the user through iOS settings.
 

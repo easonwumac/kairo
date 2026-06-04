@@ -298,6 +298,10 @@ final class SourceHealthTests: XCTestCase {
             contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
             encoding: .utf8
         )
+        let reviewNotes = try String(
+            contentsOf: root.appendingPathComponent("docs/APP_REVIEW_NOTES.md"),
+            encoding: .utf8
+        )
 
         XCTAssertEqual(manifest["NSPrivacyTracking"] as? Bool, false)
         XCTAssertTrue((manifest["NSPrivacyTrackingDomains"] as? [Any])?.isEmpty == true)
@@ -314,6 +318,16 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(privacyLabelsChecklist.contains("no analytics SDK"))
         XCTAssertTrue(privacyLabelsChecklist.contains("no backend account"))
         XCTAssertTrue(privacyLabelsChecklist.contains("docs/REAL_DEVICE_BETA_SIGNOFF.md"))
+        let privacyChangeTriggers = [
+            "no analytics SDK",
+            "no backend account",
+            "no cloud memory sync",
+            "no crash/telemetry collection provider",
+            "no provider-side sync beyond explicit user-configured API calls"
+        ]
+        for trigger in privacyChangeTriggers {
+            XCTAssertTrue(reviewNotes.contains(trigger), trigger)
+        }
         XCTAssertFalse(privacyLabelsChecklist.localizedCaseInsensitiveContains("tracking: yes"))
         XCTAssertFalse(privacyLabelsChecklist.localizedCaseInsensitiveContains("data collected: yes"))
     }
@@ -467,7 +481,7 @@ final class SourceHealthTests: XCTestCase {
             "Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions.",
             "On-device deletion is user-triggered for chat history, memory JSON/export content, downloaded local models, saved API keys, OAuth tokens, and metadata-only audit logs.",
             "For the current beta, App Privacy Labels should remain no tracking and no collected data.",
-            "The submitted binary has no analytics SDK, no backend account, no cloud memory sync, and no crash/telemetry collection provider.",
+            "The submitted binary has no analytics SDK, no backend account, no cloud memory sync, no crash/telemetry collection provider, and no provider-side sync beyond explicit user-configured API calls.",
             "Local model catalog/download/select/delete are present, but iOS production local inference is not complete.",
             "macOS/dev reply checks and benchmark numbers are not iPhone runtime proof.",
             "HomeKit is limited to preview/demo/test scaffolding in this beta.",
@@ -703,6 +717,7 @@ final class SourceHealthTests: XCTestCase {
             "Real-device sign-off has no `Blocked - device unavailable` rows",
             "App Review notes do not claim iOS production local inference",
             "Privacy labels match `Kairo/Resources/PrivacyInfo.xcprivacy`",
+            "Privacy-label change triggers are still absent from the submitted binary",
             "Purpose strings match current beta capabilities",
             "iOS target readiness has signed-build evidence for Apple Developer entitlement resolution",
             "iOS production inference runtime, which remains Planned",
