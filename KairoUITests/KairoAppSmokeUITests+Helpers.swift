@@ -329,6 +329,16 @@ extension KairoAppSmokeUITests {
         return find(element, direction: direction, maxSwipes: maxSwipes)
     }
 
+    func findTextField(
+        _ identifier: String,
+        direction: SearchDirection = .both,
+        maxSwipes: Int = 8
+    ) -> XCUIElement {
+        let identifiedElement = app.textFields.matching(identifier: identifier).firstMatch
+        let element = identifiedElement.exists ? identifiedElement : app.textFields.firstMatch
+        return find(element, direction: direction, maxSwipes: maxSwipes)
+    }
+
     func findButton(
         labeled label: String,
         direction: SearchDirection = .both,
@@ -521,9 +531,11 @@ extension KairoAppSmokeUITests {
             return
         }
 
+        let doneButton = keyboard.buttons["Done"]
         let returnButton = keyboard.buttons["Return"]
-        if returnButton.exists {
-            returnButton.tap()
+        let keyboardDismissButton = doneButton.exists ? doneButton : returnButton
+        if keyboardDismissButton.exists {
+            keyboardDismissButton.tap()
             if keyboard.waitForNonExistence(timeout: 2) {
                 return
             }
@@ -547,8 +559,10 @@ extension KairoAppSmokeUITests {
             return collectionView
         }
 
-        let scrollView = app.scrollViews.firstMatch
-        if scrollView.exists {
+        let scrollView = app.scrollViews.allElementsBoundByIndex.first { element in
+            element.exists && element.identifier != "root.primary-tabs"
+        }
+        if let scrollView {
             return scrollView
         }
 

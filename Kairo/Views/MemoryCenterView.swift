@@ -1,7 +1,11 @@
 #if canImport(SwiftUI)
+import Foundation
 import SwiftUI
 
 public struct MemoryCenterView: View {
+    private static let searchSectionScrollID = "memory.search.section.scroll"
+
+    @FocusState private var isAddFieldFocused: Bool
     @State private var draft: String = ""
     @State private var searchQuery: String = ""
     @State private var memories: [MemoryRecord] = []
@@ -20,86 +24,136 @@ public struct MemoryCenterView: View {
 
     public var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    memoryLibraryHeader
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        memoryLibraryHeader
 
-                    memoryAddSection
+                        memorySearchSection
+                            .id(Self.searchSectionScrollID)
 
-                    if let errorMessage {
-                        Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
-                            .font(.caption)
-                            .foregroundStyle(KairoDesign.red)
-                            .accessibilityIdentifier("memory.error")
-                    }
+                        memoryAddSection
 
-                    KairoGroupedSurface {
-                        if memories.isEmpty {
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text(KairoL10n.string("memory.empty.title"))
-                                    .font(.subheadline.weight(.semibold))
-                                    .accessibilityIdentifier("memory.empty")
-                                Text(KairoL10n.string("memory.empty.subtitle"))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, 10)
-                        } else {
-                            ForEach(memories) { memory in
-                                HStack(alignment: .top, spacing: 12) {
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text(memory.title)
-                                            .font(.subheadline.weight(.semibold))
-                                        Text(memory.summary)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(2)
-                                        KairoStatusPill(
-                                            title: memory.source.rawValue,
-                                            systemImage: "doc.text.magnifyingglass",
-                                            tint: KairoDesign.teal
-                                        )
-                                    }
-
-                                    Spacer(minLength: 0)
-
-                                    Button(role: .destructive) {
-                                        delete(memory)
-                                    } label: {
-                                        Label(KairoL10n.string("memory.delete.accessibility"), systemImage: "trash")
-                                            .labelStyle(.iconOnly)
-                                            .font(.subheadline.weight(.semibold))
-                                            .frame(width: 36, height: 36)
-                                            .background(KairoDesign.red.opacity(0.10), in: Circle())
-                                    }
-                                    .buttonStyle(.plain)
-                                    .foregroundStyle(KairoDesign.red)
-                                    .accessibilityLabel(KairoL10n.string("memory.delete.accessibility"))
-                                    .accessibilityIdentifier("memory.record.delete")
-                                }
-                                .padding(.vertical, 10)
-                                .accessibilityElement(children: .contain)
-                                .accessibilityIdentifier("memory.record")
-
-                                if memory.id != memories.last?.id {
-                                    Divider()
-                                }
-                            }
+                        if let errorMessage {
+                            Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(KairoDesign.red)
+                                .accessibilityIdentifier("memory.error")
                         }
+
+                        memoryRecordsSection
                     }
-                    .accessibilityIdentifier("memory.list")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 18)
+                    .padding(.bottom, 32)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 18)
-                .padding(.top, 18)
-                .padding(.bottom, 32)
+                .background(KairoDesign.background.ignoresSafeArea())
+                .scrollIndicators(.hidden)
+                .navigationTitle(KairoL10n.string("memory.navigationTitle"))
+                .task(id: searchQuery) { await reload() }
+                .refreshable { await reload() }
+                .onChange(of: memories.count) { _, _ in
+                    withAnimation(.snappy(duration: 0.25)) {
+                        scrollProxy.scrollTo(Self.searchSectionScrollID, anchor: .top)
+                    }
+                }
             }
-            .background(KairoDesign.background.ignoresSafeArea())
-            .scrollIndicators(.hidden)
-            .navigationTitle(KairoL10n.string("memory.navigationTitle"))
-            .task(id: searchQuery) { await reload() }
-            .refreshable { await reload() }
         }
+    }
+
+    private var memoryRecordsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if memories.isEmpty {
+                KairoGroupedSurface {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(KairoL10n.string("memory.empty.title"))
+                            .font(.subheadline.weight(.semibold))
+                            .accessibilityIdentifier("memory.empty")
+                        Text(KairoL10n.string("memory.empty.subtitle"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 10)
+                }
+            } else {
+                ForEach(memories) { memory in
+                    memoryRecordCard(memory)
+                }
+            }
+        }
+        .accessibilityIdentifier("memory.list")
+    }
+
+    private func memoryRecordCard(_ memory: MemoryRecord) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(memory.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                        .lineLimit(2)
+
+                    Text(memory.summary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                Button(role: .destructive) {
+                    delete(memory)
+                } label: {
+                    Label(KairoL10n.string("memory.delete.accessibility"), systemImage: "trash")
+                        .labelStyle(.iconOnly)
+                        .font(.subheadline.weight(.semibold))
+                        .frame(width: 36, height: 36)
+                        .background(KairoDesign.red.opacity(0.10), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(KairoDesign.red)
+                .accessibilityLabel(KairoL10n.string("memory.delete.accessibility"))
+                .accessibilityIdentifier("memory.record.delete")
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    KairoStatusPill(
+                        title: sourceLabel(for: memory.source),
+                        systemImage: sourceIcon(for: memory.source),
+                        tint: KairoDesign.teal
+                    )
+                    KairoStatusPill(
+                        title: KairoL10n.string("memory.record.updated", Self.memoryDateFormatter.string(from: memory.updatedAt)),
+                        systemImage: "clock",
+                        tint: KairoDesign.blue
+                    )
+                }
+
+                HStack(spacing: 8) {
+                    KairoStatusPill(
+                        title: memory.cloudSyncAllowed ? KairoL10n.string("memory.record.cloudAllowed") : KairoL10n.string("memory.record.localOnly"),
+                        systemImage: memory.cloudSyncAllowed ? "icloud.fill" : "lock.shield.fill",
+                        tint: memory.cloudSyncAllowed ? KairoDesign.blue : KairoDesign.green
+                    )
+                    KairoStatusPill(
+                        title: expiryLabel(for: memory),
+                        systemImage: memory.expiresAt == nil ? "calendar.badge.checkmark" : "calendar.badge.clock",
+                        tint: memory.expiresAt == nil ? KairoDesign.green : KairoDesign.amber
+                    )
+                }
+            }
+        }
+        .padding(14)
+        .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(KairoDesign.line, lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("memory.record")
     }
 
     private var memoryLibraryHeader: some View {
@@ -145,7 +199,14 @@ public struct MemoryCenterView: View {
                         tint: KairoDesign.green
                     )
                 }
+            }
+        }
+        .accessibilityIdentifier("memory.library.header")
+    }
 
+    private var memorySearchSection: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
                         .font(.subheadline.weight(.semibold))
@@ -169,7 +230,7 @@ public struct MemoryCenterView: View {
                     .accessibilityIdentifier("memory.search.summary")
             }
         }
-        .accessibilityIdentifier("memory.library.header")
+        .accessibilityIdentifier("memory.search.section")
     }
 
     private var memoryAddSection: some View {
@@ -192,8 +253,12 @@ public struct MemoryCenterView: View {
                     }
                 }
 
-                TextField(KairoL10n.string("memory.add.placeholder"), text: $draft, axis: .vertical)
-                    .lineLimit(2...5)
+                TextField(KairoL10n.string("memory.add.placeholder"), text: $draft)
+                    .focused($isAddFieldFocused)
+                    .submitLabel(.done)
+                    .onSubmit {
+                        isAddFieldFocused = false
+                    }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
                     .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -205,6 +270,7 @@ public struct MemoryCenterView: View {
                     Label(KairoL10n.string("memory.add.save"), systemImage: "plus.circle.fill")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity, alignment: .center)
+                        .accessibilityIdentifier("memory.add.save")
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -229,6 +295,66 @@ public struct MemoryCenterView: View {
             Int64(memories.count),
             trimmedSearchQuery
         )
+    }
+
+    private static let memoryDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter
+    }()
+
+    private func sourceLabel(for source: MemorySource) -> String {
+        switch source {
+        case .manual:
+            return KairoL10n.string("memory.source.manual")
+        case .chat:
+            return KairoL10n.string("memory.source.chat")
+        case .shareExtension:
+            return KairoL10n.string("memory.source.shareExtension")
+        case .documentPicker:
+            return KairoL10n.string("memory.source.documentPicker")
+        case .photosPicker:
+            return KairoL10n.string("memory.source.photosPicker")
+        case .appIntent:
+            return KairoL10n.string("memory.source.appIntent")
+        case .calendar:
+            return KairoL10n.string("memory.source.calendar")
+        case .reminders:
+            return KairoL10n.string("memory.source.reminders")
+        case .externalConnector:
+            return KairoL10n.string("memory.source.externalConnector")
+        }
+    }
+
+    private func sourceIcon(for source: MemorySource) -> String {
+        switch source {
+        case .manual:
+            return "square.and.pencil"
+        case .chat:
+            return "bubble.left.and.bubble.right.fill"
+        case .shareExtension:
+            return "square.and.arrow.down"
+        case .documentPicker:
+            return "doc.text.fill"
+        case .photosPicker:
+            return "photo.fill"
+        case .appIntent:
+            return "wand.and.sparkles"
+        case .calendar:
+            return "calendar"
+        case .reminders:
+            return "checklist.checked"
+        case .externalConnector:
+            return "point.3.connected.trianglepath.dotted"
+        }
+    }
+
+    private func expiryLabel(for memory: MemoryRecord) -> String {
+        guard let expiresAt = memory.expiresAt else {
+            return KairoL10n.string("memory.record.noExpiry")
+        }
+        return KairoL10n.string("memory.record.expires", Self.memoryDateFormatter.string(from: expiresAt))
     }
 
     private func save() {

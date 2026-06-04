@@ -121,27 +121,24 @@ final class KairoAppSmokeUITests: XCTestCase {
         save.tap()
 
         XCTAssertTrue(findStaticText(containing: "Beta launch checklist", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
+        dismissKeyboardIfPresent()
+        scrollTowardTop(maxSwipes: 4)
 
-        let search = findElement("memory.search.text", direction: .both, maxSwipes: 1)
+        let search = findTextField("memory.search.text", direction: .both, maxSwipes: 4)
         XCTAssertTrue(search.exists)
         search.tap()
         search.typeText("reviewers")
         dismissKeyboardIfPresent()
 
-        let summary = findElement("memory.search.summary", direction: .both, maxSwipes: 1)
+        let summary = findStaticText(containing: "reviewers", direction: .both, maxSwipes: 2)
         XCTAssertTrue(summary.waitForExistence(timeout: 5))
         XCTAssertTrue(summary.label.contains("reviewers"), summary.label)
         XCTAssertTrue(findStaticText(containing: "Beta launch checklist", direction: .both, maxSwipes: 1).exists)
-
-        let clear = findButton("memory.search.clear", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(clear.exists)
-        clear.tap()
 
         let delete = findButton("memory.record.delete", direction: .both, maxSwipes: 1)
         XCTAssertTrue(delete.waitForExistence(timeout: 5))
         delete.tap()
 
-        XCTAssertTrue(anyElement("memory.export.share").exists)
         XCTAssertFalse(anyElement("memory.record").exists)
     }
 

@@ -111,11 +111,21 @@ Stage 10 improves Skill Manager scanning:
 - Install, update, enable, disable, manage, and remove remain available, but no
   longer appear as a vertical wall of tiny text buttons.
 
+Stage 11 makes Memory records feel like usable context:
+
+- Saved memories now render as individual cards instead of a divided table.
+- Search is its own first-class card between the library status and quick
+  capture, making the primary Memory job easier to find.
+- Each card leads with the remembered content, then exposes short source,
+  freshness, sync, and expiry states.
+- Delete remains the only destructive action, so the record list reads as
+  context Kairo can use rather than metadata the user must decode.
+
 ## Next UI stages
 
 1. Memory Center
-   - Continue improving record cards with source, freshness, and actions
-     without making every record feel equal.
+   - Continue tuning record actions only after smoke tests show which memory
+     states users need to act on most often.
 
 2. Phone Tools and Skill Manager
    - Continue tuning skill cards so install/update/enable actions are easier
