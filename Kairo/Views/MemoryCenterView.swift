@@ -30,10 +30,10 @@ public struct MemoryCenterView: View {
             ScrollViewReader { scrollProxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
+                        memoryAddSection
+
                         memorySearchSection
                             .id(Self.searchSectionScrollID)
-
-                        memoryAddSection
 
                         if let errorMessage {
                             Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
@@ -330,10 +330,6 @@ public struct MemoryCenterView: View {
                             Text(KairoL10n.string("memory.add.section"))
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(KairoDesign.ink)
-                            Text(KairoL10n.string("memory.add.detail"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
                         }
 
                         Spacer(minLength: 8)
@@ -344,6 +340,8 @@ public struct MemoryCenterView: View {
                             .frame(width: 34, height: 34)
                             .background(KairoDesign.blue.opacity(0.10), in: Circle())
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(showAddContext ? KairoL10n.string("memory.add.hide") : KairoL10n.string("memory.add.show"))
@@ -360,6 +358,11 @@ public struct MemoryCenterView: View {
                         .padding(.vertical, 8)
                         .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .accessibilityIdentifier("memory.add.text")
+
+                    Text(KairoL10n.string("memory.add.detail"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Button {
                         save()

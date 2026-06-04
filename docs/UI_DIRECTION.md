@@ -547,6 +547,16 @@ Stage 57 makes Memory overview terse:
 - Find context, Add context, records, per-record Details, Delete, and search
   behavior keep their existing progressive paths.
 
+Stage 58 makes Memory add context action-first:
+
+- Add context no longer shows explanatory detail copy on the first layer.
+- Add context now sits before search so the Memory screen opens on the primary
+  save action, then search and saved records follow.
+- The Add context disclosure opens directly from a compact action row; save
+  guidance appears only after expansion next to the input field.
+- Search, manual save, record Details, Delete, and export behavior keep their
+  existing identifiers and progressive paths.
+
 ## Next UI stages
 
 1. Product surface audit
