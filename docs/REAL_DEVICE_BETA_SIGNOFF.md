@@ -24,7 +24,7 @@ Do not treat a successful build, simulator install, TestFlight upload, or `xcode
 
 ## Current device availability
 
-Last checked with `xcrun devicectl list devices` on 2026-06-04 10:23 CST:
+Last checked with `xcrun devicectl list devices` on 2026-06-04 10:37 CST:
 
 | Device | Identifier | State |
 |---|---|---|
