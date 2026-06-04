@@ -45,16 +45,6 @@ struct SettingsAnswerOverviewCard: View {
                 .accessibilityIdentifier("settings.routing.details.toggle")
 
                 if showSetupDetails {
-                    Text(KairoL10n.string("settings.routing.detail"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(KairoL10n.string("settings.routing.details.subtitle"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
                     HStack(spacing: 8) {
                         KairoStatusPill(
                             title: hasAPIKey ? KairoL10n.string("settings.routing.cloudReady") : KairoL10n.string("settings.routing.cloudNeedsKey"),

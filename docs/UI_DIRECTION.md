@@ -653,6 +653,15 @@ Stage 68 makes Access expanded layers action-first:
 - Capability rows, HomeKit demos, skill manager flows, manifest import, and
   existing Access smoke identifiers keep their current paths.
 
+Stage 69 makes Settings route details status-first:
+
+- The answer-route setup details expansion no longer starts with routing
+  explanation copy.
+- Expansion now goes straight to cloud key, connected account, and local model
+  status pills, keeping Settings focused on readiness and next setup actions.
+- Route preference, setup details toggle, OpenAI key controls, connected
+  accounts, and model setup identifiers keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit
