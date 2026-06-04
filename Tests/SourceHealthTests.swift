@@ -733,9 +733,14 @@ final class SourceHealthTests: XCTestCase {
             contentsOf: root.appendingPathComponent("NEXT_STEPS.md"),
             encoding: .utf8
         )
+        let releaseHygiene = try String(
+            contentsOf: root.appendingPathComponent("docs/RELEASE_HYGIENE.md"),
+            encoding: .utf8
+        )
 
         XCTAssertTrue(readiness.contains("docs/APP_STORE_SUBMISSION_CHECKLIST.md"))
         XCTAssertTrue(nextSteps.contains("docs/APP_STORE_SUBMISSION_CHECKLIST.md"))
+        XCTAssertTrue(nextSteps.contains("docs/RELEASE_HYGIENE.md"))
 
         let requiredDocuments = [
             "docs/APP_STORE_READINESS.md",
@@ -744,7 +749,8 @@ final class SourceHealthTests: XCTestCase {
             "docs/REAL_DEVICE_BETA_SIGNOFF.md",
             "docs/IOS_TARGET_READINESS.md",
             "docs/CATALOG_RELEASE_CHECKLIST.md",
-            "docs/TRUST_STORE_RUNBOOK.md"
+            "docs/TRUST_STORE_RUNBOOK.md",
+            "docs/RELEASE_HYGIENE.md"
         ]
         for document in requiredDocuments {
             XCTAssertTrue(submissionChecklist.contains(document), document)
@@ -771,6 +777,17 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(submissionChecklist.contains("App-side signature verification proves fail-closed validation behavior, not that production catalogs have been published."))
         XCTAssertTrue(submissionChecklist.contains("macOS/dev local-model reply checks and benchmark adapters are not iPhone runtime proof."))
         XCTAssertTrue(submissionChecklist.contains("Current deletion proof is on-device only"))
+        XCTAssertTrue(submissionChecklist.contains("GitHub Actions success must match the submitted commit `HEAD`"))
+        XCTAssertTrue(releaseHygiene.contains("swift test"))
+        XCTAssertTrue(releaseHygiene.contains("xcodegen generate"))
+        XCTAssertTrue(releaseHygiene.contains("git diff --check"))
+        XCTAssertTrue(releaseHygiene.contains("gh run list --repo easonwumac/kairo --branch main --limit 5"))
+        XCTAssertTrue(releaseHygiene.contains("The matching `headSha` must equal `HEAD`"))
+        XCTAssertTrue(releaseHygiene.contains("Older successful runs do not prove the submitted commit."))
+        XCTAssertTrue(releaseHygiene.contains("Real-device beta sign-off still requires `docs/REAL_DEVICE_BETA_SIGNOFF.md`"))
+        XCTAssertTrue(releaseHygiene.contains("App-side catalog signature validation proves fail-closed behavior only"))
+        XCTAssertTrue(releaseHygiene.contains("macOS/dev local-model reply checks and benchmark adapters are not iPhone production inference proof"))
+        XCTAssertTrue(releaseHygiene.contains("Do not stage `tmp/` screenshots as release evidence."))
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("production local inference is complete"))
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("live HomeKit control is complete"))
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("silently creates Apple Shortcuts"))

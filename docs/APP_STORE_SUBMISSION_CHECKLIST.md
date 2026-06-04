@@ -11,6 +11,7 @@ This is the final handoff checklist before uploading a Kairo beta or App Review 
 - `docs/IOS_TARGET_READINESS.md` tracks signing, target, simulator-build, App Group, purpose-string, and app-bundle evidence boundaries.
 - `docs/CATALOG_RELEASE_CHECKLIST.md` is the production gate for standalone skill and model catalogs.
 - `docs/TRUST_STORE_RUNBOOK.md` is the rotation/revocation runbook for signed catalog trust stores.
+- `docs/RELEASE_HYGIENE.md` is the repeatable local test, scan, and GitHub Actions verification runbook.
 
 ## Blocking Gates
 
@@ -34,3 +35,4 @@ Do not submit until all gates below are true:
 - App-side signature verification proves fail-closed validation behavior, not that production catalogs have been published.
 - macOS/dev local-model reply checks and benchmark adapters are not iPhone runtime proof.
 - Current deletion proof is on-device only; do not add backend account deletion copy unless a backend account exists.
+- GitHub Actions success must match the submitted commit `HEAD`; older successful `main` runs do not prove the current handoff.
