@@ -537,9 +537,34 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(readiness.contains("unknown/revoked/pending-publication/out-of-window/invalid signing-key gating"))
         XCTAssertTrue(localModelFallback.contains("unknown, revoked, pending-publication, out-of-window, unsupported, or invalid signing keys"))
         XCTAssertTrue(localModelFallback.contains("production key material is absent, unpublished, or mismatched"))
+        XCTAssertTrue(readme.contains("| Local model catalog/download/select/delete | Scaffolded |"))
         XCTAssertTrue(readme.contains("progress/cancel UI, and runtime-unavailable handling are in the beta path"))
         XCTAssertTrue(readme.contains("remaining blockers are production signed catalog/public-key publication and real-device runtime proof"))
+        XCTAssertFalse(readme.contains("| Local model catalog/download/select/delete | Implemented |"))
         XCTAssertFalse(readme.contains("remaining gaps are progress/cancel UI"))
+    }
+
+    func testPrivacyLabelsChecklistKeepsDeletionAndLabelBoundariesCurrent() throws {
+        let root = packageRootURL()
+        let privacyChecklist = try String(
+            contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(privacyChecklist.contains("Tracking: No."))
+        XCTAssertTrue(privacyChecklist.contains("Data collected: No collected data."))
+        XCTAssertTrue(privacyChecklist.contains("Required Reason API usage: UserDefaults only, reason `CA92.1`."))
+        XCTAssertTrue(privacyChecklist.contains("no analytics SDK, no ad tracking, no backend account, no cloud memory sync, no crash/telemetry collection provider, and no provider-side sync beyond user-configured API calls"))
+        XCTAssertTrue(privacyChecklist.contains("## Deletion Evidence Boundary"))
+        XCTAssertTrue(privacyChecklist.contains("Current deletion proof is on-device and user-triggered only"))
+        XCTAssertTrue(privacyChecklist.contains("Chat history: delete a thread from Chat history"))
+        XCTAssertTrue(privacyChecklist.contains("Memory Center delete/export covers active records"))
+        XCTAssertTrue(privacyChecklist.contains("Settings / Models delete removes installed model files and clears selected-model state"))
+        XCTAssertTrue(privacyChecklist.contains("Settings delete/disconnect removes Keychain-backed secrets"))
+        XCTAssertTrue(privacyChecklist.contains("Settings / Privacy exposes Clear Audit Log for metadata-only audit records"))
+        XCTAssertTrue(privacyChecklist.contains("not applicable in the current beta because Kairo has no backend account"))
+        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("backend account deletion is supported"))
+        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("cloud-sync deletion is supported"))
     }
 
     func testRealDeviceSignOffDocsRequirePhysicalDeviceEvidence() throws {
@@ -562,6 +587,12 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(signOff.contains("Do not mark any item as passed from simulator runs, package tests, source-health tests, screenshots from `tmp/`, or code inspection alone."))
         XCTAssertTrue(signOff.contains("Required evidence must come from a reachable physical iPhone or iPad"))
         XCTAssertTrue(signOff.contains("Simulator, package-test, and XCUITest evidence may be linked as supporting coverage only; it is not real-device sign-off."))
+        XCTAssertTrue(signOff.contains("## Install and launch proof chain"))
+        XCTAssertTrue(signOff.contains("xcodebuild -destination 'id=<device-id>'"))
+        XCTAssertTrue(signOff.contains("xcrun devicectl device install app --device <device-id> <path-to-app>"))
+        XCTAssertTrue(signOff.contains("xcrun devicectl device info apps --device <device-id>"))
+        XCTAssertTrue(signOff.contains("xcrun devicectl device process launch --device <device-id> app.kairo.ios"))
+        XCTAssertTrue(signOff.contains("Do not treat a successful build, simulator install, TestFlight upload, or `xcodebuild` destination listing as proof"))
         XCTAssertTrue(signOff.contains("Blocked - device unavailable"))
         XCTAssertTrue(signOff.contains("Chat history restart persistence"))
         XCTAssertTrue(signOff.contains("App Intents Ask"))
@@ -750,6 +781,11 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(iosTargetReadiness.contains("requires signed physical-device runtime evidence"))
         XCTAssertTrue(iosTargetReadiness.contains("requires physical-device permission prompts"))
         XCTAssertTrue(iosTargetReadiness.contains("requires inspection of the signed app bundle/archive"))
+        XCTAssertTrue(iosTargetReadiness.contains("signed `xcodebuild` for `id=<device-id>`"))
+        XCTAssertTrue(iosTargetReadiness.contains("built `.app` exists in derived data"))
+        XCTAssertTrue(iosTargetReadiness.contains("xcrun devicectl device install app"))
+        XCTAssertTrue(iosTargetReadiness.contains("xcrun devicectl device info apps --device <device-id>` lists `app.kairo.ios`"))
+        XCTAssertTrue(iosTargetReadiness.contains("xcrun devicectl device process launch --device <device-id> app.kairo.ios"))
         XCTAssertTrue(iosTargetReadiness.contains("simulator build evidence only"))
     }
 

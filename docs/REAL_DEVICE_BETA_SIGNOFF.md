@@ -10,6 +10,18 @@ This file is the release-blocking physical-device evidence log for the Kairo bet
 - If `devicectl` lists devices as `unavailable`, keep all rows as `Blocked - device unavailable`.
 - Do not mark local-model iOS runtime, live HomeKit control, cross-app private reads, arbitrary UI control, or silent Apple Shortcut creation as passed in this file.
 
+## Install and launch proof chain
+
+Before marking any row as passed on a real device, capture each step separately:
+
+1. Build the signed app for the physical device with `xcodebuild -destination 'id=<device-id>'`.
+2. Confirm the built `.app` exists in the selected derived-data path.
+3. Install explicitly with `xcrun devicectl device install app --device <device-id> <path-to-app>`.
+4. Verify the installed bundle appears in `xcrun devicectl device info apps --device <device-id>`.
+5. Launch with `xcrun devicectl device process launch --device <device-id> app.kairo.ios` after bundle presence is confirmed.
+
+Do not treat a successful build, simulator install, TestFlight upload, or `xcodebuild` destination listing as proof that the app is installed or launched on a physical device.
+
 ## Current device availability
 
 Last checked with `xcrun devicectl list devices` on 2026-06-04:

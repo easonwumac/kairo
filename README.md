@@ -79,7 +79,7 @@ Use these labels throughout the docs:
 | EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist; Shortcut nodes stay draft/preview oriented. |
 | HomeKit | Scaffolded | Typed preview/action model and test/demo UI exist; real HomeKit entitlement path is not complete. |
 | OAuth provider APIs | Scaffolded | Authorization/callback/status scaffolds exist; real provider read/write integrations are planned. |
-| Local model catalog/download/select/delete | Implemented | User-triggered downloads and settings exist; model weights are never bundled. |
+| Local model catalog/download/select/delete | Scaffolded | User-triggered catalog/download/settings path exists, model weights are never bundled, and remaining blockers are production signed catalog/public-key publication plus real-device runtime proof. |
 | macOS/dev local model runtime adapter | Test-only / Mock | External command validation path for development. |
 | iOS production local model inference | Planned | Not implemented; do not treat macOS/dev reply checks as iPhone runtime proof. |
 | Audit / memory lifecycle hardening | Implemented | Live audit logs persist metadata-only events; Memory Center supports export and delete. |

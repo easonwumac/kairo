@@ -39,6 +39,17 @@ Future-only purpose strings must remain absent from the beta plist until the cor
 - Verify `docs/APP_REVIEW_NOTES.md` does not claim backend account deletion or cloud-sync deletion unless a backend account exists.
 - Verify `docs/REAL_DEVICE_BETA_SIGNOFF.md` remains the source for physical-device evidence; privacy labels do not prove runtime behavior.
 
+## Deletion Evidence Boundary
+
+Current deletion proof is on-device and user-triggered only:
+
+- Chat history: delete a thread from Chat history; package/UI evidence exists, but restart persistence still needs real-device sign-off.
+- Memory records: Memory Center delete/export covers active records, and `JSONFileMemoryStore.purgeDeleted` removes deleted JSON records from disk.
+- Local models: Settings / Models delete removes installed model files and clears selected-model state; no model weights are bundled or committed.
+- API keys and OAuth tokens: Settings delete/disconnect removes Keychain-backed secrets; malformed token handling requires reauthorization instead of silently treating stale credentials as connected.
+- Audit logs: Settings / Privacy exposes Clear Audit Log for metadata-only audit records; audit deletion must not be described as deleting chat history, memories, API keys, OAuth tokens, or downloaded models.
+- Backend account deletion: not applicable in the current beta because Kairo has no backend account, server-side audit log, remotely stored chat history, or cloud memory sync.
+
 ## Change Triggers
 
 Update App Privacy Labels, review notes, and this checklist before submission if any of these are added:

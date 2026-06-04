@@ -58,6 +58,8 @@ These match `BackgroundTaskPolicy.defaultTasks`.
 
 Current device availability was checked with `xcrun devicectl list devices` on 2026-06-04, and all listed physical devices were `unavailable`. Until a signed build runs on a reachable physical iPhone or iPad, the checks below remain release-blocking and must not be replaced by simulator build output, package tests, source-health tests, or screenshots from `tmp/`.
 
+Real-device install/launch evidence must prove the full sequence separately: signed `xcodebuild` for `id=<device-id>`, built `.app` exists in derived data, `xcrun devicectl device install app` succeeds, `xcrun devicectl device info apps --device <device-id>` lists `app.kairo.ios`, and `xcrun devicectl device process launch --device <device-id> app.kairo.ios` succeeds. A successful build or simulator run is not enough.
+
 Physical-device or Apple Developer evidence is still required for:
 
 - entitlement resolution against the Apple Developer team;
