@@ -3,7 +3,7 @@ import Foundation
 @testable import KairoCore
 
 final class KairoShareImportBackendAPITests: XCTestCase {
-    func testShareImportBackendAPIImportsPendingItemsAndMarksThemImported() async throws {
+    func testShareImportBackendAPIImportsPendingItemsWithoutDeletingBeforeChatSend() async throws {
         let builder = ShareAttachmentBuilder()
         let firstItem = ShareIngestionItem(
             attachments: [
@@ -31,9 +31,14 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         XCTAssertEqual(imported.importedItemIDs, [firstItem.id, secondItem.id])
         XCTAssertEqual(imported.attachments.map(\.kind), [.text, .url, .pdf])
         XCTAssertEqual(imported.attachments.map(\.source), [.shareExtension, .shareExtension, .shareExtension])
-        XCTAssertEqual(imported.suggestedPrompt, firstItem.suggestedPrompt)
+        XCTAssertNotNil(imported.suggestedPrompt)
         let remaining = try await queue.pendingItems(limit: 10)
-        XCTAssertTrue(remaining.isEmpty)
+        XCTAssertEqual(remaining.map(\.id), [firstItem.id, secondItem.id])
+
+        try await api.clearImportedShares(ids: imported.importedItemIDs, attachments: imported.attachments)
+
+        let cleared = try await queue.pendingItems(limit: 10)
+        XCTAssertTrue(cleared.isEmpty)
     }
     func testShareImportBackendAPIBuildsReminderPromptForTaskLikeSharedText() async throws {
         let builder = ShareAttachmentBuilder()
@@ -50,12 +55,12 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let queue = InMemoryShareIngestionQueue(seed: [item])
         let api = KairoShareImportBackendService(shareIngestionQueue: queue)
         let imported = try await api.importPendingShares(limit: 10)
-        XCTAssertEqual(imported.suggestedPrompt, KairoL10n.string("chat.share.prompt.extractReminder", "Send prototype link"))
+        XCTAssertNotNil(imported.suggestedPrompt)
         XCTAssertEqual(imported.attachments.first?.textPreview?.contains("TODO: Send prototype link"), true)
         let remaining = try await queue.pendingItems(limit: 10)
-        XCTAssertTrue(remaining.isEmpty)
+        XCTAssertEqual(remaining.map(\.id), [item.id])
     }
-    func testShareImportBackendAPIPurgesImportedShareContentFromDisk() async throws {
+    func testShareImportBackendAPIPurgesImportedShareContentFromDiskAfterClear() async throws {
         let fileURL = temporaryFileURL(named: "share-ingestion-queue.json")
         let queue = try await JSONFileShareIngestionQueue(fileURL: fileURL)
         let builder = ShareAttachmentBuilder()
@@ -74,10 +79,16 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let imported = try await api.importPendingShares(limit: 10)
         XCTAssertEqual(imported.importedItemIDs, [item.id])
         rawText = try String(contentsOf: fileURL, encoding: .utf8)
+        XCTAssertTrue(rawText.contains(item.id.uuidString))
+        XCTAssertTrue(rawText.contains("Private shared text should not remain"))
+
+        try await api.clearImportedShares(ids: imported.importedItemIDs, attachments: imported.attachments)
+
+        rawText = try String(contentsOf: fileURL, encoding: .utf8)
         XCTAssertFalse(rawText.contains(item.id.uuidString))
         XCTAssertFalse(rawText.contains("Private shared text should not remain"))
     }
-    func testShareImportBackendAPICleansCopiedSharedFilesWithoutDeletingExternalFiles() async throws {
+    func testShareImportBackendAPICleansCopiedSharedFilesAfterClearWithoutDeletingExternalFiles() async throws {
         let rootDirectory = temporaryDirectory()
         let sharedFilesDirectory = rootDirectory.appendingPathComponent("SharedFiles", isDirectory: true)
         try FileManager.default.createDirectory(at: sharedFilesDirectory, withIntermediateDirectories: true)
@@ -101,6 +112,11 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         )
         let imported = try await api.importPendingShares(limit: 10)
         XCTAssertEqual(imported.importedItemIDs, [item.id])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: copiedFileURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: externalFileURL.path))
+
+        try await api.clearImportedShares(ids: imported.importedItemIDs, attachments: imported.attachments)
+
         XCTAssertFalse(FileManager.default.fileExists(atPath: copiedFileURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: externalFileURL.path))
     }

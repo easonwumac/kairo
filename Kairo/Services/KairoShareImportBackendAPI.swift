@@ -22,6 +22,7 @@ public struct KairoShareImportResult: Equatable, Sendable {
 
 public protocol KairoShareImportAPI: Sendable {
     func importPendingShares(limit: Int) async throws -> KairoShareImportResult
+    func clearImportedShares(ids: [UUID], attachments: [ChatAttachment]) async throws
 }
 
 public struct KairoShareImportBackendService: KairoShareImportAPI {
@@ -40,20 +41,19 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
         }
         let attachments = items.flatMap(\.attachments)
 
-        var importedItemIDs: [UUID] = []
-        importedItemIDs.reserveCapacity(items.count)
-        for item in items {
-            try await shareIngestionQueue.markImported(id: item.id)
-            try await shareIngestionQueue.delete(id: item.id)
-            importedItemIDs.append(item.id)
-        }
-        cleanupCopiedSharedFiles(from: attachments)
-
         return KairoShareImportResult(
             attachments: attachments,
             suggestedPrompt: Self.suggestedPrompt(for: items),
-            importedItemIDs: importedItemIDs
+            importedItemIDs: items.map(\.id)
         )
+    }
+
+    public func clearImportedShares(ids: [UUID], attachments: [ChatAttachment]) async throws {
+        for id in ids {
+            try await shareIngestionQueue.markImported(id: id)
+            try await shareIngestionQueue.delete(id: id)
+        }
+        cleanupCopiedSharedFiles(from: attachments)
     }
 
     private func cleanupCopiedSharedFiles(from attachments: [ChatAttachment]) {

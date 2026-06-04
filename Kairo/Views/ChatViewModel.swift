@@ -44,6 +44,7 @@ public final class ChatViewModel: ObservableObject {
     private let openAISettingsService: OpenAISettingsService?
     private let localModelChatRuntimeAvailable: Bool
     private var pendingActionSource: PendingActionSource?
+    private var importedShareItemIDs: [UUID] = []
 
     public init(
         historyStore: ChatHistoryStore = InMemoryChatHistoryStore(),
@@ -130,10 +131,12 @@ public final class ChatViewModel: ObservableObject {
     }
 
     public func importPendingShares() async {
+        guard !canSendImportedShareToChat else { return }
         do {
             let imported = try await shareImportAPI.importPendingShares(limit: 10)
             guard !imported.isEmpty else { return }
             pendingAttachments.append(contentsOf: imported.attachments)
+            importedShareItemIDs = imported.importedItemIDs
             if composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 composerText = imported.suggestedPrompt ?? KairoL10n.string("chat.share.prompt.summarizeDefault")
             }
@@ -148,7 +151,15 @@ public final class ChatViewModel: ObservableObject {
 
     public func sendImportedShareToChat() async {
         guard canSendImportedShareToChat else { return }
+        let importedItemIDs = importedShareItemIDs
+        let importedAttachments = pendingAttachments
         await sendComposerMessage()
+        do {
+            try await shareImportAPI.clearImportedShares(ids: importedItemIDs, attachments: importedAttachments)
+            importedShareItemIDs = []
+        } catch {
+            errorMessage = KairoL10n.string("chat.error.importShare", error.localizedDescription)
+        }
         shareImportReviewAction = firstReminderActionFromLatestAssistantMessage()
     }
 
@@ -330,6 +341,7 @@ public final class ChatViewModel: ObservableObject {
 
     private func clearShareImportState() {
         pendingAttachments = []
+        importedShareItemIDs = []
         shareImportNotice = nil
         shareImportPreview = nil
     }

@@ -54,7 +54,7 @@ final class ShareExtensionLifecycleTests: XCTestCase {
             "Article: Shared article text • example.com: https://example.com/story • photo.png"
         )
         let remaining = try await queue.pendingItems(limit: 10)
-        XCTAssertTrue(remaining.isEmpty)
+        XCTAssertEqual(remaining.map(\.id), [item.id])
 
         await viewModel.sendImportedShareToChat()
 
@@ -64,6 +64,8 @@ final class ShareExtensionLifecycleTests: XCTestCase {
         XCTAssertNil(viewModel.shareImportNotice)
         XCTAssertNil(viewModel.shareImportPreview)
         XCTAssertTrue(viewModel.pendingAttachments.isEmpty)
+        let cleared = try await queue.pendingItems(limit: 10)
+        XCTAssertTrue(cleared.isEmpty)
     }
     #endif
 
