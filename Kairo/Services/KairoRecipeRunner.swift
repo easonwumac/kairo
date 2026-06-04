@@ -77,6 +77,7 @@ public struct KairoRecipeRunner: Sendable {
 
         let draftCount = proposedActions.count
         let draftSummary = draftCount == 0 ? "no drafts" : "\(draftCount) draft\(draftCount == 1 ? "" : "s")"
+        let requiresActionConfirmation = proposedActions.contains { $0.requiresConfirmation }
         return KairoRecipeRunResult(
             recipeID: recipe.id,
             startedAt: startedAt,
@@ -86,7 +87,7 @@ public struct KairoRecipeRunner: Sendable {
             stepResults: stepResults,
             proposedActions: proposedActions,
             riskTier: effectiveRisk,
-            requiresConfirmation: false,
+            requiresConfirmation: requiresActionConfirmation,
             success: stepResults.allSatisfy(\.success),
             errorMessage: stepResults.first(where: { !$0.success })?.errorMessage
         )

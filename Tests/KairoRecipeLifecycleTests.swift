@@ -117,11 +117,32 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         ))
 
         XCTAssertTrue(result.success)
-        XCTAssertFalse(result.requiresConfirmation)
+        XCTAssertTrue(result.requiresConfirmation)
         XCTAssertEqual(result.proposedActions.count, 2)
         XCTAssertEqual(result.proposedActions.map(\.kind), [.createReminderDraft, .createReminderDraft])
+        XCTAssertTrue(result.proposedActions.allSatisfy(\.requiresConfirmation))
         XCTAssertTrue(result.stepResults.first?.outputText?.contains("Send Automations UI screenshot") == true)
         XCTAssertTrue(result.summary.contains("2 draft"))
+    }
+
+    func testDailyBriefingRecipeRunsAsDraftOnlyAndRequiresActionConfirmation() async throws {
+        let recipe = KairoRecipeTemplateFactory.dailyBriefing()
+        let runner = KairoRecipeRunner(recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]))
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .app,
+            input: "Review launch plan and prepare follow-up drafts.",
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertTrue(result.success)
+        XCTAssertTrue(result.requiresConfirmation)
+        XCTAssertEqual(result.recipeID, recipe.id)
+        XCTAssertEqual(result.proposedActions.map(\.kind), [.answer])
+        XCTAssertTrue(result.proposedActions.allSatisfy(\.requiresConfirmation))
+        XCTAssertTrue(result.stepResults.allSatisfy(\.success))
     }
 
     func testKairoRecipeRunnerUsesLocalizedLocalFallbackWhenAskStepHasNoProvider() async throws {
