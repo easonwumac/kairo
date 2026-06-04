@@ -126,6 +126,7 @@ final class AgentSkillFeatureTests: XCTestCase {
           "marketplaceVersion": "2026.6",
           "sourceRepository": "https://github.com/easonwumac/kairo-skills",
           "generatedAt": "2026-06-02T00:00:00Z",
+          "catalogSignatureStatus": "productionSigned",
           "skills": [
             {
               "id": "marketplace-weather-briefing",
@@ -178,6 +179,7 @@ final class AgentSkillFeatureTests: XCTestCase {
         XCTAssertEqual(request.url?.absoluteString, "https://easonwumac.github.io/kairo-skills/skills.json")
         XCTAssertEqual(remoteCatalog.sourceRepository.absoluteString, "https://github.com/easonwumac/kairo-skills")
         XCTAssertEqual(remoteCatalog.marketplaceVersion, "2026.6")
+        XCTAssertEqual(remoteCatalog.catalogSignatureStatus, .productionSigned)
         XCTAssertEqual(remoteCatalog.catalog.skills.map(\.id), [
             "marketplace-weather-briefing",
             "marketplace-homekit-scene-guard"
@@ -195,6 +197,47 @@ final class AgentSkillFeatureTests: XCTestCase {
         let homeKit = try XCTUnwrap(remoteCatalog.catalog.skill(id: "marketplace-homekit-scene-guard"))
         XCTAssertEqual(homeKit.compatibilityRequirements.minimumIOSVersion, "17.0")
         XCTAssertEqual(homeKit.compatibilityRequirements.requiredEntitlements, ["com.apple.developer.homekit"])
+    }
+
+    func testAgentSkillMarketplaceCatalogServiceRejectsReferenceUnsignedIndex() async throws {
+        let body = """
+        {
+          "marketplaceVersion": "2026.6",
+          "sourceRepository": "https://github.com/easonwumac/kairo-skills",
+          "generatedAt": "2026-06-02T00:00:00Z",
+          "catalogSignatureStatus": "referenceUnsigned",
+          "skills": [
+            {
+              "id": "marketplace-weather-briefing",
+              "displayName": "Weather Briefing",
+              "summary": "Summarizes weather through an approved provider API.",
+              "version": "2.1.0",
+              "author": "Kairo Marketplace",
+              "category": "External API",
+              "kind": "custom",
+              "permissions": ["externalConnectors"],
+              "riskTier": "Tier 3: external data request",
+              "requiresConfirmation": true,
+              "installSurface": "Access Skill Manager",
+              "manifestURL": "manifests/weather-briefing.json",
+              "screenshots": ["assets/weather-briefing-card.svg"],
+              "changelog": ["Adds storm alerts."]
+            }
+          ]
+        }
+        """
+        let httpClient = AgentSkillMockHTTPClient(statusCode: 200, body: body)
+        let service = AgentSkillMarketplaceCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-skills/skills.json")!,
+            httpClient: httpClient
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected reference marketplace catalog status to fail closed.")
+        } catch let error as AgentSkillMarketplaceCatalogError {
+            XCTAssertEqual(error, .nonProductionCatalogSignatureStatus("referenceUnsigned"))
+        }
     }
 
     func testAgentSkillMarketplaceCatalogServiceFetchesManifestForDownloadableSkill() async throws {

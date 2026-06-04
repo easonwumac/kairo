@@ -345,6 +345,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
           "marketplaceVersion": "2026.6",
           "sourceRepository": "https://github.com/easonwumac/kairo-skills",
           "generatedAt": "2026-06-02T00:00:00Z",
+          "catalogSignatureStatus": "productionSigned",
           "skills": [
             {
               "id": "marketplace-weather-briefing",

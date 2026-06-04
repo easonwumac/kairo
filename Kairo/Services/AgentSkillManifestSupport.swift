@@ -59,24 +59,33 @@ public enum AgentSkillInstallError: Error, Equatable, Sendable {
 public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable {
     case invalidPermission(skillID: String, permission: String)
     case invalidManifestURL(skillID: String, manifestURL: String)
+    case nonProductionCatalogSignatureStatus(String)
     case invalidJSON
+}
+
+public enum AgentSkillMarketplaceCatalogSignatureStatus: String, Codable, Equatable, Sendable {
+    case productionSigned
+    case referenceUnsigned
 }
 
 public struct AgentSkillRemoteMarketplaceCatalog: Codable, Equatable, Sendable {
     public var marketplaceVersion: String
     public var sourceRepository: URL
     public var generatedAt: Date?
+    public var catalogSignatureStatus: AgentSkillMarketplaceCatalogSignatureStatus
     public var catalog: AgentSkillCatalog
 
     public init(
         marketplaceVersion: String,
         sourceRepository: URL,
         generatedAt: Date?,
+        catalogSignatureStatus: AgentSkillMarketplaceCatalogSignatureStatus,
         catalog: AgentSkillCatalog
     ) {
         self.marketplaceVersion = marketplaceVersion
         self.sourceRepository = sourceRepository
         self.generatedAt = generatedAt
+        self.catalogSignatureStatus = catalogSignatureStatus
         self.catalog = catalog
     }
 }
@@ -85,7 +94,28 @@ private struct AgentSkillMarketplaceIndex: Decodable, Sendable {
     public var marketplaceVersion: String
     public var sourceRepository: URL
     public var generatedAt: Date?
+    public var catalogSignatureStatus: AgentSkillMarketplaceCatalogSignatureStatus
     public var skills: [AgentSkillMarketplaceIndexEntry]
+
+    private enum CodingKeys: String, CodingKey {
+        case marketplaceVersion
+        case sourceRepository
+        case generatedAt
+        case catalogSignatureStatus
+        case skills
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.marketplaceVersion = try container.decode(String.self, forKey: .marketplaceVersion)
+        self.sourceRepository = try container.decode(URL.self, forKey: .sourceRepository)
+        self.generatedAt = try container.decodeIfPresent(Date.self, forKey: .generatedAt)
+        self.catalogSignatureStatus = try container.decodeIfPresent(
+            AgentSkillMarketplaceCatalogSignatureStatus.self,
+            forKey: .catalogSignatureStatus
+        ) ?? .productionSigned
+        self.skills = try container.decode([AgentSkillMarketplaceIndexEntry].self, forKey: .skills)
+    }
 }
 
 private struct AgentSkillMarketplaceIndexEntry: Decodable, Sendable {
@@ -138,11 +168,17 @@ public struct AgentSkillMarketplaceCatalogService: Sendable {
         } catch {
             throw AgentSkillMarketplaceCatalogError.invalidJSON
         }
+        guard index.catalogSignatureStatus == .productionSigned else {
+            throw AgentSkillMarketplaceCatalogError.nonProductionCatalogSignatureStatus(
+                index.catalogSignatureStatus.rawValue
+            )
+        }
 
         return AgentSkillRemoteMarketplaceCatalog(
             marketplaceVersion: index.marketplaceVersion,
             sourceRepository: index.sourceRepository,
             generatedAt: index.generatedAt,
+            catalogSignatureStatus: index.catalogSignatureStatus,
             catalog: AgentSkillCatalog(skills: try index.skills.map(skill(from:)))
         )
     }
