@@ -2,7 +2,7 @@ import XCTest
 @testable import KairoCore
 
 final class KairoChatBackendAPITests: XCTestCase {
-    func testChatBackendUsesSavedOpenAIKeyForMockOpenAIProviderRequest() async throws {
+    func testChatBackendUsesSavedOpenAIKeyForOpenAIProviderRequest() async throws {
         let credentials = InMemoryCredentialStore()
         try await credentials.saveSecret("chat-openai-key-1234567890", for: CredentialKey.openAIAPIKey)
         let httpClient = ChatBackendCapturingHTTPClient(body: #"{"output_text":"Live provider response"}"#)
@@ -86,39 +86,6 @@ final class KairoChatBackendAPITests: XCTestCase {
         XCTAssertEqual(capturedRequest.privacyMode, .privateChat)
         XCTAssertTrue(capturedRequest.memoryContext.isEmpty)
     }
-}
-
-private actor ChatBackendCapturingHTTPClient: HTTPClient {
-    private let statusCode: Int
-    private let body: String
-    private var capturedRequest: URLRequest?
-
-    init(statusCode: Int = 200, body: String) {
-        self.statusCode = statusCode
-        self.body = body
-    }
-
-    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        capturedRequest = request
-        let response = HTTPURLResponse(
-            url: request.url ?? URL(string: "https://api.openai.com")!,
-            statusCode: statusCode,
-            httpVersion: nil,
-            headerFields: nil
-        )!
-        return (Data(body.utf8), response)
-    }
-
-    func lastRequest() throws -> URLRequest {
-        guard let capturedRequest else {
-            throw ChatBackendCapturingHTTPClientError.missingRequest
-        }
-        return capturedRequest
-    }
-}
-
-private enum ChatBackendCapturingHTTPClientError: Error {
-    case missingRequest
 }
 
 private actor FailingChatBackendAIProvider: AIProvider {
