@@ -313,6 +313,43 @@ final class SourceHealthTests: XCTestCase {
         }
     }
 
+    func testSandboxActionExecutorCoverageLivesInFocusedTestFile() throws {
+        let root = packageRootURL()
+        let focusedTestsURL = root.appendingPathComponent("Tests/SandboxActionExecutorTests.swift")
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: focusedTestsURL.path),
+            "SandboxActionExecutor behavior tests should live in a focused test file instead of the KairoCoreTests monolith."
+        )
+
+        let requiredFocusedTests = [
+            "testSandboxActionExecutorSavesConfirmedMemory",
+            "testSandboxActionExecutorReportsUnsupportedSandboxActionWithoutExecuting",
+            "testSandboxActionExecutorOpensURLThroughInjectedOpener",
+            "testSandboxActionExecutorOpensConfirmedShortcutHandoffURLThroughInjectedOpener",
+            "testSandboxActionExecutorOpensEmailDraftHandoffThroughInjectedOpener",
+            "testSandboxActionExecutorOpensMapDirectionsHandoffThroughInjectedOpener",
+            "testSandboxActionExecutorOpensMessageHandoffThroughInjectedOpenerWithoutBodyInURL",
+            "testSandboxActionExecutorOpensPhoneCallHandoffThroughInjectedOpenerWithoutCallingSilently",
+            "testSandboxActionExecutorOpensWebSearchHandoffThroughInjectedOpenerWithoutBrowsingSilently",
+            "testSandboxActionExecutorSchedulesNotificationThroughInjectedScheduler",
+            "testSandboxActionExecutorCreatesReminderThroughInjectedScheduler",
+            "testSandboxActionExecutorCreatesCalendarEventThroughInjectedScheduler",
+            "testSandboxActionExecutorReportsCalendarPermissionDenied",
+            "testSandboxActionExecutorCreatesContactThroughInjectedScheduler",
+            "testSandboxActionExecutorReportsContactPermissionDenied"
+        ]
+        let focusedTests = try String(contentsOf: focusedTestsURL, encoding: .utf8)
+        for testName in requiredFocusedTests {
+            XCTAssertTrue(focusedTests.contains(testName), testName)
+        }
+        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 440)
+
+        let coreTests = try String(contentsOf: root.appendingPathComponent("Tests/KairoCoreTests.swift"))
+        for testName in requiredFocusedTests {
+            XCTAssertFalse(coreTests.contains(testName), testName)
+        }
+    }
+
     func testSandboxActionSupportStaysSplitAcrossFocusedFiles() throws {
         let root = packageRootURL()
         let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)
