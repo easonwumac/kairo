@@ -126,6 +126,12 @@ public struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
+                    SettingsAnswerOverviewCard(
+                        hasAPIKey: hasAPIKey,
+                        routePreference: localModelStatus.preference,
+                        connectedConnectorCount: connectedConnectorCount,
+                        localModelInstalled: localModelStatus.localModelInstalled
+                    )
                     accountSettingsSection
                     oauthConnectorsSection
                     privacySettingsSection
@@ -330,6 +336,10 @@ public struct SettingsView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 2)
+    }
+
+    private var connectedConnectorCount: Int {
+        connectorOptions.filter { $0.readiness == .connected }.count
     }
 
     private var modelsOnlyContent: some View {

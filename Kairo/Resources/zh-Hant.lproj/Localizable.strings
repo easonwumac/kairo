@@ -516,6 +516,13 @@
 "settings.title.all" = "設定";
 "settings.title.models" = "AI 引擎";
 "settings.title.shortcutDemos" = "Shortcut Demos";
+"settings.routing.section" = "Kairo 如何回答";
+"settings.routing.detail" = "先設定日常回答路線；API key、帳號與 local model 都是支援設定。";
+"settings.routing.cloudReady" = "Cloud 可用";
+"settings.routing.cloudNeedsKey" = "Cloud 需要 key";
+"settings.routing.connectedAccounts" = "%lld 個帳號";
+"settings.routing.localSelected" = "Local 已選擇";
+"settings.routing.localOptional" = "Local 可選";
 "settings.openai.section" = "OpenAI";
 "settings.openai.detail" = "需要線上回覆時，讓 Kairo 連到 cloud model。";
 "settings.openai.apiKey" = "API Key";
@@ -628,6 +635,8 @@
 "settings.models.progress.downloading" = "下載中";
 "settings.models.progress.verifying" = "驗證中";
 "settings.models.compact.subtitle" = "選擇 Kairo 如何回覆；本機模型需由使用者下載，不會內建 bundled。";
+"settings.models.compact.localReady" = "Local 可用";
+"settings.models.compact.localNotSelected" = "未選 local model";
 "settings.models.compact.selectedModel" = "已選模型";
 "settings.models.compact.activeForLocalTasks" = "%@ 會用於符合條件的本機任務。";
 "settings.models.compact.downloadedSelectForRouting" = "%@ 已下載。選用後可用於本機路由。";

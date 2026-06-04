@@ -65,6 +65,15 @@ Stage 4 turns Workflows into a guided workflow gallery:
 - Shortcut templates and action previews remain available, but are visually
   secondary and explicitly manual.
 
+Stage 5 clarifies AI setup and Settings:
+
+- Settings now starts with how Kairo answers: cloud readiness, route preference,
+  connected accounts, and local model state.
+- API keys, OAuth connectors, and privacy controls remain available, but they
+  support the answer route instead of defining the page.
+- AI engine now opens with route and local-model readiness before catalog
+  controls, so model downloads feel like an explicit opt-in path.
+
 ## Next UI stages
 
 1. Memory Center
@@ -80,8 +89,8 @@ Stage 4 turns Workflows into a guided workflow gallery:
      common workflow states.
 
 4. AI Setup and Settings
-   - Separate everyday routing status from advanced model management.
-   - Make local/cloud/private routing understandable from Chat first.
+   - Continue moving deep diagnostics behind explicit advanced affordances
+     after simulator smoke confirms the new first screen.
 
 5. Action Preview
    - Turn the sheet into a clearer review checklist:
