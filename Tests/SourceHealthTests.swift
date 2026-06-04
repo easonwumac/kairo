@@ -218,6 +218,8 @@ final class SourceHealthTests: XCTestCase {
         let backendTestsURL = root.appendingPathComponent("Tests/KairoBackendAPITests.swift")
         let chatTestsURL = root.appendingPathComponent("Tests/KairoChatBackendAPITests.swift")
         let memoryTestsURL = root.appendingPathComponent("Tests/KairoMemoryBackendAPITests.swift")
+        let recipeTestsURL = root.appendingPathComponent("Tests/KairoRecipeBackendAPITests.swift")
+        let shareImportTestsURL = root.appendingPathComponent("Tests/KairoShareImportBackendAPITests.swift")
         let accessTestsURL = root.appendingPathComponent("Tests/KairoAccessBackendAPITests.swift")
         let settingsTestsURL = root.appendingPathComponent("Tests/KairoSettingsBackendAPITests.swift")
         let skillTestsURL = root.appendingPathComponent("Tests/KairoSkillBackendAPITests.swift")
@@ -228,6 +230,8 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: backendTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: chatTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: memoryTestsURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: recipeTestsURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: shareImportTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: accessTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: settingsTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: skillTestsURL.path))
@@ -238,6 +242,8 @@ final class SourceHealthTests: XCTestCase {
         let backendTests = try String(contentsOf: backendTestsURL, encoding: .utf8)
         let chatTests = try String(contentsOf: chatTestsURL, encoding: .utf8)
         let memoryTests = try String(contentsOf: memoryTestsURL, encoding: .utf8)
+        let recipeTests = try String(contentsOf: recipeTestsURL, encoding: .utf8)
+        let shareImportTests = try String(contentsOf: shareImportTestsURL, encoding: .utf8)
         let accessTests = try String(contentsOf: accessTestsURL, encoding: .utf8)
         let settingsTests = try String(contentsOf: settingsTestsURL, encoding: .utf8)
         let skillTests = try String(contentsOf: skillTestsURL, encoding: .utf8)
@@ -249,6 +255,11 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(chatTests.contains("testChatBackendAPIForwardsPrivacyModeThroughAgentCore"))
         XCTAssertTrue(memoryTests.contains("final class KairoMemoryBackendAPITests"))
         XCTAssertTrue(memoryTests.contains("testMemoryBackendAPIForwardsLifecycleAndExportThroughStore"))
+        XCTAssertTrue(recipeTests.contains("final class KairoRecipeBackendAPITests"))
+        XCTAssertTrue(recipeTests.contains("testRecipeBackendAPIForwardsLifecycleAndRunThroughInternalRecipeStore"))
+        XCTAssertTrue(recipeTests.contains("testRecipeBackendAPISeedsKairoOwnedSamplesWithoutAppleShortcutSideEffects"))
+        XCTAssertTrue(shareImportTests.contains("final class KairoShareImportBackendAPITests"))
+        XCTAssertTrue(shareImportTests.contains("testShareImportBackendAPIImportsPendingItemsAndMarksThemImported"))
         XCTAssertTrue(accessTests.contains("final class KairoAccessBackendAPITests"))
         XCTAssertTrue(accessTests.contains("testAccessBackendAPIResolvesPermissionStatusesWithoutRequestingPrompts"))
         XCTAssertTrue(accessTests.contains("testAccessBackendAPIForwardsExplicitPermissionRequests"))
@@ -272,6 +283,8 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(backendTestSupport.contains("makeBackendTestLocalModelSettingsService"))
         XCTAssertFalse(backendTests.contains("testChatBackendAPIForwardsPrivacyModeThroughAgentCore"))
         XCTAssertFalse(backendTests.contains("testMemoryBackendAPIForwardsLifecycleAndExportThroughStore"))
+        XCTAssertFalse(backendTests.contains("testRecipeBackendAPIForwardsLifecycleAndRunThroughInternalRecipeStore"))
+        XCTAssertFalse(backendTests.contains("testShareImportBackendAPIImportsPendingItemsAndMarksThemImported"))
         XCTAssertFalse(backendTests.contains("testAccessBackendAPIResolvesPermissionStatusesWithoutRequestingPrompts"))
         XCTAssertFalse(backendTests.contains("testSettingsBackendAPIManagesOpenAIKeyWithoutLeakingSecrets"))
         XCTAssertFalse(backendTests.contains("testSkillBackendAPIForwardsLifecycleThroughSkillManager"))
@@ -282,6 +295,8 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertLessThan(backendTests.split(separator: "\n").count, 720)
         XCTAssertLessThan(chatTests.split(separator: "\n").count, 120)
         XCTAssertLessThan(memoryTests.split(separator: "\n").count, 120)
+        XCTAssertLessThan(recipeTests.split(separator: "\n").count, 120)
+        XCTAssertLessThan(shareImportTests.split(separator: "\n").count, 120)
         XCTAssertLessThan(accessTests.split(separator: "\n").count, 180)
         XCTAssertLessThan(settingsTests.split(separator: "\n").count, 180)
         XCTAssertLessThan(skillTests.split(separator: "\n").count, 240)
@@ -542,6 +557,44 @@ final class SourceHealthTests: XCTestCase {
             for source in reviewCopySources {
                 XCTAssertFalse(source.localizedCaseInsensitiveContains(claim), claim)
             }
+        }
+    }
+
+    func testAppReviewDeletionCopyDocumentsCurrentOnDeviceFlows() throws {
+        let root = packageRootURL()
+        let reviewNotes = try String(
+            contentsOf: root.appendingPathComponent("docs/APP_REVIEW_NOTES.md"),
+            encoding: .utf8
+        )
+        let privacyChecklist = try String(
+            contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
+            encoding: .utf8
+        )
+        let readiness = try String(
+            contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"),
+            encoding: .utf8
+        )
+
+        let requiredDeletionCopy = [
+            "Data deletion flow for the current beta:",
+            "Chat history: users delete a chat thread from Chat history.",
+            "Memory records: users delete individual memories from Memory Center; exports include active records only, and deleted JSON records can be purged from disk.",
+            "Local models: users delete downloaded models from Settings / Models, which also clears selected-model state when needed.",
+            "API keys and OAuth tokens: users delete OpenAI API keys or disconnect OAuth connectors from Settings; secrets are stored in Keychain-backed storage.",
+            "Audit logs: users clear the local metadata-only audit log from Settings / Privacy. This action does not delete chat history, memories, API keys, OAuth tokens, or downloaded models.",
+            "Backend account deletion: not applicable in the current beta because Kairo has no backend account, server-side audit log, remotely stored chat history, or cloud memory sync."
+        ]
+        for copy in requiredDeletionCopy {
+            XCTAssertTrue(reviewNotes.contains(copy), copy)
+        }
+
+        for source in [reviewNotes, privacyChecklist, readiness] {
+            XCTAssertTrue(source.contains("Backend account deletion"))
+            XCTAssertTrue(source.contains("no backend account"))
+            XCTAssertFalse(source.localizedCaseInsensitiveContains("delete your backend account"))
+            XCTAssertFalse(source.localizedCaseInsensitiveContains("server-side deletion request"))
+            XCTAssertFalse(source.localizedCaseInsensitiveContains("cloud memory deletion request"))
+            XCTAssertFalse(source.localizedCaseInsensitiveContains("delete all data from our servers"))
         }
     }
 
