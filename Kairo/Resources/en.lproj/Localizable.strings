@@ -50,6 +50,9 @@
 "memory.record.cloudAllowed" = "Cloud allowed";
 "memory.record.noExpiry" = "No expiry";
 "memory.record.expires" = "Expires %@";
+"memory.record.details" = "Details";
+"memory.record.details.show" = "Show memory details";
+"memory.record.details.hide" = "Hide memory details";
 "memory.source.manual" = "Manual";
 "memory.source.chat" = "Chat";
 "memory.source.shareExtension" = "Shared";

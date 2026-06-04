@@ -50,6 +50,9 @@
 "memory.record.cloudAllowed" = "可雲端使用";
 "memory.record.noExpiry" = "不會到期";
 "memory.record.expires" = "%@ 到期";
+"memory.record.details" = "細節";
+"memory.record.details.show" = "顯示 memory 細節";
+"memory.record.details.hide" = "隱藏 memory 細節";
 "memory.source.manual" = "手動加入";
 "memory.source.chat" = "Chat";
 "memory.source.shareExtension" = "分享";

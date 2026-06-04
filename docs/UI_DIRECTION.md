@@ -253,11 +253,20 @@ Stage 25 makes Action Preview decision-first:
 - Exact draft or handoff payload details remain separately collapsed, preserving
   review depth without forcing every user through every field.
 
+Stage 26 makes Memory records context-first:
+
+- Saved memory cards now keep title, summary, source, and updated date as the
+  first-level scanning surface.
+- Lower-frequency metadata such as cloud use and expiry now lives behind a
+  per-record Details disclosure.
+- Delete moved into Details so the Memory Center reads as a context library
+  first, not a table of record-management controls.
+
 ## Next UI stages
 
-1. Memory Center
-   - Continue tuning record actions only after smoke tests show which saved
-     memory states users need to act on most often.
+1. Chat
+   - Continue reducing first-level helper copy and make suggested jobs feel like
+     one clear starting path before exposing routing or setup details.
 
 2. Phone Tools and Skill Manager
    - Continue tuning skill-card density inside Skill library after simulator

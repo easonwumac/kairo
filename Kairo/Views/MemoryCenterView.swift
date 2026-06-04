@@ -12,6 +12,7 @@ public struct MemoryCenterView: View {
     @State private var errorMessage: String?
     @State private var exportText: String = "{}"
     @State private var showAddContext = false
+    @State private var expandedMemoryDetailID: UUID?
 
     private let memoryAPI: any KairoMemoryAPI
 
@@ -103,49 +104,22 @@ public struct MemoryCenterView: View {
                 }
 
                 Spacer(minLength: 0)
-
-                Button(role: .destructive) {
-                    delete(memory)
-                } label: {
-                    Label(KairoL10n.string("memory.delete.accessibility"), systemImage: "trash")
-                        .labelStyle(.iconOnly)
-                        .font(.subheadline.weight(.semibold))
-                        .frame(width: 36, height: 36)
-                        .background(KairoDesign.red.opacity(0.10), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(KairoDesign.red)
-                .accessibilityLabel(KairoL10n.string("memory.delete.accessibility"))
-                .accessibilityIdentifier("memory.record.delete")
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    KairoStatusPill(
-                        title: sourceLabel(for: memory.source),
-                        systemImage: sourceIcon(for: memory.source),
-                        tint: KairoDesign.teal
-                    )
-                    KairoStatusPill(
-                        title: KairoL10n.string("memory.record.updated", Self.memoryDateFormatter.string(from: memory.updatedAt)),
-                        systemImage: "clock",
-                        tint: KairoDesign.blue
-                    )
-                }
-
-                HStack(spacing: 8) {
-                    KairoStatusPill(
-                        title: memory.cloudSyncAllowed ? KairoL10n.string("memory.record.cloudAllowed") : KairoL10n.string("memory.record.localOnly"),
-                        systemImage: memory.cloudSyncAllowed ? "icloud.fill" : "lock.shield.fill",
-                        tint: memory.cloudSyncAllowed ? KairoDesign.blue : KairoDesign.green
-                    )
-                    KairoStatusPill(
-                        title: expiryLabel(for: memory),
-                        systemImage: memory.expiresAt == nil ? "calendar.badge.checkmark" : "calendar.badge.clock",
-                        tint: memory.expiresAt == nil ? KairoDesign.green : KairoDesign.amber
-                    )
-                }
+            HStack(spacing: 8) {
+                KairoStatusPill(
+                    title: sourceLabel(for: memory.source),
+                    systemImage: sourceIcon(for: memory.source),
+                    tint: KairoDesign.teal
+                )
+                KairoStatusPill(
+                    title: KairoL10n.string("memory.record.updated", Self.memoryDateFormatter.string(from: memory.updatedAt)),
+                    systemImage: "clock",
+                    tint: KairoDesign.blue
+                )
             }
+
+            memoryRecordDetailsDisclosure(memory)
         }
         .padding(14)
         .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -155,6 +129,76 @@ public struct MemoryCenterView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("memory.record")
+    }
+
+    private func memoryRecordDetailsDisclosure(_ memory: MemoryRecord) -> some View {
+        let isExpanded = expandedMemoryDetailID == memory.id
+
+        return VStack(alignment: .leading, spacing: 10) {
+            Button {
+                expandedMemoryDetailID = isExpanded ? nil : memory.id
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(KairoDesign.teal)
+                        .frame(width: 26, height: 26)
+                        .background(KairoDesign.teal.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                    Text(KairoL10n.string("memory.record.details"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+
+                    Spacer(minLength: 8)
+
+                    Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.teal)
+                }
+                .frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isExpanded ? KairoL10n.string("memory.record.details.hide") : KairoL10n.string("memory.record.details.show"))
+            .accessibilityIdentifier("memory.record.details.toggle")
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 10) {
+                    Divider()
+
+                    HStack(spacing: 8) {
+                        KairoStatusPill(
+                            title: memory.cloudSyncAllowed ? KairoL10n.string("memory.record.cloudAllowed") : KairoL10n.string("memory.record.localOnly"),
+                            systemImage: memory.cloudSyncAllowed ? "icloud.fill" : "lock.shield.fill",
+                            tint: memory.cloudSyncAllowed ? KairoDesign.blue : KairoDesign.green
+                        )
+                        KairoStatusPill(
+                            title: expiryLabel(for: memory),
+                            systemImage: memory.expiresAt == nil ? "calendar.badge.checkmark" : "calendar.badge.clock",
+                            tint: memory.expiresAt == nil ? KairoDesign.green : KairoDesign.amber
+                        )
+                    }
+
+                    Button {
+                        delete(memory)
+                    } label: {
+                        Label(KairoL10n.string("memory.delete.accessibility"), systemImage: "trash")
+                            .font(.caption.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 34, alignment: .center)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(KairoDesign.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(KairoDesign.red.opacity(0.18), lineWidth: 1)
+                    }
+                    .foregroundStyle(KairoDesign.red)
+                    .accessibilityLabel(KairoL10n.string("memory.delete.accessibility"))
+                    .accessibilityIdentifier("memory.record.delete")
+                }
+            }
+        }
     }
 
     private var memoryLibraryHeader: some View {
@@ -414,6 +458,11 @@ public struct MemoryCenterView: View {
                 try await memoryAPI.delete(id: memory.id)
                 try await memoryAPI.purgeDeleted()
                 await reload()
+                await MainActor.run {
+                    if expandedMemoryDetailID == memory.id {
+                        expandedMemoryDetailID = nil
+                    }
+                }
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription

@@ -140,6 +140,10 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(summary.label.contains("reviewers"), summary.label)
         XCTAssertTrue(findStaticText(containing: "Beta launch checklist", direction: .both, maxSwipes: 1).exists)
 
+        let details = findButton("memory.record.details.toggle", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(details.waitForExistence(timeout: 5))
+        tapElement(details)
+
         let delete = findButton("memory.record.delete", direction: .both, maxSwipes: 1)
         XCTAssertTrue(delete.waitForExistence(timeout: 5))
         delete.tap()
