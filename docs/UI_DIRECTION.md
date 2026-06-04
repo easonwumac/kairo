@@ -130,6 +130,15 @@ Stage 12 makes Workflows recipe-first:
 - The Apple Shortcuts boundary remains visible as a short safety status in the
   recipe center, not as a long setup explanation.
 
+Stage 13 makes Settings setup-on-demand:
+
+- Settings now keeps the first level focused on how Kairo answers and whether
+  connection setup needs attention.
+- API key, OAuth connector, and privacy controls live behind a Connection Setup
+  disclosure instead of loading as three full setup sections.
+- The same controls and identifiers remain available after expansion, so setup
+  workflows stay testable without turning Settings into the product homepage.
+
 ## Next UI stages
 
 1. Memory Center
@@ -145,8 +154,8 @@ Stage 12 makes Workflows recipe-first:
      the most common workflow states.
 
 4. AI Setup and Settings
-   - Continue moving deep diagnostics behind explicit advanced affordances
-     after simulator smoke confirms the new first screen.
+   - Continue moving local-model diagnostics behind explicit advanced
+     affordances after simulator smoke confirms the new first screen.
 
 5. Action Preview
    - Continue tuning checklist labels after broader smoke coverage shows which

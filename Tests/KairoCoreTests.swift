@@ -592,6 +592,11 @@ final class KairoCoreTests: XCTestCase {
     func testSettingsViewDefinesLocalModelSectionAccessibilityIdentifiers() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
+        let settingsLocalModels = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView+LocalModels.swift"),
+            encoding: .utf8
+        )
+        let settingsSources = settingsView + "\n" + settingsLocalModels
         let compactView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/LocalModelsCompactView.swift"), encoding: .utf8)
         let progressView = try String(
             contentsOf: root.appendingPathComponent("Kairo/Views/LocalModelDownloadProgressInlineView.swift"),
@@ -616,21 +621,21 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains("localModelDownloadTask"))
         XCTAssertTrue(settingsView.contains("cancelLocalModelDownload(row)"))
         XCTAssertTrue(settingsView.contains("LocalModelDownloadProgressInlineView("))
-        XCTAssertTrue(settingsView.contains("localModelDownloadTask == nil"))
-        XCTAssertTrue(settingsView.contains("cleanupStaleDownloadingRecords()"))
+        XCTAssertTrue(settingsSources.contains("localModelDownloadTask == nil"))
+        XCTAssertTrue(settingsSources.contains("cleanupStaleDownloadingRecords()"))
         XCTAssertTrue(progressView.contains(#""settings.models.\(modelID).download-progress""#))
         XCTAssertTrue(progressView.contains(#""settings.models.\(modelID).download-active-cancel""#))
-        XCTAssertTrue(settingsView.contains("localModelDownloader.download(row.manifest) { fractionCompleted in"))
+        XCTAssertTrue(settingsSources.contains("localModelDownloader.download(row.manifest) { fractionCompleted in"))
         XCTAssertTrue(settingsView.contains("row.benchmarkSummaryText"))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).benchmark""#))
-        XCTAssertTrue(settingsView.contains("private let localModelBenchmarkService: LocalModelBenchmarkService?"))
-        XCTAssertTrue(settingsView.contains("runLocalModelBenchmark(row)"))
+        XCTAssertTrue(settingsSources.contains("let localModelBenchmarkService: LocalModelBenchmarkService?"))
+        XCTAssertTrue(settingsSources.contains("runLocalModelBenchmark(row)"))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).benchmark-run""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.\(row.modelID).reply-check""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.benchmark-message""#))
-        XCTAssertTrue(settingsView.contains("runLocalModelReplyCheck(row)"))
-        XCTAssertTrue(settingsView.contains(#""settings.models.message.benchmarkNeedsDownload""#))
-        XCTAssertTrue(settingsView.contains("refreshLocalModelCatalog"))
+        XCTAssertTrue(settingsSources.contains("runLocalModelReplyCheck(row)"))
+        XCTAssertTrue(settingsSources.contains(#""settings.models.message.benchmarkNeedsDownload""#))
+        XCTAssertTrue(settingsSources.contains("refreshLocalModelCatalog"))
         XCTAssertTrue(settingsView.contains(#""settings.models.refresh-catalog""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.catalog-source""#))
     }

@@ -563,6 +563,10 @@
 "settings.routing.connectedAccounts" = "%lld accounts";
 "settings.routing.localSelected" = "Local selected";
 "settings.routing.localOptional" = "Local optional";
+"settings.connection.section" = "Connection setup";
+"settings.connection.detail" = "Manage cloud keys, connected accounts, and privacy controls only when setup needs attention.";
+"settings.connection.show" = "Show connection setup";
+"settings.connection.hide" = "Hide connection setup";
 "settings.openai.section" = "OpenAI";
 "settings.openai.detail" = "Connect Kairo to a cloud model when you want online answers.";
 "settings.openai.apiKey" = "API Key";

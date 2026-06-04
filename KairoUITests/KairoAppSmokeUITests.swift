@@ -60,6 +60,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     func testSettingsCanSaveDryRunAndDeleteOpenAIAPIKey() throws {
         relaunchForUITesting(initialSection: "settings")
         XCTAssertTrue(anyElement("settings.form").waitForExistence(timeout: 5))
+        openConnectionSetupIfNeeded()
         let initialStatus = anyElement("settings.openai.api-key-status")
         XCTAssertTrue(initialStatus.waitForExistence(timeout: 5))
         XCTAssertTrue(initialStatus.label.contains("Not configured"), initialStatus.label)
@@ -92,6 +93,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     func testSettingsCanClearMetadataOnlyAuditLog() throws {
         relaunchForUITesting(initialSection: "settings")
         XCTAssertTrue(anyElement("settings.form").waitForExistence(timeout: 5))
+        openConnectionSetupIfNeeded()
 
         let clearAuditLog = findButton("settings.privacy.clear-audit-log", direction: .both, maxSwipes: 4)
         XCTAssertTrue(clearAuditLog.exists)
@@ -518,8 +520,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testSettingsShowsOAuthConnectorReadinessAndBoundaries() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
+        relaunchForUITesting(initialSection: "settings")
+        openConnectionSetupIfNeeded()
 
         XCTAssertTrue(findElement("settings.oauth.connectors", direction: .down).exists)
         verifyOAuthConnector(
@@ -561,10 +563,9 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testSettingsKeepsOAuthCallbackPreviewOutOfPrimaryUI() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
+        relaunchForUITesting(initialSection: "settings")
 
-        XCTAssertTrue(findElement("settings.oauth.connectors", direction: .down).exists)
+        XCTAssertFalse(anyElement("settings.oauth.connectors").exists)
         XCTAssertFalse(anyElement("settings.oauth.callback-url").exists)
         XCTAssertFalse(anyElement("settings.oauth.preview-callback").exists)
         XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "sample-sensitive-code")).firstMatch.exists)

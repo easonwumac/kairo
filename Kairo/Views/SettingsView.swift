@@ -28,24 +28,25 @@ public struct SettingsView: View {
     @State private var connectorStatusMessage: String?
     @State private var oauthCallbackURLText: String = ""
     @State private var oauthCallbackPreviewMessage: String?
-    @State private var localModelCatalog: LocalModelCatalog
-    @State private var localModelStatus: LocalModelSettingsStatus
-    @State private var localModelDownloadProgress: LocalModelDownloadProgressState?
-    @State private var localModelDownloadTask: Task<Void, Never>?
-    @State private var localModelStatusMessage: String?
-    @State private var localModelStatusMessageModelID: String?
+    @State var localModelCatalog: LocalModelCatalog
+    @State var localModelStatus: LocalModelSettingsStatus
+    @State var localModelDownloadProgress: LocalModelDownloadProgressState?
+    @State var localModelDownloadTask: Task<Void, Never>?
+    @State var localModelStatusMessage: String?
+    @State var localModelStatusMessageModelID: String?
     @State private var privacyStatusMessage: String?
+    @State private var showConnectionSetup = false
 
     private let settingsService: OpenAISettingsService
     private let mode: SettingsViewMode
     private let credentialStore: any CredentialStore
     private let oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
     private let oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
-    private let localModelCatalogService: LocalModelCatalogService?
-    private let localModelSettingsService: LocalModelSettingsService?
-    private let localModelDownloader: (any LocalModelDownloader)?
-    private let localModelBenchmarkService: LocalModelBenchmarkService?
-    private let localModelReplyCheckService: LocalModelReplyCheckService?
+    let localModelCatalogService: LocalModelCatalogService?
+    let localModelSettingsService: LocalModelSettingsService?
+    let localModelDownloader: (any LocalModelDownloader)?
+    let localModelBenchmarkService: LocalModelBenchmarkService?
+    let localModelReplyCheckService: LocalModelReplyCheckService?
     private let deletionAPI: (any KairoDeletionAPI)?
 
     public init(
@@ -132,9 +133,7 @@ public struct SettingsView: View {
                         connectedConnectorCount: connectedConnectorCount,
                         localModelInstalled: localModelStatus.localModelInstalled
                     )
-                    accountSettingsSection
-                    oauthConnectorsSection
-                    privacySettingsSection
+                    connectionSetupSection
 
                     if let connectorStatusMessage {
                         KairoGroupedSurface {
@@ -153,6 +152,61 @@ public struct SettingsView: View {
             .navigationTitle(mode.navigationTitle)
             .background(KairoDesign.background.ignoresSafeArea())
             .accessibilityIdentifier("settings.form")
+        }
+    }
+
+    private var connectionSetupSection: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showConnectionSetup.toggle()
+                    }
+                } label: {
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(KairoL10n.string("settings.connection.section"))
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                            Text(KairoL10n.string("settings.connection.detail"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: showConnectionSetup ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                            .frame(width: 36, height: 36)
+                            .background(KairoDesign.blue.opacity(0.10), in: Circle())
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(showConnectionSetup ? KairoL10n.string("settings.connection.hide") : KairoL10n.string("settings.connection.show"))
+                .accessibilityIdentifier("settings.connection.toggle")
+
+                HStack(spacing: 8) {
+                    KairoStatusPill(
+                        title: hasAPIKey ? KairoL10n.string("settings.openai.status.configured") : KairoL10n.string("settings.openai.status.notConfigured"),
+                        systemImage: "key.fill",
+                        tint: hasAPIKey ? KairoDesign.green : KairoDesign.amber
+                    )
+                    KairoStatusPill(
+                        title: KairoL10n.string("settings.routing.connectedAccounts", Int64(connectedConnectorCount)),
+                        systemImage: "person.crop.circle.badge.checkmark",
+                        tint: connectedConnectorCount > 0 ? KairoDesign.green : KairoDesign.violet
+                    )
+                }
+
+                if showConnectionSetup {
+                    Divider()
+                    accountSettingsSection
+                    oauthConnectorsSection
+                    privacySettingsSection
+                }
+            }
         }
     }
 
@@ -758,282 +812,6 @@ public struct SettingsView: View {
         }
     }
 
-    private func setLocalModelPreference(_ preference: ProviderRoutePreference) {
-        Task {
-            guard let localModelSettingsService else {
-                await MainActor.run {
-                    localModelStatusMessageModelID = nil
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
-                }
-                return
-            }
-
-            do {
-                try await localModelSettingsService.setPreference(preference)
-                await MainActor.run {
-                    localModelStatus.preference = preference
-                    localModelStatusMessageModelID = nil
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.preferenceSaved", preference.settingsTitle)
-                }
-                await reloadLocalModelStatus()
-            } catch {
-                await MainActor.run {
-                    localModelStatusMessageModelID = nil
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.preferenceFailed", error.localizedDescription)
-                }
-            }
-        }
-    }
-
-    private func downloadLocalModel(_ row: LocalModelSettingsRow) {
-        if let progress = localModelDownloadProgress {
-            localModelStatusMessageModelID = progress.modelID
-            localModelStatusMessage = KairoL10n.string("settings.models.message.downloadInProgress")
-            return
-        }
-
-        guard localModelSettingsService != nil else {
-            localModelStatusMessageModelID = row.modelID
-            localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
-            return
-        }
-
-        guard let localModelDownloader else {
-            localModelStatusMessageModelID = row.modelID
-            localModelStatusMessage = KairoL10n.string("settings.models.message.downloaderMissing")
-            return
-        }
-
-        let task = Task {
-            do {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.downloading", row.displayName)
-                    localModelDownloadProgress = LocalModelDownloadProgressState(
-                        modelID: row.modelID,
-                        fractionCompleted: 0.05
-                    )
-                }
-                _ = try await localModelDownloader.download(row.manifest) { fractionCompleted in
-                    Task { @MainActor in
-                        localModelDownloadProgress = LocalModelDownloadProgressState(
-                            modelID: row.modelID,
-                            fractionCompleted: fractionCompleted
-                        )
-                    }
-                }
-                await MainActor.run { finishLocalModelDownload(row, message: KairoL10n.string("settings.models.message.downloaded", row.displayName)) }
-                await reloadLocalModelStatus()
-            } catch LocalModelDownloadError.cancelled {
-                await MainActor.run { finishLocalModelDownload(row, message: KairoL10n.string("settings.models.message.downloadCancelled", row.displayName)) }
-                await reloadLocalModelStatus()
-            } catch {
-                await MainActor.run { finishLocalModelDownload(row, message: KairoL10n.string("settings.models.message.downloadFailed", error.localizedDescription)) }
-                await reloadLocalModelStatus()
-            }
-        }
-        localModelDownloadTask = task
-    }
-
-    private func cancelLocalModelDownload(_ row: LocalModelSettingsRow) {
-        localModelDownloadTask?.cancel()
-        localModelStatusMessageModelID = row.modelID
-        localModelStatusMessage = KairoL10n.string("settings.models.message.cancellingDownload", row.displayName)
-    }
-
-    private func finishLocalModelDownload(_ row: LocalModelSettingsRow, message: String) {
-        localModelStatusMessageModelID = row.modelID
-        localModelDownloadProgress = nil
-        localModelDownloadTask = nil
-        localModelStatusMessage = message
-    }
-
-    private func selectLocalModel(_ row: LocalModelSettingsRow) {
-        Task {
-            guard let localModelSettingsService else {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
-                }
-                return
-            }
-
-            do {
-                try await localModelSettingsService.selectModel(
-                    id: row.modelID,
-                    minimumSafetyPolicyVersion: localModelCatalog.minimumSafetyPolicyVersion
-                )
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.selected", row.displayName)
-                }
-                await reloadLocalModelStatus()
-            } catch {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.selectFailed", error.localizedDescription)
-                }
-            }
-        }
-    }
-
-    private func runLocalModelBenchmark(_ row: LocalModelSettingsRow) {
-        Task {
-            guard let localModelBenchmarkService else {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkServiceMissing")
-                }
-                return
-            }
-
-            do {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkRunning", row.displayName)
-                }
-                let result = try await localModelBenchmarkService.runBenchmark(
-                    modelID: row.modelID,
-                    minimumSafetyPolicyVersion: localModelCatalog.minimumSafetyPolicyVersion
-                )
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkResult", row.displayName, result.summaryText)
-                }
-            } catch let error as LocalModelBenchmarkError {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    switch error {
-                    case .modelNotInstalled:
-                        localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkNeedsDownload", row.displayName)
-                    case let .modelUnavailable(modelID):
-                        localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkModelUnavailable", modelID)
-                    case let .runtimeUnavailable(reason):
-                        localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkRuntimeUnavailable", reason)
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkFailed", error.localizedDescription)
-                }
-            }
-        }
-    }
-
-    private func runLocalModelReplyCheck(_ row: LocalModelSettingsRow) {
-        Task {
-            guard let localModelReplyCheckService else {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckServiceMissing")
-                }
-                return
-            }
-
-            do {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckRunning", row.displayName)
-                }
-                let result = try await localModelReplyCheckService.runReplyCheck(
-                    modelID: row.modelID,
-                    minimumSafetyPolicyVersion: localModelCatalog.minimumSafetyPolicyVersion
-                )
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckResult", row.displayName, result.summaryText)
-                }
-            } catch let error as LocalModelReplyCheckError {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    switch error {
-                    case .modelNotInstalled:
-                        localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckNeedsDownload", row.displayName)
-                    case let .modelUnavailable(modelID):
-                        localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckModelUnavailable", modelID)
-                    case let .runtimeUnavailable(reason):
-                        localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckRuntimeUnavailable", reason)
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckFailed", error.localizedDescription)
-                }
-            }
-        }
-    }
-
-    private func deleteLocalModel(_ row: LocalModelSettingsRow) {
-        Task {
-            guard let localModelSettingsService else {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
-                }
-                return
-            }
-
-            do {
-                try await localModelSettingsService.deleteModel(id: row.modelID)
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.deleted", row.displayName)
-                }
-                await reloadLocalModelStatus()
-            } catch {
-                await MainActor.run {
-                    localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.deleteFailed", error.localizedDescription)
-                }
-            }
-        }
-    }
-
-    private func refreshLocalModelCatalog() {
-        Task {
-            guard let localModelCatalogService else {
-                await MainActor.run {
-                    localModelStatusMessageModelID = nil
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.usingBuiltInCatalog")
-                }
-                return
-            }
-
-            do {
-                await MainActor.run {
-                    localModelStatusMessageModelID = nil
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.refreshingCatalog")
-                }
-                let mergedCatalog = try await localModelCatalogService.fetchMergedCatalog(with: localModelCatalog)
-                if let localModelSettingsService {
-                    await localModelSettingsService.replaceCatalog(mergedCatalog)
-                }
-                if let localModelBenchmarkService {
-                    await localModelBenchmarkService.replaceCatalog(mergedCatalog)
-                }
-                if let localModelReplyCheckService {
-                    await localModelReplyCheckService.replaceCatalog(mergedCatalog)
-                }
-                await MainActor.run {
-                    localModelCatalog = mergedCatalog
-                    localModelStatusMessageModelID = nil
-                    let count = mergedCatalog.availableModels(
-                        minimumSafetyPolicyVersion: mergedCatalog.minimumSafetyPolicyVersion
-                    ).count
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.catalogRefreshed", Int64(count))
-                }
-                await reloadLocalModelStatus()
-            } catch {
-                await MainActor.run {
-                    localModelStatusMessageModelID = nil
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.catalogRefreshFailed", error.localizedDescription)
-                }
-            }
-        }
-    }
-
     private func reloadAllStatus() async {
         await reloadStatus()
         await reloadConnectorOptions()
@@ -1066,37 +844,6 @@ public struct SettingsView: View {
         }
     }
 
-    private func reloadLocalModelStatus() async {
-        let status: LocalModelSettingsStatus
-        if let localModelSettingsService {
-            if localModelDownloadTask == nil {
-                do {
-                    let cleanedModelIDs = try await localModelSettingsService.cleanupStaleDownloadingRecords()
-                    if !cleanedModelIDs.isEmpty {
-                        await MainActor.run {
-                            localModelStatusMessageModelID = nil
-                            localModelStatusMessage = KairoL10n.string("settings.models.message.cleanedStaleDownload")
-                        }
-                    }
-                } catch {
-                    await MainActor.run {
-                        localModelStatusMessageModelID = nil
-                        localModelStatusMessage = KairoL10n.string("settings.models.message.cleanStaleDownloadFailed", error.localizedDescription)
-                    }
-                }
-            }
-            status = await localModelSettingsService.status(
-                minimumSafetyPolicyVersion: localModelCatalog.minimumSafetyPolicyVersion
-            )
-        } else {
-            status = Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog)
-        }
-
-        await MainActor.run {
-            localModelStatus = status
-        }
-    }
-
     private func connectorLoginCenter() -> OAuthConnectorLoginCenter {
         OAuthConnectorLoginCenter(
             registry: IntegrationRegistry(),
@@ -1104,21 +851,6 @@ public struct SettingsView: View {
             clientConfigurations: oauthClientConfigurations,
             callbackStore: oauthCallbackStore
         )
-    }
-
-    private static func catalogOnlyLocalModelStatus(catalog: LocalModelCatalog) -> LocalModelSettingsStatus {
-        LocalModelSettingsStatus(
-            selectedModelID: nil,
-            selectedModel: nil,
-            installedRecord: nil,
-            preference: .automatic,
-            availableModels: catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion),
-            installedModels: []
-        )
-    }
-
-    private var localModelCatalogSourceText: String {
-        localModelCatalog.sourceRepository?.absoluteString ?? KairoL10n.string("settings.models.catalogBuiltIn")
     }
 
     private func statusColor(for readiness: OAuthConnectorLoginReadiness) -> Color {
@@ -1134,17 +866,5 @@ public struct SettingsView: View {
         }
     }
 
-    private func localModelStatusColor(for action: LocalModelSettingsPrimaryAction) -> Color {
-        switch action {
-        case .selected:
-            return .green
-        case .select:
-            return .blue
-        case .download, .retryDownload:
-            return .orange
-        case .unavailable:
-            return .secondary
-        }
-    }
 }
 #endif
