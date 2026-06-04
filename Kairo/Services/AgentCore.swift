@@ -47,6 +47,7 @@ public actor AgentCore {
             safetyPolicyEngine: safetyPolicyEngine
         ).plan(for: AgentToolInvocationRequest(
             userText: message,
+            matchingText: Self.planningText(message: message, attachments: attachments),
             allowsToolUse: privacyMode != .privateChat
         ))
 
@@ -105,6 +106,17 @@ public actor AgentCore {
     若使用者要求 iOS sandbox 或目前整合不允許的事，請用 unsupportedSandboxAction 清楚說明限制與安全替代方案，不要假裝已完成。
     對高風險操作，你必須先產生預覽並要求使用者確認。
     """
+
+    private static func planningText(message: String, attachments: [ChatAttachment]) -> String {
+        let attachmentText = attachments
+            .map(\.promptSummary)
+            .joined(separator: "\n")
+        guard !attachmentText.isEmpty else { return message }
+        return [message, attachmentText]
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
+    }
 
     private static func mergeActionPreviews(
         modelActions: [AgentAction],

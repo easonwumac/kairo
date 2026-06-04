@@ -67,6 +67,58 @@ final class ShareExtensionLifecycleTests: XCTestCase {
         let cleared = try await queue.pendingItems(limit: 10)
         XCTAssertTrue(cleared.isEmpty)
     }
+
+    @MainActor
+    func testSharedMeetingTextSentToChatProducesCalendarReview() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("Schedule a meeting Friday 10:00 Kairo roadmap review", displayName: "Meeting Notes")
+            ],
+            sourceApplication: "ShareSheet"
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: queue,
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+        )
+
+        await viewModel.importPendingShares()
+        await viewModel.sendImportedShareToChat()
+
+        XCTAssertNotNil(viewModel.calendarReviewAction)
+        XCTAssertEqual(viewModel.calendarReviewAction?.kind, .createCalendarDraft)
+        XCTAssertNil(viewModel.pendingAction)
+        let cleared = try await queue.pendingItems(limit: 10)
+        XCTAssertTrue(cleared.isEmpty)
+    }
+
+    @MainActor
+    func testSharedEmailTextSentToChatProducesHandoffReview() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("Draft an email to alex@example.com subject Kairo update body Please review the roadmap.", displayName: "Email Notes")
+            ],
+            sourceApplication: "ShareSheet"
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: queue,
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+        )
+
+        await viewModel.importPendingShares()
+        await viewModel.sendImportedShareToChat()
+
+        XCTAssertNotNil(viewModel.handoffReviewAction)
+        XCTAssertEqual(viewModel.handoffReviewAction?.kind, .composeEmailDraft)
+        XCTAssertNil(viewModel.pendingAction)
+        let cleared = try await queue.pendingItems(limit: 10)
+        XCTAssertTrue(cleared.isEmpty)
+    }
     #endif
 
     func testShareExtensionControllerStaysQueueOnlyAndActionFree() throws {

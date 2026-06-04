@@ -23,7 +23,7 @@ public struct AgentToolInvocationPlanner: Sendable {
             )
         }
 
-        let normalizedText = normalize(request.userText)
+        let normalizedText = normalize(request.matchingText)
         guard !normalizedText.isEmpty else {
             return AgentToolInvocationPlan(candidates: [])
         }

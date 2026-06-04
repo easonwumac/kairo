@@ -8,10 +8,12 @@ public enum AgentToolInvocationSource: String, Codable, Equatable, Sendable {
 
 public struct AgentToolInvocationRequest: Codable, Equatable, Sendable {
     public var userText: String
+    public var matchingText: String
     public var allowsToolUse: Bool
 
-    public init(userText: String, allowsToolUse: Bool = true) {
+    public init(userText: String, matchingText: String? = nil, allowsToolUse: Bool = true) {
         self.userText = userText
+        self.matchingText = matchingText ?? userText
         self.allowsToolUse = allowsToolUse
     }
 }
