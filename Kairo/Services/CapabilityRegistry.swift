@@ -10,152 +10,152 @@ public struct CapabilityRegistry: Sendable {
     public static let defaultCapabilities: [Capability] = [
         Capability(
             key: .chat,
-            displayName: "Chat",
-            description: "和 Kairo 對話，查詢記憶與規劃任務。",
+            displayName: KairoL10n.string("capability.chat.title"),
+            description: KairoL10n.string("capability.chat.description"),
             permission: .none,
             status: .available,
             isMVP: true
         ),
         Capability(
             key: .memory,
-            displayName: "Memory",
-            description: "儲存、搜尋、編輯與刪除使用者選擇交給 Kairo 的記憶。",
+            displayName: KairoL10n.string("capability.memory.title"),
+            description: KairoL10n.string("capability.memory.description"),
             permission: .none,
             status: .available,
             isMVP: true
         ),
         Capability(
             key: .shareExtension,
-            displayName: "Share Extension",
-            description: "從其他 App 分享內容到 Kairo。",
+            displayName: KairoL10n.string("capability.shareExtension.title"),
+            description: KairoL10n.string("capability.shareExtension.description"),
             permission: .userInitiated,
             status: .available,
             isMVP: true
         ),
         Capability(
             key: .appIntents,
-            displayName: "App Intents & Shortcuts",
-            description: "讓 Siri 與捷徑呼叫 Kairo 支援的動作。",
+            displayName: KairoL10n.string("capability.appIntents.title"),
+            description: KairoL10n.string("capability.appIntents.description"),
             permission: .userInitiated,
             status: .available,
             isMVP: true
         ),
         Capability(
             key: .integrationRegistry,
-            displayName: "Integration Registry",
-            description: "記錄 App Intents、Shortcuts、URL schemes 與 OAuth connector metadata，避免誇大跨 App 能力。",
+            displayName: KairoL10n.string("capability.integrationRegistry.title"),
+            description: KairoL10n.string("capability.integrationRegistry.description"),
             permission: .userInitiated,
             status: .available,
             isMVP: true
         ),
         Capability(
             key: .backgroundTasks,
-            displayName: "Background Task Policy",
-            description: "規劃 BGTaskScheduler 可接受的有限背景刷新/處理工作，不宣稱常駐 daemon。",
+            displayName: KairoL10n.string("capability.backgroundTasks.title"),
+            description: KairoL10n.string("capability.backgroundTasks.description"),
             permission: .entitlement,
             status: .available,
             isMVP: true
         ),
         Capability(
             key: .notifications,
-            displayName: "Notifications",
-            description: "傳送 briefing、確認請求與提醒通知。",
+            displayName: KairoL10n.string("capability.notifications.title"),
+            description: KairoL10n.string("capability.notifications.description"),
             permission: .runtimePrompt,
             status: .unknown,
             isMVP: true
         ),
         Capability(
             key: .calendar,
-            displayName: "Calendar",
-            description: "讀取授權行事曆並建立行事曆草稿。",
+            displayName: KairoL10n.string("capability.calendar.title"),
+            description: KairoL10n.string("capability.calendar.description"),
             permission: .runtimePrompt,
             status: .unknown,
             isMVP: true
         ),
         Capability(
             key: .reminders,
-            displayName: "Reminders",
-            description: "建立與整理提醒事項。",
+            displayName: KairoL10n.string("capability.reminders.title"),
+            description: KairoL10n.string("capability.reminders.description"),
             permission: .runtimePrompt,
             status: .unknown,
             isMVP: true
         ),
         Capability(
             key: .contacts,
-            displayName: "Contacts",
-            description: "在使用者授權與確認後建立聯絡人；不讀取或匯出聯絡人資料庫。",
+            displayName: KairoL10n.string("capability.contacts.title"),
+            description: KairoL10n.string("capability.contacts.description"),
             permission: .runtimePrompt,
             status: .unknown,
             isMVP: false
         ),
         Capability(
             key: .mail,
-            displayName: "Mail Draft Handoff",
-            description: "透過 mailto 產生使用者可見的 Email 草稿 handoff；不讀取 Mail 資料庫、不靜默寄信。",
+            displayName: KairoL10n.string("capability.mail.title"),
+            description: KairoL10n.string("capability.mail.description"),
             permission: .userInitiated,
             status: .available,
             isMVP: true
         ),
         Capability(
             key: .messages,
-            displayName: "Messages Handoff",
-            description: "透過 sms: 只開啟使用者可見的 Messages 收件人 handoff；正文留在 Kairo preview，不讀 Messages、不靜默傳送。",
+            displayName: KairoL10n.string("capability.messages.title"),
+            description: KairoL10n.string("capability.messages.description"),
             permission: .userInitiated,
             status: .available,
             isMVP: true
         ),
         Capability(
             key: .phone,
-            displayName: "Phone Handoff",
-            description: "透過 tel: 只開啟使用者可見的 Phone handoff；不讀通話紀錄、不靜默撥號。",
+            displayName: KairoL10n.string("capability.phone.title"),
+            description: KairoL10n.string("capability.phone.description"),
             permission: .userInitiated,
             status: .available,
             isMVP: true
         ),
         Capability(
             key: .web,
-            displayName: "Web Search Handoff",
-            description: "透過 HTTPS 搜尋 URL 開啟使用者可見的 Safari handoff；不背景瀏覽、不讀取網頁內容。",
+            displayName: KairoL10n.string("capability.web.title"),
+            description: KairoL10n.string("capability.web.description"),
             permission: .userInitiated,
             status: .available,
             isMVP: true
         ),
         Capability(
             key: .photos,
-            displayName: "Photos",
-            description: "處理使用者選取的圖片或截圖。",
+            displayName: KairoL10n.string("capability.photos.title"),
+            description: KairoL10n.string("capability.photos.description"),
             permission: .userInitiated,
             status: .unknown,
             isMVP: true
         ),
         Capability(
             key: .documents,
-            displayName: "Documents",
-            description: "處理使用者選取的文件。",
+            displayName: KairoL10n.string("capability.documents.title"),
+            description: KairoL10n.string("capability.documents.description"),
             permission: .userInitiated,
             status: .unknown,
             isMVP: true
         ),
         Capability(
             key: .location,
-            displayName: "Maps Directions Handoff",
-            description: "透過 Apple Maps link 開啟使用者可見的路線規劃，不讀取目前位置、不自動開始導航。",
+            displayName: KairoL10n.string("capability.location.title"),
+            description: KairoL10n.string("capability.location.description"),
             permission: .userInitiated,
             status: .available,
             isMVP: true
         ),
         Capability(
             key: .homeKit,
-            displayName: "HomeKit",
-            description: "目前 beta 僅提供 HomeKit 動作預覽；live control 仍需 entitlement、provider 與真機驗證。",
+            displayName: KairoL10n.string("capability.homeKit.title"),
+            description: KairoL10n.string("capability.homeKit.description"),
             permission: .runtimePrompt,
             status: .unknown,
             isMVP: false
         ),
         Capability(
             key: .externalConnectors,
-            displayName: "External Connectors",
-            description: "透過 OAuth 連接 Gmail、Microsoft 365、Notion 等外部服務。",
+            displayName: KairoL10n.string("capability.externalConnectors.title"),
+            description: KairoL10n.string("capability.externalConnectors.description"),
             permission: .oauth,
             status: .unknown,
             isMVP: false

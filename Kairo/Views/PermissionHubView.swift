@@ -33,48 +33,76 @@ public struct PermissionHubView: View {
     public var body: some View {
         NavigationStack {
             List {
-                Section("Capabilities") {
+                Section {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(KairoL10n.string("access.overview.title"))
+                            .font(.headline)
+                            .foregroundStyle(KairoDesign.ink)
+                        Text(KairoL10n.string("access.overview.subtitle"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                Section {
                     ForEach(registry.capabilities) { capability in
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(capability.displayName).font(.headline)
-                                Spacer()
-                                Text(capability.permission.rawValue)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Text(capability.description)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            if let fallbackMessage = capability.status.accessFallbackMessage {
-                                Text(fallbackMessage)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .accessibilityIdentifier("access.capability.\(capability.key.rawValue).status-fallback")
-                            }
-                            HStack {
-                                if capability.isMVP {
-                                    Text(KairoL10n.string("access.capability.core"))
-                                        .font(.caption2)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(.blue.opacity(0.15))
-                                        .clipShape(Capsule())
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: iconName(for: capability.key))
+                                .font(.subheadline.weight(.semibold))
+                                .symbolRenderingMode(.hierarchical)
+                                .foregroundStyle(capabilityTint(for: capability))
+                                .frame(width: 28, height: 28)
+
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Text(capability.displayName)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(KairoDesign.ink)
+                                    Spacer(minLength: 8)
+                                    Text(permissionLabel(for: capability.permission))
+                                        .font(.caption2.weight(.semibold))
+                                        .foregroundStyle(.secondary)
                                 }
-                                ForEach(actionCatalog.descriptors(for: capability.key).prefix(3)) { descriptor in
-                                    CapabilityChipView(descriptor: descriptor)
+
+                                Text(capability.description)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+
+                                if let fallbackMessage = capability.status.accessFallbackMessage {
+                                    Text(fallbackMessage)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .accessibilityIdentifier("access.capability.\(capability.key.rawValue).status-fallback")
+                                }
+
+                                HStack {
+                                    if capability.isMVP {
+                                        Text(KairoL10n.string("access.capability.core"))
+                                            .font(.caption2.weight(.semibold))
+                                            .padding(.horizontal, 7)
+                                            .padding(.vertical, 3)
+                                            .background(KairoDesign.blue.opacity(0.12), in: Capsule())
+                                    }
+                                    ForEach(actionCatalog.descriptors(for: capability.key).prefix(3)) { descriptor in
+                                        CapabilityChipView(descriptor: descriptor)
+                                    }
                                 }
                             }
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 6)
                     }
+                } header: {
+                    Text(KairoL10n.string("access.capabilities.section"))
+                } footer: {
+                    Text(KairoL10n.string("access.capabilities.footer"))
                 }
 
                 Section {
                     skillSearchControls()
-                    if normalizedSkillSearchText.isEmpty {
-                        manifestImportControls()
-                    }
 
                     if let skillManagerMessage {
                         Text(skillManagerMessage)
@@ -86,13 +114,23 @@ public struct PermissionHubView: View {
                     ForEach(filteredSkills) { skill in
                         skillManagerRow(skill)
                     }
+                } header: {
+                    Text(KairoL10n.string("access.skills.manager.title"))
+                        .accessibilityIdentifier("access.skills.manager")
+                } footer: {
+                    Text(KairoL10n.string("access.skills.manager.footer"))
+                }
+
+                Section {
+                    manifestImportControls()
 
                     if let manifestInstallPreview {
                         manifestPreview(manifestInstallPreview)
                     }
                 } header: {
-                    Text(KairoL10n.string("access.skills.manager.title"))
-                        .accessibilityIdentifier("access.skills.manager")
+                    Text(KairoL10n.string("access.skills.advanced.title"))
+                } footer: {
+                    Text(KairoL10n.string("access.skills.advanced.footer"))
                 }
 
                 Section {
@@ -110,10 +148,79 @@ public struct PermissionHubView: View {
                         .accessibilityIdentifier("access.homekit.demos")
                 }
             }
-            .navigationTitle("Access")
+            .navigationTitle(KairoL10n.string("access.navigation.title"))
             .task {
                 await loadSkillCatalog()
             }
+        }
+    }
+
+    private func iconName(for key: CapabilityKey) -> String {
+        switch key {
+        case .chat:
+            return "message.fill"
+        case .memory:
+            return "brain.head.profile"
+        case .shareExtension:
+            return "square.and.arrow.down"
+        case .appIntents:
+            return "wand.and.stars"
+        case .integrationRegistry, .externalConnectors:
+            return "person.crop.circle.badge.checkmark"
+        case .backgroundTasks:
+            return "clock.arrow.circlepath"
+        case .notifications:
+            return "bell"
+        case .calendar:
+            return "calendar"
+        case .reminders:
+            return "checklist"
+        case .contacts:
+            return "person.crop.circle"
+        case .mail:
+            return "envelope"
+        case .messages:
+            return "bubble.left.and.bubble.right"
+        case .phone:
+            return "phone"
+        case .photos:
+            return "photo"
+        case .documents:
+            return "doc.text"
+        case .web:
+            return "safari"
+        case .location:
+            return "location"
+        case .homeKit:
+            return "house"
+        }
+    }
+
+    private func capabilityTint(for capability: Capability) -> Color {
+        switch capability.status {
+        case .available:
+            return KairoDesign.teal
+        case .denied, .restricted, .unsupported:
+            return KairoDesign.red
+        case .unknown:
+            return capability.isMVP ? KairoDesign.blue : .secondary
+        }
+    }
+
+    private func permissionLabel(for permission: PermissionRequirement) -> String {
+        switch permission {
+        case .none:
+            return KairoL10n.string("access.permission.none")
+        case .userInitiated:
+            return KairoL10n.string("access.permission.userInitiated")
+        case .runtimePrompt:
+            return KairoL10n.string("access.permission.runtimePrompt")
+        case .entitlement:
+            return KairoL10n.string("access.permission.entitlement")
+        case .oauth:
+            return KairoL10n.string("access.permission.oauth")
+        case .unsupported:
+            return KairoL10n.string("access.permission.unsupported")
         }
     }
 
@@ -341,24 +448,36 @@ public struct PermissionHubView: View {
 
     @ViewBuilder
     private func skillManagerRow(_ skill: AgentSkill) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(skill.displayName)
-                .font(.subheadline)
-                .fontWeight(.medium)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(skill.displayName)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(2)
+
+                Spacer(minLength: 8)
+
+                Text(skill.installationStatus.rawValue)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
 
             Text(skill.summary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             Text(skill.managementSummary)
-                .font(.caption)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
                 .accessibilityIdentifier("access.skill.\(skill.id).summary")
 
-            HStack {
+            VStack(alignment: .leading, spacing: 6) {
                 Button {
                     skillManagerMessage = KairoL10n.string("access.skills.message.managementSummary", skill.displayName, skill.managementSummary)
                 } label: {
                     Label(KairoL10n.string("access.skills.action.manage"), systemImage: "slider.horizontal.3")
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .accessibilityIdentifier("access.skill.\(skill.id).manage")
 
@@ -370,6 +489,7 @@ public struct PermissionHubView: View {
                         }
                     } label: {
                         Label(KairoL10n.string("access.skills.action.install"), systemImage: "square.and.arrow.down")
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .accessibilityIdentifier("access.skill.\(skill.id).install")
                 case .installed:
@@ -380,6 +500,7 @@ public struct PermissionHubView: View {
                             }
                         } label: {
                             Label(KairoL10n.string("access.skills.action.previewUpdate"), systemImage: "arrow.triangle.2.circlepath")
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .accessibilityIdentifier("access.skill.\(skill.id).update")
                     }
@@ -390,6 +511,7 @@ public struct PermissionHubView: View {
                         }
                     } label: {
                         Label(KairoL10n.string("access.skills.action.disable"), systemImage: "pause.circle")
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .accessibilityIdentifier("access.skill.\(skill.id).disable")
                 case .disabled:
@@ -399,6 +521,7 @@ public struct PermissionHubView: View {
                         }
                     } label: {
                         Label(KairoL10n.string("access.skills.action.enable"), systemImage: "play.circle")
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .accessibilityIdentifier("access.skill.\(skill.id).enable")
                 }
@@ -409,12 +532,14 @@ public struct PermissionHubView: View {
                     }
                 } label: {
                     Label(KairoL10n.string("access.skills.action.remove"), systemImage: "trash")
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .accessibilityIdentifier("access.skill.\(skill.id).remove")
             }
             .font(.caption)
+            .buttonStyle(.borderless)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("access.skill.\(skill.id)")
     }

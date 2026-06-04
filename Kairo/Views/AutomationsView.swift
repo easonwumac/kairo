@@ -48,20 +48,18 @@ public struct AutomationsView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                automationSection(KairoL10n.string("automations.recipeCenter.section")) {
-                    Text(KairoL10n.string("automations.recipeCenter.detail"))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    Button(KairoL10n.string("automations.recipeCenter.addSamples")) {
-                        Task { await seedSampleRecipes() }
+                automationSection(KairoL10n.string("automations.recipes.section")) {
+                    if recipes.isEmpty {
+                        Text(KairoL10n.string("automations.recipes.empty"))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
-                    .accessibilityLabel(KairoL10n.string("automations.recipeCenter.addSamples"))
-                    .accessibilityIdentifier("automations.seed-samples")
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+
+                    ForEach(recipes) { recipe in
+                        recipeRow(recipe)
+                    }
                 }
-                .accessibilityIdentifier("automations.recipe-center")
+                .accessibilityIdentifier("automations.list")
 
                 automationSection(KairoL10n.string("automations.shortcutTemplates.section")) {
                     Text(shortcutTemplateRegistry.manualInstallDisclaimer)
@@ -86,18 +84,20 @@ public struct AutomationsView: View {
                 }
                 .accessibilityIdentifier("automations.shortcut-demos")
 
-                automationSection(KairoL10n.string("automations.recipes.section")) {
-                    if recipes.isEmpty {
-                        Text(KairoL10n.string("automations.recipes.empty"))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+                automationSection(KairoL10n.string("automations.recipeCenter.section")) {
+                    Text(KairoL10n.string("automations.recipeCenter.detail"))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
 
-                    ForEach(recipes) { recipe in
-                        recipeRow(recipe)
+                    Button(KairoL10n.string("automations.recipeCenter.addSamples")) {
+                        Task { await seedSampleRecipes() }
                     }
+                    .accessibilityLabel(KairoL10n.string("automations.recipeCenter.addSamples"))
+                    .accessibilityIdentifier("automations.seed-samples")
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
-                .accessibilityIdentifier("automations.list")
+                .accessibilityIdentifier("automations.recipe-center")
 
                 if let message {
                     automationSection(KairoL10n.string("automations.status.section")) {
