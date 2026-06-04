@@ -42,7 +42,7 @@ final class SourceHealthTests: XCTestCase {
         let enumerator = FileManager.default.enumerator(
             at: root,
             includingPropertiesForKeys: keys,
-            options: [.skipsHiddenFiles]
+            options: []
         )
         var matches: [String] = []
 
@@ -95,7 +95,7 @@ final class SourceHealthTests: XCTestCase {
         let enumerator = FileManager.default.enumerator(
             at: root,
             includingPropertiesForKeys: keys,
-            options: [.skipsHiddenFiles]
+            options: []
         )
         var matches: [String] = []
 
