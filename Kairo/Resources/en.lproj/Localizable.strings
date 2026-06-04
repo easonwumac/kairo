@@ -214,10 +214,12 @@
 "automations.recipes.section" = "Your saved workflows";
 "automations.recipes.detail" = "Preview, run, or pause each workflow from one review card.";
 "automations.recipes.empty" = "No internal recipes yet.";
+"automations.recipes.empty.detail" = "Add the starter set, then preview one workflow before running it.";
 "automations.status.section" = "Status";
 "automations.recipe.enabled" = "Enabled";
 "automations.recipe.disabled" = "Disabled";
 "automations.recipe.risk" = "Risk: %@";
+"automations.recipe.reviewThenRun" = "Preview first";
 "automations.recipe.preview" = "Preview";
 "automations.recipe.run" = "Run";
 "automations.recipe.enable" = "Enable";

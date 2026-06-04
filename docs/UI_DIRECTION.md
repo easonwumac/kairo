@@ -167,6 +167,18 @@ Stage 16 makes Action Preview checklist-first:
 - Confirm and Go Back remain visible without opening details, preserving the
   review-first safety flow while reducing text overload.
 
+Stage 17 makes Workflows recipe-action-first:
+
+- Workflows no longer promotes Shortcut handoff counts or demo preview counts in
+  the overview; the first-level status is saved workflows plus review-first
+  safety.
+- Empty Workflows now points users to one starter set before asking them to scan
+  saved recipes.
+- Saved recipe rows lead with title, short summary, risk, and a primary Preview
+  action, while Run and Pause stay available as secondary controls.
+- Advanced references remain reachable, but implementation catalogs no longer
+  compete with the recipe job on first load.
+
 ## Next UI stages
 
 1. Memory Center
@@ -178,8 +190,8 @@ Stage 16 makes Action Preview checklist-first:
      smoke confirms the new first screen.
 
 3. Workflows
-   - Continue tightening recipe row actions after runtime smoke tests reveal
-     the most common workflow states.
+   - Continue tuning saved recipe cards only after runtime smoke confirms the
+     new recipe-first order.
 
 4. AI Setup and Settings
    - Continue tightening route-state language after simulator smoke confirms

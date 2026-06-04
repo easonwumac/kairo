@@ -214,10 +214,12 @@
 "automations.recipes.section" = "你的已儲存流程";
 "automations.recipes.detail" = "每個流程都能在同一張卡片中預覽、執行或暫停。";
 "automations.recipes.empty" = "還沒有 internal recipes。";
+"automations.recipes.empty.detail" = "先加入 starter set，再預覽一個流程後才執行。";
 "automations.status.section" = "狀態";
 "automations.recipe.enabled" = "已啟用";
 "automations.recipe.disabled" = "已停用";
 "automations.recipe.risk" = "風險：%@";
+"automations.recipe.reviewThenRun" = "先預覽";
 "automations.recipe.preview" = "預覽";
 "automations.recipe.run" = "執行";
 "automations.recipe.enable" = "啟用";
