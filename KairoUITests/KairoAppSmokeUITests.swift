@@ -128,6 +128,34 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertFalse(anyElement("memory.record").exists)
     }
 
+    func testChatShowsWhenAssistantUsedMemoryContext() throws {
+        relaunchForUITesting(initialSection: "memory")
+
+        let addField = anyElement("memory.add.text")
+        XCTAssertTrue(addField.waitForExistence(timeout: 5))
+        addField.tap()
+        addField.typeText("Reviewer memory: prepare concise beta launch notes.")
+        dismissKeyboardIfPresent()
+
+        let save = findButton("memory.add.save", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(save.exists)
+        save.tap()
+        XCTAssertTrue(findStaticText(containing: "Reviewer memory", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
+
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+        let composer = anyElement("chat.composer.text")
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        composer.tap()
+        composer.typeText("Reviewer memory")
+        anyElement("chat.composer.send").tap()
+
+        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
+        let memoryBadge = findElement("chat.message.memory-context", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(memoryBadge.waitForExistence(timeout: 5))
+        XCTAssertTrue(memoryBadge.label.contains("Used 1 memory item"), memoryBadge.label)
+    }
+
     func testSettingsExpandedModelCatalogKeepsPopularStarterRowsVisible() throws {
         relaunchForUITesting(initialSection: "models", seedExpandedLocalModelCatalog: true)
 

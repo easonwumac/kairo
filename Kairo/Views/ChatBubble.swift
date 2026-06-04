@@ -44,6 +44,8 @@ struct ChatBubble: View {
                     Text(message.createdAt, style: .time)
                     if !isUser, message.memoryContextCount > 0 {
                         Label(memoryContextLabel, systemImage: "brain.head.profile")
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(memoryContextLabel)
                             .accessibilityIdentifier("chat.message.memory-context")
                     }
                     messageActionButton(
