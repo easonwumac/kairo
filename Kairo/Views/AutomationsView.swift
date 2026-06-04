@@ -40,10 +40,11 @@ public struct AutomationsView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                workflowOverviewCard
                 if recipes.isEmpty {
                     recipeCenterCard
+                    workflowOverviewCard
                 } else {
+                    workflowOverviewCard
                     savedRecipesCard
                     recipeCenterCard
                 }
@@ -100,11 +101,6 @@ public struct AutomationsView: View {
 
                 if showWorkflowDetails {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(KairoL10n.string("automations.subtitle"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
                         HStack(spacing: 8) {
                             KairoStatusPill(
                                 title: KairoL10n.string("automations.status.recipes", Int64(recipes.count)),
@@ -117,11 +113,6 @@ public struct AutomationsView: View {
                                 tint: KairoDesign.green
                             )
                         }
-
-                        Text(KairoL10n.string("automations.details.subtitle"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
 
                         Text(KairoL10n.string("automations.recipeCenter.detail"))
                             .font(.caption)

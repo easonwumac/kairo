@@ -625,6 +625,16 @@ Stage 65 makes Chat action preview easier to confirm:
 - Confirm/cancel actions, payload details, safety disclosure, and existing chat
   action preview identifiers keep their current paths.
 
+Stage 66 makes empty Workflows action-first:
+
+- Empty Workflows now opens on the starter workflow action instead of the
+  explanatory overview.
+- Workflow details keeps saved count, review-first state, and the internal
+  workflow boundary after expansion without repeating multiple explanatory
+  paragraphs.
+- Saved workflow lists, recipe preview/run controls, advanced references, and
+  existing workflow smoke identifiers keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit
