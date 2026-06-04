@@ -229,7 +229,7 @@ extension KairoAppSmokeUITests {
         for text in previewContains {
             XCTAssertTrue(findStaticText(containing: text, direction: .both, maxSwipes: 1).exists, text)
         }
-        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
+        let confirm = findButton("chat.action.confirm", direction: .both, maxSwipes: 1)
         XCTAssertTrue(confirm.exists)
         tapElement(confirm)
 

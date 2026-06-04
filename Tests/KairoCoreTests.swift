@@ -781,8 +781,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(rootView.contains("case memory"))
         XCTAssertFalse(rootView.contains("TabView"))
         XCTAssertFalse(chatView.contains("KairoBriefingStrip()"))
-        XCTAssertTrue(actionPreview.contains("Review before Kairo acts"))
-        XCTAssertTrue(actionPreview.contains("Nothing changes until you confirm."))
+        XCTAssertTrue(actionPreview.contains("確認前先檢查"))
+        XCTAssertTrue(actionPreview.contains("你按下確認之前，Kairo 不會寫入資料或開啟外部 App。"))
     }
 
     func testRootShellKeepsChatFirstForMobileUse() throws {
@@ -1407,7 +1407,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("Will ask first"))
         XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.sendNotification""#))
         XCTAssertTrue(uiTestSources.contains(#""chat.action-preview""#))
-        XCTAssertTrue(uiTestSources.contains(#"findButton(labeled: "Confirm""#))
+        XCTAssertTrue(uiTestSources.contains(#"findButton("chat.action.confirm""#))
         XCTAssertTrue(actionPreviewView.contains(#""chat.action.confirm""#))
         XCTAssertTrue(uiTestSources.contains(#""chat.action-result""#))
         XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmReminderAction"))

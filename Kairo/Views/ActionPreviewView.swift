@@ -36,12 +36,12 @@ public struct ActionPreviewView: View {
                         .background((action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Review before Kairo acts")
+                        Text("確認前先檢查")
                             .font(.title3.bold())
                         Text(action.title)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
-                        Text("Nothing changes until you confirm.")
+                        Text("你按下確認之前，Kairo 不會寫入資料或開啟外部 App。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -68,7 +68,7 @@ public struct ActionPreviewView: View {
 
                 HStack(spacing: 12) {
                     Button(role: .cancel, action: onCancel) {
-                        Text("Edit")
+                        Text("返回修改")
                             .frame(maxWidth: .infinity)
                             .accessibilityIdentifier("chat.action.cancel.label")
                     }
@@ -77,7 +77,7 @@ public struct ActionPreviewView: View {
                     .accessibilityIdentifier("chat.action.cancel")
 
                     Button(action: onConfirm) {
-                        Text(action.kind == .unsupportedSandboxAction ? "OK" : "Confirm")
+                        Text(action.kind == .unsupportedSandboxAction ? "知道了" : "確認執行")
                             .frame(maxWidth: .infinity)
                             .accessibilityIdentifier("chat.action.confirm.label")
                     }
