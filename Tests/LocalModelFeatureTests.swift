@@ -256,6 +256,61 @@ final class LocalModelFeatureTests: XCTestCase {
         }
     }
 
+    func testLocalModelCatalogServiceRejectsInvalidSizeMetadata() async throws {
+        let zeroFileSizeManifest = remoteModelManifestJSON(
+            id: "zero-size-model",
+            displayName: "Zero Size Model"
+        ).replacingOccurrences(
+            of: #""fileSizeBytes": 512"#,
+            with: #""fileSizeBytes": 0"#
+        )
+        let impossibleInstallSizeManifest = remoteModelManifestJSON(
+            id: "small-install-model",
+            displayName: "Small Install Model"
+        ).replacingOccurrences(
+            of: #""installedSizeBytes": 1024"#,
+            with: #""installedSizeBytes": 256"#
+        )
+
+        for (manifestJSON, expectedError) in [
+            (
+                zeroFileSizeManifest,
+                LocalModelCatalogServiceError.invalidSizeMetadata(
+                    modelID: "zero-size-model",
+                    fileSizeBytes: 0,
+                    installedSizeBytes: 1024
+                )
+            ),
+            (
+                impossibleInstallSizeManifest,
+                LocalModelCatalogServiceError.invalidSizeMetadata(
+                    modelID: "small-install-model",
+                    fileSizeBytes: 512,
+                    installedSizeBytes: 256
+                )
+            )
+        ] {
+            let signedCatalog = try signedRemoteModelCatalogJSON(
+                modelsJSON: [
+                    manifestJSON
+                ]
+            )
+            let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+            let service = LocalModelCatalogService(
+                indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+                httpClient: httpClient,
+                trustStore: signedCatalog.trustStore
+            )
+
+            do {
+                _ = try await service.fetchCatalog()
+                XCTFail("Expected invalid model size metadata to fail closed.")
+            } catch let error as LocalModelCatalogServiceError {
+                XCTAssertEqual(error, expectedError)
+            }
+        }
+    }
+
     func testLocalModelCatalogServiceRejectsNonHexChecksum() async throws {
         let invalidChecksum = String(repeating: "z", count: 64)
         let manifestJSON = remoteModelManifestJSON(

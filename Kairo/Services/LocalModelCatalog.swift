@@ -539,6 +539,7 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
     case nonProductionCatalogSignatureStatus(String)
     case invalidModelID(String)
     case missingCapabilities(modelID: String)
+    case invalidSizeMetadata(modelID: String, fileSizeBytes: Int64, installedSizeBytes: Int64)
     case duplicateModelID(String)
     case unsafeDownloadURL(modelID: String, url: String)
     case invalidChecksum(modelID: String, sha256: String)
@@ -569,6 +570,8 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
             return "Model catalog contains an invalid model id: \(modelID)."
         case .missingCapabilities(let modelID):
             return "Model catalog must declare at least one capability for \(modelID)."
+        case .invalidSizeMetadata(let modelID, let fileSizeBytes, let installedSizeBytes):
+            return "Model catalog has invalid size metadata for \(modelID): file=\(fileSizeBytes), installed=\(installedSizeBytes)."
         case .duplicateModelID(let modelID):
             return "Model catalog contains a duplicate model id: \(modelID)."
         case .unsafeDownloadURL(let modelID, let url):
@@ -674,6 +677,13 @@ public struct LocalModelCatalogService: Sendable {
             }
             guard !model.capabilities.isEmpty else {
                 throw LocalModelCatalogServiceError.missingCapabilities(modelID: model.id)
+            }
+            guard model.fileSizeBytes > 0, model.installedSizeBytes >= model.fileSizeBytes else {
+                throw LocalModelCatalogServiceError.invalidSizeMetadata(
+                    modelID: model.id,
+                    fileSizeBytes: model.fileSizeBytes,
+                    installedSizeBytes: model.installedSizeBytes
+                )
             }
             guard Self.isValidSHA256Hex(model.sha256) else {
                 throw LocalModelCatalogServiceError.invalidChecksum(
