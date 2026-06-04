@@ -443,6 +443,7 @@
 "chat.private.detail" = "不使用記憶或工具；私密聊天不會預設送到雲端。";
 "chat.mode.standard" = "標準";
 "chat.mode.private" = "私密";
+"chat.mode.label" = "模式";
 "chat.mode.privateOn" = "開啟私密";
 "chat.mode.privateOff" = "關閉私密";
 "chat.mode.accessibilityStatus" = "%@模式。路由：%@。%@";
@@ -463,6 +464,7 @@
 "chat.message.memoryContext.many" = "使用了 %lld 筆 Memory";
 "chat.message.accessibility" = "%@ 訊息";
 "chat.provider.route.settingsUnavailable" = "無法調整聊天路由";
+"chat.provider.route.label" = "路由";
 "chat.provider.route.menuTitle" = "路由";
 "chat.provider.route.accessibility" = "聊天路由";
 "chat.provider.route.only" = "僅本機";

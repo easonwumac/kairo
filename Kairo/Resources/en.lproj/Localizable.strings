@@ -443,6 +443,7 @@
 "chat.private.detail" = "No memory context or tools; private prompts do not default to cloud.";
 "chat.mode.standard" = "Standard";
 "chat.mode.private" = "Private";
+"chat.mode.label" = "Mode";
 "chat.mode.privateOn" = "Turn on Private";
 "chat.mode.privateOff" = "Turn off Private";
 "chat.mode.accessibilityStatus" = "%@ mode. Route: %@. %@";
@@ -463,6 +464,7 @@
 "chat.message.memoryContext.many" = "Used %lld memory items";
 "chat.message.accessibility" = "%@ message";
 "chat.provider.route.settingsUnavailable" = "Route settings unavailable";
+"chat.provider.route.label" = "Route";
 "chat.provider.route.menuTitle" = "Route";
 "chat.provider.route.accessibility" = "Chat route";
 "chat.provider.route.only" = "Local only";

@@ -40,29 +40,20 @@ struct ChatProviderRouteBar: View {
                 Text(KairoL10n.string("chat.provider.route.settingsUnavailable"))
             }
         } label: {
-            HStack(spacing: 7) {
-                Image(systemName: isPrivateChatEnabled ? "lock.fill" : "shield")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(isPrivateChatEnabled ? KairoDesign.ink : .secondary)
-
-                Text(modeTitle)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(isPrivateChatEnabled ? KairoDesign.ink : .secondary)
-
-                Text("·")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-
-                Image(systemName: status.warning == nil ? "bolt.horizontal.circle" : "exclamationmark.triangle.fill")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(status.warning == nil ? Color.secondary : Color.orange)
-
-                Text(status.title)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("chat.provider-route.title")
-
+            HStack(spacing: 8) {
+                routePill(
+                    label: KairoL10n.string("chat.mode.label"),
+                    value: modeTitle,
+                    systemImage: isPrivateChatEnabled ? "lock.fill" : "shield",
+                    tint: isPrivateChatEnabled ? KairoDesign.ink : KairoDesign.muted
+                )
+                routePill(
+                    label: KairoL10n.string("chat.provider.route.label"),
+                    value: status.title,
+                    systemImage: status.warning == nil ? "bolt.horizontal.circle" : "exclamationmark.triangle.fill",
+                    tint: status.warning == nil ? KairoDesign.blue : KairoDesign.amber
+                )
+                .accessibilityIdentifier("chat.provider-route.title")
                 Spacer(minLength: 4)
 
                 Image(systemName: "slider.horizontal.3")
@@ -92,6 +83,20 @@ struct ChatProviderRouteBar: View {
 
     private var modeTitle: String {
         isPrivateChatEnabled ? KairoL10n.string("chat.mode.private") : KairoL10n.string("chat.mode.standard")
+    }
+
+    private func routePill(label: String, value: String, systemImage: String, tint: Color) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.semibold))
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+        }
+        .foregroundStyle(tint)
     }
 }
 #endif

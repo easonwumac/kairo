@@ -97,6 +97,13 @@ Stage 8 polishes chat history outside iOS:
 - Thread selection is still simple, but history reads as saved work rather than
   a default system table.
 
+Stage 9 clarifies the chat route control:
+
+- The composer route bar now reads as two compact controls, Mode and Route,
+  instead of a terse technical string separated by punctuation.
+- The same menu still owns private chat and route preference, keeping advanced
+  routing editable without making Chat feel like a settings page.
+
 ## Next UI stages
 
 1. Memory Center
