@@ -729,6 +729,63 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(iosTargetReadiness.contains("simulator build evidence only"))
     }
 
+    func testPrivacyLabelsChecklistKeepsRequiredHandoffSections() throws {
+        let root = packageRootURL()
+        let privacyChecklist = try String(
+            contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
+            encoding: .utf8
+        )
+
+        let requiredSections = [
+            "## Current Beta Label Answers",
+            "## Purpose String Alignment",
+            "## Review Before Submission",
+            "## Deletion Evidence Boundary",
+            "## Change Triggers"
+        ]
+        for section in requiredSections {
+            XCTAssertTrue(privacyChecklist.contains(section), section)
+        }
+
+        XCTAssertTrue(privacyChecklist.contains("Tracking: No."))
+        XCTAssertTrue(privacyChecklist.contains("Data collected: No collected data."))
+        XCTAssertTrue(privacyChecklist.contains("NSPrivacyTracking=false"))
+        XCTAssertTrue(privacyChecklist.contains("NSPrivacyCollectedDataTypes"))
+        XCTAssertTrue(privacyChecklist.contains("NSPrivacyAccessedAPITypes"))
+        XCTAssertTrue(privacyChecklist.contains("NSHomeKitUsageDescription"))
+        XCTAssertTrue(privacyChecklist.contains("NSLocationWhenInUseUsageDescription"))
+        XCTAssertTrue(privacyChecklist.contains("NSPhotoLibraryUsageDescription"))
+        XCTAssertTrue(privacyChecklist.contains("Current deletion proof is on-device and user-triggered only"))
+        XCTAssertTrue(privacyChecklist.contains("Backend account deletion: not applicable in the current beta"))
+        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("tracking: yes"))
+        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("data collected: yes"))
+        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("backend account deletion is supported"))
+        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("cloud-sync deletion is supported"))
+    }
+
+    func testGitHubPublishingChecklistDefersToReleaseHygieneRunbook() throws {
+        let root = packageRootURL()
+        let publishing = try String(
+            contentsOf: root.appendingPathComponent("docs/GITHUB_PUBLISHING.md"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(publishing.contains("docs/RELEASE_HYGIENE.md"))
+        XCTAssertTrue(publishing.contains("swift test"))
+        XCTAssertTrue(publishing.contains("xcodegen generate"))
+        XCTAssertTrue(publishing.contains("git diff --check"))
+        XCTAssertTrue(publishing.contains("rg -n --hidden --glob '!.git/**'"))
+        XCTAssertTrue(publishing.contains("find . -path './.git' -prune"))
+        XCTAssertTrue(publishing.contains("*.gguf"))
+        XCTAssertTrue(publishing.contains("tokenizer blobs"))
+        XCTAssertTrue(publishing.contains("git status --short --branch"))
+        XCTAssertTrue(publishing.contains("gh run list --repo easonwumac/kairo --branch main --limit 5"))
+        XCTAssertTrue(publishing.contains("headSha"))
+        XCTAssertTrue(publishing.contains("舊的成功 run 不可當成本次提交證據"))
+        XCTAssertTrue(publishing.contains("不可提交或引用為真機證據"))
+        XCTAssertFalse(publishing.contains(#"rg -n "sk-|OPENAI_API_KEY|apiKey|password|secret|token|refresh_token|access_token" ."#))
+    }
+
     func testRoadmapKeepsReleaseBlockingBoundariesCurrent() throws {
         let root = packageRootURL()
         let roadmap = try String(
