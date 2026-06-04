@@ -192,6 +192,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findButton("chat.tools.menu", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(anyElement("chat.composer.surface").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("chat.provider-route").exists)
         XCTAssertTrue(anyElement("chat.composer.input-shell").exists)
 
         let composer = anyElement("chat.composer.text")

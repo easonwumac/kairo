@@ -401,6 +401,11 @@
 "chat.attachment.remove" = "移除附件";
 "chat.private.title" = "私密聊天";
 "chat.private.detail" = "不使用記憶或工具；私密聊天不會預設送到雲端。";
+"chat.mode.standard" = "標準";
+"chat.mode.private" = "私密";
+"chat.mode.privateOn" = "開啟私密";
+"chat.mode.privateOff" = "關閉私密";
+"chat.mode.accessibilityStatus" = "%@模式。路由：%@。%@";
 "chat.tools.open" = "開啟 Chat 工具";
 "chat.tools.phoneTools" = "手機工具";
 "chat.tools.phoneTools.prompt" = "幫我用手機功能完成：";

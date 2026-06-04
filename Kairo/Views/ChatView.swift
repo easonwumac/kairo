@@ -308,42 +308,19 @@ public struct ChatView: View {
     }
 
     private var composerStatusRow: some View {
-        HStack(spacing: 8) {
-            privateModeButton
-
-            ChatProviderRouteBar(
-                status: viewModel.providerRouteStatus,
-                canEdit: viewModel.canEditProviderRoute,
-                setPreference: { preference in
-                    Task { await viewModel.setProviderRoutePreference(preference) }
-                }
-            )
-        }
+        ChatProviderRouteBar(
+            status: viewModel.providerRouteStatus,
+            isPrivateChatEnabled: viewModel.isPrivateChatEnabled,
+            canEdit: viewModel.canEditProviderRoute,
+            togglePrivateChat: {
+                viewModel.setPrivateChatEnabled(!viewModel.isPrivateChatEnabled)
+            },
+            setPreference: { preference in
+                Task { await viewModel.setProviderRoutePreference(preference) }
+            }
+        )
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.composer.status-row")
-    }
-
-    private var privateModeButton: some View {
-        Button {
-            viewModel.setPrivateChatEnabled(!viewModel.isPrivateChatEnabled)
-        } label: {
-            Label(
-                KairoL10n.string("chat.private.title"),
-                systemImage: viewModel.isPrivateChatEnabled ? "lock.fill" : "lock"
-            )
-            .font(.caption.weight(.semibold))
-            .lineLimit(1)
-            .foregroundStyle(viewModel.isPrivateChatEnabled ? KairoDesign.ink : .secondary)
-            .padding(.horizontal, 10)
-            .frame(height: 32)
-            .background(
-                viewModel.isPrivateChatEnabled ? KairoDesign.amber.opacity(0.18) : Color.primary.opacity(0.045),
-                in: Capsule()
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(KairoL10n.string("chat.private.detail"))
-        .accessibilityIdentifier("chat.private-chat.toggle")
     }
 
     private var toolMenu: some View {

@@ -401,6 +401,11 @@
 "chat.attachment.remove" = "Remove attachment";
 "chat.private.title" = "Private chat";
 "chat.private.detail" = "No memory context or tools; private prompts do not default to cloud.";
+"chat.mode.standard" = "Standard";
+"chat.mode.private" = "Private";
+"chat.mode.privateOn" = "Turn on Private";
+"chat.mode.privateOff" = "Turn off Private";
+"chat.mode.accessibilityStatus" = "%@ mode. Route: %@. %@";
 "chat.tools.open" = "Open Chat tools";
 "chat.tools.phoneTools" = "Phone tools";
 "chat.tools.phoneTools.prompt" = "Help me complete this with phone tools:";
