@@ -75,6 +75,8 @@
 "access.status.reviewFirst" = "Review first";
 "access.status.needsSetup" = "%lld need setup";
 "access.status.unavailable" = "%lld unavailable";
+"access.status.details.title" = "Setup details";
+"access.status.details.subtitle" = "Review rules, setup needs, and unavailable tools stay here.";
 "access.capabilities.section" = "Phone abilities";
 "access.capabilities.focusedFooter" = "The useful everyday tools, shown before advanced setup.";
 "access.capabilities.footer" = "Unavailable items stay visible so the boundary is clear; Kairo will not bypass iOS permissions.";

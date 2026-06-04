@@ -363,6 +363,16 @@ Stage 37 makes Workflows starter-first:
 - Once workflows exist, saved workflows return to the first position and the
   starter set becomes a secondary add-more path below them.
 
+Stage 38 makes Access setup details secondary:
+
+- Access overview now opens with the ready tool count as the only first-level
+  status, keeping the page focused on tools Chat can actually suggest.
+- Review-first, setup-needed, and unavailable counts move behind a Setup details
+  disclosure so permission boundaries remain visible without turning the first
+  screen into a status dashboard.
+- The everyday tool list remains directly under the overview; advanced skill
+  library, developer manifest import, and HomeKit previews stay progressive.
+
 ## Next UI stages
 
 1. Product surface audit

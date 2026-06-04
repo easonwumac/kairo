@@ -15,6 +15,7 @@ public struct PermissionHubView: View {
     @State private var isAdvancedSkillSetupExpanded = false
     @State private var isDeveloperSkillSetupExpanded = false
     @State private var isHomeKitPreviewExpanded = false
+    @State private var isAccessStatusExpanded = false
     @State private var showMorePrimaryTools = false
     @State private var expandedCapabilityDetails: Set<CapabilityKey> = []
     @State private var expandedSkillDetails: Set<String> = []
@@ -70,30 +71,46 @@ public struct PermissionHubView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                HStack(spacing: 8) {
-                    KairoStatusPill(
-                        title: KairoL10n.string("access.status.ready", Int64(readyCapabilityCount)),
-                        systemImage: "checkmark.circle.fill",
-                        tint: KairoDesign.green
-                    )
-                    KairoStatusPill(
-                        title: KairoL10n.string("access.status.reviewFirst"),
-                        systemImage: "checkmark.shield.fill",
-                        tint: KairoDesign.blue
+                KairoStatusPill(
+                    title: KairoL10n.string("access.status.ready", Int64(readyCapabilityCount)),
+                    systemImage: "checkmark.circle.fill",
+                    tint: KairoDesign.green
+                )
+
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        isAccessStatusExpanded.toggle()
+                    }
+                } label: {
+                    disclosureHeader(
+                        title: KairoL10n.string("access.status.details.title"),
+                        subtitle: KairoL10n.string("access.status.details.subtitle"),
+                        isExpanded: isAccessStatusExpanded
                     )
                 }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("access.status.details.toggle")
 
-                HStack(spacing: 8) {
-                    KairoStatusPill(
-                        title: KairoL10n.string("access.status.needsSetup", Int64(needsSetupCapabilityCount)),
-                        systemImage: "wrench.and.screwdriver.fill",
-                        tint: KairoDesign.amber
-                    )
+                if isAccessStatusExpanded {
+                    HStack(spacing: 8) {
+                        KairoStatusPill(
+                            title: KairoL10n.string("access.status.reviewFirst"),
+                            systemImage: "checkmark.shield.fill",
+                            tint: KairoDesign.blue
+                        )
+                        KairoStatusPill(
+                            title: KairoL10n.string("access.status.needsSetup", Int64(needsSetupCapabilityCount)),
+                            systemImage: "wrench.and.screwdriver.fill",
+                            tint: KairoDesign.amber
+                        )
+                    }
                     KairoStatusPill(
                         title: KairoL10n.string("access.status.unavailable", Int64(unavailableCapabilityCount)),
                         systemImage: "nosign",
                         tint: KairoDesign.red
                     )
+                    .accessibilityIdentifier("access.status.unavailable")
                 }
             }
         }

@@ -75,6 +75,8 @@
 "access.status.reviewFirst" = "先檢查";
 "access.status.needsSetup" = "%lld 個需設定";
 "access.status.unavailable" = "%lld 個不可用";
+"access.status.details.title" = "設定細節";
+"access.status.details.subtitle" = "檢查規則、需設定與不可用工具都放在這裡。";
 "access.capabilities.section" = "手機能力";
 "access.capabilities.focusedFooter" = "先顯示日常最常用工具，進階設定放後面。";
 "access.capabilities.footer" = "不可用項目仍會顯示，讓邊界清楚；Kairo 不會繞過 iOS 權限。";
