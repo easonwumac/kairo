@@ -218,14 +218,20 @@ final class SourceHealthTests: XCTestCase {
         let backendTestsURL = root.appendingPathComponent("Tests/KairoBackendAPITests.swift")
         let accessTestsURL = root.appendingPathComponent("Tests/KairoAccessBackendAPITests.swift")
         let settingsTestsURL = root.appendingPathComponent("Tests/KairoSettingsBackendAPITests.swift")
+        let skillTestsURL = root.appendingPathComponent("Tests/KairoSkillBackendAPITests.swift")
+        let backendTestSupportURL = root.appendingPathComponent("Tests/KairoBackendTestSupport.swift")
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: backendTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: accessTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: settingsTestsURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: skillTestsURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: backendTestSupportURL.path))
 
         let backendTests = try String(contentsOf: backendTestsURL, encoding: .utf8)
         let accessTests = try String(contentsOf: accessTestsURL, encoding: .utf8)
         let settingsTests = try String(contentsOf: settingsTestsURL, encoding: .utf8)
+        let skillTests = try String(contentsOf: skillTestsURL, encoding: .utf8)
+        let backendTestSupport = try String(contentsOf: backendTestSupportURL, encoding: .utf8)
 
         XCTAssertTrue(accessTests.contains("final class KairoAccessBackendAPITests"))
         XCTAssertTrue(accessTests.contains("testAccessBackendAPIResolvesPermissionStatusesWithoutRequestingPrompts"))
@@ -233,11 +239,21 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(settingsTests.contains("final class KairoSettingsBackendAPITests"))
         XCTAssertTrue(settingsTests.contains("testSettingsBackendAPIManagesOpenAIKeyWithoutLeakingSecrets"))
         XCTAssertTrue(settingsTests.contains("testSettingsBackendAPIManagesOAuthLoginWithoutPersistingAuthorizationCode"))
+        XCTAssertTrue(skillTests.contains("final class KairoSkillBackendAPITests"))
+        XCTAssertTrue(skillTests.contains("testSkillBackendAPIForwardsLifecycleThroughSkillManager"))
+        XCTAssertTrue(skillTests.contains("testSkillBackendAPIRequiresExplicitUserDraftCapabilityAndConfirmationPolicy"))
+        XCTAssertTrue(skillTests.contains("testSkillBackendAPIBlocksIncompatibleMarketplaceSkillsFromExecutableCatalog"))
+        XCTAssertTrue(skillTests.contains("testSkillBackendAPIFailsClosedWhenServiceIsUnavailable"))
+        XCTAssertTrue(backendTestSupport.contains("makeBackendTestAgentSkillManagerService"))
         XCTAssertFalse(backendTests.contains("testAccessBackendAPIResolvesPermissionStatusesWithoutRequestingPrompts"))
         XCTAssertFalse(backendTests.contains("testSettingsBackendAPIManagesOpenAIKeyWithoutLeakingSecrets"))
+        XCTAssertFalse(backendTests.contains("testSkillBackendAPIForwardsLifecycleThroughSkillManager"))
+        XCTAssertFalse(backendTests.contains("testSkillBackendAPIBlocksIncompatibleMarketplaceSkillsFromExecutableCatalog"))
         XCTAssertLessThan(backendTests.split(separator: "\n").count, 720)
         XCTAssertLessThan(accessTests.split(separator: "\n").count, 180)
         XCTAssertLessThan(settingsTests.split(separator: "\n").count, 180)
+        XCTAssertLessThan(skillTests.split(separator: "\n").count, 240)
+        XCTAssertLessThan(backendTestSupport.split(separator: "\n").count, 80)
     }
 
     func testUITestHelpersStaySplitFromSmokeScenarios() throws {
