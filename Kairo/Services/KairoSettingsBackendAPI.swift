@@ -22,11 +22,11 @@ public protocol KairoSettingsAPI: Sendable {
 
 public struct KairoSettingsBackendService: KairoSettingsAPI {
     private let openAISettingsService: OpenAISettingsService
-    private let oauthLoginCenter: OAuthConnectorLoginCenter
+    private let oauthLoginCenter: any OAuthConnectorLoginServicing
 
     public init(
         openAISettingsService: OpenAISettingsService,
-        oauthLoginCenter: OAuthConnectorLoginCenter
+        oauthLoginCenter: any OAuthConnectorLoginServicing
     ) {
         self.openAISettingsService = openAISettingsService
         self.oauthLoginCenter = oauthLoginCenter

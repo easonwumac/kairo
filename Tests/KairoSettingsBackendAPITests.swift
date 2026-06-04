@@ -36,6 +36,32 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         XCTAssertNil(deletedOpenAIKey)
     }
 
+    func testSettingsBackendAPIDependsOnOAuthLoginServiceAbstraction() async throws {
+        let oauthService = StubOAuthConnectorLoginService(
+            options: [
+                OAuthConnectorLoginOption(
+                    integrationKey: "chatgpt",
+                    displayName: "ChatGPT",
+                    providerKey: "chatgpt",
+                    readiness: .readyToAuthorize,
+                    defaultScopes: ["openid"],
+                    requiresBackendTokenExchange: false,
+                    accountDataBoundary: "Account profile only"
+                )
+            ]
+        )
+        let api = KairoSettingsBackendService(
+            openAISettingsService: OpenAISettingsService(credentialStore: InMemoryCredentialStore()),
+            oauthLoginCenter: oauthService
+        )
+
+        let options = try await api.oauthLoginOptions()
+        let didLoadOptions = await oauthService.didLoadOptions()
+
+        XCTAssertEqual(options.map(\.providerKey), ["chatgpt"])
+        XCTAssertTrue(didLoadOptions)
+    }
+
     func testSettingsBackendAPIManagesOAuthLoginWithoutPersistingAuthorizationCode() async throws {
         let fileURL = temporaryFileURL(named: "oauth-callbacks.json")
         let callbackStore = try await FileBackedOAuthConnectorCallbackStore(fileURL: fileURL)
@@ -175,5 +201,56 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
             .appendingPathComponent(name)
+    }
+}
+
+private actor StubOAuthConnectorLoginService: OAuthConnectorLoginServicing {
+    private let options: [OAuthConnectorLoginOption]
+    private var loadedOptions = false
+
+    init(options: [OAuthConnectorLoginOption]) {
+        self.options = options
+    }
+
+    func loginOptions() async throws -> [OAuthConnectorLoginOption] {
+        loadedOptions = true
+        return options
+    }
+
+    func makeAuthorizationSession(
+        for integrationKey: String,
+        state: String,
+        codeVerifier: String
+    ) async throws -> OAuthConnectorAuthorizationSession {
+        OAuthConnectorAuthorizationSession(
+            providerKey: integrationKey,
+            authorizationURL: URL(string: "kairo://oauth/\(integrationKey)/authorize")!,
+            state: state,
+            codeVerifier: codeVerifier
+        )
+    }
+
+    func previewCallback(_ callbackURL: URL) async throws -> OAuthConnectorCallbackPreview {
+        OAuthConnectorCallbackPreview(
+            providerKey: "chatgpt",
+            integrationKey: "chatgpt",
+            state: nil,
+            authorizationCodeLength: 0,
+            requiresBackendTokenExchange: false
+        )
+    }
+
+    func exchangeCallback(
+        _ callbackURL: URL,
+        expectedState: String,
+        codeVerifier: String?
+    ) async throws -> OAuthTokenSet {
+        OAuthTokenSet(accessToken: "stub-token")
+    }
+
+    func disconnect(providerKey: String) async throws {}
+
+    func didLoadOptions() -> Bool {
+        loadedOptions
     }
 }

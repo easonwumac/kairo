@@ -46,6 +46,7 @@ public struct SettingsView: View {
     private let credentialStore: any CredentialStore
     private let oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
     private let oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
+    private let oauthLoginService: any OAuthConnectorLoginServicing
     private let oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)?
     let localModelCatalogService: LocalModelCatalogService?
     let localModelSettingsService: LocalModelSettingsService?
@@ -59,6 +60,7 @@ public struct SettingsView: View {
         credentialStore: any CredentialStore = InMemoryCredentialStore(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
+        oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
         oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)? = Self.defaultOAuthWebAuthenticationRunner(),
         localModelCatalog: LocalModelCatalog = .kairoDefault,
         localModelCatalogService: LocalModelCatalogService? = nil,
@@ -73,6 +75,12 @@ public struct SettingsView: View {
         self.credentialStore = credentialStore
         self.oauthClientConfigurations = oauthClientConfigurations
         self.oauthCallbackStore = oauthCallbackStore
+        self.oauthLoginService = Self.defaultOAuthLoginService(
+            override: oauthLoginService,
+            credentialStore: credentialStore,
+            oauthClientConfigurations: oauthClientConfigurations,
+            oauthCallbackStore: oauthCallbackStore
+        )
         self.oauthWebAuthenticationRunner = oauthWebAuthenticationRunner
         self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
@@ -90,6 +98,7 @@ public struct SettingsView: View {
         credentialStore: any CredentialStore,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
+        oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
         oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)? = Self.defaultOAuthWebAuthenticationRunner(),
         localModelCatalog: LocalModelCatalog = .kairoDefault,
         localModelCatalogService: LocalModelCatalogService? = nil,
@@ -104,6 +113,12 @@ public struct SettingsView: View {
         self.credentialStore = credentialStore
         self.oauthClientConfigurations = oauthClientConfigurations
         self.oauthCallbackStore = oauthCallbackStore
+        self.oauthLoginService = Self.defaultOAuthLoginService(
+            override: oauthLoginService,
+            credentialStore: credentialStore,
+            oauthClientConfigurations: oauthClientConfigurations,
+            oauthCallbackStore: oauthCallbackStore
+        )
         self.oauthWebAuthenticationRunner = oauthWebAuthenticationRunner
         self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
@@ -865,7 +880,7 @@ public struct SettingsView: View {
     private func authorizeConnector(_ option: OAuthConnectorLoginOption) {
         Task {
             do {
-                let center = connectorLoginCenter()
+                let center = oauthLoginService
                 await MainActor.run {
                     connectorStatusMessage = KairoL10n.string("settings.oauth.openingAuthorization", option.displayName)
                 }
@@ -903,7 +918,7 @@ public struct SettingsView: View {
     private func disconnectConnector(_ option: OAuthConnectorLoginOption) {
         Task {
             do {
-                try await connectorLoginCenter().disconnect(providerKey: option.providerKey)
+                try await oauthLoginService.disconnect(providerKey: option.providerKey)
                 await reloadConnectorOptions()
                 await MainActor.run {
                     connectorStatusMessage = KairoL10n.string("settings.oauth.disconnected", option.displayName)
@@ -927,7 +942,7 @@ public struct SettingsView: View {
             }
 
             do {
-                let preview = try await connectorLoginCenter().previewCallback(url)
+                let preview = try await oauthLoginService.previewCallback(url)
                 await MainActor.run {
                     oauthCallbackPreviewMessage = preview.settingsStatusText
                 }
@@ -958,7 +973,7 @@ public struct SettingsView: View {
             }
 
             do {
-                _ = try await connectorLoginCenter().exchangeCallback(
+                _ = try await oauthLoginService.exchangeCallback(
                     url,
                     expectedState: session.state,
                     codeVerifier: session.codeVerifier
@@ -998,7 +1013,7 @@ public struct SettingsView: View {
 
     private func reloadConnectorOptions() async {
         do {
-            let options = try await connectorLoginCenter().loginOptions()
+            let options = try await oauthLoginService.loginOptions()
             await MainActor.run {
                 connectorOptions = options
             }
@@ -1009,8 +1024,16 @@ public struct SettingsView: View {
         }
     }
 
-    private func connectorLoginCenter() -> OAuthConnectorLoginCenter {
-        OAuthConnectorLoginCenter(
+    private static func defaultOAuthLoginService(
+        override: (any OAuthConnectorLoginServicing)?,
+        credentialStore: any CredentialStore,
+        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration],
+        oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
+    ) -> any OAuthConnectorLoginServicing {
+        if let override {
+            return override
+        }
+        return OAuthConnectorLoginCenter(
             registry: IntegrationRegistry(),
             credentialStore: credentialStore,
             clientConfigurations: oauthClientConfigurations,

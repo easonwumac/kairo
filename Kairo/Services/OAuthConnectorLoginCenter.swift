@@ -159,7 +159,33 @@ public enum OAuthConnectorLoginCenterError: Error, Equatable {
     case missingClientConfiguration(String)
 }
 
-public actor OAuthConnectorLoginCenter {
+public protocol OAuthConnectorLoginServicing: Sendable {
+    func loginOptions() async throws -> [OAuthConnectorLoginOption]
+    func makeAuthorizationSession(
+        for integrationKey: String,
+        state: String,
+        codeVerifier: String
+    ) async throws -> OAuthConnectorAuthorizationSession
+    func previewCallback(_ callbackURL: URL) async throws -> OAuthConnectorCallbackPreview
+    func exchangeCallback(
+        _ callbackURL: URL,
+        expectedState: String,
+        codeVerifier: String?
+    ) async throws -> OAuthTokenSet
+    func disconnect(providerKey: String) async throws
+}
+
+public extension OAuthConnectorLoginServicing {
+    func makeAuthorizationSession(for integrationKey: String) async throws -> OAuthConnectorAuthorizationSession {
+        try await makeAuthorizationSession(
+            for: integrationKey,
+            state: OAuthNonce.make(),
+            codeVerifier: OAuthNonce.make(length: 64)
+        )
+    }
+}
+
+public actor OAuthConnectorLoginCenter: OAuthConnectorLoginServicing {
     private let registry: IntegrationRegistry
     private let credentialStore: CredentialStore
     private let clientConfigurations: [String: OAuthConnectorClientConfiguration]
@@ -338,11 +364,11 @@ public actor OAuthConnectorLoginCenter {
 }
 
 public actor OAuthConnectorInteractiveLoginService {
-    private let loginCenter: OAuthConnectorLoginCenter
+    private let loginCenter: any OAuthConnectorLoginServicing
     private let webAuthenticationRunner: any OAuthWebAuthenticationRunner
 
     public init(
-        loginCenter: OAuthConnectorLoginCenter,
+        loginCenter: any OAuthConnectorLoginServicing,
         webAuthenticationRunner: any OAuthWebAuthenticationRunner
     ) {
         self.loginCenter = loginCenter
