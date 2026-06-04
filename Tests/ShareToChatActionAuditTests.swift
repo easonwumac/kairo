@@ -57,7 +57,7 @@ final class ShareToChatActionAuditTests: XCTestCase {
             "Reminder was not created. Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
         )
         XCTAssertEqual(flow.viewModel.actionResultSucceeded, false)
-        XCTAssertEqual(flow.viewModel.errorMessage, "Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again.")
+        XCTAssertNil(flow.viewModel.errorMessage)
         let auditEvents = try await flow.auditLogger.list(limit: 10)
         let remainingShares = try await flow.shareQueue.pendingItems(limit: 10)
         XCTAssertEqual(auditEvents.first?.result, .failed)

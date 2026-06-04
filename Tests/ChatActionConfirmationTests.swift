@@ -189,7 +189,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         XCTAssertNil(viewModel.pendingAction, file: file, line: line)
         XCTAssertEqual(viewModel.actionResultMessage, expectedResultMessage, file: file, line: line)
         XCTAssertEqual(viewModel.actionResultSucceeded, false, file: file, line: line)
-        XCTAssertEqual(viewModel.errorMessage, executorMessage, file: file, line: line)
+        XCTAssertNil(viewModel.errorMessage, file: file, line: line)
     }
 }
 

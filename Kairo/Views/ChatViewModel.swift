@@ -277,7 +277,7 @@ public final class ChatViewModel: ObservableObject {
             let result = try await actionExecutor.execute(action, confirmed: true)
             actionResultMessage = Self.actionResultMessage(for: result, action: action, source: actionSource)
             actionResultSucceeded = result.completed
-            errorMessage = result.completed ? nil : result.message
+            errorMessage = nil
         } catch {
             actionResultMessage = "Action failed: \(error.localizedDescription)"
             actionResultSucceeded = false
