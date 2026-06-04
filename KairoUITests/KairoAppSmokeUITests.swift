@@ -625,14 +625,16 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     func testAccessSkillManagerBlocksIncompatibleMarketplaceSkillInstall() throws {
         relaunchForUITesting(initialSection: "access")
+        expandAdvancedSkillSetup()
+        expandDeveloperSkillSetup()
 
         let refreshMarketplace = findButton("access.skills.marketplace-refresh", direction: .down, maxSwipes: 10)
         XCTAssertTrue(refreshMarketplace.exists)
         refreshMarketplace.tap()
 
         XCTAssertTrue(findStaticText(containing: "Loaded 2 marketplace skills", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
-        XCTAssertTrue(findButton("access.skill.marketplace-weather-briefing.install", direction: .down, maxSwipes: 8).waitForExistence(timeout: 5))
-        let installQwenWorkflow = findButton("access.skill.marketplace-qwen-oauth-workflow.install", direction: .down, maxSwipes: 20)
+        XCTAssertTrue(findButton("access.skill.marketplace-weather-briefing.install", direction: .both, maxSwipes: 8).waitForExistence(timeout: 5))
+        let installQwenWorkflow = findButton("access.skill.marketplace-qwen-oauth-workflow.install", direction: .both, maxSwipes: 20)
         XCTAssertTrue(installQwenWorkflow.exists)
         installQwenWorkflow.tap()
 
@@ -649,6 +651,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     func testAccessSkillManagerPreviewsSignedMarketplaceSkillUpdate() throws {
         relaunchForUITesting(initialSection: "access", seedInstalledWeatherSkill: true)
+        expandAdvancedSkillSetup()
 
         let searchField = findElement("access.skills.search", direction: .down, maxSwipes: 3)
         XCTAssertTrue(searchField.waitForExistence(timeout: 5))
@@ -678,6 +681,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     func testAccessSkillManagerCreatesLocalUserSkillDraft() throws {
         relaunchForUITesting(initialSection: "access")
         expandAdvancedSkillSetup()
+        expandDeveloperSkillSetup()
 
         let nameField = findElement("access.skills.local-create.name", direction: .down)
         XCTAssertTrue(nameField.exists)
@@ -716,6 +720,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     func testAccessSkillManagerSearchFiltersSkills() throws {
         relaunchForUITesting(initialSection: "access")
+        expandAdvancedSkillSetup()
 
         let searchField = findElement("access.skills.search", direction: .down, maxSwipes: 3)
         XCTAssertTrue(searchField.waitForExistence(timeout: 5))
@@ -734,9 +739,11 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     func testAccessShowsHomeKitSecurityDevicePreview() throws {
         relaunchForUITesting(initialSection: "access")
+        expandAdvancedSkillSetup()
+        expandHomeKitPreviewDemos()
 
         XCTAssertTrue(findElement("access.skill.homekit-front-door-lock", direction: .down, maxSwipes: 8).exists)
-        XCTAssertTrue(findButton("access.skill.homekit-front-door-lock.manage", direction: .down, maxSwipes: 2).exists)
+        XCTAssertTrue(findButton("access.skill.homekit-front-door-lock.manage", direction: .both, maxSwipes: 6).exists)
         XCTAssertTrue(findElement("access.homekit.demo.front-door-lock", direction: .down, maxSwipes: 8).exists)
 
         let previewLock = findButton("access.homekit.demo.front-door-lock.confirm", direction: .both, maxSwipes: 2)

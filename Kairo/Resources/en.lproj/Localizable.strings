@@ -84,8 +84,8 @@
 "access.skills.manager.footer" = "Skills extend Chat suggestions. Enable only the ones you want Kairo to offer.";
 "access.skills.advanced.title" = "Advanced setup";
 "access.skills.advanced.footer" = "Import signed manifests or draft local skills only when you know what capability you are adding.";
-"access.skills.advanced.toggle.title" = "Developer setup";
-"access.skills.advanced.toggle.subtitle" = "Import a signed skill manifest, refresh marketplace metadata, or draft a local skill.";
+"access.skills.advanced.toggle.title" = "Skill library";
+"access.skills.advanced.toggle.subtitle" = "Manage installed skills, preview beta demos, or import signed manifests when setup needs attention.";
 "access.skills.advanced.toggle.collapsed" = "Collapsed";
 "access.skills.advanced.toggle.expanded" = "Expanded";
 "access.skills.manifestImport.title" = "Signed Manifest Import";

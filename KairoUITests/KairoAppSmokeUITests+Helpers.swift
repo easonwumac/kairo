@@ -43,10 +43,13 @@ extension KairoAppSmokeUITests {
         selectDrawerSection(identifier: "root.drawer.access", label: "Access")
         scrollTowardTop()
         expandAdvancedSkillSetup()
+        expandDeveloperSkillSetup()
         XCTAssertTrue(findButton("access.skills.marketplace-refresh", direction: .down, maxSwipes: 4).exists)
         XCTAssertTrue(findElement("access.skills.manifest-import", direction: .down).exists)
         XCTAssertTrue(findElement("access.skills.manifest-import.text", direction: .down).exists)
         XCTAssertTrue(findButton("access.skills.manifest-import.button", direction: .down).exists)
+        scrollTowardTop()
+        expandAdvancedSkillSetup()
         XCTAssertTrue(findElement("access.skill.homekit-evening-scene", direction: .down).exists)
         XCTAssertTrue(findButton("access.skill.homekit-evening-scene.manage", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-save-shared-text", direction: .down).exists)
@@ -55,6 +58,7 @@ extension KairoAppSmokeUITests {
         XCTAssertTrue(findElement("access.skill.shortcut-email-triage", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-meeting-prep-brief", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-generic-node-runner", direction: .down).exists)
+        expandHomeKitPreviewDemos()
         XCTAssertTrue(findElement("access.homekit.demos", direction: .down).exists)
         XCTAssertTrue(findElement("access.homekit.demo.evening-scene", direction: .down).exists)
         XCTAssertTrue(findButton("access.homekit.demo.evening-scene.confirm", direction: .down).exists)
@@ -63,6 +67,7 @@ extension KairoAppSmokeUITests {
     func verifySkillManagerInteractionFlow() {
         selectDrawerSection(identifier: "root.drawer.access", label: "Access")
         expandAdvancedSkillSetup()
+        expandDeveloperSkillSetup()
 
         let refreshMarketplace = findButton("access.skills.marketplace-refresh", direction: .down, maxSwipes: 4)
         XCTAssertTrue(refreshMarketplace.exists)
@@ -90,6 +95,7 @@ extension KairoAppSmokeUITests {
         confirmInstall.tap()
         XCTAssertTrue(findButton("access.skill.marketplace-weather-briefing.disable").waitForExistence(timeout: 5))
 
+        expandHomeKitPreviewDemos()
         let previewHomeKit = findButton("access.homekit.demo.evening-scene.confirm")
         XCTAssertTrue(previewHomeKit.exists)
         previewHomeKit.tap()
@@ -97,13 +103,33 @@ extension KairoAppSmokeUITests {
     }
 
     func expandAdvancedSkillSetup() {
+        if anyElement("access.skills.manager").exists {
+            return
+        }
+        let toggle = findButton("access.skills.advanced.toggle", direction: .down, maxSwipes: 8)
+        XCTAssertTrue(toggle.exists)
+        tapElement(toggle)
+        XCTAssertTrue(findElement("access.skills.manager", direction: .down, maxSwipes: 8).waitForExistence(timeout: 5))
+    }
+
+    func expandDeveloperSkillSetup() {
         if anyElement("access.skills.manifest-import").exists {
             return
         }
-        let toggle = findElement("access.skills.advanced.toggle", direction: .down, maxSwipes: 8)
+        let toggle = findButton("access.skills.developer.toggle", direction: .down, maxSwipes: 8)
         XCTAssertTrue(toggle.exists)
         tapElement(toggle)
-        XCTAssertTrue(findElement("access.skills.manifest-import", direction: .down, maxSwipes: 4).waitForExistence(timeout: 5))
+        XCTAssertTrue(findElement("access.skills.manifest-import", direction: .down, maxSwipes: 6).waitForExistence(timeout: 5))
+    }
+
+    func expandHomeKitPreviewDemos() {
+        if anyElement("access.homekit.demos").exists {
+            return
+        }
+        let toggle = findButton("access.homekit.demos.toggle", direction: .down, maxSwipes: 8)
+        XCTAssertTrue(toggle.exists)
+        tapElement(toggle)
+        XCTAssertTrue(findElement("access.homekit.demos", direction: .down, maxSwipes: 4).waitForExistence(timeout: 5))
     }
 
     func openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: Bool) {

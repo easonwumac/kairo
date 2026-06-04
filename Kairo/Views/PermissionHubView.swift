@@ -13,6 +13,8 @@ public struct PermissionHubView: View {
     @State private var localSkillConfirmationPolicy: AgentSkillConfirmationPolicy = .previewRequired
     @State private var skillSearchText = ""
     @State private var isAdvancedSkillSetupExpanded = false
+    @State private var isDeveloperSkillSetupExpanded = false
+    @State private var isHomeKitPreviewExpanded = false
     @State private var skillCatalog: AgentSkillCatalog
 
     private let registry = CapabilityRegistry()
@@ -38,8 +40,6 @@ public struct PermissionHubView: View {
                     accessOverviewCard
                     primaryToolsCard
                     advancedSetupCard
-                    skillManagerCard
-                    homeKitPreviewCard
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 18)
@@ -120,73 +120,124 @@ public struct PermissionHubView: View {
     private var advancedSetupCard: some View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
-                accessSectionTitle(
-                    title: KairoL10n.string("access.skills.advanced.title"),
-                    subtitle: KairoL10n.string("access.skills.advanced.footer")
-                )
-
                 advancedSkillSetupToggle()
 
                 if isAdvancedSkillSetupExpanded {
                     Divider()
-                    manifestImportControls()
-
-                    if let manifestInstallPreview {
-                        Divider()
-                        manifestPreview(manifestInstallPreview)
-                    }
-                }
-            }
-        }
-    }
-
-    private var skillManagerCard: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 12) {
-                accessSectionTitle(
-                    title: KairoL10n.string("access.skills.manager.title"),
-                    subtitle: KairoL10n.string("access.skills.manager.footer")
-                )
-                .accessibilityIdentifier("access.skills.manager")
-
-                skillSearchControls()
-
-                if let skillManagerMessage {
-                    Text(skillManagerMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("access.skills.message")
-                }
-
-                ForEach(filteredSkills) { skill in
+                    skillManagerContent
                     Divider()
-                    skillManagerRow(skill)
+                    developerSetupDisclosure
+                    Divider()
+                    homeKitPreviewDisclosure
                 }
             }
         }
     }
 
-    private var homeKitPreviewCard: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 12) {
-                accessSectionTitle(
-                    title: KairoL10n.string("access.homekit.demos.title"),
-                    subtitle: KairoL10n.string("access.homekit.demos.subtitle")
+    private var developerSetupDisclosure: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button {
+                withAnimation(.snappy) {
+                    isDeveloperSkillSetupExpanded.toggle()
+                }
+            } label: {
+                disclosureHeader(
+                    title: KairoL10n.string("access.skills.advanced.title"),
+                    subtitle: KairoL10n.string("access.skills.advanced.footer"),
+                    isExpanded: isDeveloperSkillSetupExpanded
                 )
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("access.skills.developer.toggle")
+
+            if isDeveloperSkillSetupExpanded {
+                developerSetupContent
+            }
+        }
+    }
+
+    private var developerSetupContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            manifestImportControls()
+
+            if let manifestInstallPreview {
+                Divider()
+                manifestPreview(manifestInstallPreview)
+            }
+        }
+    }
+
+    private var homeKitPreviewDisclosure: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button {
+                withAnimation(.snappy) {
+                    isHomeKitPreviewExpanded.toggle()
+                }
+            } label: {
+                disclosureHeader(
+                    title: KairoL10n.string("access.homekit.demos.title"),
+                    subtitle: KairoL10n.string("access.homekit.demos.subtitle"),
+                    isExpanded: isHomeKitPreviewExpanded
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("access.homekit.demos.toggle")
+
+            if isHomeKitPreviewExpanded {
+                homeKitPreviewContent
+            }
+        }
+    }
+
+    private var skillManagerContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(KairoL10n.string("access.skills.manager.title"))
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .accessibilityIdentifier("access.skills.manager")
+                Text(KairoL10n.string("access.skills.manager.footer"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            skillSearchControls()
+
+            if let skillManagerMessage {
+                Text(skillManagerMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("access.skills.message")
+            }
+
+            ForEach(filteredSkills) { skill in
+                Divider()
+                skillManagerRow(skill)
+            }
+        }
+    }
+
+    private var homeKitPreviewContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(KairoL10n.string("access.homekit.demos.title"))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
                 .accessibilityIdentifier("access.homekit.demos")
 
-                ForEach(homeKitDemoCatalog.recipes) { recipe in
-                    homeKitDemoRow(recipe)
-                    if recipe.id != homeKitDemoCatalog.recipes.last?.id {
-                        Divider()
-                    }
+            ForEach(homeKitDemoCatalog.recipes) { recipe in
+                homeKitDemoRow(recipe)
+                if recipe.id != homeKitDemoCatalog.recipes.last?.id {
+                    Divider()
                 }
+            }
 
-                if let homeKitPreviewMessage {
-                    Text(homeKitPreviewMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+            if let homeKitPreviewMessage {
+                Text(homeKitPreviewMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -201,6 +252,27 @@ public struct PermissionHubView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private func disclosureHeader(title: String, subtitle: String, isExpanded: Bool) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+        }
+        .contentShape(Rectangle())
     }
 
     @ViewBuilder
@@ -858,6 +930,7 @@ public struct PermissionHubView: View {
         do {
             let preview = try await skillManagerService.previewInstall(jsonString: manifestImportText)
             manifestInstallPreview = preview
+            isDeveloperSkillSetupExpanded = true
             skillManagerMessage = preview.summary
         } catch AgentSkillManifestImportError.invalidJSON {
             skillManagerMessage = KairoL10n.string("access.skills.message.manifestInvalidJSON")
@@ -951,6 +1024,7 @@ public struct PermissionHubView: View {
             let manifest = try await marketplaceCatalogService.fetchManifest(for: skill)
             let preview = try await skillManagerService.previewInstall(manifest: manifest)
             manifestInstallPreview = preview
+            isDeveloperSkillSetupExpanded = true
             skillManagerMessage = preview.summary
         } catch AgentSkillManifestImportError.invalidJSON {
             skillManagerMessage = KairoL10n.string("access.skills.message.manifestInvalidJSON")

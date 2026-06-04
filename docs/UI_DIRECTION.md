@@ -149,6 +149,15 @@ Stage 14 makes AI setup route-first:
   moment of consent, keeping safety visible without making diagnostics the main
   product path.
 
+Stage 15 makes Phone Tools action-first:
+
+- Phone Tools now keeps the first level to Chat-suggested everyday capabilities
+  instead of showing skill management and beta demos immediately.
+- Skill Manager, marketplace refresh, signed manifest import, local skill drafts,
+  and HomeKit preview demos now live inside Skill library.
+- Existing controls remain reachable after expansion, but Tools reads as a
+  support room for Chat rather than a marketplace or demo console.
+
 ## Next UI stages
 
 1. Memory Center
@@ -156,8 +165,8 @@ Stage 14 makes AI setup route-first:
      states users need to act on most often.
 
 2. Phone Tools and Skill Manager
-   - Continue tuning skill cards so install/update/enable actions are easier
-     to scan without reading every metadata line.
+   - Continue tuning skill-card density inside Skill library after simulator
+     smoke confirms the new first screen.
 
 3. Workflows
    - Continue tightening recipe row actions after runtime smoke tests reveal
