@@ -454,6 +454,9 @@
 "settings.models.download.cancel" = "取消";
 "settings.models.download.keepOpen" = "請保持此畫面開啟，Kairo 會下載、驗證 checksum，取消時可清理狀態。";
 "settings.models.download.cancelActive" = "取消下載";
+"settings.models.download.failure.checksumMismatch" = "Checksum 不相符。預期 %@，實際 %@。";
+"settings.models.download.failure.cancelled" = "使用者已取消下載。";
+"settings.models.download.failure.httpStatus" = "HTTP 狀態碼 %lld。";
 "settings.route.automatic.title" = "自動";
 "settings.route.preferLocal.title" = "優先本機";
 "settings.route.preferCloud.title" = "優先雲端";

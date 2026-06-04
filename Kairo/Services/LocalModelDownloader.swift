@@ -135,11 +135,11 @@ public actor VerifiedLocalModelDownloader: LocalModelDownloader {
     private func failureReason(for error: Error) -> String {
         switch error {
         case let LocalModelDownloadError.checksumMismatch(expected, actual):
-            return "Checksum mismatch. Expected \(expected), got \(actual)."
+            return KairoL10n.string("settings.models.download.failure.checksumMismatch", expected, actual)
         case LocalModelDownloadError.cancelled:
-            return "Download cancelled by user."
+            return KairoL10n.string("settings.models.download.failure.cancelled")
         case let HTTPClientError.unacceptableStatusCode(statusCode, _):
-            return "HTTP status \(statusCode)."
+            return KairoL10n.string("settings.models.download.failure.httpStatus", statusCode)
         default:
             return String(describing: error)
         }

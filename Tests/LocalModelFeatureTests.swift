@@ -1672,7 +1672,14 @@ final class LocalModelFeatureTests: XCTestCase {
 
         let record = await registry.record(for: manifest.id)
         XCTAssertEqual(record?.status, .failed)
-        XCTAssertTrue(record?.failureReason?.contains("Checksum mismatch") == true)
+        XCTAssertEqual(
+            record?.failureReason,
+            KairoL10n.string(
+                "settings.models.download.failure.checksumMismatch",
+                manifest.sha256,
+                "7c1d387f892b3c965dfc1951e2a92a2149cd103cef25c8ba5d0cc30a3a21063f"
+            )
+        )
         XCTAssertTrue((try? FileManager.default.contentsOfDirectory(at: modelsDirectory, includingPropertiesForKeys: nil))?.isEmpty ?? true)
     }
 

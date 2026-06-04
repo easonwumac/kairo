@@ -454,6 +454,9 @@
 "settings.models.download.cancel" = "Cancel";
 "settings.models.download.keepOpen" = "Keep this screen open while Kairo downloads, verifies checksum, and can clean up if the task is cancelled.";
 "settings.models.download.cancelActive" = "Cancel Download";
+"settings.models.download.failure.checksumMismatch" = "Checksum mismatch. Expected %@, got %@.";
+"settings.models.download.failure.cancelled" = "Download cancelled by user.";
+"settings.models.download.failure.httpStatus" = "HTTP status %lld.";
 "settings.route.automatic.title" = "Automatic";
 "settings.route.preferLocal.title" = "Prefer Local";
 "settings.route.preferCloud.title" = "Prefer Cloud";
