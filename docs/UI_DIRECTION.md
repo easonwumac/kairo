@@ -557,6 +557,15 @@ Stage 58 makes Memory add context action-first:
 - Search, manual save, record Details, Delete, and export behavior keep their
   existing identifiers and progressive paths.
 
+Stage 59 makes Workflows advanced references quieter:
+
+- Advanced references no longer shows implementation-detail copy on the first
+  layer.
+- The advanced disclosure is now a compact row with a full-width tap target;
+  Shortcut handoff and node-preview guidance appears only after expansion.
+- Shortcut templates, demo previews, preview result identifiers, and recipe
+  center behavior keep their existing progressive paths.
+
 ## Next UI stages
 
 1. Product surface audit

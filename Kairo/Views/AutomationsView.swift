@@ -211,10 +211,6 @@ public struct AutomationsView: View {
                     HStack(alignment: .top, spacing: 12) {
                         VStack(alignment: .leading, spacing: 3) {
                             automationSectionHeader(KairoL10n.string("automations.advanced.section"))
-                            Text(KairoL10n.string("automations.advanced.detail"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
                         }
 
                         Spacer(minLength: 8)
@@ -225,12 +221,19 @@ public struct AutomationsView: View {
                             .frame(width: 36, height: 36)
                             .background(KairoDesign.blue.opacity(0.10), in: Circle())
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(showAdvancedWorkflowReferences ? KairoL10n.string("automations.advanced.hide") : KairoL10n.string("automations.advanced.show"))
                 .accessibilityIdentifier("automations.advanced.toggle")
 
                 if showAdvancedWorkflowReferences {
+                    Text(KairoL10n.string("automations.advanced.detail"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
                     Divider()
                     shortcutTemplatesSection
                     Divider()
