@@ -39,7 +39,7 @@ public final class ChatViewModel: ObservableObject {
     private let historyStore: ChatHistoryStore
     private let shareImportAPI: any KairoShareImportAPI
     private let chatAPI: any KairoChatAPI
-    private let actionExecutor: any ActionExecutor
+    private let actionAPI: any KairoActionAPI
     private let localModelSettingsService: LocalModelSettingsService?
     private let openAISettingsService: OpenAISettingsService?
     private let localModelChatRuntimeAvailable: Bool
@@ -51,6 +51,7 @@ public final class ChatViewModel: ObservableObject {
         agent: AgentCore = AgentCore(),
         shareImportAPI: (any KairoShareImportAPI)? = nil,
         chatAPI: (any KairoChatAPI)? = nil,
+        actionAPI: (any KairoActionAPI)? = nil,
         actionExecutor: any ActionExecutor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore()),
         localModelSettingsService: LocalModelSettingsService? = nil,
         openAISettingsService: OpenAISettingsService? = nil,
@@ -59,7 +60,7 @@ public final class ChatViewModel: ObservableObject {
         self.historyStore = historyStore
         self.shareImportAPI = shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue)
         self.chatAPI = chatAPI ?? KairoChatBackendService(agent: agent)
-        self.actionExecutor = actionExecutor
+        self.actionAPI = actionAPI ?? KairoActionBackendService(actionExecutor: actionExecutor)
         self.localModelSettingsService = localModelSettingsService
         self.openAISettingsService = openAISettingsService
         self.localModelChatRuntimeAvailable = localModelChatRuntimeAvailable
@@ -72,7 +73,7 @@ public final class ChatViewModel: ObservableObject {
             historyStore: environment.chatHistoryStore,
             shareImportAPI: environment.backendAPI.shareImports,
             chatAPI: environment.backendAPI.chat,
-            actionExecutor: environment.actionExecutor,
+            actionAPI: environment.backendAPI.actions,
             localModelSettingsService: environment.localModelSettingsService,
             openAISettingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
             localModelChatRuntimeAvailable: environment.localModelChatRuntimeAvailable
@@ -290,7 +291,7 @@ public final class ChatViewModel: ObservableObject {
         guard let action = pendingAction else { return }
         let actionSource = pendingActionSource
         do {
-            let result = try await actionExecutor.execute(action, confirmed: true)
+            let result = try await actionAPI.confirm(action)
             actionResultMessage = Self.actionResultMessage(for: result, action: action, source: actionSource)
             actionResultSucceeded = result.completed
             errorMessage = nil

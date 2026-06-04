@@ -6,6 +6,7 @@ public struct KairoBackendAPI: Sendable {
     public let memory: any KairoMemoryAPI
     public let recipes: any KairoRecipeAPI
     public let shareImports: any KairoShareImportAPI
+    public let actions: any KairoActionAPI
     public let deletion: any KairoDeletionAPI
     public let localModels: any KairoLocalModelAPI
     public let skills: any KairoSkillAPI
@@ -18,6 +19,7 @@ public struct KairoBackendAPI: Sendable {
         memory: any KairoMemoryAPI,
         recipes: any KairoRecipeAPI,
         shareImports: any KairoShareImportAPI,
+        actions: any KairoActionAPI,
         deletion: any KairoDeletionAPI,
         localModels: any KairoLocalModelAPI,
         skills: any KairoSkillAPI,
@@ -29,6 +31,7 @@ public struct KairoBackendAPI: Sendable {
         self.memory = memory
         self.recipes = recipes
         self.shareImports = shareImports
+        self.actions = actions
         self.deletion = deletion
         self.localModels = localModels
         self.skills = skills

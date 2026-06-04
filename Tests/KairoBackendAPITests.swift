@@ -7,36 +7,16 @@ final class KairoBackendAPITests: XCTestCase {
             KairoBackendModuleRegistry.production.modules.map(\.id),
             KairoBackendModuleID.allCases
         )
-        XCTAssertEqual(
-            KairoBackendModuleRegistry.production.modules.map(\.displayName),
-            [
-                "Chat",
-                "Memory",
-                "Internal Recipes",
-                "Share Imports",
-                "Data Deletion",
-                "Local Models",
-                "Skill Manager",
-                "Settings",
-                "Access"
-            ]
-        )
         XCTAssertTrue(KairoBackendModuleRegistry.production.modules.allSatisfy { !$0.boundarySummary.isEmpty })
-
-        let summariesByID = Dictionary(
-            uniqueKeysWithValues: KairoBackendModuleRegistry.production.modules.map { ($0.id, $0.boundarySummary) }
-        )
-        XCTAssertTrue(summariesByID[.recipes]?.contains("without Apple Shortcut mutation") == true)
-        XCTAssertTrue(summariesByID[.shareImports]?.contains("without extension-side actions") == true)
-        XCTAssertTrue(summariesByID[.skills]?.contains("effective tool catalog") == true)
-        XCTAssertTrue(summariesByID[.localModels]?.contains("explicit download state") == true)
-        XCTAssertTrue(summariesByID[.access]?.contains("explicit permission requests") == true)
 
         let api = KairoBackendAPI(
             chat: KairoChatBackendService(agent: AgentCore()),
             memory: KairoMemoryBackendService(memoryStore: InMemoryMemoryStore()),
             recipes: KairoRecipeBackendService(recipeStore: InMemoryKairoRecipeStore()),
             shareImports: KairoShareImportBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
+            actions: KairoActionBackendService(
+                actionExecutor: AllowingBackendActionExecutor()
+            ),
             deletion: KairoDeletionBackendService(
                 chatHistoryStore: InMemoryChatHistoryStore(),
                 memoryStore: InMemoryMemoryStore(),

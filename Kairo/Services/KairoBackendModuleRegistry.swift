@@ -5,6 +5,7 @@ public enum KairoBackendModuleID: String, CaseIterable, Sendable {
     case memory
     case recipes
     case shareImports
+    case actions
     case deletion
     case localModels
     case skills
@@ -53,6 +54,8 @@ private extension KairoBackendModuleID {
             return "Internal Recipes"
         case .shareImports:
             return "Share Imports"
+        case .actions:
+            return "Actions"
         case .deletion:
             return "Data Deletion"
         case .localModels:
@@ -76,6 +79,8 @@ private extension KairoBackendModuleID {
             return "Kairo-owned internal recipe lifecycle and dry-run execution without Apple Shortcut mutation."
         case .shareImports:
             return "Share Extension queue import and imported-state updates without extension-side actions."
+        case .actions:
+            return "Action preview, safety decision, and explicit user-confirmed execution."
         case .deletion:
             return "User-triggered deletion for chat, memory, credentials, OAuth tokens, local models, and audit metadata."
         case .localModels:

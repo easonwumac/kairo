@@ -27,6 +27,29 @@ actor FailingChatBackendAIProvider: AIProvider {
     func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse { throw error }
 }
 
+actor AllowingBackendActionExecutor: ActionExecutor {
+    private var executedActions: [AgentAction] = []
+    private var confirmationValues: [Bool] = []
+
+    func execute(_ action: AgentAction, confirmed: Bool) async throws -> ActionExecutionResult {
+        executedActions.append(action)
+        confirmationValues.append(confirmed)
+        return ActionExecutionResult(
+            completed: true,
+            message: "backend-action-executed",
+            createdIdentifier: action.id.uuidString
+        )
+    }
+
+    func executedKinds() -> [AgentActionKind] {
+        executedActions.map(\.kind)
+    }
+
+    func confirmations() -> [Bool] {
+        confirmationValues
+    }
+}
+
 actor ChatBackendCapturingHTTPClient: HTTPClient {
     private let statusCode: Int
     private let body: String
