@@ -692,7 +692,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains("selectedModelSummaryText"))
         XCTAssertTrue(compactView.contains("downloadedModel"))
         XCTAssertTrue(compactView.contains(#""settings.models.compact.downloadedSelectForRouting""#))
-        XCTAssertTrue(compactView.contains(#""settings.models.compact.subtitle""#))
         XCTAssertTrue(compactView.contains("compactRoutePreferenceMenu"))
         XCTAssertFalse(compactView.contains("Picker(\"Route Preference\""))
         XCTAssertTrue(compactView.contains("private var compactSectionTitleFont: Font { .title3.weight(.semibold) }"))

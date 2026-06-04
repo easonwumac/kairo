@@ -139,21 +139,6 @@ struct LocalModelsCompactView: View {
                 if showAdvancedDiagnostics {
                     Divider()
 
-                    Text(KairoL10n.string("settings.models.advanced.detail"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(KairoL10n.string("settings.models.starter.subtitle"))
-                        .font(compactModelMetadataFont)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(KairoL10n.string("settings.models.compact.subtitle"))
-                        .font(compactModelMetadataFont)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
                     catalogDiagnosticsCard
 
                     VStack(alignment: .leading, spacing: 8) {

@@ -730,7 +730,6 @@
 "settings.models.progress.preparing" = "Preparing download";
 "settings.models.progress.downloading" = "Downloading";
 "settings.models.progress.verifying" = "Verifying";
-"settings.models.compact.subtitle" = "Choose how Kairo answers. Local models stay user-downloaded and are never bundled.";
 "settings.models.compact.localReady" = "Local ready";
 "settings.models.compact.localNotSelected" = "No local model";
 "settings.models.compact.selectedModel" = "Selected model";
@@ -739,9 +738,7 @@
 "settings.models.compact.noDownloadedModel" = "No downloaded model selected yet.";
 "settings.models.compact.trimmed" = "Showing %lld starter models only. More downloadable models stay in kairo-models.";
 "settings.models.starter.title" = "Start with one local model";
-"settings.models.starter.subtitle" = "Download or select a starter only when you want Kairo to answer eligible prompts on-device.";
 "settings.models.advanced.section" = "Advanced diagnostics";
-"settings.models.advanced.detail" = "Catalog refresh, runtime fit, manifest details, and dev checks stay here until troubleshooting is needed.";
 "settings.models.advanced.show" = "Show advanced diagnostics";
 "settings.models.advanced.hide" = "Hide advanced diagnostics";
 "settings.models.download.approvalRequired" = "Download requires explicit approval.";

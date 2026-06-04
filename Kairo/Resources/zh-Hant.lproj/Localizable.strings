@@ -730,7 +730,6 @@
 "settings.models.progress.preparing" = "準備下載";
 "settings.models.progress.downloading" = "下載中";
 "settings.models.progress.verifying" = "驗證中";
-"settings.models.compact.subtitle" = "選擇 Kairo 如何回覆；本機模型需由使用者下載，不會內建 bundled。";
 "settings.models.compact.localReady" = "Local 可用";
 "settings.models.compact.localNotSelected" = "未選 local model";
 "settings.models.compact.selectedModel" = "已選模型";
@@ -739,9 +738,7 @@
 "settings.models.compact.noDownloadedModel" = "尚未選擇已下載的模型。";
 "settings.models.compact.trimmed" = "目前只顯示 %lld 個 starter models。更多可下載模型保留在 kairo-models。";
 "settings.models.starter.title" = "先選一個本機模型";
-"settings.models.starter.subtitle" = "只有在你想讓 Kairo 於裝置上回答符合條件的問題時，才下載或選用 starter。";
 "settings.models.advanced.section" = "進階診斷";
-"settings.models.advanced.detail" = "Catalog 刷新、runtime fit、manifest 細節與 dev checks 只在需要排查時顯示。";
 "settings.models.advanced.show" = "顯示進階診斷";
 "settings.models.advanced.hide" = "隱藏進階診斷";
 "settings.models.download.approvalRequired" = "下載需要明確確認。";

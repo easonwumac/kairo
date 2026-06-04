@@ -681,6 +681,16 @@ Stage 71 makes Automations expanded layers status-first:
   shortcut templates, demo previews, and existing Automations smoke identifiers
   keep their current paths.
 
+Stage 72 makes Models diagnostics status-first:
+
+- Advanced diagnostics no longer opens with explanatory catalog, starter, or
+  compact-mode paragraphs.
+- Expansion now goes directly to catalog source, refresh, runtime fit, manifest,
+  benchmark, reply check, and delete controls.
+- Answer route, starter model rows, download confirmation, catalog refresh,
+  runtime diagnostics, and existing Models smoke identifiers keep their current
+  paths.
+
 ## Next UI stages
 
 1. Product surface audit
