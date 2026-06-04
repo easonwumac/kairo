@@ -248,17 +248,12 @@ public struct RootView: View {
 
                     navigationGroup(
                         title: KairoL10n.string("root.menu.group.primary"),
-                        sections: [.chat]
-                    )
-
-                    navigationGroup(
-                        title: KairoL10n.string("root.menu.group.agent"),
-                        sections: [.access, .shortcuts, .memory]
+                        sections: [.chat, .memory, .shortcuts]
                     )
 
                     navigationGroup(
                         title: KairoL10n.string("root.menu.group.system"),
-                        sections: [.models, .settings]
+                        sections: [.access, .models, .settings]
                     )
 
                     Text(KairoL10n.string("root.menu.privacyNote"))

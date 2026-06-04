@@ -437,6 +437,15 @@ Stage 45 makes empty Memory action-only:
 - Record details and library export remain progressive, keeping the memory
   surface focused on finding or adding context.
 
+Stage 46 makes navigation product-led:
+
+- The drawer now groups Chat, Memory, and Workflows under Start here so the
+  main product path reads as one workflow instead of separate support rooms.
+- Phone tools, AI setup, and Settings move together under Setup, making
+  configuration secondary to the everyday Chat path.
+- Workflows drawer copy now describes reviewed flows instead of recipes, keeping
+  the navigation language closer to what users do.
+
 ## Next UI stages
 
 1. Product surface audit

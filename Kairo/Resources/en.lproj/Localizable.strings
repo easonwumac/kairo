@@ -7,8 +7,8 @@
 "root.menu.subtitle" = "Start in Chat. Use setup pages only when Kairo needs a capability.";
 "root.menu.privacyNote" = "Kairo uses public APIs, explicit permission, and visible handoff. Nothing changes silently.";
 "root.menu.accessibility" = "Kairo navigation menu";
-"root.menu.group.primary" = "Home";
-"root.menu.group.agent" = "Support rooms";
+"root.menu.group.primary" = "Start here";
+"root.menu.group.agent" = "Support";
 "root.menu.group.system" = "Setup";
 "root.environment.loading" = "Loading Kairo";
 "root.environment.liveLoadFailed" = "Kairo could not load the live app environment. Restart the app and try again.";
@@ -67,7 +67,7 @@
 "memory.source.reminders" = "Reminder";
 "memory.source.externalConnector" = "Connector";
 "root.section.shortcuts.title" = "Workflows";
-"root.section.shortcuts.subtitle" = "Reusable recipes you review first";
+"root.section.shortcuts.subtitle" = "Flows you review and run";
 "root.section.shortcuts.shortTitle" = "Flows";
 "root.section.access.title" = "Phone tools";
 "root.section.access.subtitle" = "Capabilities Chat can suggest";
