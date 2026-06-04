@@ -530,6 +530,15 @@ Stage 55 makes Models starter action-first:
 - The starter purpose boundary and local-download reminder move into Advanced
   diagnostics with the existing catalog and runtime context.
 
+Stage 56 makes Settings route overview terse:
+
+- Settings no longer opens the answer-route card with explanatory subtitle copy.
+- Setup details is now a compact first-layer disclosure label; routing rationale,
+  cloud key readiness, connected account count, and local model status appear
+  only after expansion.
+- Connection setup, API key editing, OAuth connector controls, privacy cleanup,
+  and model controls keep their existing progressive paths.
+
 ## Next UI stages
 
 1. Product surface audit

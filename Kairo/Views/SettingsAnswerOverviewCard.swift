@@ -16,10 +16,6 @@ struct SettingsAnswerOverviewCard: View {
                     Text(KairoL10n.string("settings.routing.section"))
                         .font(.title2.weight(.bold))
                         .foregroundStyle(KairoDesign.ink)
-                    Text(KairoL10n.string("settings.routing.detail"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 KairoStatusPill(title: routePreference.settingsTitle, systemImage: "switch.2", tint: KairoDesign.blue)
@@ -34,10 +30,6 @@ struct SettingsAnswerOverviewCard: View {
                             Text(KairoL10n.string("settings.routing.details.title"))
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(KairoDesign.ink)
-                            Text(KairoL10n.string("settings.routing.details.subtitle"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
                         }
 
                         Spacer(minLength: 8)
@@ -53,6 +45,16 @@ struct SettingsAnswerOverviewCard: View {
                 .accessibilityIdentifier("settings.routing.details.toggle")
 
                 if showSetupDetails {
+                    Text(KairoL10n.string("settings.routing.detail"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(KairoL10n.string("settings.routing.details.subtitle"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
                     HStack(spacing: 8) {
                         KairoStatusPill(
                             title: hasAPIKey ? KairoL10n.string("settings.routing.cloudReady") : KairoL10n.string("settings.routing.cloudNeedsKey"),
