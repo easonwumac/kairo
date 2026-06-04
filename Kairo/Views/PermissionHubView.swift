@@ -193,11 +193,11 @@ public struct PermissionHubView: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Divider()
+                    homeKitPreviewDisclosure
+                    Divider()
                     skillManagerContent
                     Divider()
                     developerSetupDisclosure
-                    Divider()
-                    homeKitPreviewDisclosure
                 }
             }
         }
@@ -212,7 +212,6 @@ public struct PermissionHubView: View {
             } label: {
                 disclosureHeader(
                     title: KairoL10n.string("access.skills.advanced.title"),
-                    subtitle: KairoL10n.string("access.skills.advanced.footer"),
                     isExpanded: isDeveloperSkillSetupExpanded
                 )
             }
@@ -221,6 +220,10 @@ public struct PermissionHubView: View {
             .accessibilityIdentifier("access.skills.developer.toggle")
 
             if isDeveloperSkillSetupExpanded {
+                Text(KairoL10n.string("access.skills.advanced.footer"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 developerSetupContent
             }
         }
@@ -246,7 +249,6 @@ public struct PermissionHubView: View {
             } label: {
                 disclosureHeader(
                     title: KairoL10n.string("access.homekit.demos.title"),
-                    subtitle: KairoL10n.string("access.homekit.demos.subtitle"),
                     isExpanded: isHomeKitPreviewExpanded
                 )
             }
@@ -845,6 +847,16 @@ public struct PermissionHubView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 128), spacing: 8)], spacing: 8) {
                 primarySkillActionButton(for: skill)
 
+                if skill.installationStatus == .installed {
+                    skillActionButton(
+                        title: KairoL10n.string("access.skills.action.manage"),
+                        systemImage: "slider.horizontal.3",
+                        accessibilityIdentifier: "access.skill.\(skill.id).manage"
+                    ) {
+                        skillManagerMessage = KairoL10n.string("access.skills.message.managementSummary", skill.displayName, skill.managementSummary)
+                    }
+                }
+
                 Button {
                     withAnimation(.snappy(duration: 0.2)) {
                         toggleSkillDetails(skill.id)
@@ -866,6 +878,16 @@ public struct PermissionHubView: View {
 
             if isSkillDetailsExpanded(skill.id) {
                 VStack(alignment: .leading, spacing: 10) {
+                    if skill.installationStatus != .installed {
+                        skillActionButton(
+                            title: KairoL10n.string("access.skills.action.manage"),
+                            systemImage: "slider.horizontal.3",
+                            accessibilityIdentifier: "access.skill.\(skill.id).manage"
+                        ) {
+                            skillManagerMessage = KairoL10n.string("access.skills.message.managementSummary", skill.displayName, skill.managementSummary)
+                        }
+                    }
+
                     Label {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(skill.summary)
@@ -897,14 +919,6 @@ public struct PermissionHubView: View {
                                     await disableSkill(skill)
                                 }
                             }
-                        }
-
-                        skillActionButton(
-                            title: KairoL10n.string("access.skills.action.manage"),
-                            systemImage: "slider.horizontal.3",
-                            accessibilityIdentifier: "access.skill.\(skill.id).manage"
-                        ) {
-                            skillManagerMessage = KairoL10n.string("access.skills.message.managementSummary", skill.displayName, skill.managementSummary)
                         }
 
                         skillActionButton(

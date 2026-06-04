@@ -601,6 +601,21 @@ Stage 63 makes Workflows advanced groups quieter:
 - Shortcut template identifiers, manual install disclaimer, demo contracts, and
   preview sample actions keep their existing paths.
 
+Stage 64 makes Access advanced setup rows quieter:
+
+- Developer setup and HomeKit preview demos no longer show explanatory copy in
+  their collapsed disclosure rows.
+- The first advanced layer keeps only the compact row titles; setup guidance and
+  HomeKit preview boundaries appear after the user expands each row.
+- Installed skill rows now expose Manage as a first-layer action, while Details
+  keeps descriptive summaries and heavier disable/remove actions behind
+  disclosure.
+- HomeKit preview demos now appear before the longer skill library inside
+  Advanced setup, keeping security-preview examples reachable without scrolling
+  through the full catalog first.
+- Manifest import, HomeKit demo, preview confirmation, and existing Access smoke
+  identifiers keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit
