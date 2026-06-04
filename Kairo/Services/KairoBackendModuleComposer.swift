@@ -6,6 +6,7 @@ public protocol KairoBackendDependencies: Sendable {
     var aiProvider: AIProvider { get }
     var chatHistoryStore: ChatHistoryStore { get }
     var shareIngestionQueue: ShareIngestionQueue { get }
+    var sharedFilesDirectory: URL? { get }
     var kairoRecipeStore: any KairoRecipeStore { get }
     var permissionService: PermissionService { get }
     var auditLogger: AuditLogger { get }
@@ -43,7 +44,8 @@ public struct KairoBackendModuleComposer<Dependencies: KairoBackendDependencies>
                 aiProvider: dependencies.aiProvider
             ),
             shareImports: KairoShareImportBackendService(
-                shareIngestionQueue: dependencies.shareIngestionQueue
+                shareIngestionQueue: dependencies.shareIngestionQueue,
+                sharedFilesDirectory: dependencies.sharedFilesDirectory
             ),
             deletion: KairoDeletionBackendService(
                 chatHistoryStore: dependencies.chatHistoryStore,

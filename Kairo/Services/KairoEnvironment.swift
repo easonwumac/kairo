@@ -27,6 +27,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public let aiProvider: AIProvider
     public let chatHistoryStore: ChatHistoryStore
     public let shareIngestionQueue: ShareIngestionQueue
+    public let sharedFilesDirectory: URL?
     public let kairoRecipeStore: any KairoRecipeStore
     public let permissionService: PermissionService
     public let auditLogger: AuditLogger
@@ -47,6 +48,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         aiProvider: AIProvider,
         chatHistoryStore: ChatHistoryStore = InMemoryChatHistoryStore(),
         shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
+        sharedFilesDirectory: URL? = nil,
         kairoRecipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
         permissionService: PermissionService = StubPermissionService(),
         auditLogger: AuditLogger = InMemoryAuditLogger(),
@@ -66,6 +68,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         self.aiProvider = aiProvider
         self.chatHistoryStore = chatHistoryStore
         self.shareIngestionQueue = shareIngestionQueue
+        self.sharedFilesDirectory = sharedFilesDirectory
         self.kairoRecipeStore = kairoRecipeStore
         self.permissionService = permissionService
         self.auditLogger = auditLogger
@@ -537,6 +540,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
             aiProvider: aiProvider,
             chatHistoryStore: chatHistoryStore,
             shareIngestionQueue: shareIngestionQueue,
+            sharedFilesDirectory: paths.sharedFilesDirectory,
             kairoRecipeStore: kairoRecipeStore,
             permissionService: SystemPermissionService(),
             auditLogger: auditLogger,

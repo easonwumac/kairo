@@ -26,9 +26,11 @@ public protocol KairoShareImportAPI: Sendable {
 
 public struct KairoShareImportBackendService: KairoShareImportAPI {
     private let shareIngestionQueue: any ShareIngestionQueue
+    private let sharedFilesDirectory: URL?
 
-    public init(shareIngestionQueue: any ShareIngestionQueue) {
+    public init(shareIngestionQueue: any ShareIngestionQueue, sharedFilesDirectory: URL? = nil) {
         self.shareIngestionQueue = shareIngestionQueue
+        self.sharedFilesDirectory = sharedFilesDirectory
     }
 
     public func importPendingShares(limit: Int = 10) async throws -> KairoShareImportResult {
@@ -36,6 +38,7 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
         guard !items.isEmpty else {
             return KairoShareImportResult(attachments: [], suggestedPrompt: nil, importedItemIDs: [])
         }
+        let attachments = items.flatMap(\.attachments)
 
         var importedItemIDs: [UUID] = []
         importedItemIDs.reserveCapacity(items.count)
@@ -44,12 +47,27 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
             try await shareIngestionQueue.delete(id: item.id)
             importedItemIDs.append(item.id)
         }
+        cleanupCopiedSharedFiles(from: attachments)
 
         return KairoShareImportResult(
-            attachments: items.flatMap(\.attachments),
+            attachments: attachments,
             suggestedPrompt: Self.suggestedPrompt(for: items),
             importedItemIDs: importedItemIDs
         )
+    }
+
+    private func cleanupCopiedSharedFiles(from attachments: [ChatAttachment]) {
+        guard let sharedFilesDirectory else { return }
+        let boundary = sharedFilesDirectory.standardizedFileURL.path
+        for attachment in attachments {
+            guard attachment.source == .shareExtension,
+                  let fileURL = attachment.fileURL,
+                  fileURL.isFileURL
+            else { continue }
+            let filePath = fileURL.standardizedFileURL.path
+            guard filePath.hasPrefix(boundary + "/") else { continue }
+            try? FileManager.default.removeItem(at: fileURL)
+        }
     }
 
     private static func suggestedPrompt(for items: [ShareIngestionItem]) -> String? {
