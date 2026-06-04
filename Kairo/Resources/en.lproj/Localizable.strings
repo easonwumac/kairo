@@ -7,6 +7,9 @@
 "root.menu.subtitle" = "Chat stays first. Manage tools only when you need setup.";
 "root.menu.privacyNote" = "Kairo uses public APIs, explicit permission, and visible handoff. Nothing changes silently.";
 "root.menu.accessibility" = "Kairo navigation menu";
+"root.environment.loading" = "Loading Kairo";
+"root.environment.liveLoadFailed" = "Kairo could not load the live app environment. Restart the app and try again.";
+"root.environment.uiTestingLoadFailed" = "Kairo could not load the UI testing environment.";
 "root.navigation.title" = "Navigate";
 "root.section.chat.title" = "Kairo Chat";
 "root.section.chat.subtitle" = "Tell Kairo what to do on this phone";

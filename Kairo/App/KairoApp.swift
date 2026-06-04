@@ -7,7 +7,7 @@ struct KairoApp: App {
     @State private var environment: KairoEnvironment = .preview()
     @State private var environmentRevision = 0
     @State private var didLoadEnvironment = false
-    @State private var isLoadingLaunchEnvironment = ProcessInfo.processInfo.arguments.contains("--ui-testing")
+    @State private var isLoadingLaunchEnvironment = true
     @State private var launchEnvironmentError: String?
 
     var body: some Scene {
@@ -17,7 +17,7 @@ struct KairoApp: App {
                     Text(launchEnvironmentError)
                         .accessibilityIdentifier("root.environment.error")
                 } else if isLoadingLaunchEnvironment {
-                    ProgressView("Loading Kairo")
+                    ProgressView(KairoL10n.string("root.environment.loading"))
                         .accessibilityIdentifier("root.environment.loading")
                 } else {
                     RootView(
@@ -53,13 +53,19 @@ struct KairoApp: App {
                             environmentRevision += 1
                             isLoadingLaunchEnvironment = false
                         } catch {
-                            launchEnvironmentError = "Unable to load UI testing environment."
+                            launchEnvironmentError = KairoL10n.string("root.environment.uiTestingLoadFailed")
+                            isLoadingLaunchEnvironment = false
                         }
                         return
                     }
-                    if let liveEnvironment = try? await Self.liveEnvironment() {
+                    do {
+                        let liveEnvironment = try await Self.liveEnvironment()
                         environment = liveEnvironment
                         environmentRevision += 1
+                        isLoadingLaunchEnvironment = false
+                    } catch {
+                        launchEnvironmentError = KairoL10n.string("root.environment.liveLoadFailed")
+                        isLoadingLaunchEnvironment = false
                     }
                 }
         }
