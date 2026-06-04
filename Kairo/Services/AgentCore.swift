@@ -7,6 +7,7 @@ public actor AgentCore {
     private let capabilityRegistry: CapabilityRegistry
     private let skillCatalogProvider: AgentSkillCatalogProvider
     private let integrationRegistry: IntegrationRegistry
+    private let memoryCandidateExtractor: MemoryCandidateExtractor
 
     public init(
         memoryStore: MemoryStore = InMemoryMemoryStore(),
@@ -15,7 +16,8 @@ public actor AgentCore {
         skillCatalogProvider: AgentSkillCatalogProvider? = nil,
         integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
-        capabilityRegistry: CapabilityRegistry = CapabilityRegistry()
+        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
+        memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
     ) {
         self.memoryStore = memoryStore
         self.aiProvider = aiProvider
@@ -23,6 +25,7 @@ public actor AgentCore {
         self.capabilityRegistry = capabilityRegistry
         self.skillCatalogProvider = skillCatalogProvider ?? .constant(skillCatalog)
         self.integrationRegistry = integrationRegistry
+        self.memoryCandidateExtractor = memoryCandidateExtractor
     }
 
     public func respond(
@@ -66,10 +69,14 @@ public actor AgentCore {
             toolPlan.candidates,
             privacyMode: privacyMode
         )
-        let proposedActions = Self.mergeActionPreviews(
+        var proposedActions = Self.mergeActionPreviews(
             modelActions: response.proposedActions,
             toolActions: toolCandidates.compactMap(\.action)
         )
+        if privacyMode != .privateChat,
+           let memoryAction = memoryCandidateExtractor.proposedSaveMemoryAction(from: message, memoryContext: memories) {
+            proposedActions = Self.mergeActionPreviews(modelActions: proposedActions, toolActions: [memoryAction])
+        }
         let safeActions = proposedActions.filter { action in
             safetyPolicyEngine.evaluate(action).allowed
         }

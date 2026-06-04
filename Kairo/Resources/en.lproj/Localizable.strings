@@ -508,6 +508,8 @@
 "chat.message.replyAccessibility" = "Reply to message";
 "chat.message.memoryContext.one" = "Used 1 memory item";
 "chat.message.memoryContext.many" = "Used %lld memory items";
+"chat.memory.proposal.title" = "Save Memory";
+"chat.memory.proposal.rationale" = "Kairo found a preference or fact that may help future chat replies. It will only be saved if you confirm.";
 "chat.message.accessibility" = "%@ message";
 "chat.provider.route.settingsUnavailable" = "Route settings unavailable";
 "chat.provider.route.label" = "Route";
