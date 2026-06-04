@@ -213,6 +213,33 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(backendAPI.contains("public extension KairoEnvironment"))
     }
 
+    func testBackendAPICoverageStaysSplitAcrossFocusedTestFiles() throws {
+        let root = packageRootURL()
+        let backendTestsURL = root.appendingPathComponent("Tests/KairoBackendAPITests.swift")
+        let accessTestsURL = root.appendingPathComponent("Tests/KairoAccessBackendAPITests.swift")
+        let settingsTestsURL = root.appendingPathComponent("Tests/KairoSettingsBackendAPITests.swift")
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: backendTestsURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: accessTestsURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: settingsTestsURL.path))
+
+        let backendTests = try String(contentsOf: backendTestsURL, encoding: .utf8)
+        let accessTests = try String(contentsOf: accessTestsURL, encoding: .utf8)
+        let settingsTests = try String(contentsOf: settingsTestsURL, encoding: .utf8)
+
+        XCTAssertTrue(accessTests.contains("final class KairoAccessBackendAPITests"))
+        XCTAssertTrue(accessTests.contains("testAccessBackendAPIResolvesPermissionStatusesWithoutRequestingPrompts"))
+        XCTAssertTrue(accessTests.contains("testAccessBackendAPIForwardsExplicitPermissionRequests"))
+        XCTAssertTrue(settingsTests.contains("final class KairoSettingsBackendAPITests"))
+        XCTAssertTrue(settingsTests.contains("testSettingsBackendAPIManagesOpenAIKeyWithoutLeakingSecrets"))
+        XCTAssertTrue(settingsTests.contains("testSettingsBackendAPIManagesOAuthLoginWithoutPersistingAuthorizationCode"))
+        XCTAssertFalse(backendTests.contains("testAccessBackendAPIResolvesPermissionStatusesWithoutRequestingPrompts"))
+        XCTAssertFalse(backendTests.contains("testSettingsBackendAPIManagesOpenAIKeyWithoutLeakingSecrets"))
+        XCTAssertLessThan(backendTests.split(separator: "\n").count, 720)
+        XCTAssertLessThan(accessTests.split(separator: "\n").count, 180)
+        XCTAssertLessThan(settingsTests.split(separator: "\n").count, 180)
+    }
+
     func testUITestHelpersStaySplitFromSmokeScenarios() throws {
         let root = packageRootURL()
         let uiTests = root.appendingPathComponent("KairoUITests", isDirectory: true)
