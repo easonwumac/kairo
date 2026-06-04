@@ -31,6 +31,7 @@
 "root.section.shortcuts.subtitle" = "可重複使用的 Kairo recipes";
 "root.section.access.title" = "手機工具";
 "root.section.access.subtitle" = "Chat 可以建議的能力";
+"access.capability.core" = "核心";
 "access.skills.manager.title" = "Skill Manager";
 "access.skills.manifestImport.title" = "Signed Manifest 匯入";
 "access.skills.manifestImport.preview" = "預覽 Manifest";

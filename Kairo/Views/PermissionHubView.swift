@@ -54,7 +54,7 @@ public struct PermissionHubView: View {
                             }
                             HStack {
                                 if capability.isMVP {
-                                    Text("MVP")
+                                    Text(KairoL10n.string("access.capability.core"))
                                         .font(.caption2)
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 2)

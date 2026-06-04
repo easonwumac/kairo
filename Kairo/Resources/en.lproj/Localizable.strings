@@ -31,6 +31,7 @@
 "root.section.shortcuts.subtitle" = "Reusable Kairo recipes";
 "root.section.access.title" = "Phone tools";
 "root.section.access.subtitle" = "What Chat can suggest";
+"access.capability.core" = "Core";
 "access.skills.manager.title" = "Skill Manager";
 "access.skills.manifestImport.title" = "Signed Manifest Import";
 "access.skills.manifestImport.preview" = "Preview Manifest";
