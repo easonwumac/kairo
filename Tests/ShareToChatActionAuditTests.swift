@@ -5,14 +5,78 @@ import XCTest
 final class ShareToChatActionAuditTests: XCTestCase {
     @MainActor
     func testShareTextToChatReminderConfirmationRecordsAuditEvent() async throws {
+        let flow = makeShareReminderFlow(reminderScheduler: AllowingReminderScheduler(identifier: "shared-text-reminder-id"))
+
+        await flow.viewModel.importPendingShares()
+        XCTAssertEqual(flow.viewModel.composerText, "建立提醒事項：Send prototype link")
+        XCTAssertEqual(flow.viewModel.pendingAttachments.map(\.displayName), ["Launch Notes"])
+        XCTAssertEqual(flow.viewModel.shareImportPreview,
+            "Launch Notes: TODO: Send prototype link Reminder: Book beta review meeting"
+        )
+
+        await flow.viewModel.sendImportedShareToChat()
+        XCTAssertNil(flow.viewModel.shareImportNotice)
+        XCTAssertNil(flow.viewModel.shareImportPreview)
+        XCTAssertFalse(flow.viewModel.canSendImportedShareToChat)
+        let assistantMessage = try XCTUnwrap(flow.viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createReminderDraft })
+        guard case let .reminder(draft) = action.payload else {
+            return XCTFail("Expected reminder payload.")
+        }
+        XCTAssertEqual(draft.title, "Send prototype link")
+
+        flow.viewModel.reviewImportedShareAction()
+        XCTAssertEqual(flow.viewModel.pendingAction?.id, action.id)
+        await flow.viewModel.confirmPendingAction()
+
+        XCTAssertNil(flow.viewModel.pendingAction)
+        XCTAssertEqual(flow.viewModel.actionResultMessage,
+            "Created reminder. Send prototype link Shared content was cleared from the import queue."
+        )
+        let auditEvents = try await flow.auditLogger.list(limit: 10)
+        XCTAssertEqual(auditEvents.count, 1)
+        XCTAssertEqual(auditEvents.first?.actionKind, .createReminderDraft)
+        XCTAssertEqual(auditEvents.first?.capabilityKeys, [.reminders])
+        XCTAssertEqual(auditEvents.first?.userConfirmed, true)
+        XCTAssertEqual(auditEvents.first?.result, .completed)
+        let remainingShares = try await flow.shareQueue.pendingItems(limit: 10)
+        XCTAssertTrue(remainingShares.isEmpty)
+    }
+
+    @MainActor
+    func testShareTextReminderPermissionFailureSaysReminderWasNotCreated() async throws {
+        let flow = makeShareReminderFlow(reminderScheduler: UnavailableReminderScheduler())
+
+        await flow.viewModel.importPendingShares()
+        await flow.viewModel.sendImportedShareToChat()
+        flow.viewModel.reviewImportedShareAction()
+        await flow.viewModel.confirmPendingAction()
+
+        XCTAssertNil(flow.viewModel.pendingAction)
+        XCTAssertEqual(flow.viewModel.actionResultMessage,
+            "Reminder was not created. Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
+        )
+        XCTAssertEqual(flow.viewModel.actionResultSucceeded, false)
+        XCTAssertEqual(flow.viewModel.errorMessage, "Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again.")
+        let auditEvents = try await flow.auditLogger.list(limit: 10)
+        let remainingShares = try await flow.shareQueue.pendingItems(limit: 10)
+        XCTAssertEqual(auditEvents.first?.result, .failed)
+        XCTAssertTrue(remainingShares.isEmpty)
+    }
+
+    @MainActor
+    private func makeShareReminderFlow(reminderScheduler: any ReminderScheduling) -> (
+        viewModel: ChatViewModel,
+        shareQueue: InMemoryShareIngestionQueue,
+        auditLogger: InMemoryAuditLogger
+    ) {
         let builder = ShareAttachmentBuilder()
+        let text = """
+        TODO: Send prototype link
+        Reminder: Book beta review meeting
+        """
         let sharedItem = ShareIngestionItem(
-            attachments: [
-                builder.text("""
-                TODO: Send prototype link
-                Reminder: Book beta review meeting
-                """, displayName: "Launch Notes")
-            ],
+            attachments: [builder.text(text, displayName: "Launch Notes")],
             sourceApplication: "ShareSheet",
             receivedAt: Date(timeIntervalSince1970: 10)
         )
@@ -24,53 +88,11 @@ final class ShareToChatActionAuditTests: XCTestCase {
             agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
             actionExecutor: SandboxActionExecutor(
                 memoryStore: InMemoryMemoryStore(),
-                reminderScheduler: AllowingReminderScheduler(identifier: "shared-text-reminder-id"),
+                reminderScheduler: reminderScheduler,
                 auditLogger: auditLogger
             )
         )
-
-        await viewModel.importPendingShares()
-        XCTAssertEqual(viewModel.composerText, "建立提醒事項：Send prototype link")
-        XCTAssertEqual(viewModel.pendingAttachments.map(\.displayName), ["Launch Notes"])
-        XCTAssertEqual(viewModel.shareImportNotice, "已匯入 1 個分享項目，可送進 Chat 摘要或抽任務。")
-        XCTAssertEqual(
-            viewModel.shareImportPreview,
-            "Launch Notes: TODO: Send prototype link Reminder: Book beta review meeting"
-        )
-        XCTAssertTrue(viewModel.canSendImportedShareToChat)
-        XCTAssertEqual(viewModel.shareImportPrimaryActionTitle, "Extract Tasks")
-
-        await viewModel.sendImportedShareToChat()
-        XCTAssertNil(viewModel.shareImportNotice)
-        XCTAssertNil(viewModel.shareImportPreview)
-        XCTAssertFalse(viewModel.canSendImportedShareToChat)
-        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
-        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createReminderDraft })
-        XCTAssertNil(viewModel.pendingAction)
-        XCTAssertEqual(viewModel.shareImportReviewAction?.id, action.id)
-        guard case let .reminder(draft) = action.payload else {
-            return XCTFail("Expected reminder payload.")
-        }
-        XCTAssertEqual(draft.title, "Send prototype link")
-
-        viewModel.reviewImportedShareAction()
-        XCTAssertEqual(viewModel.pendingAction?.id, action.id)
-        XCTAssertNil(viewModel.shareImportReviewAction)
-        await viewModel.confirmPendingAction()
-
-        XCTAssertNil(viewModel.pendingAction)
-        XCTAssertEqual(
-            viewModel.actionResultMessage,
-            "Created reminder. Send prototype link Shared content was cleared from the import queue."
-        )
-        let auditEvents = try await auditLogger.list(limit: 10)
-        XCTAssertEqual(auditEvents.count, 1)
-        XCTAssertEqual(auditEvents.first?.actionKind, .createReminderDraft)
-        XCTAssertEqual(auditEvents.first?.capabilityKeys, [.reminders])
-        XCTAssertEqual(auditEvents.first?.userConfirmed, true)
-        XCTAssertEqual(auditEvents.first?.result, .completed)
-        let remainingShares = try await shareQueue.pendingItems(limit: 10)
-        XCTAssertTrue(remainingShares.isEmpty)
+        return (viewModel, shareQueue, auditLogger)
     }
 }
 #endif

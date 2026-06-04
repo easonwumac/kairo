@@ -35,7 +35,8 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertDeniedAction(
             prompt: "建立行程：週五 10:00 Kairo roadmap review",
             expectedKind: .createCalendarDraft,
-            deniedMessage: "Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
+            executorMessage: "Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again.",
+            expectedResultMessage: "Calendar event was not created. Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
         )
     }
 
@@ -44,7 +45,8 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertDeniedAction(
             prompt: "建立提醒事項：下班前整理 Kairo model list",
             expectedKind: .createReminderDraft,
-            deniedMessage: "Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
+            executorMessage: "Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again.",
+            expectedResultMessage: "Reminder was not created. Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
         )
     }
 
@@ -168,7 +170,8 @@ final class ChatActionConfirmationTests: XCTestCase {
     private func assertDeniedAction(
         prompt: String,
         expectedKind: AgentActionKind,
-        deniedMessage: String,
+        executorMessage: String,
+        expectedResultMessage: String,
         file: StaticString = #filePath,
         line: UInt = #line
     ) async throws {
@@ -176,7 +179,7 @@ final class ChatActionConfirmationTests: XCTestCase {
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
             agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
-            actionExecutor: DeniedActionExecutor(message: deniedMessage)
+            actionExecutor: DeniedActionExecutor(message: executorMessage)
         )
         await viewModel.send(prompt)
         let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last, file: file, line: line)
@@ -184,9 +187,9 @@ final class ChatActionConfirmationTests: XCTestCase {
         viewModel.previewAction(action)
         await viewModel.confirmPendingAction()
         XCTAssertNil(viewModel.pendingAction, file: file, line: line)
-        XCTAssertEqual(viewModel.actionResultMessage, deniedMessage, file: file, line: line)
+        XCTAssertEqual(viewModel.actionResultMessage, expectedResultMessage, file: file, line: line)
         XCTAssertEqual(viewModel.actionResultSucceeded, false, file: file, line: line)
-        XCTAssertEqual(viewModel.errorMessage, deniedMessage, file: file, line: line)
+        XCTAssertEqual(viewModel.errorMessage, executorMessage, file: file, line: line)
     }
 }
 

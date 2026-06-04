@@ -297,7 +297,16 @@ public final class ChatViewModel: ObservableObject {
     }
 
     private static func actionResultMessage(for result: ActionExecutionResult, action: AgentAction, source: PendingActionSource?) -> String {
-        guard result.completed else { return result.message }
+        guard result.completed else {
+            switch action.payload {
+            case .reminder:
+                return "Reminder was not created. \(result.message)"
+            case .calendarEvent:
+                return "Calendar event was not created. \(result.message)"
+            default:
+                return result.message
+            }
+        }
         let suffix = source == .importedShare ? " Shared content was cleared from the import queue." : ""
         switch action.payload {
         case .reminder(let draft):
