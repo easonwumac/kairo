@@ -125,13 +125,13 @@ public extension ProviderRoutePreference {
     var chatControlTitle: String {
         switch self {
         case .automatic:
-            return "Auto"
+            return KairoL10n.string("chat.provider.route.auto")
         case .preferLocal:
-            return "Local"
+            return KairoL10n.string("chat.provider.route.local")
         case .preferCloud:
-            return "Cloud"
+            return KairoL10n.string("chat.provider.route.cloud")
         case .localOnly:
-            return "Only"
+            return KairoL10n.string("chat.provider.route.only")
         }
     }
 }

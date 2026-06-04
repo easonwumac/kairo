@@ -57,10 +57,10 @@ public struct ActionPreviewView: View {
                 }
 
                 if let descriptor {
-                    reviewField(title: "Capability", value: descriptor.displayName)
+                    reviewField(title: KairoL10n.string("chat.action.preview.field.capability"), value: descriptor.displayName)
                 }
 
-                reviewField(title: "Why", value: action.rationale)
+                reviewField(title: KairoL10n.string("chat.action.preview.field.why"), value: action.rationale)
 
                 KairoGroupedSurface {
                     actionPayloadPreview
@@ -111,27 +111,27 @@ public struct ActionPreviewView: View {
     private var riskLabel: String {
         switch action.kind {
         case .saveMemory:
-            return "Saves memory"
+            return KairoL10n.string("chat.action.risk.savesMemory")
         case .createReminderDraft:
-            return "Creates reminder"
+            return KairoL10n.string("chat.action.risk.createsReminder")
         case .createCalendarDraft:
-            return "Creates calendar event"
+            return KairoL10n.string("chat.action.risk.createsCalendar")
         case .createContactDraft:
-            return "Creates contact"
+            return KairoL10n.string("chat.action.risk.createsContact")
         case .sendNotification:
-            return "Schedules notification"
+            return KairoL10n.string("chat.action.risk.schedulesNotification")
         default:
             break
         }
         switch action.riskTier {
         case .tier0ReadOnly:
-            return "Read only"
+            return KairoL10n.string("chat.action.risk.readOnly")
         case .tier1Draft:
-            return "Draft or handoff"
+            return KairoL10n.string("chat.action.risk.draftOrHandoff")
         case .tier2LowRiskWrite:
-            return "Writes local data"
+            return KairoL10n.string("chat.action.risk.writesLocalData")
         case .tier3HighRiskExternal:
-            return "External account action"
+            return KairoL10n.string("chat.action.risk.externalAccountAction")
         }
     }
 
@@ -167,23 +167,23 @@ public struct ActionPreviewView: View {
             }
         case .contact(let draft):
             VStack(alignment: .leading, spacing: 4) {
-                Text(draft.displayName.isEmpty ? "Kairo Contact" : draft.displayName).font(.headline)
+                Text(draft.displayName.isEmpty ? KairoL10n.string("chat.action.preview.contactFallback") : draft.displayName).font(.headline)
                 if !draft.phoneNumbers.isEmpty {
-                    Text("Phone: \(draft.phoneNumbers.joined(separator: ", "))").font(.caption)
+                    Text(KairoL10n.string("chat.action.preview.phoneLabel", draft.phoneNumbers.joined(separator: ", "))).font(.caption)
                 }
                 if !draft.emailAddresses.isEmpty {
-                    Text("Email: \(draft.emailAddresses.joined(separator: ", "))").font(.caption)
+                    Text(KairoL10n.string("chat.action.preview.emailLabel", draft.emailAddresses.joined(separator: ", "))).font(.caption)
                 }
                 if let notes = draft.notes { Text(notes).font(.caption) }
             }
         case .email(let draft):
             VStack(alignment: .leading, spacing: 4) {
-                Text(draft.subject.isEmpty ? "Email Draft" : draft.subject).font(.headline)
+                Text(draft.subject.isEmpty ? KairoL10n.string("chat.action.preview.emailDraftFallback") : draft.subject).font(.headline)
                 if !draft.to.isEmpty {
-                    Text("To: \(draft.to.joined(separator: ", "))").font(.caption)
+                    Text(KairoL10n.string("chat.action.preview.toLabel", draft.to.joined(separator: ", "))).font(.caption)
                 }
                 if !draft.cc.isEmpty {
-                    Text("Cc: \(draft.cc.joined(separator: ", "))").font(.caption)
+                    Text(KairoL10n.string("chat.action.preview.ccLabel", draft.cc.joined(separator: ", "))).font(.caption)
                 }
                 if !draft.body.isEmpty {
                     Text(draft.body).font(.caption)
@@ -191,36 +191,36 @@ public struct ActionPreviewView: View {
             }
         case .mapDirections(let draft):
             VStack(alignment: .leading, spacing: 4) {
-                Text(draft.destinationQuery.isEmpty ? "Apple Maps Destination" : draft.destinationQuery).font(.headline)
-                Text("Mode: \(draft.mode.displayName)").font(.caption)
-                Text("Apple Maps opens visibly; navigation still requires user action.").font(.caption).foregroundStyle(.secondary)
+                Text(draft.destinationQuery.isEmpty ? KairoL10n.string("chat.action.preview.mapsDestinationFallback") : draft.destinationQuery).font(.headline)
+                Text(KairoL10n.string("chat.action.preview.modeLabel", draft.mode.displayName)).font(.caption)
+                Text(KairoL10n.string("chat.action.preview.mapsVisibleHandoff")).font(.caption).foregroundStyle(.secondary)
             }
         case .message(let draft):
             VStack(alignment: .leading, spacing: 4) {
-                Text(draft.recipients.isEmpty ? "Messages Handoff" : draft.recipients.joined(separator: ", ")).font(.headline)
+                Text(draft.recipients.isEmpty ? KairoL10n.string("chat.action.preview.messagesFallback") : draft.recipients.joined(separator: ", ")).font(.headline)
                 if !draft.body.isEmpty {
                     Text(draft.body).font(.caption)
                 }
-                Text("Body stays in Kairo preview; Messages opens visibly with the recipient only.").font(.caption).foregroundStyle(.secondary)
+                Text(KairoL10n.string("chat.action.preview.messagesVisibleHandoff")).font(.caption).foregroundStyle(.secondary)
             }
         case .phoneCall(let draft):
             VStack(alignment: .leading, spacing: 4) {
                 if let label = draft.label, !label.isEmpty {
                     Text(label).font(.headline)
                 } else {
-                    Text("Phone Handoff").font(.headline)
+                    Text(KairoL10n.string("chat.action.preview.phoneFallback")).font(.headline)
                 }
-                Text("Number: \(draft.phoneNumber)").font(.caption)
+                Text(KairoL10n.string("chat.action.preview.numberLabel", draft.phoneNumber)).font(.caption)
                 if let notes = draft.notes, !notes.isEmpty {
                     Text(notes).font(.caption)
                 }
-                Text("Phone opens visibly; the call still requires user action.").font(.caption).foregroundStyle(.secondary)
+                Text(KairoL10n.string("chat.action.preview.phoneVisibleHandoff")).font(.caption).foregroundStyle(.secondary)
             }
         case .webSearch(let draft):
             VStack(alignment: .leading, spacing: 4) {
-                Text(draft.query.isEmpty ? "Web Search Handoff" : draft.query).font(.headline)
+                Text(draft.query.isEmpty ? KairoL10n.string("chat.action.preview.webFallback") : draft.query).font(.headline)
                 Text(draft.searchURL).font(.caption.monospaced()).textSelection(.enabled)
-                Text("Safari opens visibly; Kairo does not browse or scrape pages silently.").font(.caption).foregroundStyle(.secondary)
+                Text(KairoL10n.string("chat.action.preview.webVisibleHandoff")).font(.caption).foregroundStyle(.secondary)
             }
         case .notification(let draft):
             VStack(alignment: .leading, spacing: 4) {
@@ -233,11 +233,11 @@ public struct ActionPreviewView: View {
         case .homeControl(let request):
             VStack(alignment: .leading, spacing: 4) {
                 Text(request.targetName).font(.headline)
-                if let homeName = request.homeName { Text("Home: \(homeName)").font(.caption) }
-                if let roomName = request.roomName { Text("Room: \(roomName)").font(.caption) }
-                Text("Command: \(request.command.rawValue)").font(.caption)
+                if let homeName = request.homeName { Text(KairoL10n.string("chat.action.preview.homeLabel", homeName)).font(.caption) }
+                if let roomName = request.roomName { Text(KairoL10n.string("chat.action.preview.roomLabel", roomName)).font(.caption) }
+                Text(KairoL10n.string("chat.action.preview.commandLabel", request.command.rawValue)).font(.caption)
                 if let value = request.value {
-                    Text("Value: \(value.displayValue)").font(.caption)
+                    Text(KairoL10n.string("chat.action.preview.valueLabel", value.displayValue)).font(.caption)
                 }
             }
         case .unsupported(let explanation):
@@ -245,7 +245,7 @@ public struct ActionPreviewView: View {
                 Text(explanation.requestedAction).font(.headline)
                 Text(explanation.reason).font(.caption)
                 if let alternative = explanation.safeAlternative {
-                    Text("Alternative: \(alternative)").font(.caption).foregroundStyle(.secondary)
+                    Text(KairoL10n.string("chat.action.preview.alternativeLabel", alternative)).font(.caption).foregroundStyle(.secondary)
                 }
             }
         case .empty:
@@ -303,11 +303,11 @@ private extension MapDirectionsMode {
     var displayName: String {
         switch self {
         case .driving:
-            return "Driving"
+            return KairoL10n.string("chat.action.preview.mode.driving")
         case .walking:
-            return "Walking"
+            return KairoL10n.string("chat.action.preview.mode.walking")
         case .transit:
-            return "Transit"
+            return KairoL10n.string("chat.action.preview.mode.transit")
         }
     }
 }

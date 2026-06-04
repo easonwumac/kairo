@@ -24,14 +24,14 @@ struct ChatBubble: View {
                         Button {
                             onCopy(message.text)
                         } label: {
-                            Label("Copy", systemImage: "doc.on.doc")
+                            Label(KairoL10n.string("chat.message.copy"), systemImage: "doc.on.doc")
                         }
                         .accessibilityIdentifier("chat.message.copy-menu.\(message.id.uuidString)")
 
                         Button {
                             onReply(message)
                         } label: {
-                            Label("Reply", systemImage: "arrowshape.turn.up.left")
+                            Label(KairoL10n.string("chat.message.reply"), systemImage: "arrowshape.turn.up.left")
                         }
                         .accessibilityIdentifier("chat.message.reply-menu.\(message.id.uuidString)")
                     }
@@ -49,7 +49,8 @@ struct ChatBubble: View {
                             .accessibilityIdentifier("chat.message.memory-context")
                     }
                     messageActionButton(
-                        title: "Copy",
+                        title: KairoL10n.string("chat.message.copy"),
+                        accessibilityLabel: KairoL10n.string("chat.message.copyAccessibility"),
                         systemImage: "doc.on.doc",
                         identifier: "chat.message.copy.\(message.id.uuidString)"
                     ) {
@@ -57,7 +58,8 @@ struct ChatBubble: View {
                     }
 
                     messageActionButton(
-                        title: "Reply",
+                        title: KairoL10n.string("chat.message.reply"),
+                        accessibilityLabel: KairoL10n.string("chat.message.replyAccessibility"),
                         systemImage: "arrowshape.turn.up.left",
                         identifier: "chat.message.reply.\(message.id.uuidString)"
                     ) {
@@ -84,12 +86,15 @@ struct ChatBubble: View {
     }
 
     private var memoryContextLabel: String {
-        let suffix = message.memoryContextCount == 1 ? "" : "s"
-        return "Used \(message.memoryContextCount) memory item\(suffix)"
+        if message.memoryContextCount == 1 {
+            return KairoL10n.string("chat.message.memoryContext.one")
+        }
+        return KairoL10n.string("chat.message.memoryContext.many", Int64(message.memoryContextCount))
     }
 
     private func messageActionButton(
         title: String,
+        accessibilityLabel: String,
         systemImage: String,
         identifier: String,
         action: @escaping () -> Void
@@ -102,7 +107,7 @@ struct ChatBubble: View {
                 .frame(width: 26, height: 24)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(title) message")
+        .accessibilityLabel(accessibilityLabel)
         .accessibilityIdentifier(identifier)
     }
 }

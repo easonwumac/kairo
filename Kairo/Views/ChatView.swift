@@ -25,7 +25,7 @@ public struct ChatView: View {
         #else
         NavigationSplitView {
             historyList
-                .navigationTitle("History")
+                .navigationTitle(KairoL10n.string("chat.history.title"))
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         newChatButton
@@ -46,7 +46,7 @@ public struct ChatView: View {
         Button {
             viewModel.startNewThread()
         } label: {
-            Label("New", systemImage: "square.and.pencil")
+            Label(KairoL10n.string("chat.new"), systemImage: "square.and.pencil")
         }
         .accessibilityIdentifier("chat.new")
     }
@@ -61,9 +61,9 @@ public struct ChatView: View {
         )) {
             if viewModel.threads.isEmpty {
                 ContentUnavailableView(
-                    "No History Yet",
+                    KairoL10n.string("chat.history.empty.title"),
                     systemImage: "clock.arrow.circlepath",
-                    description: Text("Send a message to create your first saved chat.")
+                    description: Text(KairoL10n.string("chat.history.empty.description"))
                 )
             } else {
                 ForEach(viewModel.threads) { thread in
@@ -73,7 +73,7 @@ public struct ChatView: View {
                             Button(role: .destructive) {
                                 Task { await viewModel.deleteThread(thread) }
                             } label: {
-                                Label("Delete", systemImage: "trash")
+                                Label(KairoL10n.string("chat.delete"), systemImage: "trash")
                             }
                         }
                 }
@@ -115,7 +115,7 @@ public struct ChatView: View {
                             HStack {
                                 ProgressView()
                                     .controlSize(.small)
-                                Text("Kairo is thinking…")
+                                Text(KairoL10n.string("chat.loading"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Spacer()
@@ -237,7 +237,7 @@ public struct ChatView: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Cancel reply")
+                    .accessibilityLabel(KairoL10n.string("chat.reply.cancel"))
                     .accessibilityIdentifier("chat.reply-preview.cancel")
                 }
                 .padding(.horizontal, 12)
@@ -251,11 +251,11 @@ public struct ChatView: View {
                     Color.clear
                         .frame(width: 1, height: 1)
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("Reply preview")
+                        .accessibilityLabel(KairoL10n.string("chat.reply.preview"))
                         .accessibilityIdentifier("chat.reply-preview")
                 }
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("Replying to \(ChatViewModel.replyReferenceText(for: replyTarget))")
+                .accessibilityLabel(KairoL10n.string("chat.replyingTo", ChatViewModel.replyReferenceText(for: replyTarget)))
                 .accessibilityIdentifier("chat.reply-preview")
             }
 
@@ -264,7 +264,7 @@ public struct ChatView: View {
             HStack(alignment: .bottom, spacing: 10) {
                 toolMenu
 
-                TextField("Ask Kairo to act", text: $viewModel.composerText, axis: .vertical)
+                TextField(KairoL10n.string("chat.composer.placeholder"), text: $viewModel.composerText, axis: .vertical)
                     .lineLimit(1...5)
                     .disabled(viewModel.isLoading)
                     .focused($isComposerFocused)
@@ -288,7 +288,7 @@ public struct ChatView: View {
                         .background(sendButtonBackground, in: Circle())
                 }
                 .disabled((viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading)
-                .accessibilityLabel("Send")
+                .accessibilityLabel(KairoL10n.string("chat.composer.send"))
                 .accessibilityIdentifier("chat.composer.send")
             }
             .padding(.leading, 2)
@@ -303,7 +303,7 @@ public struct ChatView: View {
                 Color.clear
                     .frame(width: 1, height: 1)
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Chat composer input shell")
+                    .accessibilityLabel(KairoL10n.string("chat.composer.inputShell"))
                     .accessibilityIdentifier("chat.composer.input-shell")
             }
             .shadow(color: .black.opacity(0.08), radius: 18, x: 0, y: 8)
@@ -322,9 +322,9 @@ public struct ChatView: View {
             get: { viewModel.isPrivateChatEnabled },
             set: { viewModel.setPrivateChatEnabled($0) }
         )) {
-            Label("Private chat", systemImage: viewModel.isPrivateChatEnabled ? "lock.fill" : "lock")
+            Label(KairoL10n.string("chat.private.title"), systemImage: viewModel.isPrivateChatEnabled ? "lock.fill" : "lock")
                 .font(.caption.weight(.semibold))
-            Text("No memory context or tools; private prompts do not default to cloud.")
+            Text(KairoL10n.string("chat.private.detail"))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -338,24 +338,24 @@ public struct ChatView: View {
     private var toolMenu: some View {
         Menu {
             capabilityPromptButton(
-                title: "Phone tools",
+                title: KairoL10n.string("chat.tools.phoneTools"),
                 systemImage: "iphone.gen3",
-                prompt: "幫我用手機功能完成："
+                prompt: KairoL10n.string("chat.tools.phoneTools.prompt")
             )
             capabilityPromptButton(
-                title: "Reminder or calendar",
+                title: KairoL10n.string("chat.tools.reminderCalendar"),
                 systemImage: "calendar.badge.plus",
-                prompt: "幫我建立提醒或行程："
+                prompt: KairoL10n.string("chat.tools.reminderCalendar.prompt")
             )
             capabilityPromptButton(
-                title: "Message or email draft",
+                title: KairoL10n.string("chat.tools.messageEmailDraft"),
                 systemImage: "envelope",
-                prompt: "幫我準備一則回覆草稿："
+                prompt: KairoL10n.string("chat.tools.messageEmailDraft.prompt")
             )
             capabilityPromptButton(
-                title: "Summarize shared content",
+                title: KairoL10n.string("chat.tools.summarizeSharedContent"),
                 systemImage: "doc.text.magnifyingglass",
-                prompt: "把我分享的內容整理成重點和待辦。"
+                prompt: KairoL10n.string("chat.tools.summarizeSharedContent.prompt")
             )
         } label: {
             Image(systemName: "plus")
@@ -364,7 +364,7 @@ public struct ChatView: View {
                 .frame(width: 42, height: 42)
                 .background(Color.primary.opacity(0.06), in: Circle())
         }
-        .accessibilityLabel("Open Chat tools")
+        .accessibilityLabel(KairoL10n.string("chat.tools.open"))
         .accessibilityIdentifier("chat.tools.menu")
     }
 
@@ -426,7 +426,7 @@ private struct AttachmentTray: View {
                             Image(systemName: "xmark.circle.fill")
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Remove attachment")
+                        .accessibilityLabel(KairoL10n.string("chat.attachment.remove"))
                     }
                     .font(.caption)
                     .padding(.horizontal, 10)

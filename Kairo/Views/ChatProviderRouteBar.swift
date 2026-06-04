@@ -38,7 +38,7 @@ struct ChatProviderRouteBar: View {
                         setPreference(preference)
                     } label: {
                         HStack {
-                            Text(preference.settingsTitle)
+                            Text(preference.chatControlTitle)
                             if status.preference == preference {
                                 Image(systemName: "checkmark")
                             }
@@ -47,10 +47,10 @@ struct ChatProviderRouteBar: View {
                     .accessibilityIdentifier("chat.provider-route.preference.\(preference.rawValue)")
                 }
             } else {
-                Text("Route settings unavailable")
+                Text(KairoL10n.string("chat.provider.route.settingsUnavailable"))
             }
         } label: {
-            Label("Route", systemImage: "slider.horizontal.3")
+            Label(KairoL10n.string("chat.provider.route.menuTitle"), systemImage: "slider.horizontal.3")
                 .labelStyle(.titleAndIcon)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -59,7 +59,7 @@ struct ChatProviderRouteBar: View {
                 .background(Color.primary.opacity(0.06), in: Capsule())
         }
         .disabled(!canEdit)
-        .accessibilityLabel("Chat route")
+        .accessibilityLabel(KairoL10n.string("chat.provider.route.accessibility"))
         .accessibilityIdentifier("chat.provider-route.preference")
     }
 }

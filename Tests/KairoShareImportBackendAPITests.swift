@@ -50,7 +50,7 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let queue = InMemoryShareIngestionQueue(seed: [item])
         let api = KairoShareImportBackendService(shareIngestionQueue: queue)
         let imported = try await api.importPendingShares(limit: 10)
-        XCTAssertEqual(imported.suggestedPrompt, "建立提醒事項：Send prototype link")
+        XCTAssertEqual(imported.suggestedPrompt, KairoL10n.string("chat.share.prompt.extractReminder", "Send prototype link"))
         XCTAssertEqual(imported.attachments.first?.textPreview?.contains("TODO: Send prototype link"), true)
         let remaining = try await queue.pendingItems(limit: 10)
         XCTAssertTrue(remaining.isEmpty)

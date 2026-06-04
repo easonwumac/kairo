@@ -389,6 +389,7 @@ extension AgentToolInvocationPlanner {
         let prefixes = [
             "Create a reminder to",
             "Create reminder to",
+            "Create reminder:",
             "Add a reminder to",
             "Add reminder to",
             "Reminder:",

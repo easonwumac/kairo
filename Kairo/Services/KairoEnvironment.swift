@@ -91,7 +91,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
             credentialStore: credentialStore,
             aiProvider: MockAIProvider(),
             chatHistoryStore: InMemoryChatHistoryStore(seed: [ChatThread(messages: [
-                ChatMessage(role: .assistant, text: "我是 Kairo。我會記住你選擇交給我的內容，並只操作 iOS sandbox 與公開 API 允許的能力。")
+                ChatMessage(role: .assistant, text: KairoL10n.string("chat.welcome.preview"))
             ])]),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
             kairoRecipeStore: InMemoryKairoRecipeStore(),

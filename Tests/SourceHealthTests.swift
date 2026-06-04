@@ -606,8 +606,8 @@ final class SourceHealthTests: XCTestCase {
         )
 
         XCTAssertTrue(chatViewSource.contains("chat.tools.menu"))
-        XCTAssertTrue(chatViewSource.contains("Ask Kairo to act"))
-        XCTAssertTrue(chatViewSource.contains("Phone tools"))
+        XCTAssertTrue(chatViewSource.contains(#""chat.composer.placeholder""#))
+        XCTAssertTrue(chatViewSource.contains(#""chat.tools.phoneTools""#))
         XCTAssertTrue(chatViewSource.contains("ChatProviderRouteBar("))
         XCTAssertFalse(chatViewSource.contains("chat.session-controls"))
         XCTAssertFalse(chatViewSource.contains("chatTopControls"))

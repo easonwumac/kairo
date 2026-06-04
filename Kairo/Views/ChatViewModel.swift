@@ -28,7 +28,7 @@ public final class ChatViewModel: ObservableObject {
     }
     public var shareImportPrimaryActionTitle: String {
         let prompt = composerText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if prompt.hasPrefix("建立提醒事項：") {
+        if prompt.hasPrefix(KairoL10n.string("chat.share.prompt.extractReminderPrefix")) {
             return KairoL10n.string("chat.share.action.extractReminders")
         }
         return prompt.localizedCaseInsensitiveContains("summarize")
@@ -86,7 +86,7 @@ public final class ChatViewModel: ObservableObject {
             errorMessage = nil
             await refreshProviderRouteStatus()
         } catch {
-            errorMessage = "無法載入聊天紀錄：\(error.localizedDescription)"
+            errorMessage = KairoL10n.string("chat.error.loadHistory", error.localizedDescription)
         }
     }
 
@@ -120,7 +120,7 @@ public final class ChatViewModel: ObservableObject {
             }
             errorMessage = nil
         } catch {
-            errorMessage = "無法刪除聊天紀錄：\(error.localizedDescription)"
+            errorMessage = KairoL10n.string("chat.error.deleteHistory", error.localizedDescription)
         }
     }
 
@@ -137,7 +137,7 @@ public final class ChatViewModel: ObservableObject {
             shareImportReviewAction = nil
             errorMessage = nil
         } catch {
-            errorMessage = "無法匯入分享內容：\(error.localizedDescription)"
+            errorMessage = KairoL10n.string("chat.error.importShare", error.localizedDescription)
         }
     }
 
@@ -258,7 +258,7 @@ public final class ChatViewModel: ObservableObject {
 
     public func setProviderRoutePreference(_ preference: ProviderRoutePreference) async {
         guard let localModelSettingsService else {
-            errorMessage = "目前聊天環境無法更新模型路由。"
+            errorMessage = KairoL10n.string("chat.error.routeUnavailable")
             return
         }
         do {
@@ -266,7 +266,7 @@ public final class ChatViewModel: ObservableObject {
             await refreshProviderRouteStatus()
             errorMessage = nil
         } catch {
-            errorMessage = "無法更新模型路由：\(error.localizedDescription)"
+            errorMessage = KairoL10n.string("chat.error.updateRoute", error.localizedDescription)
         }
     }
 
@@ -292,7 +292,7 @@ public final class ChatViewModel: ObservableObject {
         } catch {
             actionResultMessage = KairoL10n.string("chat.action.error.failed", error.localizedDescription)
             actionResultSucceeded = false
-            errorMessage = "Kairo 無法執行此動作。"
+            errorMessage = KairoL10n.string("chat.error.actionUnavailable")
         }
         pendingAction = nil
         pendingActionSource = nil
@@ -377,7 +377,7 @@ public final class ChatViewModel: ObservableObject {
             try await historyStore.saveThread(currentThread)
             threads = try await historyStore.listThreads(limit: 50)
         } catch {
-            errorMessage = "無法儲存聊天紀錄：\(error.localizedDescription)"
+            errorMessage = KairoL10n.string("chat.error.saveHistory", error.localizedDescription)
         }
     }
 
@@ -418,7 +418,7 @@ public final class ChatViewModel: ObservableObject {
         guard let replyTarget else {
             return body
         }
-        return "Replying to \"\(Self.replyReferenceText(for: replyTarget))\":\n\(body)"
+        return KairoL10n.string("chat.reply.composedPrefix", Self.replyReferenceText(for: replyTarget), body)
     }
 
     public static func replyReferenceText(for message: ChatMessage) -> String {
@@ -426,7 +426,7 @@ public final class ChatViewModel: ObservableObject {
             .replacingOccurrences(of: "\n", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !singleLine.isEmpty else {
-            return "selected message"
+            return KairoL10n.string("chat.reply.selectedMessage")
         }
         return String(singleLine.prefix(140))
     }
@@ -474,7 +474,7 @@ public final class ChatViewModel: ObservableObject {
 
     public static let welcomeMessage = ChatMessage(
         role: .assistant,
-        text: "我是 Kairo。直接說你想在手機上完成什麼；我會在聊天裡提出可用工具、草稿與確認卡片，不會靜默改動任何東西。"
+        text: KairoL10n.string("chat.welcome.default")
     )
 
     private enum PendingActionSource {

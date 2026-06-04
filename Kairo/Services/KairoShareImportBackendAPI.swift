@@ -74,7 +74,7 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
         let attachments = items.flatMap(\.attachments)
         for attachment in attachments {
             guard let taskTitle = taskTitle(from: attachment.textPreview) else { continue }
-            return "建立提醒事項：\(taskTitle)"
+            return KairoL10n.string("chat.share.prompt.extractReminder", taskTitle)
         }
         return items.first?.suggestedPrompt
     }

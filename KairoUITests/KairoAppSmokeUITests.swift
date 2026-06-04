@@ -680,7 +680,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
         let composerValue = composer.value as? String ?? ""
-        XCTAssertTrue(composerValue.contains("建立提醒事項：Send prototype link"), composerValue)
+        XCTAssertTrue(composerValue.contains("Create reminder: Send prototype link"), composerValue)
 
         let sendShare = findButton("chat.share-import.send", direction: .both, maxSwipes: 1)
         XCTAssertTrue(sendShare.exists)

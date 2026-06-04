@@ -8,7 +8,7 @@ final class ShareToChatActionAuditTests: XCTestCase {
         let flow = makeShareReminderFlow(reminderScheduler: AllowingReminderScheduler(identifier: "shared-text-reminder-id"))
 
         await flow.viewModel.importPendingShares()
-        XCTAssertEqual(flow.viewModel.composerText, "建立提醒事項：Send prototype link")
+        XCTAssertEqual(flow.viewModel.composerText, KairoL10n.string("chat.share.prompt.extractReminder", "Send prototype link"))
         XCTAssertEqual(flow.viewModel.pendingAttachments.map(\.displayName), ["Launch Notes"])
         XCTAssertEqual(flow.viewModel.shareImportPreview,
             "Launch Notes: TODO: Send prototype link Reminder: Book beta review meeting"
