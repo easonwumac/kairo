@@ -76,15 +76,12 @@ public struct OpenAIProvider: AIProvider {
     }
 
     private func buildInput(from request: AICompletionRequest) -> [OpenAIInputMessage] {
-        let memoryContext = request.memoryContext.map { memory in
-            "- [\(memory.source.rawValue)] \(memory.title): \(memory.summary)"
-        }.joined(separator: "\n")
-
+        let memoryContext = MemoryPromptContextBuilder().build(from: request.memoryContext)
         let capabilities = request.allowedCapabilities.map(\.rawValue).joined(separator: ", ")
         let attachmentContext = CapabilityPromptContextBuilder.attachmentContext(request.attachmentContext)
         let context = """
         Relevant memory:
-        \(memoryContext.isEmpty ? "None" : memoryContext)
+        \(memoryContext)
 
         Allowed capabilities:
         \(capabilities.isEmpty ? "None" : capabilities)

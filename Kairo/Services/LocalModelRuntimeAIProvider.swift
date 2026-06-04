@@ -58,17 +58,14 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
     }
 
     private static func prompt(from request: AICompletionRequest) -> String {
-        let memoryContext = request.memoryContext.map { memory in
-            "- [\(memory.source.rawValue)] \(memory.title): \(memory.summary)"
-        }.joined(separator: "\n")
-
+        let memoryContext = MemoryPromptContextBuilder().build(from: request.memoryContext)
         let capabilities = request.allowedCapabilities.map(\.rawValue).joined(separator: ", ")
         return """
         System:
         \(request.systemPrompt)
 
         Relevant memory:
-        \(memoryContext.isEmpty ? "None" : memoryContext)
+        \(memoryContext)
 
         Allowed capabilities:
         \(capabilities.isEmpty ? "None" : capabilities)

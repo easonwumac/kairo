@@ -31,6 +31,7 @@ final class KairoChatBackendAPITests: XCTestCase {
         XCTAssertTrue(input.contains { message in
             message["role"] == "system"
                 && (message["content"]?.contains("Prefers concise Traditional Chinese replies") == true)
+                && (message["content"]?.contains("Keep answers short.") == true)
         })
     }
 
