@@ -72,11 +72,6 @@ public struct AutomationsView: View {
                     Text(KairoL10n.string("automations.title"))
                         .font(.title2.weight(.bold))
                         .foregroundStyle(KairoDesign.ink)
-
-                    Text(KairoL10n.string("automations.subtitle"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Button {
@@ -89,10 +84,6 @@ public struct AutomationsView: View {
                             Text(KairoL10n.string("automations.details.title"))
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(KairoDesign.ink)
-                            Text(KairoL10n.string("automations.details.subtitle"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
                         }
 
                         Spacer(minLength: 8)
@@ -109,6 +100,11 @@ public struct AutomationsView: View {
 
                 if showWorkflowDetails {
                     VStack(alignment: .leading, spacing: 8) {
+                        Text(KairoL10n.string("automations.subtitle"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
                         HStack(spacing: 8) {
                             KairoStatusPill(
                                 title: KairoL10n.string("automations.status.recipes", Int64(recipes.count)),
@@ -121,6 +117,11 @@ public struct AutomationsView: View {
                                 tint: KairoDesign.green
                             )
                         }
+
+                        Text(KairoL10n.string("automations.details.subtitle"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
 
                         Text(KairoL10n.string("automations.recipeCenter.detail"))
                             .font(.caption)

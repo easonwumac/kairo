@@ -504,6 +504,15 @@ Stage 52 makes Memory search-first again:
 - No memory behavior changes: manual save, search, record details, delete, and
   export remain reachable with the same identifiers.
 
+Stage 53 makes Workflows overview terse:
+
+- Workflows no longer opens with explanatory subtitle copy under the page title.
+- Workflow details is now a compact first-layer disclosure label; the workflow
+  purpose, saved count, review-first rule, recipe-center rationale, and internal
+  recipe boundary appear only after expansion.
+- Starter workflows, saved workflow preview, and advanced Shortcut references
+  keep their existing progressive paths.
+
 ## Next UI stages
 
 1. Product surface audit
