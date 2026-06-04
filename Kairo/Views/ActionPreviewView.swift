@@ -3,6 +3,7 @@ import SwiftUI
 
 public struct ActionPreviewView: View {
     @State private var showPayloadDetails = false
+    @State private var showSafetyDetails = false
 
     public let action: AgentAction
     public let descriptor: SandboxActionDescriptor?
@@ -149,6 +150,63 @@ public struct ActionPreviewView: View {
 
                 Divider()
 
+                checklistRow(
+                    title: KairoL10n.string("chat.action.preview.field.destination"),
+                    value: destinationLabel,
+                    systemImage: "arrow.up.right.square.fill",
+                    tint: KairoDesign.violet
+                )
+                checklistRow(
+                    title: KairoL10n.string("chat.action.preview.field.confirmation"),
+                    value: confirmationLabel,
+                    systemImage: "hand.tap.fill",
+                    tint: riskColor
+                )
+
+                safetyDetailsDisclosure
+            }
+        }
+    }
+
+    private var safetyDetailsDisclosure: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(.snappy(duration: 0.2)) {
+                    showSafetyDetails.toggle()
+                }
+            } label: {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "checklist.checked")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(KairoDesign.teal)
+                        .frame(width: 24, height: 24)
+                        .background(KairoDesign.teal.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(KairoL10n.string("chat.action.preview.safetyDetails"))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.ink)
+                        Text(KairoL10n.string("chat.action.preview.safetyDetails.detail"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Image(systemName: showSafetyDetails ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("chat.action.safety.toggle")
+            .accessibilityLabel(showSafetyDetails ? KairoL10n.string("chat.action.preview.safetyDetails.hide") : KairoL10n.string("chat.action.preview.safetyDetails.show"))
+
+            if showSafetyDetails {
+                Divider()
+
                 if let descriptor {
                     checklistRow(
                         title: KairoL10n.string("chat.action.preview.field.capability"),
@@ -158,22 +216,10 @@ public struct ActionPreviewView: View {
                     )
                 }
                 checklistRow(
-                    title: KairoL10n.string("chat.action.preview.field.destination"),
-                    value: destinationLabel,
-                    systemImage: "arrow.up.right.square.fill",
-                    tint: KairoDesign.violet
-                )
-                checklistRow(
                     title: KairoL10n.string("chat.action.preview.field.why"),
                     value: action.rationale,
                     systemImage: "text.bubble.fill",
                     tint: KairoDesign.teal
-                )
-                checklistRow(
-                    title: KairoL10n.string("chat.action.preview.field.confirmation"),
-                    value: confirmationLabel,
-                    systemImage: "hand.tap.fill",
-                    tint: riskColor
                 )
             }
         }

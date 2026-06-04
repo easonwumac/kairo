@@ -244,6 +244,15 @@ Stage 24 makes Workflows preview-first:
 - Existing run and toggle identifiers stay reachable after expansion so smoke
   tests still verify behavior rather than copy.
 
+Stage 25 makes Action Preview decision-first:
+
+- Action Preview now keeps destination, risk, and confirmation status as the
+  first-level review surface.
+- Capability and rationale move behind a Safety details disclosure so long
+  explanatory text does not compete with the confirm/cancel decision.
+- Exact draft or handoff payload details remain separately collapsed, preserving
+  review depth without forcing every user through every field.
+
 ## Next UI stages
 
 1. Memory Center
