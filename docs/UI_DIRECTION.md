@@ -662,6 +662,15 @@ Stage 69 makes Settings route details status-first:
 - Route preference, setup details toggle, OpenAI key controls, connected
   accounts, and model setup identifiers keep their current paths.
 
+Stage 70 makes Memory library details status-first:
+
+- The Memory library details expansion no longer starts with general
+  explanation copy.
+- Expansion now goes directly to saved-count, user-approved status, and export,
+  keeping the Memory surface focused on record management.
+- Add memory, search, record details, delete, export, and existing Memory smoke
+  identifiers keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit

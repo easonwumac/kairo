@@ -238,16 +238,6 @@ public struct MemoryCenterView: View {
                 .accessibilityIdentifier("memory.details.toggle")
 
                 if showLibraryDetails {
-                    Text(KairoL10n.string("memory.subtitle"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(KairoL10n.string("memory.details.subtitle"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
                     HStack(spacing: 8) {
                         KairoStatusPill(
                             title: KairoL10n.string(
