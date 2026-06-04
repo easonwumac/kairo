@@ -51,13 +51,13 @@ public enum ChatProviderRouteStatusBuilder {
             detail = "Cloud routing is preferred for chat. Local models stay available only after switching route preference."
         case .localOnly:
             if status.localModelInstalled, let selectedModelName {
-                detail = "Local Only uses \(selectedModelName) for eligible local work. Tools and current info fail closed."
+                detail = "Local Only selected \(selectedModelName), but iOS production local inference is not available in this beta. Chat fails closed instead of pretending the phone can answer locally."
             } else {
                 detail = "Local Only is active. Download and select a local model before chat can answer locally."
             }
         case .automatic, .preferLocal:
             if status.localModelInstalled, let selectedModelName {
-                detail = "Selected local model: \(selectedModelName). Eligible private/offline work can route locally; tools and current info stay cloud or visible handoff."
+                detail = "Selected local model: \(selectedModelName). Catalog/download/select/delete are available; iOS production local inference remains unavailable until a runtime is implemented and verified on device."
             } else if selectedModelName != nil {
                 detail = "Selected local model is not installed yet. Download it before local routing can answer."
             } else {
@@ -66,7 +66,9 @@ public enum ChatProviderRouteStatusBuilder {
         }
 
         let warning: String?
-        if status.preference == .localOnly && !status.localModelInstalled {
+        if status.preference == .localOnly && status.localModelInstalled {
+            warning = "iOS production local inference is unavailable in this beta."
+        } else if status.preference == .localOnly && !status.localModelInstalled {
             warning = "Local Only is active but no downloaded model is selected."
         } else if status.preference == .preferLocal && !status.localModelInstalled {
             warning = "Prefer Local needs a downloaded selected model before private/offline work can route locally."

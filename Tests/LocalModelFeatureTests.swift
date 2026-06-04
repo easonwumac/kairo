@@ -547,8 +547,30 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(selectedStatus.title, "Route: Prefer Local")
         XCTAssertEqual(selectedStatus.badge, "Local")
         XCTAssertTrue(selectedStatus.detail.contains("Selected local model: Qwen Small Test"))
-        XCTAssertTrue(selectedStatus.detail.contains("tools and current info"))
+        XCTAssertTrue(selectedStatus.detail.contains("Catalog/download/select/delete are available"))
+        XCTAssertTrue(selectedStatus.detail.contains("iOS production local inference remains unavailable"))
         XCTAssertNil(selectedStatus.warning)
+
+        let installedManifest = makeLocalModelManifest(id: "qwen-small")
+        let installedRecord = LocalModelInstallRecord(
+            modelID: "qwen-small",
+            version: installedManifest.version,
+            status: .installed,
+            fileURL: URL(fileURLWithPath: "/tmp/qwen-small.gguf"),
+            installedSizeBytes: installedManifest.installedSizeBytes,
+            sha256: installedManifest.sha256
+        )
+        let localOnlyInstalledStatus = ChatProviderRouteStatusBuilder.build(from: LocalModelSettingsStatus(
+            selectedModelID: "qwen-small",
+            selectedModel: installedManifest,
+            installedRecord: installedRecord,
+            preference: .localOnly,
+            availableModels: [installedManifest],
+            installedModels: [installedRecord]
+        ))
+
+        XCTAssertTrue(localOnlyInstalledStatus.detail.contains("Chat fails closed"))
+        XCTAssertEqual(localOnlyInstalledStatus.warning, "iOS production local inference is unavailable in this beta.")
 
         let warningStatus = ChatProviderRouteStatusBuilder.build(from: LocalModelSettingsStatus(
             selectedModelID: nil,
