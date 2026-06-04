@@ -62,7 +62,7 @@ struct ShareActionReviewBanner: View {
             }
             Spacer(minLength: 8)
             Button(action: review) {
-                Text("Review Reminder")
+                Text("檢查提醒事項")
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
@@ -99,7 +99,7 @@ struct CalendarActionReviewBanner: View {
             }
             Spacer(minLength: 8)
             Button(action: review) {
-                Text("Review Calendar")
+                Text("檢查行程")
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)

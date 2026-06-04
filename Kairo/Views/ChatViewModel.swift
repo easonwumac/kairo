@@ -29,9 +29,9 @@ public final class ChatViewModel: ObservableObject {
     public var shareImportPrimaryActionTitle: String {
         let prompt = composerText.trimmingCharacters(in: .whitespacesAndNewlines)
         if prompt.hasPrefix("建立提醒事項：") {
-            return "Extract Tasks"
+            return "抽出提醒事項"
         }
-        return prompt.localizedCaseInsensitiveContains("summarize") ? "Summarize" : "Send to Chat"
+        return prompt.localizedCaseInsensitiveContains("summarize") ? "摘要分享內容" : "送進 Chat"
     }
 
     private let historyStore: ChatHistoryStore

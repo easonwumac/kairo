@@ -50,7 +50,7 @@ final class ShareExtensionLifecycleTests: XCTestCase {
             viewModel.composerText,
             "Summarize this shared content: Article, example.com, photo.png, brief.pdf"
         )
-        XCTAssertEqual(viewModel.shareImportPrimaryActionTitle, "Summarize")
+        XCTAssertEqual(viewModel.shareImportPrimaryActionTitle, "摘要分享內容")
         XCTAssertEqual(
             viewModel.shareImportPreview,
             "Article: Shared article text • example.com: https://example.com/story • photo.png"
