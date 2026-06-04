@@ -12,6 +12,76 @@ public struct OAuthConnectorClientConfiguration: Equatable, Sendable {
     }
 }
 
+public struct OAuthConnectorClientConfigurationLoader: Sendable {
+    public init() {}
+
+    public func load(
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        infoDictionary: [String: Any]? = Bundle.main.infoDictionary
+    ) -> [String: OAuthConnectorClientConfiguration] {
+        var configurations = Self.loadFromInfoDictionary(infoDictionary)
+        configurations.merge(Self.loadFromEnvironment(environment)) { _, environmentValue in
+            environmentValue
+        }
+        return configurations
+    }
+
+    private static func loadFromEnvironment(_ environment: [String: String]) -> [String: OAuthConnectorClientConfiguration] {
+        var configurations: [String: OAuthConnectorClientConfiguration] = [:]
+        for metadata in IntegrationRegistry().oauthConnectors.compactMap(\.oauth) {
+            let key = metadata.providerKey
+                .uppercased()
+                .replacingOccurrences(of: "-", with: "_")
+            guard let clientID = trimmed(environment["KAIRO_OAUTH_\(key)_CLIENT_ID"]),
+                  let redirectURI = trimmed(environment["KAIRO_OAUTH_\(key)_REDIRECT_URI"]) else {
+                continue
+            }
+            configurations[metadata.providerKey] = OAuthConnectorClientConfiguration(
+                clientID: clientID,
+                redirectURI: redirectURI,
+                scopes: scopes(from: environment["KAIRO_OAUTH_\(key)_SCOPES"])
+            )
+        }
+        return configurations
+    }
+
+    private static func loadFromInfoDictionary(_ infoDictionary: [String: Any]?) -> [String: OAuthConnectorClientConfiguration] {
+        guard let rawConfigurations = infoDictionary?["KairoOAuthClientConfigurations"] as? [String: [String: Any]] else {
+            return [:]
+        }
+
+        var configurations: [String: OAuthConnectorClientConfiguration] = [:]
+        for (providerKey, rawConfiguration) in rawConfigurations {
+            guard let clientID = trimmed(rawConfiguration["clientID"] as? String),
+                  let redirectURI = trimmed(rawConfiguration["redirectURI"] as? String) else {
+                continue
+            }
+            configurations[providerKey] = OAuthConnectorClientConfiguration(
+                clientID: clientID,
+                redirectURI: redirectURI,
+                scopes: scopes(from: rawConfiguration["scopes"] as? String)
+            )
+        }
+        return configurations
+    }
+
+    private static func trimmed(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
+    }
+
+    private static func scopes(from value: String?) -> [String]? {
+        let scopes = value?
+            .split { $0 == " " || $0 == "," }
+            .map(String.init)
+            .filter { !$0.isEmpty }
+        return scopes?.isEmpty == false ? scopes : nil
+    }
+}
+
 public enum OAuthConnectorLoginReadiness: String, Codable, Equatable, Sendable {
     case connected
     case readyToAuthorize

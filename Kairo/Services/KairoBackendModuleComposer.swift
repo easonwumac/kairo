@@ -11,6 +11,7 @@ public protocol KairoBackendDependencies: Sendable {
     var kairoRecipeStore: any KairoRecipeStore { get }
     var permissionService: PermissionService { get }
     var auditLogger: AuditLogger { get }
+    var oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] { get }
     var agentSkillManagerService: AgentSkillManagerService? { get }
     var localModelSettingsService: LocalModelSettingsService? { get }
 }
@@ -66,7 +67,10 @@ public struct KairoBackendModuleComposer<Dependencies: KairoBackendDependencies>
             ),
             settings: KairoSettingsBackendService(
                 openAISettingsService: OpenAISettingsService(credentialStore: dependencies.credentialStore),
-                oauthLoginCenter: OAuthConnectorLoginCenter(credentialStore: dependencies.credentialStore)
+                oauthLoginCenter: OAuthConnectorLoginCenter(
+                    credentialStore: dependencies.credentialStore,
+                    clientConfigurations: dependencies.oauthClientConfigurations
+                )
             ),
             access: KairoAccessBackendService(
                 permissionService: dependencies.permissionService

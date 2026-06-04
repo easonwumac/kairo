@@ -32,6 +32,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public let permissionService: PermissionService
     public let auditLogger: AuditLogger
     public let oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore?
+    public let oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
     public let agentSkillManagerService: AgentSkillManagerService?
     public let agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService?
     public let localModelCatalog: LocalModelCatalog
@@ -54,6 +55,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         permissionService: PermissionService = StubPermissionService(),
         auditLogger: AuditLogger = InMemoryAuditLogger(),
         oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
+        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         agentSkillManagerService: AgentSkillManagerService? = nil,
         agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil,
         localModelCatalog: LocalModelCatalog = .kairoDefault,
@@ -75,6 +77,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         self.permissionService = permissionService
         self.auditLogger = auditLogger
         self.oauthConnectorCallbackStore = oauthConnectorCallbackStore
+        self.oauthClientConfigurations = oauthClientConfigurations
         self.agentSkillManagerService = agentSkillManagerService
         self.agentSkillMarketplaceCatalogService = agentSkillMarketplaceCatalogService
         self.localModelCatalog = localModelCatalog
@@ -582,6 +585,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         let agentSkillMarketplaceCatalogService = AgentSkillMarketplaceCatalogService.defaultStandaloneRepository
         let localModelCatalogService = LocalModelCatalogService.defaultStandaloneRepository
         let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(fileURL: paths.oauthConnectorCallbackPreviewsURL)
+        let oauthClientConfigurations = OAuthConnectorClientConfigurationLoader().load()
         #if canImport(UIKit)
         let urlOpener: any URLOpener = UIApplicationURLOpener()
         #else
@@ -614,6 +618,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
             permissionService: SystemPermissionService(),
             auditLogger: auditLogger,
             oauthConnectorCallbackStore: oauthCallbackStore,
+            oauthClientConfigurations: oauthClientConfigurations,
             agentSkillManagerService: agentSkillManagerService,
             agentSkillMarketplaceCatalogService: agentSkillMarketplaceCatalogService,
             localModelCatalog: localModelCatalog,

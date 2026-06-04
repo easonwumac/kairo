@@ -72,4 +72,24 @@ final class KairoBackendAPITests: XCTestCase {
         }
     }
 
+    func testBackendModuleComposerUsesEnvironmentOAuthClientConfigurations() async throws {
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
+            oauthClientConfigurations: [
+                "chatgpt": OAuthConnectorClientConfiguration(
+                    clientID: "chatgpt-client",
+                    redirectURI: "kairo://oauth/chatgpt/callback"
+                )
+            ]
+        )
+
+        let options = try await environment.backendAPI.settings.oauthLoginOptions()
+        let chatGPT = try XCTUnwrap(options.first { $0.providerKey == "chatgpt" })
+
+        XCTAssertEqual(chatGPT.readiness, .readyToAuthorize)
+        XCTAssertTrue(chatGPT.canStartAuthorization)
+    }
+
 }

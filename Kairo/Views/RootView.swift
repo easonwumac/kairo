@@ -55,6 +55,7 @@ public struct RootView: View {
                 _ = try? await OAuthConnectorLoginCenter(
                     registry: IntegrationRegistry(),
                     credentialStore: environment.credentialStore,
+                    clientConfigurations: environment.oauthClientConfigurations,
                     callbackStore: oauthCallbackStore
                 )
                 .previewCallback(url)
@@ -95,6 +96,7 @@ public struct RootView: View {
                 settingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
                 mode: .modelsOnly,
                 credentialStore: environment.credentialStore,
+                oauthClientConfigurations: environment.oauthClientConfigurations,
                 oauthCallbackStore: environment.oauthConnectorCallbackStore,
                 localModelCatalog: environment.localModelCatalog,
                 localModelCatalogService: environment.localModelCatalogService,
@@ -108,6 +110,7 @@ public struct RootView: View {
                 settingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
                 mode: settingsMode,
                 credentialStore: environment.credentialStore,
+                oauthClientConfigurations: environment.oauthClientConfigurations,
                 oauthCallbackStore: environment.oauthConnectorCallbackStore,
                 localModelCatalog: environment.localModelCatalog,
                 localModelCatalogService: environment.localModelCatalogService,

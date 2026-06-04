@@ -66,6 +66,13 @@ Current scope:
 
 `SettingsView` surfaces these login options as a status list. It can open an authorization URL only when the app has a provider client configuration; otherwise it labels the connector as needing iOS OAuth client setup. Settings also includes an OAuth callback field for validating callback routing and completing public-client token exchange. It shows only redacted status and never displays the raw authorization code or token values.
 
+Runtime OAuth client configuration is intentionally external to source control. Kairo loads public-client metadata from either:
+
+- `Info.plist` key `KairoOAuthClientConfigurations`, keyed by provider, for example `chatgpt.clientID`, `chatgpt.redirectURI`, and optional space/comma-separated `chatgpt.scopes`;
+- process environment overrides such as `KAIRO_OAUTH_CHATGPT_CLIENT_ID`, `KAIRO_OAUTH_CHATGPT_REDIRECT_URI`, and optional `KAIRO_OAUTH_CHATGPT_SCOPES`.
+
+Do not place client secrets, authorization codes, access tokens, refresh tokens, or personal callback URLs in these config values. If a provider requires a client secret or backend token exchange, the iOS app must not perform that exchange directly.
+
 Out of scope for this core:
 
 - refreshing tokens;

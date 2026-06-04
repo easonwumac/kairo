@@ -93,6 +93,30 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertEqual(connectedOption.settingsDetailText, KairoL10n.string("settings.oauth.grantedScopes", "repo"))
     }
 
+    func testOAuthConnectorClientConfigurationLoaderReadsChatGPTRuntimeConfigurationWithoutSecrets() {
+        let loader = OAuthConnectorClientConfigurationLoader()
+
+        let configurations = loader.load(
+            environment: [
+                "KAIRO_OAUTH_CHATGPT_CLIENT_ID": "chatgpt-client",
+                "KAIRO_OAUTH_CHATGPT_REDIRECT_URI": "kairo://oauth/chatgpt/callback",
+                "KAIRO_OAUTH_CHATGPT_SCOPES": "openid profile"
+            ],
+            infoDictionary: [
+                "KairoOAuthClientConfigurations": [
+                    "chatgpt": [
+                        "clientID": "plist-client",
+                        "redirectURI": "kairo://oauth/chatgpt/plist-callback"
+                    ]
+                ]
+            ]
+        )
+
+        XCTAssertEqual(configurations["chatgpt"]?.clientID, "chatgpt-client")
+        XCTAssertEqual(configurations["chatgpt"]?.redirectURI, "kairo://oauth/chatgpt/callback")
+        XCTAssertEqual(configurations["chatgpt"]?.scopes, ["openid", "profile"])
+    }
+
     func testChatGPTOAuthServiceBuildsPKCEAuthorizationURL() async throws {
         let service = ChatGPTOAuthService(
             configuration: ChatGPTOAuthConfiguration(
