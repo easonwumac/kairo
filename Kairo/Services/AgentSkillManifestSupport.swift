@@ -58,6 +58,7 @@ public enum AgentSkillInstallError: Error, Equatable, Sendable {
 
 public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable, LocalizedError {
     case invalidSkillID(String)
+    case missingPermissions(skillID: String)
     case invalidPermission(skillID: String, permission: String)
     case invalidManifestURL(skillID: String, manifestURL: String)
     case duplicateSkillID(String)
@@ -70,6 +71,8 @@ public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable, Local
         switch self {
         case .invalidSkillID(let skillID):
             return "Marketplace catalog contains an invalid skill id: \(skillID)."
+        case .missingPermissions(let skillID):
+            return "Marketplace skill \(skillID) must declare at least one permission."
         case .invalidPermission(let skillID, let permission):
             return "Marketplace skill \(skillID) uses an unknown permission: \(permission)."
         case .invalidManifestURL(let skillID, let manifestURL):
@@ -248,6 +251,9 @@ public struct AgentSkillMarketplaceCatalogService: Sendable {
         }
         guard entry.requiresConfirmation else {
             throw AgentSkillMarketplaceCatalogError.confirmationRequiredDisabled(skillID: entry.id)
+        }
+        guard !entry.permissions.isEmpty else {
+            throw AgentSkillMarketplaceCatalogError.missingPermissions(skillID: entry.id)
         }
 
         let requiredCapabilities = try entry.permissions.map { permission in
