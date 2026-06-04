@@ -50,7 +50,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         XCTAssertNil(viewModel.pendingAction)
         XCTAssertEqual(viewModel.actionResultMessage, deniedMessage)
         XCTAssertEqual(viewModel.actionResultSucceeded, false)
-        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertEqual(viewModel.errorMessage, deniedMessage)
     }
 
     @MainActor
