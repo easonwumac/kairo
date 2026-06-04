@@ -505,7 +505,7 @@ final class KairoCoreTests: XCTestCase {
         let requests = await service.requests
 
         XCTAssertFalse(result.completed)
-        XCTAssertEqual(result.message, "Action requires user confirmation.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.executor.confirmationRequired"))
         XCTAssertTrue(requests.isEmpty)
     }
 
@@ -1834,7 +1834,7 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertFalse(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertEqual(result.message, "Could not open the visible URL handoff. Nothing was opened.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.executor.openURLFailed"))
     }
 
     func testLiveEnvironmentSourceUsesKeychainCredentialStoreForProviderSecrets() throws {

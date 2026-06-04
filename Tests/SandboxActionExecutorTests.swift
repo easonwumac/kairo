@@ -41,7 +41,11 @@ final class SandboxActionExecutorTests: XCTestCase {
         let result = try await executor.execute(action, confirmed: false)
 
         XCTAssertFalse(result.completed)
-        XCTAssertTrue(result.message.contains("Unsupported by iOS sandbox"))
+        XCTAssertTrue(result.message.contains(KairoL10n.string(
+            "chat.action.executor.unsupportedSandbox",
+            "iOS does not expose another app's private container to Kairo",
+            ""
+        )))
         XCTAssertTrue(result.message.contains("share the content"))
     }
 
@@ -108,7 +112,7 @@ final class SandboxActionExecutorTests: XCTestCase {
 
         XCTAssertTrue(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertEqual(result.message, "Opened visible Mail draft handoff. No email has been sent.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.result.email.success"))
         let openedURLs = await opener.openedURLs
         let openedURL = try XCTUnwrap(openedURLs.first)
         XCTAssertEqual(openedURL.scheme, "mailto")
@@ -132,7 +136,7 @@ final class SandboxActionExecutorTests: XCTestCase {
 
         XCTAssertTrue(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertEqual(result.message, "Opened visible Apple Maps handoff. Navigation still requires user action in Maps.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.result.maps.success"))
         let openedURLs = await opener.openedURLs
         let openedURL = try XCTUnwrap(openedURLs.first)
         XCTAssertEqual(openedURL.scheme, "https")
@@ -156,7 +160,7 @@ final class SandboxActionExecutorTests: XCTestCase {
 
         XCTAssertTrue(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertEqual(result.message, "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.result.message.success"))
         let openedURLs = await opener.openedURLs
         let openedURL = try XCTUnwrap(openedURLs.first)
         XCTAssertEqual(openedURL.scheme, "sms")
@@ -180,7 +184,7 @@ final class SandboxActionExecutorTests: XCTestCase {
 
         XCTAssertTrue(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertEqual(result.message, "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.result.phone.success"))
         let openedURLs = await opener.openedURLs
         let openedURL = try XCTUnwrap(openedURLs.first)
         XCTAssertEqual(openedURL.scheme, "tel")
@@ -202,7 +206,7 @@ final class SandboxActionExecutorTests: XCTestCase {
 
         XCTAssertTrue(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertEqual(result.message, "Opened visible Safari web search handoff. No browsing has happened inside Kairo.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.result.web.success"))
         let openedURLs = await opener.openedURLs
         let openedURL = try XCTUnwrap(openedURLs.first)
         XCTAssertEqual(openedURL.scheme, "https")
@@ -243,7 +247,7 @@ final class SandboxActionExecutorTests: XCTestCase {
         let result = try await executor.execute(action, confirmed: true)
 
         XCTAssertTrue(result.completed)
-        XCTAssertEqual(result.message, "Created reminder.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.executor.createdReminder"))
         XCTAssertEqual(result.createdIdentifier, "reminder-id")
         let createdTitles = await scheduler.createdDrafts.map(\.title)
         XCTAssertEqual(createdTitles, ["Review Shortcut node outputs"])
@@ -263,7 +267,7 @@ final class SandboxActionExecutorTests: XCTestCase {
         let result = try await executor.execute(action, confirmed: true)
 
         XCTAssertFalse(result.completed)
-        XCTAssertEqual(result.message, "Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.permission.reminders.off"))
         let createdTitles = await scheduler.createdDrafts.map(\.title)
         XCTAssertEqual(createdTitles, [])
     }
@@ -321,7 +325,7 @@ final class SandboxActionExecutorTests: XCTestCase {
         let createdDrafts = await scheduler.createdDrafts
 
         XCTAssertFalse(result.completed)
-        XCTAssertEqual(result.message, "Action requires user confirmation.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.executor.confirmationRequired"))
         XCTAssertTrue(createdDrafts.isEmpty)
         XCTAssertEqual(auditEvents.count, 1)
         XCTAssertEqual(auditEvents.first?.actionKind, .createReminderDraft)
@@ -357,7 +361,7 @@ final class SandboxActionExecutorTests: XCTestCase {
         let auditEvents = try await auditLogger.list(limit: 10)
 
         XCTAssertFalse(result.completed)
-        XCTAssertEqual(result.message, "Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.permission.calendar.off"))
         XCTAssertEqual(auditEvents.count, 1)
         XCTAssertEqual(auditEvents.first?.actionKind, .createCalendarDraft)
         XCTAssertEqual(auditEvents.first?.capabilityKeys, [.calendar])
@@ -376,7 +380,7 @@ final class SandboxActionExecutorTests: XCTestCase {
         let auditEvents = try await auditLogger.list(limit: 10)
 
         XCTAssertFalse(result.completed)
-        XCTAssertTrue(result.message.contains("Could not create calendar event"))
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.executor.writeFailed.calendar"))
         XCTAssertEqual(auditEvents.first?.result, .failed)
     }
 
@@ -448,7 +452,7 @@ final class SandboxActionExecutorTests: XCTestCase {
         let result = try await executor.execute(action, confirmed: true)
 
         XCTAssertTrue(result.completed)
-        XCTAssertEqual(result.message, "Created calendar event.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.executor.createdCalendar"))
         XCTAssertEqual(result.createdIdentifier, "calendar-event-id")
         let createdTitles = await scheduler.createdDrafts.map(\.title)
         XCTAssertEqual(createdTitles, ["Kairo roadmap review"])
@@ -474,7 +478,7 @@ final class SandboxActionExecutorTests: XCTestCase {
         let result = try await executor.execute(action, confirmed: true)
 
         XCTAssertFalse(result.completed)
-        XCTAssertEqual(result.message, "Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.permission.calendar.off"))
         let createdTitles = await scheduler.createdDrafts.map(\.title)
         XCTAssertEqual(createdTitles, [])
     }
@@ -499,7 +503,7 @@ final class SandboxActionExecutorTests: XCTestCase {
         let result = try await executor.execute(action, confirmed: true)
 
         XCTAssertTrue(result.completed)
-        XCTAssertEqual(result.message, "Created contact.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.executor.createdContact"))
         XCTAssertEqual(result.createdIdentifier, "contact-id")
         let createdNames = await scheduler.createdDrafts.map { "\($0.givenName) \($0.familyName)" }
         XCTAssertEqual(createdNames, ["Alex Chen"])
@@ -525,7 +529,7 @@ final class SandboxActionExecutorTests: XCTestCase {
         let result = try await executor.execute(action, confirmed: true)
 
         XCTAssertFalse(result.completed)
-        XCTAssertEqual(result.message, "Contacts permission was not granted.")
+        XCTAssertEqual(result.message, KairoL10n.string("chat.action.executor.permission.contactsDenied"))
         let createdNames = await scheduler.createdDrafts.map(\.givenName)
         XCTAssertEqual(createdNames, [])
     }

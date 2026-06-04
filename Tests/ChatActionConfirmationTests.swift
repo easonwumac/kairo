@@ -35,7 +35,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertDeniedAction(
             prompt: "建立行程：週五 10:00 Kairo roadmap review",
             expectedKind: .createCalendarDraft,
-            executorMessage: "Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again.",
+            executorMessage: KairoL10n.string("chat.action.permission.calendar.off"),
             expectedResultMessage: KairoL10n.string(
                 "chat.action.result.calendar.failure",
                 KairoL10n.string("chat.action.permission.calendar.off")
@@ -48,7 +48,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertDeniedAction(
             prompt: "建立提醒事項：下班前整理 Kairo model list",
             expectedKind: .createReminderDraft,
-            executorMessage: "Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again.",
+            executorMessage: KairoL10n.string("chat.action.permission.reminders.off"),
             expectedResultMessage: KairoL10n.string(
                 "chat.action.result.reminder.failure",
                 KairoL10n.string("chat.action.permission.reminders.off")
@@ -208,23 +208,23 @@ private actor ChatActionConfirmationMockExecutor: ActionExecutor {
         confirmations.append(confirmed)
         switch action.kind.rawValue {
         case "createContactDraft":
-            return ActionExecutionResult(completed: true, message: "Created contact.", createdIdentifier: "contact-id")
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.executor.createdContact"), createdIdentifier: "contact-id")
         case "composeEmailDraft":
-            return ActionExecutionResult(completed: true, message: "Opened visible Mail draft handoff. No email has been sent.", requiresExternalUI: true)
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.result.email.success"), requiresExternalUI: true)
         case "openMapDirections":
-            return ActionExecutionResult(completed: true, message: "Opened visible Apple Maps handoff. Navigation still requires user action in Maps.", requiresExternalUI: true)
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.result.maps.success"), requiresExternalUI: true)
         case "openMessageHandoff":
-            return ActionExecutionResult(completed: true, message: "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview.", requiresExternalUI: true)
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.result.message.success"), requiresExternalUI: true)
         case "openPhoneCallHandoff":
-            return ActionExecutionResult(completed: true, message: "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone.", requiresExternalUI: true)
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.result.phone.success"), requiresExternalUI: true)
         case "openWebSearchHandoff":
-            return ActionExecutionResult(completed: true, message: "Opened visible Safari web search handoff. No browsing has happened inside Kairo.", requiresExternalUI: true)
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.result.web.success"), requiresExternalUI: true)
         case "createCalendarDraft":
-            return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: "calendar-event-id")
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.executor.createdCalendar"), createdIdentifier: "calendar-event-id")
         case "createReminderDraft":
-            return ActionExecutionResult(completed: true, message: "Created reminder.", createdIdentifier: "reminder-id")
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.executor.createdReminder"), createdIdentifier: "reminder-id")
         default:
-            return ActionExecutionResult(completed: true, message: "Scheduled notification.", createdIdentifier: "notification-id")
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.executor.scheduledNotification"), createdIdentifier: "notification-id")
         }
     }
 }

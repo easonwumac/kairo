@@ -114,123 +114,123 @@ public actor SandboxActionExecutor: ActionExecutor {
             return ActionExecutionResult(completed: false, message: decision.reason)
         }
         guard !decision.requiresConfirmation || confirmed else {
-            return ActionExecutionResult(completed: false, message: "Action requires user confirmation.")
+            return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.confirmationRequired"))
         }
 
         switch (action.kind, action.payload) {
         case (.saveMemory, .text(let text)):
             let memory = MemoryRecord(title: String(text.prefix(40)), summary: String(text.prefix(160)), content: text, source: .chat)
             try await memoryStore.save(memory)
-            return ActionExecutionResult(completed: true, message: "Saved memory.", createdIdentifier: memory.id.uuidString)
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.executor.savedMemory"), createdIdentifier: memory.id.uuidString)
         case (.createReminderDraft, .reminder(let draft)):
             guard try await reminderScheduler.requestAccess() else {
-                return ActionExecutionResult(completed: false, message: Self.permissionDeniedMessage(for: "Reminders"))
+                return ActionExecutionResult(completed: false, message: Self.permissionDeniedMessage(for: .reminders))
             }
             let identifier: String
             do {
                 identifier = try await reminderScheduler.createReminder(from: draft)
             } catch {
-                return ActionExecutionResult(completed: false, message: Self.writeFailedMessage(for: "reminder"))
+                return ActionExecutionResult(completed: false, message: Self.writeFailedMessage(for: .reminder))
             }
-            return ActionExecutionResult(completed: true, message: "Created reminder.", createdIdentifier: identifier)
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.executor.createdReminder"), createdIdentifier: identifier)
         case (.createCalendarDraft, .calendarEvent(let draft)):
             guard try await calendarScheduler.requestAccess() else {
-                return ActionExecutionResult(completed: false, message: Self.permissionDeniedMessage(for: "Calendar"))
+                return ActionExecutionResult(completed: false, message: Self.permissionDeniedMessage(for: .calendar))
             }
             let identifier: String
             do {
                 identifier = try await calendarScheduler.createCalendarEvent(from: draft)
             } catch {
-                return ActionExecutionResult(completed: false, message: Self.writeFailedMessage(for: "calendar event"))
+                return ActionExecutionResult(completed: false, message: Self.writeFailedMessage(for: .calendarEvent))
             }
-            return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: identifier)
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.executor.createdCalendar"), createdIdentifier: identifier)
         case (.createContactDraft, .contact(let draft)):
             guard try await contactScheduler.requestAccess() else {
-                return ActionExecutionResult(completed: false, message: "Contacts permission was not granted.")
+                return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.permission.contactsDenied"))
             }
             let identifier = try await contactScheduler.createContact(from: draft)
-            return ActionExecutionResult(completed: true, message: "Created contact.", createdIdentifier: identifier)
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.executor.createdContact"), createdIdentifier: identifier)
         case (.answer, _):
-            return ActionExecutionResult(completed: true, message: "No external action required.")
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.executor.noExternalAction"))
         case (.openURL, .url(let urlString)):
             guard let url = URL(string: urlString), Self.isSupportedUserVisibleURL(url) else {
-                return ActionExecutionResult(completed: false, message: "Unsupported or invalid URL.")
+                return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.invalidURL"))
             }
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible URL handoff." : "Could not open the visible URL handoff. Nothing was opened.",
+                message: KairoL10n.string(opened ? "chat.action.executor.openedURL" : "chat.action.executor.openURLFailed"),
                 requiresExternalUI: true
             )
         case (.composeEmailDraft, .email(let draft)):
             guard let url = Self.mailtoURL(for: draft) else {
-                return ActionExecutionResult(completed: false, message: "Unsupported or invalid email draft.")
+                return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.invalidEmailDraft"))
             }
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible Mail draft handoff. No email has been sent." : "Could not open the Mail draft handoff. No email has been sent.",
+                message: KairoL10n.string(opened ? "chat.action.result.email.success" : "chat.action.result.email.failure"),
                 requiresExternalUI: true
             )
         case (.openMapDirections, .mapDirections(let draft)):
             guard let url = Self.appleMapsDirectionsURL(for: draft) else {
-                return ActionExecutionResult(completed: false, message: "Unsupported or invalid map directions request.")
+                return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.invalidMapDirections"))
             }
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible Apple Maps handoff. Navigation still requires user action in Maps." : "Could not open the Apple Maps handoff. Navigation has not started.",
+                message: KairoL10n.string(opened ? "chat.action.result.maps.success" : "chat.action.result.maps.failure"),
                 requiresExternalUI: true
             )
         case (.openMessageHandoff, .message(let draft)):
             guard let url = Self.smsHandoffURL(for: draft) else {
-                return ActionExecutionResult(completed: false, message: "Unsupported or invalid message handoff request.")
+                return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.invalidMessageHandoff"))
             }
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview." : "Could not open the Messages handoff. No message has been sent; body remains in Kairo preview.",
+                message: KairoL10n.string(opened ? "chat.action.result.message.success" : "chat.action.result.message.failure"),
                 requiresExternalUI: true
             )
         case (.openPhoneCallHandoff, .phoneCall(let draft)):
             guard let url = Self.phoneCallHandoffURL(for: draft) else {
-                return ActionExecutionResult(completed: false, message: "Unsupported or invalid phone call handoff request.")
+                return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.invalidPhoneHandoff"))
             }
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone." : "Could not open the Phone handoff. No call has been placed.",
+                message: KairoL10n.string(opened ? "chat.action.result.phone.success" : "chat.action.result.phone.failure"),
                 requiresExternalUI: true
             )
         case (.openWebSearchHandoff, .webSearch(let draft)):
             guard let url = Self.webSearchHandoffURL(for: draft) else {
-                return ActionExecutionResult(completed: false, message: "Unsupported or invalid web search handoff request.")
+                return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.invalidWebSearchHandoff"))
             }
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible Safari web search handoff. No browsing has happened inside Kairo." : "Could not open the Safari web search handoff. No browsing has happened inside Kairo.",
+                message: KairoL10n.string(opened ? "chat.action.result.web.success" : "chat.action.result.web.failure"),
                 requiresExternalUI: true
             )
         case (.sendNotification, .notification(let draft)):
             guard try await notificationScheduler.requestAuthorization() else {
-                return ActionExecutionResult(completed: false, message: "Notification permission was not granted.")
+                return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.permission.notificationDenied"))
             }
             let identifier = try await notificationScheduler.schedule(draft)
-            return ActionExecutionResult(completed: true, message: "Scheduled notification.", createdIdentifier: identifier)
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.executor.scheduledNotification"), createdIdentifier: identifier)
         case (.controlHome, .homeControl(let request)):
             guard try await homeControlService.requestAuthorization() else {
-                return ActionExecutionResult(completed: false, message: "HomeKit permission was not granted.")
+                return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.permission.homeKitDenied"))
             }
             let identifier = try await homeControlService.execute(request)
-            return ActionExecutionResult(completed: true, message: "Executed HomeKit control.", createdIdentifier: identifier)
+            return ActionExecutionResult(completed: true, message: KairoL10n.string("chat.action.executor.executedHomeKit"), createdIdentifier: identifier)
         case (.unsupportedSandboxAction, .unsupported(let explanation)):
-            let alternative = explanation.safeAlternative.map { " Safe alternative: \($0)" } ?? ""
-            return ActionExecutionResult(completed: false, message: "Unsupported by iOS sandbox: \(explanation.reason).\(alternative)")
+            let alternative = explanation.safeAlternative.map { KairoL10n.string("chat.action.executor.unsupportedSandbox.safeAlternative", $0) } ?? ""
+            return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.unsupportedSandbox", explanation.reason, alternative))
         case (.externalAPIRequest, _):
-            return ActionExecutionResult(completed: false, message: "External API actions require an OAuth connector integration.")
+            return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.externalAPIRequiresOAuth"))
         default:
-            return ActionExecutionResult(completed: false, message: "Unsupported action payload for \(action.kind.rawValue).")
+            return ActionExecutionResult(completed: false, message: KairoL10n.string("chat.action.executor.unsupportedPayload", action.kind.rawValue))
         }
     }
 
@@ -328,13 +328,33 @@ public actor SandboxActionExecutor: ActionExecutor {
         }
     }
 
-    private static func permissionDeniedMessage(for serviceName: String) -> String {
-        "\(serviceName) permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
+    private static func permissionDeniedMessage(for service: ActionPermissionService) -> String {
+        switch service {
+        case .reminders:
+            return KairoL10n.string("chat.action.permission.reminders.off")
+        case .calendar:
+            return KairoL10n.string("chat.action.permission.calendar.off")
+        }
     }
 
-    private static func writeFailedMessage(for itemName: String) -> String {
-        "Could not create \(itemName). Check iOS Settings permissions and try again."
+    private static func writeFailedMessage(for item: WritableActionItem) -> String {
+        switch item {
+        case .reminder:
+            return KairoL10n.string("chat.action.executor.writeFailed.reminder")
+        case .calendarEvent:
+            return KairoL10n.string("chat.action.executor.writeFailed.calendar")
+        }
     }
+}
+
+private enum ActionPermissionService {
+    case reminders
+    case calendar
+}
+
+private enum WritableActionItem {
+    case reminder
+    case calendarEvent
 }
 
 private extension MapDirectionsMode {

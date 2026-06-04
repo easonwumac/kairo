@@ -363,9 +363,9 @@ public final class ChatViewModel: ObservableObject {
 
     private static func localizedExecutionDetail(for message: String) -> String {
         switch message {
-        case "Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again.":
+        case KairoL10n.string("chat.action.permission.reminders.off"):
             return KairoL10n.string("chat.action.permission.reminders.off")
-        case "Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again.":
+        case KairoL10n.string("chat.action.permission.calendar.off"):
             return KairoL10n.string("chat.action.permission.calendar.off")
         default:
             return message
