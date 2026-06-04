@@ -315,6 +315,9 @@ extension KairoAppSmokeUITests {
         XCTAssertFalse(providerKey.isEmpty)
         XCTAssertTrue(findStaticText(containing: displayName, direction: .both, maxSwipes: 6).exists)
         XCTAssertTrue(findStaticText(containing: "Client configuration required", direction: .both, maxSwipes: 1).exists)
+        let details = findButton("settings.oauth.\(providerKey).details", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(details.exists)
+        tapElement(details)
         XCTAssertTrue(findStaticText(containing: detailText, direction: .both, maxSwipes: 2).exists)
 
         if expectsBackendExchange {

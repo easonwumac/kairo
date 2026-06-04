@@ -37,6 +37,7 @@ public struct SettingsView: View {
     @State private var privacyStatusMessage: String?
     @State private var showConnectionSetup = false
     @State private var showAPIKeyEditor = false
+    @State private var expandedOAuthConnectorDetails: Set<String> = []
     @State private var showPrivacyControls = false
 
     private let settingsService: OpenAISettingsService
@@ -477,6 +478,8 @@ public struct SettingsView: View {
 
     @ViewBuilder
     private func connectorRow(_ option: OAuthConnectorLoginOption) -> some View {
+        let isExpanded = expandedOAuthConnectorDetails.contains(option.providerKey)
+
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text(option.displayName)
@@ -490,47 +493,75 @@ public struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(statusColor(for: option.readiness))
                     .accessibilityIdentifier("settings.oauth.\(option.providerKey).status")
-            }
 
-            Text(option.accountDataBoundary)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(3)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("settings.oauth.\(option.providerKey).detail")
-
-            if option.requiresBackendTokenExchange {
-                Text(KairoL10n.string("settings.oauth.backendExchangeRequired"))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("settings.oauth.\(option.providerKey).backend-exchange")
-            }
-
-        if option.canStartAuthorization || option.readiness == .connected {
-            HStack {
-                if option.canStartAuthorization {
-                    Button(KairoL10n.string("settings.oauth.authorize")) {
-                        authorizeConnector(option)
-                    }
-                    .accessibilityIdentifier("settings.oauth.\(option.providerKey).authorize")
+                Button {
+                    toggleOAuthConnectorDetails(option.providerKey)
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.blue)
                 }
-
-                if option.readiness == .connected || option.readiness == .needsReauthorization {
-                    Button(KairoL10n.string("settings.oauth.disconnect"), role: .destructive) {
-                        disconnectConnector(option)
-                    }
-                    .accessibilityIdentifier("settings.oauth.\(option.providerKey).disconnect")
-                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isExpanded ? KairoL10n.string("settings.oauth.details.hide") : KairoL10n.string("settings.oauth.details.show"))
+                .accessibilityIdentifier("settings.oauth.\(option.providerKey).details")
             }
-        } else if option.readiness == .needsClientConfiguration {
-            Text(KairoL10n.string("settings.oauth.clientNotConfigured"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(option.accountDataBoundary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("settings.oauth.\(option.providerKey).detail")
+
+                    if option.requiresBackendTokenExchange {
+                        Text(KairoL10n.string("settings.oauth.backendExchangeRequired"))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("settings.oauth.\(option.providerKey).backend-exchange")
+                    }
+
+                    if option.canStartAuthorization || option.readiness == .connected {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 8)], spacing: 8) {
+                            if option.canStartAuthorization {
+                                Button(KairoL10n.string("settings.oauth.authorize")) {
+                                    authorizeConnector(option)
+                                }
+                                .buttonStyle(.bordered)
+                                .accessibilityIdentifier("settings.oauth.\(option.providerKey).authorize")
+                            }
+
+                            if option.readiness == .connected || option.readiness == .needsReauthorization {
+                                Button(KairoL10n.string("settings.oauth.disconnect"), role: .destructive) {
+                                    disconnectConnector(option)
+                                }
+                                .buttonStyle(.bordered)
+                                .accessibilityIdentifier("settings.oauth.\(option.providerKey).disconnect")
+                            }
+                        }
+                    } else if option.readiness == .needsClientConfiguration {
+                        Text(KairoL10n.string("settings.oauth.clientNotConfigured"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.oauth.\(option.providerKey).row")
+    }
+
+    private func toggleOAuthConnectorDetails(_ providerKey: String) {
+        withAnimation(.snappy(duration: 0.2)) {
+            if expandedOAuthConnectorDetails.contains(providerKey) {
+                expandedOAuthConnectorDetails.remove(providerKey)
+            } else {
+                expandedOAuthConnectorDetails.insert(providerKey)
+            }
+        }
     }
 
     @ViewBuilder

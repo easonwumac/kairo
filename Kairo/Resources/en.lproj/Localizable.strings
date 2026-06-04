@@ -621,6 +621,8 @@
 "settings.oauth.status.needsReauthorization" = "Reauthorization required";
 "settings.oauth.grantedScopes" = "Authorized scopes: %@";
 "settings.oauth.defaultScopes" = "Default scopes: %@";
+"settings.oauth.details.show" = "Show account details";
+"settings.oauth.details.hide" = "Hide account details";
 "settings.oauth.backendExchangeRequired" = "Requires backend token exchange.";
 "settings.oauth.clientNotConfigured" = "iOS OAuth client is not configured yet.";
 "settings.oauth.authorize" = "Authorize";

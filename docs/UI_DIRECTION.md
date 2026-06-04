@@ -325,10 +325,19 @@ Stage 33 makes cloud key setup status-first:
 - Cloud key handling remains testable and Keychain-bound; only presentation
   hierarchy changed.
 
+Stage 34 makes connected accounts status-first:
+
+- OAuth connector rows now keep the first layer to account name, readiness, and
+  Details.
+- Account data boundary, backend token-exchange notes, Authorize, and Disconnect
+  move behind each row's Details disclosure.
+- Connected accounts still show the same official OAuth/API boundaries, but
+  Settings no longer reads like a connector implementation table.
+
 ## Next UI stages
 
 1. Settings
-   - Continue tightening connected account rows after smoke confirms which OAuth
+   - Continue tightening privacy cleanup after smoke confirms which retention
      states users need on the first screen.
 
 2. Action Preview

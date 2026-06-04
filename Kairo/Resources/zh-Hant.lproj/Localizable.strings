@@ -621,6 +621,8 @@
 "settings.oauth.status.needsReauthorization" = "需要重新授權";
 "settings.oauth.grantedScopes" = "已授權 scopes: %@";
 "settings.oauth.defaultScopes" = "預設 scopes: %@";
+"settings.oauth.details.show" = "顯示帳號細節";
+"settings.oauth.details.hide" = "隱藏帳號細節";
 "settings.oauth.backendExchangeRequired" = "需要後端 token exchange。";
 "settings.oauth.clientNotConfigured" = "尚未設定 iOS OAuth client。";
 "settings.oauth.authorize" = "Authorize";
