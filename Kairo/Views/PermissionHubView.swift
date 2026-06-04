@@ -188,6 +188,11 @@ public struct PermissionHubView: View {
 
                 if isAdvancedSkillSetupExpanded {
                     Divider()
+                    Text(KairoL10n.string("access.skills.advanced.toggle.subtitle"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Divider()
                     skillManagerContent
                     Divider()
                     developerSetupDisclosure
@@ -577,10 +582,6 @@ public struct PermissionHubView: View {
                     Text(KairoL10n.string("access.skills.advanced.toggle.title"))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(KairoDesign.ink)
-                    Text(KairoL10n.string("access.skills.advanced.toggle.subtitle"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: 8)
@@ -589,6 +590,7 @@ public struct PermissionHubView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

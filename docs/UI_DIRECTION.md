@@ -566,6 +566,14 @@ Stage 59 makes Workflows advanced references quieter:
 - Shortcut templates, demo previews, preview result identifiers, and recipe
   center behavior keep their existing progressive paths.
 
+Stage 60 makes Access skill library quieter:
+
+- Skill library no longer shows management/setup explanation on the first layer.
+- The Skill library disclosure is now a compact full-width row; installed skill,
+  beta demo, and signed-manifest guidance appears only after expansion.
+- Skill Manager, developer setup, HomeKit preview demos, and existing access
+  smoke identifiers keep their current progressive paths.
+
 ## Next UI stages
 
 1. Product surface audit
