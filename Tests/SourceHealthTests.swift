@@ -687,6 +687,15 @@ final class SourceHealthTests: XCTestCase {
         )
         let privacyManifest = try propertyListDictionary(at: root.appendingPathComponent("Kairo/Resources/PrivacyInfo.xcprivacy"))
         let appInfoPlist = try propertyListDictionary(at: root.appendingPathComponent("Config/KairoApp-Info.plist"))
+        let dependencySurfaces = try [
+            "Package.swift",
+            "project.yml",
+            "Kairo.xcodeproj/project.pbxproj",
+            "Config/KairoApp-Info.plist",
+            "Kairo/Resources/PrivacyInfo.xcprivacy"
+        ]
+        .map { try String(contentsOf: root.appendingPathComponent($0), encoding: .utf8) }
+        .joined(separator: "\n")
         XCTAssertEqual(privacyManifest["NSPrivacyTracking"] as? Bool, false)
         XCTAssertTrue((privacyManifest["NSPrivacyTrackingDomains"] as? [Any])?.isEmpty == true)
         XCTAssertTrue((privacyManifest["NSPrivacyCollectedDataTypes"] as? [Any])?.isEmpty == true)
@@ -727,6 +736,9 @@ final class SourceHealthTests: XCTestCase {
         ] {
             XCTAssertTrue(checklist.contains(boundary), boundary)
             XCTAssertTrue(reviewNotes.contains(boundary), boundary)
+        }
+        for sdkName in ["Firebase", "Crashlytics", "Sentry", "Amplitude", "Mixpanel", "Segment", "Datadog", "NewRelic", "AppCenter"] {
+            XCTAssertFalse(dependencySurfaces.localizedCaseInsensitiveContains(sdkName), sdkName)
         }
         XCTAssertTrue(checklist.contains("Backend account deletion: not applicable in the current beta"))
         XCTAssertTrue(reviewNotes.contains("Backend account deletion: not applicable in the current beta"))
