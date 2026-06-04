@@ -747,7 +747,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(rootView.contains("case settings"))
         XCTAssertTrue(rootView.contains("AutomationsView("))
         XCTAssertTrue(rootView.contains("recipeAPI: environment.backendAPI.recipes"))
-        XCTAssertTrue(automationsView.contains(#""automations.recipeCenter.detail""#))
         XCTAssertTrue(automationsView.contains(#""automations.recipe-center""#))
         XCTAssertTrue(automationsView.contains(#""automations.list""#))
         XCTAssertTrue(automationsView.contains(#""automations.seed-samples""#))

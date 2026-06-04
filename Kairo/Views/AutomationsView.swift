@@ -114,11 +114,6 @@ public struct AutomationsView: View {
                             )
                         }
 
-                        Text(KairoL10n.string("automations.recipeCenter.detail"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
                         KairoStatusPill(
                             title: KairoL10n.string("automations.recipeCenter.boundary"),
                             systemImage: "checkmark.shield.fill",
@@ -220,12 +215,6 @@ public struct AutomationsView: View {
                 .accessibilityIdentifier("automations.advanced.toggle")
 
                 if showAdvancedWorkflowReferences {
-                    Text(KairoL10n.string("automations.advanced.detail"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Divider()
                     shortcutTemplatesSection
                     Divider()
                     shortcutDemoSection

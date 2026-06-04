@@ -671,6 +671,16 @@ Stage 70 makes Memory library details status-first:
 - Add memory, search, record details, delete, export, and existing Memory smoke
   identifiers keep their current paths.
 
+Stage 71 makes Automations expanded layers status-first:
+
+- Workflow details no longer opens with recipe-center explanation copy; it goes
+  directly to saved count, review-first, and Kairo-internal boundary status.
+- Advanced references no longer starts with implementation explanation copy; it
+  opens directly into Shortcut templates and preview demos.
+- Recipe center, starter workflow action, boundary status, advanced references,
+  shortcut templates, demo previews, and existing Automations smoke identifiers
+  keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit
