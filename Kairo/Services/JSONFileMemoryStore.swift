@@ -24,21 +24,26 @@ public actor JSONFileMemoryStore: MemoryStore {
     }
 
     public func search(query: String, limit: Int = 20) async throws -> [MemoryRecord] {
-        let normalized = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !normalized.isEmpty else {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
             return try await list(limit: limit)
         }
+        let matcher = MemorySearchMatcher(query: query)
 
         return activeRecords()
-            .filter { record in
-                record.title.lowercased().contains(normalized)
-                || record.summary.lowercased().contains(normalized)
-                || record.content.lowercased().contains(normalized)
-                || record.tags.contains { $0.lowercased().contains(normalized) }
+            .compactMap { record -> (record: MemoryRecord, score: Int)? in
+                let score = matcher.score(record)
+                guard score > 0 else { return nil }
+                return (record, score)
             }
-            .sorted { $0.updatedAt > $1.updatedAt }
+            .sorted { lhs, rhs in
+                if lhs.score != rhs.score {
+                    return lhs.score > rhs.score
+                }
+                return lhs.record.updatedAt > rhs.record.updatedAt
+            }
             .prefix(limit)
-            .map { $0 }
+            .map(\.record)
     }
 
     public func list(limit: Int = 50) async throws -> [MemoryRecord] {

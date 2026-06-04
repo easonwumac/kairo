@@ -40,18 +40,22 @@ public actor InMemoryMemoryStore: MemoryStore {
     }
 
     public func search(query: String, limit: Int = 20) async throws -> [MemoryRecord] {
-        let normalized = query.lowercased()
+        let matcher = MemorySearchMatcher(query: query)
         return records.values
             .filter { $0.deletedAt == nil }
-            .filter { record in
-                record.title.lowercased().contains(normalized)
-                || record.summary.lowercased().contains(normalized)
-                || record.content.lowercased().contains(normalized)
-                || record.tags.contains { $0.lowercased().contains(normalized) }
+            .compactMap { record -> (record: MemoryRecord, score: Int)? in
+                let score = matcher.score(record)
+                guard score > 0 else { return nil }
+                return (record, score)
             }
-            .sorted { $0.updatedAt > $1.updatedAt }
+            .sorted { lhs, rhs in
+                if lhs.score != rhs.score {
+                    return lhs.score > rhs.score
+                }
+                return lhs.record.updatedAt > rhs.record.updatedAt
+            }
             .prefix(limit)
-            .map { $0 }
+            .map(\.record)
     }
 
     public func list(limit: Int = 50) async throws -> [MemoryRecord] {
@@ -79,5 +83,63 @@ public actor InMemoryMemoryStore: MemoryStore {
 
     public func export(limit: Int = 50) async throws -> MemoryExport {
         MemoryExport(records: try await list(limit: limit))
+    }
+}
+
+public struct MemorySearchMatcher: Sendable {
+    private let normalizedQuery: String
+    private let tokens: [String]
+
+    public init(query: String) {
+        self.normalizedQuery = Self.normalize(query)
+        self.tokens = Self.searchTokens(from: normalizedQuery)
+    }
+
+    public func score(_ record: MemoryRecord) -> Int {
+        guard !normalizedQuery.isEmpty else { return 1 }
+
+        let searchableFields = [
+            record.title,
+            record.summary,
+            record.content,
+            record.tags.joined(separator: " ")
+        ].map(Self.normalize)
+        let searchableText = searchableFields.joined(separator: " ")
+
+        var score = 0
+        if searchableText.contains(normalizedQuery) {
+            score += 100
+        }
+
+        for token in tokens where searchableText.contains(token) {
+            score += 10
+            if searchableFields.first?.contains(token) == true {
+                score += 5
+            }
+        }
+
+        return score
+    }
+
+    private static func normalize(_ value: String) -> String {
+        value
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+    }
+
+    private static func searchTokens(from query: String) -> [String] {
+        let stopWords: Set<String> = [
+            "about", "should", "what", "when", "where", "which", "who", "why", "how",
+            "the", "this", "that", "with", "from", "into", "for", "and", "or", "but",
+            "please", "remember", "memory", "kairo", "我", "你", "請", "幫我", "關於"
+        ]
+
+        return query
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { token in
+                token.count >= 3 && !stopWords.contains(token)
+            }
     }
 }

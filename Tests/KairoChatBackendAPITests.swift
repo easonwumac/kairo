@@ -85,6 +85,34 @@ final class KairoChatBackendAPITests: XCTestCase {
         XCTAssertTrue(capturedRequest.memoryContext.isEmpty)
     }
 
+    func testChatBackendUsesNaturalLanguageMemoryMatchesInStandardChat() async throws {
+        let memoryID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+        let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Used saved context"))
+        let api = KairoChatBackendService(agent: AgentCore(
+            memoryStore: InMemoryMemoryStore(seed: [
+                MemoryRecord(
+                    id: memoryID,
+                    title: "Launch plan",
+                    summary: "Send beta invites after the QA pass.",
+                    content: "The Kairo beta launch plan depends on QA sign-off.",
+                    source: .manual
+                )
+            ]),
+            aiProvider: provider
+        ))
+
+        let response = try await api.respond(
+            to: "What should I remember about the launch?",
+            attachments: [],
+            privacyMode: .standard
+        )
+        let capturedRequestResult = await provider.capturedRequest()
+        let capturedRequest = try XCTUnwrap(capturedRequestResult)
+
+        XCTAssertEqual(response.memoryContextCount, 1)
+        XCTAssertEqual(capturedRequest.memoryContext.map(\.id), [memoryID])
+    }
+
     @MainActor
     func testChatViewModelPersistsAssistantMemoryContextCount() async throws {
         let memory = MemoryRecord(

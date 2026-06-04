@@ -68,6 +68,30 @@ final class MemoryLifecycleTests: XCTestCase {
         XCTAssertTrue(export.records.isEmpty)
     }
 
+    func testJSONFileMemoryStoreFindsNaturalLanguageKeywordMatches() async throws {
+        let fileURL = temporaryFileURL(named: "memory-store.json")
+        let store = try await JSONFileMemoryStore(fileURL: fileURL)
+        let launch = MemoryRecord(
+            title: "Launch plan",
+            summary: "Send beta invites after the QA pass.",
+            content: "The Kairo beta launch plan depends on QA sign-off.",
+            source: .manual
+        )
+        let groceries = MemoryRecord(
+            title: "Groceries",
+            summary: "Buy oat milk.",
+            content: "Personal errands.",
+            source: .manual
+        )
+
+        try await store.save(launch)
+        try await store.save(groceries)
+
+        let results = try await store.search(query: "What should I remember about the launch?", limit: 10)
+
+        XCTAssertEqual(results.map(\.id), [launch.id])
+    }
+
     private func temporaryFileURL(named name: String) -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("KairoMemoryLifecycleTests-\(UUID().uuidString)", isDirectory: true)
