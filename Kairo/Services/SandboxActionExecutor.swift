@@ -43,12 +43,17 @@ public struct AllowingURLOpener: URLOpener {
 }
 
 #if canImport(UIKit)
-@MainActor
 public struct UIApplicationURLOpener: URLOpener {
     public init() {}
 
     public func open(_ url: URL) async -> Bool {
-        await UIApplication.shared.open(url)
+        await withCheckedContinuation { continuation in
+            Task { @MainActor in
+                UIApplication.shared.open(url, options: [:]) { opened in
+                    continuation.resume(returning: opened)
+                }
+            }
+        }
     }
 }
 #endif

@@ -580,15 +580,25 @@ public struct KairoEnvironment: KairoBackendDependencies {
         let agentSkillMarketplaceCatalogService = AgentSkillMarketplaceCatalogService.defaultStandaloneRepository
         let localModelCatalogService = LocalModelCatalogService.defaultStandaloneRepository
         let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(fileURL: paths.oauthConnectorCallbackPreviewsURL)
+        #if canImport(UIKit)
+        let urlOpener: any URLOpener = UIApplicationURLOpener()
+        #else
+        let urlOpener: any URLOpener = NoOpURLOpener()
+        #endif
         let actionExecutor: any ActionExecutor
         #if canImport(UserNotifications)
         actionExecutor = SandboxActionExecutor(
             memoryStore: memoryStore,
+            urlOpener: urlOpener,
             notificationScheduler: UserNotificationScheduler(),
             auditLogger: auditLogger
         )
         #else
-        actionExecutor = SandboxActionExecutor(memoryStore: memoryStore, auditLogger: auditLogger)
+        actionExecutor = SandboxActionExecutor(
+            memoryStore: memoryStore,
+            urlOpener: urlOpener,
+            auditLogger: auditLogger
+        )
         #endif
 
         return KairoEnvironment(
