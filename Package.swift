@@ -17,6 +17,7 @@ let package = Package(
             path: "Kairo",
             exclude: [
                 "App/KairoApp.swift",
+                "App/LlamaCppLocalModelRuntime.swift",
                 "Extensions/ShareExtension/ShareExtensionNotes.md",
                 "Extensions/ShareExtension/ShareViewController.swift"
             ],

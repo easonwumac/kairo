@@ -105,7 +105,10 @@ public struct KairoEnvironment: KairoBackendDependencies {
         seedInstalledLocalModel: Bool = false,
         seedInstalledWeatherSkill: Bool = false,
         seedExpandedLocalModelCatalog: Bool = false,
-        seedSharedTaskText: Bool = false
+        seedSharedTaskText: Bool = false,
+        installedLocalModelFileURL: URL? = nil,
+        localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
+        localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) async throws -> KairoEnvironment {
         let rootDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("KairoUITesting", isDirectory: true)
@@ -152,13 +155,28 @@ public struct KairoEnvironment: KairoBackendDependencies {
                 .appendingPathComponent("install-registry.json")
         )
         if seedInstalledLocalModel {
+            let defaultInstalledModelURL = rootDirectory
+                .appendingPathComponent("LocalModels", isDirectory: true)
+                .appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+            let installedModelURL: URL
+            if let installedLocalModelFileURL {
+                try FileManager.default.createDirectory(
+                    at: defaultInstalledModelURL.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                if FileManager.default.fileExists(atPath: defaultInstalledModelURL.path) {
+                    try FileManager.default.removeItem(at: defaultInstalledModelURL)
+                }
+                try FileManager.default.copyItem(at: installedLocalModelFileURL, to: defaultInstalledModelURL)
+                installedModelURL = defaultInstalledModelURL
+            } else {
+                installedModelURL = defaultInstalledModelURL
+            }
             try await localModelInstallRegistry.upsert(LocalModelInstallRecord(
                 modelID: LocalModelManifest.qwen35Tiny.id,
                 version: LocalModelManifest.qwen35Tiny.version,
                 status: .installed,
-                fileURL: rootDirectory
-                    .appendingPathComponent("LocalModels", isDirectory: true)
-                    .appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf"),
+                fileURL: installedModelURL,
                 installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
                 sha256: LocalModelManifest.qwen35Tiny.sha256
             ))
@@ -181,12 +199,13 @@ public struct KairoEnvironment: KairoBackendDependencies {
         let localModelBenchmarkService = LocalModelBenchmarkService(
             catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
-            resultStore: localModelBenchmarkStore
+            resultStore: localModelBenchmarkStore,
+            engine: localModelBenchmarkEngineOverride ?? UnavailableLocalModelBenchmarkEngine()
         )
         let localModelReplyCheckService = LocalModelReplyCheckService(
             catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
-            runtime: DeterministicLocalModelReplyCheckRuntime(
+            runtime: localModelReplyCheckRuntimeOverride ?? DeterministicLocalModelReplyCheckRuntime(
                 responseText: "Local model reply is alive.",
                 generationTokensPerSecond: 38.5
             )
@@ -448,7 +467,9 @@ public struct KairoEnvironment: KairoBackendDependencies {
 
     public static func live(
         appName: String = KairoSharedAppStorage.appName,
-        appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier
+        appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier,
+        localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
+        localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) async throws -> KairoEnvironment {
         let paths = KairoPaths(appName: appName, appGroupIdentifier: appGroupIdentifier)
         let memoryStore = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
@@ -485,22 +506,24 @@ public struct KairoEnvironment: KairoBackendDependencies {
             catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
             resultStore: localModelBenchmarkStore,
-            engine: localModelCommandRuntime
+            engine: localModelBenchmarkEngineOverride ?? localModelCommandRuntime
         )
         let localModelReplyCheckService = LocalModelReplyCheckService(
             catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
-            runtime: localModelCommandRuntime
+            runtime: localModelReplyCheckRuntimeOverride ?? localModelCommandRuntime
         )
         #else
         let localModelBenchmarkService = LocalModelBenchmarkService(
             catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
-            resultStore: localModelBenchmarkStore
+            resultStore: localModelBenchmarkStore,
+            engine: localModelBenchmarkEngineOverride ?? UnavailableLocalModelBenchmarkEngine()
         )
         let localModelReplyCheckService = LocalModelReplyCheckService(
             catalog: localModelCatalog,
-            installRegistry: localModelInstallRegistry
+            installRegistry: localModelInstallRegistry,
+            runtime: localModelReplyCheckRuntimeOverride ?? UnavailableLocalModelReplyCheckRuntime()
         )
         #endif
         let credentialStore = KeychainCredentialStore()

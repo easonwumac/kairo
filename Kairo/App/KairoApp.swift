@@ -42,7 +42,10 @@ struct KairoApp: App {
                                 seedInstalledLocalModel: arguments.contains("--ui-testing-installed-local-model"),
                                 seedInstalledWeatherSkill: arguments.contains("--ui-testing-installed-weather-skill"),
                                 seedExpandedLocalModelCatalog: arguments.contains("--ui-testing-expanded-local-model-catalog"),
-                                seedSharedTaskText: arguments.contains("--ui-testing-seed-shared-task")
+                                seedSharedTaskText: arguments.contains("--ui-testing-seed-shared-task"),
+                                installedLocalModelFileURL: Self.uiTestingLocalModelFileURL(arguments: arguments),
+                                localModelReplyCheckRuntimeOverride: Self.uiTestingLocalModelReplyRuntime(arguments: arguments),
+                                localModelBenchmarkEngineOverride: Self.uiTestingLocalModelBenchmarkEngine(arguments: arguments)
                             )
                             environment = uiTestingEnvironment
                             environmentRevision += 1
@@ -52,14 +55,57 @@ struct KairoApp: App {
                         }
                         return
                     }
-                    if let liveEnvironment = try? await KairoEnvironment.live(
-                        appGroupIdentifier: KairoSharedAppStorage.appGroupIdentifier
-                    ) {
+                    if let liveEnvironment = try? await Self.liveEnvironment() {
                         environment = liveEnvironment
                         environmentRevision += 1
                     }
                 }
         }
+    }
+
+    private static func liveEnvironment() async throws -> KairoEnvironment {
+        #if canImport(llama)
+        let runtime = LlamaCppLocalModelRuntime()
+        return try await KairoEnvironment.live(
+            appGroupIdentifier: KairoSharedAppStorage.appGroupIdentifier,
+            localModelReplyCheckRuntimeOverride: runtime,
+            localModelBenchmarkEngineOverride: runtime
+        )
+        #else
+        return try await KairoEnvironment.live(
+            appGroupIdentifier: KairoSharedAppStorage.appGroupIdentifier
+        )
+        #endif
+    }
+
+    private static func uiTestingLocalModelFileURL(arguments: [String]) -> URL? {
+        let prefix = "--ui-testing-local-model-file="
+        guard let argument = arguments.first(where: { $0.hasPrefix(prefix) }) else {
+            return nil
+        }
+        return URL(fileURLWithPath: String(argument.dropFirst(prefix.count)))
+    }
+
+    private static func uiTestingLocalModelReplyRuntime(arguments: [String]) -> (any LocalModelReplyCheckRuntime)? {
+        #if canImport(llama)
+        guard arguments.contains("--ui-testing-live-local-model-runtime") else {
+            return nil
+        }
+        return LlamaCppLocalModelRuntime()
+        #else
+        return nil
+        #endif
+    }
+
+    private static func uiTestingLocalModelBenchmarkEngine(arguments: [String]) -> (any LocalModelBenchmarkEngine)? {
+        #if canImport(llama)
+        guard arguments.contains("--ui-testing-live-local-model-runtime") else {
+            return nil
+        }
+        return LlamaCppLocalModelRuntime()
+        #else
+        return nil
+        #endif
     }
 
     private static func launchInitialSection(arguments: [String]) -> String? {

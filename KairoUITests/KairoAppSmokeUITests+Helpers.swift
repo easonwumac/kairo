@@ -356,13 +356,27 @@ extension KairoAppSmokeUITests {
         relaunchForUITesting(initialSection: initialSection, seedInstalledLocalModel: true)
     }
 
+    func relaunchWithLiveLocalModelRuntimeForTesting(
+        initialSection: String? = nil,
+        modelFilePath: String
+    ) {
+        relaunchForUITesting(
+            initialSection: initialSection,
+            seedInstalledLocalModel: true,
+            liveLocalModelRuntime: true,
+            localModelFilePath: modelFilePath
+        )
+    }
+
     func relaunchForUITesting(
         initialSection: String? = nil,
         seedInstalledLocalModel: Bool = false,
         seedInstalledWeatherSkill: Bool = false,
         seedExpandedLocalModelCatalog: Bool = false,
         seedSharedTaskText: Bool = false,
-        settingsShortcutDemosOnly: Bool = false
+        settingsShortcutDemosOnly: Bool = false,
+        liveLocalModelRuntime: Bool = false,
+        localModelFilePath: String? = nil
     ) {
         app.terminate()
         app = XCUIApplication()
@@ -383,6 +397,12 @@ extension KairoAppSmokeUITests {
         }
         if settingsShortcutDemosOnly {
             app.launchArguments.append("--ui-testing-settings-shortcut-demos-only")
+        }
+        if liveLocalModelRuntime {
+            app.launchArguments.append("--ui-testing-live-local-model-runtime")
+        }
+        if let localModelFilePath {
+            app.launchArguments.append("--ui-testing-local-model-file=\(localModelFilePath)")
         }
         if let initialSection {
             app.launchArguments.append("--ui-testing-root-section=\(initialSection)")
