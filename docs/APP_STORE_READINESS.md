@@ -49,7 +49,7 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 - **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
 - **Purpose string scope:** Beta app plist includes only currently exercised Calendar, Reminders, Contacts, and Notifications purpose strings; HomeKit, Location, and Photo Library purpose strings stay future-only until those capabilities ship.
 - **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, pending-publication, out-of-window, unsupported, or invalid signing keys. Skill marketplace and local model release keys must remain `publicationStatus=pendingPublication` until matching standalone catalogs and public trust metadata are published. The app-repo `Website/skills/skills.json` and `Website/models/models.json` seeds are marked `catalogSignatureStatus=referenceUnsigned` and are not production signed catalog evidence. `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` define the production publication and rotation/revocation gates, but production signed catalogs and release public-key material still need publication in the standalone repos.
-- **Local model runtime scope:** Qwen3.5 0.8B GGUF has host macOS `llama.cpp` CLI proof, plus app-internal iOS Simulator reply-check proof through embedded `llama.xcframework` on 2026-06-04 (`testSettingsRunsQwen35ThroughEmbeddedLlamaRuntime`). This is still not iPhone production proof; real-device latency, memory, thermal behavior, and App Store packaging remain unverified.
+- **Local model runtime scope:** Qwen3.5 0.8B GGUF has host macOS `llama.cpp` CLI proof, plus app-internal iOS Simulator reply-check and Chat smoke proof through embedded `llama.xcframework` on 2026-06-04 (`testSettingsRunsQwen35ThroughEmbeddedLlamaRuntime`, `testChatRepliesThroughSelectedQwenLocalRuntime`). This is still not iPhone production proof; real-device latency, memory, thermal behavior, and App Store packaging remain unverified.
 
 ### 1. Public API only
 
@@ -166,8 +166,8 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 - [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
 - [x] Remote catalog payload signature verification rejects unknown, revoked, pending-publication, out-of-window, unsupported, or invalid P-256 signing keys before accepting download rows.
 - [x] Package tests cover checksum failure, download cancellation cleanup, stale interrupted-download cleanup after restart/status reload, deleting the selected model, and runtime-unavailable fail-closed paths.
-- [x] Qwen3.5 0.8B GGUF has host macOS `llama.cpp` CLI validation and app-internal iOS Simulator reply-check validation through embedded `llama.xcframework`; this is still not iPhone runtime proof.
-- [x] KairoApp builds, installs, launches, and runs the installed Qwen reply-check smoke on iOS Simulator when generated with `scripts/generate_xcodeproj_with_local_runtime.sh`.
+- [x] Qwen3.5 0.8B GGUF has host macOS `llama.cpp` CLI validation and app-internal iOS Simulator reply-check/Chat validation through embedded `llama.xcframework`; this is still not iPhone runtime proof.
+- [x] KairoApp builds, installs, launches, runs the installed Qwen reply-check smoke, and replies in Chat on iOS Simulator when generated with `scripts/generate_xcodeproj_with_local_runtime.sh`.
 - [ ] Publish production signed model catalog and public trust-store key material from the standalone `easonwumac/kairo-models` repo.
 - [ ] Capture real-device iOS runtime proof for latency, memory, thermal behavior, and App Store-compatible packaging before claiming production inference.
 - [x] 模型存在 Application Support/LocalModels，並由 downloader 標記為不進 iCloud backup。

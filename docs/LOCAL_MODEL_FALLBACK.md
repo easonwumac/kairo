@@ -117,7 +117,7 @@ MLX is the stronger Apple Silicon benchmark path for macOS/dev validation. iPhon
 - it calls an injected `LocalModelReplyCheckRuntime` and requires non-empty response text;
 - `LocalModelExternalCommandRuntime` can run a downloaded GGUF through an injected external command runner, parse prompt/generation token speeds, and feed both Reply Check and Benchmark results;
 - macOS/dev live wiring uses `/opt/homebrew/bin/llama-cli` when available, so a developer can validate a user-downloaded Qwen GGUF without bundling model weights;
-- iOS Simulator builds generated with `scripts/generate_xcodeproj_with_local_runtime.sh` can embed `llama.xcframework` and run the installed Qwen reply-check smoke inside KairoApp;
+- iOS Simulator builds generated with `scripts/generate_xcodeproj_with_local_runtime.sh` can embed `llama.xcframework` and run installed Qwen reply-check and Chat smoke paths inside KairoApp;
 - the same adapter can build an `mlx_lm.generate` command from the Qwen MLX benchmark profile for Apple Silicon reference validation, but MLX artifacts are not the in-app iPhone download target in this pass;
 - Settings exposes a visible `Run Reply Check` button for each model row;
 - UI tests normally seed only a deterministic install record and deterministic runtime response; the explicit live-runtime smoke requires a local ignored GGUF path and does not commit model weights;
