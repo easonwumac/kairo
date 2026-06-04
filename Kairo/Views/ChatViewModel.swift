@@ -42,6 +42,7 @@ public final class ChatViewModel: ObservableObject {
     private let actionExecutor: any ActionExecutor
     private let localModelSettingsService: LocalModelSettingsService?
     private let openAISettingsService: OpenAISettingsService?
+    private let localModelChatRuntimeAvailable: Bool
     private var pendingActionSource: PendingActionSource?
 
     public init(
@@ -52,7 +53,8 @@ public final class ChatViewModel: ObservableObject {
         chatAPI: (any KairoChatAPI)? = nil,
         actionExecutor: any ActionExecutor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore()),
         localModelSettingsService: LocalModelSettingsService? = nil,
-        openAISettingsService: OpenAISettingsService? = nil
+        openAISettingsService: OpenAISettingsService? = nil,
+        localModelChatRuntimeAvailable: Bool = false
     ) {
         self.historyStore = historyStore
         self.shareImportAPI = shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue)
@@ -60,6 +62,7 @@ public final class ChatViewModel: ObservableObject {
         self.actionExecutor = actionExecutor
         self.localModelSettingsService = localModelSettingsService
         self.openAISettingsService = openAISettingsService
+        self.localModelChatRuntimeAvailable = localModelChatRuntimeAvailable
         self.currentThread = ChatThread(messages: [Self.welcomeMessage])
         self.providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil)
     }
@@ -71,7 +74,8 @@ public final class ChatViewModel: ObservableObject {
             chatAPI: environment.backendAPI.chat,
             actionExecutor: environment.actionExecutor,
             localModelSettingsService: environment.localModelSettingsService,
-            openAISettingsService: OpenAISettingsService(credentialStore: environment.credentialStore)
+            openAISettingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
+            localModelChatRuntimeAvailable: environment.localModelChatRuntimeAvailable
         )
     }
 
@@ -252,7 +256,8 @@ public final class ChatViewModel: ObservableObject {
         }
         providerRouteStatus = ChatProviderRouteStatusBuilder.build(
             from: await localModelSettingsService.status(),
-            openAIStatus: openAIStatus
+            openAIStatus: openAIStatus,
+            localRuntimeAvailable: localModelChatRuntimeAvailable
         )
     }
 

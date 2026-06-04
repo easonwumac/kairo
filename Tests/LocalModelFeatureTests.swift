@@ -830,6 +830,19 @@ final class LocalModelFeatureTests: XCTestCase {
         )
         XCTAssertEqual(localOnlyInstalledStatus.warning, KairoL10n.string("chat.provider.warning.localInferenceUnavailable"))
 
+        let localOnlyRuntimeReadyStatus = ChatProviderRouteStatusBuilder.build(
+            from: LocalModelSettingsStatus(
+                selectedModelID: "qwen-small",
+                selectedModel: installedManifest,
+                installedRecord: installedRecord,
+                preference: .localOnly,
+                availableModels: [installedManifest],
+                installedModels: [installedRecord]
+            ),
+            localRuntimeAvailable: true
+        )
+        XCTAssertNil(localOnlyRuntimeReadyStatus.warning)
+
         let warningStatus = ChatProviderRouteStatusBuilder.build(from: LocalModelSettingsStatus(
             selectedModelID: nil,
             selectedModel: nil,

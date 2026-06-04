@@ -25,7 +25,8 @@ public struct ChatProviderRouteStatus: Equatable, Sendable {
 public enum ChatProviderRouteStatusBuilder {
     public static func build(
         from status: LocalModelSettingsStatus?,
-        openAIStatus: OpenAISettingsStatus? = nil
+        openAIStatus: OpenAISettingsStatus? = nil,
+        localRuntimeAvailable: Bool = false
     ) -> ChatProviderRouteStatus {
         let cloudWarning = cloudProviderWarning(from: openAIStatus)
         guard let status else {
@@ -56,13 +57,17 @@ public enum ChatProviderRouteStatusBuilder {
             detail = KairoL10n.string("chat.provider.detail.preferCloud")
         case .localOnly:
             if status.localModelInstalled, let selectedModelName {
-                detail = KairoL10n.string("chat.provider.detail.localOnlyInstalledUnavailable", selectedModelName)
+                detail = localRuntimeAvailable
+                    ? KairoL10n.string("chat.provider.detail.localOnlyInstalledAvailable", selectedModelName)
+                    : KairoL10n.string("chat.provider.detail.localOnlyInstalledUnavailable", selectedModelName)
             } else {
                 detail = KairoL10n.string("chat.provider.detail.localOnlyNeedsModel")
             }
         case .automatic, .preferLocal:
             if status.localModelInstalled, let selectedModelName {
-                detail = KairoL10n.string("chat.provider.detail.localSelectedUnavailable", selectedModelName)
+                detail = localRuntimeAvailable
+                    ? KairoL10n.string("chat.provider.detail.localSelectedAvailable", selectedModelName)
+                    : KairoL10n.string("chat.provider.detail.localSelectedUnavailable", selectedModelName)
             } else if selectedModelName != nil {
                 detail = KairoL10n.string("chat.provider.detail.localSelectedNotInstalled")
             } else {
@@ -71,7 +76,7 @@ public enum ChatProviderRouteStatusBuilder {
         }
 
         let warning: String?
-        if status.preference == .localOnly && status.localModelInstalled {
+        if status.preference == .localOnly && status.localModelInstalled && !localRuntimeAvailable {
             warning = KairoL10n.string("chat.provider.warning.localInferenceUnavailable")
         } else if status.preference == .localOnly && !status.localModelInstalled {
             warning = KairoL10n.string("chat.provider.warning.localOnlyNoModel")

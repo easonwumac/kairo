@@ -231,8 +231,10 @@
 "chat.provider.detail.cloudConfigured" = "%@ is configured for cloud chat.";
 "chat.provider.detail.cloudKeyMissing" = "%@ API key is not saved. Chat will fail closed until Settings has a key or a supported local route is selected.";
 "chat.provider.detail.preferCloud" = "Cloud routing is preferred for chat. Local models stay available only after switching route preference.";
+"chat.provider.detail.localOnlyInstalledAvailable" = "Local Only selected %@. Eligible offline replies use the selected local model runtime; tools, web, account actions, and regulated advice still fail closed.";
 "chat.provider.detail.localOnlyInstalledUnavailable" = "Local Only selected %@, but iOS production local inference is not available in this beta. Chat fails closed instead of pretending the phone can answer locally.";
 "chat.provider.detail.localOnlyNeedsModel" = "Local Only is active. Download and select a local model before chat can answer locally.";
+"chat.provider.detail.localSelectedAvailable" = "Selected local model: %@. Eligible offline replies can use the local runtime; tools, web, account actions, and regulated advice still route to cloud or fail closed.";
 "chat.provider.detail.localSelectedUnavailable" = "Selected local model: %@. Catalog/download/select/delete are available; iOS production local inference remains unavailable until a runtime is implemented and verified on device.";
 "chat.provider.detail.localSelectedNotInstalled" = "Selected local model is not installed yet. Download it before local routing can answer.";
 "chat.provider.detail.noLocalModel" = "No local model selected. General chat uses the configured cloud provider when policy allows.";

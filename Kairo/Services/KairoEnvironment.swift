@@ -40,6 +40,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public let localModelDownloader: (any LocalModelDownloader)?
     public let localModelBenchmarkService: LocalModelBenchmarkService?
     public let localModelReplyCheckService: LocalModelReplyCheckService?
+    public let localModelChatRuntimeAvailable: Bool
     public let actionExecutor: any ActionExecutor
 
     public init(
@@ -61,6 +62,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         localModelDownloader: (any LocalModelDownloader)? = nil,
         localModelBenchmarkService: LocalModelBenchmarkService? = nil,
         localModelReplyCheckService: LocalModelReplyCheckService? = nil,
+        localModelChatRuntimeAvailable: Bool = false,
         actionExecutor: (any ActionExecutor)? = nil
     ) {
         self.memoryStore = memoryStore
@@ -81,6 +83,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         self.localModelDownloader = localModelDownloader
         self.localModelBenchmarkService = localModelBenchmarkService
         self.localModelReplyCheckService = localModelReplyCheckService
+        self.localModelChatRuntimeAvailable = localModelChatRuntimeAvailable
         self.actionExecutor = actionExecutor ?? SandboxActionExecutor(memoryStore: memoryStore, auditLogger: auditLogger)
     }
 
@@ -285,6 +288,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
             localModelSettingsService: localModelSettingsService,
             localModelBenchmarkService: localModelBenchmarkService,
             localModelReplyCheckService: localModelReplyCheckService,
+            localModelChatRuntimeAvailable: localModelReplyCheckRuntimeOverride != nil,
             actionExecutor: SandboxActionExecutor(
                 memoryStore: memoryStore,
                 reminderScheduler: AllowingReminderScheduler(identifier: "ui-testing-reminder-id"),
@@ -528,6 +532,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
             installRegistry: localModelInstallRegistry,
             runtime: localModelReplyRuntime
         )
+        let localModelChatRuntimeAvailable = true
         #else
         let localModelBenchmarkService = LocalModelBenchmarkService(
             catalog: localModelCatalog,
@@ -541,6 +546,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
             installRegistry: localModelInstallRegistry,
             runtime: localModelReplyRuntime
         )
+        let localModelChatRuntimeAvailable = localModelReplyCheckRuntimeOverride != nil
         #endif
         let credentialStore = KeychainCredentialStore()
         let aiProvider = LocalModelRoutingAIProvider(
@@ -596,6 +602,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
             localModelDownloader: localModelDownloader,
             localModelBenchmarkService: localModelBenchmarkService,
             localModelReplyCheckService: localModelReplyCheckService,
+            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable,
             actionExecutor: actionExecutor
         )
     }

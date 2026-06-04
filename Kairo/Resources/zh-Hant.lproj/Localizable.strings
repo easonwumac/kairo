@@ -231,8 +231,10 @@
 "chat.provider.detail.cloudConfigured" = "%@ 已設定為 cloud chat provider。";
 "chat.provider.detail.cloudKeyMissing" = "%@ API key 尚未儲存。Settings 有 key 或選到支援的 local route 之前，Chat 會停止而不是假裝成功。";
 "chat.provider.detail.preferCloud" = "Chat 目前優先使用 Cloud route。Local models 仍保留，但要切換 route preference 後才會使用。";
+"chat.provider.detail.localOnlyInstalledAvailable" = "Local Only 已選擇 %@。符合條件的離線回覆會使用選定的本機模型 runtime；工具、網頁、帳號動作與受管制建議仍會失敗關閉。";
 "chat.provider.detail.localOnlyInstalledUnavailable" = "Local Only 已選擇 %@，但此 beta 尚未提供 iOS production local inference。Chat 會停止，而不是假裝手機能本機回覆。";
 "chat.provider.detail.localOnlyNeedsModel" = "Local Only 已啟用。請先下載並選擇 local model，Chat 才能嘗試本機回覆。";
+"chat.provider.detail.localSelectedAvailable" = "已選擇 local model：%@。符合條件的離線回覆可使用本機 runtime；工具、網頁、帳號動作與受管制建議仍會走 cloud 或失敗關閉。";
 "chat.provider.detail.localSelectedUnavailable" = "已選擇 local model：%@。Catalog/download/select/delete 可用；iOS production local inference 仍需 runtime 實作並經真機驗證。";
 "chat.provider.detail.localSelectedNotInstalled" = "選擇的 local model 尚未安裝。請先下載後，local routing 才能回覆。";
 "chat.provider.detail.noLocalModel" = "尚未選擇 local model。Policy 允許時，一般 Chat 會使用已設定的 cloud provider。";
