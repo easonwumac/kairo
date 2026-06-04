@@ -24,8 +24,6 @@ struct LocalModelsCompactView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                modelOverviewCard
-
                 answerRouteCard
 
                 modelStarterSection
@@ -95,9 +93,16 @@ struct LocalModelsCompactView: View {
     private var answerRouteCard: some View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text(KairoL10n.string("settings.models.answerRoute"))
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(KairoL10n.string("settings.models.section"))
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+
+                    Text(KairoL10n.string("settings.models.answerRoute"))
+                        .font(compactModelMetadataFont)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                }
 
                 routePreferenceInline
 
@@ -105,8 +110,9 @@ struct LocalModelsCompactView: View {
 
                 selectedModelInline
             }
+            .accessibilityIdentifier("settings.models.answer-route")
         }
-        .accessibilityIdentifier("settings.models.answer-route")
+        .accessibilityIdentifier("settings.models.local")
     }
 
     private var advancedDiagnosticsSection: some View {
@@ -144,6 +150,11 @@ struct LocalModelsCompactView: View {
 
                 if showAdvancedDiagnostics {
                     Divider()
+
+                    Text(KairoL10n.string("settings.models.compact.subtitle"))
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     catalogDiagnosticsCard
 
@@ -288,37 +299,6 @@ struct LocalModelsCompactView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.models.route-card")
-    }
-
-    private var modelOverviewCard: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 14) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(KairoL10n.string("settings.models.section"))
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(KairoDesign.ink)
-                        .accessibilityIdentifier("settings.models.local")
-
-                    Text(KairoL10n.string("settings.models.compact.subtitle"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                HStack(spacing: 8) {
-                    KairoStatusPill(
-                        title: localModelStatus.preference.settingsTitle,
-                        systemImage: "switch.2",
-                        tint: KairoDesign.blue
-                    )
-                    KairoStatusPill(
-                        title: localModelStatus.localModelInstalled ? KairoL10n.string("settings.models.compact.localReady") : KairoL10n.string("settings.models.compact.localNotSelected"),
-                        systemImage: "cpu.fill",
-                        tint: localModelStatus.localModelInstalled ? KairoDesign.green : KairoDesign.amber
-                    )
-                }
-            }
-        }
     }
 
     private var selectedModelInline: some View {

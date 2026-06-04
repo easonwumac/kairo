@@ -486,6 +486,16 @@ Stage 50 makes Settings setup direct and terse:
 - The existing API key editor, OAuth connector controls, and privacy cleanup
   stay in the setup section without adding first-layer explanatory copy.
 
+Stage 51 makes Models route-first:
+
+- Models no longer opens with a separate AI engine explainer card and duplicate
+  status pills.
+- The first card is now the answer route: route preference, current route, and
+  selected local model status in one place.
+- Starter model rows remain available below the route card, while catalog
+  source, runtime fit, manifest details, and the compact setup explanation stay
+  behind Advanced diagnostics.
+
 ## Next UI stages
 
 1. Product surface audit
