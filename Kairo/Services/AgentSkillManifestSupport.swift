@@ -59,6 +59,7 @@ public enum AgentSkillInstallError: Error, Equatable, Sendable {
 public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable, LocalizedError {
     case invalidPermission(skillID: String, permission: String)
     case invalidManifestURL(skillID: String, manifestURL: String)
+    case duplicateSkillID(String)
     case nonProductionCatalogSignatureStatus(String)
     case invalidJSON
 
@@ -68,6 +69,8 @@ public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable, Local
             return "Marketplace skill \(skillID) uses an unknown permission: \(permission)."
         case .invalidManifestURL(let skillID, let manifestURL):
             return "Marketplace skill \(skillID) has an invalid manifest URL: \(manifestURL)."
+        case .duplicateSkillID(let skillID):
+            return "Marketplace catalog contains a duplicate skill id: \(skillID)."
         case .nonProductionCatalogSignatureStatus(let status):
             return "Marketplace catalog is marked \(status), not productionSigned."
         case .invalidJSON:
@@ -187,12 +190,15 @@ public struct AgentSkillMarketplaceCatalogService: Sendable {
             )
         }
 
+        let skills = try index.skills.map(skill(from:))
+        try validateUniqueSkillIDs(skills)
+
         return AgentSkillRemoteMarketplaceCatalog(
             marketplaceVersion: index.marketplaceVersion,
             sourceRepository: index.sourceRepository,
             generatedAt: index.generatedAt,
             catalogSignatureStatus: index.catalogSignatureStatus,
-            catalog: AgentSkillCatalog(skills: try index.skills.map(skill(from:)))
+            catalog: AgentSkillCatalog(skills: skills)
         )
     }
 
@@ -255,6 +261,15 @@ public struct AgentSkillMarketplaceCatalogService: Sendable {
             author: entry.author,
             compatibilityRequirements: entry.compatibilityRequirements ?? .empty
         )
+    }
+
+    private func validateUniqueSkillIDs(_ skills: [AgentSkill]) throws {
+        var seenSkillIDs = Set<String>()
+        for skill in skills {
+            guard seenSkillIDs.insert(skill.id).inserted else {
+                throw AgentSkillMarketplaceCatalogError.duplicateSkillID(skill.id)
+            }
+        }
     }
 }
 
