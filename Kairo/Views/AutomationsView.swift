@@ -38,32 +38,32 @@ public struct AutomationsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Automations")
+                    Text(KairoL10n.string("automations.title"))
                         .font(.headline)
                         .fontWeight(.semibold)
 
-                    Text("Kairo recipes, Shortcut templates, and node demos stay user-approved and visible.")
+                    Text(KairoL10n.string("automations.subtitle"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                automationSection("Recipe Center") {
-                    Text("Kairo internal recipe center. Kairo creates internal recipes and does not create Apple Shortcuts silently.")
+                automationSection(KairoL10n.string("automations.recipeCenter.section")) {
+                    Text(KairoL10n.string("automations.recipeCenter.detail"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
 
-                    Button("Add Sample Recipes") {
+                    Button(KairoL10n.string("automations.recipeCenter.addSamples")) {
                         Task { await seedSampleRecipes() }
                     }
-                    .accessibilityLabel("Add Sample Recipes")
+                    .accessibilityLabel(KairoL10n.string("automations.recipeCenter.addSamples"))
                     .accessibilityIdentifier("automations.seed-samples")
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
                 .accessibilityIdentifier("automations.recipe-center")
 
-                automationSection("Shortcut Templates") {
+                automationSection(KairoL10n.string("automations.shortcutTemplates.section")) {
                     Text(shortcutTemplateRegistry.manualInstallDisclaimer)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -75,8 +75,8 @@ public struct AutomationsView: View {
                 }
                 .accessibilityIdentifier("automations.shortcut-templates")
 
-                automationSection("Shortcut Node Demos") {
-                    Text("Use these as user-installed Shortcut node examples. Each demo passes explicit input into Kairo and returns structured output for downstream Shortcut steps.")
+                automationSection(KairoL10n.string("automations.shortcutDemos.section")) {
+                    Text(KairoL10n.string("automations.shortcutDemos.detail"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
 
@@ -86,9 +86,9 @@ public struct AutomationsView: View {
                 }
                 .accessibilityIdentifier("automations.shortcut-demos")
 
-                automationSection("Recipes") {
+                automationSection(KairoL10n.string("automations.recipes.section")) {
                     if recipes.isEmpty {
-                        Text("No internal recipes yet.")
+                        Text(KairoL10n.string("automations.recipes.empty"))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -100,7 +100,7 @@ public struct AutomationsView: View {
                 .accessibilityIdentifier("automations.list")
 
                 if let message {
-                    automationSection("Status") {
+                    automationSection(KairoL10n.string("automations.status.section")) {
                         Text(message)
                             .font(.caption2)
                             .accessibilityIdentifier("automations.message")
@@ -155,7 +155,7 @@ public struct AutomationsView: View {
                 .accessibilityIdentifier("automations.shortcut-template.\(template.identifier).instructions")
 
             if let installURL = template.installURL {
-                Button("Open Template") {
+                Button(KairoL10n.string("automations.shortcutTemplates.openTemplate")) {
                     openURL(installURL)
                 }
                 .accessibilityIdentifier("automations.shortcut-template.\(template.identifier).open")
@@ -198,10 +198,10 @@ public struct AutomationsView: View {
                     .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).sample")
             }
 
-            Button("Preview Sample") {
+            Button(KairoL10n.string("automations.shortcutDemos.previewSample")) {
                 Task { await previewShortcutDemo(recipe) }
             }
-            .accessibilityLabel("Preview \(recipe.title) Sample")
+            .accessibilityLabel(KairoL10n.string("automations.shortcutDemos.previewSampleAccessibility", recipe.title))
             .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).preview-sample")
             .buttonStyle(.bordered)
             .controlSize(.small)
@@ -226,7 +226,7 @@ public struct AutomationsView: View {
                     .font(.headline)
                     .accessibilityIdentifier("automations.recipe.\(recipe.id)")
                 Spacer()
-                Text(recipe.isEnabled ? "Enabled" : "Disabled")
+                Text(recipe.isEnabled ? KairoL10n.string("automations.recipe.enabled") : KairoL10n.string("automations.recipe.disabled"))
                     .font(.caption)
                     .foregroundStyle(recipe.isEnabled ? .green : .secondary)
             }
@@ -235,24 +235,24 @@ public struct AutomationsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Text("Risk: \(recipe.riskTier.rawValue)")
+            Text(KairoL10n.string("automations.recipe.risk", recipe.riskTier.rawValue))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
             HStack {
-                Button("Preview") {
+                Button(KairoL10n.string("automations.recipe.preview")) {
                     Task { await preview(recipe) }
                 }
                 .disabled(!recipe.isEnabled || isLoading)
                 .accessibilityIdentifier("automations.recipe.\(recipe.id).preview")
 
-                Button("Run") {
+                Button(KairoL10n.string("automations.recipe.run")) {
                     Task { await run(recipe) }
                 }
                 .disabled(!recipe.isEnabled || isLoading)
                 .accessibilityIdentifier("automations.recipe.\(recipe.id).run")
 
-                Button(recipe.isEnabled ? "Disable" : "Enable") {
+                Button(recipe.isEnabled ? KairoL10n.string("automations.recipe.disable") : KairoL10n.string("automations.recipe.enable")) {
                     Task { await toggle(recipe) }
                 }
                 .disabled(isLoading)
@@ -269,7 +269,7 @@ public struct AutomationsView: View {
         do {
             recipes = try await recipeAPI.listRecipes()
         } catch {
-            message = "Unable to load Kairo internal recipes."
+            message = KairoL10n.string("automations.message.loadFailed")
         }
     }
 
@@ -279,9 +279,9 @@ public struct AutomationsView: View {
         defer { isLoading = false }
         do {
             recipes = try await recipeAPI.seedSampleRecipes()
-            message = "Added \(recipes.count) Kairo internal recipe samples."
+            message = KairoL10n.string("automations.message.samplesAdded", Int64(recipes.count))
         } catch {
-            message = "Unable to add Kairo internal recipe samples."
+            message = KairoL10n.string("automations.message.samplesAddFailed")
         }
     }
 
@@ -295,11 +295,11 @@ public struct AutomationsView: View {
             let run = try await runner.runSample(recipe)
             let finalOutput = run.steps.last?.output.displayText.trimmingCharacters(in: .whitespacesAndNewlines)
             let finalOutputSummary = finalOutput?.isEmpty == false ? " \(finalOutput ?? "")" : ""
-            let previewMessage = "Sample \(run.displaySummary)\(finalOutputSummary)"
+            let previewMessage = KairoL10n.string("automations.message.samplePreview", run.displaySummary, finalOutputSummary)
             shortcutDemoPreviewMessages[recipe.id] = previewMessage
             message = previewMessage
         } catch {
-            let previewMessage = "Unable to preview sample for \(recipe.title)."
+            let previewMessage = KairoL10n.string("automations.message.samplePreviewFailed", recipe.title)
             shortcutDemoPreviewMessages[recipe.id] = previewMessage
             message = previewMessage
         }
@@ -317,9 +317,9 @@ public struct AutomationsView: View {
                 dryRun: true,
                 userConfirmed: false
             ))
-            message = "Preview \(recipe.title): \(result.summary)"
+            message = KairoL10n.string("automations.message.previewResult", recipe.title, result.summary)
         } catch {
-            message = "Unable to preview \(recipe.title)."
+            message = KairoL10n.string("automations.message.previewFailed", recipe.title)
         }
     }
 
@@ -336,12 +336,12 @@ public struct AutomationsView: View {
                 userConfirmed: true
             ))
             if result.requiresConfirmation {
-                message = "\(recipe.title) requires confirmation in Kairo before running."
+                message = KairoL10n.string("automations.message.requiresConfirmation", recipe.title)
             } else {
-                message = "Ran \(recipe.title): \(result.summary)"
+                message = KairoL10n.string("automations.message.runResult", recipe.title, result.summary)
             }
         } catch {
-            message = "Unable to run \(recipe.title)."
+            message = KairoL10n.string("automations.message.runFailed", recipe.title)
         }
     }
 
@@ -353,9 +353,10 @@ public struct AutomationsView: View {
             let nextEnabled = !recipe.isEnabled
             try await recipeAPI.setEnabled(nextEnabled, id: recipe.id)
             recipes = try await recipeAPI.listRecipes()
-            message = "\(nextEnabled ? "Enabled" : "Disabled") \(recipe.title)."
+            let state = nextEnabled ? KairoL10n.string("automations.recipe.enabled") : KairoL10n.string("automations.recipe.disabled")
+            message = KairoL10n.string("automations.message.toggleResult", state, recipe.title)
         } catch {
-            message = "Unable to update \(recipe.title)."
+            message = KairoL10n.string("automations.message.toggleFailed", recipe.title)
         }
     }
 }

@@ -47,13 +47,13 @@ public enum SandboxActionSupportStatus: String, Codable, Equatable, Sendable {
     public var displayName: String {
         switch self {
         case .implemented:
-            return "Supported"
+            return KairoL10n.string("chat.action.support.implemented")
         case .scaffolded:
-            return "Needs confirmation"
+            return KairoL10n.string("chat.action.support.needsConfirmation")
         case .requiresIntegration:
-            return "Planned integration"
+            return KairoL10n.string("chat.action.support.plannedIntegration")
         case .unsupportedBySandbox:
-            return "Not available in sandbox"
+            return KairoL10n.string("chat.action.support.unavailableInSandbox")
         }
     }
 }
@@ -85,7 +85,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .answer,
             displayName: "Answer",
-            description: "回答問題與整理上下文，不觸碰外部資料。",
+            description: KairoL10n.string("chat.action.description.answer"),
             capability: .chat,
             permissionRequirement: .none,
             riskTier: .tier0ReadOnly,
@@ -94,7 +94,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .saveMemory,
             displayName: "Save Memory",
-            description: "把使用者確認的內容存進 Kairo 記憶。",
+            description: KairoL10n.string("chat.action.description.saveMemory"),
             capability: .memory,
             permissionRequirement: .none,
             riskTier: .tier2LowRiskWrite,
@@ -103,7 +103,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .createReminderDraft,
             displayName: "Create Reminder",
-            description: "在提醒事項權限允許後建立提醒事項。",
+            description: KairoL10n.string("chat.action.description.createReminder"),
             capability: .reminders,
             permissionRequirement: .runtimePrompt,
             riskTier: .tier2LowRiskWrite,
@@ -112,7 +112,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .createCalendarDraft,
             displayName: "Create Calendar Event",
-            description: "在行事曆權限允許後建立行事曆事件。",
+            description: KairoL10n.string("chat.action.description.createCalendar"),
             capability: .calendar,
             permissionRequirement: .runtimePrompt,
             riskTier: .tier2LowRiskWrite,
@@ -121,7 +121,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .createContactDraft,
             displayName: "Create Contact",
-            description: "在聯絡人權限允許後建立使用者確認的聯絡人。",
+            description: KairoL10n.string("chat.action.description.createContact"),
             capability: .contacts,
             permissionRequirement: .runtimePrompt,
             riskTier: .tier2LowRiskWrite,
@@ -130,7 +130,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .composeEmailDraft,
             displayName: "Compose Email Draft",
-            description: "透過 mailto 建立使用者可見的 Email 草稿 handoff，不會自動寄出。",
+            description: KairoL10n.string("chat.action.description.composeEmail"),
             capability: .mail,
             permissionRequirement: .userInitiated,
             riskTier: .tier1Draft,
@@ -139,7 +139,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .openMapDirections,
             displayName: "Open Apple Maps Directions",
-            description: "透過 Apple Maps link 開啟使用者可見的路線規劃，不讀取位置、不自動開始導航。",
+            description: KairoL10n.string("chat.action.description.openMaps"),
             capability: .location,
             permissionRequirement: .userInitiated,
             riskTier: .tier1Draft,
@@ -148,7 +148,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .openMessageHandoff,
             displayName: "Open Messages Handoff",
-            description: "透過 sms: 開啟使用者可見的 Messages 收件人 handoff；正文留在 Kairo preview，不會自動送出。",
+            description: KairoL10n.string("chat.action.description.openMessages"),
             capability: .messages,
             permissionRequirement: .userInitiated,
             riskTier: .tier1Draft,
@@ -157,7 +157,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .openPhoneCallHandoff,
             displayName: "Open Phone Handoff",
-            description: "透過 tel: 開啟使用者可見的 Phone handoff；不讀通話紀錄、不會自動撥號。",
+            description: KairoL10n.string("chat.action.description.openPhone"),
             capability: .phone,
             permissionRequirement: .userInitiated,
             riskTier: .tier1Draft,
@@ -166,7 +166,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .openWebSearchHandoff,
             displayName: "Open Safari Search Handoff",
-            description: "透過 HTTPS 搜尋 URL 開啟使用者可見的 Safari handoff；不背景瀏覽、不讀取網頁內容。",
+            description: KairoL10n.string("chat.action.description.openWeb"),
             capability: .web,
             permissionRequirement: .userInitiated,
             riskTier: .tier1Draft,
@@ -175,7 +175,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .sendNotification,
             displayName: "Send Notification",
-            description: "在通知權限允許後發送本機提醒。",
+            description: KairoL10n.string("chat.action.description.sendNotification"),
             capability: .notifications,
             permissionRequirement: .runtimePrompt,
             riskTier: .tier2LowRiskWrite,
@@ -184,7 +184,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .openURL,
             displayName: "Open URL",
-            description: "開啟使用者可見的 URL 或 deep link。",
+            description: KairoL10n.string("chat.action.description.openURL"),
             capability: .documents,
             permissionRequirement: .userInitiated,
             riskTier: .tier1Draft,
@@ -193,7 +193,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .controlHome,
             displayName: "Control Home",
-            description: "透過 HomeKit 在使用者授權與確認後執行家庭場景或配件控制。",
+            description: KairoL10n.string("chat.action.description.controlHome"),
             capability: .homeKit,
             permissionRequirement: .runtimePrompt,
             riskTier: .tier3HighRiskExternal,
@@ -202,7 +202,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .externalAPIRequest,
             displayName: "External API Request",
-            description: "透過使用者 OAuth 授權的官方 API 執行動作。",
+            description: KairoL10n.string("chat.action.description.externalAPI"),
             capability: .externalConnectors,
             permissionRequirement: .oauth,
             riskTier: .tier3HighRiskExternal,
@@ -211,7 +211,7 @@ public struct SandboxActionCatalog: Sendable {
         SandboxActionDescriptor(
             kind: .unsupportedSandboxAction,
             displayName: "Unsupported iOS Action",
-            description: "清楚標示 iOS sandbox、公開 API 或目前權限不允許的操作，不聲稱可執行。",
+            description: KairoL10n.string("chat.action.description.unsupported"),
             capability: .appIntents,
             permissionRequirement: .unsupported,
             riskTier: .tier3HighRiskExternal,
