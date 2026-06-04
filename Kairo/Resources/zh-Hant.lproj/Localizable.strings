@@ -24,8 +24,11 @@
 "root.section.memory.shortTitle" = "記憶";
 "memory.navigationTitle" = "Memory";
 "memory.title" = "Kairo 記得的事";
-"memory.subtitle" = "新增、搜尋並檢查 Kairo 之後可使用的脈絡。";
+"memory.subtitle" = "搜尋 Kairo 之後可使用的脈絡。";
 "memory.export.accessibility" = "匯出 memories";
+"memory.status.count.one" = "%lld 筆 memory";
+"memory.status.count.many" = "%lld 筆 memories";
+"memory.status.userApproved" = "使用者核准";
 "memory.search.section" = "尋找脈絡";
 "memory.search.placeholder" = "搜尋 memories";
 "memory.search.clear" = "清除";
@@ -34,6 +37,7 @@
 "memory.search.summary.matches.one" = "找到 %lld 筆「%@」符合項目";
 "memory.search.summary.matches.many" = "找到 %lld 筆「%@」符合項目";
 "memory.add.section" = "加入脈絡";
+"memory.add.detail" = "只儲存希望 Kairo 重複使用的內容。";
 "memory.add.placeholder" = "輸入希望 Kairo 記住的內容";
 "memory.add.save" = "儲存";
 "memory.empty.title" = "還沒有 memories";

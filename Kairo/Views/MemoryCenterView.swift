@@ -22,30 +22,7 @@ public struct MemoryCenterView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    HStack(alignment: .top, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(KairoL10n.string("memory.title"))
-                                .font(.title2.bold())
-                            Text(KairoL10n.string("memory.subtitle"))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer(minLength: 0)
-
-                        ShareLink(item: exportText) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.headline.weight(.semibold))
-                                .frame(width: 36, height: 36)
-                                .foregroundStyle(memories.isEmpty ? .secondary : KairoDesign.teal)
-                                .background(Color.white.opacity(0.85), in: Circle())
-                        }
-                        .disabled(memories.isEmpty)
-                        .accessibilityLabel(KairoL10n.string("memory.export.accessibility"))
-                        .accessibilityIdentifier("memory.export.share")
-                    }
-
-                    memorySearchSection
+                    memoryLibraryHeader
 
                     memoryAddSection
 
@@ -125,12 +102,49 @@ public struct MemoryCenterView: View {
         }
     }
 
-    private var memorySearchSection: some View {
-        KairoGroupedSurface {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(KairoL10n.string("memory.search.section"))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+    private var memoryLibraryHeader: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 15) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(KairoL10n.string("memory.title"))
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(KairoDesign.ink)
+                        Text(KairoL10n.string("memory.subtitle"))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    ShareLink(item: exportText) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.headline.weight(.semibold))
+                            .frame(width: 38, height: 38)
+                            .foregroundStyle(memories.isEmpty ? .secondary : KairoDesign.teal)
+                            .background(KairoDesign.softSurface, in: Circle())
+                    }
+                    .disabled(memories.isEmpty)
+                    .accessibilityLabel(KairoL10n.string("memory.export.accessibility"))
+                    .accessibilityIdentifier("memory.export.share")
+                }
+
+                HStack(spacing: 8) {
+                    KairoStatusPill(
+                        title: KairoL10n.string(
+                            memories.count == 1 ? "memory.status.count.one" : "memory.status.count.many",
+                            Int64(memories.count)
+                        ),
+                        systemImage: "brain.head.profile",
+                        tint: KairoDesign.teal
+                    )
+                    KairoStatusPill(
+                        title: KairoL10n.string("memory.status.userApproved"),
+                        systemImage: "checkmark.shield.fill",
+                        tint: KairoDesign.green
+                    )
+                }
 
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
@@ -155,14 +169,28 @@ public struct MemoryCenterView: View {
                     .accessibilityIdentifier("memory.search.summary")
             }
         }
+        .accessibilityIdentifier("memory.library.header")
     }
 
     private var memoryAddSection: some View {
-        KairoGroupedSurface {
+        KairoFocusCard {
             VStack(alignment: .leading, spacing: 10) {
-                Text(KairoL10n.string("memory.add.section"))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 10) {
+                    Image(systemName: "plus.message.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.blue)
+                        .frame(width: 28, height: 28)
+                        .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(KairoL10n.string("memory.add.section"))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.ink)
+                        Text(KairoL10n.string("memory.add.detail"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 TextField(KairoL10n.string("memory.add.placeholder"), text: $draft, axis: .vertical)
                     .lineLimit(2...5)

@@ -24,8 +24,11 @@
 "root.section.memory.shortTitle" = "Memory";
 "memory.navigationTitle" = "Memory";
 "memory.title" = "What Kairo remembers";
-"memory.subtitle" = "Add, search, and review the context Kairo can use later.";
+"memory.subtitle" = "Search the context Kairo can use later.";
 "memory.export.accessibility" = "Export memories";
+"memory.status.count.one" = "%lld memory";
+"memory.status.count.many" = "%lld memories";
+"memory.status.userApproved" = "User approved";
 "memory.search.section" = "Find context";
 "memory.search.placeholder" = "Search memories";
 "memory.search.clear" = "Clear";
@@ -34,6 +37,7 @@
 "memory.search.summary.matches.one" = "%lld match for \"%@\"";
 "memory.search.summary.matches.many" = "%lld matches for \"%@\"";
 "memory.add.section" = "Add context";
+"memory.add.detail" = "Save only the context Kairo should reuse.";
 "memory.add.placeholder" = "Type something Kairo should remember";
 "memory.add.save" = "Save";
 "memory.empty.title" = "No memories yet";

@@ -36,11 +36,21 @@ Stage 1 gives the app a clearer commercial shell:
 This stage does not add new capabilities. It only changes presentation and
 entry points for existing behavior.
 
+Stage 2 starts moving support screens from setup-heavy pages toward focused
+workspaces:
+
+- Memory Center now leads with search, saved-count status, and export in one
+  library header.
+- Manual capture remains available, but it is visually secondary to finding
+  and reviewing context.
+- Memory status is framed around user-approved context instead of a generic
+  data table.
+
 ## Next UI stages
 
 1. Memory Center
-   - Replace add/search/list stacking with a search-first library.
-   - Show source, freshness, and actions without making every record feel equal.
+   - Continue improving record cards with source, freshness, and actions
+     without making every record feel equal.
 
 2. Phone Tools and Skill Manager
    - Split user-facing tools from developer setup.
