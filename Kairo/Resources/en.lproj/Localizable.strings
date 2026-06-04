@@ -311,6 +311,9 @@
 "chat.provider.localFallback.toolsUnavailable" = "Local model fallback cannot use tools, browse the web, or perform account actions.";
 "chat.action.accessibility.preview" = "Action preview: %@, %@, %@";
 "chat.option.accessibility.suggested" = "Suggested option: %@, %@. %@. %@";
+"chat.action.card.intent" = "Suggested action";
+"chat.tool.card.intent" = "Suggested skill";
+"chat.action.card.review" = "Review";
 "chat.action.confirmation.willAskFirst" = "Will ask first";
 "chat.action.confirmation.noChanges" = "No changes";
 "chat.action.risk.readOnly" = "Read only";
@@ -335,7 +338,7 @@
 "chat.action.displayName.sendNotification" = "Send Notification";
 "chat.action.displayName.scheduleNotification" = "Schedule Local Notification";
 "chat.action.displayName.openURL" = "Open URL";
-"chat.action.displayName.controlHome" = "Preview Home Action";
+"chat.action.displayName.controlHome" = "Control Home Preview";
 "chat.action.displayName.externalAPI" = "External API Request";
 "chat.action.displayName.unsupported" = "Unsupported iOS Action";
 "chat.action.description.answer" = "Answers questions and organizes context without touching external data.";

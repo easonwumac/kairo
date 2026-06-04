@@ -311,6 +311,9 @@
 "chat.provider.localFallback.toolsUnavailable" = "Local model fallback 不能使用工具、瀏覽網頁或執行帳號動作。";
 "chat.action.accessibility.preview" = "動作預覽：%@，%@，%@";
 "chat.option.accessibility.suggested" = "建議選項：%@，%@。%@。%@";
+"chat.action.card.intent" = "建議動作";
+"chat.tool.card.intent" = "建議 Skill";
+"chat.action.card.review" = "檢查";
 "chat.action.confirmation.willAskFirst" = "會先詢問";
 "chat.action.confirmation.noChanges" = "不會改動";
 "chat.action.risk.readOnly" = "唯讀";
@@ -335,7 +338,7 @@
 "chat.action.displayName.sendNotification" = "送出通知";
 "chat.action.displayName.scheduleNotification" = "排程本機通知";
 "chat.action.displayName.openURL" = "開啟 URL";
-"chat.action.displayName.controlHome" = "預覽 Home 動作";
+"chat.action.displayName.controlHome" = "檢查 Home 控制";
 "chat.action.displayName.externalAPI" = "外部 API 請求";
 "chat.action.displayName.unsupported" = "iOS 目前不支援的操作";
 "chat.action.description.answer" = "回答問題並整理上下文，不觸碰外部資料。";

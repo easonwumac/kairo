@@ -14,34 +14,47 @@ struct ProposedActionsStrip: View {
                     Button {
                         onSelect(action)
                     } label: {
-                        HStack(alignment: .top, spacing: 10) {
+                        HStack(alignment: .center, spacing: 10) {
                             Image(systemName: descriptor.supportStatus == .unsupportedBySandbox ? "exclamationmark.triangle" : "checkmark.circle")
                                 .font(.subheadline.weight(.semibold))
                                 .symbolRenderingMode(.hierarchical)
                                 .foregroundStyle(actionRiskColor(for: action))
                                 .frame(width: 24, height: 24)
 
-                            VStack(alignment: .leading, spacing: 5) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(KairoL10n.string("chat.action.card.intent"))
+                                    .font(.caption2.weight(.bold))
+                                    .textCase(.uppercase)
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue).intent")
+
                                 Text(descriptor.displayName)
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(KairoDesign.ink)
-
-                                Text(riskSummary)
-                                    .font(.caption)
-                                    .foregroundStyle(actionRiskColor(for: action))
                                     .lineLimit(2)
-                                    .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue).risk")
+
+                                HStack(spacing: 6) {
+                                    CapabilityChipView(descriptor: descriptor)
+
+                                    Text(riskSummary)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(actionRiskColor(for: action))
+                                        .lineLimit(1)
+                                        .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue).risk")
+                                }
                             }
 
                             Spacer(minLength: 8)
 
-                            CapabilityChipView(descriptor: descriptor)
-
-                            Image(systemName: "chevron.right")
+                            Text(KairoL10n.string("chat.action.card.review"))
                                 .font(.caption.weight(.bold))
-                                .foregroundStyle(.tertiary)
-                                .padding(.top, 4)
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(KairoDesign.ink, in: Capsule())
                         }
+                        .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
                         .padding(.horizontal, 12)
                         .padding(.vertical, 11)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -53,7 +66,6 @@ struct ProposedActionsStrip: View {
                     }
                     .buttonStyle(.plain)
                     .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .accessibilityElement(children: .combine)
                     .accessibilityLabel(KairoL10n.string("chat.action.accessibility.preview", descriptor.displayName, descriptor.supportStatus.displayName, riskSummary))
                     .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
                 }
@@ -104,23 +116,24 @@ struct ToolCandidatesStrip: View {
             ForEach(candidates) { candidate in
                 let riskSummary = toolRiskSummary(for: candidate)
                 VStack(alignment: .leading, spacing: 6) {
-                    HStack(alignment: .top, spacing: 10) {
+                    HStack(alignment: .center, spacing: 10) {
                         Image(systemName: iconName(for: candidate.skillKind))
                             .font(.subheadline.weight(.semibold))
                             .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(toolRiskColor(for: candidate))
                             .frame(width: 24, height: 24)
 
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack(spacing: 6) {
-                                Text(candidate.title)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(KairoDesign.ink)
-                                    .lineLimit(1)
-                                Text(optionDetail(for: candidate))
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(KairoL10n.string("chat.tool.card.intent"))
+                                .font(.caption2.weight(.bold))
+                                .textCase(.uppercase)
+                                .foregroundStyle(.secondary)
+                                .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).intent")
+
+                            Text(candidate.title)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                                .lineLimit(2)
 
                             Text(candidate.handoffSummary)
                                 .font(.caption)
@@ -129,15 +142,32 @@ struct ToolCandidatesStrip: View {
                                 .fixedSize(horizontal: false, vertical: true)
                                 .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).summary")
 
-                            Text(riskSummary)
-                                .font(.caption)
-                                .foregroundStyle(toolRiskColor(for: candidate))
-                                .lineLimit(1)
-                                .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).risk")
+                            HStack(spacing: 6) {
+                                KairoStatusPill(
+                                    title: optionDetail(for: candidate),
+                                    systemImage: candidate.requiresConfirmation ? "checkmark.shield" : "arrow.up.right",
+                                    tint: toolRiskColor(for: candidate)
+                                )
+
+                                Text(riskSummary)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(toolRiskColor(for: candidate))
+                                    .lineLimit(1)
+                                    .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).risk")
+                            }
                         }
 
-                        Spacer(minLength: 0)
+                        Spacer(minLength: 8)
+
+                        Text(KairoL10n.string("chat.action.card.review"))
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(KairoDesign.ink)
+                            .lineLimit(1)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(KairoDesign.ink.opacity(0.08), in: Capsule())
                     }
+                    .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id)")
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 11)
@@ -147,7 +177,6 @@ struct ToolCandidatesStrip: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(Color.black.opacity(0.07), lineWidth: 1)
                 }
-                .accessibilityElement(children: .combine)
                 .accessibilityLabel(KairoL10n.string("chat.option.accessibility.suggested", candidate.title, optionDetail(for: candidate), candidate.handoffSummary, riskSummary))
                 .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id)")
             }
