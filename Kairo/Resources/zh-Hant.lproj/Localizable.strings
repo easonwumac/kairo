@@ -88,6 +88,7 @@
 "access.skills.message.removed" = "%@ 已從 manager 移除。";
 "access.skills.message.removeFailed" = "無法移除 %@。";
 "access.homekit.demos.title" = "HomeKit 預覽 Demos";
+"access.homekit.demo.previewConfirmation" = "預覽確認內容";
 "root.section.models.title" = "AI 引擎";
 "root.section.models.subtitle" = "Cloud 與 local models";
 "root.section.settings.title" = "設定";

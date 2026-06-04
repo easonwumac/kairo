@@ -680,7 +680,7 @@ public struct PermissionHubView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
-            Button("Preview Confirmation") {
+            Button(KairoL10n.string("access.homekit.demo.previewConfirmation")) {
                 homeKitPreviewMessage = recipe.confirmationSummary
             }
             .accessibilityIdentifier("access.homekit.demo.\(recipe.id).confirm")

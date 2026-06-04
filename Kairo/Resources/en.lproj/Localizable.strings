@@ -88,6 +88,7 @@
 "access.skills.message.removed" = "%@ removed from manager.";
 "access.skills.message.removeFailed" = "Unable to remove %@.";
 "access.homekit.demos.title" = "HomeKit Preview Demos";
+"access.homekit.demo.previewConfirmation" = "Preview Confirmation";
 "root.section.models.title" = "AI engine";
 "root.section.models.subtitle" = "Cloud and local models";
 "root.section.settings.title" = "Settings";
