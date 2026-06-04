@@ -354,8 +354,7 @@ public struct SettingsView: View {
     private var oauthConnectorsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             settingsSectionHeader(
-                title: KairoL10n.string("settings.oauth.section"),
-                subtitle: KairoL10n.string("settings.oauth.detail")
+                title: KairoL10n.string("settings.oauth.section")
             )
 
             KairoGroupedSurface {
@@ -591,6 +590,11 @@ public struct SettingsView: View {
 
             if isExpanded {
                 VStack(alignment: .leading, spacing: 6) {
+                    Text(KairoL10n.string("settings.oauth.detail"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
                     Text(option.accountDataBoundary)
                         .font(.caption)
                         .foregroundStyle(.secondary)

@@ -582,6 +582,15 @@ Stage 61 makes Settings OpenAI setup quieter:
 - API key field, save, dry-run, delete, status message, and connection setup
   identifiers keep their current progressive paths.
 
+Stage 62 makes Settings connected accounts quieter:
+
+- Connected accounts no longer shows OAuth handoff explanation in the section
+  header.
+- The first layer keeps only account names, readiness state, and Details; OAuth
+  handoff guidance appears only after a connector row is expanded.
+- Connector readiness, account boundary details, backend-exchange notes, and
+  callback-preview isolation keep their existing identifiers and paths.
+
 ## Next UI stages
 
 1. Product surface audit
