@@ -499,7 +499,7 @@
 "settings.models.message.replyCheckModelUnavailable" = "Reply check model unavailable: %@.";
 "settings.models.message.replyCheckRuntimeUnavailable" = "Local reply runtime is not connected: %@";
 "settings.models.message.replyCheckFailed" = "Reply check failed: %@";
-"settings.models.runtimeUnavailable.iOSSimulatorQwen" = "Qwen app-internal inference is not wired for iOS or Simulator yet. The current beta supports catalog, download, select, delete, and macOS/dev CLI checks only.";
+"settings.models.runtimeUnavailable.iOSSimulatorQwen" = "This build does not include an available local inference runtime. Use an app build with the embedded runtime and a downloaded selected model before running reply checks or local chat.";
 "settings.models.message.deleted" = "%@ deleted.";
 "settings.models.message.deleteFailed" = "Could not delete model: %@";
 "settings.models.message.usingBuiltInCatalog" = "Using built-in local model catalog.";
