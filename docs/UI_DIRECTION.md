@@ -644,6 +644,15 @@ Stage 67 makes Models diagnostics quieter:
 - Route preference, starter model rows, download confirmation, catalog refresh,
   runtime checks, and model diagnostics identifiers keep their current paths.
 
+Stage 68 makes Access expanded layers action-first:
+
+- Access setup details no longer opens with explanatory paragraphs; expansion
+  goes directly to review-first, setup-needed, and unavailable status pills.
+- Skill library expansion now moves directly into HomeKit previews, skill
+  management, and developer setup instead of showing a setup explainer first.
+- Capability rows, HomeKit demos, skill manager flows, manifest import, and
+  existing Access smoke identifiers keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit

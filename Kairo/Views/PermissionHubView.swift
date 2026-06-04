@@ -88,16 +88,6 @@ public struct PermissionHubView: View {
                 .accessibilityIdentifier("access.status.details.toggle")
 
                 if isAccessStatusExpanded {
-                    Text(KairoL10n.string("access.overview.subtitle"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(KairoL10n.string("access.status.details.subtitle"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
                     HStack(spacing: 8) {
                         KairoStatusPill(
                             title: KairoL10n.string("access.status.reviewFirst"),
@@ -187,11 +177,6 @@ public struct PermissionHubView: View {
                 advancedSkillSetupToggle()
 
                 if isAdvancedSkillSetupExpanded {
-                    Divider()
-                    Text(KairoL10n.string("access.skills.advanced.toggle.subtitle"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                     Divider()
                     homeKitPreviewDisclosure
                     Divider()
