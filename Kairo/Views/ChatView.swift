@@ -24,13 +24,20 @@ public struct ChatView: View {
         }
         #else
         NavigationSplitView {
-            historyList
-                .navigationTitle(KairoL10n.string("chat.history.title"))
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        newChatButton
-                    }
+            ChatHistorySidebarView(
+                threads: viewModel.threads,
+                selectedThreadID: viewModel.currentThread.id,
+                selectThread: { thread in
+                    viewModel.selectThread(thread)
+                },
+                deleteThread: { thread in
+                    Task { await viewModel.deleteThread(thread) }
+                },
+                startNewThread: {
+                    viewModel.startNewThread()
                 }
+            )
+                .navigationTitle(KairoL10n.string("chat.history.title"))
         } detail: {
             chatSurface
                 .navigationTitle(viewModel.currentThread.title)
@@ -40,45 +47,6 @@ public struct ChatView: View {
             await viewModel.importPendingShares()
         }
         #endif
-    }
-
-    private var newChatButton: some View {
-        Button {
-            viewModel.startNewThread()
-        } label: {
-            Label(KairoL10n.string("chat.new"), systemImage: "square.and.pencil")
-        }
-        .accessibilityIdentifier("chat.new")
-    }
-
-    private var historyList: some View {
-        List(selection: Binding(
-            get: { viewModel.currentThread.id },
-            set: { selectedID in
-                guard let selectedID, let thread = viewModel.threads.first(where: { $0.id == selectedID }) else { return }
-                viewModel.selectThread(thread)
-            }
-        )) {
-            if viewModel.threads.isEmpty {
-                ContentUnavailableView(
-                    KairoL10n.string("chat.history.empty.title"),
-                    systemImage: "clock.arrow.circlepath",
-                    description: Text(KairoL10n.string("chat.history.empty.description"))
-                )
-            } else {
-                ForEach(viewModel.threads) { thread in
-                    ChatHistoryRow(thread: thread)
-                        .tag(thread.id)
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                Task { await viewModel.deleteThread(thread) }
-                            } label: {
-                                Label(KairoL10n.string("chat.delete"), systemImage: "trash")
-                            }
-                        }
-                }
-            }
-        }
     }
 
     private var shouldShowFocusPanel: Bool {
@@ -524,28 +492,6 @@ private func iconName(for kind: AttachmentKind) -> String {
     case .pdf: return "doc.richtext"
     case .file: return "doc"
     case .unknown: return "questionmark.square"
-    }
-}
-
-private struct ChatHistoryRow: View {
-    let thread: ChatThread
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(thread.title)
-                .font(.headline)
-                .lineLimit(1)
-            Text(thread.lastMessagePreview)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-            Text(thread.updatedAt, style: .relative)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("chat.history.thread")
     }
 }
 

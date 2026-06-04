@@ -90,6 +90,13 @@ Stage 7 removes the last native Settings demo form:
 - Demo input/output contracts remain available for verification, but the page
   reads as a reference gallery rather than a primary workflow.
 
+Stage 8 polishes chat history outside iOS:
+
+- The non-iOS chat history sidebar now uses Kairo cards instead of a native
+  `List`, keeping the product language consistent across surfaces.
+- Thread selection is still simple, but history reads as saved work rather than
+  a default system table.
+
 ## Next UI stages
 
 1. Memory Center
