@@ -103,6 +103,31 @@ final class ChatActionConfirmationTests: XCTestCase {
     }
 
     @MainActor
+    func testChatViewModelClearsStaleActionReviewWhenSelectingAnotherThread() async throws {
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: ChatActionConfirmationMockExecutor()
+        )
+
+        await viewModel.send("建立行程：週五 10:00 Kairo roadmap review")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createCalendarDraft })
+        XCTAssertEqual(viewModel.calendarReviewAction?.id, action.id)
+
+        viewModel.selectThread(ChatThread(messages: [
+            ChatMessage(role: .user, text: "Different thread")
+        ]))
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertNil(viewModel.shareImportReviewAction)
+        XCTAssertNil(viewModel.calendarReviewAction)
+        XCTAssertNil(viewModel.handoffReviewAction)
+        XCTAssertNil(viewModel.actionResultMessage)
+    }
+
+    @MainActor
     private func assertConfirmedAction(
         prompt: String,
         expectedKind: AgentActionKind,

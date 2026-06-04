@@ -90,10 +90,8 @@ public final class ChatViewModel: ObservableObject {
         pendingAttachments = []
         shareImportNotice = nil
         shareImportPreview = nil
-        shareImportReviewAction = nil
-        calendarReviewAction = nil
-        handoffReviewAction = nil
         errorMessage = nil
+        clearTransientActionState()
     }
 
     public func selectThread(_ thread: ChatThread) {
@@ -101,6 +99,7 @@ public final class ChatViewModel: ObservableObject {
         composerText = ""
         replyTarget = nil
         errorMessage = nil
+        clearTransientActionState()
     }
 
     public func deleteThread(_ thread: ChatThread) async {
@@ -110,6 +109,7 @@ public final class ChatViewModel: ObservableObject {
             threads = try await historyStore.listThreads(limit: 50)
             if currentThread.id == thread.id {
                 currentThread = threads.first ?? ChatThread(messages: [Self.welcomeMessage])
+                clearTransientActionState()
             }
             errorMessage = nil
         } catch {
@@ -279,6 +279,15 @@ public final class ChatViewModel: ObservableObject {
             errorMessage = "Kairo 無法執行此動作。"
         }
         pendingAction = nil
+    }
+
+    private func clearTransientActionState() {
+        pendingAction = nil
+        shareImportReviewAction = nil
+        calendarReviewAction = nil
+        handoffReviewAction = nil
+        actionResultMessage = nil
+        actionResultSucceeded = nil
     }
 
     private static func actionResultMessage(for result: ActionExecutionResult, action: AgentAction) -> String {
