@@ -26,9 +26,7 @@ struct LocalModelsCompactView: View {
             VStack(alignment: .leading, spacing: 14) {
                 modelOverviewCard
 
-                routePreferenceCard
-
-                selectedModelSummary
+                answerRouteCard
 
                 modelStarterSection
 
@@ -79,6 +77,23 @@ struct LocalModelsCompactView: View {
                     .accessibilityIdentifier("settings.models.benchmark-message")
             }
         }
+    }
+
+    private var answerRouteCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(KairoL10n.string("settings.models.answerRoute"))
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+
+                routePreferenceInline
+
+                Divider()
+
+                selectedModelInline
+            }
+        }
+        .accessibilityIdentifier("settings.models.answer-route")
     }
 
     private var advancedDiagnosticsSection: some View {
@@ -233,25 +248,30 @@ struct LocalModelsCompactView: View {
         }
     }
 
-    private var routePreferenceCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            VStack(alignment: .leading, spacing: 3) {
+    private var routePreferenceInline: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: "switch.2")
+                .font(.headline)
+                .foregroundStyle(KairoDesign.blue)
+                .frame(width: 30, height: 30)
+                .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
                 Text(KairoL10n.string("settings.models.routePreference"))
-                    .font(compactSectionHeadingFont)
+                    .font(compactModelMetadataFont)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
 
                 Text(localModelStatus.preference.settingsDetailText)
                     .font(compactModelMetadataFont)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            Spacer(minLength: 8)
+
             compactRoutePreferenceMenu
-        }
-        .padding(12)
-        .background(Color.white.opacity(0.86), in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.models.route-card")
@@ -288,7 +308,7 @@ struct LocalModelsCompactView: View {
         }
     }
 
-    private var selectedModelSummary: some View {
+    private var selectedModelInline: some View {
         HStack(alignment: .center, spacing: 8) {
             Image(systemName: selectedModelSummaryIconName)
                 .font(.headline)
@@ -308,12 +328,6 @@ struct LocalModelsCompactView: View {
             }
 
             Spacer(minLength: 0)
-        }
-        .padding(12)
-        .background(Color.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(selectedModelSummaryText)

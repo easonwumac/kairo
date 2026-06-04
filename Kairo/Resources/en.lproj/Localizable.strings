@@ -635,6 +635,7 @@
 "settings.status.section" = "Status";
 "settings.models.section" = "AI engine";
 "settings.models.emptyCatalog" = "Local model catalog has not loaded yet.";
+"settings.models.answerRoute" = "Answer route";
 "settings.models.routePreference" = "Route Preference";
 "settings.models.catalog" = "Catalog";
 "settings.models.refreshCatalog" = "Refresh Catalog";

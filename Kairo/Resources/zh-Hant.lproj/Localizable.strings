@@ -635,6 +635,7 @@
 "settings.status.section" = "狀態";
 "settings.models.section" = "AI 引擎";
 "settings.models.emptyCatalog" = "尚未載入 local model catalog。";
+"settings.models.answerRoute" = "回答路線";
 "settings.models.routePreference" = "路由偏好";
 "settings.models.catalog" = "Catalog";
 "settings.models.refreshCatalog" = "刷新 Catalog";

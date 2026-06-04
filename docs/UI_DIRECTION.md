@@ -206,6 +206,15 @@ Stage 20 makes Phone Tools progressive:
 - Capability rows now carry stable identifiers so future UI smoke can verify
   progressive disclosure behavior without asserting user-facing copy.
 
+Stage 21 makes AI Setup answer-route-first:
+
+- AI Setup now combines route preference and selected local model state into one
+  Answer route card instead of showing them as separate settings panels.
+- Starter model downloads remain below the route decision, keeping model catalog
+  work secondary to how Kairo answers.
+- Existing route and selected-model identifiers remain in the card so current
+  smoke coverage can continue to target behavior rather than copy.
+
 ## Next UI stages
 
 1. Memory Center
@@ -221,8 +230,8 @@ Stage 20 makes Phone Tools progressive:
      new recipe-first order.
 
 4. AI Setup and Settings
-   - Continue tightening route-state language after simulator smoke confirms
-     which local-model states users need on the first screen.
+   - Continue tightening starter model rows after simulator smoke confirms which
+     local-model states users need on the first screen.
 
 5. Action Preview
    - Continue tuning action-specific summaries after smoke coverage shows which
