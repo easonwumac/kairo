@@ -26,7 +26,7 @@ Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App St
 
 推薦描述：
 
-> Kairo is a private iPhone agent with memory, chat history, share-sheet ingestion, Shortcuts automation, local fallback models, and confirmation-based actions across iOS-approved capabilities.
+> Kairo is a private iPhone agent with memory, chat history, share-sheet ingestion, App Intents automation, user-triggered local model catalog/download management, and confirmation-based actions across iOS-approved capabilities.
 
 避免描述：
 
