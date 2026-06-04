@@ -563,7 +563,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.privacy.clearAuditLog""#))
         XCTAssertTrue(settingsView.contains("clearAuditLog()"))
         XCTAssertTrue(settingsView.contains("deletionAPI.clearAuditLog()"))
-        XCTAssertTrue(settingsView.contains(#""settings.privacy""#))
         XCTAssertTrue(settingsView.contains(#""settings.privacy.clear-audit-log""#))
         XCTAssertTrue(settingsView.contains(#""settings.privacy.audit-log-detail""#))
         XCTAssertTrue(settingsView.contains(#""settings.privacy.status""#))

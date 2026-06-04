@@ -90,6 +90,21 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(deletedStatus.label.contains("Not configured"), deletedStatus.label)
     }
 
+    func testSettingsCanClearMetadataOnlyAuditLog() throws {
+        relaunchForUITesting(initialSection: "settings")
+        XCTAssertTrue(anyElement("settings.form").waitForExistence(timeout: 5))
+
+        let clearAuditLog = findElement("settings.privacy.clear-audit-log", direction: .both, maxSwipes: 4)
+        XCTAssertTrue(clearAuditLog.exists)
+        XCTAssertTrue(findElement("settings.privacy.audit-log-detail", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "does not delete chat history", direction: .both, maxSwipes: 1).exists)
+        tapElement(clearAuditLog)
+
+        let status = findElement("settings.privacy.status", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(status.waitForExistence(timeout: 5))
+        XCTAssertTrue(status.label.contains("Metadata-only audit log cleared."), status.label)
+    }
+
     func testMemoryCenterCanAddSearchAndDeleteMemory() throws {
         relaunchForUITesting(initialSection: "memory")
 

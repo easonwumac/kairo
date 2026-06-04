@@ -165,6 +165,31 @@ public struct SettingsView: View {
                     }
                 }
 
+                Section(KairoL10n.string("settings.privacy.section")) {
+                    Text(KairoL10n.string("settings.privacy.keychainBoundary"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Button(role: .destructive) {
+                        clearAuditLog()
+                    } label: {
+                        Text(KairoL10n.string("settings.privacy.clearAuditLog"))
+                    }
+                    .disabled(deletionAPI == nil)
+                    .accessibilityIdentifier("settings.privacy.clear-audit-log")
+
+                    Text(KairoL10n.string("settings.privacy.auditLogDetail"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("settings.privacy.audit-log-detail")
+
+                    if let privacyStatusMessage {
+                        Text(privacyStatusMessage)
+                            .font(.caption)
+                            .accessibilityIdentifier("settings.privacy.status")
+                    }
+                }
+
                 Section(KairoL10n.string("settings.oauth.section")) {
                     if connectorOptions.isEmpty {
                         Text(KairoL10n.string("settings.oauth.empty"))
@@ -204,30 +229,6 @@ public struct SettingsView: View {
                 .accessibilityIdentifier("settings.models.local")
 
                 SettingsShortcutDemosSection()
-
-                Section(KairoL10n.string("settings.privacy.section")) {
-                    Text(KairoL10n.string("settings.privacy.keychainBoundary"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Button(KairoL10n.string("settings.privacy.clearAuditLog"), role: .destructive) {
-                        clearAuditLog()
-                    }
-                    .disabled(deletionAPI == nil)
-                    .accessibilityIdentifier("settings.privacy.clear-audit-log")
-
-                    Text(KairoL10n.string("settings.privacy.auditLogDetail"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("settings.privacy.audit-log-detail")
-
-                    if let privacyStatusMessage {
-                        Text(privacyStatusMessage)
-                            .font(.caption)
-                            .accessibilityIdentifier("settings.privacy.status")
-                    }
-                }
-                .accessibilityIdentifier("settings.privacy")
 
                 if connectorStatusMessage != nil {
                     Section(KairoL10n.string("settings.status.section")) {
