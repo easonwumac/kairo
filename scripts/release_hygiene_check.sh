@@ -11,6 +11,7 @@ Runs Kairo release hygiene checks:
   - git diff --check
   - App Review boundary scan
   - Share Extension action-free boundary scan
+  - catalog publication boundary scan
   - focused secret scan
   - model artifact scan
   - optional GitHub Actions exact-HEAD gate with --require-ci
@@ -200,6 +201,62 @@ if failures:
     sys.exit(1)
 
 print("Share Extension action-free boundary scan passed.")
+
+PY
+
+echo
+echo "== catalog publication boundary scan =="
+python3 - <<'PY'
+import json
+import sys
+from pathlib import Path
+from urllib.parse import urlparse
+
+root = Path.cwd()
+failures = []
+
+def load_json(relative_path):
+    with (root / relative_path).open("r", encoding="utf-8") as file:
+        return json.load(file)
+
+skills_catalog = load_json("Website/skills/skills.json")
+models_catalog = load_json("Website/models/models.json")
+
+if skills_catalog.get("catalogSignatureStatus") != "referenceUnsigned":
+    failures.append("Website/skills/skills.json must remain referenceUnsigned in the app repo; publish production signed catalogs from kairo-skills.")
+if models_catalog.get("catalogSignatureStatus") != "referenceUnsigned":
+    failures.append("Website/models/models.json must remain referenceUnsigned in the app repo; publish production signed catalogs from kairo-models.")
+
+if models_catalog.get("signature") != "unsigned-reference-catalog":
+    failures.append("Website/models/models.json must not contain production signature material in this app repo seed.")
+if models_catalog.get("signingKeyID") != "kairo-models-reference":
+    failures.append("Website/models/models.json must keep the reference signingKeyID until standalone production publication.")
+
+for model in models_catalog.get("models", []):
+    model_id = model.get("id", "<missing>")
+    parsed = urlparse(model.get("downloadURL", ""))
+    if parsed.scheme != "https" or not parsed.netloc:
+        failures.append(f"Model {model_id} must use an external HTTPS downloadURL, not an inline or bundled artifact.")
+    for forbidden_key in ["weights", "modelWeights", "tokenizer", "tokenizerJSON", "blob", "data"]:
+        if forbidden_key in model:
+            failures.append(f"Model {model_id} must not inline {forbidden_key} in the app repo catalog seed.")
+    if not model.get("sha256"):
+        failures.append(f"Model {model_id} must keep sha256 metadata for verified user-triggered downloads.")
+
+for relative_path in sorted((root / "Website/skills/manifests").glob("*.json")):
+    manifest = json.loads(relative_path.read_text(encoding="utf-8"))
+    signature = manifest.get("signature", {})
+    if signature.get("value") != "static-demo-signature":
+        failures.append(f"{relative_path.relative_to(root)} must not contain production signature material in this app repo seed.")
+    if signature.get("keyID") != "kairo-marketplace-2026":
+        failures.append(f"{relative_path.relative_to(root)} must keep the reference marketplace key ID until standalone production publication.")
+
+if failures:
+    for failure in failures:
+        print(f"- {failure}", file=sys.stderr)
+    sys.exit(1)
+
+print("Catalog publication boundary scan passed.")
 
 PY
 
