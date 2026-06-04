@@ -39,6 +39,7 @@ public final class ChatViewModel: ObservableObject {
     private let chatAPI: any KairoChatAPI
     private let actionExecutor: any ActionExecutor
     private let localModelSettingsService: LocalModelSettingsService?
+    private var pendingActionSource: PendingActionSource?
 
     public init(
         historyStore: ChatHistoryStore = InMemoryChatHistoryStore(),
@@ -214,6 +215,7 @@ public final class ChatViewModel: ObservableObject {
     public func reviewImportedShareAction() {
         guard let action = shareImportReviewAction else { return }
         previewAction(action)
+        pendingActionSource = .importedShare
     }
 
     public func reviewCalendarAction() {
@@ -264,13 +266,15 @@ public final class ChatViewModel: ObservableObject {
 
     public func cancelPendingAction() {
         pendingAction = nil
+        pendingActionSource = nil
     }
 
     public func confirmPendingAction() async {
         guard let action = pendingAction else { return }
+        let actionSource = pendingActionSource
         do {
             let result = try await actionExecutor.execute(action, confirmed: true)
-            actionResultMessage = Self.actionResultMessage(for: result, action: action)
+            actionResultMessage = Self.actionResultMessage(for: result, action: action, source: actionSource)
             actionResultSucceeded = result.completed
             errorMessage = result.completed ? nil : result.message
         } catch {
@@ -279,10 +283,12 @@ public final class ChatViewModel: ObservableObject {
             errorMessage = "Kairo 無法執行此動作。"
         }
         pendingAction = nil
+        pendingActionSource = nil
     }
 
     private func clearTransientActionState() {
         pendingAction = nil
+        pendingActionSource = nil
         shareImportReviewAction = nil
         calendarReviewAction = nil
         handoffReviewAction = nil
@@ -290,15 +296,16 @@ public final class ChatViewModel: ObservableObject {
         actionResultSucceeded = nil
     }
 
-    private static func actionResultMessage(for result: ActionExecutionResult, action: AgentAction) -> String {
+    private static func actionResultMessage(for result: ActionExecutionResult, action: AgentAction, source: PendingActionSource?) -> String {
         guard result.completed else { return result.message }
+        let suffix = source == .importedShare ? " Shared content was cleared from the import queue." : ""
         switch action.payload {
         case .reminder(let draft):
-            return "\(result.message) \(draft.title)"
+            return "\(result.message) \(draft.title)\(suffix)"
         case .calendarEvent(let draft):
-            return "\(result.message) \(draft.title)"
+            return "\(result.message) \(draft.title)\(suffix)"
         default:
-            return result.message
+            return "\(result.message)\(suffix)"
         }
     }
 
@@ -404,5 +411,9 @@ public final class ChatViewModel: ObservableObject {
         role: .assistant,
         text: "我是 Kairo。直接說你想在手機上完成什麼；我會在聊天裡提出可用工具、草稿與確認卡片，不會靜默改動任何東西。"
     )
+
+    private enum PendingActionSource {
+        case importedShare
+    }
 }
 #endif

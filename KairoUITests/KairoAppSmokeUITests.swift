@@ -704,6 +704,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "Created reminder. Send prototype link", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Shared content was cleared from the import queue.", direction: .both, maxSwipes: 1).exists)
     }
 
     func testChatCanPreviewAndConfirmNotificationAction() throws {
