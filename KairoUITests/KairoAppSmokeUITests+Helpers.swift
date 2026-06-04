@@ -217,7 +217,7 @@ extension KairoAppSmokeUITests {
         XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
         let action = findButton(actionIdentifier, direction: .down)
         XCTAssertTrue(action.exists)
-        action.tap()
+        tapElement(action)
 
         XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
         for text in previewContains {
@@ -225,7 +225,7 @@ extension KairoAppSmokeUITests {
         }
         let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
         XCTAssertTrue(confirm.exists)
-        confirm.tap()
+        tapElement(confirm)
 
         XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: resultText, direction: .both, maxSwipes: 1).exists)
@@ -295,8 +295,8 @@ extension KairoAppSmokeUITests {
         direction: SearchDirection = .both,
         maxSwipes: Int = 8
     ) -> XCUIElement {
-        let button = app.buttons[identifier]
-        return find(button, direction: direction, maxSwipes: maxSwipes)
+        let query = app.buttons.matching(identifier: identifier)
+        return findHittableButton(in: query, direction: direction, maxSwipes: maxSwipes)
     }
 
     func findElement(
@@ -313,8 +313,8 @@ extension KairoAppSmokeUITests {
         direction: SearchDirection = .both,
         maxSwipes: Int = 8
     ) -> XCUIElement {
-        let button = app.buttons[label]
-        return find(button, direction: direction, maxSwipes: maxSwipes)
+        let query = app.buttons.matching(NSPredicate(format: "label == %@", label))
+        return findHittableButton(in: query, direction: direction, maxSwipes: maxSwipes)
     }
 
     func findStaticText(
@@ -331,6 +331,19 @@ extension KairoAppSmokeUITests {
         let query = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix))
         let hittable = query.allElementsBoundByIndex.first { $0.exists && $0.isHittable }
         return hittable ?? query.firstMatch
+    }
+
+    func tapElement(
+        _ element: XCUIElement,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertTrue(element.exists, file: file, line: line)
+        if element.isHittable {
+            element.tap()
+            return
+        }
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
     }
 
     func relaunchWithInstalledLocalModelForTesting(initialSection: String? = nil) {
@@ -398,6 +411,44 @@ extension KairoAppSmokeUITests {
         }
 
         return element
+    }
+
+    func findHittableButton(
+        in query: XCUIElementQuery,
+        direction: SearchDirection,
+        maxSwipes: Int
+    ) -> XCUIElement {
+        if let button = firstExistingButton(in: query), button.isHittable {
+            return button
+        }
+
+        if direction == .down || direction == .both {
+            for _ in 0..<maxSwipes {
+                scrollDown()
+                if let button = firstExistingButton(in: query), button.isHittable {
+                    return button
+                }
+            }
+        }
+
+        if direction == .up || direction == .both {
+            for _ in 0..<maxSwipes {
+                scrollUp()
+                if let button = firstExistingButton(in: query), button.isHittable {
+                    return button
+                }
+            }
+        }
+
+        return query.firstMatch
+    }
+
+    private func firstExistingButton(in query: XCUIElementQuery) -> XCUIElement? {
+        let buttons = query.allElementsBoundByIndex
+        if let hittable = buttons.first(where: { $0.exists && $0.isHittable }) {
+            return hittable
+        }
+        return buttons.first { $0.exists }
     }
 
     func anyElement(_ identifier: String) -> XCUIElement {

@@ -168,6 +168,14 @@ public struct ChatView: View {
                 .padding(.top, 8)
             }
 
+            if let shareImportReviewAction = viewModel.shareImportReviewAction {
+                ShareActionReviewBanner(action: shareImportReviewAction) {
+                    viewModel.reviewImportedShareAction()
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+            }
+
             if !viewModel.pendingAttachments.isEmpty {
                 AttachmentTray(attachments: viewModel.pendingAttachments) { id in
                     viewModel.removeAttachment(id: id)

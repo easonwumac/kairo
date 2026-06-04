@@ -46,12 +46,16 @@ final class ShareToChatActionAuditTests: XCTestCase {
         XCTAssertFalse(viewModel.canSendImportedShareToChat)
         let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
         let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createReminderDraft })
-        XCTAssertEqual(viewModel.pendingAction?.id, action.id)
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertEqual(viewModel.shareImportReviewAction?.id, action.id)
         guard case let .reminder(draft) = action.payload else {
             return XCTFail("Expected reminder payload.")
         }
         XCTAssertEqual(draft.title, "Send prototype link")
 
+        viewModel.reviewImportedShareAction()
+        XCTAssertEqual(viewModel.pendingAction?.id, action.id)
+        XCTAssertNil(viewModel.shareImportReviewAction)
         await viewModel.confirmPendingAction()
 
         XCTAssertNil(viewModel.pendingAction)

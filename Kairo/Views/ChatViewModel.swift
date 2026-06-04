@@ -10,6 +10,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var pendingAttachments: [ChatAttachment] = []
     @Published public private(set) var shareImportNotice: String?
     @Published public private(set) var shareImportPreview: String?
+    @Published public private(set) var shareImportReviewAction: AgentAction?
     @Published public var composerText: String = ""
     @Published public var errorMessage: String?
     @Published public var pendingAction: AgentAction?
@@ -87,6 +88,7 @@ public final class ChatViewModel: ObservableObject {
         pendingAttachments = []
         shareImportNotice = nil
         shareImportPreview = nil
+        shareImportReviewAction = nil
         errorMessage = nil
     }
 
@@ -121,6 +123,7 @@ public final class ChatViewModel: ObservableObject {
             }
             shareImportNotice = Self.shareImportNotice(importedCount: imported.importedItemIDs.count)
             shareImportPreview = Self.shareImportPreview(for: imported.attachments)
+            shareImportReviewAction = nil
             errorMessage = nil
         } catch {
             errorMessage = "無法匯入分享內容：\(error.localizedDescription)"
@@ -130,7 +133,7 @@ public final class ChatViewModel: ObservableObject {
     public func sendImportedShareToChat() async {
         guard canSendImportedShareToChat else { return }
         await sendComposerMessage()
-        previewFirstReminderActionFromLatestAssistantMessage()
+        shareImportReviewAction = firstReminderActionFromLatestAssistantMessage()
     }
 
     public func addAttachment(_ attachment: ChatAttachment) {
@@ -190,8 +193,16 @@ public final class ChatViewModel: ObservableObject {
 
     public func previewAction(_ action: AgentAction) {
         pendingAction = action
+        if shareImportReviewAction?.id == action.id {
+            shareImportReviewAction = nil
+        }
         actionResultMessage = nil
         actionResultSucceeded = nil
+    }
+
+    public func reviewImportedShareAction() {
+        guard let action = shareImportReviewAction else { return }
+        previewAction(action)
     }
 
     public func replyToMessage(_ message: ChatMessage) {
@@ -270,13 +281,12 @@ public final class ChatViewModel: ObservableObject {
         }
     }
 
-    private func previewFirstReminderActionFromLatestAssistantMessage() {
-        guard pendingAction == nil else { return }
+    private func firstReminderActionFromLatestAssistantMessage() -> AgentAction? {
         let latestActions = currentThread.messages
             .reversed()
             .first { $0.role == .assistant && !$0.proposedActions.isEmpty }?
             .proposedActions ?? []
-        pendingAction = latestActions.first { $0.kind == .createReminderDraft }
+        return latestActions.first { $0.kind == .createReminderDraft }
     }
 
     private func previewFirstCalendarActionFromLatestAssistantMessage() {

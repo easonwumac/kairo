@@ -44,4 +44,41 @@ struct ShareImportBanner: View {
         .accessibilityIdentifier("chat.share-import.banner")
     }
 }
+
+struct ShareActionReviewBanner: View {
+    let action: AgentAction
+    let review: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Label("已抽出提醒事項草稿", systemImage: "checklist.checked")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                Text(action.title)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 8)
+            Button(action: review) {
+                Text("Review Reminder")
+                    .font(.caption.weight(.bold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(Color.accentColor, in: Capsule())
+                    .foregroundStyle(.white)
+            }
+            .accessibilityIdentifier("chat.share-import.review-action")
+        }
+        .padding(12)
+        .background(KairoDesign.teal.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(KairoDesign.teal.opacity(0.22), lineWidth: 1)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.share-import.review-banner")
+    }
+}
 #endif

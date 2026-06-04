@@ -12,31 +12,32 @@ struct ProposedActionsStrip: View {
                 ForEach(actions) { action in
                     if let descriptor = catalog.descriptor(for: action.kind) {
                         let riskSummary = actionRiskSummary(for: action)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Button {
-                                onSelect(action)
-                            } label: {
+                        Button {
+                            onSelect(action)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
                                 HStack(spacing: 6) {
                                     Image(systemName: descriptor.supportStatus == .unsupportedBySandbox ? "exclamationmark.triangle" : "checkmark.circle")
                                     Text(descriptor.displayName)
                                     CapabilityChipView(descriptor: descriptor)
                                 }
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityElement(children: .combine)
-                            .accessibilityLabel("Action preview: \(descriptor.displayName), \(descriptor.supportStatus.displayName), \(riskSummary)")
-                            .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
 
-                            Text(riskSummary)
-                                .font(.caption2)
-                                .foregroundStyle(actionRiskColor(for: action))
-                                .lineLimit(1)
-                                .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue).risk")
+                                Text(riskSummary)
+                                    .font(.caption2)
+                                    .foregroundStyle(actionRiskColor(for: action))
+                                    .lineLimit(1)
+                                    .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue).risk")
+                            }
+                            .font(.caption)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
-                        .font(.caption)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .buttonStyle(.plain)
+                        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Action preview: \(descriptor.displayName), \(descriptor.supportStatus.displayName), \(riskSummary)")
+                        .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
                     }
                 }
             }

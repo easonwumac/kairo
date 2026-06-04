@@ -608,6 +608,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(anyElement("chat.share-import.banner").waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "已匯入 1 個分享項目", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Launch Notes: TODO: Send prototype link", direction: .both, maxSwipes: 1).exists)
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
         let composerValue = composer.value as? String ?? ""
@@ -615,23 +616,25 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         let sendShare = findButton("chat.share-import.send", direction: .both, maxSwipes: 1)
         XCTAssertTrue(sendShare.exists)
-        sendShare.tap()
+        tapElement(sendShare)
 
         XCTAssertTrue(anyElement("chat.message.user").waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
-        let action = findButton("chat.proposed-action.createReminderDraft", direction: .down, maxSwipes: 4)
+        XCTAssertTrue(anyElement("chat.share-import.review-banner").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "已抽出提醒事項草稿", direction: .both, maxSwipes: 1).exists)
+        let action = findButton("chat.share-import.review-action", direction: .both, maxSwipes: 1)
         XCTAssertTrue(action.exists)
-        action.tap()
+        tapElement(action)
 
         XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "Create Reminder", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "Send prototype link", direction: .both, maxSwipes: 1).exists)
         let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
         XCTAssertTrue(confirm.exists)
-        confirm.tap()
+        tapElement(confirm)
 
         XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Created reminder.", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Created reminder. Send prototype link", direction: .both, maxSwipes: 1).exists)
     }
 
     func testChatCanPreviewAndConfirmNotificationAction() throws {
@@ -648,7 +651,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             prompt: "建立提醒事項：下班前整理 Kairo model list",
             actionIdentifier: "chat.proposed-action.createReminderDraft",
             previewContains: ["Create Reminder"],
-            resultText: "Created reminder."
+            resultText: "Created reminder. 下班前整理 Kairo model list"
         )
     }
 
@@ -657,7 +660,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             prompt: "建立行程：週五 10:00 Kairo roadmap review",
             actionIdentifier: "chat.proposed-action.createCalendarDraft",
             previewContains: ["Create Calendar Event"],
-            resultText: "Created calendar event."
+            resultText: "Created calendar event. 週五 10:00 Kairo roadmap review"
         )
     }
 
@@ -675,7 +678,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             prompt: "Draft an email to alex@example.com subject Kairo update body Please review the roadmap.",
             actionIdentifier: "chat.proposed-action.composeEmailDraft",
             previewContains: ["Compose Email Draft", "alex@example.com", "Kairo update"],
-            resultText: "Prepared email draft handoff."
+            resultText: "Opened visible Mail draft handoff. No email has been sent."
         )
     }
 
@@ -684,7 +687,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             prompt: "Drive to Apple Park",
             actionIdentifier: "chat.proposed-action.openMapDirections",
             previewContains: ["Open Apple Maps Directions", "Apple Park"],
-            resultText: "Prepared Apple Maps directions handoff."
+            resultText: "Opened visible Apple Maps handoff. Navigation still requires user action in Maps."
         )
     }
 
@@ -693,7 +696,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             prompt: "Text 0912-345-678 body I am running late.",
             actionIdentifier: "chat.proposed-action.openMessageHandoff",
             previewContains: ["Open Messages Handoff", "0912-345-678", "I am running late.", "Body stays in Kairo preview"],
-            resultText: "Prepared Messages handoff."
+            resultText: "Opened visible Messages recipient handoff. No message has been sent"
         )
     }
 
@@ -702,7 +705,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             prompt: "Call 0912-345-678",
             actionIdentifier: "chat.proposed-action.openPhoneCallHandoff",
             previewContains: ["Phone Handoff", "0912-345-678", "tel: opens Phone visibly"],
-            resultText: "Prepared phone call handoff."
+            resultText: "Opened visible Phone handoff. No call has been placed"
         )
     }
 
@@ -711,7 +714,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             prompt: "Search web for SwiftUI App Intents examples",
             actionIdentifier: "chat.proposed-action.openWebSearchHandoff",
             previewContains: ["Web Search Handoff", "SwiftUI App Intents examples", "Safari opens visibly"],
-            resultText: "Prepared Safari web search handoff."
+            resultText: "Opened visible Safari web search handoff. No browsing has happened inside Kairo."
         )
     }
 
