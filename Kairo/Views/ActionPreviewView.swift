@@ -28,42 +28,16 @@ public struct ActionPreviewView: View {
                     .frame(maxWidth: .infinity)
                     .accessibilityHidden(true)
 
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: action.kind == .unsupportedSandboxAction ? "exclamationmark.triangle.fill" : "checkmark.shield.fill")
-                        .font(.title2)
-                        .foregroundStyle(action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal)
-                        .frame(width: 42, height: 42)
-                        .background((action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(KairoL10n.string("chat.action.preview.title"))
-                            .font(.title3.bold())
-                        Text(action.title)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Text(KairoL10n.string("chat.action.preview.safetyNote"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-
-                HStack(spacing: 8) {
-                    if let descriptor {
-                        CapabilityChipView(descriptor: descriptor)
-                    }
-                    KairoStatusPill(title: riskLabel, systemImage: "gauge.medium", tint: riskColor)
-                }
-
-                if let descriptor {
-                    reviewField(title: KairoL10n.string("chat.action.preview.field.capability"), value: descriptor.displayName)
-                }
-
-                reviewField(title: KairoL10n.string("chat.action.preview.field.why"), value: action.rationale)
+                previewHeader
+                reviewChecklistCard
 
                 KairoGroupedSurface {
-                    actionPayloadPreview
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(KairoL10n.string("chat.action.preview.field.payload"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        actionPayloadPreview
+                    }
                 }
 
                 HStack(spacing: 12) {
@@ -93,6 +67,72 @@ public struct ActionPreviewView: View {
         }
         .background(KairoDesign.background.ignoresSafeArea())
         .accessibilityIdentifier("chat.action-preview")
+    }
+
+    private var previewHeader: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: action.kind == .unsupportedSandboxAction ? "exclamationmark.triangle.fill" : "checkmark.shield.fill")
+                .font(.title2)
+                .foregroundStyle(action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal)
+                .frame(width: 42, height: 42)
+                .background((action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(KairoL10n.string("chat.action.preview.title"))
+                    .font(.title3.bold())
+                Text(action.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                Text(KairoL10n.string("chat.action.preview.safetyNote"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var reviewChecklistCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    if let descriptor {
+                        CapabilityChipView(descriptor: descriptor)
+                    }
+                    KairoStatusPill(title: riskLabel, systemImage: "gauge.medium", tint: riskColor)
+                }
+
+                Divider()
+
+                if let descriptor {
+                    checklistRow(
+                        title: KairoL10n.string("chat.action.preview.field.capability"),
+                        value: descriptor.displayName,
+                        systemImage: "wrench.and.screwdriver.fill",
+                        tint: KairoDesign.blue
+                    )
+                }
+                checklistRow(
+                    title: KairoL10n.string("chat.action.preview.field.destination"),
+                    value: destinationLabel,
+                    systemImage: "arrow.up.right.square.fill",
+                    tint: KairoDesign.violet
+                )
+                checklistRow(
+                    title: KairoL10n.string("chat.action.preview.field.why"),
+                    value: action.rationale,
+                    systemImage: "text.bubble.fill",
+                    tint: KairoDesign.teal
+                )
+                checklistRow(
+                    title: KairoL10n.string("chat.action.preview.field.confirmation"),
+                    value: confirmationLabel,
+                    systemImage: "hand.tap.fill",
+                    tint: riskColor
+                )
+            }
+        }
     }
 
     private var riskColor: Color {
@@ -146,6 +186,55 @@ public struct ActionPreviewView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func checklistRow(title: String, value: String, systemImage: String, tint: Color) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(tint)
+                .frame(width: 24, height: 24)
+                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+
+            reviewField(title: title, value: value)
+        }
+    }
+
+    private var destinationLabel: String {
+        switch action.payload {
+        case .reminder:
+            return KairoL10n.string("chat.action.preview.destination.reminders")
+        case .calendarEvent:
+            return KairoL10n.string("chat.action.preview.destination.calendar")
+        case .contact:
+            return KairoL10n.string("chat.action.preview.destination.contacts")
+        case .email:
+            return KairoL10n.string("chat.action.preview.destination.mail")
+        case .mapDirections:
+            return KairoL10n.string("chat.action.preview.destination.maps")
+        case .message:
+            return KairoL10n.string("chat.action.preview.destination.messages")
+        case .phoneCall:
+            return KairoL10n.string("chat.action.preview.destination.phone")
+        case .webSearch:
+            return KairoL10n.string("chat.action.preview.destination.safari")
+        case .notification:
+            return KairoL10n.string("chat.action.preview.destination.notifications")
+        case .homeControl:
+            return KairoL10n.string("chat.action.preview.destination.home")
+        case .text:
+            return KairoL10n.string("chat.action.preview.destination.kairo")
+        case .url:
+            return KairoL10n.string("chat.action.preview.destination.url")
+        case .unsupported, .empty:
+            return KairoL10n.string("chat.action.preview.destination.none")
+        }
+    }
+
+    private var confirmationLabel: String {
+        descriptor?.supportStatus == .unsupportedBySandbox
+            ? KairoL10n.string("chat.action.preview.confirmation.unavailable")
+            : KairoL10n.string("chat.action.preview.confirmation.required")
     }
 
     @ViewBuilder

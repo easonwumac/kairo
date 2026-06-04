@@ -74,6 +74,15 @@ Stage 5 clarifies AI setup and Settings:
 - AI engine now opens with route and local-model readiness before catalog
   controls, so model downloads feel like an explicit opt-in path.
 
+Stage 6 makes Action Preview a confirmation checklist:
+
+- The sheet now leads with a clear review state instead of treating the payload
+  as the whole story.
+- Users can scan capability, destination, rationale, and confirmation state
+  before reading the detailed payload.
+- The payload remains visible, but it is framed as content to review before
+  the confirm button.
+
 ## Next UI stages
 
 1. Memory Center
@@ -93,8 +102,8 @@ Stage 5 clarifies AI setup and Settings:
      after simulator smoke confirms the new first screen.
 
 5. Action Preview
-   - Turn the sheet into a clearer review checklist:
-     destination, payload, risk, permission, and confirmation.
+   - Continue tuning checklist labels after broader smoke coverage shows which
+     action types need stronger destination or permission summaries.
 
 ## What to avoid
 
