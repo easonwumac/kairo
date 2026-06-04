@@ -263,6 +263,7 @@ public final class ChatViewModel: ObservableObject {
     public func setPrivateChatEnabled(_ enabled: Bool) {
         privacyMode = enabled ? .privateChat : .standard
         errorMessage = nil
+        clearTransientActionState()
     }
 
     public func cancelPendingAction() {
