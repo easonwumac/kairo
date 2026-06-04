@@ -17,7 +17,7 @@ public struct MockAIProvider: AIProvider {
 
     public func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
         AICompletionResponse(
-            message: "我可以根據你授權的資料與記憶協助你。這是 mock 回應：\(request.userPrompt)",
+            message: KairoL10n.string("chat.provider.mockPreviewResponse", request.userPrompt),
             proposedActions: []
         )
     }

@@ -169,6 +169,7 @@
 "chat.provider.warning.localOnlyNoModel" = "Local Only 已啟用，但尚未選擇已下載的 model。";
 "chat.provider.warning.preferLocalNoModel" = "Prefer Local 需要已下載且已選擇的 model，才能處理 private/offline route。";
 "chat.provider.warning.openAIKeyMissing" = "%@ API key 尚未儲存。";
+"chat.provider.mockPreviewResponse" = "Preview/test provider 回覆。這不是真實模型回覆：%@";
 "chat.action.accessibility.preview" = "動作預覽：%@，%@，%@";
 "chat.option.accessibility.suggested" = "建議選項：%@，%@。%@。%@";
 "chat.action.confirmation.willAskFirst" = "會先詢問";

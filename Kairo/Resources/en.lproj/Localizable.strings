@@ -169,6 +169,7 @@
 "chat.provider.warning.localOnlyNoModel" = "Local Only is active but no downloaded model is selected.";
 "chat.provider.warning.preferLocalNoModel" = "Prefer Local needs a downloaded selected model before private/offline work can route locally.";
 "chat.provider.warning.openAIKeyMissing" = "%@ API key is not saved.";
+"chat.provider.mockPreviewResponse" = "Preview/test provider response. This is not a live model reply: %@";
 "chat.action.accessibility.preview" = "Action preview: %@, %@, %@";
 "chat.option.accessibility.suggested" = "Suggested option: %@, %@. %@. %@";
 "chat.action.confirmation.willAskFirst" = "Will ask first";

@@ -881,7 +881,10 @@ final class LocalModelFeatureTests: XCTestCase {
             userPrompt: "Use HomeKit to turn on the living room light."
         ))
 
-        XCTAssertTrue(response.message.contains("mock 回應"))
+        XCTAssertEqual(
+            response.message,
+            KairoL10n.string("chat.provider.mockPreviewResponse", "Use HomeKit to turn on the living room light.")
+        )
         XCTAssertFalse(response.message.contains("Local fallback"))
     }
 
