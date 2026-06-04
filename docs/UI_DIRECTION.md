@@ -56,6 +56,15 @@ Stage 3 refocuses Phone Tools:
 - HomeKit stays explicitly preview-only and visually separated from everyday
   tools.
 
+Stage 4 turns Workflows into a guided workflow gallery:
+
+- The screen now opens with workflow counts and a review-first safety state.
+- Sample recipes come before technical Shortcut demos, so users can create a
+  usable workflow path without reading implementation details first.
+- Saved recipes use one card pattern for preview, run, and pause actions.
+- Shortcut templates and action previews remain available, but are visually
+  secondary and explicitly manual.
+
 ## Next UI stages
 
 1. Memory Center
@@ -67,8 +76,8 @@ Stage 3 refocuses Phone Tools:
      to scan without reading every metadata line.
 
 3. Workflows
-   - Convert recipe/demo/template sections into a guided workflow gallery.
-   - Put preview/run/toggle into a consistent review-first card pattern.
+   - Continue tightening recipe rows after runtime smoke tests reveal the most
+     common workflow states.
 
 4. AI Setup and Settings
    - Separate everyday routing status from advanced model management.

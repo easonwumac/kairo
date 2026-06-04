@@ -37,79 +37,19 @@ public struct AutomationsView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(KairoL10n.string("automations.title"))
-                        .font(.headline)
-                        .fontWeight(.semibold)
-
-                    Text(KairoL10n.string("automations.subtitle"))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                automationSection(KairoL10n.string("automations.recipes.section")) {
-                    if recipes.isEmpty {
-                        Text(KairoL10n.string("automations.recipes.empty"))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    ForEach(recipes) { recipe in
-                        recipeRow(recipe)
-                    }
-                }
-                .accessibilityIdentifier("automations.list")
-
-                automationSection(KairoL10n.string("automations.shortcutTemplates.section")) {
-                    Text(shortcutTemplateRegistry.manualInstallDisclaimer)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("automations.shortcut-template.disclaimer")
-
-                    ForEach(shortcutTemplateRegistry.templates) { template in
-                        shortcutTemplateRow(template)
-                    }
-                }
-                .accessibilityIdentifier("automations.shortcut-templates")
-
-                automationSection(KairoL10n.string("automations.shortcutDemos.section")) {
-                    Text(KairoL10n.string("automations.shortcutDemos.detail"))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    ForEach(ShortcutDemoCatalog.default.recipes) { recipe in
-                        shortcutDemoRow(recipe)
-                    }
-                }
-                .accessibilityIdentifier("automations.shortcut-demos")
-
-                automationSection(KairoL10n.string("automations.recipeCenter.section")) {
-                    Text(KairoL10n.string("automations.recipeCenter.detail"))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    Button(KairoL10n.string("automations.recipeCenter.addSamples")) {
-                        Task { await seedSampleRecipes() }
-                    }
-                    .accessibilityLabel(KairoL10n.string("automations.recipeCenter.addSamples"))
-                    .accessibilityIdentifier("automations.seed-samples")
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-                .accessibilityIdentifier("automations.recipe-center")
+                workflowOverviewCard
+                recipeCenterCard
+                savedRecipesCard
+                shortcutTemplatesCard
+                shortcutDemoCard
 
                 if let message {
-                    automationSection(KairoL10n.string("automations.status.section")) {
-                        Text(message)
-                            .font(.caption2)
-                            .accessibilityIdentifier("automations.message")
-                    }
+                    statusCard(message)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 18)
-            .padding(.top, 20)
+            .padding(.horizontal, 16)
+            .padding(.top, 18)
             .padding(.bottom, 32)
         }
         .scrollIndicators(.hidden)
@@ -119,21 +59,169 @@ public struct AutomationsView: View {
         }
     }
 
-    private func automationSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            automationSectionHeader(title)
-            content()
-            Divider()
+    private var workflowOverviewCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(KairoL10n.string("automations.title"))
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(KairoDesign.ink)
+
+                    Text(KairoL10n.string("automations.subtitle"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                HStack(spacing: 8) {
+                    KairoStatusPill(
+                        title: KairoL10n.string("automations.status.recipes", Int64(recipes.count)),
+                        systemImage: "point.topleft.down.curvedto.point.bottomright.up",
+                        tint: KairoDesign.blue
+                    )
+                    KairoStatusPill(
+                        title: KairoL10n.string("automations.status.reviewFirst"),
+                        systemImage: "checkmark.shield.fill",
+                        tint: KairoDesign.green
+                    )
+                }
+
+                HStack(spacing: 8) {
+                    KairoStatusPill(
+                        title: KairoL10n.string("automations.status.templates", Int64(shortcutTemplateRegistry.templates.count)),
+                        systemImage: "square.and.arrow.up",
+                        tint: KairoDesign.violet
+                    )
+                    KairoStatusPill(
+                        title: KairoL10n.string("automations.status.previews", Int64(ShortcutDemoCatalog.default.recipes.count)),
+                        systemImage: "doc.text.magnifyingglass",
+                        tint: KairoDesign.amber
+                    )
+                }
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var recipeCenterCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                automationSectionTitle(
+                    title: KairoL10n.string("automations.recipeCenter.section"),
+                    subtitle: KairoL10n.string("automations.recipeCenter.detail")
+                )
+
+                Button {
+                    Task { await seedSampleRecipes() }
+                } label: {
+                    Label(KairoL10n.string("automations.recipeCenter.addSamples"), systemImage: "plus.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isLoading)
+                .accessibilityLabel(KairoL10n.string("automations.recipeCenter.addSamples"))
+                .accessibilityIdentifier("automations.seed-samples")
+            }
+        }
+        .accessibilityIdentifier("automations.recipe-center")
+    }
+
+    private var savedRecipesCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                automationSectionTitle(
+                    title: KairoL10n.string("automations.recipes.section"),
+                    subtitle: KairoL10n.string("automations.recipes.detail")
+                )
+
+                if recipes.isEmpty {
+                    Text(KairoL10n.string("automations.recipes.empty"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(recipes) { recipe in
+                        recipeRow(recipe)
+                        if recipe.id != recipes.last?.id {
+                            Divider()
+                        }
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("automations.list")
+    }
+
+    private var shortcutTemplatesCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                automationSectionTitle(
+                    title: KairoL10n.string("automations.shortcutTemplates.section"),
+                    subtitle: KairoL10n.string("automations.shortcutTemplates.detail")
+                )
+
+                Text(shortcutTemplateRegistry.manualInstallDisclaimer)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("automations.shortcut-template.disclaimer")
+
+                ForEach(shortcutTemplateRegistry.templates) { template in
+                    Divider()
+                    shortcutTemplateRow(template)
+                }
+            }
+        }
+        .accessibilityIdentifier("automations.shortcut-templates")
+    }
+
+    private var shortcutDemoCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                automationSectionTitle(
+                    title: KairoL10n.string("automations.shortcutDemos.section"),
+                    subtitle: KairoL10n.string("automations.shortcutDemos.detail")
+                )
+
+                ForEach(ShortcutDemoCatalog.default.recipes) { recipe in
+                    shortcutDemoRow(recipe)
+                    if recipe.id != ShortcutDemoCatalog.default.recipes.last?.id {
+                        Divider()
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("automations.shortcut-demos")
+    }
+
+    private func statusCard(_ message: String) -> some View {
+        KairoFocusCard {
+            Label(message, systemImage: "info.circle.fill")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("automations.message")
+        }
+    }
+
+    private func automationSectionTitle(title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            automationSectionHeader(title)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private func automationSectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.caption)
-            .fontWeight(.semibold)
-            .foregroundStyle(.secondary)
-            .textCase(.none)
+            .font(.headline.weight(.semibold))
+            .foregroundStyle(KairoDesign.ink)
+    }
+
+    private func automationSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            automationSectionHeader(title)
+            content()
+        }
     }
 
     private func shortcutTemplateRow(_ template: ShortcutTemplate) -> some View {
@@ -152,12 +240,17 @@ public struct AutomationsView: View {
             Text(template.setupInstructions.joined(separator: "\n"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(4)
                 .accessibilityIdentifier("automations.shortcut-template.\(template.identifier).instructions")
 
             if let installURL = template.installURL {
-                Button(KairoL10n.string("automations.shortcutTemplates.openTemplate")) {
+                Button {
                     openURL(installURL)
+                } label: {
+                    Label(KairoL10n.string("automations.shortcutTemplates.openTemplate"), systemImage: "arrow.up.right.square")
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
                 .accessibilityIdentifier("automations.shortcut-template.\(template.identifier).open")
             }
         }
@@ -178,16 +271,19 @@ public struct AutomationsView: View {
 
             Text(recipe.settingsStepSummary)
                 .font(.caption)
+                .lineLimit(2)
                 .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).steps")
 
             Text(recipe.settingsInputSummary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(2)
                 .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).input")
 
             Text(recipe.settingsOutputSummary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(2)
                 .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).output")
 
             if !recipe.settingsSampleInputPreview.isEmpty {
@@ -223,11 +319,12 @@ public struct AutomationsView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 Text(recipe.title)
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
                     .accessibilityIdentifier("automations.recipe.\(recipe.id)")
                 Spacer()
                 Text(recipe.isEnabled ? KairoL10n.string("automations.recipe.enabled") : KairoL10n.string("automations.recipe.disabled"))
-                    .font(.caption)
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(recipe.isEnabled ? .green : .secondary)
             }
 
@@ -239,21 +336,37 @@ public struct AutomationsView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
-            HStack {
-                Button(KairoL10n.string("automations.recipe.preview")) {
+            LazyVGrid(columns: [
+                GridItem(.flexible(minimum: 96), spacing: 8),
+                GridItem(.flexible(minimum: 96), spacing: 8),
+                GridItem(.flexible(minimum: 96), spacing: 8)
+            ], spacing: 8) {
+                Button {
                     Task { await preview(recipe) }
+                } label: {
+                    Label(KairoL10n.string("automations.recipe.preview"), systemImage: "doc.text.magnifyingglass")
+                        .frame(maxWidth: .infinity)
                 }
                 .disabled(!recipe.isEnabled || isLoading)
                 .accessibilityIdentifier("automations.recipe.\(recipe.id).preview")
 
-                Button(KairoL10n.string("automations.recipe.run")) {
+                Button {
                     Task { await run(recipe) }
+                } label: {
+                    Label(KairoL10n.string("automations.recipe.run"), systemImage: "play.circle")
+                        .frame(maxWidth: .infinity)
                 }
                 .disabled(!recipe.isEnabled || isLoading)
                 .accessibilityIdentifier("automations.recipe.\(recipe.id).run")
 
-                Button(recipe.isEnabled ? KairoL10n.string("automations.recipe.disable") : KairoL10n.string("automations.recipe.enable")) {
+                Button {
                     Task { await toggle(recipe) }
+                } label: {
+                    Label(
+                        recipe.isEnabled ? KairoL10n.string("automations.recipe.disable") : KairoL10n.string("automations.recipe.enable"),
+                        systemImage: recipe.isEnabled ? "pause.circle" : "play.circle.fill"
+                    )
+                    .frame(maxWidth: .infinity)
                 }
                 .disabled(isLoading)
                 .accessibilityIdentifier("automations.recipe.\(recipe.id).toggle")
