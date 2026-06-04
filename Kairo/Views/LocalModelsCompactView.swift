@@ -74,8 +74,8 @@ struct LocalModelsCompactView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 12)
-            .padding(.top, 12)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
             .padding(.bottom, 32)
         }
         .scrollIndicators(.visible)
@@ -84,8 +84,8 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactLocalModelControls: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 8) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(KairoL10n.string("settings.models.routePreference"))
                         .font(compactSectionHeadingFont)
@@ -96,14 +96,12 @@ struct LocalModelsCompactView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Spacer(minLength: 10)
-
                 compactRoutePreferenceMenu
             }
 
             Divider()
 
-            HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(KairoL10n.string("settings.models.catalog"))
                         .font(compactSectionHeadingFont)
@@ -115,8 +113,6 @@ struct LocalModelsCompactView: View {
                         .accessibilityIdentifier("settings.models.catalog-source")
                 }
 
-                Spacer(minLength: 10)
-
                 compactActionButton(
                     KairoL10n.string("settings.models.refresh"),
                     systemImage: "arrow.clockwise",
@@ -127,7 +123,7 @@ struct LocalModelsCompactView: View {
                 .accessibilityLabel(KairoL10n.string("settings.models.refreshCatalog"))
             }
         }
-        .padding(8)
+        .padding(12)
         .background(Color.white.opacity(0.86), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -141,7 +137,7 @@ struct LocalModelsCompactView: View {
     private var selectedModelSummary: some View {
         HStack(alignment: .center, spacing: 8) {
             Image(systemName: selectedModelSummaryIconName)
-                .font(.subheadline)
+                .font(.headline)
                 .foregroundStyle(selectedModelSummaryIconColor)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -159,7 +155,7 @@ struct LocalModelsCompactView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(8)
+        .padding(12)
         .background(Color.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -238,11 +234,11 @@ struct LocalModelsCompactView: View {
                     .lineLimit(1)
 
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 6.5, weight: .semibold))
+                    .font(.caption2.weight(.semibold))
             }
             .foregroundStyle(.blue)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
             .background(Color.blue.opacity(0.06), in: Capsule())
         }
         .buttonStyle(.plain)
@@ -252,8 +248,8 @@ struct LocalModelsCompactView: View {
 
     @ViewBuilder
     private func compactLocalModelRow(_ row: LocalModelSettingsRow) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
                 Text(row.displayName)
                     .font(compactModelNameFont)
                     .fontWeight(.semibold)
@@ -265,8 +261,8 @@ struct LocalModelsCompactView: View {
                 Text(row.statusText)
                     .font(compactModelStatusFont)
                     .foregroundStyle(localModelStatusColor(row.primaryAction))
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                     .background(localModelStatusColor(row.primaryAction).opacity(0.11), in: Capsule())
                     .accessibilityIdentifier("settings.models.\(row.modelID).status")
             }
@@ -274,17 +270,18 @@ struct LocalModelsCompactView: View {
             Text(row.detailText)
                 .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.tail)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
 
             runtimePills(for: row)
 
             Text(row.manifestTransparencyText)
                 .font(compactModelMetadataFont)
                 .foregroundStyle(.secondary.opacity(0.85))
-                .lineLimit(1)
+                .lineLimit(2)
                 .truncationMode(.tail)
                 .accessibilityIdentifier("settings.models.\(row.modelID).manifest")
+                .accessibilityHidden(true)
 
             if let benchmarkSummaryText = row.benchmarkSummaryText {
                 Text(benchmarkSummaryText)
@@ -295,7 +292,7 @@ struct LocalModelsCompactView: View {
                     .accessibilityIdentifier("settings.models.\(row.modelID).benchmark")
             }
 
-            LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 4) {
+            LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 8) {
                 compactLocalModelAction(for: row)
 
                 if row.benchmarkSummaryText != nil {
@@ -348,7 +345,7 @@ struct LocalModelsCompactView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(5)
+        .padding(12)
         .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -359,15 +356,15 @@ struct LocalModelsCompactView: View {
     }
 
     private func runtimePills(for row: LocalModelSettingsRow) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             ForEach(Array(row.runtimePillTexts.enumerated()), id: \.offset) { index, text in
                 Text(text)
                     .font(compactModelMetadataFont)
                     .fontWeight(.medium)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                     .background(Color.blue.opacity(0.06), in: Capsule())
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("settings.models.\(row.modelID).runtime-pill.\(index)")
@@ -379,22 +376,22 @@ struct LocalModelsCompactView: View {
     }
 
     private var compactButtonGridColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 52), spacing: 4, alignment: .leading)]
+        [GridItem(.adaptive(minimum: 108), spacing: 8, alignment: .leading)]
     }
 
-    private var compactSectionTitleFont: Font { .system(size: 10, weight: .semibold) }
+    private var compactSectionTitleFont: Font { .title3.weight(.semibold) }
 
-    private var compactSectionHeadingFont: Font { .system(size: 7, weight: .semibold) }
+    private var compactSectionHeadingFont: Font { .subheadline.weight(.semibold) }
 
-    private var compactModelNameFont: Font { .system(size: 7, weight: .semibold) }
+    private var compactModelNameFont: Font { .subheadline.weight(.semibold) }
 
-    private var compactModelMetadataFont: Font { .system(size: 6) }
+    private var compactModelMetadataFont: Font { .caption }
 
-    private var compactModelStatusFont: Font { .system(size: 6, weight: .semibold) }
+    private var compactModelStatusFont: Font { .caption2.weight(.semibold) }
 
-    private var compactButtonLabelFont: Font { .system(size: 6, weight: .semibold) }
+    private var compactButtonLabelFont: Font { .caption.weight(.semibold) }
 
-    private var compactControlValueFont: Font { .system(size: 8, weight: .semibold) }
+    private var compactControlValueFont: Font { .subheadline.weight(.semibold) }
 
     @ViewBuilder
     private func compactLocalModelAction(for row: LocalModelSettingsRow) -> some View {
@@ -421,17 +418,21 @@ struct LocalModelsCompactView: View {
             Label(row.primaryAction.title, systemImage: "checkmark.circle.fill")
                 .font(compactButtonLabelFont)
                 .foregroundStyle(.green)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
                 .accessibilityIdentifier("settings.models.\(row.modelID).select")
         case .unavailable:
             Text(row.primaryAction.title)
                 .font(compactButtonLabelFont)
                 .foregroundStyle(.secondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
                 .accessibilityIdentifier("settings.models.\(row.modelID).unavailable")
         }
     }
 
     private func downloadPreview(for row: LocalModelSettingsRow) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(KairoL10n.string("settings.models.download.approvalRequired"))
                 .font(compactModelStatusFont)
                 .fontWeight(.semibold)
@@ -462,7 +463,7 @@ struct LocalModelsCompactView: View {
                 .foregroundStyle(.secondary.opacity(0.9))
                 .lineLimit(2)
 
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 compactActionButton(
                     KairoL10n.string("settings.models.download.confirm"),
                     systemImage: "checkmark.circle",
@@ -483,7 +484,7 @@ struct LocalModelsCompactView: View {
                 }
             }
         }
-        .padding(6)
+        .padding(10)
         .background(Color.blue.opacity(0.055), in: RoundedRectangle(cornerRadius: 7))
         .overlay {
             RoundedRectangle(cornerRadius: 7)
@@ -494,7 +495,7 @@ struct LocalModelsCompactView: View {
     }
 
     private func downloadProgressView(_ progress: LocalModelDownloadProgressState, row: LocalModelSettingsRow) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 ProgressView(value: progress.fractionCompleted)
                     .progressViewStyle(.linear)
@@ -528,7 +529,7 @@ struct LocalModelsCompactView: View {
                 }
             }
         }
-        .padding(6)
+        .padding(10)
         .background(Color.orange.opacity(0.055), in: RoundedRectangle(cornerRadius: 7))
         .overlay {
             RoundedRectangle(cornerRadius: 7)
@@ -555,8 +556,8 @@ struct LocalModelsCompactView: View {
                 .imageScale(.small)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 3)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .foregroundStyle(tint)
                 .background(tint.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))

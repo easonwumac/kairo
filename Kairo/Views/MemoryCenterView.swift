@@ -45,40 +45,9 @@ public struct MemoryCenterView: View {
                         .accessibilityIdentifier("memory.export.share")
                     }
 
-                    KairoGroupedSurface {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack(spacing: 10) {
-                                TextField(KairoL10n.string("memory.search.placeholder"), text: $searchQuery)
-                                    .accessibilityIdentifier("memory.search.text")
+                    memorySearchSection
 
-                                if !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                    Button(KairoL10n.string("memory.search.clear")) { searchQuery = "" }
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(KairoDesign.blue)
-                                        .accessibilityIdentifier("memory.search.clear")
-                                }
-                            }
-
-                            Text(searchSummary)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .accessibilityIdentifier("memory.search.summary")
-
-                            Divider()
-
-                            HStack(spacing: 10) {
-                                TextField(KairoL10n.string("memory.add.placeholder"), text: $draft, axis: .vertical)
-                                    .lineLimit(1...4)
-                                    .accessibilityIdentifier("memory.add.text")
-
-                                Button(KairoL10n.string("memory.add.save")) { save() }
-                                    .font(.subheadline.weight(.semibold))
-                                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                                    .accessibilityIdentifier("memory.add.save")
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
+                    memoryAddSection
 
                     if let errorMessage {
                         Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
@@ -100,7 +69,7 @@ public struct MemoryCenterView: View {
                             .padding(.vertical, 10)
                         } else {
                             ForEach(memories) { memory in
-                                HStack(alignment: .top, spacing: 10) {
+                                HStack(alignment: .top, spacing: 12) {
                                     VStack(alignment: .leading, spacing: 5) {
                                         Text(memory.title)
                                             .font(.subheadline.weight(.semibold))
@@ -120,9 +89,11 @@ public struct MemoryCenterView: View {
                                     Button(role: .destructive) {
                                         delete(memory)
                                     } label: {
-                                        Image(systemName: "trash")
+                                        Label(KairoL10n.string("memory.delete.accessibility"), systemImage: "trash")
+                                            .labelStyle(.iconOnly)
                                             .font(.subheadline.weight(.semibold))
-                                            .frame(width: 32, height: 32)
+                                            .frame(width: 36, height: 36)
+                                            .background(KairoDesign.red.opacity(0.10), in: Circle())
                                     }
                                     .buttonStyle(.plain)
                                     .foregroundStyle(KairoDesign.red)
@@ -151,6 +122,66 @@ public struct MemoryCenterView: View {
             .navigationTitle(KairoL10n.string("memory.navigationTitle"))
             .task(id: searchQuery) { await reload() }
             .refreshable { await reload() }
+        }
+    }
+
+    private var memorySearchSection: some View {
+        KairoGroupedSurface {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(KairoL10n.string("memory.search.section"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 22, height: 22)
+
+                    TextField(KairoL10n.string("memory.search.placeholder"), text: $searchQuery)
+                        .accessibilityIdentifier("memory.search.text")
+
+                    if !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Button(KairoL10n.string("memory.search.clear")) { searchQuery = "" }
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                            .accessibilityIdentifier("memory.search.clear")
+                    }
+                }
+
+                Text(searchSummary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("memory.search.summary")
+            }
+        }
+    }
+
+    private var memoryAddSection: some View {
+        KairoGroupedSurface {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(KairoL10n.string("memory.add.section"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                TextField(KairoL10n.string("memory.add.placeholder"), text: $draft, axis: .vertical)
+                    .lineLimit(2...5)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .accessibilityIdentifier("memory.add.text")
+
+                Button {
+                    save()
+                } label: {
+                    Label(KairoL10n.string("memory.add.save"), systemImage: "plus.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityIdentifier("memory.add.save")
+            }
         }
     }
 
