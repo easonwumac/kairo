@@ -249,6 +249,25 @@ final class SandboxActionExecutorTests: XCTestCase {
         XCTAssertEqual(createdTitles, ["Review Shortcut node outputs"])
     }
 
+    func testSandboxActionExecutorReportsReminderPermissionDeniedWithSettingsRecovery() async throws {
+        let scheduler = MockReminderScheduler(granted: false)
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), reminderScheduler: scheduler)
+        let action = AgentAction(
+            kind: .createReminderDraft,
+            title: "Create Reminder",
+            rationale: "User confirmed Kairo may write an EventKit reminder.",
+            payload: .reminder(ReminderDraft(title: "Permission denied QA", notes: nil, dueDate: nil)),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+
+        XCTAssertFalse(result.completed)
+        XCTAssertEqual(result.message, "Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again.")
+        let createdTitles = await scheduler.createdDrafts.map(\.title)
+        XCTAssertEqual(createdTitles, [])
+    }
+
     func testSandboxActionExecutorRecordsAuditEventAfterConfirmedReminderCreation() async throws {
         let scheduler = MockReminderScheduler(granted: true)
         let auditLogger = InMemoryAuditLogger()
@@ -338,7 +357,7 @@ final class SandboxActionExecutorTests: XCTestCase {
         let auditEvents = try await auditLogger.list(limit: 10)
 
         XCTAssertFalse(result.completed)
-        XCTAssertEqual(result.message, "Calendar permission was not granted.")
+        XCTAssertEqual(result.message, "Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again.")
         XCTAssertEqual(auditEvents.count, 1)
         XCTAssertEqual(auditEvents.first?.actionKind, .createCalendarDraft)
         XCTAssertEqual(auditEvents.first?.capabilityKeys, [.calendar])
@@ -441,7 +460,7 @@ final class SandboxActionExecutorTests: XCTestCase {
         let result = try await executor.execute(action, confirmed: true)
 
         XCTAssertFalse(result.completed)
-        XCTAssertEqual(result.message, "Calendar permission was not granted.")
+        XCTAssertEqual(result.message, "Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again.")
         let createdTitles = await scheduler.createdDrafts.map(\.title)
         XCTAssertEqual(createdTitles, [])
     }

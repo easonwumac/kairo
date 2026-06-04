@@ -124,13 +124,13 @@ public actor SandboxActionExecutor: ActionExecutor {
             return ActionExecutionResult(completed: true, message: "Saved memory.", createdIdentifier: memory.id.uuidString)
         case (.createReminderDraft, .reminder(let draft)):
             guard try await reminderScheduler.requestAccess() else {
-                return ActionExecutionResult(completed: false, message: "Reminder permission was not granted.")
+                return ActionExecutionResult(completed: false, message: Self.permissionDeniedMessage(for: "Reminders"))
             }
             let identifier = try await reminderScheduler.createReminder(from: draft)
             return ActionExecutionResult(completed: true, message: "Created reminder.", createdIdentifier: identifier)
         case (.createCalendarDraft, .calendarEvent(let draft)):
             guard try await calendarScheduler.requestAccess() else {
-                return ActionExecutionResult(completed: false, message: "Calendar permission was not granted.")
+                return ActionExecutionResult(completed: false, message: Self.permissionDeniedMessage(for: "Calendar"))
             }
             let identifier = try await calendarScheduler.createCalendarEvent(from: draft)
             return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: identifier)
@@ -316,6 +316,10 @@ public actor SandboxActionExecutor: ActionExecutor {
         default:
             return false
         }
+    }
+
+    private static func permissionDeniedMessage(for serviceName: String) -> String {
+        "\(serviceName) permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
     }
 }
 
