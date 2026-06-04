@@ -691,6 +691,19 @@ Stage 72 makes Models diagnostics status-first:
   runtime diagnostics, and existing Models smoke identifiers keep their current
   paths.
 
+Stage 73 makes Settings setup controls action-first:
+
+- Connection details no longer opens with setup explanation copy; it goes
+  directly to cloud key and connected-account status.
+- API key editing opens directly on the secure field and save/dry-run/delete
+  controls instead of a cloud-model explanation.
+- Privacy and OAuth rows keep their controls and boundary text, but no longer
+  repeat general setup explanations before the user can act.
+- Privacy cleanup no longer uses nested disclosure; the card shows audit
+  status, boundary, detail, and the destructive clear action in one layer.
+- Connection setup, API key, privacy cleanup, OAuth details, and existing
+  Settings smoke flows keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit

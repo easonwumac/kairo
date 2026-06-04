@@ -604,13 +604,10 @@
 "settings.routing.details.title" = "Setup details";
 "settings.routing.details.subtitle" = "Cloud key, accounts, and local model status stay here.";
 "settings.connection.section" = "Connection setup";
-"settings.connection.detail" = "Manage cloud keys, connected accounts, and privacy controls only when setup needs attention.";
 "settings.connection.show" = "Show connection setup";
 "settings.connection.hide" = "Hide connection setup";
 "settings.connection.details.title" = "Connection details";
-"settings.connection.details.subtitle" = "Cloud key and connected account status stay here.";
 "settings.openai.section" = "OpenAI";
-"settings.openai.detail" = "Connect Kairo to a cloud model when you want online answers.";
 "settings.openai.apiKey" = "API Key";
 "settings.openai.apiKeyPlaceholder" = "sk-...";
 "settings.openai.keychainNote" = "Stored in Keychain only.";
@@ -631,7 +628,6 @@
 "settings.openai.error.emptyAPIKey" = "OpenAI API key is empty. Paste an API key before saving or running a dry run.";
 "settings.openai.loadFailed" = "Could not load settings: %@";
 "settings.oauth.section" = "Connected accounts";
-"settings.oauth.detail" = "Let Chat suggest visible handoffs for services you authorize.";
 "settings.oauth.empty" = "Connector status has not loaded yet.";
 "settings.oauth.status.connected" = "Connected";
 "settings.oauth.status.readyToAuthorize" = "Ready to authorize";
@@ -659,13 +655,8 @@
 "settings.oauth.callback.readyForTokenExchange" = "ready for configured token exchange";
 "settings.oauth.callback.authorizationCodeReceived" = "%@ authorization code received (%lld chars); %@.";
 "settings.privacy.section" = "Privacy";
-"settings.privacy.detail" = "Review what Kairo stores locally and clear audit metadata.";
-"settings.privacy.show" = "Show privacy cleanup";
-"settings.privacy.hide" = "Hide privacy cleanup";
 "settings.privacy.keychainBoundary" = "API keys should only be stored in Keychain. Kairo should not write secrets to UserDefaults, logs, or analytics.";
 "settings.privacy.auditLog" = "Audit log";
-"settings.privacy.auditLogDetails.show" = "Show audit log cleanup";
-"settings.privacy.auditLogDetails.hide" = "Hide audit log cleanup";
 "settings.privacy.clearAuditLog" = "Clear Audit Log";
 "settings.privacy.auditLogDetail" = "Clears the local metadata-only audit log. It does not delete chat history, memories, API keys, OAuth tokens, or downloaded models.";
 "settings.privacy.statusReady" = "Audit controls ready.";

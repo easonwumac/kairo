@@ -604,13 +604,10 @@
 "settings.routing.details.title" = "設定細節";
 "settings.routing.details.subtitle" = "Cloud key、連接帳號與 local model 狀態都放在這裡。";
 "settings.connection.section" = "連線設定";
-"settings.connection.detail" = "只有設定需要處理時，再管理 cloud key、連接帳號與隱私控制。";
 "settings.connection.show" = "顯示連線設定";
 "settings.connection.hide" = "隱藏連線設定";
 "settings.connection.details.title" = "連線細節";
-"settings.connection.details.subtitle" = "Cloud key 與連接帳號狀態放在這裡。";
 "settings.openai.section" = "OpenAI";
-"settings.openai.detail" = "需要線上回覆時，讓 Kairo 連到 cloud model。";
 "settings.openai.apiKey" = "API Key";
 "settings.openai.apiKeyPlaceholder" = "sk-...";
 "settings.openai.keychainNote" = "只儲存在 Keychain。";
@@ -631,7 +628,6 @@
 "settings.openai.error.emptyAPIKey" = "OpenAI API key 是空的。請先貼上 API key，再儲存或執行 dry run。";
 "settings.openai.loadFailed" = "讀取設定失敗：%@";
 "settings.oauth.section" = "已連接帳號";
-"settings.oauth.detail" = "授權後，Chat 可以替這些服務建議可見 handoff。";
 "settings.oauth.empty" = "尚未載入 connector 狀態。";
 "settings.oauth.status.connected" = "已連線";
 "settings.oauth.status.readyToAuthorize" = "可授權";
@@ -659,13 +655,8 @@
 "settings.oauth.callback.readyForTokenExchange" = "已可使用已設定的 token exchange";
 "settings.oauth.callback.authorizationCodeReceived" = "%@ 已收到 authorization code（%lld 字元）；%@。";
 "settings.privacy.section" = "隱私";
-"settings.privacy.detail" = "檢查 Kairo 本機保存的內容，並清除 audit metadata。";
-"settings.privacy.show" = "顯示隱私清理";
-"settings.privacy.hide" = "隱藏隱私清理";
 "settings.privacy.keychainBoundary" = "API key 只應儲存在 Keychain。Kairo 不應把 secret 寫入 UserDefaults、log 或 analytics。";
 "settings.privacy.auditLog" = "Audit log";
-"settings.privacy.auditLogDetails.show" = "顯示 audit log 清理";
-"settings.privacy.auditLogDetails.hide" = "隱藏 audit log 清理";
 "settings.privacy.clearAuditLog" = "清除 Audit Log";
 "settings.privacy.auditLogDetail" = "清除本機 metadata-only audit log。這不會刪除 chat history、memories、API keys、OAuth tokens 或已下載模型。";
 "settings.privacy.statusReady" = "Audit 控制已就緒。";
