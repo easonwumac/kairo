@@ -16,7 +16,7 @@ extension AgentToolInvocationPlanner {
                 requiredCapabilities: skill.requiredCapabilities,
                 riskTier: riskTier,
                 requiresConfirmation: requiresConfirmation,
-                handoffSummary: "Preview the installed HomeKit skill; HomeKit permission and visible confirmation are required before execution.",
+                handoffSummary: KairoL10n.string("chat.tool.summary.homeKitSkill"),
                 action: skill.action
             )
         case .shortcutWorkflow:
@@ -44,7 +44,7 @@ extension AgentToolInvocationPlanner {
                 requiredCapabilities: skill.requiredCapabilities,
                 riskTier: .tier3HighRiskExternal,
                 requiresConfirmation: true,
-                handoffSummary: "Use the installed OAuth connector through official OAuth/API access; private app data is unavailable."
+                handoffSummary: KairoL10n.string("chat.tool.summary.oauthSkill")
             )
         case .custom:
             guard matchesGenericSkill(skill, normalizedText: normalizedText) else { return nil }
@@ -57,7 +57,7 @@ extension AgentToolInvocationPlanner {
                 requiredCapabilities: skill.requiredCapabilities,
                 riskTier: skill.action?.riskTier ?? .tier1Draft,
                 requiresConfirmation: (skill.action?.riskTier ?? .tier1Draft).requiresConfirmation,
-                handoffSummary: "Use the installed managed skill package through Kairo's confirmation flow.",
+                handoffSummary: KairoL10n.string("chat.tool.summary.managedSkill"),
                 action: skill.action
             )
         case .localModel:
@@ -79,7 +79,7 @@ extension AgentToolInvocationPlanner {
             requiredCapabilities: integration.requiredCapabilities,
             riskTier: .tier3HighRiskExternal,
             requiresConfirmation: true,
-            handoffSummary: "Use \(integration.displayName) through official OAuth/API connector metadata; private app data is unavailable and account writes require confirmation."
+            handoffSummary: KairoL10n.string("chat.tool.summary.integration", integration.displayName)
         )
     }
 
@@ -127,7 +127,7 @@ extension AgentToolInvocationPlanner {
     }
 
     func shortcutHandoffSummary(for skill: AgentSkill) -> String {
-        let boundary = "Visible App Intents/Shortcuts handoff; Kairo does not install Apple Shortcuts silently."
+        let boundary = KairoL10n.string("chat.tool.summary.shortcutBoundary")
         guard
             let recipeID = skill.shortcutRecipeID,
             let recipe = ShortcutDemoCatalog.default.recipe(id: recipeID)

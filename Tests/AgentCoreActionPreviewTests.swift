@@ -23,7 +23,7 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         let candidate = try XCTUnwrap(response.toolCandidates.first { $0.skillID == "shortcut-save-shared-text" })
         XCTAssertEqual(candidate.skillKind, .shortcutWorkflow)
         XCTAssertEqual(candidate.shortcutRecipeID, "save-shared-text")
-        XCTAssertTrue(candidate.handoffSummary.contains("Kairo does not install Apple Shortcuts silently"))
+        XCTAssertTrue(candidate.handoffSummary.contains(KairoL10n.string("chat.tool.summary.shortcutBoundary")))
         XCTAssertTrue(response.proposedActions.isEmpty)
     }
 

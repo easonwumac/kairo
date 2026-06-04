@@ -210,6 +210,11 @@
 "chat.action.reminder.defaultNotes" = "由 Kairo chat request 建立的草稿。";
 "chat.option.reviewFirst" = "先檢查";
 "chat.option.visibleHandoff" = "可見 handoff";
+"chat.tool.summary.homeKitSkill" = "預覽已安裝的 HomeKit skill；執行前需要 HomeKit 權限與可見確認。";
+"chat.tool.summary.oauthSkill" = "透過官方 OAuth/API 存取使用已安裝的 OAuth connector；無法讀取 private app data。";
+"chat.tool.summary.managedSkill" = "透過 Kairo 的確認流程使用已安裝的 managed skill package。";
+"chat.tool.summary.integration" = "透過官方 OAuth/API connector metadata 使用 %@；無法讀取 private app data，帳號寫入也需要確認。";
+"chat.tool.summary.shortcutBoundary" = "可見 App Intents/Shortcuts handoff；Kairo 不會靜默安裝 Apple Shortcuts。";
 "chat.history.title" = "聊天紀錄";
 "chat.history.empty.title" = "還沒有聊天紀錄";
 "chat.history.empty.description" = "送出訊息後會建立第一個已儲存的聊天。";

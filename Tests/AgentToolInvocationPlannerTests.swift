@@ -13,7 +13,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(candidate.shortcutRecipeID, "save-shared-text")
         XCTAssertEqual(candidate.riskTier, .tier1Draft)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertTrue(candidate.handoffSummary.contains("Kairo does not install Apple Shortcuts silently"))
+        XCTAssertTrue(candidate.handoffSummary.contains(KairoL10n.string("chat.tool.summary.shortcutBoundary")))
         XCTAssertTrue(candidate.handoffSummary.contains("2 steps: saveMemory -> extractTasks"))
         XCTAssertTrue(candidate.handoffSummary.contains("Input: text, sourceName, variables"))
         XCTAssertTrue(candidate.handoffSummary.contains("Output: memoryID, fields.taskCount"))
@@ -48,7 +48,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         let meetingCandidate = try XCTUnwrap(meetingPlan.candidates.first { $0.skillID == "shortcut-meeting-prep-brief" })
         XCTAssertEqual(meetingCandidate.shortcutRecipeID, "meeting-prep-brief")
         XCTAssertEqual(meetingCandidate.riskTier, .tier1Draft)
-        XCTAssertTrue(meetingCandidate.handoffSummary.contains("Shortcuts handoff"))
+        XCTAssertTrue(meetingCandidate.handoffSummary.contains(KairoL10n.string("chat.tool.summary.shortcutBoundary")))
     }
 
     func testAgentToolInvocationPlannerSuggestsHomeKitActionWithConfirmation() throws {
@@ -97,8 +97,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(candidate.skillKind, .oauthConnector)
         XCTAssertEqual(candidate.riskTier, .tier3HighRiskExternal)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertTrue(candidate.handoffSummary.contains("official OAuth/API"))
-        XCTAssertTrue(candidate.handoffSummary.contains("private app data is unavailable"))
+        XCTAssertEqual(candidate.handoffSummary, KairoL10n.string("chat.tool.summary.integration", "Gmail / Google Workspace"))
         XCTAssertNil(candidate.action)
     }
 

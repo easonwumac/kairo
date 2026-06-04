@@ -210,6 +210,11 @@
 "chat.action.reminder.defaultNotes" = "Drafted from a Kairo chat request.";
 "chat.option.reviewFirst" = "Review first";
 "chat.option.visibleHandoff" = "Visible handoff";
+"chat.tool.summary.homeKitSkill" = "Preview the installed HomeKit skill; HomeKit permission and visible confirmation are required before execution.";
+"chat.tool.summary.oauthSkill" = "Use the installed OAuth connector through official OAuth/API access; private app data is unavailable.";
+"chat.tool.summary.managedSkill" = "Use the installed managed skill package through Kairo's confirmation flow.";
+"chat.tool.summary.integration" = "Use %@ through official OAuth/API connector metadata; private app data is unavailable and account writes require confirmation.";
+"chat.tool.summary.shortcutBoundary" = "Visible App Intents/Shortcuts handoff; Kairo does not install Apple Shortcuts silently.";
 "chat.history.title" = "History";
 "chat.history.empty.title" = "No History Yet";
 "chat.history.empty.description" = "Send a message to create your first saved chat.";
