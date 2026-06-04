@@ -635,6 +635,15 @@ Stage 66 makes empty Workflows action-first:
 - Saved workflow lists, recipe preview/run controls, advanced references, and
   existing workflow smoke identifiers keep their current paths.
 
+Stage 67 makes Models diagnostics quieter:
+
+- Advanced diagnostics no longer explains catalog/runtime/manifest checks on
+  the collapsed row.
+- The Models first layer stays focused on answer route, selected model, and the
+  starter model action; troubleshooting context appears only after expansion.
+- Route preference, starter model rows, download confirmation, catalog refresh,
+  runtime checks, and model diagnostics identifiers keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit

@@ -119,16 +119,9 @@ struct LocalModelsCompactView: View {
                     }
                 } label: {
                     HStack(alignment: .center, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(KairoL10n.string("settings.models.advanced.section"))
-                                .font(.headline.weight(.semibold))
-                                .foregroundStyle(KairoDesign.ink)
-
-                            Text(KairoL10n.string("settings.models.advanced.detail"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                        Text(KairoL10n.string("settings.models.advanced.section"))
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.ink)
 
                         Spacer(minLength: 8)
 
@@ -145,6 +138,11 @@ struct LocalModelsCompactView: View {
 
                 if showAdvancedDiagnostics {
                     Divider()
+
+                    Text(KairoL10n.string("settings.models.advanced.detail"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text(KairoL10n.string("settings.models.starter.subtitle"))
                         .font(compactModelMetadataFont)
