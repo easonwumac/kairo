@@ -511,6 +511,9 @@
 "chat.action.preview.field.destination" = "目的地";
 "chat.action.preview.field.confirmation" = "確認方式";
 "chat.action.preview.field.payload" = "要檢查的內容";
+"chat.action.preview.payloadDetail" = "只有需要檢查完整草稿或 handoff payload 時再展開。";
+"chat.action.preview.payload.show" = "顯示內容細節";
+"chat.action.preview.payload.hide" = "隱藏內容細節";
 "chat.action.preview.confirmation.required" = "任何變更前都會先在這裡確認。";
 "chat.action.preview.confirmation.unavailable" = "此動作無法在 iOS sandbox 中執行。";
 "chat.action.preview.destination.reminders" = "Reminders";

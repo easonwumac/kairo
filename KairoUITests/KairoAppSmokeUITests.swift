@@ -815,6 +815,11 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
         XCTAssertTrue(findStaticText(containing: "Create Reminder", direction: .both, maxSwipes: 1).exists)
+        XCTAssertFalse(anyElement("chat.action.payload.details").exists)
+        let payloadDetails = findButton("chat.action.payload.toggle", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(payloadDetails.exists)
+        tapElement(payloadDetails)
+        XCTAssertTrue(anyElement("chat.action.payload.details").waitForExistence(timeout: 3))
         XCTAssertTrue(findStaticText(containing: "Send prototype link", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "Creates reminder", direction: .both, maxSwipes: 1).exists)
         XCTAssertFalse(findStaticText(containing: "tier2LowRiskWrite", direction: .both, maxSwipes: 1).exists)

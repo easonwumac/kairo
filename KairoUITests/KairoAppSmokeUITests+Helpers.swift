@@ -307,6 +307,11 @@ extension KairoAppSmokeUITests {
         tapElement(action)
 
         XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
+        let payloadDetails = findButton("chat.action.payload.toggle", direction: .both, maxSwipes: 1)
+        if payloadDetails.exists {
+            tapElement(payloadDetails)
+            XCTAssertTrue(anyElement("chat.action.payload.details").waitForExistence(timeout: 3))
+        }
         for text in previewContains {
             XCTAssertTrue(findStaticText(containing: text, direction: .both, maxSwipes: 1).exists, text)
         }

@@ -158,6 +158,15 @@ Stage 15 makes Phone Tools action-first:
 - Existing controls remain reachable after expansion, but Tools reads as a
   support room for Chat rather than a marketplace or demo console.
 
+Stage 16 makes Action Preview checklist-first:
+
+- Action Preview now keeps capability, destination, reason, risk, and confirmation
+  as the first-level decision surface.
+- Exact draft or handoff payload details live behind a content details disclosure
+  so users are not forced through long fields before confirming.
+- Confirm and Go Back remain visible without opening details, preserving the
+  review-first safety flow while reducing text overload.
+
 ## Next UI stages
 
 1. Memory Center
@@ -177,8 +186,8 @@ Stage 15 makes Phone Tools action-first:
      which local-model states users need on the first screen.
 
 5. Action Preview
-   - Continue tuning checklist labels after broader smoke coverage shows which
-     action types need stronger destination or permission summaries.
+   - Continue tuning action-specific summaries after smoke coverage shows which
+     destination or permission states are still ambiguous.
 
 ## What to avoid
 

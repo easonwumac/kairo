@@ -2,6 +2,8 @@
 import SwiftUI
 
 public struct ActionPreviewView: View {
+    @State private var showPayloadDetails = false
+
     public let action: AgentAction
     public let descriptor: SandboxActionDescriptor?
     public let onConfirm: () -> Void
@@ -31,14 +33,7 @@ public struct ActionPreviewView: View {
                 previewHeader
                 reviewChecklistCard
 
-                KairoGroupedSurface {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(KairoL10n.string("chat.action.preview.field.payload"))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        actionPayloadPreview
-                    }
-                }
+                payloadDetailsCard
 
                 HStack(spacing: 12) {
                     Button(role: .cancel, action: onCancel) {
@@ -90,6 +85,55 @@ public struct ActionPreviewView: View {
             }
 
             Spacer(minLength: 0)
+        }
+    }
+
+    private var payloadDetailsCard: some View {
+        KairoGroupedSurface {
+            VStack(alignment: .leading, spacing: 10) {
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showPayloadDetails.toggle()
+                    }
+                } label: {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                            .frame(width: 28, height: 28)
+                            .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(KairoL10n.string("chat.action.preview.field.payload"))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                            Text(KairoL10n.string("chat.action.preview.payloadDetail"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: showPayloadDetails ? "chevron.up" : "chevron.down")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("chat.action.payload.toggle")
+                .accessibilityLabel(showPayloadDetails ? KairoL10n.string("chat.action.preview.payload.hide") : KairoL10n.string("chat.action.preview.payload.show"))
+
+                if showPayloadDetails {
+                    Divider()
+                    VStack(alignment: .leading, spacing: 0) {
+                        actionPayloadPreview
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("chat.action.payload.details")
+                }
+            }
         }
     }
 
