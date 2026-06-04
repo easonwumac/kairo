@@ -544,6 +544,29 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(readme.contains("remaining gaps are progress/cancel UI"))
     }
 
+    func testPrivacyLabelsChecklistKeepsDeletionAndLabelBoundariesCurrent() throws {
+        let root = packageRootURL()
+        let privacyChecklist = try String(
+            contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(privacyChecklist.contains("Tracking: No."))
+        XCTAssertTrue(privacyChecklist.contains("Data collected: No collected data."))
+        XCTAssertTrue(privacyChecklist.contains("Required Reason API usage: UserDefaults only, reason `CA92.1`."))
+        XCTAssertTrue(privacyChecklist.contains("no analytics SDK, no ad tracking, no backend account, no cloud memory sync, no crash/telemetry collection provider, and no provider-side sync beyond user-configured API calls"))
+        XCTAssertTrue(privacyChecklist.contains("## Deletion Evidence Boundary"))
+        XCTAssertTrue(privacyChecklist.contains("Current deletion proof is on-device and user-triggered only"))
+        XCTAssertTrue(privacyChecklist.contains("Chat history: delete a thread from Chat history"))
+        XCTAssertTrue(privacyChecklist.contains("Memory Center delete/export covers active records"))
+        XCTAssertTrue(privacyChecklist.contains("Settings / Models delete removes installed model files and clears selected-model state"))
+        XCTAssertTrue(privacyChecklist.contains("Settings delete/disconnect removes Keychain-backed secrets"))
+        XCTAssertTrue(privacyChecklist.contains("Settings / Privacy exposes Clear Audit Log for metadata-only audit records"))
+        XCTAssertTrue(privacyChecklist.contains("not applicable in the current beta because Kairo has no backend account"))
+        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("backend account deletion is supported"))
+        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("cloud-sync deletion is supported"))
+    }
+
     func testRealDeviceSignOffDocsRequirePhysicalDeviceEvidence() throws {
         let root = packageRootURL()
         let signOff = try String(
