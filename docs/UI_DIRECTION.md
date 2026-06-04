@@ -262,11 +262,20 @@ Stage 26 makes Memory records context-first:
 - Delete moved into Details so the Memory Center reads as a context library
   first, not a table of record-management controls.
 
+Stage 27 makes Chat start-path-first:
+
+- The empty Chat focus panel now presents one primary starting path instead of
+  three equally weighted command rows.
+- Plan and Reply remain available as compact secondary chips, keeping the
+  first screen useful without reading like a feature catalog.
+- The review-first promise stays in short supporting copy instead of a separate
+  status pill competing with the user's first action.
+
 ## Next UI stages
 
-1. Chat
-   - Continue reducing first-level helper copy and make suggested jobs feel like
-     one clear starting path before exposing routing or setup details.
+1. Chat suggested actions
+   - Continue reducing proposed action and tool-candidate cards so review,
+     risk, and destination appear before capability labels or handoff prose.
 
 2. Phone Tools and Skill Manager
    - Continue tuning skill-card density inside Skill library after simulator

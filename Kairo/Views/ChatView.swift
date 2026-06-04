@@ -55,49 +55,37 @@ public struct ChatView: View {
 
     private var chatFocusPanel: some View {
         KairoFocusCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(KairoL10n.string("chat.focus.title"))
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(KairoDesign.ink)
-                        Text(KairoL10n.string("chat.focus.subtitle"))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 8)
-
-                    KairoStatusPill(
-                        title: KairoL10n.string("chat.focus.safety"),
-                        systemImage: "checkmark.shield.fill",
-                        tint: KairoDesign.green
-                    )
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(KairoL10n.string("chat.focus.title"))
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(KairoL10n.string("chat.focus.subtitle"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
-                VStack(spacing: 8) {
-                    KairoCommandButton(
-                        title: KairoL10n.string("chat.focus.shared.title"),
-                        subtitle: KairoL10n.string("chat.focus.shared.subtitle"),
-                        systemImage: "square.and.arrow.down",
-                        tint: KairoDesign.blue
-                    ) {
-                        applyPrompt(KairoL10n.string("chat.tools.summarizeSharedContent.prompt"))
-                    }
+                KairoCommandButton(
+                    title: KairoL10n.string("chat.focus.shared.title"),
+                    subtitle: KairoL10n.string("chat.focus.shared.subtitle"),
+                    systemImage: "square.and.arrow.down",
+                    tint: KairoDesign.blue
+                ) {
+                    applyPrompt(KairoL10n.string("chat.tools.summarizeSharedContent.prompt"))
+                }
 
-                    KairoCommandButton(
+                HStack(spacing: 8) {
+                    ChatFocusChip(
                         title: KairoL10n.string("chat.focus.plan.title"),
-                        subtitle: KairoL10n.string("chat.focus.plan.subtitle"),
                         systemImage: "calendar.badge.plus",
                         tint: KairoDesign.amber
                     ) {
                         applyPrompt(KairoL10n.string("chat.tools.reminderCalendar.prompt"))
                     }
 
-                    KairoCommandButton(
+                    ChatFocusChip(
                         title: KairoL10n.string("chat.focus.reply.title"),
-                        subtitle: KairoL10n.string("chat.focus.reply.subtitle"),
                         systemImage: "envelope.open",
                         tint: KairoDesign.violet
                     ) {
@@ -433,6 +421,42 @@ public struct ChatView: View {
         #else
         _ = text
         #endif
+    }
+}
+
+private struct ChatFocusChip: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(tint)
+
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
+            .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(tint.opacity(0.16), lineWidth: 1)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 
