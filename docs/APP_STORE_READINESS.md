@@ -208,7 +208,7 @@ Current beta deletion is on-device and user-triggered:
 
 | Data area | User flow | Evidence scope |
 |---|---|---|
-| Chat history | Delete chat thread from Chat history UI. | `ChatHistoryStore` soft-deletes threads and `purgeDeletedThreads` removes deleted file-backed threads from disk; package/UI evidence still needs real-device restart sign-off. |
+| Chat history | Delete chat thread from Chat history UI. | `ChatViewModel.deleteThread` soft-deletes the thread and calls `purgeDeletedThreads` to remove deleted file-backed threads from disk; package/UI evidence still needs real-device restart sign-off. |
 | Memory records | Memory Center delete button removes a record; export shares active records only. | `JSONFileMemoryStore.delete` marks records deleted and `purgeDeleted` removes deleted JSON records from disk. |
 | Local models | Settings / Models delete removes the installed model and clears selected-model state. | Package tests cover selected-model delete; no model weights are committed or bundled. |
 | API keys / OAuth tokens | Settings delete/disconnect removes Keychain-backed secrets. | Package tests cover OpenAI API key delete and OAuth token disconnect/delete. |

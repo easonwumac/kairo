@@ -91,6 +91,7 @@ public final class ChatViewModel: ObservableObject {
     public func deleteThread(_ thread: ChatThread) async {
         do {
             try await historyStore.deleteThread(id: thread.id)
+            try await historyStore.purgeDeletedThreads()
             threads = try await historyStore.listThreads(limit: 50)
             if currentThread.id == thread.id {
                 currentThread = threads.first ?? ChatThread(messages: [Self.welcomeMessage])

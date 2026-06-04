@@ -132,6 +132,23 @@ final class KairoDeletionBackendAPITests: XCTestCase {
         XCTAssertFalse(rawText.contains("Delete this private launch note"))
     }
 
+    @MainActor
+    func testChatViewModelDeleteThreadPurgesDeletedChatHistoryFromDisk() async throws {
+        let threadID = UUID(uuidString: "55555555-5555-5555-5555-555555555555")!
+        let fileURL = temporaryFileURL(named: "chat-history-view-model-delete.json")
+        let chatStore = try await JSONFileChatHistoryStore(fileURL: fileURL)
+        let thread = ChatThread(id: threadID, messages: [ChatMessage(role: .user, text: "Delete this UI thread from disk")])
+        let viewModel = ChatViewModel(historyStore: chatStore)
+        try await chatStore.saveThread(thread)
+        await viewModel.load()
+        XCTAssertEqual(viewModel.threads.map(\.id), [threadID])
+        await viewModel.deleteThread(thread)
+        let rawText = try String(contentsOf: fileURL, encoding: .utf8)
+        XCTAssertTrue(viewModel.threads.isEmpty)
+        XCTAssertFalse(rawText.contains(threadID.uuidString))
+        XCTAssertFalse(rawText.contains("Delete this UI thread from disk"))
+    }
+
     private func temporaryFileURL(named name: String) -> URL {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("KairoDeletionBackendAPITests-\(UUID().uuidString)", isDirectory: true)
