@@ -165,16 +165,26 @@ final class SourceHealthTests: XCTestCase {
             "Provider credential safety tests should live in a focused test file instead of the KairoCoreTests monolith."
         )
 
+        let requiredFocusedTests = [
+            "testOpenAISettingsServiceSavesAndDeletesAPIKey",
+            "testOpenAISettingsServiceDryRunRedactsProvidedKeyWithoutSaving",
+            "testOpenAISettingsServiceDryRunUsesSavedKeyWhenInputIsEmpty",
+            "testOAuthConnectorReadinessProvidesSettingsCopyAndActionState",
+            "testChatGPTOAuthServiceBuildsPKCEAuthorizationURL",
+            "testOAuthConnectorLoginCenterDisconnectDeletesStoredTokensAndResetsReadiness",
+            "testOAuthConnectorCallbackPreviewRedactsAuthorizationCodeAndPersistsStatus",
+            "testKairoEnvironmentConnectedOAuthProviderKeysIgnoreMalformedStoredTokens"
+        ]
         let focusedTests = try String(contentsOf: focusedTestsURL, encoding: .utf8)
-        XCTAssertTrue(focusedTests.contains("testOpenAISettingsServiceSavesAndDeletesAPIKey"))
-        XCTAssertTrue(focusedTests.contains("testOpenAISettingsServiceDryRunRedactsProvidedKeyWithoutSaving"))
-        XCTAssertTrue(focusedTests.contains("testOpenAISettingsServiceDryRunUsesSavedKeyWhenInputIsEmpty"))
-        XCTAssertTrue(focusedTests.contains("testOAuthConnectorReadinessProvidesSettingsCopyAndActionState"))
-        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 140)
+        for testName in requiredFocusedTests {
+            XCTAssertTrue(focusedTests.contains(testName), testName)
+        }
+        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 420)
 
         let coreTests = try String(contentsOf: root.appendingPathComponent("Tests/KairoCoreTests.swift"))
-        XCTAssertFalse(coreTests.contains("testOpenAISettingsServiceSavesAndDeletesAPIKey"))
-        XCTAssertFalse(coreTests.contains("testOAuthConnectorReadinessProvidesSettingsCopyAndActionState"))
+        for testName in requiredFocusedTests {
+            XCTAssertFalse(coreTests.contains(testName), testName)
+        }
     }
 
     func testSandboxActionSupportStaysSplitAcrossFocusedFiles() throws {

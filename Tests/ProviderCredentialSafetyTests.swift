@@ -74,4 +74,314 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertFalse(connectedOption.canStartAuthorization)
         XCTAssertEqual(connectedOption.settingsDetailText, "已授權 scopes: repo")
     }
+
+    func testChatGPTOAuthServiceBuildsPKCEAuthorizationURL() async throws {
+        let service = ChatGPTOAuthService(
+            configuration: ChatGPTOAuthConfiguration(
+                authorizationEndpoint: URL(string: "https://auth.example.com/oauth/authorize")!,
+                tokenEndpoint: URL(string: "https://auth.example.com/oauth/token")!,
+                clientID: "client-id",
+                redirectURI: "kairo://oauth/callback",
+                scopes: ["openid", "profile"],
+                audience: "chatgpt"
+            ),
+            credentialStore: InMemoryCredentialStore()
+        )
+
+        let session = try await service.makeAuthorizationSession(state: "state-123", codeVerifier: "verifier-123")
+        let components = try XCTUnwrap(URLComponents(url: session.authorizationURL, resolvingAgainstBaseURL: false))
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+
+        XCTAssertEqual(query["response_type"], "code")
+        XCTAssertEqual(query["client_id"], "client-id")
+        XCTAssertEqual(query["redirect_uri"], "kairo://oauth/callback")
+        XCTAssertEqual(query["scope"], "openid profile")
+        XCTAssertEqual(query["state"], "state-123")
+        XCTAssertEqual(query["code_challenge_method"], "S256")
+        XCTAssertNotEqual(query["code_challenge"], "verifier-123")
+        XCTAssertEqual(query["audience"], "chatgpt")
+    }
+
+    func testOAuthConnectorAuthorizationServiceBuildsPKCEAuthorizationURLFromRegistryMetadata() async throws {
+        let google = try XCTUnwrap(IntegrationRegistry().integration(for: "gmail-google-workspace")?.oauth)
+        let service = OAuthConnectorAuthorizationService(
+            metadata: google,
+            clientID: "ios-client-id",
+            redirectURI: "kairo://oauth/google/callback",
+            credentialStore: InMemoryCredentialStore()
+        )
+
+        let session = try await service.makeAuthorizationSession(state: "state-123", codeVerifier: "verifier-123")
+        let components = try XCTUnwrap(URLComponents(url: session.authorizationURL, resolvingAgainstBaseURL: false))
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+
+        XCTAssertEqual(session.providerKey, "google")
+        XCTAssertEqual(query["response_type"], "code")
+        XCTAssertEqual(query["client_id"], "ios-client-id")
+        XCTAssertEqual(query["redirect_uri"], "kairo://oauth/google/callback")
+        XCTAssertEqual(query["scope"], "openid email profile https://www.googleapis.com/auth/gmail.readonly")
+        XCTAssertEqual(query["state"], "state-123")
+        XCTAssertEqual(query["code_challenge_method"], "S256")
+        XCTAssertNotEqual(query["code_challenge"], "verifier-123")
+    }
+
+    func testOAuthConnectorLoginCenterReportsStatusesForRegistryConnectors() async throws {
+        let registry = IntegrationRegistry()
+        let github = try XCTUnwrap(registry.integration(for: "github")?.oauth)
+        let credentials = InMemoryCredentialStore()
+        let githubAuth = OAuthConnectorAuthorizationService(
+            metadata: github,
+            clientID: "github-client",
+            redirectURI: "kairo://oauth/github/callback",
+            credentialStore: credentials
+        )
+        try await githubAuth.storeTokens(OAuthTokenSet(accessToken: "dummy", scopes: ["repo"]))
+
+        let center = OAuthConnectorLoginCenter(
+            registry: registry,
+            credentialStore: credentials,
+            clientConfigurations: [
+                "google": OAuthConnectorClientConfiguration(
+                    clientID: "google-client",
+                    redirectURI: "kairo://oauth/google/callback"
+                )
+            ]
+        )
+
+        let options = try await center.loginOptions()
+        let google = try XCTUnwrap(options.first { $0.providerKey == "google" })
+        let microsoft = try XCTUnwrap(options.first { $0.providerKey == "microsoft" })
+        let connectedGitHub = try XCTUnwrap(options.first { $0.providerKey == "github" })
+
+        XCTAssertEqual(options.map(\.providerKey), ["google", "microsoft", "notion", "slack", "chatgpt", "github"])
+        XCTAssertEqual(google.integrationKey, "gmail-google-workspace")
+        XCTAssertEqual(google.readiness, .readyToAuthorize)
+        XCTAssertEqual(microsoft.readiness, .needsClientConfiguration)
+        XCTAssertEqual(connectedGitHub.readiness, .connected)
+        XCTAssertEqual(connectedGitHub.grantedScopes, ["repo"])
+        XCTAssertTrue(connectedGitHub.requiresBackendTokenExchange)
+    }
+
+    func testOAuthConnectorLoginCenterDisconnectDeletesStoredTokensAndResetsReadiness() async throws {
+        let registry = IntegrationRegistry()
+        let credentials = InMemoryCredentialStore()
+        let githubAuth = OAuthConnectorAuthorizationService(
+            metadata: try XCTUnwrap(registry.integration(for: "github")?.oauth),
+            clientID: "github-client",
+            redirectURI: "kairo://oauth/github/callback",
+            credentialStore: credentials,
+            scopes: ["repo"]
+        )
+        try await githubAuth.storeTokens(OAuthTokenSet(accessToken: "dummy", scopes: ["repo"]))
+
+        let center = OAuthConnectorLoginCenter(
+            registry: registry,
+            credentialStore: credentials,
+            clientConfigurations: [
+                "github": OAuthConnectorClientConfiguration(
+                    clientID: "github-client",
+                    redirectURI: "kairo://oauth/github/callback",
+                    scopes: ["repo"]
+                )
+            ]
+        )
+
+        let connectedOptions = try await center.loginOptions()
+        let connectedOption = try XCTUnwrap(connectedOptions.first { $0.providerKey == "github" })
+        XCTAssertEqual(connectedOption.readiness, .connected)
+
+        try await center.disconnect(providerKey: "github")
+
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "github"))
+        let disconnectedOptions = try await center.loginOptions()
+        let disconnectedOption = try XCTUnwrap(disconnectedOptions.first { $0.providerKey == "github" })
+        XCTAssertNil(storedRaw)
+        XCTAssertEqual(disconnectedOption.readiness, .readyToAuthorize)
+        XCTAssertTrue(disconnectedOption.canStartAuthorization)
+    }
+
+    func testOAuthConnectorLoginCenterTreatsMalformedStoredTokenAsNeedsReauthorization() async throws {
+        let credentials = InMemoryCredentialStore()
+        try await credentials.saveSecret("not-a-valid-token-secret", for: CredentialKey.oauthTokenSet(providerKey: "github"))
+
+        let center = OAuthConnectorLoginCenter(
+            registry: IntegrationRegistry(),
+            credentialStore: credentials,
+            clientConfigurations: [
+                "github": OAuthConnectorClientConfiguration(
+                    clientID: "github-client",
+                    redirectURI: "kairo://oauth/github/callback",
+                    scopes: ["repo"]
+                )
+            ]
+        )
+
+        let options = try await center.loginOptions()
+        let github = try XCTUnwrap(options.first { $0.providerKey == "github" })
+
+        XCTAssertEqual(github.readiness, .needsReauthorization)
+        XCTAssertTrue(github.canStartAuthorization)
+        XCTAssertTrue(github.grantedScopes.isEmpty)
+    }
+
+    func testOAuthConnectorLoginCenterBuildsAuthorizationSessionFromClientConfiguration() async throws {
+        let center = OAuthConnectorLoginCenter(
+            registry: IntegrationRegistry(),
+            credentialStore: InMemoryCredentialStore(),
+            clientConfigurations: [
+                "google": OAuthConnectorClientConfiguration(
+                    clientID: "google-client",
+                    redirectURI: "kairo://oauth/google/callback",
+                    scopes: ["openid", "email"]
+                )
+            ]
+        )
+
+        let session = try await center.makeAuthorizationSession(
+            for: "gmail-google-workspace",
+            state: "state-123",
+            codeVerifier: "verifier-123"
+        )
+        let components = try XCTUnwrap(URLComponents(url: session.authorizationURL, resolvingAgainstBaseURL: false))
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+
+        XCTAssertEqual(session.providerKey, "google")
+        XCTAssertEqual(query["client_id"], "google-client")
+        XCTAssertEqual(query["redirect_uri"], "kairo://oauth/google/callback")
+        XCTAssertEqual(query["scope"], "openid email")
+        XCTAssertEqual(query["state"], "state-123")
+        XCTAssertEqual(query["code_challenge_method"], "S256")
+    }
+
+    func testOAuthConnectorCallbackPreviewRedactsAuthorizationCodeAndPersistsStatus() async throws {
+        let fileURL = temporaryFileURL(named: "oauth-callbacks.json")
+        let store = try await FileBackedOAuthConnectorCallbackStore(fileURL: fileURL)
+        let center = OAuthConnectorLoginCenter(
+            registry: IntegrationRegistry(),
+            credentialStore: InMemoryCredentialStore(),
+            callbackStore: store
+        )
+
+        let preview = try await center.previewCallback(
+            URL(string: "kairo://oauth/google/callback?code=sample-sensitive-code&state=state-123")!
+        )
+
+        XCTAssertEqual(preview.providerKey, "google")
+        XCTAssertEqual(preview.integrationKey, "gmail-google-workspace")
+        XCTAssertEqual(preview.state, "state-123")
+        XCTAssertEqual(preview.authorizationCodeLength, "sample-sensitive-code".count)
+        XCTAssertTrue(preview.requiresBackendTokenExchange)
+        XCTAssertTrue(preview.settingsStatusText.contains("google"))
+        XCTAssertTrue(preview.settingsStatusText.contains("backend token exchange"))
+        XCTAssertFalse(preview.settingsStatusText.contains("sample-sensitive-code"))
+
+        let latest = await store.latestPreview(for: "google")
+        XCTAssertEqual(latest, preview)
+
+        let storedJSON = try String(contentsOf: fileURL, encoding: .utf8)
+        XCTAssertFalse(storedJSON.contains("sample-sensitive-code"))
+        XCTAssertTrue(storedJSON.contains(#""authorizationCodeLength":21"#))
+    }
+
+    func testOAuthConnectorAuthorizationServiceHandlesNonPKCEConnectorsAndStoresNamespacedTokens() async throws {
+        let github = try XCTUnwrap(IntegrationRegistry().integration(for: "github")?.oauth)
+        let credentials = InMemoryCredentialStore()
+        let service = OAuthConnectorAuthorizationService(
+            metadata: github,
+            clientID: "github-client-id",
+            redirectURI: "kairo://oauth/github/callback",
+            credentialStore: credentials
+        )
+
+        let session = try await service.makeAuthorizationSession(state: "github-state", codeVerifier: "ignored-verifier")
+        let components = try XCTUnwrap(URLComponents(url: session.authorizationURL, resolvingAgainstBaseURL: false))
+        let queryNames = Set((components.queryItems ?? []).map(\.name))
+
+        XCTAssertEqual(session.providerKey, "github")
+        XCTAssertFalse(queryNames.contains("code_challenge"))
+        XCTAssertFalse(queryNames.contains("code_challenge_method"))
+        let authorizationCode = try await service.validateCallback(
+            URL(string: "kairo://oauth/github/callback?code=abc&state=github-state")!,
+            expectedState: "github-state"
+        )
+        XCTAssertEqual(authorizationCode, "abc")
+
+        let tokens = OAuthTokenSet(accessToken: "dummy", refreshToken: "dummy", scopes: ["repo"])
+        try await service.storeTokens(tokens)
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "github"))
+        let loaded = try await service.loadTokens()
+
+        XCTAssertNotNil(storedRaw)
+        XCTAssertEqual(loaded, tokens)
+
+        try await service.signOut()
+        let tokensAfterSignOut = try await service.loadTokens()
+        XCTAssertNil(tokensAfterSignOut)
+    }
+
+    func testChatGPTOAuthServiceValidatesCallbackAndStoresTokens() async throws {
+        let credentials = InMemoryCredentialStore()
+        let service = ChatGPTOAuthService(
+            configuration: ChatGPTOAuthConfiguration(
+                authorizationEndpoint: URL(string: "https://auth.example.com/oauth/authorize")!,
+                tokenEndpoint: URL(string: "https://auth.example.com/oauth/token")!,
+                clientID: "client-id",
+                redirectURI: "kairo://oauth/callback",
+                scopes: ["openid"]
+            ),
+            credentialStore: credentials
+        )
+
+        let code = try await service.validateCallback(URL(string: "kairo://oauth/callback?code=abc&state=expected")!, expectedState: "expected")
+        XCTAssertEqual(code, "abc")
+
+        try await service.storeTokens(OAuthTokenSet(accessToken: "access", refreshToken: "refresh", scopes: ["openid"]))
+        let tokens = try await service.loadTokens()
+        XCTAssertEqual(tokens?.accessToken, "access")
+        XCTAssertEqual(tokens?.refreshToken, "refresh")
+
+        try await service.signOut()
+        let signedOutTokens = try await service.loadTokens()
+        XCTAssertNil(signedOutTokens)
+    }
+
+    func testOAuthTokenSetStorageHelpersRoundTripAndRejectMalformedSecrets() throws {
+        let tokenSet = OAuthTokenSet(
+            accessToken: "access",
+            refreshToken: "refresh",
+            expiresAt: Date(timeIntervalSince1970: 42),
+            scopes: ["repo"]
+        )
+
+        let encoded = try tokenSet.encodedForStorage()
+        let decoded = try XCTUnwrap(OAuthTokenSet.decodeStoredSecret(encoded))
+
+        XCTAssertEqual(decoded, tokenSet)
+        XCTAssertNil(try OAuthTokenSet.decodeStoredSecret("not-base64"))
+    }
+
+    func testKairoEnvironmentConnectedOAuthProviderKeysIgnoreMalformedStoredTokens() async throws {
+        let credentials = InMemoryCredentialStore()
+        let validTokens = OAuthTokenSet(accessToken: "github-token", scopes: ["repo"])
+
+        try await credentials.saveSecret(validTokens.encodedForStorage(), for: CredentialKey.oauthTokenSet(providerKey: "github"))
+        try await credentials.saveSecret("not-a-valid-token-secret", for: CredentialKey.oauthTokenSet(providerKey: "google"))
+        try await credentials.saveSecret(try OAuthTokenSet(accessToken: "   ", scopes: []).encodedForStorage(), for: CredentialKey.oauthTokenSet(providerKey: "slack"))
+
+        let connected = try await KairoEnvironment.connectedOAuthProviderKeys(credentialStore: credentials)
+
+        XCTAssertEqual(connected, ["github"])
+    }
+
+    private func temporaryFileURL(named name: String) -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+            .appendingPathComponent(name)
+    }
 }
