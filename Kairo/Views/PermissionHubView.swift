@@ -16,6 +16,7 @@ public struct PermissionHubView: View {
     @State private var isDeveloperSkillSetupExpanded = false
     @State private var isHomeKitPreviewExpanded = false
     @State private var showMorePrimaryTools = false
+    @State private var expandedCapabilityDetails: Set<CapabilityKey> = []
     @State private var expandedSkillDetails: Set<String> = []
     @State private var skillCatalog: AgentSkillCatalog
 
@@ -319,6 +320,8 @@ public struct PermissionHubView: View {
 
     @ViewBuilder
     private func capabilityRow(_ capability: Capability) -> some View {
+        let isExpanded = expandedCapabilityDetails.contains(capability.key)
+
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: iconName(for: capability.key))
                 .font(.subheadline.weight(.semibold))
@@ -337,38 +340,70 @@ public struct PermissionHubView: View {
                     Text(permissionLabel(for: capability.permission))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
+
+                    Button {
+                        toggleCapabilityDetails(capability.key)
+                    } label: {
+                        Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(
+                        isExpanded
+                        ? KairoL10n.string("access.capability.details.hide")
+                        : KairoL10n.string("access.capability.details.show")
+                    )
+                    .accessibilityValue(isExpanded ? "expanded" : "collapsed")
+                    .accessibilityIdentifier("access.capability.\(capability.key.rawValue).details")
                 }
 
-                Text(capability.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                if isExpanded {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(capability.description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
 
-                if shouldShowFallbackMessage(for: capability),
-                   let fallbackMessage = capability.status.accessFallbackMessage {
-                    Text(fallbackMessage)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("access.capability.\(capability.key.rawValue).status-fallback")
-                }
+                        if shouldShowFallbackMessage(for: capability),
+                           let fallbackMessage = capability.status.accessFallbackMessage {
+                            Text(fallbackMessage)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("access.capability.\(capability.key.rawValue).status-fallback")
+                        }
 
-                HStack {
-                    if capability.isMVP {
-                        Text(KairoL10n.string("access.capability.core"))
-                            .font(.caption2.weight(.semibold))
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(KairoDesign.blue.opacity(0.12), in: Capsule())
+                        HStack {
+                            if capability.isMVP {
+                                Text(KairoL10n.string("access.capability.core"))
+                                    .font(.caption2.weight(.semibold))
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 3)
+                                    .background(KairoDesign.blue.opacity(0.12), in: Capsule())
+                            }
+                            ForEach(actionCatalog.descriptors(for: capability.key).prefix(2)) { descriptor in
+                                CapabilityChipView(descriptor: descriptor)
+                            }
+                        }
                     }
-                    ForEach(actionCatalog.descriptors(for: capability.key).prefix(2)) { descriptor in
-                        CapabilityChipView(descriptor: descriptor)
-                    }
+                    .accessibilityIdentifier("access.capability.\(capability.key.rawValue).details-content")
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .contain)
+    }
+
+    private func toggleCapabilityDetails(_ key: CapabilityKey) {
+        withAnimation(.snappy(duration: 0.2)) {
+            if expandedCapabilityDetails.contains(key) {
+                expandedCapabilityDetails.remove(key)
+            } else {
+                expandedCapabilityDetails.insert(key)
+            }
+        }
     }
 
     private func shouldShowFallbackMessage(for capability: Capability) -> Bool {

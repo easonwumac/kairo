@@ -82,6 +82,8 @@
 "access.capabilities.more.show" = "Show more phone tools";
 "access.capabilities.more.hide" = "Hide more phone tools";
 "access.capability.core" = "Core";
+"access.capability.details.show" = "Show tool details";
+"access.capability.details.hide" = "Hide tool details";
 "access.permission.none" = "Ready";
 "access.permission.userInitiated" = "User action";
 "access.permission.runtimePrompt" = "Asks first";

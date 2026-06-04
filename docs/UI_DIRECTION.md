@@ -279,9 +279,18 @@ Stage 28 makes Chat suggestions review-first:
 - Long handoff summaries move behind Details, so Chat suggestions read as
   decisions to review instead of implementation explanations.
 
+Stage 29 makes Phone Tools status-first:
+
+- Phone ability rows now keep only tool name, permission status, and Details on
+  the first layer.
+- Capability descriptions, fallback notes, core labels, and action chips move
+  behind each row's Details disclosure.
+- Phone Tools now reads more like everyday support for Chat instead of a
+  capability inventory, while deeper permission context remains reachable.
+
 ## Next UI stages
 
-1. Phone Tools and Skill Manager
+1. Skill Manager
    - Continue tuning skill-card density inside Skill library after simulator
      smoke confirms the new first screen.
 

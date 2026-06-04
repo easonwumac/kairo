@@ -82,6 +82,8 @@
 "access.capabilities.more.show" = "顯示更多手機工具";
 "access.capabilities.more.hide" = "隱藏更多手機工具";
 "access.capability.core" = "核心";
+"access.capability.details.show" = "顯示工具細節";
+"access.capability.details.hide" = "隱藏工具細節";
 "access.permission.none" = "可用";
 "access.permission.userInitiated" = "使用者觸發";
 "access.permission.runtimePrompt" = "會先詢問";
