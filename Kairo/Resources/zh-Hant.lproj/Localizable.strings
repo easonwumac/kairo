@@ -607,6 +607,8 @@
 "settings.connection.detail" = "只有設定需要處理時，再管理 cloud key、連接帳號與隱私控制。";
 "settings.connection.show" = "顯示連線設定";
 "settings.connection.hide" = "隱藏連線設定";
+"settings.connection.details.title" = "連線細節";
+"settings.connection.details.subtitle" = "Cloud key 與連接帳號狀態放在這裡。";
 "settings.openai.section" = "OpenAI";
 "settings.openai.detail" = "需要線上回覆時，讓 Kairo 連到 cloud model。";
 "settings.openai.apiKey" = "API Key";

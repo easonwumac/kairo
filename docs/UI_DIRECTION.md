@@ -419,6 +419,15 @@ Stage 43 makes Chat start with one action:
 - The composer and route controls remain unchanged so the everyday chat path
   stays stable while the first layer gets quieter.
 
+Stage 44 makes Settings connection setup quieter:
+
+- Connection setup no longer shows API key and connected-account pills on the
+  first layer; those status details move behind Connection details.
+- The setup toggle remains the primary action for editing cloud keys, accounts,
+  and privacy controls when setup needs attention.
+- Account editing, OAuth connectors, and privacy cleanup keep their existing
+  progressive disclosure after the setup section is opened.
+
 ## Next UI stages
 
 1. Product surface audit

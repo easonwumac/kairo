@@ -36,6 +36,7 @@ public struct SettingsView: View {
     @State var localModelStatusMessageModelID: String?
     @State private var privacyStatusMessage: String?
     @State private var showConnectionSetup = false
+    @State private var showConnectionDetails = false
     @State private var showAPIKeyEditor = false
     @State private var expandedOAuthConnectorDetails: Set<String> = []
     @State private var showPrivacyControls = false
@@ -191,17 +192,50 @@ public struct SettingsView: View {
                 .accessibilityLabel(showConnectionSetup ? KairoL10n.string("settings.connection.hide") : KairoL10n.string("settings.connection.show"))
                 .accessibilityIdentifier("settings.connection.toggle")
 
-                HStack(spacing: 8) {
-                    KairoStatusPill(
-                        title: hasAPIKey ? KairoL10n.string("settings.openai.status.configured") : KairoL10n.string("settings.openai.status.notConfigured"),
-                        systemImage: "key.fill",
-                        tint: hasAPIKey ? KairoDesign.green : KairoDesign.amber
-                    )
-                    KairoStatusPill(
-                        title: KairoL10n.string("settings.routing.connectedAccounts", Int64(connectedConnectorCount)),
-                        systemImage: "person.crop.circle.badge.checkmark",
-                        tint: connectedConnectorCount > 0 ? KairoDesign.green : KairoDesign.violet
-                    )
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showConnectionDetails.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: showConnectionDetails ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(KairoL10n.string("settings.connection.details.title"))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                            Text(KairoL10n.string("settings.connection.details.subtitle"))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 9)
+                    .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("settings.connection.details.toggle")
+
+                if showConnectionDetails {
+                    HStack(spacing: 8) {
+                        KairoStatusPill(
+                            title: hasAPIKey ? KairoL10n.string("settings.openai.status.configured") : KairoL10n.string("settings.openai.status.notConfigured"),
+                            systemImage: "key.fill",
+                            tint: hasAPIKey ? KairoDesign.green : KairoDesign.amber
+                        )
+                        KairoStatusPill(
+                            title: KairoL10n.string("settings.routing.connectedAccounts", Int64(connectedConnectorCount)),
+                            systemImage: "person.crop.circle.badge.checkmark",
+                            tint: connectedConnectorCount > 0 ? KairoDesign.green : KairoDesign.violet
+                        )
+                    }
                 }
 
                 if showConnectionSetup {
