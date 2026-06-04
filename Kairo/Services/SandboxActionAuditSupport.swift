@@ -50,7 +50,7 @@ extension SandboxActionExecutor {
         case .composeEmailDraft:
             return [.mail]
         case .openMapDirections:
-            return [.web]
+            return [.location]
         case .openMessageHandoff:
             return [.messages]
         case .openPhoneCallHandoff:

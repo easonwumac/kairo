@@ -285,6 +285,15 @@ final class SourceHealthTests: XCTestCase {
         let shareToChatAuditTests = try String(contentsOf: shareToChatAuditTestsURL, encoding: .utf8)
         XCTAssertTrue(shareToChatAuditTests.contains("testShareTextToChatReminderConfirmationRecordsAuditEvent"))
         XCTAssertLessThan(shareToChatAuditTests.split(separator: "\n").count, 90)
+
+        let chatHandoffAuditTestsURL = root.appendingPathComponent("Tests/ChatHandoffActionAuditTests.swift")
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: chatHandoffAuditTestsURL.path),
+            "Chat handoff action audit coverage should live in its own focused test file."
+        )
+        let chatHandoffAuditTests = try String(contentsOf: chatHandoffAuditTestsURL, encoding: .utf8)
+        XCTAssertTrue(chatHandoffAuditTests.contains("testChatConfirmedEmailMessagePhoneWebAndMapsHandoffsOpenVisibleURLsAndRecordAudit"))
+        XCTAssertLessThan(chatHandoffAuditTests.split(separator: "\n").count, 110)
     }
 
     func testAgentCoreActionPreviewCoverageLivesInFocusedTestFile() throws {
