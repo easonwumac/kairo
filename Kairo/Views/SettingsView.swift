@@ -124,124 +124,212 @@ public struct SettingsView: View {
 
     private var settingsFormContent: some View {
         NavigationStack {
-            Form {
-                Section(KairoL10n.string("settings.openai.section")) {
-                    HStack {
-                        Text(KairoL10n.string("settings.openai.apiKey"))
-                        Spacer()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    accountSettingsSection
+                    oauthConnectorsSection
+                    privacySettingsSection
+
+                    if let connectorStatusMessage {
+                        KairoGroupedSurface {
+                            Label(connectorStatusMessage, systemImage: "info.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .accessibilityIdentifier("settings.status.message")
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 24)
+                .padding(.bottom, 32)
+            }
+            .navigationTitle(mode.navigationTitle)
+            .background(KairoDesign.background.ignoresSafeArea())
+            .accessibilityIdentifier("settings.form")
+        }
+    }
+
+    private var accountSettingsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            settingsSectionHeader(
+                title: KairoL10n.string("settings.openai.section"),
+                subtitle: KairoL10n.string("settings.openai.detail")
+            )
+
+            KairoGroupedSurface {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .center, spacing: 10) {
+                        Image(systemName: "key.fill")
+                            .font(.headline)
+                            .foregroundStyle(KairoDesign.blue)
+                            .frame(width: 28, height: 28)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(KairoL10n.string("settings.openai.apiKey"))
+                                .font(.subheadline.weight(.semibold))
+                            Text(KairoL10n.string("settings.openai.keychainNote"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer(minLength: 8)
+
                         Text(hasAPIKey ? KairoL10n.string("settings.openai.status.configured") : KairoL10n.string("settings.openai.status.notConfigured"))
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(hasAPIKey ? .green : .secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background((hasAPIKey ? Color.green : Color.secondary).opacity(0.10), in: Capsule())
                             .accessibilityIdentifier("settings.openai.api-key-status")
                     }
 
                     SecureField(KairoL10n.string("settings.openai.apiKeyPlaceholder"), text: $apiKey)
                         .textContentType(.password)
+                        .autocorrectionDisabled()
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 9)
+                        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .accessibilityIdentifier("settings.openai.api-key-field")
 
-                    HStack {
+                    HStack(spacing: 8) {
                         Button(KairoL10n.string("settings.openai.save")) {
                             saveAPIKey()
                         }
+                        .buttonStyle(.borderedProminent)
                         .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .accessibilityIdentifier("settings.openai.save-api-key")
 
                         Button(KairoL10n.string("settings.openai.dryRun")) {
                             dryRunAPIKey()
                         }
+                        .buttonStyle(.bordered)
                         .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasAPIKey)
                         .accessibilityIdentifier("settings.openai.dry-run-api-key")
+
+                        Spacer(minLength: 0)
                     }
 
                     Button(KairoL10n.string("settings.openai.delete"), role: .destructive) {
                         deleteAPIKey()
                     }
+                    .font(.subheadline.weight(.semibold))
                     .disabled(!hasAPIKey)
                     .accessibilityIdentifier("settings.openai.delete-api-key")
 
                     if let statusMessage {
                         Text(statusMessage)
                             .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("settings.openai.status-message")
                     }
                 }
+            }
+        }
+    }
 
-                Section(KairoL10n.string("settings.privacy.section")) {
-                    Text(KairoL10n.string("settings.privacy.keychainBoundary"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+    private var oauthConnectorsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            settingsSectionHeader(
+                title: KairoL10n.string("settings.oauth.section"),
+                subtitle: KairoL10n.string("settings.oauth.detail")
+            )
 
-                    Button(role: .destructive) {
-                        clearAuditLog()
-                    } label: {
-                        Text(KairoL10n.string("settings.privacy.clearAuditLog"))
+            KairoGroupedSurface {
+                VStack(alignment: .leading, spacing: 0) {
+                    if connectorOptions.isEmpty {
+                        Text(KairoL10n.string("settings.oauth.empty"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 8)
                     }
-                    .disabled(deletionAPI == nil)
+
+                    ForEach(connectorOptions) { option in
+                        connectorRow(option)
+                        if option.id != connectorOptions.last?.id {
+                            Divider()
+                                .padding(.leading, 42)
+                        }
+                    }
+                }
+            }
+            .accessibilityIdentifier("settings.oauth.connectors")
+        }
+    }
+
+    private var privacySettingsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            settingsSectionHeader(
+                title: KairoL10n.string("settings.privacy.section"),
+                subtitle: KairoL10n.string("settings.privacy.detail")
+            )
+
+            KairoGroupedSurface {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label {
+                        Text(KairoL10n.string("settings.privacy.keychainBoundary"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "lock.shield.fill")
+                            .foregroundStyle(KairoDesign.teal)
+                    }
+
+                    Divider()
+
+                    HStack(spacing: 10) {
+                        Image(systemName: "trash.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(width: 24, height: 24)
+
+                        Text(KairoL10n.string("settings.privacy.clearAuditLog"))
+                            .font(.subheadline.weight(.semibold))
+
+                        Spacer(minLength: 8)
+                    }
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        clearAuditLog()
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction {
+                        clearAuditLog()
+                    }
                     .accessibilityIdentifier("settings.privacy.clear-audit-log")
 
                     Text(KairoL10n.string("settings.privacy.auditLogDetail"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("settings.privacy.audit-log-detail")
 
-                    if let privacyStatusMessage {
-                        Text(privacyStatusMessage)
-                            .font(.caption)
-                            .accessibilityIdentifier("settings.privacy.status")
-                    }
-                }
-
-                Section(KairoL10n.string("settings.oauth.section")) {
-                    if connectorOptions.isEmpty {
-                        Text(KairoL10n.string("settings.oauth.empty"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    ForEach(connectorOptions) { option in
-                        connectorRow(option)
-                    }
-
-                    oauthCallbackPreviewControls()
-                }
-                .accessibilityIdentifier("settings.oauth.connectors")
-
-                Section(KairoL10n.string("settings.models.section")) {
-                    localModelPreferencePicker()
-                    localModelCatalogControls()
-
-                    if localModelStatus.settingsRows.isEmpty {
-                        Text(KairoL10n.string("settings.models.emptyCatalog"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    ForEach(localModelStatus.settingsRows) { row in
-                        localModelRow(row)
-                    }
-
-                    if localModelStatusMessageModelID == nil, let localModelStatusMessage {
-                        Text(localModelStatusMessage)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .accessibilityIdentifier("settings.models.benchmark-message")
-                    }
-                }
-                .accessibilityIdentifier("settings.models.local")
-
-                SettingsShortcutDemosSection()
-
-                if connectorStatusMessage != nil {
-                    Section(KairoL10n.string("settings.status.section")) {
-                        if let connectorStatusMessage {
-                            Text(connectorStatusMessage)
-                                .font(.caption)
-                        }
-                    }
                 }
             }
-            .navigationTitle(mode.navigationTitle)
-            .accessibilityIdentifier("settings.form")
+
+            Text(privacyStatusMessage ?? KairoL10n.string("settings.privacy.statusReady"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 2)
+                .accessibilityIdentifier("settings.privacy.status")
         }
+    }
+
+    private func settingsSectionHeader(title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.headline)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 2)
     }
 
     private var modelsOnlyContent: some View {
@@ -290,9 +378,11 @@ public struct SettingsView: View {
                     .accessibilityIdentifier("settings.oauth.\(option.providerKey).status")
             }
 
-            Text(option.settingsDetailText)
+            Text(option.accountDataBoundary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("settings.oauth.\(option.providerKey).detail")
 
             if option.requiresBackendTokenExchange {
@@ -573,6 +663,7 @@ public struct SettingsView: View {
     }
 
     private func clearAuditLog() {
+        privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogClearing")
         Task {
             guard let deletionAPI else {
                 await MainActor.run {

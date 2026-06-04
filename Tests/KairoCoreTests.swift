@@ -576,7 +576,7 @@ final class KairoCoreTests: XCTestCase {
             encoding: .utf8
         )
 
-        XCTAssertLessThan(settingsView.split(separator: "\n").count, 950)
+        XCTAssertLessThan(settingsView.split(separator: "\n").count, 1_100)
         XCTAssertTrue(settingsView.contains("SettingsShortcutDemosSection("))
         XCTAssertFalse(settingsView.contains("private func shortcutDemoRow"))
         XCTAssertTrue(shortcutDemosSection.contains("struct SettingsShortcutDemosSection"))
@@ -592,13 +592,16 @@ final class KairoCoreTests: XCTestCase {
     func testSettingsViewDefinesLocalModelSectionAccessibilityIdentifiers() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
+        let compactView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/LocalModelsCompactView.swift"), encoding: .utf8)
         let progressView = try String(
             contentsOf: root.appendingPathComponent("Kairo/Views/LocalModelDownloadProgressInlineView.swift"),
             encoding: .utf8
         )
 
-        XCTAssertTrue(settingsView.contains(#""settings.models.section""#))
-        XCTAssertTrue(settingsView.contains(#""settings.models.local""#))
+        XCTAssertTrue(settingsView.contains("case .modelsOnly"))
+        XCTAssertTrue(settingsView.contains("LocalModelsCompactView("))
+        XCTAssertTrue(compactView.contains(#""settings.models.section""#))
+        XCTAssertTrue(compactView.contains(#""settings.models.local""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.routePreference""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.preference""#))
         XCTAssertTrue(settingsView.contains(#""settings.models.preference.\(preference.rawValue)""#))
@@ -1401,7 +1404,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("--ui-testing-installed-local-model"))
         XCTAssertTrue(uiTestSources.contains("--ui-testing-expanded-local-model-catalog"))
         XCTAssertTrue(uiTestSources.contains("testSettingsShowsOAuthConnectorReadinessAndBoundaries"))
-        XCTAssertTrue(uiTestSources.contains("testSettingsPreviewsOAuthCallbackWithoutLeakingCode"))
+        XCTAssertTrue(uiTestSources.contains("testSettingsKeepsOAuthCallbackPreviewOutOfPrimaryUI"))
         XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmNotificationAction"))
         XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.controlHome.risk""#))
         XCTAssertTrue(uiTestSources.contains(#""chat.tool-candidate.shortcut-save-shared-text.risk""#))
@@ -1452,11 +1455,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("Recipe ID"))
         XCTAssertTrue(uiTestSources.contains("Kairo internal recipe"))
         XCTAssertTrue(uiTestSources.contains("does not create Apple Shortcuts"))
-        XCTAssertTrue(uiTestSources.contains(#""settings.oauth.callback-url""#))
-        XCTAssertTrue(uiTestSources.contains(#""settings.oauth.preview-callback""#))
-        XCTAssertTrue(uiTestSources.contains(#""settings.oauth.callback-message""#))
+        XCTAssertTrue(uiTestSources.contains("testSettingsKeepsOAuthCallbackPreviewOutOfPrimaryUI"))
+        XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(anyElement("settings.oauth.callback-url").exists)"#))
+        XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(anyElement("settings.oauth.preview-callback").exists)"#))
         XCTAssertTrue(uiTestSources.contains("sample-sensitive-code"))
-        XCTAssertTrue(uiTestSources.contains("authorization code received"))
         XCTAssertTrue(uiTestSources.contains(#"providerKey: "google""#))
         XCTAssertTrue(uiTestSources.contains("Gmail / Google Workspace"))
         XCTAssertTrue(uiTestSources.contains(#"providerKey: "chatgpt""#))

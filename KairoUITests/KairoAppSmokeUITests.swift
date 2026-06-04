@@ -94,7 +94,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         relaunchForUITesting(initialSection: "settings")
         XCTAssertTrue(anyElement("settings.form").waitForExistence(timeout: 5))
 
-        let clearAuditLog = findElement("settings.privacy.clear-audit-log", direction: .both, maxSwipes: 4)
+        let clearAuditLog = findButton("settings.privacy.clear-audit-log", direction: .both, maxSwipes: 4)
         XCTAssertTrue(clearAuditLog.exists)
         XCTAssertTrue(findElement("settings.privacy.audit-log-detail", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "does not delete chat history", direction: .both, maxSwipes: 1).exists)
@@ -102,6 +102,9 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         let status = findElement("settings.privacy.status", direction: .both, maxSwipes: 1)
         XCTAssertTrue(status.waitForExistence(timeout: 5))
+        let cleared = NSPredicate(format: "label CONTAINS %@", "Metadata-only audit log cleared.")
+        expectation(for: cleared, evaluatedWith: status)
+        waitForExpectations(timeout: 5)
         XCTAssertTrue(status.label.contains("Metadata-only audit log cleared."), status.label)
     }
 
@@ -522,13 +525,13 @@ final class KairoAppSmokeUITests: XCTestCase {
         verifyOAuthConnector(
             providerKey: "google",
             displayName: "Gmail / Google Workspace",
-            detailText: "Default scopes: openid, email, profile, https://www.googleapis.com/auth/gmail.readonly",
+            detailText: "Only mailbox data covered by granted Google API scopes may be accessed",
             expectsBackendExchange: true
         )
         verifyOAuthConnector(
             providerKey: "microsoft",
             displayName: "Microsoft 365 / Outlook",
-            detailText: "Default scopes: openid, profile, offline_access, User.Read, Mail.Read, Calendars.ReadWrite",
+            detailText: "Only Microsoft Graph resources covered by granted scopes are available.",
             expectsBackendExchange: true
         )
         verifyOAuthConnector(
@@ -540,39 +543,30 @@ final class KairoAppSmokeUITests: XCTestCase {
         verifyOAuthConnector(
             providerKey: "slack",
             displayName: "Slack",
-            detailText: "Default scopes: channels:history, chat:write",
+            detailText: "Only channels and workspace resources covered by Slack OAuth scopes may be accessed.",
             expectsBackendExchange: true
         )
         verifyOAuthConnector(
             providerKey: "chatgpt",
             displayName: "ChatGPT",
-            detailText: "Default scopes: openid, profile, email",
+            detailText: "Kairo cannot read ChatGPT web cookies or conversation history",
             expectsBackendExchange: false
         )
         verifyOAuthConnector(
             providerKey: "github",
             displayName: "GitHub",
-            detailText: "Default scopes: read:user, repo",
+            detailText: "Repository access follows granted GitHub OAuth scopes",
             expectsBackendExchange: true
         )
     }
 
-    func testSettingsPreviewsOAuthCallbackWithoutLeakingCode() throws {
+    func testSettingsKeepsOAuthCallbackPreviewOutOfPrimaryUI() throws {
         assertPrimaryDrawerItemsExist()
         selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
 
-        let callbackField = findElement("settings.oauth.callback-url", direction: .down, maxSwipes: 4)
-        XCTAssertTrue(callbackField.exists)
-        callbackField.tap()
-        callbackField.typeText("kairo://oauth/google/callback?code=sample-sensitive-code&state=ui-state")
-
-        let previewButton = findButton("settings.oauth.preview-callback", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(previewButton.exists)
-        previewButton.tap()
-
-        XCTAssertTrue(findElement("settings.oauth.callback-message", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "authorization code received", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "backend token exchange", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findElement("settings.oauth.connectors", direction: .down).exists)
+        XCTAssertFalse(anyElement("settings.oauth.callback-url").exists)
+        XCTAssertFalse(anyElement("settings.oauth.preview-callback").exists)
         XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "sample-sensitive-code")).firstMatch.exists)
     }
 

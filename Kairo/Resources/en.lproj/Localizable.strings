@@ -472,8 +472,10 @@
 "settings.title.models" = "AI engine";
 "settings.title.shortcutDemos" = "Shortcut Demos";
 "settings.openai.section" = "OpenAI";
+"settings.openai.detail" = "Connect Kairo to a cloud model when you want online answers.";
 "settings.openai.apiKey" = "API Key";
 "settings.openai.apiKeyPlaceholder" = "sk-...";
+"settings.openai.keychainNote" = "Stored in Keychain only.";
 "settings.openai.status.configured" = "Configured";
 "settings.openai.status.notConfigured" = "Not configured";
 "settings.openai.save" = "Save API Key";
@@ -488,7 +490,8 @@
 "settings.openai.dryRun.noNetwork" = "Dry run only. No network request was sent.";
 "settings.openai.error.emptyAPIKey" = "OpenAI API key is empty. Paste an API key before saving or running a dry run.";
 "settings.openai.loadFailed" = "Could not load settings: %@";
-"settings.oauth.section" = "OAuth Connectors";
+"settings.oauth.section" = "Connected accounts";
+"settings.oauth.detail" = "Let Chat suggest visible handoffs for services you authorize.";
 "settings.oauth.empty" = "Connector status has not loaded yet.";
 "settings.oauth.status.connected" = "Connected";
 "settings.oauth.status.readyToAuthorize" = "Ready to authorize";
@@ -514,9 +517,12 @@
 "settings.oauth.callback.readyForTokenExchange" = "ready for configured token exchange";
 "settings.oauth.callback.authorizationCodeReceived" = "%@ authorization code received (%lld chars); %@.";
 "settings.privacy.section" = "Privacy";
+"settings.privacy.detail" = "Review what Kairo stores locally and clear audit metadata.";
 "settings.privacy.keychainBoundary" = "API keys should only be stored in Keychain. Kairo should not write secrets to UserDefaults, logs, or analytics.";
 "settings.privacy.clearAuditLog" = "Clear Audit Log";
 "settings.privacy.auditLogDetail" = "Clears the local metadata-only audit log. It does not delete chat history, memories, API keys, OAuth tokens, or downloaded models.";
+"settings.privacy.statusReady" = "Audit controls ready.";
+"settings.privacy.auditLogClearing" = "Clearing metadata-only audit log...";
 "settings.privacy.auditLogUnavailable" = "Audit log deletion is unavailable in this environment.";
 "settings.privacy.auditLogCleared" = "Metadata-only audit log cleared.";
 "settings.privacy.auditLogClearFailed" = "Could not clear audit log: %@";
