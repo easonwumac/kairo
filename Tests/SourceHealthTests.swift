@@ -488,6 +488,70 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertEqual(accessedAPITypes.first?["NSPrivacyAccessedAPITypeReasons"] as? [String], ["CA92.1"])
     }
 
+    func testPrivacyLabelsChecklistMatchesCurrentBetaBoundaries() throws {
+        let root = packageRootURL()
+        let checklist = try String(
+            contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
+            encoding: .utf8
+        )
+        let reviewNotes = try String(
+            contentsOf: root.appendingPathComponent("docs/APP_REVIEW_NOTES.md"),
+            encoding: .utf8
+        )
+        let privacyManifest = try propertyListDictionary(at: root.appendingPathComponent("Kairo/Resources/PrivacyInfo.xcprivacy"))
+        let appInfoPlist = try propertyListDictionary(at: root.appendingPathComponent("Config/KairoApp-Info.plist"))
+
+        XCTAssertEqual(privacyManifest["NSPrivacyTracking"] as? Bool, false)
+        XCTAssertTrue((privacyManifest["NSPrivacyTrackingDomains"] as? [Any])?.isEmpty == true)
+        XCTAssertTrue((privacyManifest["NSPrivacyCollectedDataTypes"] as? [Any])?.isEmpty == true)
+        XCTAssertTrue(checklist.contains("- Tracking: No."))
+        XCTAssertTrue(checklist.contains("- Data collected: No collected data."))
+        XCTAssertTrue(checklist.contains("- Tracking domains: None."))
+        XCTAssertTrue(checklist.contains("Required Reason API usage: UserDefaults only, reason `CA92.1`"))
+
+        let currentPurposeStrings = [
+            "NSCalendarsUsageDescription",
+            "NSCalendarsFullAccessUsageDescription",
+            "NSRemindersUsageDescription",
+            "NSRemindersFullAccessUsageDescription",
+            "NSUserNotificationsUsageDescription",
+            "NSContactsUsageDescription"
+        ]
+        for purposeString in currentPurposeStrings {
+            XCTAssertNotNil(appInfoPlist[purposeString], purposeString)
+            XCTAssertTrue(checklist.contains("- `\(purposeString)`"), purposeString)
+        }
+
+        let futureOnlyPurposeStrings = [
+            "NSHomeKitUsageDescription",
+            "NSLocationWhenInUseUsageDescription",
+            "NSPhotoLibraryUsageDescription"
+        ]
+        for purposeString in futureOnlyPurposeStrings {
+            XCTAssertNil(appInfoPlist[purposeString], purposeString)
+            XCTAssertTrue(checklist.contains("- `\(purposeString)`"), purposeString)
+        }
+
+        for boundary in [
+            "no analytics SDK",
+            "no backend account",
+            "no cloud memory sync",
+            "no crash/telemetry collection provider",
+            "no provider-side sync beyond explicit user-configured API calls"
+        ] {
+            XCTAssertTrue(checklist.contains(boundary), boundary)
+            XCTAssertTrue(reviewNotes.contains(boundary), boundary)
+        }
+
+        XCTAssertTrue(checklist.contains("Backend account deletion: not applicable in the current beta"))
+        XCTAssertTrue(reviewNotes.contains("Backend account deletion: not applicable in the current beta"))
+        XCTAssertTrue(checklist.contains("Audit logs: Settings / Privacy exposes Clear Audit Log"))
+        XCTAssertTrue(reviewNotes.contains("metadata-only audit log"))
+        XCTAssertTrue(checklist.contains("privacy labels do not prove runtime behavior"))
+        XCTAssertFalse(checklist.localizedCaseInsensitiveContains("backend account deletion is available"))
+        XCTAssertFalse(checklist.localizedCaseInsensitiveContains("cloud-sync deletion is available"))
+    }
+
     func testBetaInfoPlistPurposeStringsMatchEnabledCapabilities() throws {
         let root = packageRootURL()
         let appInfoPlistURL = root.appendingPathComponent("Config/KairoApp-Info.plist")

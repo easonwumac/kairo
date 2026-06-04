@@ -11,7 +11,7 @@ For the current beta binary:
 - Tracking domains: None.
 - Required Reason API usage: UserDefaults only, reason `CA92.1`.
 
-These answers are valid only while Kairo has no analytics SDK, no ad tracking, no backend account, no cloud memory sync, no crash/telemetry collection provider, and no provider-side sync beyond user-configured API calls.
+These answers are valid only while Kairo has no analytics SDK, no ad tracking, no backend account, no cloud memory sync, no crash/telemetry collection provider, and no provider-side sync beyond explicit user-configured API calls.
 
 ## Purpose String Alignment
 
