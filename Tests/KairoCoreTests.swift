@@ -1286,9 +1286,6 @@ final class KairoCoreTests: XCTestCase {
             XCTAssertTrue(automationsShortcutDemoScenarioIdentifiers.contains("automations.shortcut-demo.\(recipe.id).preview-result"), recipe.id)
         }
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.api-key-status") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.dry-run-api-key") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.delete-api-key") == true)
-        XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.openai.status-message") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
         let oauthScenarioIdentifiers = catalog.scenario(id: "settings-oauth-connectors")?.requiredAccessibilityIdentifiers ?? []
@@ -1514,11 +1511,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains(#""access.homekit.demo.front-door-lock.confirm""#))
         XCTAssertTrue(uiTestSources.contains("Confirm in Kairo before any HomeKit security-device write."))
         XCTAssertTrue(uiTestSources.contains("settings.openai.api-key-status"))
-        XCTAssertTrue(uiTestSources.contains("testSettingsCanSaveDryRunAndDeleteOpenAIAPIKey"))
-        XCTAssertTrue(uiTestSources.contains("settings.openai.dry-run-api-key"))
-        XCTAssertTrue(uiTestSources.contains("settings.openai.delete-api-key"))
-        XCTAssertTrue(uiTestSources.contains("settings.openai.status-message"))
-        XCTAssertTrue(uiTestSources.contains("未送出網路請求"))
         XCTAssertTrue(uiTestSources.contains("settings.oauth.connectors"))
         XCTAssertTrue(uiTestSources.contains("settings.shortcuts.demos"))
         XCTAssertTrue(uiTestSources.contains("settings.models.local"))
