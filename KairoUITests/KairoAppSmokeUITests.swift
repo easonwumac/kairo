@@ -588,8 +588,12 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(findElement("automations.recipe-center").waitForExistence(timeout: 5))
         XCTAssertFalse(anyElement("automations.recipes.empty").exists)
-        XCTAssertTrue(findStaticText(containing: "Kairo internal recipe", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "does not create Apple Shortcuts", direction: .both, maxSwipes: 1).exists)
+        XCTAssertFalse(anyElement("automations.recipe-center.boundary").exists)
+
+        let workflowDetails = findButton("automations.details.toggle", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(workflowDetails.exists)
+        workflowDetails.tap()
+        XCTAssertTrue(findElement("automations.recipe-center.boundary", direction: .both, maxSwipes: 1).exists)
 
         let seedSamples = findElement("automations.seed-samples", direction: .down, maxSwipes: 5)
         XCTAssertTrue(seedSamples.exists)

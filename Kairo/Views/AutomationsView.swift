@@ -108,17 +108,31 @@ public struct AutomationsView: View {
                 .accessibilityIdentifier("automations.details.toggle")
 
                 if showWorkflowDetails {
-                    HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            KairoStatusPill(
+                                title: KairoL10n.string("automations.status.recipes", Int64(recipes.count)),
+                                systemImage: "point.topleft.down.curvedto.point.bottomright.up",
+                                tint: KairoDesign.blue
+                            )
+                            KairoStatusPill(
+                                title: KairoL10n.string("automations.status.reviewFirst"),
+                                systemImage: "checkmark.shield.fill",
+                                tint: KairoDesign.green
+                            )
+                        }
+
+                        Text(KairoL10n.string("automations.recipeCenter.detail"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
                         KairoStatusPill(
-                            title: KairoL10n.string("automations.status.recipes", Int64(recipes.count)),
-                            systemImage: "point.topleft.down.curvedto.point.bottomright.up",
-                            tint: KairoDesign.blue
-                        )
-                        KairoStatusPill(
-                            title: KairoL10n.string("automations.status.reviewFirst"),
+                            title: KairoL10n.string("automations.recipeCenter.boundary"),
                             systemImage: "checkmark.shield.fill",
                             tint: KairoDesign.green
                         )
+                        .accessibilityIdentifier("automations.recipe-center.boundary")
                     }
                 }
             }
@@ -135,8 +149,7 @@ public struct AutomationsView: View {
                     .accessibilityIdentifier("automations.recipe-center")
 
                 automationSectionTitle(
-                    title: KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.emptySection" : "automations.recipeCenter.section"),
-                    subtitle: KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.emptyDetail" : "automations.recipeCenter.detail")
+                    title: KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.emptySection" : "automations.recipeCenter.section")
                 )
 
                 Button {
@@ -150,12 +163,6 @@ public struct AutomationsView: View {
                 .disabled(isLoading)
                 .accessibilityLabel(KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.addStarter" : "automations.recipeCenter.addSamples"))
                 .accessibilityIdentifier("automations.seed-samples")
-
-                KairoStatusPill(
-                    title: KairoL10n.string("automations.recipeCenter.boundary"),
-                    systemImage: "checkmark.shield.fill",
-                    tint: KairoDesign.green
-                )
             }
         }
     }
@@ -164,8 +171,7 @@ public struct AutomationsView: View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
                 automationSectionTitle(
-                    title: KairoL10n.string("automations.recipes.section"),
-                    subtitle: KairoL10n.string("automations.recipes.detail")
+                    title: KairoL10n.string("automations.recipes.section")
                 )
 
                 if recipes.isEmpty {
@@ -280,13 +286,15 @@ public struct AutomationsView: View {
         }
     }
 
-    private func automationSectionTitle(title: String, subtitle: String) -> some View {
+    private func automationSectionTitle(title: String, subtitle: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             automationSectionHeader(title)
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if let subtitle {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

@@ -456,6 +456,16 @@ Stage 47 makes Access tools list direct:
 - Per-tool details, setup status, and advanced skill library controls remain
   progressive and unchanged.
 
+Stage 48 makes Workflows starter action-only:
+
+- The starter workflow and saved workflow sections now open with only their
+  section names and primary action/preview path, not explanatory subtitles.
+- The internal-recipe boundary and sample-recipe explanation move into Workflow
+  details, so safety context remains reachable without making the first layer
+  read like setup documentation.
+- Advanced Shortcut references and per-recipe More actions remain unchanged and
+  progressive.
+
 ## Next UI stages
 
 1. Product surface audit
