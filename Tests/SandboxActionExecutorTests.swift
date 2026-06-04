@@ -366,6 +366,20 @@ final class SandboxActionExecutorTests: XCTestCase {
         XCTAssertEqual(auditEvents.first?.result, .failed)
     }
 
+    func testSandboxActionExecutorReportsCalendarWriteFailureWithFailedAuditEvent() async throws {
+        let scheduler = MockCalendarScheduler(granted: true, createError: CalendarSchedulingError.unavailable)
+        let auditLogger = InMemoryAuditLogger()
+        let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), calendarScheduler: scheduler, auditLogger: auditLogger)
+        let action = makeCalendarAction(title: "EventKit write QA")
+
+        let result = try await executor.execute(action, confirmed: true)
+        let auditEvents = try await auditLogger.list(limit: 10)
+
+        XCTAssertFalse(result.completed)
+        XCTAssertTrue(result.message.contains("Could not create calendar event"))
+        XCTAssertEqual(auditEvents.first?.result, .failed)
+    }
+
     func testKairoEnvironmentDefaultActionExecutorUsesInjectedAuditLogger() async throws {
         let auditLogger = InMemoryAuditLogger()
         let environment = KairoEnvironment(
@@ -517,13 +531,17 @@ final class SandboxActionExecutorTests: XCTestCase {
     }
 }
 
+private func makeCalendarAction(title: String) -> AgentAction {
+    let startDate = Date(timeIntervalSince1970: 1_780_358_400)
+    let draft = CalendarEventDraft(title: title, notes: nil, startDate: startDate, endDate: startDate.addingTimeInterval(1800))
+    return AgentAction(kind: .createCalendarDraft, title: "Create Calendar Event", rationale: "User confirmed Kairo may write an EventKit calendar event.", payload: .calendarEvent(draft), riskTier: .tier2LowRiskWrite)
+}
+
 private actor MockURLOpener: URLOpener {
     private(set) var openedURLs: [URL] = []
     private let result: Bool
 
-    init(result: Bool = true) {
-        self.result = result
-    }
+    init(result: Bool = true) { self.result = result }
 
     func open(_ url: URL) async -> Bool {
         openedURLs.append(url)
@@ -539,9 +557,7 @@ private actor MockNotificationScheduler: NotificationScheduling {
         self.granted = granted
     }
 
-    func requestAuthorization() async throws -> Bool {
-        granted
-    }
+    func requestAuthorization() async throws -> Bool { granted }
 
     func schedule(_ draft: NotificationDraft) async throws -> String {
         scheduledDrafts.append(draft)
@@ -553,13 +569,9 @@ private actor MockReminderScheduler: ReminderScheduling {
     private(set) var createdDrafts: [ReminderDraft] = []
     private let granted: Bool
 
-    init(granted: Bool) {
-        self.granted = granted
-    }
+    init(granted: Bool) { self.granted = granted }
 
-    func requestAccess() async throws -> Bool {
-        granted
-    }
+    func requestAccess() async throws -> Bool { granted }
 
     func createReminder(from draft: ReminderDraft) async throws -> String {
         createdDrafts.append(draft)
@@ -570,16 +582,17 @@ private actor MockReminderScheduler: ReminderScheduling {
 private actor MockCalendarScheduler: CalendarScheduling {
     private(set) var createdDrafts: [CalendarEventDraft] = []
     private let granted: Bool
+    private let createError: Error?
 
-    init(granted: Bool) {
+    init(granted: Bool, createError: Error? = nil) {
         self.granted = granted
+        self.createError = createError
     }
 
-    func requestAccess() async throws -> Bool {
-        granted
-    }
+    func requestAccess() async throws -> Bool { granted }
 
     func createCalendarEvent(from draft: CalendarEventDraft) async throws -> String {
+        if let createError { throw createError }
         createdDrafts.append(draft)
         return "calendar-event-id"
     }
@@ -589,13 +602,9 @@ private actor MockContactScheduler: ContactScheduling {
     private(set) var createdDrafts: [ContactDraft] = []
     private let granted: Bool
 
-    init(granted: Bool) {
-        self.granted = granted
-    }
+    init(granted: Bool) { self.granted = granted }
 
-    func requestAccess() async throws -> Bool {
-        granted
-    }
+    func requestAccess() async throws -> Bool { granted }
 
     func createContact(from draft: ContactDraft) async throws -> String {
         createdDrafts.append(draft)

@@ -126,13 +126,23 @@ public actor SandboxActionExecutor: ActionExecutor {
             guard try await reminderScheduler.requestAccess() else {
                 return ActionExecutionResult(completed: false, message: Self.permissionDeniedMessage(for: "Reminders"))
             }
-            let identifier = try await reminderScheduler.createReminder(from: draft)
+            let identifier: String
+            do {
+                identifier = try await reminderScheduler.createReminder(from: draft)
+            } catch {
+                return ActionExecutionResult(completed: false, message: Self.writeFailedMessage(for: "reminder"))
+            }
             return ActionExecutionResult(completed: true, message: "Created reminder.", createdIdentifier: identifier)
         case (.createCalendarDraft, .calendarEvent(let draft)):
             guard try await calendarScheduler.requestAccess() else {
                 return ActionExecutionResult(completed: false, message: Self.permissionDeniedMessage(for: "Calendar"))
             }
-            let identifier = try await calendarScheduler.createCalendarEvent(from: draft)
+            let identifier: String
+            do {
+                identifier = try await calendarScheduler.createCalendarEvent(from: draft)
+            } catch {
+                return ActionExecutionResult(completed: false, message: Self.writeFailedMessage(for: "calendar event"))
+            }
             return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: identifier)
         case (.createContactDraft, .contact(let draft)):
             guard try await contactScheduler.requestAccess() else {
@@ -320,6 +330,10 @@ public actor SandboxActionExecutor: ActionExecutor {
 
     private static func permissionDeniedMessage(for serviceName: String) -> String {
         "\(serviceName) permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
+    }
+
+    private static func writeFailedMessage(for itemName: String) -> String {
+        "Could not create \(itemName). Check iOS Settings permissions and try again."
     }
 }
 
