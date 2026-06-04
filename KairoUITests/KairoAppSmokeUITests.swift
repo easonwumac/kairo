@@ -587,16 +587,13 @@ final class KairoAppSmokeUITests: XCTestCase {
         relaunchForUITesting(initialSection: "shortcuts")
 
         XCTAssertTrue(findElement("automations.recipe-center").waitForExistence(timeout: 5))
+        XCTAssertFalse(anyElement("automations.recipes.empty").exists)
         XCTAssertTrue(findStaticText(containing: "Kairo internal recipe", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "does not create Apple Shortcuts", direction: .both, maxSwipes: 1).exists)
 
-        scrollTowardTop(maxSwipes: 2)
-        let identifiedSeedSamples = app.buttons["automations.seed-samples"]
-        let seedSamples = identifiedSeedSamples.exists
-            ? identifiedSeedSamples
-            : findButton(labeled: "Add Sample Recipes", direction: .both, maxSwipes: 2)
+        let seedSamples = findElement("automations.seed-samples", direction: .down, maxSwipes: 5)
         XCTAssertTrue(seedSamples.exists)
-        seedSamples.tap()
+        tapElement(seedSamples)
 
         XCTAssertTrue(findStaticText(containing: "Daily Briefing", direction: .both, maxSwipes: 1).exists)
 

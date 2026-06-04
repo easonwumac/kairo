@@ -207,9 +207,12 @@
 "automations.status.reviewFirst" = "Review first";
 "automations.status.templates" = "%lld handoffs";
 "automations.status.previews" = "%lld previews";
+"automations.recipeCenter.emptySection" = "Start with a workflow";
+"automations.recipeCenter.emptyDetail" = "Add a starter set, preview one workflow, then run only when it looks right.";
 "automations.recipeCenter.section" = "Sample recipes";
 "automations.recipeCenter.detail" = "Start with Kairo-owned workflows you can preview before enabling.";
 "automations.recipeCenter.boundary" = "Kairo internal recipe; does not create Apple Shortcuts.";
+"automations.recipeCenter.addStarter" = "Add Starter Workflows";
 "automations.recipeCenter.addSamples" = "Add Sample Recipes";
 "automations.advanced.section" = "Advanced references";
 "automations.advanced.detail" = "Shortcut handoffs and node previews stay available when you need implementation details.";

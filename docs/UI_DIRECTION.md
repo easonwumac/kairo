@@ -354,10 +354,19 @@ Stage 36 makes Action Preview outcome-first:
   below the decision path, preserving review safety without making the sheet feel
   like a metadata table.
 
+Stage 37 makes Workflows starter-first:
+
+- Empty Workflows now shows one starter path instead of pairing the starter
+  recipe center with a separate empty saved-workflows card.
+- The starter action is framed as adding workflows to preview and run, not as a
+  sample/demo catalog.
+- Once workflows exist, saved workflows return to the first position and the
+  starter set becomes a secondary add-more path below them.
+
 ## Next UI stages
 
 1. Product surface audit
-   - Re-scan Chat, Memory, Workflows, Access, Models, and Settings for remaining
+   - Re-scan Chat, Memory, Access, Models, and Settings for remaining
      first-level text blocks, duplicated status rows, or table-like disclosures
      that still compete with the primary product path.
 

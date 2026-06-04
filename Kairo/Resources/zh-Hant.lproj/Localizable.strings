@@ -207,9 +207,12 @@
 "automations.status.reviewFirst" = "先預覽確認";
 "automations.status.templates" = "%lld 個 handoff";
 "automations.status.previews" = "%lld 個預覽";
+"automations.recipeCenter.emptySection" = "從一個流程開始";
+"automations.recipeCenter.emptyDetail" = "先加入 starter set，預覽一個流程，確認適合後才執行。";
 "automations.recipeCenter.section" = "範例流程";
 "automations.recipeCenter.detail" = "從 Kairo 自有流程開始；可先預覽，再決定是否啟用。";
 "automations.recipeCenter.boundary" = "Kairo internal recipe；不會建立 Apple Shortcuts。";
+"automations.recipeCenter.addStarter" = "加入起始工作流";
 "automations.recipeCenter.addSamples" = "加入範例 Recipes";
 "automations.advanced.section" = "進階參考";
 "automations.advanced.detail" = "需要實作細節時，再查看 Shortcut handoff 與節點預覽。";

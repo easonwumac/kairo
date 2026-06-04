@@ -42,7 +42,6 @@ public struct AutomationsView: View {
                 workflowOverviewCard
                 if recipes.isEmpty {
                     recipeCenterCard
-                    savedRecipesCard
                 } else {
                     savedRecipesCard
                     recipeCenterCard
@@ -98,9 +97,15 @@ public struct AutomationsView: View {
     private var recipeCenterCard: some View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.emptySection" : "automations.recipeCenter.section"))
+                    .accessibilityIdentifier("automations.recipe-center")
+
                 automationSectionTitle(
-                    title: KairoL10n.string("automations.recipeCenter.section"),
-                    subtitle: KairoL10n.string("automations.recipeCenter.detail")
+                    title: KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.emptySection" : "automations.recipeCenter.section"),
+                    subtitle: KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.emptyDetail" : "automations.recipeCenter.detail")
                 )
 
                 KairoStatusPill(
@@ -112,17 +117,16 @@ public struct AutomationsView: View {
                 Button {
                     Task { await seedSampleRecipes() }
                 } label: {
-                    Label(KairoL10n.string("automations.recipeCenter.addSamples"), systemImage: "plus.circle.fill")
+                    Label(KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.addStarter" : "automations.recipeCenter.addSamples"), systemImage: "plus.circle.fill")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isLoading)
-                .accessibilityLabel(KairoL10n.string("automations.recipeCenter.addSamples"))
+                .accessibilityLabel(KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.addStarter" : "automations.recipeCenter.addSamples"))
                 .accessibilityIdentifier("automations.seed-samples")
             }
         }
-        .accessibilityIdentifier("automations.recipe-center")
     }
 
     private var savedRecipesCard: some View {
