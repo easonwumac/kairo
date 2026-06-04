@@ -62,6 +62,7 @@ public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable, Local
     case invalidManifestURL(skillID: String, manifestURL: String)
     case duplicateSkillID(String)
     case manifestSkillMismatch(expectedSkillID: String, actualSkillID: String)
+    case confirmationRequiredDisabled(skillID: String)
     case nonProductionCatalogSignatureStatus(String)
     case invalidJSON
 
@@ -77,6 +78,8 @@ public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable, Local
             return "Marketplace catalog contains a duplicate skill id: \(skillID)."
         case .manifestSkillMismatch(let expectedSkillID, let actualSkillID):
             return "Marketplace manifest skill id mismatch: expected \(expectedSkillID), got \(actualSkillID)."
+        case .confirmationRequiredDisabled(let skillID):
+            return "Marketplace skill \(skillID) disables required confirmation."
         case .nonProductionCatalogSignatureStatus(let status):
             return "Marketplace catalog is marked \(status), not productionSigned."
         case .invalidJSON:
@@ -242,6 +245,9 @@ public struct AgentSkillMarketplaceCatalogService: Sendable {
     private func skill(from entry: AgentSkillMarketplaceIndexEntry) throws -> AgentSkill {
         guard !entry.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw AgentSkillMarketplaceCatalogError.invalidSkillID(entry.id)
+        }
+        guard entry.requiresConfirmation else {
+            throw AgentSkillMarketplaceCatalogError.confirmationRequiredDisabled(skillID: entry.id)
         }
 
         let requiredCapabilities = try entry.permissions.map { permission in
