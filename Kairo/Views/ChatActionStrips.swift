@@ -91,7 +91,7 @@ struct ToolCandidatesStrip: View {
                             Text(candidate.title)
                                 .fontWeight(.semibold)
                                 .lineLimit(1)
-                            Text(candidate.skillKind.settingsTitle)
+                            Text(optionDetail(for: candidate))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
@@ -115,7 +115,7 @@ struct ToolCandidatesStrip: View {
                     .padding(.vertical, 8)
                     .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Tool candidate: \(candidate.title), \(candidate.skillKind.settingsTitle). \(candidate.handoffSummary). \(riskSummary)")
+                    .accessibilityLabel("Suggested option: \(candidate.title), \(optionDetail(for: candidate)). \(candidate.handoffSummary). \(riskSummary)")
                     .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id)")
                 }
             }
@@ -126,6 +126,22 @@ struct ToolCandidatesStrip: View {
     private func toolRiskSummary(for candidate: AgentToolInvocationCandidate) -> String {
         let confirmation = candidate.requiresConfirmation ? "Will ask first" : "No changes"
         return "\(toolRiskTierLabel(for: candidate.riskTier)) · \(confirmation)"
+    }
+
+    private func optionDetail(for candidate: AgentToolInvocationCandidate) -> String {
+        if candidate.requiresConfirmation {
+            return "Review first"
+        }
+        switch candidate.riskTier {
+        case .tier0ReadOnly:
+            return "No changes"
+        case .tier1Draft:
+            return "Visible handoff"
+        case .tier2LowRiskWrite:
+            return "Phone change"
+        case .tier3HighRiskExternal:
+            return "External handoff"
+        }
     }
 
     private func toolRiskTierLabel(for riskTier: ActionRiskTier) -> String {
