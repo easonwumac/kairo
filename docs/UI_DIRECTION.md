@@ -334,13 +334,18 @@ Stage 34 makes connected accounts status-first:
 - Connected accounts still show the same official OAuth/API boundaries, but
   Settings no longer reads like a connector implementation table.
 
+Stage 35 makes privacy cleanup review-first:
+
+- Privacy cleanup now opens to an audit-log status row instead of immediately
+  exposing the destructive Clear Audit Log action.
+- Keychain boundary text, audit-log retention detail, and the clear action move
+  behind an Audit log cleanup disclosure.
+- The destructive action remains reachable and smoke-tested, but Settings reads
+  as retention status first, cleanup second.
+
 ## Next UI stages
 
-1. Settings
-   - Continue tightening privacy cleanup after smoke confirms which retention
-     states users need on the first screen.
-
-2. Action Preview
+1. Action Preview
    - Continue tuning action-specific summaries after smoke coverage shows which
      destination or permission states are still ambiguous.
 

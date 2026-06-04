@@ -645,6 +645,9 @@
 "settings.privacy.show" = "顯示隱私清理";
 "settings.privacy.hide" = "隱藏隱私清理";
 "settings.privacy.keychainBoundary" = "API key 只應儲存在 Keychain。Kairo 不應把 secret 寫入 UserDefaults、log 或 analytics。";
+"settings.privacy.auditLog" = "Audit log";
+"settings.privacy.auditLogDetails.show" = "顯示 audit log 清理";
+"settings.privacy.auditLogDetails.hide" = "隱藏 audit log 清理";
 "settings.privacy.clearAuditLog" = "清除 Audit Log";
 "settings.privacy.auditLogDetail" = "清除本機 metadata-only audit log。這不會刪除 chat history、memories、API keys、OAuth tokens 或已下載模型。";
 "settings.privacy.statusReady" = "Audit 控制已就緒。";

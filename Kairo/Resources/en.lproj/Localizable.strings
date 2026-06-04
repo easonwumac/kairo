@@ -645,6 +645,9 @@
 "settings.privacy.show" = "Show privacy cleanup";
 "settings.privacy.hide" = "Hide privacy cleanup";
 "settings.privacy.keychainBoundary" = "API keys should only be stored in Keychain. Kairo should not write secrets to UserDefaults, logs, or analytics.";
+"settings.privacy.auditLog" = "Audit log";
+"settings.privacy.auditLogDetails.show" = "Show audit log cleanup";
+"settings.privacy.auditLogDetails.hide" = "Hide audit log cleanup";
 "settings.privacy.clearAuditLog" = "Clear Audit Log";
 "settings.privacy.auditLogDetail" = "Clears the local metadata-only audit log. It does not delete chat history, memories, API keys, OAuth tokens, or downloaded models.";
 "settings.privacy.statusReady" = "Audit controls ready.";

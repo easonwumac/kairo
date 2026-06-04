@@ -97,7 +97,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         openConnectionSetupIfNeeded()
         openPrivacyCleanupIfNeeded()
 
-        let clearAuditLog = findElement("settings.privacy.clear-audit-log", direction: .both, maxSwipes: 4)
+        let clearAuditLog = findButton("settings.privacy.clear-audit-log", direction: .both, maxSwipes: 4)
         XCTAssertTrue(clearAuditLog.exists)
         XCTAssertTrue(findElement("settings.privacy.audit-log-detail", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "does not delete chat history", direction: .both, maxSwipes: 1).exists)

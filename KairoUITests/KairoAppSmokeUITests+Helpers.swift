@@ -190,7 +190,13 @@ extension KairoAppSmokeUITests {
         let toggle = findButton("settings.privacy.toggle", direction: .down, maxSwipes: 4)
         XCTAssertTrue(toggle.exists)
         tapElement(toggle)
-        XCTAssertTrue(findElement("settings.privacy.clear-audit-log", direction: .down, maxSwipes: 2).waitForExistence(timeout: 2))
+        if anyElement("settings.privacy.clear-audit-log").exists {
+            return
+        }
+        let auditDetails = findButton("settings.privacy.audit-log-details", direction: .down, maxSwipes: 2)
+        XCTAssertTrue(auditDetails.exists)
+        tapElement(auditDetails)
+        XCTAssertTrue(findButton("settings.privacy.clear-audit-log", direction: .down, maxSwipes: 2).waitForExistence(timeout: 2))
     }
 
     func openMemoryAddContextIfNeeded() {
