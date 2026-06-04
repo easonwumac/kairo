@@ -87,7 +87,7 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 - [x] tier1/tier2/tier3 action 需要使用者確認；高風險 handoff 不自動執行。
 - [x] 不支援的 iOS 操作用 unsupportedSandboxAction 清楚說明。
 - [x] 發送訊息、Email、付款、刪除資料等高風險操作預設不自動執行；付款目前不是支援 action。
-- [x] Audit log 使用 metadata-only event model，不保存完整敏感 payload。
+- [x] Audit log 使用 metadata-only event model；confirmed、rejected、permission-denied/failed action outcomes are recorded without saving full sensitive payloads.
 
 ### 5. Share Extension
 

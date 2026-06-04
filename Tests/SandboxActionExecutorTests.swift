@@ -249,6 +249,152 @@ final class SandboxActionExecutorTests: XCTestCase {
         XCTAssertEqual(createdTitles, ["Review Shortcut node outputs"])
     }
 
+    func testSandboxActionExecutorRecordsAuditEventAfterConfirmedReminderCreation() async throws {
+        let scheduler = MockReminderScheduler(granted: true)
+        let auditLogger = InMemoryAuditLogger()
+        let executor = SandboxActionExecutor(
+            memoryStore: InMemoryMemoryStore(),
+            reminderScheduler: scheduler,
+            auditLogger: auditLogger
+        )
+        let action = AgentAction(
+            kind: .createReminderDraft,
+            title: "Create Reminder",
+            rationale: "User confirmed Kairo may write an EventKit reminder.",
+            payload: .reminder(ReminderDraft(
+                title: "Follow up from shared text",
+                notes: "Created from Share -> Chat task extraction.",
+                dueDate: nil
+            )),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+        let auditEvents = try await auditLogger.list(limit: 10)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(auditEvents.count, 1)
+        XCTAssertEqual(auditEvents.first?.actionKind, .createReminderDraft)
+        XCTAssertEqual(auditEvents.first?.capabilityKeys, [.reminders])
+        XCTAssertEqual(auditEvents.first?.requiredConfirmation, true)
+        XCTAssertEqual(auditEvents.first?.userConfirmed, true)
+        XCTAssertEqual(auditEvents.first?.result, .completed)
+    }
+
+    func testSandboxActionExecutorRecordsRejectedAuditEventForUnconfirmedWrite() async throws {
+        let scheduler = MockReminderScheduler(granted: true)
+        let auditLogger = InMemoryAuditLogger()
+        let executor = SandboxActionExecutor(
+            memoryStore: InMemoryMemoryStore(),
+            reminderScheduler: scheduler,
+            auditLogger: auditLogger
+        )
+        let action = AgentAction(
+            kind: .createReminderDraft,
+            title: "Create Reminder",
+            rationale: "Kairo must not write EventKit data until the user confirms.",
+            payload: .reminder(ReminderDraft(title: "Needs confirmation", notes: nil, dueDate: nil)),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: false)
+        let auditEvents = try await auditLogger.list(limit: 10)
+        let createdDrafts = await scheduler.createdDrafts
+
+        XCTAssertFalse(result.completed)
+        XCTAssertEqual(result.message, "Action requires user confirmation.")
+        XCTAssertTrue(createdDrafts.isEmpty)
+        XCTAssertEqual(auditEvents.count, 1)
+        XCTAssertEqual(auditEvents.first?.actionKind, .createReminderDraft)
+        XCTAssertEqual(auditEvents.first?.capabilityKeys, [.reminders])
+        XCTAssertEqual(auditEvents.first?.requiredConfirmation, true)
+        XCTAssertEqual(auditEvents.first?.userConfirmed, false)
+        XCTAssertEqual(auditEvents.first?.result, .rejected)
+    }
+
+    func testSandboxActionExecutorRecordsFailedAuditEventForPermissionDeniedWrite() async throws {
+        let scheduler = MockCalendarScheduler(granted: false)
+        let auditLogger = InMemoryAuditLogger()
+        let executor = SandboxActionExecutor(
+            memoryStore: InMemoryMemoryStore(),
+            calendarScheduler: scheduler,
+            auditLogger: auditLogger
+        )
+        let startDate = Date(timeIntervalSince1970: 1_780_358_400)
+        let action = AgentAction(
+            kind: .createCalendarDraft,
+            title: "Create Calendar Event",
+            rationale: "User confirmed Kairo may write an EventKit calendar event.",
+            payload: .calendarEvent(CalendarEventDraft(
+                title: "Permission denied QA",
+                notes: nil,
+                startDate: startDate,
+                endDate: startDate.addingTimeInterval(1800)
+            )),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+        let auditEvents = try await auditLogger.list(limit: 10)
+
+        XCTAssertFalse(result.completed)
+        XCTAssertEqual(result.message, "Calendar permission was not granted.")
+        XCTAssertEqual(auditEvents.count, 1)
+        XCTAssertEqual(auditEvents.first?.actionKind, .createCalendarDraft)
+        XCTAssertEqual(auditEvents.first?.capabilityKeys, [.calendar])
+        XCTAssertEqual(auditEvents.first?.requiredConfirmation, true)
+        XCTAssertEqual(auditEvents.first?.userConfirmed, true)
+        XCTAssertEqual(auditEvents.first?.result, .failed)
+    }
+
+    func testKairoEnvironmentDefaultActionExecutorUsesInjectedAuditLogger() async throws {
+        let auditLogger = InMemoryAuditLogger()
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: MockAIProvider(),
+            auditLogger: auditLogger
+        )
+        let action = AgentAction(
+            kind: .answer,
+            title: "Answer",
+            rationale: "No external action required.",
+            payload: .text("No-op answer"),
+            riskTier: .tier0ReadOnly
+        )
+
+        let result = try await environment.actionExecutor.execute(action, confirmed: false)
+        let auditEvents = try await auditLogger.list(limit: 10)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(auditEvents.count, 1)
+        XCTAssertEqual(auditEvents.first?.actionKind, .answer)
+        XCTAssertEqual(auditEvents.first?.capabilityKeys, [.chat])
+        XCTAssertEqual(auditEvents.first?.result, .completed)
+    }
+
+    func testKairoEnvironmentUITestingActionExecutorUsesEnvironmentAuditLogger() async throws {
+        let environment = try await KairoEnvironment.uiTesting()
+        let action = AgentAction(
+            kind: .sendNotification,
+            title: "Notify",
+            rationale: "UI testing environment should record action audit metadata.",
+            payload: .notification(NotificationDraft(title: "Kairo", body: "Audit metadata smoke")),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await environment.actionExecutor.execute(action, confirmed: true)
+        let auditEvents = try await environment.auditLogger.list(limit: 10)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(auditEvents.count, 1)
+        XCTAssertEqual(auditEvents.first?.actionKind, .sendNotification)
+        XCTAssertEqual(auditEvents.first?.capabilityKeys, [.notifications])
+        XCTAssertEqual(auditEvents.first?.requiredConfirmation, true)
+        XCTAssertEqual(auditEvents.first?.userConfirmed, true)
+        XCTAssertEqual(auditEvents.first?.result, .completed)
+    }
+
     func testSandboxActionExecutorCreatesCalendarEventThroughInjectedScheduler() async throws {
         let scheduler = MockCalendarScheduler(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), calendarScheduler: scheduler)

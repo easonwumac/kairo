@@ -46,8 +46,56 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
 
         return KairoShareImportResult(
             attachments: items.flatMap(\.attachments),
-            suggestedPrompt: items.first?.suggestedPrompt,
+            suggestedPrompt: Self.suggestedPrompt(for: items),
             importedItemIDs: importedItemIDs
         )
+    }
+
+    private static func suggestedPrompt(for items: [ShareIngestionItem]) -> String? {
+        let attachments = items.flatMap(\.attachments)
+        for attachment in attachments {
+            guard let taskTitle = taskTitle(from: attachment.textPreview) else { continue }
+            return "建立提醒事項：\(taskTitle)"
+        }
+        return items.first?.suggestedPrompt
+    }
+
+    private static func taskTitle(from text: String?) -> String? {
+        guard let text else { return nil }
+        for rawLine in text.components(separatedBy: .newlines) {
+            let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !line.isEmpty else { continue }
+            if let title = strippedTaskTitle(from: line) {
+                return title
+            }
+        }
+        return nil
+    }
+
+    private static func strippedTaskTitle(from line: String) -> String? {
+        let prefixes = [
+            "TODO:",
+            "Todo:",
+            "todo:",
+            "Reminder:",
+            "reminder:",
+            "Action:",
+            "action:",
+            "待辦：",
+            "待辦:",
+            "提醒：",
+            "提醒:",
+            "- [ ]",
+            "-",
+            "*",
+            "•"
+        ]
+        for prefix in prefixes where line.hasPrefix(prefix) {
+            let title = line
+                .dropFirst(prefix.count)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return title.isEmpty ? nil : String(title.prefix(120))
+        }
+        return nil
     }
 }

@@ -67,6 +67,7 @@ public actor SandboxActionExecutor: ActionExecutor {
     private let urlOpener: any URLOpener
     private let notificationScheduler: any NotificationScheduling
     private let homeControlService: any HomeControlService
+    let auditLogger: (any AuditLogger)?
 
     public init(
         memoryStore: MemoryStore,
@@ -77,7 +78,8 @@ public actor SandboxActionExecutor: ActionExecutor {
         contactScheduler: any ContactScheduling = ContactsFrameworkContactScheduler(),
         urlOpener: any URLOpener = NoOpURLOpener(),
         notificationScheduler: any NotificationScheduling = UnavailableNotificationScheduler(),
-        homeControlService: any HomeControlService = UnavailableHomeControlService()
+        homeControlService: any HomeControlService = UnavailableHomeControlService(),
+        auditLogger: (any AuditLogger)? = nil
     ) {
         self.memoryStore = memoryStore
         self.safetyPolicyEngine = safetyPolicyEngine
@@ -88,10 +90,26 @@ public actor SandboxActionExecutor: ActionExecutor {
         self.urlOpener = urlOpener
         self.notificationScheduler = notificationScheduler
         self.homeControlService = homeControlService
+        self.auditLogger = auditLogger
     }
 
     public func execute(_ action: AgentAction, confirmed: Bool = false) async throws -> ActionExecutionResult {
         let decision = safetyPolicyEngine.evaluate(action)
+        do {
+            let result = try await execute(action, confirmed: confirmed, decision: decision)
+            try await recordAuditEvent(for: action, decision: decision, confirmed: confirmed, executionResult: result)
+            return result
+        } catch {
+            try? await recordAuditEvent(for: action, decision: decision, confirmed: confirmed, result: .failed)
+            throw error
+        }
+    }
+
+    private func execute(
+        _ action: AgentAction,
+        confirmed: Bool,
+        decision: SafetyPolicyDecision
+    ) async throws -> ActionExecutionResult {
         guard decision.allowed else {
             return ActionExecutionResult(completed: false, message: decision.reason)
         }

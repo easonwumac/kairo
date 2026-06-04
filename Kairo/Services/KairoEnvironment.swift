@@ -78,7 +78,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         self.localModelDownloader = localModelDownloader
         self.localModelBenchmarkService = localModelBenchmarkService
         self.localModelReplyCheckService = localModelReplyCheckService
-        self.actionExecutor = actionExecutor ?? SandboxActionExecutor(memoryStore: memoryStore)
+        self.actionExecutor = actionExecutor ?? SandboxActionExecutor(memoryStore: memoryStore, auditLogger: auditLogger)
     }
 
     public static func preview() -> KairoEnvironment {
@@ -199,6 +199,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
                 .appendingPathComponent("kairo-recipes.json")
         )
         let memoryStore = InMemoryMemoryStore()
+        let auditLogger = InMemoryAuditLogger()
 
         return KairoEnvironment(
             memoryStore: memoryStore,
@@ -210,7 +211,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
             shareIngestionQueue: InMemoryShareIngestionQueue(),
             kairoRecipeStore: kairoRecipeStore,
             permissionService: StubPermissionService(),
-            auditLogger: InMemoryAuditLogger(),
+            auditLogger: auditLogger,
             oauthConnectorCallbackStore: oauthCallbackStore,
             agentSkillManagerService: skillManagerService,
             agentSkillMarketplaceCatalogService: marketplaceCatalogService,
@@ -225,7 +226,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
                 calendarScheduler: AllowingCalendarScheduler(identifier: "ui-testing-calendar-event-id"),
                 contactScheduler: AllowingContactScheduler(identifier: "ui-testing-contact-id"),
                 urlOpener: AllowingURLOpener(),
-                notificationScheduler: AllowingNotificationScheduler(identifier: "ui-testing-notification-id")
+                notificationScheduler: AllowingNotificationScheduler(identifier: "ui-testing-notification-id"),
+                auditLogger: auditLogger
             )
         )
     }
@@ -491,10 +493,11 @@ public struct KairoEnvironment: KairoBackendDependencies {
         #if canImport(UserNotifications)
         actionExecutor = SandboxActionExecutor(
             memoryStore: memoryStore,
-            notificationScheduler: UserNotificationScheduler()
+            notificationScheduler: UserNotificationScheduler(),
+            auditLogger: auditLogger
         )
         #else
-        actionExecutor = SandboxActionExecutor(memoryStore: memoryStore)
+        actionExecutor = SandboxActionExecutor(memoryStore: memoryStore, auditLogger: auditLogger)
         #endif
 
         return KairoEnvironment(

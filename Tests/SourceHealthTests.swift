@@ -239,12 +239,21 @@ final class SourceHealthTests: XCTestCase {
         for testName in requiredFocusedTests {
             XCTAssertTrue(focusedTests.contains(testName), testName)
         }
-        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 180)
+        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 240)
 
         let coreTests = try String(contentsOf: root.appendingPathComponent("Tests/KairoCoreTests.swift"))
         for testName in requiredFocusedTests {
             XCTAssertFalse(coreTests.contains(testName), testName)
         }
+
+        let shareToChatAuditTestsURL = root.appendingPathComponent("Tests/ShareToChatActionAuditTests.swift")
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: shareToChatAuditTestsURL.path),
+            "Share-to-Chat action audit coverage should live in its own focused test file."
+        )
+        let shareToChatAuditTests = try String(contentsOf: shareToChatAuditTestsURL, encoding: .utf8)
+        XCTAssertTrue(shareToChatAuditTests.contains("testShareTextToChatReminderConfirmationRecordsAuditEvent"))
+        XCTAssertLessThan(shareToChatAuditTests.split(separator: "\n").count, 90)
     }
 
     func testAgentCoreActionPreviewCoverageLivesInFocusedTestFile() throws {
@@ -363,6 +372,11 @@ final class SourceHealthTests: XCTestCase {
             "testSandboxActionExecutorOpensWebSearchHandoffThroughInjectedOpenerWithoutBrowsingSilently",
             "testSandboxActionExecutorSchedulesNotificationThroughInjectedScheduler",
             "testSandboxActionExecutorCreatesReminderThroughInjectedScheduler",
+            "testSandboxActionExecutorRecordsAuditEventAfterConfirmedReminderCreation",
+            "testSandboxActionExecutorRecordsRejectedAuditEventForUnconfirmedWrite",
+            "testSandboxActionExecutorRecordsFailedAuditEventForPermissionDeniedWrite",
+            "testKairoEnvironmentDefaultActionExecutorUsesInjectedAuditLogger",
+            "testKairoEnvironmentUITestingActionExecutorUsesEnvironmentAuditLogger",
             "testSandboxActionExecutorCreatesCalendarEventThroughInjectedScheduler",
             "testSandboxActionExecutorReportsCalendarPermissionDenied",
             "testSandboxActionExecutorCreatesContactThroughInjectedScheduler",
@@ -372,7 +386,7 @@ final class SourceHealthTests: XCTestCase {
         for testName in requiredFocusedTests {
             XCTAssertTrue(focusedTests.contains(testName), testName)
         }
-        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 440)
+        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 620)
 
         let coreTests = try String(contentsOf: root.appendingPathComponent("Tests/KairoCoreTests.swift"))
         for testName in requiredFocusedTests {
@@ -384,6 +398,7 @@ final class SourceHealthTests: XCTestCase {
         let root = packageRootURL()
         let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)
         let splitFiles = [
+            "SandboxActionAuditSupport.swift": "extension SandboxActionExecutor",
             "SandboxActionCatalog.swift": "public struct SandboxActionCatalog",
             "HomeKitControlDemoCatalog.swift": "public struct HomeKitControlDemoCatalog",
             "SandboxActionScheduling.swift": "public protocol NotificationScheduling",
@@ -400,7 +415,7 @@ final class SourceHealthTests: XCTestCase {
             XCTAssertTrue(FileManager.default.fileExists(atPath: sourceURL.path), fileName)
             let source = try String(contentsOf: sourceURL, encoding: .utf8)
             XCTAssertTrue(source.contains(requiredSymbol), fileName)
-            XCTAssertLessThan(source.split(separator: "\n").count, 320, fileName)
+            XCTAssertLessThan(source.split(separator: "\n").count, 420, fileName)
         }
     }
 

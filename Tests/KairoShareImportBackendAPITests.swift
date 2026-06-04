@@ -36,4 +36,27 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let remaining = try await queue.pendingItems(limit: 10)
         XCTAssertTrue(remaining.isEmpty)
     }
+
+    func testShareImportBackendAPIBuildsReminderPromptForTaskLikeSharedText() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("""
+                TODO: Send prototype link
+                Notes from the launch review.
+                """, displayName: "Launch Notes")
+            ],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let api = KairoShareImportBackendService(shareIngestionQueue: queue)
+
+        let imported = try await api.importPendingShares(limit: 10)
+
+        XCTAssertEqual(imported.suggestedPrompt, "建立提醒事項：Send prototype link")
+        XCTAssertEqual(imported.attachments.first?.textPreview?.contains("TODO: Send prototype link"), true)
+        let remaining = try await queue.pendingItems(limit: 10)
+        XCTAssertTrue(remaining.isEmpty)
+    }
 }
