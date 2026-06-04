@@ -1,4 +1,5 @@
 import XCTest
+import Foundation
 @testable import KairoCore
 
 final class KairoShareImportBackendAPITests: XCTestCase {
@@ -58,5 +59,37 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         XCTAssertEqual(imported.attachments.first?.textPreview?.contains("TODO: Send prototype link"), true)
         let remaining = try await queue.pendingItems(limit: 10)
         XCTAssertTrue(remaining.isEmpty)
+    }
+
+    func testShareImportBackendAPIPurgesImportedShareContentFromDisk() async throws {
+        let fileURL = temporaryFileURL(named: "share-ingestion-queue.json")
+        let queue = try await JSONFileShareIngestionQueue(fileURL: fileURL)
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("Private shared text should not remain in the queue after import.", displayName: "Private Note")
+            ],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        try await queue.enqueue(item)
+        var rawText = try String(contentsOf: fileURL, encoding: .utf8)
+        XCTAssertTrue(rawText.contains(item.id.uuidString))
+        XCTAssertTrue(rawText.contains("Private shared text should not remain"))
+
+        let api = KairoShareImportBackendService(shareIngestionQueue: queue)
+        let imported = try await api.importPendingShares(limit: 10)
+
+        XCTAssertEqual(imported.importedItemIDs, [item.id])
+        rawText = try String(contentsOf: fileURL, encoding: .utf8)
+        XCTAssertFalse(rawText.contains(item.id.uuidString))
+        XCTAssertFalse(rawText.contains("Private shared text should not remain"))
+    }
+
+    private func temporaryFileURL(named name: String) -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("KairoShareImportBackendAPITests-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory.appendingPathComponent(name)
     }
 }

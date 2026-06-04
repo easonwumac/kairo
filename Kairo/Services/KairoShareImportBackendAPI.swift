@@ -41,6 +41,7 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
         importedItemIDs.reserveCapacity(items.count)
         for item in items {
             try await shareIngestionQueue.markImported(id: item.id)
+            try await shareIngestionQueue.delete(id: item.id)
             importedItemIDs.append(item.id)
         }
 
