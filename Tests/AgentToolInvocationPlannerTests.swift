@@ -114,13 +114,13 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(candidate.requiredCapabilities, [.notifications])
         XCTAssertEqual(candidate.riskTier, .tier2LowRiskWrite)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertTrue(candidate.handoffSummary.contains("UserNotifications"))
+        XCTAssertEqual(candidate.handoffSummary, KairoL10n.string("chat.action.handoffSummary.notification"))
         XCTAssertEqual(action.kind, .sendNotification)
         XCTAssertTrue(action.requiresConfirmation)
         guard case let .notification(draft) = action.payload else {
             return XCTFail("Expected notification payload.")
         }
-        XCTAssertEqual(draft.title, "Kairo Notification")
+        XCTAssertEqual(draft.title, KairoL10n.string("chat.action.notification.defaultTitle"))
         XCTAssertTrue(draft.body.contains("喝水"))
         XCTAssertNil(draft.deliveryDate)
     }
@@ -137,14 +137,14 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(candidate.requiredCapabilities, [.reminders])
         XCTAssertEqual(candidate.riskTier, .tier2LowRiskWrite)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertTrue(candidate.handoffSummary.contains("EventKit"))
+        XCTAssertEqual(candidate.handoffSummary, KairoL10n.string("chat.action.handoffSummary.reminder"))
         XCTAssertEqual(action.kind, .createReminderDraft)
         XCTAssertTrue(action.requiresConfirmation)
         guard case let .reminder(draft) = action.payload else {
             return XCTFail("Expected reminder payload.")
         }
         XCTAssertTrue(draft.title.contains("下班前整理"))
-        XCTAssertEqual(draft.notes, "Drafted from a Kairo chat request.")
+        XCTAssertEqual(draft.notes, KairoL10n.string("chat.action.reminder.defaultNotes"))
         XCTAssertNil(draft.dueDate)
         XCTAssertFalse(plan.candidates.contains { $0.id == "action-send-notification" })
     }
@@ -275,8 +275,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(candidate.requiredCapabilities.map(\.rawValue), ["messages"])
         XCTAssertEqual(candidate.riskTier, .tier1Draft)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertTrue(candidate.handoffSummary.contains("sms:"))
-        XCTAssertTrue(candidate.handoffSummary.contains("body stays in Kairo"))
+        XCTAssertEqual(candidate.handoffSummary, KairoL10n.string("chat.action.handoffSummary.messages"))
         XCTAssertEqual(action.kind.rawValue, "openMessageHandoff")
         XCTAssertTrue(action.requiresConfirmation)
         let payloadData = try JSONEncoder().encode(action.payload)
@@ -321,8 +320,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(candidate.requiredCapabilities, [.web])
         XCTAssertEqual(candidate.riskTier, .tier1Draft)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertTrue(candidate.handoffSummary.contains("Safari"))
-        XCTAssertTrue(candidate.handoffSummary.contains("does not browse silently"))
+        XCTAssertEqual(candidate.handoffSummary, KairoL10n.string("chat.action.handoffSummary.web"))
         XCTAssertEqual(action.kind, .openWebSearchHandoff)
         XCTAssertTrue(action.requiresConfirmation)
         guard case let .webSearch(draft) = action.payload else {

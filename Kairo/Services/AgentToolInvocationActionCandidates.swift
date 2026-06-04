@@ -29,26 +29,26 @@ extension AgentToolInvocationPlanner {
         }
 
         let draft = NotificationDraft(
-            title: "Kairo Notification",
+            title: KairoL10n.string("chat.action.notification.defaultTitle"),
             body: notificationBody(from: userText)
         )
         let action = AgentAction(
             kind: .sendNotification,
-            title: "Schedule Local Notification",
-            rationale: "User asked Kairo to prepare a local notification through the public UserNotifications API.",
+            title: KairoL10n.string("chat.action.displayName.scheduleNotification"),
+            rationale: KairoL10n.string("chat.action.rationale.notification"),
             payload: .notification(draft),
             riskTier: .tier2LowRiskWrite
         )
 
         return AgentToolInvocationCandidate(
             id: "action-send-notification",
-            title: "Schedule Local Notification",
+            title: KairoL10n.string("chat.action.displayName.scheduleNotification"),
             source: .actionCatalog,
             skillKind: .custom,
             requiredCapabilities: [.notifications],
             riskTier: .tier2LowRiskWrite,
             requiresConfirmation: true,
-            handoffSummary: "Use UserNotifications for a local notification after runtime permission and visible confirmation.",
+            handoffSummary: KairoL10n.string("chat.action.handoffSummary.notification"),
             action: action
         )
     }
@@ -61,21 +61,21 @@ extension AgentToolInvocationPlanner {
         let draft = emailDraft(from: userText)
         let action = AgentAction(
             kind: .composeEmailDraft,
-            title: "Compose Email Draft",
-            rationale: "User asked Kairo to prepare a visible email draft handoff without sending mail automatically.",
+            title: KairoL10n.string("chat.action.displayName.composeEmail"),
+            rationale: KairoL10n.string("chat.action.rationale.email"),
             payload: .email(draft),
             riskTier: .tier1Draft
         )
 
         return AgentToolInvocationCandidate(
             id: "action-compose-email-draft",
-            title: "Compose Email Draft",
+            title: KairoL10n.string("chat.action.displayName.composeEmail"),
             source: .actionCatalog,
             skillKind: .custom,
             requiredCapabilities: [.mail],
             riskTier: .tier1Draft,
             requiresConfirmation: true,
-            handoffSummary: "Use a visible mailto handoff for a user-reviewed email draft; Kairo cannot read Apple Mail or send silently.",
+            handoffSummary: KairoL10n.string("chat.action.handoffSummary.email"),
             action: action
         )
     }
@@ -88,21 +88,21 @@ extension AgentToolInvocationPlanner {
         let draft = mapDirectionsDraft(from: userText, normalizedText: normalizedText)
         let action = AgentAction(
             kind: .openMapDirections,
-            title: "Open Apple Maps Directions",
-            rationale: "User asked Kairo to open a visible Apple Maps directions handoff.",
+            title: KairoL10n.string("chat.action.displayName.openMaps"),
+            rationale: KairoL10n.string("chat.action.rationale.maps"),
             payload: .mapDirections(draft),
             riskTier: .tier1Draft
         )
 
         return AgentToolInvocationCandidate(
             id: "action-open-map-directions",
-            title: "Open Apple Maps Directions",
+            title: KairoL10n.string("chat.action.displayName.openMaps"),
             source: .actionCatalog,
             skillKind: .custom,
             requiredCapabilities: [.location],
             riskTier: .tier1Draft,
             requiresConfirmation: true,
-            handoffSummary: "Use an Apple Maps link after visible confirmation; Kairo does not read current location or start navigation silently.",
+            handoffSummary: KairoL10n.string("chat.action.handoffSummary.maps"),
             action: action
         )
     }
@@ -118,21 +118,21 @@ extension AgentToolInvocationPlanner {
         let draft = messageDraft(from: userText)
         let action = AgentAction(
             kind: .openMessageHandoff,
-            title: "Open Messages Handoff",
-            rationale: "User asked Kairo to prepare a visible Messages recipient handoff; Apple's SMS link does not carry message body text.",
+            title: KairoL10n.string("chat.action.displayName.openMessages"),
+            rationale: KairoL10n.string("chat.action.rationale.messages"),
             payload: .message(draft),
             riskTier: .tier1Draft
         )
 
         return AgentToolInvocationCandidate(
             id: "action-open-message-handoff",
-            title: "Open Messages Handoff",
+            title: KairoL10n.string("chat.action.displayName.openMessages"),
             source: .actionCatalog,
             skillKind: .custom,
             requiredCapabilities: [.messages],
             riskTier: .tier1Draft,
             requiresConfirmation: true,
-            handoffSummary: "Use a visible sms: recipient handoff after confirmation; body stays in Kairo preview and Kairo cannot read Messages or send silently.",
+            handoffSummary: KairoL10n.string("chat.action.handoffSummary.messages"),
             action: action
         )
     }
@@ -152,21 +152,21 @@ extension AgentToolInvocationPlanner {
 
         let action = AgentAction(
             kind: .openPhoneCallHandoff,
-            title: "Open Phone Handoff",
-            rationale: "User asked Kairo to prepare a visible Phone handoff. Kairo opens only a tel: URL after confirmation and does not place calls silently.",
+            title: KairoL10n.string("chat.action.displayName.openPhone"),
+            rationale: KairoL10n.string("chat.action.rationale.phone"),
             payload: .phoneCall(draft),
             riskTier: .tier1Draft
         )
 
         return AgentToolInvocationCandidate(
             id: "action-open-phone-call-handoff",
-            title: "Open Phone Handoff",
+            title: KairoL10n.string("chat.action.displayName.openPhone"),
             source: .actionCatalog,
             skillKind: .custom,
             requiredCapabilities: [.phone],
             riskTier: .tier1Draft,
             requiresConfirmation: true,
-            handoffSummary: "Use a visible tel: handoff after confirmation; Kairo cannot read call history or place calls silently.",
+            handoffSummary: KairoL10n.string("chat.action.handoffSummary.phone"),
             action: action
         )
     }
@@ -184,21 +184,21 @@ extension AgentToolInvocationPlanner {
         let draft = webSearchDraft(from: userText)
         let action = AgentAction(
             kind: .openWebSearchHandoff,
-            title: "Open Web Search Handoff",
-            rationale: "User asked Kairo to prepare a visible Safari web search handoff. Kairo only opens a search URL after confirmation and does not browse or scrape pages silently.",
+            title: KairoL10n.string("chat.action.displayName.openWebSearch"),
+            rationale: KairoL10n.string("chat.action.rationale.web"),
             payload: .webSearch(draft),
             riskTier: .tier1Draft
         )
 
         return AgentToolInvocationCandidate(
             id: "action-open-web-search-handoff",
-            title: "Open Web Search Handoff",
+            title: KairoL10n.string("chat.action.displayName.openWebSearch"),
             source: .actionCatalog,
             skillKind: .custom,
             requiredCapabilities: [.web],
             riskTier: .tier1Draft,
             requiresConfirmation: true,
-            handoffSummary: "Use a visible Safari/DuckDuckGo search handoff after confirmation; Kairo does not browse silently or read web content in the background.",
+            handoffSummary: KairoL10n.string("chat.action.handoffSummary.web"),
             action: action
         )
     }
@@ -211,21 +211,21 @@ extension AgentToolInvocationPlanner {
         let draft = contactDraft(from: userText)
         let action = AgentAction(
             kind: .createContactDraft,
-            title: "Create Contact",
-            rationale: "User asked Kairo to create a contact through the public Contacts.framework API.",
+            title: KairoL10n.string("chat.action.displayName.createContact"),
+            rationale: KairoL10n.string("chat.action.rationale.contact"),
             payload: .contact(draft),
             riskTier: .tier2LowRiskWrite
         )
 
         return AgentToolInvocationCandidate(
             id: "action-create-contact",
-            title: "Create Contact",
+            title: KairoL10n.string("chat.action.displayName.createContact"),
             source: .actionCatalog,
             skillKind: .custom,
             requiredCapabilities: [.contacts],
             riskTier: .tier2LowRiskWrite,
             requiresConfirmation: true,
-            handoffSummary: "Use Contacts.framework after runtime permission and visible confirmation.",
+            handoffSummary: KairoL10n.string("chat.action.handoffSummary.contact"),
             action: action
         )
     }
@@ -238,21 +238,21 @@ extension AgentToolInvocationPlanner {
         let draft = calendarDraft(from: userText)
         let action = AgentAction(
             kind: .createCalendarDraft,
-            title: "Create Calendar Event",
-            rationale: "User asked Kairo to create a calendar event through the public EventKit Calendar API.",
+            title: KairoL10n.string("chat.action.displayName.createCalendar"),
+            rationale: KairoL10n.string("chat.action.rationale.calendar"),
             payload: .calendarEvent(draft),
             riskTier: .tier2LowRiskWrite
         )
 
         return AgentToolInvocationCandidate(
             id: "action-create-calendar-event",
-            title: "Create Calendar Event",
+            title: KairoL10n.string("chat.action.displayName.createCalendar"),
             source: .actionCatalog,
             skillKind: .custom,
             requiredCapabilities: [.calendar],
             riskTier: .tier2LowRiskWrite,
             requiresConfirmation: true,
-            handoffSummary: "Use EventKit Calendar after runtime permission and visible confirmation.",
+            handoffSummary: KairoL10n.string("chat.action.handoffSummary.calendar"),
             action: action
         )
     }
@@ -264,26 +264,26 @@ extension AgentToolInvocationPlanner {
 
         let draft = ReminderDraft(
             title: reminderTitle(from: userText),
-            notes: "Drafted from a Kairo chat request.",
+            notes: KairoL10n.string("chat.action.reminder.defaultNotes"),
             dueDate: nil
         )
         let action = AgentAction(
             kind: .createReminderDraft,
-            title: "Create Reminder",
-            rationale: "User asked Kairo to create a reminder through the public EventKit Reminders API.",
+            title: KairoL10n.string("chat.action.displayName.createReminder"),
+            rationale: KairoL10n.string("chat.action.rationale.reminder"),
             payload: .reminder(draft),
             riskTier: .tier2LowRiskWrite
         )
 
         return AgentToolInvocationCandidate(
             id: "action-create-reminder",
-            title: "Create Reminder",
+            title: KairoL10n.string("chat.action.displayName.createReminder"),
             source: .actionCatalog,
             skillKind: .custom,
             requiredCapabilities: [.reminders],
             riskTier: .tier2LowRiskWrite,
             requiresConfirmation: true,
-            handoffSummary: "Use EventKit Reminders after runtime permission and visible confirmation.",
+            handoffSummary: KairoL10n.string("chat.action.handoffSummary.reminder"),
             action: action
         )
     }

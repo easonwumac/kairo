@@ -31,7 +31,7 @@ public final class ChatViewModel: ObservableObject {
         if prompt.hasPrefix(KairoL10n.string("chat.share.prompt.extractReminderPrefix")) {
             return KairoL10n.string("chat.share.action.extractReminders")
         }
-        return prompt.localizedCaseInsensitiveContains("summarize")
+        return Self.isSummarizeSharePrompt(prompt)
             ? KairoL10n.string("chat.share.action.summarize")
             : KairoL10n.string("chat.share.action.sendToChat")
     }
@@ -130,7 +130,7 @@ public final class ChatViewModel: ObservableObject {
             guard !imported.isEmpty else { return }
             pendingAttachments.append(contentsOf: imported.attachments)
             if composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                composerText = imported.suggestedPrompt ?? "Summarize the shared content."
+                composerText = imported.suggestedPrompt ?? KairoL10n.string("chat.share.prompt.summarizeDefault")
             }
             shareImportNotice = Self.shareImportNotice(importedCount: imported.importedItemIDs.count)
             shareImportPreview = Self.shareImportPreview(for: imported.attachments)
@@ -413,7 +413,9 @@ public final class ChatViewModel: ObservableObject {
     }
 
     private func composedMessageText(text: String, replyTarget: ChatMessage?, hasAttachments: Bool) -> String {
-        let fallback = hasAttachments ? "Review the attached content." : "Reply to the selected message."
+        let fallback = hasAttachments
+            ? KairoL10n.string("chat.composer.fallback.reviewAttachments")
+            : KairoL10n.string("chat.composer.fallback.replySelected")
         let body = text.isEmpty ? fallback : text
         guard let replyTarget else {
             return body
@@ -454,6 +456,18 @@ public final class ChatViewModel: ObservableObject {
         text.components(separatedBy: .whitespacesAndNewlines)
             .filter { !$0.isEmpty }
             .joined(separator: " ")
+    }
+
+    private static func isSummarizeSharePrompt(_ prompt: String) -> Bool {
+        if prompt.localizedCaseInsensitiveContains("summarize") {
+            return true
+        }
+        if prompt == KairoL10n.string("chat.share.prompt.summarizeDefault") {
+            return true
+        }
+        let localizedNamedFormat = KairoL10n.string("chat.share.prompt.summarizeNamed", "")
+        let localizedPrefix = localizedNamedFormat.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !localizedPrefix.isEmpty && prompt.hasPrefix(localizedPrefix)
     }
 
     private static func userFacingChatErrorMessage(for error: Error) -> String {

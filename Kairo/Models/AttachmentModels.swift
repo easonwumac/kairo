@@ -91,10 +91,10 @@ public struct ShareIngestionItem: Identifiable, Codable, Equatable, Sendable {
 
     public static func defaultSuggestedPrompt(for attachments: [ChatAttachment]) -> String {
         if attachments.isEmpty {
-            return "Summarize the shared content."
+            return KairoL10n.string("chat.share.prompt.summarizeDefault")
         }
         let names = attachments.map(\.displayName).joined(separator: ", ")
-        return "Summarize this shared content: \(names)"
+        return KairoL10n.string("chat.share.prompt.summarizeNamed", names)
     }
 }
 

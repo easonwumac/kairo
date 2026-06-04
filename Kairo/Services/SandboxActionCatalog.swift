@@ -84,7 +84,7 @@ public struct SandboxActionCatalog: Sendable {
     public static let defaultDescriptors: [SandboxActionDescriptor] = [
         SandboxActionDescriptor(
             kind: .answer,
-            displayName: "Answer",
+            displayName: KairoL10n.string("chat.action.displayName.answer"),
             description: KairoL10n.string("chat.action.description.answer"),
             capability: .chat,
             permissionRequirement: .none,
@@ -93,7 +93,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .saveMemory,
-            displayName: "Save Memory",
+            displayName: KairoL10n.string("chat.action.displayName.saveMemory"),
             description: KairoL10n.string("chat.action.description.saveMemory"),
             capability: .memory,
             permissionRequirement: .none,
@@ -102,7 +102,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .createReminderDraft,
-            displayName: "Create Reminder",
+            displayName: KairoL10n.string("chat.action.displayName.createReminder"),
             description: KairoL10n.string("chat.action.description.createReminder"),
             capability: .reminders,
             permissionRequirement: .runtimePrompt,
@@ -111,7 +111,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .createCalendarDraft,
-            displayName: "Create Calendar Event",
+            displayName: KairoL10n.string("chat.action.displayName.createCalendar"),
             description: KairoL10n.string("chat.action.description.createCalendar"),
             capability: .calendar,
             permissionRequirement: .runtimePrompt,
@@ -120,7 +120,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .createContactDraft,
-            displayName: "Create Contact",
+            displayName: KairoL10n.string("chat.action.displayName.createContact"),
             description: KairoL10n.string("chat.action.description.createContact"),
             capability: .contacts,
             permissionRequirement: .runtimePrompt,
@@ -129,7 +129,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .composeEmailDraft,
-            displayName: "Compose Email Draft",
+            displayName: KairoL10n.string("chat.action.displayName.composeEmail"),
             description: KairoL10n.string("chat.action.description.composeEmail"),
             capability: .mail,
             permissionRequirement: .userInitiated,
@@ -138,7 +138,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .openMapDirections,
-            displayName: "Open Apple Maps Directions",
+            displayName: KairoL10n.string("chat.action.displayName.openMaps"),
             description: KairoL10n.string("chat.action.description.openMaps"),
             capability: .location,
             permissionRequirement: .userInitiated,
@@ -147,7 +147,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .openMessageHandoff,
-            displayName: "Open Messages Handoff",
+            displayName: KairoL10n.string("chat.action.displayName.openMessages"),
             description: KairoL10n.string("chat.action.description.openMessages"),
             capability: .messages,
             permissionRequirement: .userInitiated,
@@ -156,7 +156,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .openPhoneCallHandoff,
-            displayName: "Open Phone Handoff",
+            displayName: KairoL10n.string("chat.action.displayName.openPhone"),
             description: KairoL10n.string("chat.action.description.openPhone"),
             capability: .phone,
             permissionRequirement: .userInitiated,
@@ -165,7 +165,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .openWebSearchHandoff,
-            displayName: "Open Safari Search Handoff",
+            displayName: KairoL10n.string("chat.action.displayName.openWeb"),
             description: KairoL10n.string("chat.action.description.openWeb"),
             capability: .web,
             permissionRequirement: .userInitiated,
@@ -174,7 +174,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .sendNotification,
-            displayName: "Send Notification",
+            displayName: KairoL10n.string("chat.action.displayName.sendNotification"),
             description: KairoL10n.string("chat.action.description.sendNotification"),
             capability: .notifications,
             permissionRequirement: .runtimePrompt,
@@ -183,7 +183,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .openURL,
-            displayName: "Open URL",
+            displayName: KairoL10n.string("chat.action.displayName.openURL"),
             description: KairoL10n.string("chat.action.description.openURL"),
             capability: .documents,
             permissionRequirement: .userInitiated,
@@ -192,7 +192,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .controlHome,
-            displayName: "Control Home",
+            displayName: KairoL10n.string("chat.action.displayName.controlHome"),
             description: KairoL10n.string("chat.action.description.controlHome"),
             capability: .homeKit,
             permissionRequirement: .runtimePrompt,
@@ -201,7 +201,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .externalAPIRequest,
-            displayName: "External API Request",
+            displayName: KairoL10n.string("chat.action.displayName.externalAPI"),
             description: KairoL10n.string("chat.action.description.externalAPI"),
             capability: .externalConnectors,
             permissionRequirement: .oauth,
@@ -210,7 +210,7 @@ public struct SandboxActionCatalog: Sendable {
         ),
         SandboxActionDescriptor(
             kind: .unsupportedSandboxAction,
-            displayName: "Unsupported iOS Action",
+            displayName: KairoL10n.string("chat.action.displayName.unsupported"),
             description: KairoL10n.string("chat.action.description.unsupported"),
             capability: .appIntents,
             permissionRequirement: .unsupported,

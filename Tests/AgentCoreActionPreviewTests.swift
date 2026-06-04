@@ -31,7 +31,7 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         try await assertPreviewAction(
             prompt: "提醒我下班前整理 Kairo model list",
             expectedKind: .sendNotification,
-            expectedTitle: "Schedule Local Notification",
+            expectedTitle: KairoL10n.string("chat.action.displayName.scheduleNotification"),
             expectedRiskTier: .tier2LowRiskWrite,
             expectedCandidateID: "action-send-notification"
         )
@@ -41,7 +41,7 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         try await assertPreviewAction(
             prompt: "Create a reminder to review the Shortcut node outputs",
             expectedKind: .createReminderDraft,
-            expectedTitle: "Create Reminder",
+            expectedTitle: KairoL10n.string("chat.action.displayName.createReminder"),
             expectedRiskTier: .tier2LowRiskWrite,
             expectedCandidateID: "action-create-reminder"
         )
@@ -51,7 +51,7 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         try await assertPreviewAction(
             prompt: "Create a calendar event: Kairo launch review",
             expectedKind: .createCalendarDraft,
-            expectedTitle: "Create Calendar Event",
+            expectedTitle: KairoL10n.string("chat.action.displayName.createCalendar"),
             expectedRiskTier: .tier2LowRiskWrite,
             expectedCandidateID: "action-create-calendar-event"
         )
@@ -61,7 +61,7 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         try await assertPreviewAction(
             prompt: "Create a contact: Alex Chen 555-0100 alex@example.com",
             expectedKind: .createContactDraft,
-            expectedTitle: "Create Contact",
+            expectedTitle: KairoL10n.string("chat.action.displayName.createContact"),
             expectedRiskTier: .tier2LowRiskWrite,
             expectedCandidateID: "action-create-contact"
         )
@@ -71,7 +71,7 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         try await assertPreviewAction(
             prompt: "Draft an email to alex@example.com subject Kairo update body Please review the roadmap.",
             expectedKind: .composeEmailDraft,
-            expectedTitle: "Compose Email Draft",
+            expectedTitle: KairoL10n.string("chat.action.displayName.composeEmail"),
             expectedRiskTier: .tier1Draft,
             expectedCandidateID: "action-compose-email-draft"
         )
@@ -81,7 +81,7 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         try await assertPreviewAction(
             prompt: "Drive to Apple Park",
             expectedKind: .openMapDirections,
-            expectedTitle: "Open Apple Maps Directions",
+            expectedTitle: KairoL10n.string("chat.action.displayName.openMaps"),
             expectedRiskTier: .tier1Draft,
             expectedCandidateID: "action-open-map-directions"
         )
@@ -91,7 +91,7 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         try await assertPreviewAction(
             prompt: "Text 0912-345-678 body I am running late.",
             expectedKind: AgentActionKind(rawValue: "openMessageHandoff")!,
-            expectedTitle: "Open Messages Handoff",
+            expectedTitle: KairoL10n.string("chat.action.displayName.openMessages"),
             expectedRiskTier: .tier1Draft,
             expectedCandidateID: "action-open-message-handoff"
         )
@@ -101,7 +101,7 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         try await assertPreviewAction(
             prompt: "Call 0912-345-678",
             expectedKind: .openPhoneCallHandoff,
-            expectedTitle: "Open Phone Handoff",
+            expectedTitle: KairoL10n.string("chat.action.displayName.openPhone"),
             expectedRiskTier: .tier1Draft,
             expectedCandidateID: "action-open-phone-call-handoff"
         )
@@ -111,7 +111,7 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         try await assertPreviewAction(
             prompt: "Search web for SwiftUI App Intents examples",
             expectedKind: .openWebSearchHandoff,
-            expectedTitle: "Open Web Search Handoff",
+            expectedTitle: KairoL10n.string("chat.action.displayName.openWebSearch"),
             expectedRiskTier: .tier1Draft,
             expectedCandidateID: "action-open-web-search-handoff"
         )

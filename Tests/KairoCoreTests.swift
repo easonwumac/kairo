@@ -1735,7 +1735,7 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(attachment.promptSummary.contains("Deck.pdf"))
         XCTAssertTrue(attachment.promptSummary.contains("Quarterly plan"))
-        XCTAssertEqual(item.suggestedPrompt, "Summarize this shared content: Deck.pdf")
+        XCTAssertEqual(item.suggestedPrompt, KairoL10n.string("chat.share.prompt.summarizeNamed", "Deck.pdf"))
     }
 
     func testJSONFileShareIngestionQueuePersistsPendingItems() async throws {
