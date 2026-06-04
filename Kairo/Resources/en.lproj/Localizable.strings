@@ -51,8 +51,13 @@
 "root.section.access.shortTitle" = "Tools";
 "access.navigation.title" = "Phone tools";
 "access.overview.title" = "Tools Chat can suggest";
-"access.overview.subtitle" = "These are phone capabilities Kairo can prepare in Chat. Writes, handoffs, and account actions still ask first.";
+"access.overview.subtitle" = "Turn phone actions on only when Chat needs them.";
+"access.status.ready" = "%lld ready";
+"access.status.reviewFirst" = "Review first";
+"access.status.needsSetup" = "%lld need setup";
+"access.status.unavailable" = "%lld unavailable";
 "access.capabilities.section" = "Phone abilities";
+"access.capabilities.focusedFooter" = "The useful everyday tools, shown before advanced setup.";
 "access.capabilities.footer" = "Unavailable items stay visible so the boundary is clear; Kairo will not bypass iOS permissions.";
 "access.capability.core" = "Core";
 "access.permission.none" = "Ready";
@@ -125,6 +130,7 @@
 "access.skills.message.removed" = "%@ removed from manager.";
 "access.skills.message.removeFailed" = "Unable to remove %@.";
 "access.homekit.demos.title" = "HomeKit Preview Demos";
+"access.homekit.demos.subtitle" = "Preview only; live control is still outside this beta.";
 "access.homekit.demo.previewConfirmation" = "Preview Confirmation";
 "capability.chat.title" = "Chat";
 "capability.chat.description" = "Talk to Kairo, use approved memory, and plan phone tasks.";

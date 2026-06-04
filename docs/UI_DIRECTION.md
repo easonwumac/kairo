@@ -46,6 +46,16 @@ workspaces:
 - Memory status is framed around user-approved context instead of a generic
   data table.
 
+Stage 3 refocuses Phone Tools:
+
+- Phone Tools now opens with a status summary instead of a raw capability list.
+- Everyday tools are shown first, while signed manifests, marketplace refresh,
+  and local skill drafting stay behind an advanced setup disclosure.
+- Skill Manager remains available, but reads as a managed tool library rather
+  than the whole product.
+- HomeKit stays explicitly preview-only and visually separated from everyday
+  tools.
+
 ## Next UI stages
 
 1. Memory Center
@@ -53,9 +63,8 @@ workspaces:
      without making every record feel equal.
 
 2. Phone Tools and Skill Manager
-   - Split user-facing tools from developer setup.
-   - Collapse manifest import and local skill drafting by default.
-   - Surface only ready, needs setup, and unavailable states at the top level.
+   - Continue tuning skill cards so install/update/enable actions are easier
+     to scan without reading every metadata line.
 
 3. Workflows
    - Convert recipe/demo/template sections into a guided workflow gallery.

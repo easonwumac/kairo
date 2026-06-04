@@ -68,6 +68,7 @@ struct KairoFocusCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             content
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {

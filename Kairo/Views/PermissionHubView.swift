@@ -33,131 +33,277 @@ public struct PermissionHubView: View {
 
     public var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(KairoL10n.string("access.overview.title"))
-                            .font(.headline)
-                            .foregroundStyle(KairoDesign.ink)
-                        Text(KairoL10n.string("access.overview.subtitle"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(.vertical, 4)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    accessOverviewCard
+                    primaryToolsCard
+                    advancedSetupCard
+                    skillManagerCard
+                    homeKitPreviewCard
                 }
-
-                Section {
-                    ForEach(registry.capabilities) { capability in
-                        HStack(alignment: .top, spacing: 12) {
-                            Image(systemName: iconName(for: capability.key))
-                                .font(.subheadline.weight(.semibold))
-                                .symbolRenderingMode(.hierarchical)
-                                .foregroundStyle(capabilityTint(for: capability))
-                                .frame(width: 28, height: 28)
-
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                    Text(capability.displayName)
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(KairoDesign.ink)
-                                    Spacer(minLength: 8)
-                                    Text(permissionLabel(for: capability.permission))
-                                        .font(.caption2.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Text(capability.description)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-
-                                if let fallbackMessage = capability.status.accessFallbackMessage {
-                                    Text(fallbackMessage)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .accessibilityIdentifier("access.capability.\(capability.key.rawValue).status-fallback")
-                                }
-
-                                HStack {
-                                    if capability.isMVP {
-                                        Text(KairoL10n.string("access.capability.core"))
-                                            .font(.caption2.weight(.semibold))
-                                            .padding(.horizontal, 7)
-                                            .padding(.vertical, 3)
-                                            .background(KairoDesign.blue.opacity(0.12), in: Capsule())
-                                    }
-                                    ForEach(actionCatalog.descriptors(for: capability.key).prefix(3)) { descriptor in
-                                        CapabilityChipView(descriptor: descriptor)
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.vertical, 6)
-                    }
-                } header: {
-                    Text(KairoL10n.string("access.capabilities.section"))
-                } footer: {
-                    Text(KairoL10n.string("access.capabilities.footer"))
-                }
-
-                Section {
-                    advancedSkillSetupToggle()
-
-                    if isAdvancedSkillSetupExpanded {
-                        manifestImportControls()
-
-                        if let manifestInstallPreview {
-                            manifestPreview(manifestInstallPreview)
-                        }
-                    }
-                } header: {
-                    Text(KairoL10n.string("access.skills.advanced.title"))
-                } footer: {
-                    Text(KairoL10n.string("access.skills.advanced.footer"))
-                }
-
-                Section {
-                    skillSearchControls()
-
-                    if let skillManagerMessage {
-                        Text(skillManagerMessage)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .accessibilityIdentifier("access.skills.message")
-                    }
-
-                    ForEach(filteredSkills) { skill in
-                        skillManagerRow(skill)
-                    }
-                } header: {
-                    Text(KairoL10n.string("access.skills.manager.title"))
-                        .accessibilityIdentifier("access.skills.manager")
-                } footer: {
-                    Text(KairoL10n.string("access.skills.manager.footer"))
-                }
-
-                Section {
-                    ForEach(homeKitDemoCatalog.recipes) { recipe in
-                        homeKitDemoRow(recipe)
-                    }
-
-                    if let homeKitPreviewMessage {
-                        Text(homeKitPreviewMessage)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } header: {
-                    Text(KairoL10n.string("access.homekit.demos.title"))
-                        .accessibilityIdentifier("access.homekit.demos")
-                }
+                .padding(.horizontal, 16)
+                .padding(.top, 18)
+                .padding(.bottom, 32)
             }
+            .background(KairoDesign.background.ignoresSafeArea())
+            .scrollIndicators(.hidden)
             .navigationTitle(KairoL10n.string("access.navigation.title"))
             .task {
                 await loadSkillCatalog()
             }
         }
+    }
+
+    private var accessOverviewCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(KairoL10n.string("access.overview.title"))
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(KairoL10n.string("access.overview.subtitle"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                HStack(spacing: 8) {
+                    KairoStatusPill(
+                        title: KairoL10n.string("access.status.ready", Int64(readyCapabilityCount)),
+                        systemImage: "checkmark.circle.fill",
+                        tint: KairoDesign.green
+                    )
+                    KairoStatusPill(
+                        title: KairoL10n.string("access.status.reviewFirst"),
+                        systemImage: "checkmark.shield.fill",
+                        tint: KairoDesign.blue
+                    )
+                }
+
+                HStack(spacing: 8) {
+                    KairoStatusPill(
+                        title: KairoL10n.string("access.status.needsSetup", Int64(needsSetupCapabilityCount)),
+                        systemImage: "wrench.and.screwdriver.fill",
+                        tint: KairoDesign.amber
+                    )
+                    KairoStatusPill(
+                        title: KairoL10n.string("access.status.unavailable", Int64(unavailableCapabilityCount)),
+                        systemImage: "nosign",
+                        tint: KairoDesign.red
+                    )
+                }
+            }
+        }
+        .accessibilityIdentifier("access.overview.card")
+    }
+
+    private var primaryToolsCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                accessSectionTitle(
+                    title: KairoL10n.string("access.capabilities.section"),
+                    subtitle: KairoL10n.string("access.capabilities.focusedFooter")
+                )
+                .accessibilityIdentifier("access.capabilities.section")
+
+                ForEach(primaryCapabilities) { capability in
+                    capabilityRow(capability)
+                    if capability.key != primaryCapabilities.last?.key {
+                        Divider()
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("access.capabilities.card")
+    }
+
+    private var advancedSetupCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                accessSectionTitle(
+                    title: KairoL10n.string("access.skills.advanced.title"),
+                    subtitle: KairoL10n.string("access.skills.advanced.footer")
+                )
+
+                advancedSkillSetupToggle()
+
+                if isAdvancedSkillSetupExpanded {
+                    Divider()
+                    manifestImportControls()
+
+                    if let manifestInstallPreview {
+                        Divider()
+                        manifestPreview(manifestInstallPreview)
+                    }
+                }
+            }
+        }
+    }
+
+    private var skillManagerCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                accessSectionTitle(
+                    title: KairoL10n.string("access.skills.manager.title"),
+                    subtitle: KairoL10n.string("access.skills.manager.footer")
+                )
+                .accessibilityIdentifier("access.skills.manager")
+
+                skillSearchControls()
+
+                if let skillManagerMessage {
+                    Text(skillManagerMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("access.skills.message")
+                }
+
+                ForEach(filteredSkills) { skill in
+                    Divider()
+                    skillManagerRow(skill)
+                }
+            }
+        }
+    }
+
+    private var homeKitPreviewCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                accessSectionTitle(
+                    title: KairoL10n.string("access.homekit.demos.title"),
+                    subtitle: KairoL10n.string("access.homekit.demos.subtitle")
+                )
+                .accessibilityIdentifier("access.homekit.demos")
+
+                ForEach(homeKitDemoCatalog.recipes) { recipe in
+                    homeKitDemoRow(recipe)
+                    if recipe.id != homeKitDemoCatalog.recipes.last?.id {
+                        Divider()
+                    }
+                }
+
+                if let homeKitPreviewMessage {
+                    Text(homeKitPreviewMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private func accessSectionTitle(title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder
+    private func capabilityRow(_ capability: Capability) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: iconName(for: capability.key))
+                .font(.subheadline.weight(.semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(capabilityTint(for: capability))
+                .frame(width: 30, height: 30)
+                .background(capabilityTint(for: capability).opacity(0.10), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(capability.displayName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Spacer(minLength: 8)
+                    Text(permissionLabel(for: capability.permission))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+
+                Text(capability.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+
+                if shouldShowFallbackMessage(for: capability),
+                   let fallbackMessage = capability.status.accessFallbackMessage {
+                    Text(fallbackMessage)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("access.capability.\(capability.key.rawValue).status-fallback")
+                }
+
+                HStack {
+                    if capability.isMVP {
+                        Text(KairoL10n.string("access.capability.core"))
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(KairoDesign.blue.opacity(0.12), in: Capsule())
+                    }
+                    ForEach(actionCatalog.descriptors(for: capability.key).prefix(2)) { descriptor in
+                        CapabilityChipView(descriptor: descriptor)
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func shouldShowFallbackMessage(for capability: Capability) -> Bool {
+        switch capability.status {
+        case .denied, .restricted, .unsupported:
+            return true
+        case .available, .unknown:
+            return false
+        }
+    }
+
+    private var primaryCapabilities: [Capability] {
+        let priority: [CapabilityKey] = [
+            .shareExtension,
+            .memory,
+            .reminders,
+            .calendar,
+            .mail,
+            .messages,
+            .web,
+            .location
+        ]
+        return priority.compactMap { key in
+            registry.capabilities.first { $0.key == key }
+        }
+    }
+
+    private var readyCapabilityCount: Int {
+        registry.capabilities.filter { $0.status == .available }.count
+    }
+
+    private var needsSetupCapabilityCount: Int {
+        registry.capabilities.filter { capability in
+            switch capability.permission {
+            case .runtimePrompt, .entitlement, .oauth:
+                return capability.status != .unsupported
+            case .none, .userInitiated, .unsupported:
+                return false
+            }
+        }.count
+    }
+
+    private var unavailableCapabilityCount: Int {
+        registry.capabilities.filter { capability in
+            switch capability.status {
+            case .denied, .restricted, .unsupported:
+                return true
+            case .available, .unknown:
+                return false
+            }
+        }.count
     }
 
     private func iconName(for key: CapabilityKey) -> String {

@@ -51,8 +51,13 @@
 "root.section.access.shortTitle" = "工具";
 "access.navigation.title" = "手機工具";
 "access.overview.title" = "Chat 可以建議的工具";
-"access.overview.subtitle" = "這些是 Kairo 可在 Chat 裡準備的手機能力。寫入、handoff 或帳號動作仍會先詢問。";
+"access.overview.subtitle" = "只在 Chat 需要時開啟手機動作。";
+"access.status.ready" = "%lld 個可用";
+"access.status.reviewFirst" = "先檢查";
+"access.status.needsSetup" = "%lld 個需設定";
+"access.status.unavailable" = "%lld 個不可用";
 "access.capabilities.section" = "手機能力";
+"access.capabilities.focusedFooter" = "先顯示日常最常用工具，進階設定放後面。";
 "access.capabilities.footer" = "不可用項目仍會顯示，讓邊界清楚；Kairo 不會繞過 iOS 權限。";
 "access.capability.core" = "核心";
 "access.permission.none" = "可用";
@@ -125,6 +130,7 @@
 "access.skills.message.removed" = "%@ 已從 manager 移除。";
 "access.skills.message.removeFailed" = "無法移除 %@。";
 "access.homekit.demos.title" = "HomeKit 預覽 Demos";
+"access.homekit.demos.subtitle" = "只做預覽；live control 仍不在此 beta。";
 "access.homekit.demo.previewConfirmation" = "預覽確認內容";
 "capability.chat.title" = "Chat";
 "capability.chat.description" = "和 Kairo 對話，使用已核准記憶，並規劃手機任務。";
