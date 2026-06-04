@@ -91,10 +91,10 @@ public struct ShareIngestionItem: Identifiable, Codable, Equatable, Sendable {
 
     public static func defaultSuggestedPrompt(for attachments: [ChatAttachment]) -> String {
         if attachments.isEmpty {
-            return "Review the shared content."
+            return "Summarize the shared content."
         }
         let names = attachments.map(\.displayName).joined(separator: ", ")
-        return "Review this shared content: \(names)"
+        return "Summarize this shared content: \(names)"
     }
 }
 

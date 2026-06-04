@@ -23,7 +23,11 @@ public final class ChatViewModel: ObservableObject {
         shareImportNotice != nil && (!composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty)
     }
     public var shareImportPrimaryActionTitle: String {
-        composerText.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("建立提醒事項：") ? "Extract Tasks" : "Send to Chat"
+        let prompt = composerText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if prompt.hasPrefix("建立提醒事項：") {
+            return "Extract Tasks"
+        }
+        return prompt.localizedCaseInsensitiveContains("summarize") ? "Summarize" : "Send to Chat"
     }
 
     private let historyStore: ChatHistoryStore
@@ -111,7 +115,7 @@ public final class ChatViewModel: ObservableObject {
             guard !imported.isEmpty else { return }
             pendingAttachments.append(contentsOf: imported.attachments)
             if composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                composerText = imported.suggestedPrompt ?? "Review the shared content."
+                composerText = imported.suggestedPrompt ?? "Summarize the shared content."
             }
             shareImportNotice = Self.shareImportNotice(importedCount: imported.importedItemIDs.count)
             errorMessage = nil

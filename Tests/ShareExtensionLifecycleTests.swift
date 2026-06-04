@@ -48,10 +48,19 @@ final class ShareExtensionLifecycleTests: XCTestCase {
         XCTAssertEqual(viewModel.pendingAttachments.map(\.source), Array(repeating: .shareExtension, count: 4))
         XCTAssertEqual(
             viewModel.composerText,
-            "Review this shared content: Article, example.com, photo.png, brief.pdf"
+            "Summarize this shared content: Article, example.com, photo.png, brief.pdf"
         )
+        XCTAssertEqual(viewModel.shareImportPrimaryActionTitle, "Summarize")
         let remaining = try await queue.pendingItems(limit: 10)
         XCTAssertTrue(remaining.isEmpty)
+
+        await viewModel.sendImportedShareToChat()
+
+        let userMessage = try XCTUnwrap(viewModel.currentThread.messages.first { $0.role == .user })
+        XCTAssertEqual(userMessage.text, "Summarize this shared content: Article, example.com, photo.png, brief.pdf")
+        XCTAssertEqual(userMessage.attachments.map(\.kind), [.text, .url, .image, .pdf])
+        XCTAssertNil(viewModel.shareImportNotice)
+        XCTAssertTrue(viewModel.pendingAttachments.isEmpty)
     }
     #endif
 
