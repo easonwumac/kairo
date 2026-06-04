@@ -91,7 +91,7 @@ public struct PermissionHubView: View {
                         manifestPreview(manifestInstallPreview)
                     }
                 } header: {
-                    Text("Skill Manager")
+                    Text(KairoL10n.string("access.skills.manager.title"))
                         .accessibilityIdentifier("access.skills.manager")
                 }
 
@@ -120,26 +120,26 @@ public struct PermissionHubView: View {
     @ViewBuilder
     private func manifestImportControls() -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Signed Manifest Import")
+            Text(KairoL10n.string("access.skills.manifestImport.title"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("access.skills.manifest-import")
 
-            TextField("Local skill name", text: $localSkillName)
+            TextField(KairoL10n.string("access.skills.localCreate.namePlaceholder"), text: $localSkillName)
                 .accessibilityIdentifier("access.skills.local-create.name")
 
-            TextField("Local skill summary", text: $localSkillSummary, axis: .vertical)
+            TextField(KairoL10n.string("access.skills.localCreate.summaryPlaceholder"), text: $localSkillSummary, axis: .vertical)
                 .lineLimit(2...4)
                 .accessibilityIdentifier("access.skills.local-create.summary")
 
-            Picker("Capability", selection: $localSkillCapability) {
+            Picker(KairoL10n.string("access.skills.localCreate.capability"), selection: $localSkillCapability) {
                 ForEach(CapabilityKey.allCases, id: \.self) { capability in
                     Text(capability.rawValue).tag(capability)
                 }
             }
             .accessibilityIdentifier("access.skills.local-create.capability")
 
-            Picker("Confirmation", selection: $localSkillConfirmationPolicy) {
+            Picker(KairoL10n.string("access.skills.localCreate.confirmation"), selection: $localSkillConfirmationPolicy) {
                 ForEach(AgentSkillConfirmationPolicy.allCases, id: \.self) { policy in
                     Text(policy.settingsTitle).tag(policy)
                 }
@@ -151,7 +151,7 @@ public struct PermissionHubView: View {
                     await createLocalSkillDraft()
                 }
             } label: {
-                Label("Create Draft", systemImage: "plus.circle")
+                Label(KairoL10n.string("access.skills.localCreate.createDraft"), systemImage: "plus.circle")
             }
             .disabled(localSkillName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .accessibilityIdentifier("access.skills.local-create.button")
@@ -161,7 +161,7 @@ public struct PermissionHubView: View {
                     await refreshMarketplaceCatalog()
                 }
             } label: {
-                Label("Refresh Marketplace", systemImage: "arrow.clockwise")
+                Label(KairoL10n.string("access.skills.marketplace.refresh"), systemImage: "arrow.clockwise")
             }
             .disabled(isRefreshingMarketplace || marketplaceCatalogService == nil)
             .accessibilityIdentifier("access.skills.marketplace-refresh")
@@ -176,7 +176,7 @@ public struct PermissionHubView: View {
                     await previewManifestText()
                 }
             } label: {
-                Label("Preview Manifest", systemImage: "doc.text.magnifyingglass")
+                Label(KairoL10n.string("access.skills.manifestImport.preview"), systemImage: "doc.text.magnifyingglass")
             }
             .disabled(manifestImportText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .accessibilityIdentifier("access.skills.manifest-import.button")
@@ -187,7 +187,7 @@ public struct PermissionHubView: View {
     @ViewBuilder
     private func skillSearchControls() -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            TextField("Search skills", text: $skillSearchText)
+            TextField(KairoL10n.string("access.skills.search.placeholder"), text: $skillSearchText)
                 .accessibilityIdentifier("access.skills.search")
 
             Text(skillSearchSummary)
@@ -217,15 +217,15 @@ public struct PermissionHubView: View {
                 localSkillCapability = .appIntents
                 localSkillConfirmationPolicy = .previewRequired
                 manifestInstallPreview = nil
-                skillManagerMessage = "\(draft.displayName) saved as a disabled local draft."
+                skillManagerMessage = KairoL10n.string("access.skills.message.draftSaved", draft.displayName)
             } catch AgentSkillDraftError.emptyDisplayName {
-                skillManagerMessage = "Skill name is required."
+                skillManagerMessage = KairoL10n.string("access.skills.message.skillNameRequired")
             } catch AgentSkillDraftError.missingCapabilitySelection {
-                skillManagerMessage = "Choose at least one capability."
+                skillManagerMessage = KairoL10n.string("access.skills.message.capabilityRequired")
             } catch AgentSkillDraftError.missingConfirmationPolicy {
-                skillManagerMessage = "Choose a confirmation policy."
+                skillManagerMessage = KairoL10n.string("access.skills.message.confirmationRequired")
             } catch {
-                skillManagerMessage = "Unable to create local skill draft."
+                skillManagerMessage = KairoL10n.string("access.skills.message.createDraftFailed")
             }
             return
         }
@@ -238,15 +238,15 @@ public struct PermissionHubView: View {
             localSkillCapability = .appIntents
             localSkillConfirmationPolicy = .previewRequired
             manifestInstallPreview = nil
-            skillManagerMessage = "\(draft.displayName) saved as a disabled local draft."
+            skillManagerMessage = KairoL10n.string("access.skills.message.draftSaved", draft.displayName)
         } catch AgentSkillDraftError.emptyDisplayName {
-            skillManagerMessage = "Skill name is required."
+            skillManagerMessage = KairoL10n.string("access.skills.message.skillNameRequired")
         } catch AgentSkillDraftError.missingCapabilitySelection {
-            skillManagerMessage = "Choose at least one capability."
+            skillManagerMessage = KairoL10n.string("access.skills.message.capabilityRequired")
         } catch AgentSkillDraftError.missingConfirmationPolicy {
-            skillManagerMessage = "Choose a confirmation policy."
+            skillManagerMessage = KairoL10n.string("access.skills.message.confirmationRequired")
         } catch {
-            skillManagerMessage = "Unable to create local skill draft."
+            skillManagerMessage = KairoL10n.string("access.skills.message.createDraftFailed")
         }
     }
 
@@ -261,7 +261,7 @@ public struct PermissionHubView: View {
         return AgentSkill(
             id: fallbackID,
             displayName: trimmedName,
-            summary: trimmedSummary.isEmpty ? "User-created local Kairo skill draft." : trimmedSummary,
+            summary: trimmedSummary.isEmpty ? KairoL10n.string("access.skills.localCreate.defaultSummary") : trimmedSummary,
             kind: request.kind,
             source: .userCreated,
             installationStatus: .disabled,
@@ -300,7 +300,7 @@ public struct PermissionHubView: View {
             }
 
             if manifestInstallPreview.changelog.isEmpty {
-                Text("No changelog provided.")
+                Text(KairoL10n.string("access.skills.manifestPreview.noChangelog"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("access.skills.manifest-preview.changelog.empty")
@@ -318,7 +318,7 @@ public struct PermissionHubView: View {
                     await confirmManifestInstall()
                 }
             } label: {
-                Label("Confirm Install", systemImage: "checkmark.circle")
+                Label(KairoL10n.string("access.skills.manifestPreview.confirmInstall"), systemImage: "checkmark.circle")
             }
             .font(.caption)
             .disabled(
@@ -333,10 +333,10 @@ public struct PermissionHubView: View {
 
     private func manifestPreviewVersionSummary(_ manifestInstallPreview: AgentSkillInstallPreview) -> String {
         if let installedVersion = manifestInstallPreview.installedVersion {
-            return "Installed \(installedVersion) -> Incoming \(manifestInstallPreview.incomingVersion)"
+            return KairoL10n.string("access.skills.manifestPreview.versionUpdate", installedVersion, manifestInstallPreview.incomingVersion)
         }
 
-        return "Incoming \(manifestInstallPreview.incomingVersion)"
+        return KairoL10n.string("access.skills.manifestPreview.versionIncoming", manifestInstallPreview.incomingVersion)
     }
 
     @ViewBuilder
@@ -356,9 +356,9 @@ public struct PermissionHubView: View {
 
             HStack {
                 Button {
-                    skillManagerMessage = "\(skill.displayName): \(skill.managementSummary)"
+                    skillManagerMessage = KairoL10n.string("access.skills.message.managementSummary", skill.displayName, skill.managementSummary)
                 } label: {
-                    Label("Manage", systemImage: "slider.horizontal.3")
+                    Label(KairoL10n.string("access.skills.action.manage"), systemImage: "slider.horizontal.3")
                 }
                 .accessibilityIdentifier("access.skill.\(skill.id).manage")
 
@@ -369,7 +369,7 @@ public struct PermissionHubView: View {
                             await installSkill(skill)
                         }
                     } label: {
-                        Label("Install", systemImage: "square.and.arrow.down")
+                        Label(KairoL10n.string("access.skills.action.install"), systemImage: "square.and.arrow.down")
                     }
                     .accessibilityIdentifier("access.skill.\(skill.id).install")
                 case .installed:
@@ -379,7 +379,7 @@ public struct PermissionHubView: View {
                                 await installSkill(skill)
                             }
                         } label: {
-                            Label("Preview Update", systemImage: "arrow.triangle.2.circlepath")
+                            Label(KairoL10n.string("access.skills.action.previewUpdate"), systemImage: "arrow.triangle.2.circlepath")
                         }
                         .accessibilityIdentifier("access.skill.\(skill.id).update")
                     }
@@ -389,7 +389,7 @@ public struct PermissionHubView: View {
                             await disableSkill(skill)
                         }
                     } label: {
-                        Label("Disable", systemImage: "pause.circle")
+                        Label(KairoL10n.string("access.skills.action.disable"), systemImage: "pause.circle")
                     }
                     .accessibilityIdentifier("access.skill.\(skill.id).disable")
                 case .disabled:
@@ -398,7 +398,7 @@ public struct PermissionHubView: View {
                             await enableSkill(skill)
                         }
                     } label: {
-                        Label("Enable", systemImage: "play.circle")
+                        Label(KairoL10n.string("access.skills.action.enable"), systemImage: "play.circle")
                     }
                     .accessibilityIdentifier("access.skill.\(skill.id).enable")
                 }
@@ -408,7 +408,7 @@ public struct PermissionHubView: View {
                         await removeSkill(skill)
                     }
                 } label: {
-                    Label("Remove", systemImage: "trash")
+                    Label(KairoL10n.string("access.skills.action.remove"), systemImage: "trash")
                 }
                 .accessibilityIdentifier("access.skill.\(skill.id).remove")
             }
@@ -435,12 +435,12 @@ public struct PermissionHubView: View {
         let total = skillCatalog.skills.count
         let filtered = filteredSkills.count
         if normalizedSkillSearchText.isEmpty {
-            return "Showing all \(total) skills."
+            return KairoL10n.string("access.skills.search.summary.all", Int64(total))
         }
         if filtered == 1, let skill = filteredSkills.first {
-            return "Showing 1 of \(total) skills: \(skill.displayName)."
+            return KairoL10n.string("access.skills.search.summary.one", Int64(total), skill.displayName)
         }
-        return "Showing \(filtered) of \(total) skills."
+        return KairoL10n.string("access.skills.search.summary.many", Int64(filtered), Int64(total))
     }
 
     private func skillMatchesSearch(_ skill: AgentSkill, query: String) -> Bool {
@@ -459,7 +459,7 @@ public struct PermissionHubView: View {
     @MainActor
     private func refreshMarketplaceCatalog() async {
         guard let marketplaceCatalogService else {
-            skillManagerMessage = "Marketplace refresh requires a catalog source."
+            skillManagerMessage = KairoL10n.string("access.skills.message.marketplaceSourceRequired")
             return
         }
 
@@ -469,9 +469,9 @@ public struct PermissionHubView: View {
         do {
             let remoteCatalog = try await marketplaceCatalogService.fetchCatalog()
             skillCatalog = skillCatalog.mergingMarketplaceCatalog(remoteCatalog.catalog)
-            skillManagerMessage = "Loaded \(remoteCatalog.catalog.skills.count) marketplace skills from \(remoteCatalog.sourceRepository.host ?? "repository")."
+            skillManagerMessage = KairoL10n.string("access.skills.message.marketplaceLoaded", Int64(remoteCatalog.catalog.skills.count), remoteCatalog.sourceRepository.host ?? KairoL10n.string("access.skills.message.repositoryFallback"))
         } catch {
-            skillManagerMessage = "Unable to refresh marketplace skills: \(error.localizedDescription)"
+            skillManagerMessage = KairoL10n.string("access.skills.message.marketplaceRefreshFailed", error.localizedDescription)
         }
     }
 
@@ -479,12 +479,12 @@ public struct PermissionHubView: View {
     private func previewManifestText() async {
         let trimmedManifest = manifestImportText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedManifest.isEmpty else {
-            skillManagerMessage = "Manifest JSON is empty."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestEmpty")
             manifestInstallPreview = nil
             return
         }
         guard let skillManagerService else {
-            skillManagerMessage = "Manifest import requires live Skill Manager."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestRequiresLiveManager")
             manifestInstallPreview = nil
             return
         }
@@ -494,25 +494,25 @@ public struct PermissionHubView: View {
             manifestInstallPreview = preview
             skillManagerMessage = preview.summary
         } catch AgentSkillManifestImportError.invalidJSON {
-            skillManagerMessage = "Manifest JSON is invalid."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestInvalidJSON")
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.invalidSignature {
-            skillManagerMessage = "Manifest signature is invalid."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestInvalidSignature")
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.revokedSigningKey(_) {
-            skillManagerMessage = "Manifest signing key has been revoked."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestRevokedKey")
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.signingKeyPendingPublication(_) {
-            skillManagerMessage = "Manifest signing key is pending public release."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestPendingPublication")
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.signingKeyNotYetValid(_) {
-            skillManagerMessage = "Manifest signing key is not active yet."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestKeyNotYetValid")
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.signingKeyExpired(_) {
-            skillManagerMessage = "Manifest signing key has expired."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestKeyExpired")
             manifestInstallPreview = nil
         } catch {
-            skillManagerMessage = "Unable to import manifest."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestImportFailed")
             manifestInstallPreview = nil
         }
     }
@@ -520,7 +520,7 @@ public struct PermissionHubView: View {
     @MainActor
     private func confirmManifestInstall() async {
         guard let manifestInstallPreview else {
-            skillManagerMessage = "Preview a manifest before installing."
+            skillManagerMessage = KairoL10n.string("access.skills.message.previewBeforeInstall")
             return
         }
         guard manifestInstallPreview.installationChange != .downgradeBlocked else {
@@ -528,7 +528,7 @@ public struct PermissionHubView: View {
             return
         }
         guard let skillManagerService else {
-            skillManagerMessage = "Manifest import requires live Skill Manager."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestRequiresLiveManager")
             return
         }
 
@@ -537,23 +537,23 @@ public struct PermissionHubView: View {
             skillCatalog = try await skillManagerService.catalog()
             manifestImportText = ""
             self.manifestInstallPreview = nil
-            skillManagerMessage = "\(installed.displayName) installed from signed manifest."
+            skillManagerMessage = KairoL10n.string("access.skills.message.installedFromManifest", installed.displayName)
         } catch AgentSkillInstallError.versionDowngrade(_, let installedVersion, let incomingVersion) {
-            skillManagerMessage = "Blocked downgrade from \(installedVersion) to \(incomingVersion)."
+            skillManagerMessage = KairoL10n.string("access.skills.message.downgradeBlocked", installedVersion, incomingVersion)
         } catch AgentSkillInstallError.compatibilityBlocked(_, let issues) {
             skillManagerMessage = issues.map(\.message).joined(separator: "; ")
         } catch AgentSkillManifestValidationError.invalidSignature {
-            skillManagerMessage = "Manifest signature is invalid."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestInvalidSignature")
         } catch AgentSkillManifestValidationError.revokedSigningKey(_) {
-            skillManagerMessage = "Manifest signing key has been revoked."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestRevokedKey")
         } catch AgentSkillManifestValidationError.signingKeyPendingPublication(_) {
-            skillManagerMessage = "Manifest signing key is pending public release."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestPendingPublication")
         } catch AgentSkillManifestValidationError.signingKeyNotYetValid(_) {
-            skillManagerMessage = "Manifest signing key is not active yet."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestKeyNotYetValid")
         } catch AgentSkillManifestValidationError.signingKeyExpired(_) {
-            skillManagerMessage = "Manifest signing key has expired."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestKeyExpired")
         } catch {
-            skillManagerMessage = "Unable to import manifest."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestImportFailed")
         }
     }
 
@@ -564,7 +564,7 @@ public struct PermissionHubView: View {
         do {
             skillCatalog = try await skillManagerService.catalog()
         } catch {
-            skillManagerMessage = "Unable to load Skill Manager state."
+            skillManagerMessage = KairoL10n.string("access.skills.message.loadFailed")
         }
     }
 
@@ -572,12 +572,12 @@ public struct PermissionHubView: View {
     private func installSkill(_ skill: AgentSkill) async {
         guard let skillManagerService else {
             skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .installed)
-            skillManagerMessage = "\(skill.displayName) installed."
+            skillManagerMessage = KairoL10n.string("access.skills.message.installed", skill.displayName)
             return
         }
 
         guard let marketplaceCatalogService, skill.downloadURL != nil else {
-            skillManagerMessage = "\(skill.displayName) requires a signed manifest import before install."
+            skillManagerMessage = KairoL10n.string("access.skills.message.signedManifestRequired", skill.displayName)
             return
         }
 
@@ -587,25 +587,25 @@ public struct PermissionHubView: View {
             manifestInstallPreview = preview
             skillManagerMessage = preview.summary
         } catch AgentSkillManifestImportError.invalidJSON {
-            skillManagerMessage = "Manifest JSON is invalid."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestInvalidJSON")
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.invalidSignature {
-            skillManagerMessage = "Manifest signature is invalid."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestInvalidSignature")
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.revokedSigningKey(_) {
-            skillManagerMessage = "Manifest signing key has been revoked."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestRevokedKey")
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.signingKeyPendingPublication(_) {
-            skillManagerMessage = "Manifest signing key is pending public release."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestPendingPublication")
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.signingKeyNotYetValid(_) {
-            skillManagerMessage = "Manifest signing key is not active yet."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestKeyNotYetValid")
             manifestInstallPreview = nil
         } catch AgentSkillManifestValidationError.signingKeyExpired(_) {
-            skillManagerMessage = "Manifest signing key has expired."
+            skillManagerMessage = KairoL10n.string("access.skills.message.manifestKeyExpired")
             manifestInstallPreview = nil
         } catch {
-            skillManagerMessage = "Unable to preview \(skill.displayName)."
+            skillManagerMessage = KairoL10n.string("access.skills.message.previewFailed", skill.displayName)
             manifestInstallPreview = nil
         }
     }
@@ -614,16 +614,16 @@ public struct PermissionHubView: View {
     private func disableSkill(_ skill: AgentSkill) async {
         guard let skillManagerService else {
             skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .disabled)
-            skillManagerMessage = "\(skill.displayName) disabled."
+            skillManagerMessage = KairoL10n.string("access.skills.message.disabled", skill.displayName)
             return
         }
 
         do {
             _ = try await skillManagerService.disableSkill(id: skill.id)
             skillCatalog = try await skillManagerService.catalog()
-            skillManagerMessage = "\(skill.displayName) disabled."
+            skillManagerMessage = KairoL10n.string("access.skills.message.disabled", skill.displayName)
         } catch {
-            skillManagerMessage = "Unable to disable \(skill.displayName)."
+            skillManagerMessage = KairoL10n.string("access.skills.message.disableFailed", skill.displayName)
         }
     }
 
@@ -631,16 +631,16 @@ public struct PermissionHubView: View {
     private func enableSkill(_ skill: AgentSkill) async {
         guard let skillManagerService else {
             skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .installed)
-            skillManagerMessage = "\(skill.displayName) enabled."
+            skillManagerMessage = KairoL10n.string("access.skills.message.enabled", skill.displayName)
             return
         }
 
         do {
             _ = try await skillManagerService.enableSkill(id: skill.id)
             skillCatalog = try await skillManagerService.catalog()
-            skillManagerMessage = "\(skill.displayName) enabled."
+            skillManagerMessage = KairoL10n.string("access.skills.message.enabled", skill.displayName)
         } catch {
-            skillManagerMessage = "Unable to enable \(skill.displayName)."
+            skillManagerMessage = KairoL10n.string("access.skills.message.enableFailed", skill.displayName)
         }
     }
 
@@ -648,16 +648,16 @@ public struct PermissionHubView: View {
     private func removeSkill(_ skill: AgentSkill) async {
         guard let skillManagerService else {
             skillCatalog = skillCatalog.removingSkill(id: skill.id)
-            skillManagerMessage = "\(skill.displayName) removed from manager."
+            skillManagerMessage = KairoL10n.string("access.skills.message.removed", skill.displayName)
             return
         }
 
         do {
             try await skillManagerService.removeSkill(id: skill.id)
             skillCatalog = try await skillManagerService.catalog()
-            skillManagerMessage = "\(skill.displayName) removed from manager."
+            skillManagerMessage = KairoL10n.string("access.skills.message.removed", skill.displayName)
         } catch {
-            skillManagerMessage = "Unable to remove \(skill.displayName)."
+            skillManagerMessage = KairoL10n.string("access.skills.message.removeFailed", skill.displayName)
         }
     }
 
