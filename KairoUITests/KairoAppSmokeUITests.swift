@@ -89,6 +89,45 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(deletedStatus.label.contains("未設定"), deletedStatus.label)
     }
 
+    func testMemoryCenterCanAddSearchAndDeleteMemory() throws {
+        relaunchForUITesting(initialSection: "memory")
+
+        let addField = anyElement("memory.add.text")
+        XCTAssertTrue(addField.waitForExistence(timeout: 5))
+        addField.tap()
+        addField.typeText("Beta launch checklist: invite reviewers and prepare notes.")
+        dismissKeyboardIfPresent()
+
+        let save = findButton("memory.add.save", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(save.exists)
+        save.tap()
+
+        XCTAssertTrue(findStaticText(containing: "Beta launch checklist", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
+
+        let search = findElement("memory.search.text", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(search.exists)
+        search.tap()
+        search.typeText("reviewers")
+        dismissKeyboardIfPresent()
+
+        let summary = findElement("memory.search.summary", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(summary.waitForExistence(timeout: 5))
+        XCTAssertTrue(summary.label.contains("1 matches"), summary.label)
+        XCTAssertTrue(findStaticText(containing: "Beta launch checklist", direction: .both, maxSwipes: 1).exists)
+
+        let clear = findButton("memory.search.clear", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(clear.exists)
+        clear.tap()
+
+        let delete = findButton("memory.record.delete", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(delete.waitForExistence(timeout: 5))
+        delete.tap()
+
+        XCTAssertTrue(findStaticText(containing: "No memories yet", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("memory.export.share").exists)
+        XCTAssertFalse(anyElement("memory.record").exists)
+    }
+
     func testSettingsExpandedModelCatalogKeepsPopularStarterRowsVisible() throws {
         relaunchForUITesting(initialSection: "models", seedExpandedLocalModelCatalog: true)
 

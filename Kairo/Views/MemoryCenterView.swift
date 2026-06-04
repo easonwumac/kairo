@@ -3,6 +3,7 @@ import SwiftUI
 
 public struct MemoryCenterView: View {
     @State private var draft: String = ""
+    @State private var searchQuery: String = ""
     @State private var memories: [MemoryRecord] = []
     @State private var errorMessage: String?
     @State private var exportText: String = "{}"
@@ -45,17 +46,38 @@ public struct MemoryCenterView: View {
                     }
 
                     KairoGroupedSurface {
-                        HStack(spacing: 10) {
-                            TextField("Add a memory", text: $draft, axis: .vertical)
-                                .lineLimit(1...4)
-                                .accessibilityIdentifier("memory.add.text")
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 10) {
+                                TextField("Search memories", text: $searchQuery)
+                                    .accessibilityIdentifier("memory.search.text")
 
-                            Button("Save") { save() }
-                                .font(.subheadline.weight(.semibold))
-                                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                                .accessibilityIdentifier("memory.add.save")
+                                if !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                    Button("Clear") { searchQuery = "" }
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(KairoDesign.blue)
+                                        .accessibilityIdentifier("memory.search.clear")
+                                }
+                            }
+
+                            Text(searchSummary)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .accessibilityIdentifier("memory.search.summary")
+
+                            Divider()
+
+                            HStack(spacing: 10) {
+                                TextField("Add a memory", text: $draft, axis: .vertical)
+                                    .lineLimit(1...4)
+                                    .accessibilityIdentifier("memory.add.text")
+
+                                Button("Save") { save() }
+                                    .font(.subheadline.weight(.semibold))
+                                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                    .accessibilityIdentifier("memory.add.save")
+                            }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
 
                     if let errorMessage {
@@ -126,9 +148,20 @@ public struct MemoryCenterView: View {
             .background(KairoDesign.background.ignoresSafeArea())
             .scrollIndicators(.hidden)
             .navigationTitle("Memory")
-            .task { await reload() }
+            .task(id: searchQuery) { await reload() }
             .refreshable { await reload() }
         }
+    }
+
+    private var trimmedSearchQuery: String {
+        searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var searchSummary: String {
+        guard !trimmedSearchQuery.isEmpty else {
+            return "\(memories.count) saved memories"
+        }
+        return "\(memories.count) matches for \"\(trimmedSearchQuery)\""
     }
 
     private func save() {
@@ -170,7 +203,13 @@ public struct MemoryCenterView: View {
 
     private func reload() async {
         do {
-            let loaded = try await memoryAPI.list(limit: 50)
+            let query = trimmedSearchQuery
+            let loaded: [MemoryRecord]
+            if query.isEmpty {
+                loaded = try await memoryAPI.list(limit: 50)
+            } else {
+                loaded = try await memoryAPI.search(query: query, limit: 50)
+            }
             let export = try await memoryAPI.export(limit: 500)
             let exportText = try Self.exportText(for: export)
             await MainActor.run {
