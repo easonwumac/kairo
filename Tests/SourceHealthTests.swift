@@ -187,6 +187,36 @@ final class SourceHealthTests: XCTestCase {
         }
     }
 
+    func testChatActionConfirmationCoverageLivesInFocusedTestFile() throws {
+        let root = packageRootURL()
+        let focusedTestsURL = root.appendingPathComponent("Tests/ChatActionConfirmationTests.swift")
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: focusedTestsURL.path),
+            "Chat action confirmation tests should live in a focused test file instead of the KairoCoreTests monolith."
+        )
+
+        let requiredFocusedTests = [
+            "testChatViewModelConfirmsNotificationActionThroughInjectedExecutor",
+            "testChatViewModelConfirmsReminderActionThroughInjectedExecutor",
+            "testChatViewModelConfirmsCalendarActionThroughInjectedExecutor",
+            "testChatViewModelConfirmsContactActionThroughInjectedExecutor",
+            "testChatViewModelConfirmsEmailDraftHandoffThroughInjectedExecutor",
+            "testChatViewModelConfirmsMessageHandoffThroughInjectedExecutor",
+            "testChatViewModelConfirmsPhoneCallHandoffThroughInjectedExecutor",
+            "testChatViewModelConfirmsWebSearchHandoffThroughInjectedExecutor"
+        ]
+        let focusedTests = try String(contentsOf: focusedTestsURL, encoding: .utf8)
+        for testName in requiredFocusedTests {
+            XCTAssertTrue(focusedTests.contains(testName), testName)
+        }
+        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 180)
+
+        let coreTests = try String(contentsOf: root.appendingPathComponent("Tests/KairoCoreTests.swift"))
+        for testName in requiredFocusedTests {
+            XCTAssertFalse(coreTests.contains(testName), testName)
+        }
+    }
+
     func testSandboxActionSupportStaysSplitAcrossFocusedFiles() throws {
         let root = packageRootURL()
         let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)
