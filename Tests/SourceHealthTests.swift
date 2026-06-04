@@ -501,10 +501,9 @@ final class SourceHealthTests: XCTestCase {
 
     func testAppReviewCopyAndEntitlementsStayWithinBetaClaims() throws {
         let root = packageRootURL()
-        let entitlements = try String(
-            contentsOf: root.appendingPathComponent("Config/KairoApp.entitlements"),
-            encoding: .utf8
-        )
+        let entitlements = try propertyListDictionary(at: root.appendingPathComponent("Config/KairoApp.entitlements"))
+        let infoPlist = try propertyListDictionary(at: root.appendingPathComponent("Config/KairoApp-Info.plist"))
+        let privacyManifest = try propertyListDictionary(at: root.appendingPathComponent("Kairo/Resources/PrivacyInfo.xcprivacy"))
         let readiness = try String(
             contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"),
             encoding: .utf8
@@ -518,30 +517,34 @@ final class SourceHealthTests: XCTestCase {
             encoding: .utf8
         )
 
-        XCTAssertTrue(entitlements.contains("com.apple.security.application-groups"))
-        XCTAssertFalse(entitlements.contains("com.apple.developer.homekit"))
-        XCTAssertTrue(readiness.contains("Privacy Labels scope"))
-        XCTAssertTrue(readiness.contains("docs/PRIVACY_LABELS_CHECKLIST.md"))
-        XCTAssertTrue(readiness.contains("docs/APP_REVIEW_NOTES.md"))
-        XCTAssertTrue(readiness.contains("no collected data"))
-        XCTAssertTrue(readiness.contains("no tracking"))
-        XCTAssertTrue(readiness.contains("[x] HomeKit live control intentionally remains disabled for beta"))
-        XCTAssertTrue(readiness.contains("beta plist omits `NSHomeKitUsageDescription`"))
-        XCTAssertFalse(readiness.contains("[ ] HomeKit live control remains disabled for beta"))
+        let applicationGroups = try XCTUnwrap(entitlements["com.apple.security.application-groups"] as? [String])
+        XCTAssertEqual(applicationGroups, ["group.app.kairo.shared"])
+        XCTAssertNil(entitlements["com.apple.developer.homekit"])
 
-        let requiredReviewBoundaries = [
-            "Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions.",
-            "On-device deletion is user-triggered for chat history, memory JSON/export content, downloaded local models, saved API keys, OAuth tokens, and metadata-only audit logs.",
-            "For the current beta, App Privacy Labels should remain no tracking and no collected data.",
-            "The submitted binary has no analytics SDK, no backend account, no cloud memory sync, no crash/telemetry collection provider, and no provider-side sync beyond explicit user-configured API calls.",
-            "Local model catalog/download/select/delete are present, but iOS production local inference is not complete.",
-            "macOS/dev reply checks and benchmark numbers are not iPhone runtime proof.",
-            "HomeKit is limited to preview/demo/test scaffolding in this beta.",
-            "Kairo does not create, edit, install, or reorder Apple Shortcuts silently."
-        ]
-        for boundary in requiredReviewBoundaries {
-            XCTAssertTrue(readiness.contains(boundary), boundary)
-            XCTAssertTrue(reviewNotes.contains(boundary), boundary)
+        let collectedDataTypes = try XCTUnwrap(privacyManifest["NSPrivacyCollectedDataTypes"] as? [Any])
+        let trackingDomains = try XCTUnwrap(privacyManifest["NSPrivacyTrackingDomains"] as? [Any])
+        XCTAssertEqual(privacyManifest["NSPrivacyTracking"] as? Bool, false)
+        XCTAssertTrue(collectedDataTypes.isEmpty)
+        XCTAssertTrue(trackingDomains.isEmpty)
+
+        for requiredPurposeString in [
+            "NSCalendarsUsageDescription",
+            "NSCalendarsFullAccessUsageDescription",
+            "NSRemindersUsageDescription",
+            "NSRemindersFullAccessUsageDescription",
+            "NSContactsUsageDescription",
+            "NSUserNotificationsUsageDescription"
+        ] {
+            XCTAssertNotNil(infoPlist[requiredPurposeString], requiredPurposeString)
+        }
+        for deferredPurposeString in [
+            "NSHomeKitUsageDescription",
+            "NSLocationWhenInUseUsageDescription",
+            "NSPhotoLibraryUsageDescription",
+            "NSCameraUsageDescription",
+            "NSMicrophoneUsageDescription"
+        ] {
+            XCTAssertNil(infoPlist[deferredPurposeString], deferredPurposeString)
         }
 
         let forbiddenReviewClaims = [
@@ -924,6 +927,12 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(modelsSource.contains("public enum ShortcutNodeRuntimeError"))
         XCTAssertLessThan(runtimeSource.split(separator: "\n").count, 900)
         XCTAssertLessThan(modelsSource.split(separator: "\n").count, 220)
+    }
+
+    private func propertyListDictionary(at url: URL) throws -> [String: Any] {
+        let data = try Data(contentsOf: url)
+        let propertyList = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+        return try XCTUnwrap(propertyList as? [String: Any], url.path)
     }
 
     private func packageRootURL() -> URL {

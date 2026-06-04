@@ -5,7 +5,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
 ## Release-blocking gaps
 
 1. Real-device beta sign-off.
-   - Current `xcrun devicectl list devices` check on 2026-06-04 08:57 CST listed all available physical test devices as `unavailable`, so no real-device sign-off was completed in this pass.
+   - Current `xcrun devicectl list devices` check on 2026-06-04 09:14 CST listed all available physical test devices as `unavailable`, so no real-device sign-off was completed in this pass.
    - Re-run on a reachable physical iPhone or iPad: Chat / Memory / Access / Settings, Share Extension import, App Intents Ask / Save / Search, chat history restart persistence, local notification / reminder / calendar preview + confirm, and email / message / phone / web / maps handoff preview + confirm.
    - Record physical-device results in `docs/REAL_DEVICE_BETA_SIGNOFF.md`.
    - Write device results back to `docs/APP_STORE_READINESS.md`; do not substitute simulator or package tests for real-device evidence.
