@@ -858,7 +858,6 @@ final class SourceHealthTests: XCTestCase {
             contentsOf: root.appendingPathComponent("NEXT_STEPS.md"),
             encoding: .utf8
         )
-
         let applicationGroups = try XCTUnwrap(entitlements["com.apple.security.application-groups"] as? [String])
         XCTAssertEqual(applicationGroups, ["group.app.kairo.shared"])
         XCTAssertNil(entitlements["com.apple.developer.homekit"])
@@ -1113,6 +1112,10 @@ final class SourceHealthTests: XCTestCase {
             contentsOf: root.appendingPathComponent("NEXT_STEPS.md"),
             encoding: .utf8
         )
+        let githubPublishing = try String(
+            contentsOf: root.appendingPathComponent("docs/GITHUB_PUBLISHING.md"),
+            encoding: .utf8
+        )
 
         XCTAssertTrue(readiness.contains("docs/APP_STORE_SUBMISSION_CHECKLIST.md"))
         XCTAssertTrue(nextSteps.contains("docs/APP_STORE_SUBMISSION_CHECKLIST.md"))
@@ -1175,6 +1178,13 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(releaseHygiene.contains("`headSha` must equal `HEAD`"))
         XCTAssertTrue(releaseHygiene.contains("Do not stage `tmp/` screenshots as release evidence."))
         XCTAssertTrue(releaseHygiene.contains("known false-positive OAuth token endpoint URL fragment"))
+        XCTAssertTrue(githubPublishing.contains("This repository is already published"))
+        XCTAssertTrue(githubPublishing.contains("docs/RELEASE_HYGIENE.md"))
+        XCTAssertTrue(githubPublishing.contains("docs/APP_STORE_SUBMISSION_CHECKLIST.md"))
+        XCTAssertTrue(githubPublishing.contains("headSha` equals `HEAD`"))
+        XCTAssertTrue(githubPublishing.contains("Do not submit or cite `tmp/` screenshots as physical-device evidence."))
+        XCTAssertFalse(githubPublishing.contains("git init"))
+        XCTAssertFalse(githubPublishing.contains("gh repo create"))
 
         XCTAssertTrue(iosTargetReadiness.contains("## Release evidence boundary"))
         XCTAssertTrue(iosTargetReadiness.contains("all listed physical devices were `unavailable`"))
