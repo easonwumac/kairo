@@ -168,6 +168,37 @@ final class LocalModelFeatureTests: XCTestCase {
         }
     }
 
+    func testLocalModelCatalogServiceRejectsDuplicateModelIDs() async throws {
+        let signedCatalog = try signedRemoteModelCatalogJSON(
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "qwen-small",
+                    displayName: "Qwen Small",
+                    version: "1.0.0"
+                ),
+                remoteModelManifestJSON(
+                    id: "qwen-small",
+                    displayName: "Qwen Small Shadow",
+                    version: "9.9.9"
+                )
+            ]
+        )
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+        let service = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: httpClient,
+            trustStore: signedCatalog.trustStore
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected duplicate model IDs to fail closed.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .duplicateModelID("qwen-small"))
+            XCTAssertEqual(error.localizedDescription, "Model catalog contains a duplicate model id: qwen-small.")
+        }
+    }
+
     func testLocalModelCatalogServiceRejectsInvalidCatalogSignature() async throws {
         var signedCatalog = try signedRemoteModelCatalogJSON(
             modelsJSON: [

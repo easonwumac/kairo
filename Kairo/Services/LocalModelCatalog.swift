@@ -537,6 +537,7 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
     case unsupportedSignatureAlgorithm(String)
     case invalidSignature
     case nonProductionCatalogSignatureStatus(String)
+    case duplicateModelID(String)
     case unsafeDownloadURL(modelID: String, url: String)
     case invalidChecksum(modelID: String, sha256: String)
 
@@ -562,6 +563,8 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
             return "Model catalog signature is invalid."
         case .nonProductionCatalogSignatureStatus(let status):
             return "Model catalog is marked \(status), not productionSigned."
+        case .duplicateModelID(let modelID):
+            return "Model catalog contains a duplicate model id: \(modelID)."
         case .unsafeDownloadURL(let modelID, let url):
             return "Model catalog has an unsafe download URL for \(modelID): \(url)."
         case .invalidChecksum(let modelID, let sha256):
@@ -654,6 +657,7 @@ public struct LocalModelCatalogService: Sendable {
         }
         try validateTrustWindow(for: trustedKey)
         try validateSignature(for: catalog, trustedKey: trustedKey)
+        try validateUniqueModelIDs(catalog.models)
 
         for model in catalog.models {
             guard model.downloadURL.scheme?.lowercased() == "https" else {
@@ -667,6 +671,15 @@ public struct LocalModelCatalogService: Sendable {
                     modelID: model.id,
                     sha256: model.sha256
                 )
+            }
+        }
+    }
+
+    private func validateUniqueModelIDs(_ models: [LocalModelManifest]) throws {
+        var seenModelIDs = Set<String>()
+        for model in models {
+            guard seenModelIDs.insert(model.id).inserted else {
+                throw LocalModelCatalogServiceError.duplicateModelID(model.id)
             }
         }
     }
