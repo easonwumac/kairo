@@ -43,7 +43,7 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 
 ### Current release blocker summary
 
-- **Real device blocked:** `xcrun devicectl list devices` on 2026-06-04 09:14 CST listed all paired physical devices as `unavailable`, so this pass did not produce real-device sign-off.
+- **Real device blocked:** `xcrun devicectl list devices` on 2026-06-04 09:16 CST listed all paired physical devices as `unavailable`, so this pass did not produce real-device sign-off.
 - **Copy QA scope:** Review notes avoid claiming iOS production local inference, live HomeKit control, private cross-app data reads, arbitrary UI control, reuse of a user's ChatGPT browser session, or silent Apple Shortcuts creation.
 - **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking, and package source-health tests parse the privacy manifest plus entitlement/review-note boundaries. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
 - **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
@@ -231,7 +231,7 @@ Purpose-string alignment:
 
 Authoritative physical-device sign-off log: `docs/REAL_DEVICE_BETA_SIGNOFF.md`.
 
-Current `devicectl` check on 2026-06-04 09:14 CST found real devices listed but unavailable:
+Current `devicectl` check on 2026-06-04 09:16 CST found real devices listed but unavailable:
 
 - `iPad Air 5` (`EDC75137-2987-56F5-A08D-DB0D7A2B8F05`) unavailable.
 - `iPhone 17 Pro Max` (`58A417FA-6D4D-5F15-B673-AF238D812161`) unavailable.
@@ -273,7 +273,7 @@ Because no available real device was reachable, the following remain release-blo
 - [x] Share Extension 文字、URL、圖片、PDF/file metadata 匯入由 package tests 覆蓋。
 - [x] Reminder / Calendar / Contact / Notification 與 Email / Messages / Phone / Web / Maps preview + confirm path 已由 focused simulator smoke 覆蓋。
 - [x] 不支援的跨 App 操作會顯示安全替代方案。
-- [ ] 真機 smoke 尚未在這一輪重跑；2026-06-04 09:14 CST 的 `xcrun devicectl list devices` 顯示可見裝置皆為 `unavailable`，Chat / Memory / Access / Settings / Share Extension / App Intents 仍需實機簽核。
+- [ ] 真機 smoke 尚未在這一輪重跑；2026-06-04 09:16 CST 的 `xcrun devicectl list devices` 顯示可見裝置皆為 `unavailable`，Chat / Memory / Access / Settings / Share Extension / App Intents 仍需實機簽核。
 - [ ] App Intent Ask / Save / Search 在這一輪尚未做 device-level smoke；目前證據是 registry/type coverage，外加 Ask/Save/Search node package tests，不是實機驗證。
 - [ ] Chat history app 重啟 persistence 仍需在真機重跑簽核。
 - [ ] HomeKit control action 仍只可宣稱 preview/demo/test path；真實 entitlement/live control 尚未完成。
