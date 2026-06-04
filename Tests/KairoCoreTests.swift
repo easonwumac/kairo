@@ -1829,7 +1829,7 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertFalse(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertTrue(result.message.contains("UI opener"))
+        XCTAssertEqual(result.message, "Could not open the visible URL handoff. Nothing was opened.")
     }
 
     func testLiveEnvironmentSourceUsesKeychainCredentialStoreForProviderSecrets() throws {

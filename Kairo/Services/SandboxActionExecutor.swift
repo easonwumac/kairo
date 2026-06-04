@@ -159,7 +159,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible URL handoff." : "Open URL is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible URL handoff." : "Could not open the visible URL handoff. Nothing was opened.",
                 requiresExternalUI: true
             )
         case (.composeEmailDraft, .email(let draft)):
@@ -169,7 +169,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible Mail draft handoff. No email has been sent." : "Email draft handoff is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible Mail draft handoff. No email has been sent." : "Could not open the Mail draft handoff. No email has been sent.",
                 requiresExternalUI: true
             )
         case (.openMapDirections, .mapDirections(let draft)):
@@ -179,7 +179,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible Apple Maps handoff. Navigation still requires user action in Maps." : "Apple Maps directions handoff is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible Apple Maps handoff. Navigation still requires user action in Maps." : "Could not open the Apple Maps handoff. Navigation has not started.",
                 requiresExternalUI: true
             )
         case (.openMessageHandoff, .message(let draft)):
@@ -189,7 +189,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview." : "Messages handoff is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview." : "Could not open the Messages handoff. No message has been sent; body remains in Kairo preview.",
                 requiresExternalUI: true
             )
         case (.openPhoneCallHandoff, .phoneCall(let draft)):
@@ -199,7 +199,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone." : "Phone call handoff is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone." : "Could not open the Phone handoff. No call has been placed.",
                 requiresExternalUI: true
             )
         case (.openWebSearchHandoff, .webSearch(let draft)):
@@ -209,7 +209,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened visible Safari web search handoff. No browsing has happened inside Kairo." : "Safari web search handoff is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible Safari web search handoff. No browsing has happened inside Kairo." : "Could not open the Safari web search handoff. No browsing has happened inside Kairo.",
                 requiresExternalUI: true
             )
         case (.sendNotification, .notification(let draft)):
