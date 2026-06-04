@@ -65,10 +65,6 @@ public struct PermissionHubView: View {
                     Text(KairoL10n.string("access.overview.title"))
                         .font(.title2.weight(.bold))
                         .foregroundStyle(KairoDesign.ink)
-                    Text(KairoL10n.string("access.overview.subtitle"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 KairoStatusPill(
@@ -84,7 +80,6 @@ public struct PermissionHubView: View {
                 } label: {
                     disclosureHeader(
                         title: KairoL10n.string("access.status.details.title"),
-                        subtitle: KairoL10n.string("access.status.details.subtitle"),
                         isExpanded: isAccessStatusExpanded
                     )
                 }
@@ -93,6 +88,16 @@ public struct PermissionHubView: View {
                 .accessibilityIdentifier("access.status.details.toggle")
 
                 if isAccessStatusExpanded {
+                    Text(KairoL10n.string("access.overview.subtitle"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(KairoL10n.string("access.status.details.subtitle"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
                     HStack(spacing: 8) {
                         KairoStatusPill(
                             title: KairoL10n.string("access.status.reviewFirst"),
@@ -315,16 +320,18 @@ public struct PermissionHubView: View {
         }
     }
 
-    private func disclosureHeader(title: String, subtitle: String, isExpanded: Bool) -> some View {
+    private func disclosureHeader(title: String, subtitle: String? = nil, isExpanded: Bool) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             Spacer(minLength: 8)

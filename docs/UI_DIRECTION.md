@@ -513,6 +513,15 @@ Stage 53 makes Workflows overview terse:
 - Starter workflows, saved workflow preview, and advanced Shortcut references
   keep their existing progressive paths.
 
+Stage 54 makes Access overview terse:
+
+- Access no longer opens with explanatory subtitle copy under the page title.
+- Setup details is now a compact first-layer disclosure label; the tool-use
+  boundary, review-first rule, setup-needed count, and unavailable count appear
+  only after expansion.
+- Everyday tools remain directly below the overview, and advanced skill library
+  controls keep their existing progressive path.
+
 ## Next UI stages
 
 1. Product surface audit
