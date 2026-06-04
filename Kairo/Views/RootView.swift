@@ -206,15 +206,20 @@ public struct RootView: View {
                         .accessibilityIdentifier("root.drawer.close")
                     }
 
-                    KairoGroupedSurface {
-                        ForEach(RootSection.allCases) { section in
-                            navigationRow(section)
-                            if section != RootSection.allCases.last {
-                                Divider()
-                                    .padding(.leading, 44)
-                            }
-                        }
-                    }
+                    navigationGroup(
+                        title: KairoL10n.string("root.menu.group.primary"),
+                        sections: [.chat]
+                    )
+
+                    navigationGroup(
+                        title: KairoL10n.string("root.menu.group.agent"),
+                        sections: [.access, .shortcuts, .memory]
+                    )
+
+                    navigationGroup(
+                        title: KairoL10n.string("root.menu.group.system"),
+                        sections: [.models, .settings]
+                    )
 
                     Text(KairoL10n.string("root.menu.privacyNote"))
                         .font(.caption)
@@ -238,12 +243,12 @@ public struct RootView: View {
             selectedSection = section
             isMenuPresented = false
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 13) {
                 Image(systemName: section.systemImage)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.body.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(selectedSection == section ? section.tint : .secondary)
-                    .frame(width: 28, height: 28)
+                    .frame(width: 30, height: 30)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(section.title)
@@ -268,6 +273,24 @@ public struct RootView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("root.drawer.\(section.rawValue)")
+    }
+
+    private func navigationGroup(title: String, sections: [RootSection]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            KairoGroupedSurface {
+                ForEach(sections) { section in
+                    navigationRow(section)
+                    if section != sections.last {
+                        Divider()
+                            .padding(.leading, 46)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -318,17 +341,17 @@ private enum RootSection: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .chat:
-            return "bubble.left.and.text.bubble.right"
+            return "message.fill"
         case .memory:
-            return "books.vertical"
+            return "brain.head.profile"
         case .shortcuts:
-            return "list.bullet.rectangle"
+            return "rectangle.stack.badge.play"
         case .access:
-            return "iphone.gen3"
+            return "wand.and.stars"
         case .models:
             return "cpu"
         case .settings:
-            return "gear"
+            return "gearshape"
         }
     }
 

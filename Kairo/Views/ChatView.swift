@@ -198,16 +198,6 @@ public struct ChatView: View {
                 }
             }
 
-            ChatProviderRouteBar(
-                status: viewModel.providerRouteStatus,
-                canEdit: viewModel.canEditProviderRoute,
-                setPreference: { preference in
-                    Task { await viewModel.setProviderRoutePreference(preference) }
-                }
-            )
-            .padding(.horizontal, 14)
-            .padding(.top, 8)
-
             composer
         }
         .sheet(item: $viewModel.pendingAction) { action in
@@ -259,7 +249,7 @@ public struct ChatView: View {
                 .accessibilityIdentifier("chat.reply-preview")
             }
 
-            privateChatControl
+            composerStatusRow
 
             HStack(alignment: .bottom, spacing: 10) {
                 toolMenu
@@ -317,21 +307,42 @@ public struct ChatView: View {
         .accessibilityIdentifier("chat.composer.surface")
     }
 
-    private var privateChatControl: some View {
-        Toggle(isOn: Binding(
-            get: { viewModel.isPrivateChatEnabled },
-            set: { viewModel.setPrivateChatEnabled($0) }
-        )) {
-            Label(KairoL10n.string("chat.private.title"), systemImage: viewModel.isPrivateChatEnabled ? "lock.fill" : "lock")
-                .font(.caption.weight(.semibold))
-            Text(KairoL10n.string("chat.private.detail"))
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+    private var composerStatusRow: some View {
+        HStack(spacing: 8) {
+            privateModeButton
+
+            ChatProviderRouteBar(
+                status: viewModel.providerRouteStatus,
+                canEdit: viewModel.canEditProviderRoute,
+                setPreference: { preference in
+                    Task { await viewModel.setProviderRoutePreference(preference) }
+                }
+            )
         }
-        .toggleStyle(.switch)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.composer.status-row")
+    }
+
+    private var privateModeButton: some View {
+        Button {
+            viewModel.setPrivateChatEnabled(!viewModel.isPrivateChatEnabled)
+        } label: {
+            Label(
+                KairoL10n.string("chat.private.title"),
+                systemImage: viewModel.isPrivateChatEnabled ? "lock.fill" : "lock"
+            )
+            .font(.caption.weight(.semibold))
+            .lineLimit(1)
+            .foregroundStyle(viewModel.isPrivateChatEnabled ? KairoDesign.ink : .secondary)
+            .padding(.horizontal, 10)
+            .frame(height: 32)
+            .background(
+                viewModel.isPrivateChatEnabled ? KairoDesign.amber.opacity(0.18) : Color.primary.opacity(0.045),
+                in: Capsule()
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(KairoL10n.string("chat.private.detail"))
         .accessibilityIdentifier("chat.private-chat.toggle")
     }
 
