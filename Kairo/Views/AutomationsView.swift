@@ -11,6 +11,7 @@ public struct AutomationsView: View {
     @State private var message: String?
     @State private var shortcutDemoPreviewMessages: [String: String] = [:]
     @State private var isLoading = false
+    @State private var showWorkflowDetails = false
     @State private var showAdvancedWorkflowReferences = false
     @State private var expandedRecipeActions: Set<String> = []
 
@@ -78,17 +79,47 @@ public struct AutomationsView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                HStack(spacing: 8) {
-                    KairoStatusPill(
-                        title: KairoL10n.string("automations.status.recipes", Int64(recipes.count)),
-                        systemImage: "point.topleft.down.curvedto.point.bottomright.up",
-                        tint: KairoDesign.blue
-                    )
-                    KairoStatusPill(
-                        title: KairoL10n.string("automations.status.reviewFirst"),
-                        systemImage: "checkmark.shield.fill",
-                        tint: KairoDesign.green
-                    )
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showWorkflowDetails.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(KairoL10n.string("automations.details.title"))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                            Text(KairoL10n.string("automations.details.subtitle"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: showWorkflowDetails ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("automations.details.toggle")
+
+                if showWorkflowDetails {
+                    HStack(spacing: 8) {
+                        KairoStatusPill(
+                            title: KairoL10n.string("automations.status.recipes", Int64(recipes.count)),
+                            systemImage: "point.topleft.down.curvedto.point.bottomright.up",
+                            tint: KairoDesign.blue
+                        )
+                        KairoStatusPill(
+                            title: KairoL10n.string("automations.status.reviewFirst"),
+                            systemImage: "checkmark.shield.fill",
+                            tint: KairoDesign.green
+                        )
+                    }
                 }
             }
         }
@@ -108,12 +139,6 @@ public struct AutomationsView: View {
                     subtitle: KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.emptyDetail" : "automations.recipeCenter.detail")
                 )
 
-                KairoStatusPill(
-                    title: KairoL10n.string("automations.recipeCenter.boundary"),
-                    systemImage: "checkmark.shield.fill",
-                    tint: KairoDesign.green
-                )
-
                 Button {
                     Task { await seedSampleRecipes() }
                 } label: {
@@ -125,6 +150,12 @@ public struct AutomationsView: View {
                 .disabled(isLoading)
                 .accessibilityLabel(KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.addStarter" : "automations.recipeCenter.addSamples"))
                 .accessibilityIdentifier("automations.seed-samples")
+
+                KairoStatusPill(
+                    title: KairoL10n.string("automations.recipeCenter.boundary"),
+                    systemImage: "checkmark.shield.fill",
+                    tint: KairoDesign.green
+                )
             }
         }
     }

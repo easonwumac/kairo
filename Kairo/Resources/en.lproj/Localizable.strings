@@ -211,6 +211,8 @@
 "automations.status.reviewFirst" = "Review first";
 "automations.status.templates" = "%lld handoffs";
 "automations.status.previews" = "%lld previews";
+"automations.details.title" = "Workflow details";
+"automations.details.subtitle" = "Saved count and review rules stay here.";
 "automations.recipeCenter.emptySection" = "Start with a workflow";
 "automations.recipeCenter.emptyDetail" = "Add a starter set, preview one workflow, then run only when it looks right.";
 "automations.recipeCenter.section" = "Sample recipes";

@@ -401,6 +401,15 @@ Stage 41 makes Memory search-first:
 - Record metadata and delete controls remain behind per-record Details, keeping
   lower-frequency management secondary.
 
+Stage 42 makes Workflows action-first:
+
+- Workflows overview no longer opens with saved-count and review-rule pills;
+  those status details move behind Workflow details.
+- The starter card now places Add Starter Workflows before the internal-recipe
+  boundary note, so the empty state leads with the next action.
+- Saved workflow rows, preview-first controls, and advanced Shortcut references
+  keep their existing progressive disclosure.
+
 ## Next UI stages
 
 1. Product surface audit
