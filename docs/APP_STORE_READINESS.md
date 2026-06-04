@@ -165,8 +165,7 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 - [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
 - [x] Remote catalog payload signature verification rejects unknown, revoked, pending-publication, out-of-window, unsupported, or invalid P-256 signing keys before accepting download rows.
 - [x] Package tests cover checksum failure, download cancellation cleanup, stale interrupted-download cleanup after restart/status reload, deleting the selected model, and runtime-unavailable fail-closed paths.
-- [ ] Publish production signed model catalog and public trust-store key material from the standalone `easonwumac/kairo-models` repo.
-- [ ] Capture real-device iOS runtime proof for latency, memory, thermal behavior, and App Store-compatible packaging before claiming production inference.
+- [ ] Publish production signed catalog/public key material and runtime speed proof。
 - [x] 模型存在 Application Support/LocalModels，並由 downloader 標記為不進 iCloud backup。
 - [x] iOS live wiring keeps the local-model reply check and benchmark runtime fail-closed until an App Store-compatible inference engine is implemented.
 - [ ] iOS production inference runtime is implemented and verified on real devices. Current macOS/dev reply check is not proof.
@@ -261,7 +260,6 @@ Because no available real device was reachable, the following remain release-blo
   - `testAccessSkillManagerBlocksIncompatibleMarketplaceSkillInstall`
   - `testAccessSkillManagerSearchFiltersSkills`
   - `testSettingsShowsOAuthConnectorReadinessAndBoundaries`
-  - `testFlowASharedTextToReminderPreviewConfirm`
   - `testChatCanPreviewAndConfirmNotificationAction`
   - `testChatCanPreviewAndConfirmReminderAction`
   - `testChatCanPreviewAndConfirmCalendarAction`
