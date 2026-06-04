@@ -790,8 +790,8 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(rootView.contains("private var selectedSection: RootSection = .chat"))
         XCTAssertTrue(rootView.contains("?? .chat"))
-        XCTAssertTrue(rootView.contains("Tell Kairo what to do on this phone"))
-        XCTAssertTrue(rootView.contains("Phone tools"))
+        XCTAssertTrue(rootView.contains(#""root.section.chat.subtitle""#))
+        XCTAssertTrue(rootView.contains(#""root.section.access.title""#))
         XCTAssertFalse(rootView.contains(#""home.primary-actions""#))
         XCTAssertFalse(rootView.contains(#""home.ask-kairo""#))
         XCTAssertFalse(rootView.contains(#""home.review-drafts""#))
@@ -823,7 +823,7 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(rootView.contains(#""root.back-to-chat""#))
         XCTAssertTrue(rootView.contains("selectedSection = .chat"))
-        XCTAssertTrue(rootView.contains("Back to Chat"))
+        XCTAssertTrue(rootView.contains(#""root.backToChat""#))
         XCTAssertFalse(rootView.contains(#"KairoStatusPill(title: "Auto""#))
         XCTAssertTrue(chatView.contains(#""chat.tools.menu""#))
         XCTAssertFalse(chatView.contains(#""chat.session-controls""#))

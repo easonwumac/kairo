@@ -65,7 +65,7 @@ public struct RootView: View {
         Color.clear
             .frame(width: 1, height: 1)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Kairo root shell")
+            .accessibilityLabel(KairoL10n.string("root.accessibility.shell"))
             .accessibilityIdentifier("root.shell")
     }
 
@@ -127,7 +127,7 @@ public struct RootView: View {
                 Button {
                     selectedSection = .chat
                 } label: {
-                    Label("Back to Chat", systemImage: "chevron.left")
+                    Label(KairoL10n.string("root.backToChat"), systemImage: "chevron.left")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(KairoDesign.blue)
                         .padding(.horizontal, 10)
@@ -135,7 +135,7 @@ public struct RootView: View {
                         .background(KairoDesign.blue.opacity(0.10), in: Capsule())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Back to Chat")
+                .accessibilityLabel(KairoL10n.string("root.backToChat"))
                 .accessibilityIdentifier("root.back-to-chat")
             }
 
@@ -154,13 +154,13 @@ public struct RootView: View {
             Button {
                 isMenuPresented = true
             } label: {
-                Label("Menu", systemImage: "ellipsis.circle")
+                Label(KairoL10n.string("root.menu"), systemImage: "ellipsis.circle")
                     .labelStyle(.iconOnly)
                     .font(.title3.weight(.semibold))
                     .frame(width: 42, height: 42)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open navigation menu")
+            .accessibilityLabel(KairoL10n.string("root.menu.open"))
             .accessibilityIdentifier("root.drawer.toggle")
         }
         .padding(.horizontal, 16)
@@ -186,9 +186,9 @@ public struct RootView: View {
                     HStack(spacing: 12) {
                         KairoMark(size: 44)
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Kairo Chat")
+                            Text(KairoL10n.string("root.menu.title"))
                                 .font(.title3.bold())
-                            Text("Chat stays first. Manage tools only when you need setup.")
+                            Text(KairoL10n.string("root.menu.subtitle"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -202,7 +202,7 @@ public struct RootView: View {
                                 .frame(width: 38, height: 38)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Close navigation menu")
+                        .accessibilityLabel(KairoL10n.string("root.menu.close"))
                         .accessibilityIdentifier("root.drawer.close")
                     }
 
@@ -216,7 +216,7 @@ public struct RootView: View {
                         }
                     }
 
-                    Text("Kairo uses public APIs, explicit permission, and visible handoff. Nothing changes silently.")
+                    Text(KairoL10n.string("root.menu.privacyNote"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -226,10 +226,10 @@ public struct RootView: View {
                 .padding(.bottom, max(safeAreaInsets.bottom, 0) + 24)
             }
             .background(KairoDesign.background.ignoresSafeArea())
-            .navigationTitle("Navigate")
+            .navigationTitle(KairoL10n.string("root.navigation.title"))
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Kairo navigation menu")
+        .accessibilityLabel(KairoL10n.string("root.menu.accessibility"))
         .accessibilityIdentifier("root.drawer")
     }
 
@@ -284,34 +284,34 @@ private enum RootSection: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .chat:
-            return "Kairo Chat"
+            return KairoL10n.string("root.section.chat.title")
         case .memory:
-            return "Memory"
+            return KairoL10n.string("root.section.memory.title")
         case .shortcuts:
-            return "Workflows"
+            return KairoL10n.string("root.section.shortcuts.title")
         case .access:
-            return "Phone tools"
+            return KairoL10n.string("root.section.access.title")
         case .models:
-            return "AI engine"
+            return KairoL10n.string("root.section.models.title")
         case .settings:
-            return "Settings"
+            return KairoL10n.string("root.section.settings.title")
         }
     }
 
     var subtitle: String {
         switch self {
         case .chat:
-            return "Tell Kairo what to do on this phone"
+            return KairoL10n.string("root.section.chat.subtitle")
         case .memory:
-            return "Approved context"
+            return KairoL10n.string("root.section.memory.subtitle")
         case .shortcuts:
-            return "Reusable Kairo recipes"
+            return KairoL10n.string("root.section.shortcuts.subtitle")
         case .access:
-            return "What Chat can suggest"
+            return KairoL10n.string("root.section.access.subtitle")
         case .models:
-            return "Cloud and local models"
+            return KairoL10n.string("root.section.models.subtitle")
         case .settings:
-            return "Accounts and privacy"
+            return KairoL10n.string("root.section.settings.subtitle")
         }
     }
 

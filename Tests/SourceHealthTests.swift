@@ -594,8 +594,8 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(rootViewSource.contains("private var selectedSection: RootSection = .chat"))
         XCTAssertTrue(rootViewSource.contains("?? .chat"))
         XCTAssertFalse(rootViewSource.contains("BriefingInboxView"))
-        XCTAssertTrue(rootViewSource.contains("Back to Chat"))
-        XCTAssertTrue(rootViewSource.contains("Tell Kairo what to do on this phone"))
+        XCTAssertTrue(rootViewSource.contains(#""root.backToChat""#))
+        XCTAssertTrue(rootViewSource.contains(#""root.section.chat.subtitle""#))
     }
 
     func testChatSurfaceOwnsToolsAndShowsCompactRouteStatus() throws {
