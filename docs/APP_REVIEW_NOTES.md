@@ -2,7 +2,7 @@
 
 Kairo is a chat-first iOS app that uses only public APIs, App Intents, Share Extension, BGTaskScheduler, official OAuth/API flows, and visible URL handoffs.
 
-Shared content enters Kairo only through Share Extension, document/photo pickers, App Intents/Shortcuts, or official OAuth APIs. Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions.
+Shared content enters Kairo only through Share Extension, App Intents/Shortcuts, or official OAuth APIs. Kairo does not read other apps' private containers, control arbitrary app UI, or bypass iOS permissions. Shared file and image handling is limited to user-shared metadata/files delivered through the Share Extension; the beta does not request full Photo Library access.
 
 On-device deletion is user-triggered for chat history, memory JSON/export content, downloaded local models, saved API keys, OAuth tokens, and metadata-only audit logs. If a future Kairo backend account is added, backend account-deletion copy must be reviewed separately before release.
 

@@ -28,7 +28,7 @@ Kairo does **not** promise capabilities that normal App Store apps cannot provid
 - Permission bypasses, private APIs, jailbreak-only APIs, or background daemons.
 - Unapproved access to Messages, Mail, Notes, or ChatGPT web sessions/cookies.
 
-Instead, Kairo uses iOS-supported entry points: Share Extension, document/photo pickers, EventKit, Contacts.framework, UserNotifications, App Intents, Shortcuts, `mailto:`/`sms:`/`tel:`/Apple Maps/URL handoff, OAuth connectors, and explicit user confirmation.
+Instead, Kairo uses iOS-supported entry points: Share Extension, EventKit, Contacts.framework, UserNotifications, App Intents, Shortcuts, `mailto:`/`sms:`/`tel:`/Apple Maps/URL handoff, OAuth connectors, and explicit user confirmation. Shared file and image handling is limited to user-shared metadata/files delivered through the Share Extension; the beta does not request full Photo Library access.
 
 ## Current implementation
 
