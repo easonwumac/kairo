@@ -108,7 +108,7 @@ final class SandboxActionExecutorTests: XCTestCase {
 
         XCTAssertTrue(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertEqual(result.message, "Prepared email draft handoff.")
+        XCTAssertEqual(result.message, "Opened visible Mail draft handoff. No email has been sent.")
         let openedURLs = await opener.openedURLs
         let openedURL = try XCTUnwrap(openedURLs.first)
         XCTAssertEqual(openedURL.scheme, "mailto")
@@ -132,7 +132,7 @@ final class SandboxActionExecutorTests: XCTestCase {
 
         XCTAssertTrue(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertEqual(result.message, "Prepared Apple Maps directions handoff.")
+        XCTAssertEqual(result.message, "Opened visible Apple Maps handoff. Navigation still requires user action in Maps.")
         let openedURLs = await opener.openedURLs
         let openedURL = try XCTUnwrap(openedURLs.first)
         XCTAssertEqual(openedURL.scheme, "https")
@@ -156,7 +156,7 @@ final class SandboxActionExecutorTests: XCTestCase {
 
         XCTAssertTrue(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertEqual(result.message, "Prepared Messages handoff. Message body remains in Kairo preview.")
+        XCTAssertEqual(result.message, "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview.")
         let openedURLs = await opener.openedURLs
         let openedURL = try XCTUnwrap(openedURLs.first)
         XCTAssertEqual(openedURL.scheme, "sms")
@@ -180,7 +180,7 @@ final class SandboxActionExecutorTests: XCTestCase {
 
         XCTAssertTrue(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertEqual(result.message, "Prepared phone call handoff. The call still requires user action in Phone.")
+        XCTAssertEqual(result.message, "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone.")
         let openedURLs = await opener.openedURLs
         let openedURL = try XCTUnwrap(openedURLs.first)
         XCTAssertEqual(openedURL.scheme, "tel")
@@ -202,7 +202,7 @@ final class SandboxActionExecutorTests: XCTestCase {
 
         XCTAssertTrue(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
-        XCTAssertEqual(result.message, "Prepared Safari web search handoff. No browsing has happened inside Kairo.")
+        XCTAssertEqual(result.message, "Opened visible Safari web search handoff. No browsing has happened inside Kairo.")
         let openedURLs = await opener.openedURLs
         let openedURL = try XCTUnwrap(openedURLs.first)
         XCTAssertEqual(openedURL.scheme, "https")

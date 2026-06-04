@@ -149,7 +149,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Opened URL." : "Open URL is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible URL handoff." : "Open URL is available only when the app supplies a UI opener.",
                 requiresExternalUI: true
             )
         case (.composeEmailDraft, .email(let draft)):
@@ -159,7 +159,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Prepared email draft handoff." : "Email draft handoff is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible Mail draft handoff. No email has been sent." : "Email draft handoff is available only when the app supplies a UI opener.",
                 requiresExternalUI: true
             )
         case (.openMapDirections, .mapDirections(let draft)):
@@ -169,7 +169,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Prepared Apple Maps directions handoff." : "Apple Maps directions handoff is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible Apple Maps handoff. Navigation still requires user action in Maps." : "Apple Maps directions handoff is available only when the app supplies a UI opener.",
                 requiresExternalUI: true
             )
         case (.openMessageHandoff, .message(let draft)):
@@ -179,7 +179,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Prepared Messages handoff. Message body remains in Kairo preview." : "Messages handoff is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview." : "Messages handoff is available only when the app supplies a UI opener.",
                 requiresExternalUI: true
             )
         case (.openPhoneCallHandoff, .phoneCall(let draft)):
@@ -189,7 +189,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Prepared phone call handoff. The call still requires user action in Phone." : "Phone call handoff is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone." : "Phone call handoff is available only when the app supplies a UI opener.",
                 requiresExternalUI: true
             )
         case (.openWebSearchHandoff, .webSearch(let draft)):
@@ -199,7 +199,7 @@ public actor SandboxActionExecutor: ActionExecutor {
             let opened = await urlOpener.open(url)
             return ActionExecutionResult(
                 completed: opened,
-                message: opened ? "Prepared Safari web search handoff. No browsing has happened inside Kairo." : "Safari web search handoff is available only when the app supplies a UI opener.",
+                message: opened ? "Opened visible Safari web search handoff. No browsing has happened inside Kairo." : "Safari web search handoff is available only when the app supplies a UI opener.",
                 requiresExternalUI: true
             )
         case (.sendNotification, .notification(let draft)):

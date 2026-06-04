@@ -67,7 +67,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "Draft an email to alex@example.com subject Kairo update body Please review the roadmap.",
             expectedKind: .composeEmailDraft,
-            expectedMessage: "Prepared email draft handoff."
+            expectedMessage: "Opened visible Mail draft handoff. No email has been sent."
         )
     }
 
@@ -76,7 +76,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "Drive to Apple Park",
             expectedKind: .openMapDirections,
-            expectedMessage: "Prepared Apple Maps directions handoff."
+            expectedMessage: "Opened visible Apple Maps handoff. Navigation still requires user action in Maps."
         )
     }
 
@@ -85,7 +85,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "Text 0912-345-678 body I am running late.",
             expectedKind: AgentActionKind(rawValue: "openMessageHandoff")!,
-            expectedMessage: "Prepared Messages handoff."
+            expectedMessage: "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview."
         )
     }
 
@@ -94,7 +94,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "Call 0912-345-678",
             expectedKind: .openPhoneCallHandoff,
-            expectedMessage: "Prepared phone call handoff."
+            expectedMessage: "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone."
         )
     }
 
@@ -103,7 +103,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "Search web for SwiftUI App Intents examples",
             expectedKind: .openWebSearchHandoff,
-            expectedMessage: "Prepared Safari web search handoff."
+            expectedMessage: "Opened visible Safari web search handoff. No browsing has happened inside Kairo."
         )
     }
 
@@ -156,15 +156,15 @@ private actor ChatActionConfirmationMockExecutor: ActionExecutor {
         case "createContactDraft":
             return ActionExecutionResult(completed: true, message: "Created contact.", createdIdentifier: "contact-id")
         case "composeEmailDraft":
-            return ActionExecutionResult(completed: true, message: "Prepared email draft handoff.", requiresExternalUI: true)
+            return ActionExecutionResult(completed: true, message: "Opened visible Mail draft handoff. No email has been sent.", requiresExternalUI: true)
         case "openMapDirections":
-            return ActionExecutionResult(completed: true, message: "Prepared Apple Maps directions handoff.", requiresExternalUI: true)
+            return ActionExecutionResult(completed: true, message: "Opened visible Apple Maps handoff. Navigation still requires user action in Maps.", requiresExternalUI: true)
         case "openMessageHandoff":
-            return ActionExecutionResult(completed: true, message: "Prepared Messages handoff.", requiresExternalUI: true)
+            return ActionExecutionResult(completed: true, message: "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview.", requiresExternalUI: true)
         case "openPhoneCallHandoff":
-            return ActionExecutionResult(completed: true, message: "Prepared phone call handoff.", requiresExternalUI: true)
+            return ActionExecutionResult(completed: true, message: "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone.", requiresExternalUI: true)
         case "openWebSearchHandoff":
-            return ActionExecutionResult(completed: true, message: "Prepared Safari web search handoff.", requiresExternalUI: true)
+            return ActionExecutionResult(completed: true, message: "Opened visible Safari web search handoff. No browsing has happened inside Kairo.", requiresExternalUI: true)
         case "createCalendarDraft":
             return ActionExecutionResult(completed: true, message: "Created calendar event.", createdIdentifier: "calendar-event-id")
         case "createReminderDraft":

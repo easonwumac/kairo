@@ -9,31 +9,36 @@ final class ChatHandoffActionAuditTests: XCTestCase {
             prompt: "Draft an email to alex@example.com subject Kairo update body Please review the roadmap.",
             expectedKind: .composeEmailDraft,
             expectedCapability: .mail,
-            expectedURLScheme: "mailto"
+            expectedURLScheme: "mailto",
+            expectedResult: "Opened visible Mail draft handoff. No email has been sent."
         )
         try await assertConfirmedHandoff(
             prompt: "Text 0912-345-678 body I am running late.",
             expectedKind: AgentActionKind(rawValue: "openMessageHandoff")!,
             expectedCapability: .messages,
-            expectedURLScheme: "sms"
+            expectedURLScheme: "sms",
+            expectedResult: "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview."
         )
         try await assertConfirmedHandoff(
             prompt: "Call 0912-345-678",
             expectedKind: .openPhoneCallHandoff,
             expectedCapability: .phone,
-            expectedURLScheme: "tel"
+            expectedURLScheme: "tel",
+            expectedResult: "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone."
         )
         try await assertConfirmedHandoff(
             prompt: "Search web for SwiftUI App Intents examples",
             expectedKind: .openWebSearchHandoff,
             expectedCapability: .web,
-            expectedURLScheme: "https"
+            expectedURLScheme: "https",
+            expectedResult: "Opened visible Safari web search handoff. No browsing has happened inside Kairo."
         )
         try await assertConfirmedHandoff(
             prompt: "Drive to Apple Park",
             expectedKind: .openMapDirections,
             expectedCapability: .location,
-            expectedURLScheme: "https"
+            expectedURLScheme: "https",
+            expectedResult: "Opened visible Apple Maps handoff. Navigation still requires user action in Maps."
         )
     }
 
@@ -43,6 +48,7 @@ final class ChatHandoffActionAuditTests: XCTestCase {
         expectedKind: AgentActionKind,
         expectedCapability: CapabilityKey,
         expectedURLScheme: String,
+        expectedResult: String,
         file: StaticString = #filePath,
         line: UInt = #line
     ) async throws {
@@ -71,7 +77,7 @@ final class ChatHandoffActionAuditTests: XCTestCase {
         await viewModel.confirmPendingAction()
 
         XCTAssertNil(viewModel.pendingAction, file: file, line: line)
-        XCTAssertTrue(viewModel.actionResultMessage?.contains("handoff") == true, file: file, line: line)
+        XCTAssertEqual(viewModel.actionResultMessage, expectedResult, file: file, line: line)
         let openedURLs = await urlOpener.openedURLs
         XCTAssertEqual(openedURLs.count, 1, file: file, line: line)
         XCTAssertEqual(openedURLs.first?.scheme, expectedURLScheme, file: file, line: line)
