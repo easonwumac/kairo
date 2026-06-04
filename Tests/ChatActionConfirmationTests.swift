@@ -136,6 +136,36 @@ final class ChatActionConfirmationTests: XCTestCase {
     }
 
     @MainActor
+    func testChatViewModelCancelRestoresCalendarReviewWithoutExecutingAction() async throws {
+        let executor = ChatActionConfirmationMockExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: executor
+        )
+
+        await viewModel.send("建立行程：週五 10:00 Kairo roadmap review")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createCalendarDraft })
+        XCTAssertEqual(viewModel.calendarReviewAction?.id, action.id)
+
+        viewModel.reviewCalendarAction()
+        XCTAssertEqual(viewModel.pendingAction?.id, action.id)
+        XCTAssertNil(viewModel.calendarReviewAction)
+
+        viewModel.cancelPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertEqual(viewModel.calendarReviewAction?.id, action.id)
+        XCTAssertNil(viewModel.actionResultMessage)
+        let executedActions = await executor.executedActions
+        let confirmations = await executor.confirmations
+        XCTAssertTrue(executedActions.isEmpty)
+        XCTAssertTrue(confirmations.isEmpty)
+    }
+
+    @MainActor
     private func assertConfirmedAction(
         prompt: String,
         expectedKind: AgentActionKind,

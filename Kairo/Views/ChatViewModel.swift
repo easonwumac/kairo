@@ -233,11 +233,13 @@ public final class ChatViewModel: ObservableObject {
     public func reviewCalendarAction() {
         guard let action = calendarReviewAction else { return }
         previewAction(action)
+        pendingActionSource = .calendarReview
     }
 
     public func reviewHandoffAction() {
         guard let action = handoffReviewAction else { return }
         previewAction(action)
+        pendingActionSource = .handoffReview
     }
 
     public func replyToMessage(_ message: ChatMessage) {
@@ -283,6 +285,18 @@ public final class ChatViewModel: ObservableObject {
     }
 
     public func cancelPendingAction() {
+        if let action = pendingAction {
+            switch pendingActionSource {
+            case .importedShare:
+                shareImportReviewAction = action
+            case .calendarReview:
+                calendarReviewAction = action
+            case .handoffReview:
+                handoffReviewAction = action
+            case nil:
+                break
+            }
+        }
         pendingAction = nil
         pendingActionSource = nil
     }
@@ -499,6 +513,8 @@ public final class ChatViewModel: ObservableObject {
 
     private enum PendingActionSource {
         case importedShare
+        case calendarReview
+        case handoffReview
     }
 }
 #endif
