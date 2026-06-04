@@ -35,6 +35,30 @@ final class ChatCalendarActionAuditTests: XCTestCase {
     }
 
     @MainActor
+    func testCalendarPermissionFailureClearsReviewStateAndRecordsAudit() async throws {
+        let auditLogger = InMemoryAuditLogger()
+        let viewModel = makeCalendarViewModel(
+            calendarScheduler: UnavailableCalendarScheduler(),
+            auditLogger: auditLogger
+        )
+
+        try await prepareCalendarReview(in: viewModel)
+        viewModel.reviewCalendarAction()
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertNil(viewModel.calendarReviewAction)
+        XCTAssertEqual(viewModel.actionResultMessage,
+            "Calendar event was not created. Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
+        )
+        XCTAssertEqual(viewModel.actionResultSucceeded, false)
+        XCTAssertNil(viewModel.errorMessage)
+        let auditEvents = try await auditLogger.list(limit: 10)
+        XCTAssertEqual(auditEvents.first?.actionKind, .createCalendarDraft)
+        XCTAssertEqual(auditEvents.first?.result, .failed)
+    }
+
+    @MainActor
     func testCalendarReviewStateClearsWhenStartingNewThread() async throws {
         let viewModel = makeCalendarViewModel()
 
@@ -68,14 +92,17 @@ final class ChatCalendarActionAuditTests: XCTestCase {
     }
 
     @MainActor
-    private func makeCalendarViewModel(auditLogger: InMemoryAuditLogger = InMemoryAuditLogger()) -> ChatViewModel {
+    private func makeCalendarViewModel(
+        calendarScheduler: any CalendarScheduling = AllowingCalendarScheduler(identifier: "chat-calendar-event-id"),
+        auditLogger: InMemoryAuditLogger = InMemoryAuditLogger()
+    ) -> ChatViewModel {
         ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
             agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
             actionExecutor: SandboxActionExecutor(
                 memoryStore: InMemoryMemoryStore(),
-                calendarScheduler: AllowingCalendarScheduler(identifier: "chat-calendar-event-id"),
+                calendarScheduler: calendarScheduler,
                 auditLogger: auditLogger
             )
         )
