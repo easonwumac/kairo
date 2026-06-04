@@ -95,6 +95,40 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         XCTAssertEqual(connectedOptions.first { $0.providerKey == "google" }?.readiness, .readyToAuthorize)
     }
 
+    func testSettingsBackendAPIExchangesChatGPTOAuthCallbackWithoutPersistingAuthorizationCode() async throws {
+        let credentials = InMemoryCredentialStore()
+        let httpClient = ChatBackendCapturingHTTPClient(body: #"{"access_token":"access-token","scope":"openid profile email"}"#)
+        let api = KairoSettingsBackendService(
+            openAISettingsService: OpenAISettingsService(credentialStore: credentials),
+            oauthLoginCenter: OAuthConnectorLoginCenter(
+                credentialStore: credentials,
+                clientConfigurations: [
+                    "chatgpt": OAuthConnectorClientConfiguration(
+                        clientID: "chatgpt-client",
+                        redirectURI: "kairo://oauth/chatgpt/callback"
+                    )
+                ],
+                tokenExchangeHTTPClient: httpClient
+            )
+        )
+
+        let session = try await api.makeOAuthAuthorizationSession(
+            for: "chatgpt",
+            state: "state-123",
+            codeVerifier: "verifier-123"
+        )
+        let tokens = try await api.exchangeOAuthCallback(
+            URL(string: "kairo://oauth/chatgpt/callback?code=auth-code-abc&state=state-123")!,
+            expectedState: session.state,
+            codeVerifier: session.codeVerifier
+        )
+
+        XCTAssertEqual(tokens.accessToken, "access-token")
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "chatgpt"))
+        XCTAssertNotNil(storedRaw)
+        XCTAssertFalse(storedRaw?.contains("auth-code-abc") == true)
+    }
+
     func testSettingsBackendAPITreatsMalformedOAuthTokenAsReauthorizationRequired() async throws {
         let credentials = InMemoryCredentialStore()
         let api = KairoSettingsBackendService(

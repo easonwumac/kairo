@@ -638,12 +638,16 @@
 "settings.oauth.callbackPreview" = "OAuth Callback Preview";
 "settings.oauth.callbackPlaceholder" = "kairo://oauth/google/callback?code=...&state=...";
 "settings.oauth.previewCallback" = "Preview Callback";
+"settings.oauth.completeLogin" = "完成登入";
 "settings.oauth.openingAuthorization" = "正在開啟 %@ 授權。";
 "settings.oauth.authorizationFailed" = "授權啟動失敗：%@";
 "settings.oauth.disconnected" = "%@ 已登出並刪除儲存 token。";
 "settings.oauth.disconnectFailed" = "刪除 OAuth token 失敗：%@";
 "settings.oauth.callbackInvalidURL" = "OAuth callback URL 格式不正確。";
 "settings.oauth.callbackPreviewFailed" = "OAuth callback preview 失敗：%@";
+"settings.oauth.noPendingSession" = "請先啟動授權，再貼回同一次登入產生的 callback URL。";
+"settings.oauth.loginCompleted" = "%@ 登入完成。Token 已存入 credential store。";
+"settings.oauth.loginFailed" = "OAuth 登入失敗：%@";
 "settings.oauth.loadFailed" = "讀取 OAuth connector 失敗：%@";
 "settings.oauth.callback.backendExchangeRequired" = "需要後端 token exchange";
 "settings.oauth.callback.readyForTokenExchange" = "已可使用已設定的 token exchange";

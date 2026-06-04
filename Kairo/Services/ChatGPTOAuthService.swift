@@ -162,19 +162,22 @@ public actor OAuthConnectorAuthorizationService {
     private let redirectURI: String
     private let scopes: [String]
     private let credentialStore: CredentialStore
+    private let httpClient: any HTTPClient
 
     public init(
         metadata: OAuthConnectorMetadata,
         clientID: String,
         redirectURI: String,
         credentialStore: CredentialStore,
-        scopes: [String]? = nil
+        scopes: [String]? = nil,
+        httpClient: any HTTPClient = URLSessionHTTPClient()
     ) {
         self.metadata = metadata
         self.clientID = clientID
         self.redirectURI = redirectURI
         self.credentialStore = credentialStore
         self.scopes = scopes ?? metadata.defaultScopes
+        self.httpClient = httpClient
     }
 
     public func makeAuthorizationSession(
@@ -228,6 +231,49 @@ public actor OAuthConnectorAuthorizationService {
         return code
     }
 
+    public func exchangeAuthorizationCode(_ code: String, codeVerifier: String?) async throws -> OAuthTokenSet {
+        guard let tokenEndpoint = metadata.tokenEndpoint else {
+            throw OAuthConnectorAuthorizationError.missingTokenEndpoint
+        }
+        guard !metadata.requiresBackendTokenExchange else {
+            throw OAuthConnectorAuthorizationError.backendTokenExchangeRequired
+        }
+        if metadata.requiresPKCE,
+           codeVerifier?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
+            throw OAuthConnectorAuthorizationError.missingCodeVerifier
+        }
+
+        var request = URLRequest(url: tokenEndpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = Self.formBody([
+            "grant_type": "authorization_code",
+            "client_id": clientID,
+            "code": code,
+            "redirect_uri": redirectURI,
+            "code_verifier": metadata.requiresPKCE ? codeVerifier : nil
+        ])
+
+        let (data, response) = try await httpClient.data(for: request)
+        guard (200..<300).contains(response.statusCode) else {
+            throw OAuthConnectorAuthorizationError.tokenExchangeFailed(response.statusCode)
+        }
+
+        let decoded = try JSONDecoder().decode(OAuthTokenResponse.self, from: data)
+        guard !decoded.accessToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw OAuthConnectorAuthorizationError.tokenResponseMissingAccessToken
+        }
+        let tokens = OAuthTokenSet(
+            accessToken: decoded.accessToken,
+            refreshToken: decoded.refreshToken,
+            expiresAt: decoded.expiresIn.map { Date().addingTimeInterval(TimeInterval($0)) },
+            scopes: decoded.scope?.split(separator: " ").map(String.init) ?? scopes
+        )
+        try await storeTokens(tokens)
+        return tokens
+    }
+
     public func storeTokens(_ tokens: OAuthTokenSet) async throws {
         try await credentialStore.saveSecret(tokens.encodedForStorage(), for: tokenKey)
     }
@@ -246,6 +292,21 @@ public actor OAuthConnectorAuthorizationService {
     private var tokenKey: String {
         CredentialKey.oauthTokenSet(providerKey: metadata.providerKey)
     }
+
+    private static func formBody(_ fields: [String: String?]) -> Data {
+        let body = fields.compactMap { key, value -> String? in
+            guard let value else { return nil }
+            return "\(Self.formEncode(key))=\(Self.formEncode(value))"
+        }
+        .joined(separator: "&")
+        return Data(body.utf8)
+    }
+
+    private static func formEncode(_ value: String) -> String {
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "+&=")
+        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+    }
 }
 
 public enum OAuthConnectorAuthorizationError: Error, Equatable {
@@ -254,6 +315,25 @@ public enum OAuthConnectorAuthorizationError: Error, Equatable {
     case authorizationFailed(String)
     case stateMismatch
     case missingCode
+    case missingTokenEndpoint
+    case backendTokenExchangeRequired
+    case missingCodeVerifier
+    case tokenExchangeFailed(Int)
+    case tokenResponseMissingAccessToken
+}
+
+private struct OAuthTokenResponse: Decodable {
+    var accessToken: String
+    var refreshToken: String?
+    var expiresIn: Int?
+    var scope: String?
+
+    enum CodingKeys: String, CodingKey {
+        case accessToken = "access_token"
+        case refreshToken = "refresh_token"
+        case expiresIn = "expires_in"
+        case scope
+    }
 }
 
 public enum OAuthNonce {

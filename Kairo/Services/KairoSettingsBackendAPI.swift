@@ -12,6 +12,11 @@ public protocol KairoSettingsAPI: Sendable {
         codeVerifier: String
     ) async throws -> OAuthConnectorAuthorizationSession
     func previewOAuthCallback(_ callbackURL: URL) async throws -> OAuthConnectorCallbackPreview
+    func exchangeOAuthCallback(
+        _ callbackURL: URL,
+        expectedState: String,
+        codeVerifier: String?
+    ) async throws -> OAuthTokenSet
     func disconnectOAuthProvider(providerKey: String) async throws
 }
 
@@ -61,6 +66,18 @@ public struct KairoSettingsBackendService: KairoSettingsAPI {
 
     public func previewOAuthCallback(_ callbackURL: URL) async throws -> OAuthConnectorCallbackPreview {
         try await oauthLoginCenter.previewCallback(callbackURL)
+    }
+
+    public func exchangeOAuthCallback(
+        _ callbackURL: URL,
+        expectedState: String,
+        codeVerifier: String?
+    ) async throws -> OAuthTokenSet {
+        try await oauthLoginCenter.exchangeCallback(
+            callbackURL,
+            expectedState: expectedState,
+            codeVerifier: codeVerifier
+        )
     }
 
     public func disconnectOAuthProvider(providerKey: String) async throws {

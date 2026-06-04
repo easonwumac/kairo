@@ -51,6 +51,7 @@ Current scope:
 - builds provider authorization URLs from registry metadata, client id, redirect URI, scopes, state, and PKCE requirements;
 - validates redirect callbacks with `code`, `state`, and `error` handling;
 - previews `kairo://oauth/{provider}/callback` URLs through `OAuthConnectorLoginCenter.previewCallback`, stores provider/state/code-length metadata, and does not persist the raw authorization code;
+- exchanges authorization codes for token sets only for configured public-client connectors that do not require backend token exchange, using the original state and PKCE code verifier from the same login attempt;
 - stores `OAuthTokenSet` values in `CredentialStore` under `CredentialKey.oauthTokenSet(providerKey:)`;
 - supports non-PKCE connectors that require backend token exchange, such as GitHub app flows.
 
@@ -60,15 +61,16 @@ Current scope:
 - reports `connected`, `readyToAuthorize`, `needsClientConfiguration`, or `needsReauthorization`;
 - exposes granted scopes from stored token sets without leaking token values;
 - creates authorization sessions from per-provider iOS client configuration;
+- completes configured public-client login by accepting a pasted callback URL and exchanging it for tokens without storing the raw authorization code;
 - records redacted callback previews in the shared app storage path so Settings can show callback status without exposing code/token values.
 
-`SettingsView` surfaces these login options as a status list. It can open an authorization URL only when the app has a provider client configuration; otherwise it labels the connector as needing iOS OAuth client setup. Settings also includes an OAuth callback preview field for validating callback routing during setup; it shows only redacted status and never displays the raw authorization code.
+`SettingsView` surfaces these login options as a status list. It can open an authorization URL only when the app has a provider client configuration; otherwise it labels the connector as needing iOS OAuth client setup. Settings also includes an OAuth callback field for validating callback routing and completing public-client token exchange. It shows only redacted status and never displays the raw authorization code or token values.
 
 Out of scope for this core:
 
-- exchanging authorization codes for provider tokens;
 - refreshing tokens;
 - calling provider APIs.
+- exchanging authorization codes for providers that require a backend-held client secret or backend token exchange.
 
 Those pieces stay provider-specific or backend-owned because Google, Microsoft, GitHub, Notion, and future connectors have different app registration, client secret, consent review, and token exchange requirements.
 
@@ -76,6 +78,7 @@ Those pieces stay provider-specific or backend-owned because Google, Microsoft, 
 
 - API key 存 Keychain，不進 UserDefaults。
 - 不在 analytics、crash log、debug log 中輸出 token。
+- 不 commit OAuth client secret、authorization code、access token、refresh token、callback URL 實例或個人帳號資料。
 - 支援清除所有 credentials。
 - 支援 request redaction。
 - Cloud call 前執行 sensitivity check。

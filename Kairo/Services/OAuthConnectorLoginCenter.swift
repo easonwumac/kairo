@@ -94,17 +94,20 @@ public actor OAuthConnectorLoginCenter {
     private let credentialStore: CredentialStore
     private let clientConfigurations: [String: OAuthConnectorClientConfiguration]
     private let callbackStore: FileBackedOAuthConnectorCallbackStore?
+    private let tokenExchangeHTTPClient: any HTTPClient
 
     public init(
         registry: IntegrationRegistry = IntegrationRegistry(),
         credentialStore: CredentialStore,
         clientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
-        callbackStore: FileBackedOAuthConnectorCallbackStore? = nil
+        callbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
+        tokenExchangeHTTPClient: any HTTPClient = URLSessionHTTPClient()
     ) {
         self.registry = registry
         self.credentialStore = credentialStore
         self.clientConfigurations = clientConfigurations
         self.callbackStore = callbackStore
+        self.tokenExchangeHTTPClient = tokenExchangeHTTPClient
     }
 
     public func loginOptions() async throws -> [OAuthConnectorLoginOption] {
@@ -165,33 +168,46 @@ public actor OAuthConnectorLoginCenter {
             clientID: configuration.clientID,
             redirectURI: configuration.redirectURI,
             credentialStore: credentialStore,
-            scopes: configuration.scopes
+            scopes: configuration.scopes,
+            httpClient: tokenExchangeHTTPClient
         )
         return try await service.makeAuthorizationSession(state: state, codeVerifier: codeVerifier)
     }
 
-    public func previewCallback(_ callbackURL: URL) async throws -> OAuthConnectorCallbackPreview {
-        guard let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
-              components.scheme == "kairo",
-              components.host == "oauth" else {
-            throw OAuthConnectorCallbackPreviewError.invalidCallbackURL
-        }
-
-        let pathComponents = components.path
-            .split(separator: "/")
-            .map(String.init)
-        guard pathComponents.count == 2,
-              pathComponents[1] == "callback" else {
-            throw OAuthConnectorCallbackPreviewError.unsupportedCallbackURL
-        }
-
-        let providerKey = pathComponents[0]
-        guard let integration = registry.oauthConnectors.first(where: { $0.oauth?.providerKey == providerKey }),
+    public func exchangeCallback(
+        _ callbackURL: URL,
+        expectedState: String,
+        codeVerifier: String?
+    ) async throws -> OAuthTokenSet {
+        let callback = try Self.callbackComponents(from: callbackURL)
+        guard let integration = registry.oauthConnectors.first(where: { $0.oauth?.providerKey == callback.providerKey }),
               let metadata = integration.oauth else {
-            throw OAuthConnectorCallbackPreviewError.unknownProvider(providerKey)
+            throw OAuthConnectorCallbackPreviewError.unknownProvider(callback.providerKey)
+        }
+        guard let configuration = clientConfigurations[metadata.providerKey] else {
+            throw OAuthConnectorLoginCenterError.missingClientConfiguration(metadata.providerKey)
         }
 
-        let items = components.queryItems ?? []
+        let service = OAuthConnectorAuthorizationService(
+            metadata: metadata,
+            clientID: configuration.clientID,
+            redirectURI: configuration.redirectURI,
+            credentialStore: credentialStore,
+            scopes: configuration.scopes,
+            httpClient: tokenExchangeHTTPClient
+        )
+        let code = try await service.validateCallback(callbackURL, expectedState: expectedState)
+        return try await service.exchangeAuthorizationCode(code, codeVerifier: codeVerifier)
+    }
+
+    public func previewCallback(_ callbackURL: URL) async throws -> OAuthConnectorCallbackPreview {
+        let callback = try Self.callbackComponents(from: callbackURL)
+        guard let integration = registry.oauthConnectors.first(where: { $0.oauth?.providerKey == callback.providerKey }),
+              let metadata = integration.oauth else {
+            throw OAuthConnectorCallbackPreviewError.unknownProvider(callback.providerKey)
+        }
+
+        let items = callback.queryItems
         if let error = items.first(where: { $0.name == "error" })?.value {
             throw OAuthConnectorCallbackPreviewError.authorizationFailed(error)
         }
@@ -230,5 +246,23 @@ public actor OAuthConnectorLoginCenter {
             return .invalid
         }
         return .valid(tokens)
+    }
+
+    private static func callbackComponents(from callbackURL: URL) throws -> (providerKey: String, queryItems: [URLQueryItem]) {
+        guard let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
+              components.scheme == "kairo",
+              components.host == "oauth" else {
+            throw OAuthConnectorCallbackPreviewError.invalidCallbackURL
+        }
+
+        let pathComponents = components.path
+            .split(separator: "/")
+            .map(String.init)
+        guard pathComponents.count == 2,
+              pathComponents[1] == "callback" else {
+            throw OAuthConnectorCallbackPreviewError.unsupportedCallbackURL
+        }
+
+        return (providerKey: pathComponents[0], queryItems: components.queryItems ?? [])
     }
 }

@@ -343,6 +343,85 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertNil(tokensAfterSignOut)
     }
 
+    func testOAuthConnectorLoginCenterExchangesChatGPTCallbackAndDoesNotPersistAuthorizationCode() async throws {
+        let credentials = InMemoryCredentialStore()
+        let httpClient = ChatBackendCapturingHTTPClient(body: """
+        {
+          "access_token": "access-token",
+          "refresh_token": "refresh-token",
+          "expires_in": 3600,
+          "scope": "openid profile email"
+        }
+        """)
+        let center = OAuthConnectorLoginCenter(
+            registry: IntegrationRegistry(),
+            credentialStore: credentials,
+            clientConfigurations: [
+                "chatgpt": OAuthConnectorClientConfiguration(
+                    clientID: "chatgpt-client",
+                    redirectURI: "kairo://oauth/chatgpt/callback"
+                )
+            ],
+            tokenExchangeHTTPClient: httpClient
+        )
+        let session = try await center.makeAuthorizationSession(
+            for: "chatgpt",
+            state: "state-123",
+            codeVerifier: "verifier-123"
+        )
+
+        let tokens = try await center.exchangeCallback(
+            URL(string: "kairo://oauth/chatgpt/callback?code=auth-code-abc&state=state-123")!,
+            expectedState: session.state,
+            codeVerifier: session.codeVerifier
+        )
+
+        XCTAssertEqual(tokens.accessToken, "access-token")
+        XCTAssertEqual(tokens.refreshToken, "refresh-token")
+        XCTAssertEqual(tokens.scopes, ["openid", "profile", "email"])
+
+        let request = try await httpClient.lastRequest()
+        XCTAssertEqual(request.url?.absoluteString, "https://auth.openai.com/oauth/token")
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/x-www-form-urlencoded")
+        let requestBody = String(data: try XCTUnwrap(request.httpBody), encoding: .utf8) ?? ""
+        XCTAssertTrue(requestBody.contains("grant_type=authorization_code"))
+        XCTAssertTrue(requestBody.contains("client_id=chatgpt-client"))
+        XCTAssertTrue(requestBody.contains("code=auth-code-abc"))
+        XCTAssertTrue(requestBody.contains("code_verifier=verifier-123"))
+
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "chatgpt"))
+        XCTAssertNotNil(storedRaw)
+        XCTAssertFalse(storedRaw?.contains("auth-code-abc") == true)
+        let options = try await center.loginOptions()
+        XCTAssertEqual(options.first { $0.providerKey == "chatgpt" }?.readiness, .connected)
+    }
+
+    func testOAuthConnectorLoginCenterRejectsPKCETokenExchangeWithoutVerifier() async throws {
+        let center = OAuthConnectorLoginCenter(
+            registry: IntegrationRegistry(),
+            credentialStore: InMemoryCredentialStore(),
+            clientConfigurations: [
+                "chatgpt": OAuthConnectorClientConfiguration(
+                    clientID: "chatgpt-client",
+                    redirectURI: "kairo://oauth/chatgpt/callback"
+                )
+            ],
+            tokenExchangeHTTPClient: ChatBackendCapturingHTTPClient(body: #"{"access_token":"unused"}"#)
+        )
+
+        do {
+            _ = try await center.exchangeCallback(
+                URL(string: "kairo://oauth/chatgpt/callback?code=auth-code-abc&state=state-123")!,
+                expectedState: "state-123",
+                codeVerifier: nil
+            )
+            XCTFail("Expected PKCE token exchange without a verifier to fail closed.")
+        } catch let error as OAuthConnectorAuthorizationError {
+            XCTAssertEqual(error, .missingCodeVerifier)
+        }
+    }
+
     func testChatGPTOAuthServiceValidatesCallbackAndStoresTokens() async throws {
         let credentials = InMemoryCredentialStore()
         let service = ChatGPTOAuthService(

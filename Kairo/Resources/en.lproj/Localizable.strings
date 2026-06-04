@@ -638,12 +638,16 @@
 "settings.oauth.callbackPreview" = "OAuth Callback Preview";
 "settings.oauth.callbackPlaceholder" = "kairo://oauth/google/callback?code=...&state=...";
 "settings.oauth.previewCallback" = "Preview Callback";
+"settings.oauth.completeLogin" = "Complete Login";
 "settings.oauth.openingAuthorization" = "Opening %@ authorization.";
 "settings.oauth.authorizationFailed" = "Authorization failed to start: %@";
 "settings.oauth.disconnected" = "%@ disconnected and stored tokens deleted.";
 "settings.oauth.disconnectFailed" = "Could not delete OAuth token: %@";
 "settings.oauth.callbackInvalidURL" = "OAuth callback URL is invalid.";
 "settings.oauth.callbackPreviewFailed" = "OAuth callback preview failed: %@";
+"settings.oauth.noPendingSession" = "Start authorization first, then paste the callback URL from the same login attempt.";
+"settings.oauth.loginCompleted" = "%@ login completed. Stored tokens are in the credential store.";
+"settings.oauth.loginFailed" = "OAuth login failed: %@";
 "settings.oauth.loadFailed" = "Could not load OAuth connectors: %@";
 "settings.oauth.callback.backendExchangeRequired" = "requires backend token exchange";
 "settings.oauth.callback.readyForTokenExchange" = "ready for configured token exchange";

@@ -28,6 +28,7 @@ public struct SettingsView: View {
     @State private var connectorStatusMessage: String?
     @State private var oauthCallbackURLText: String = ""
     @State private var oauthCallbackPreviewMessage: String?
+    @State private var pendingOAuthSessions: [String: OAuthConnectorAuthorizationSession] = [:]
     @State var localModelCatalog: LocalModelCatalog
     @State var localModelStatus: LocalModelSettingsStatus
     @State var localModelDownloadProgress: LocalModelDownloadProgressState?
@@ -602,6 +603,12 @@ public struct SettingsView: View {
             .disabled(oauthCallbackURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .accessibilityIdentifier("settings.oauth.preview-callback")
 
+            Button(KairoL10n.string("settings.oauth.completeLogin")) {
+                completeOAuthCallbackLogin()
+            }
+            .disabled(oauthCallbackURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityIdentifier("settings.oauth.complete-login")
+
             if let oauthCallbackPreviewMessage {
                 Text(oauthCallbackPreviewMessage)
                     .font(.caption)
@@ -856,6 +863,7 @@ public struct SettingsView: View {
                 let center = connectorLoginCenter()
                 let session = try await center.makeAuthorizationSession(for: option.integrationKey)
                 await MainActor.run {
+                    pendingOAuthSessions[option.providerKey] = session
                     connectorStatusMessage = KairoL10n.string("settings.oauth.openingAuthorization", option.displayName)
                     openURL(session.authorizationURL)
                 }
@@ -907,6 +915,43 @@ public struct SettingsView: View {
         }
     }
 
+    private func completeOAuthCallbackLogin() {
+        Task {
+            let trimmed = oauthCallbackURLText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let url = URL(string: trimmed) else {
+                await MainActor.run {
+                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.callbackInvalidURL")
+                }
+                return
+            }
+            guard let providerKey = Self.oauthProviderKey(from: url),
+                  let session = pendingOAuthSessions[providerKey] else {
+                await MainActor.run {
+                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.noPendingSession")
+                }
+                return
+            }
+
+            do {
+                _ = try await connectorLoginCenter().exchangeCallback(
+                    url,
+                    expectedState: session.state,
+                    codeVerifier: session.codeVerifier
+                )
+                await reloadConnectorOptions()
+                await MainActor.run {
+                    pendingOAuthSessions[providerKey] = nil
+                    oauthCallbackURLText = ""
+                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.loginCompleted", providerKey)
+                }
+            } catch {
+                await MainActor.run {
+                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.loginFailed", error.localizedDescription)
+                }
+            }
+        }
+    }
+
     private func reloadAllStatus() async {
         await reloadStatus()
         await reloadConnectorOptions()
@@ -946,6 +991,22 @@ public struct SettingsView: View {
             clientConfigurations: oauthClientConfigurations,
             callbackStore: oauthCallbackStore
         )
+    }
+
+    private static func oauthProviderKey(from callbackURL: URL) -> String? {
+        guard let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
+              components.scheme == "kairo",
+              components.host == "oauth" else {
+            return nil
+        }
+        let pathComponents = components.path
+            .split(separator: "/")
+            .map(String.init)
+        guard pathComponents.count == 2,
+              pathComponents[1] == "callback" else {
+            return nil
+        }
+        return pathComponents[0]
     }
 
     private func statusColor(for readiness: OAuthConnectorLoginReadiness) -> Color {
