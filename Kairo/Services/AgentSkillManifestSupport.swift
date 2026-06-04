@@ -431,6 +431,24 @@ public struct AgentSkillTrustedPublicKey: Codable, Equatable, Identifiable, Send
 public struct AgentSkillManifestTrustStore: Codable, Equatable, Sendable {
     public var trustedKeys: [AgentSkillTrustedPublicKey]
 
+    public static let defaultRelease = AgentSkillManifestTrustStore(trustedKeys: [
+        AgentSkillTrustedPublicKey(
+            keyID: "kairo-marketplace-2025",
+            algorithm: .p256SHA256,
+            publicKeyBase64: "",
+            status: .revoked,
+            publicationStatus: .pendingPublication,
+            revokedReason: "Superseded by the 2026 marketplace signing key."
+        ),
+        AgentSkillTrustedPublicKey(
+            keyID: "kairo-marketplace-2026",
+            algorithm: .p256SHA256,
+            publicKeyBase64: "",
+            status: .active,
+            publicationStatus: .pendingPublication
+        )
+    ])
+
     public init(trustedKeys: [AgentSkillTrustedPublicKey]) {
         self.trustedKeys = trustedKeys
     }

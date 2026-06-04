@@ -514,6 +514,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         let agentSkillManagerService = AgentSkillManagerService(
             store: agentSkillStore,
             builtInCatalog: .defaultWithMarketplaceSamples,
+            trustStore: .defaultRelease,
             runtimeContext: runtimeContext
         )
         let agentSkillMarketplaceCatalogService = AgentSkillMarketplaceCatalogService.defaultStandaloneRepository

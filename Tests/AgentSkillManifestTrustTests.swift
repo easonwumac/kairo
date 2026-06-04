@@ -170,6 +170,35 @@ final class AgentSkillManifestTrustTests: XCTestCase {
         }
     }
 
+    func testDefaultAgentSkillManifestTrustStoreKeepsReleaseKeysPendingPublication() throws {
+        let trustStore = AgentSkillManifestTrustStore.defaultRelease
+        let activeReleaseKey = try XCTUnwrap(trustStore.trustedKey(id: "kairo-marketplace-2026"))
+        let revokedReleaseKey = try XCTUnwrap(trustStore.trustedKey(id: "kairo-marketplace-2025"))
+
+        XCTAssertEqual(activeReleaseKey.status, .active)
+        XCTAssertEqual(activeReleaseKey.publicationStatus, .pendingPublication)
+        XCTAssertTrue(activeReleaseKey.publicKeyBase64.isEmpty)
+        XCTAssertEqual(revokedReleaseKey.status, .revoked)
+        XCTAssertEqual(revokedReleaseKey.publicationStatus, .pendingPublication)
+        XCTAssertTrue(revokedReleaseKey.publicKeyBase64.isEmpty)
+
+        let downloadableSkill = marketplaceWeatherSkill()
+        let signingKey = P256.Signing.PrivateKey()
+        let manifest = try AgentSkillManifest.signedForTesting(
+            skill: downloadableSkill,
+            packageVersion: "2026.6",
+            keyID: activeReleaseKey.keyID,
+            signingKey: signingKey
+        )
+
+        XCTAssertThrowsError(try manifest.validateForInstall(trustStore: trustStore)) { error in
+            XCTAssertEqual(
+                error as? AgentSkillManifestValidationError,
+                .signingKeyPendingPublication(activeReleaseKey.keyID)
+            )
+        }
+    }
+
     func testAgentSkillTrustStoreDecodesLegacyKeysAsActive() throws {
         let json = """
         {
