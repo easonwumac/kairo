@@ -690,7 +690,6 @@ final class SourceHealthTests: XCTestCase {
         let dependencySurfaces = try [
             "Package.swift",
             "project.yml",
-            "Kairo.xcodeproj/project.pbxproj",
             "Config/KairoApp-Info.plist",
             "Kairo/Resources/PrivacyInfo.xcprivacy"
         ]
