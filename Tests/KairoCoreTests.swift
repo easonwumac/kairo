@@ -865,6 +865,7 @@ final class KairoCoreTests: XCTestCase {
     func testChatViewDefinesPolishedComposerAccessibilityIdentifiers() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let chatView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatView.swift"), encoding: .utf8)
+        let chatBubbleView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatBubble.swift"), encoding: .utf8)
         let chatActionStripsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatActionStrips.swift"), encoding: .utf8)
         let routeBarView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatProviderRouteBar.swift"), encoding: .utf8)
 
@@ -891,9 +892,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(chatView.contains("minHeight: 52"))
         XCTAssertTrue(chatView.contains("RoundedRectangle(cornerRadius: 22"))
         XCTAssertTrue(chatView.contains("shadow(color:"))
-        XCTAssertTrue(chatView.contains(".textSelection(.enabled)"))
-        XCTAssertTrue(chatView.contains(#""chat.message.copy.\(message.id.uuidString)""#))
-        XCTAssertTrue(chatView.contains(#""chat.message.reply.\(message.id.uuidString)""#))
+        XCTAssertTrue(chatBubbleView.contains("struct ChatBubble"))
+        XCTAssertLessThan(chatBubbleView.split(separator: "\n").count, 120)
+        XCTAssertTrue(chatBubbleView.contains(".textSelection(.enabled)"))
+        XCTAssertTrue(chatBubbleView.contains(#""chat.message.copy.\(message.id.uuidString)""#))
+        XCTAssertTrue(chatBubbleView.contains(#""chat.message.reply.\(message.id.uuidString)""#))
         XCTAssertTrue(chatView.contains(#""chat.reply-preview""#))
         XCTAssertTrue(chatView.contains("replyToMessage"))
         XCTAssertTrue(chatActionStripsView.contains("actionRiskSummary(for: action)"))

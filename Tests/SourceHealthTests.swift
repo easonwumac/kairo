@@ -1097,6 +1097,10 @@ final class SourceHealthTests: XCTestCase {
             contentsOf: root.appendingPathComponent("docs/APP_STORE_SUBMISSION_CHECKLIST.md"),
             encoding: .utf8
         )
+        let releaseHygiene = try String(
+            contentsOf: root.appendingPathComponent("docs/RELEASE_HYGIENE.md"),
+            encoding: .utf8
+        )
         let iosTargetReadiness = try String(
             contentsOf: root.appendingPathComponent("docs/IOS_TARGET_READINESS.md"),
             encoding: .utf8
@@ -1153,6 +1157,24 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("production local inference is complete"))
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("live HomeKit control is complete"))
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("silently creates Apple Shortcuts"))
+
+        XCTAssertTrue(releaseHygiene.contains("swift test"))
+        XCTAssertTrue(releaseHygiene.contains("xcodegen generate"))
+        XCTAssertTrue(releaseHygiene.contains("git diff --check"))
+        XCTAssertTrue(releaseHygiene.contains("AKIA[0-9A-Z]{16}"))
+        XCTAssertTrue(releaseHygiene.contains("AIza[0-9A-Za-z_-]{35}"))
+        XCTAssertTrue(releaseHygiene.contains("github_pat_"))
+        XCTAssertTrue(releaseHygiene.contains("client[_-]secret"))
+        XCTAssertTrue(releaseHygiene.contains("tokenizer.json"))
+        XCTAssertTrue(releaseHygiene.contains("tokenizer.model"))
+        XCTAssertTrue(releaseHygiene.contains("*.gguf"))
+        XCTAssertTrue(releaseHygiene.contains("*.safetensors"))
+        XCTAssertTrue(releaseHygiene.contains("*.mlmodel"))
+        XCTAssertTrue(releaseHygiene.contains("*.pt"))
+        XCTAssertTrue(releaseHygiene.contains("*.pth"))
+        XCTAssertTrue(releaseHygiene.contains("`headSha` must equal `HEAD`"))
+        XCTAssertTrue(releaseHygiene.contains("Do not stage `tmp/` screenshots as release evidence."))
+        XCTAssertTrue(releaseHygiene.contains("known false-positive OAuth token endpoint URL fragment"))
 
         XCTAssertTrue(iosTargetReadiness.contains("## Release evidence boundary"))
         XCTAssertTrue(iosTargetReadiness.contains("all listed physical devices were `unavailable`"))

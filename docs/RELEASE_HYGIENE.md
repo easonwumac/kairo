@@ -19,11 +19,11 @@ If `xcodegen` is not installed, record that explicitly in the handoff instead of
 Run focused scans before staging or committing:
 
 ```bash
-rg -n --hidden --glob '!.git/**' --glob '!.build/**' --glob '!tmp/**' --glob '!Kairo.xcodeproj/**' --glob '!*.xcworkspace/**' --glob '!*.xcuserstate' --glob '!Package.resolved' '(sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA|EC|OPENSSH|PRIVATE) KEY-----|password\s*=\s*[^\s]+|api[_-]?key\s*=\s*[^\s]+|access[_-]?token\s*=\s*[^\s]+|refresh[_-]?token\s*=\s*[^\s]+)' .
-find . -path './.git' -prune -o -path './.build' -prune -o -path './tmp' -prune -o \( -iname '*.gguf' -o -iname '*.ggml' -o -iname '*tokenizer*' -o -iname '*.safetensors' -o -iname '*.bin' -o -iname '*.mlmodelc' -o -iname '*.mlpackage' -o -iname '*.onnx' -o -iname '*model-cache*' \) -print
+rg -n --hidden --glob '!/.git/**' --glob '!/.build/**' --glob '!tmp/screenshots/**' --glob '!Kairo.xcodeproj/project.xcworkspace/xcuserdata/**' '(AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN (RSA|OPENSSH|EC|DSA|PRIVATE) KEY-----|refresh[_-]token|access[_-]token|client[_-]secret)'
+find . -path './.git' -prune -o -path './.build' -prune -o -path './tmp/screenshots' -prune -o \( -iname '*.gguf' -o -iname '*.safetensors' -o -iname '*.mlmodel' -o -iname '*.mlmodelc' -o -iname '*.onnx' -o -iname 'tokenizer.json' -o -iname 'tokenizer.model' -o -iname '*.bin' -o -iname '*.pt' -o -iname '*.pth' \) -print
 ```
 
-Both scans must return no tracked secrets, tokens, private keys, generated credentials, model weights, `.gguf`, tokenizer blobs, model packages, or downloaded caches. Do not stage `tmp/` screenshots as release evidence.
+Both scans must return no tracked secrets, tokens, private keys, generated credentials, model weights, `.gguf`, tokenizer blobs, model packages, or downloaded caches. A known false-positive OAuth token endpoint URL fragment is not a committed credential, but any match must still be reviewed before staging. Do not stage `tmp/` screenshots as release evidence.
 
 ## GitHub Actions Gate
 
