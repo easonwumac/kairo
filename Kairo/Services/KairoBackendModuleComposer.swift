@@ -13,7 +13,6 @@ public protocol KairoBackendDependencies: Sendable {
     var auditLogger: AuditLogger { get }
     var agentSkillManagerService: AgentSkillManagerService? { get }
     var localModelSettingsService: LocalModelSettingsService? { get }
-    var localModelBenchmarkService: LocalModelBenchmarkService? { get }
 }
 
 public struct KairoBackendModuleComposer<Dependencies: KairoBackendDependencies>: Sendable {
@@ -60,8 +59,7 @@ public struct KairoBackendModuleComposer<Dependencies: KairoBackendDependencies>
                 localModelSettingsService: dependencies.localModelSettingsService
             ),
             localModels: KairoLocalModelBackendService(
-                localModelSettingsService: dependencies.localModelSettingsService,
-                localModelBenchmarkService: dependencies.localModelBenchmarkService
+                localModelSettingsService: dependencies.localModelSettingsService
             ),
             skills: KairoSkillBackendService(
                 agentSkillManagerService: dependencies.agentSkillManagerService
