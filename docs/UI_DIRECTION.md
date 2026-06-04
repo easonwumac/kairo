@@ -591,6 +591,16 @@ Stage 62 makes Settings connected accounts quieter:
 - Connector readiness, account boundary details, backend-exchange notes, and
   callback-preview isolation keep their existing identifiers and paths.
 
+Stage 63 makes Workflows advanced groups quieter:
+
+- Shortcut templates and demo previews no longer repeat explanatory subtitles in
+  their section headers after Advanced references is expanded.
+- The advanced layer now moves directly from the group title into the manual
+  approval disclaimer or demo rows, keeping the screen more action/contract
+  oriented.
+- Shortcut template identifiers, manual install disclaimer, demo contracts, and
+  preview sample actions keep their existing paths.
+
 ## Next UI stages
 
 1. Product surface audit

@@ -247,8 +247,7 @@ public struct AutomationsView: View {
     private var shortcutTemplatesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             automationSectionTitle(
-                title: KairoL10n.string("automations.shortcutTemplates.section"),
-                subtitle: KairoL10n.string("automations.shortcutTemplates.detail")
+                title: KairoL10n.string("automations.shortcutTemplates.section")
             )
 
             Text(shortcutTemplateRegistry.manualInstallDisclaimer)
@@ -267,8 +266,7 @@ public struct AutomationsView: View {
     private var shortcutDemoSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             automationSectionTitle(
-                title: KairoL10n.string("automations.shortcutDemos.section"),
-                subtitle: KairoL10n.string("automations.shortcutDemos.detail")
+                title: KairoL10n.string("automations.shortcutDemos.section")
             )
 
             ForEach(ShortcutDemoCatalog.default.recipes) { recipe in
