@@ -1088,6 +1088,9 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(readiness.contains("Skill marketplace and local model release keys must remain `publicationStatus=pendingPublication`"))
         XCTAssertTrue(readiness.contains("catalogSignatureStatus=referenceUnsigned"))
         XCTAssertTrue(readiness.contains("Marketplace trust store supports key rotation, publication, and revocation metadata"))
+        XCTAssertTrue(readiness.contains("Publish production signed model catalog and public trust-store key material"))
+        XCTAssertTrue(readiness.contains("Capture real-device iOS runtime proof for latency, memory, thermal behavior, and App Store-compatible packaging"))
+        XCTAssertFalse(readiness.contains("Publish production signed catalog/public key material and runtime speed proof"))
     }
 
     func testAppStoreSubmissionChecklistGatesReleaseEvidence() throws {
