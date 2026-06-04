@@ -75,6 +75,9 @@
 "access.capabilities.section" = "手機能力";
 "access.capabilities.focusedFooter" = "先顯示日常最常用工具，進階設定放後面。";
 "access.capabilities.footer" = "不可用項目仍會顯示，讓邊界清楚；Kairo 不會繞過 iOS 權限。";
+"access.capabilities.more" = "還有 %lld 個工具";
+"access.capabilities.more.show" = "顯示更多手機工具";
+"access.capabilities.more.hide" = "隱藏更多手機工具";
 "access.capability.core" = "核心";
 "access.permission.none" = "可用";
 "access.permission.userInitiated" = "使用者觸發";

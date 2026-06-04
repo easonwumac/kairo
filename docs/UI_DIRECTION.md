@@ -197,6 +197,15 @@ Stage 19 makes Memory capture on-demand:
 - Saving a memory collapses the capture controls again, returning the screen to
   finding and reviewing usable context.
 
+Stage 20 makes Phone Tools progressive:
+
+- Phone Tools now shows the four most common Chat-support tools first: shared
+  context, memory, reminders, and calendar.
+- Mail, messages, web, and location stay available behind a More tools
+  disclosure instead of making the first level read like a capability inventory.
+- Capability rows now carry stable identifiers so future UI smoke can verify
+  progressive disclosure behavior without asserting user-facing copy.
+
 ## Next UI stages
 
 1. Memory Center

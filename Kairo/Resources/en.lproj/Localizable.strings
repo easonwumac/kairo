@@ -75,6 +75,9 @@
 "access.capabilities.section" = "Phone abilities";
 "access.capabilities.focusedFooter" = "The useful everyday tools, shown before advanced setup.";
 "access.capabilities.footer" = "Unavailable items stay visible so the boundary is clear; Kairo will not bypass iOS permissions.";
+"access.capabilities.more" = "%lld more tools";
+"access.capabilities.more.show" = "Show more phone tools";
+"access.capabilities.more.hide" = "Hide more phone tools";
 "access.capability.core" = "Core";
 "access.permission.none" = "Ready";
 "access.permission.userInitiated" = "User action";

@@ -15,6 +15,7 @@ public struct PermissionHubView: View {
     @State private var isAdvancedSkillSetupExpanded = false
     @State private var isDeveloperSkillSetupExpanded = false
     @State private var isHomeKitPreviewExpanded = false
+    @State private var showMorePrimaryTools = false
     @State private var skillCatalog: AgentSkillCatalog
 
     private let registry = CapabilityRegistry()
@@ -106,15 +107,55 @@ public struct PermissionHubView: View {
                 )
                 .accessibilityIdentifier("access.capabilities.section")
 
-                ForEach(primaryCapabilities) { capability in
+                ForEach(visiblePrimaryCapabilities) { capability in
                     capabilityRow(capability)
-                    if capability.key != primaryCapabilities.last?.key {
+                    if capability.key != visiblePrimaryCapabilities.last?.key {
                         Divider()
+                    }
+                }
+
+                if !secondaryPrimaryCapabilities.isEmpty {
+                    if !visiblePrimaryCapabilities.isEmpty {
+                        Divider()
+                    }
+
+                    Button {
+                        withAnimation(.snappy(duration: 0.2)) {
+                            showMorePrimaryTools.toggle()
+                        }
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "ellipsis.circle.fill")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                            Text(KairoL10n.string("access.capabilities.more", Int64(secondaryPrimaryCapabilities.count)))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+
+                            Spacer(minLength: 8)
+
+                            Image(systemName: showMorePrimaryTools ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(KairoDesign.blue)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(showMorePrimaryTools ? KairoL10n.string("access.capabilities.more.hide") : KairoL10n.string("access.capabilities.more.show"))
+                    .accessibilityValue(showMorePrimaryTools ? "expanded" : "collapsed")
+                    .accessibilityIdentifier("access.capabilities.more.toggle")
+
+                    if showMorePrimaryTools {
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach(secondaryPrimaryCapabilities) { capability in
+                                Divider()
+                                capabilityRow(capability)
+                            }
+                        }
                     }
                 }
             }
         }
-        .accessibilityIdentifier("access.capabilities.card")
     }
 
     private var advancedSetupCard: some View {
@@ -290,6 +331,7 @@ public struct PermissionHubView: View {
                     Text(capability.displayName)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(KairoDesign.ink)
+                        .accessibilityIdentifier("access.capability.\(capability.key.rawValue).name")
                     Spacer(minLength: 8)
                     Text(permissionLabel(for: capability.permission))
                         .font(.caption2.weight(.semibold))
@@ -325,6 +367,7 @@ public struct PermissionHubView: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
     }
 
     private func shouldShowFallbackMessage(for capability: Capability) -> Bool {
@@ -350,6 +393,14 @@ public struct PermissionHubView: View {
         return priority.compactMap { key in
             registry.capabilities.first { $0.key == key }
         }
+    }
+
+    private var visiblePrimaryCapabilities: [Capability] {
+        Array(primaryCapabilities.prefix(4))
+    }
+
+    private var secondaryPrimaryCapabilities: [Capability] {
+        Array(primaryCapabilities.dropFirst(4))
     }
 
     private var readyCapabilityCount: Int {
