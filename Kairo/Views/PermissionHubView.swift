@@ -12,6 +12,7 @@ public struct PermissionHubView: View {
     @State private var localSkillCapability: CapabilityKey = .appIntents
     @State private var localSkillConfirmationPolicy: AgentSkillConfirmationPolicy = .previewRequired
     @State private var skillSearchText = ""
+    @State private var isAdvancedSkillSetupExpanded = false
     @State private var skillCatalog: AgentSkillCatalog
 
     private let registry = CapabilityRegistry()
@@ -102,6 +103,22 @@ public struct PermissionHubView: View {
                 }
 
                 Section {
+                    advancedSkillSetupToggle()
+
+                    if isAdvancedSkillSetupExpanded {
+                        manifestImportControls()
+
+                        if let manifestInstallPreview {
+                            manifestPreview(manifestInstallPreview)
+                        }
+                    }
+                } header: {
+                    Text(KairoL10n.string("access.skills.advanced.title"))
+                } footer: {
+                    Text(KairoL10n.string("access.skills.advanced.footer"))
+                }
+
+                Section {
                     skillSearchControls()
 
                     if let skillManagerMessage {
@@ -119,18 +136,6 @@ public struct PermissionHubView: View {
                         .accessibilityIdentifier("access.skills.manager")
                 } footer: {
                     Text(KairoL10n.string("access.skills.manager.footer"))
-                }
-
-                Section {
-                    manifestImportControls()
-
-                    if let manifestInstallPreview {
-                        manifestPreview(manifestInstallPreview)
-                    }
-                } header: {
-                    Text(KairoL10n.string("access.skills.advanced.title"))
-                } footer: {
-                    Text(KairoL10n.string("access.skills.advanced.footer"))
                 }
 
                 Section {
@@ -222,6 +227,45 @@ public struct PermissionHubView: View {
         case .unsupported:
             return KairoL10n.string("access.permission.unsupported")
         }
+    }
+
+    @ViewBuilder
+    private func advancedSkillSetupToggle() -> some View {
+        Button {
+            withAnimation(.snappy) {
+                isAdvancedSkillSetupExpanded.toggle()
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.subheadline.weight(.semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(KairoDesign.blue)
+                    .frame(width: 28, height: 28)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(KairoL10n.string("access.skills.advanced.toggle.title"))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(KairoL10n.string("access.skills.advanced.toggle.subtitle"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: isAdvancedSkillSetupExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("access.skills.advanced.toggle")
+        .accessibilityLabel(KairoL10n.string("access.skills.advanced.toggle.title"))
+        .accessibilityValue(isAdvancedSkillSetupExpanded ? KairoL10n.string("access.skills.advanced.toggle.expanded") : KairoL10n.string("access.skills.advanced.toggle.collapsed"))
     }
 
     @ViewBuilder

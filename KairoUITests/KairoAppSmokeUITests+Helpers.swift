@@ -42,7 +42,8 @@ extension KairoAppSmokeUITests {
     func openAccessAndVerifyHomeKitDemos() {
         selectDrawerSection(identifier: "root.drawer.access", label: "Access")
         scrollTowardTop()
-        XCTAssertTrue(findButton("access.skills.marketplace-refresh", direction: .down).exists)
+        expandAdvancedSkillSetup()
+        XCTAssertTrue(findButton("access.skills.marketplace-refresh", direction: .down, maxSwipes: 4).exists)
         XCTAssertTrue(findElement("access.skills.manifest-import", direction: .down).exists)
         XCTAssertTrue(findElement("access.skills.manifest-import.text", direction: .down).exists)
         XCTAssertTrue(findButton("access.skills.manifest-import.button", direction: .down).exists)
@@ -61,8 +62,9 @@ extension KairoAppSmokeUITests {
 
     func verifySkillManagerInteractionFlow() {
         selectDrawerSection(identifier: "root.drawer.access", label: "Access")
+        expandAdvancedSkillSetup()
 
-        let refreshMarketplace = findButton("access.skills.marketplace-refresh")
+        let refreshMarketplace = findButton("access.skills.marketplace-refresh", direction: .down, maxSwipes: 4)
         XCTAssertTrue(refreshMarketplace.exists)
         refreshMarketplace.tap()
 
@@ -92,6 +94,16 @@ extension KairoAppSmokeUITests {
         XCTAssertTrue(previewHomeKit.exists)
         previewHomeKit.tap()
         XCTAssertTrue(findStaticText(containing: "Confirm before Kairo runs the HomeKit scene.").exists)
+    }
+
+    func expandAdvancedSkillSetup() {
+        if anyElement("access.skills.manifest-import").exists {
+            return
+        }
+        let toggle = findElement("access.skills.advanced.toggle", direction: .down, maxSwipes: 8)
+        XCTAssertTrue(toggle.exists)
+        tapElement(toggle)
+        XCTAssertTrue(findElement("access.skills.manifest-import", direction: .down, maxSwipes: 4).waitForExistence(timeout: 5))
     }
 
     func openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: Bool) {

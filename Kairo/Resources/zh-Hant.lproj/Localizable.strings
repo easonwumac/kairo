@@ -54,7 +54,11 @@
 "access.skills.manager.title" = "已安裝 skills";
 "access.skills.manager.footer" = "Skills 會擴充 Chat 的建議。只啟用你希望 Kairo 提供的能力。";
 "access.skills.advanced.title" = "進階設定";
-"access.skills.advanced.footer" = "匯入 signed skill manifest 或建立 local skill 草稿時使用。";
+"access.skills.advanced.footer" = "只有在你清楚要加入哪個能力時，才匯入 signed manifest 或建立 local skill 草稿。";
+"access.skills.advanced.toggle.title" = "開發者設定";
+"access.skills.advanced.toggle.subtitle" = "匯入 signed skill manifest、刷新 marketplace metadata，或建立 local skill 草稿。";
+"access.skills.advanced.toggle.collapsed" = "已收合";
+"access.skills.advanced.toggle.expanded" = "已展開";
 "access.skills.manifestImport.title" = "Signed Manifest 匯入";
 "access.skills.manifestImport.preview" = "預覽 Manifest";
 "access.skills.localCreate.namePlaceholder" = "Local skill 名稱";

@@ -27,7 +27,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         sendChatMessage()
         selectDrawerSection(identifier: "root.drawer.access", label: "Access")
         scrollTowardTop()
-        XCTAssertTrue(findButton("access.skills.marketplace-refresh", direction: .down, maxSwipes: 12).exists)
+        XCTAssertTrue(findElement("access.skills.advanced.toggle", direction: .down, maxSwipes: 8).exists)
         openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: false)
     }
 
@@ -617,16 +617,15 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testAccessSkillManagerBlocksIncompatibleMarketplaceSkillInstall() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.access", label: "Access")
+        relaunchForUITesting(initialSection: "access")
 
-        let refreshMarketplace = findButton("access.skills.marketplace-refresh")
+        let refreshMarketplace = findButton("access.skills.marketplace-refresh", direction: .down, maxSwipes: 10)
         XCTAssertTrue(refreshMarketplace.exists)
         refreshMarketplace.tap()
 
-        XCTAssertTrue(findElement("access.skill.shortcut-email-triage", direction: .down).exists)
-
-        let installQwenWorkflow = findButton("access.skill.marketplace-qwen-oauth-workflow.install", direction: .down, maxSwipes: 8)
+        XCTAssertTrue(findStaticText(containing: "Loaded 2 marketplace skills", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertTrue(findButton("access.skill.marketplace-weather-briefing.install", direction: .down, maxSwipes: 8).waitForExistence(timeout: 5))
+        let installQwenWorkflow = findButton("access.skill.marketplace-qwen-oauth-workflow.install", direction: .down, maxSwipes: 20)
         XCTAssertTrue(installQwenWorkflow.exists)
         installQwenWorkflow.tap()
 
@@ -670,8 +669,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testAccessSkillManagerCreatesLocalUserSkillDraft() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.access", label: "Access")
+        relaunchForUITesting(initialSection: "access")
+        expandAdvancedSkillSetup()
 
         let nameField = findElement("access.skills.local-create.name", direction: .down)
         XCTAssertTrue(nameField.exists)
