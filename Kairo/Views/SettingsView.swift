@@ -255,8 +255,7 @@ public struct SettingsView: View {
     private var accountSettingsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             settingsSectionHeader(
-                title: KairoL10n.string("settings.openai.section"),
-                subtitle: KairoL10n.string("settings.openai.detail")
+                title: KairoL10n.string("settings.openai.section")
             )
 
             KairoGroupedSurface {
@@ -301,6 +300,11 @@ public struct SettingsView: View {
 
                     if showAPIKeyEditor {
                         VStack(alignment: .leading, spacing: 12) {
+                            Text(KairoL10n.string("settings.openai.detail"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+
                             SecureField(KairoL10n.string("settings.openai.apiKeyPlaceholder"), text: $apiKey)
                                 .textContentType(.password)
                                 .autocorrectionDisabled()
@@ -501,14 +505,16 @@ public struct SettingsView: View {
         }
     }
 
-    private func settingsSectionHeader(title: String, subtitle: String) -> some View {
+    private func settingsSectionHeader(title: String, subtitle: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.headline)
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if let subtitle {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(.horizontal, 2)
     }

@@ -574,6 +574,14 @@ Stage 60 makes Access skill library quieter:
 - Skill Manager, developer setup, HomeKit preview demos, and existing access
   smoke identifiers keep their current progressive paths.
 
+Stage 61 makes Settings OpenAI setup quieter:
+
+- OpenAI no longer shows cloud-model explanatory copy in the section header.
+- The OpenAI first layer keeps only API key status and the edit action; cloud
+  model guidance appears only when the API key editor is expanded.
+- API key field, save, dry-run, delete, status message, and connection setup
+  identifiers keep their current progressive paths.
+
 ## Next UI stages
 
 1. Product surface audit
