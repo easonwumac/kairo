@@ -160,13 +160,14 @@ public final class ChatViewModel: ObservableObject {
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
             await persistCurrentThread()
         } catch {
+            let userFacingMessage = Self.userFacingChatErrorMessage(for: error)
             let failedMessage = ChatMessage(
                 role: .assistant,
-                text: "發生錯誤：\(error.localizedDescription)",
+                text: userFacingMessage,
                 status: .failed
             )
             currentThread.append(failedMessage, now: failedMessage.createdAt)
-            errorMessage = "Kairo 暫時無法回覆，請稍後再試。"
+            errorMessage = userFacingMessage
             await persistCurrentThread()
         }
         isLoading = false
@@ -266,6 +267,20 @@ public final class ChatViewModel: ObservableObject {
             return "已匯入 1 個分享項目，可送進 Chat 摘要或抽任務。"
         }
         return "已匯入 \(importedCount) 個分享項目，可送進 Chat 摘要或抽任務。"
+    }
+
+    private static func userFacingChatErrorMessage(for error: Error) -> String {
+        if let providerError = error as? AIProviderError {
+            switch providerError {
+            case .missingCredential:
+                return "OpenAI API key 尚未設定。請到 Settings 儲存 API key，或切換到可用的 local-only fallback 後再試。"
+            case .unsupported:
+                return "目前選用的 local-only fallback 無法完成這類請求。請切回 cloud provider 或選擇支援的本機模型。"
+            case .requestFailed(let message):
+                return "OpenAI 回覆失敗：\(message)"
+            }
+        }
+        return "Kairo 暫時無法回覆：\(error.localizedDescription)"
     }
 
     public static let welcomeMessage = ChatMessage(
