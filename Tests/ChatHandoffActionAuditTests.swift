@@ -43,6 +43,41 @@ final class ChatHandoffActionAuditTests: XCTestCase {
     }
 
     @MainActor
+    func testChatCancelledHandoffRestoresReviewWithoutOpeningURL() async throws {
+        let auditLogger = InMemoryAuditLogger()
+        let urlOpener = CapturingHandoffURLOpener()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: SandboxActionExecutor(
+                memoryStore: InMemoryMemoryStore(),
+                urlOpener: urlOpener,
+                auditLogger: auditLogger
+            )
+        )
+
+        await viewModel.send("Text 0912-345-678 body I am running late.")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .openMessageHandoff })
+        XCTAssertEqual(viewModel.handoffReviewAction?.id, action.id)
+
+        viewModel.reviewHandoffAction()
+        XCTAssertEqual(viewModel.pendingAction?.id, action.id)
+        XCTAssertNil(viewModel.handoffReviewAction)
+
+        viewModel.cancelPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertEqual(viewModel.handoffReviewAction?.id, action.id)
+        XCTAssertNil(viewModel.actionResultMessage)
+        let openedURLs = await urlOpener.openedURLs
+        XCTAssertTrue(openedURLs.isEmpty)
+        let auditEvents = try await auditLogger.list(limit: 10)
+        XCTAssertTrue(auditEvents.isEmpty)
+    }
+
+    @MainActor
     private func assertConfirmedHandoff(
         prompt: String,
         expectedKind: AgentActionKind,
