@@ -221,14 +221,22 @@ public struct KairoEnvironment: KairoBackendDependencies {
         } else {
             shareIngestionQueue = InMemoryShareIngestionQueue()
         }
+        let chatHistoryStore = try await JSONFileChatHistoryStore(
+            fileURL: rootDirectory
+                .appendingPathComponent("Chat", isDirectory: true)
+                .appendingPathComponent("chat-history.json")
+        )
+        if try await chatHistoryStore.listThreads(limit: 1).isEmpty {
+            try await chatHistoryStore.saveThread(ChatThread(messages: [
+                ChatMessage(role: .assistant, text: "UI testing Kairo environment loaded.")
+            ]))
+        }
 
         return KairoEnvironment(
             memoryStore: memoryStore,
             credentialStore: credentialStore,
             aiProvider: MockAIProvider(),
-            chatHistoryStore: InMemoryChatHistoryStore(seed: [ChatThread(messages: [
-                ChatMessage(role: .assistant, text: "UI testing Kairo environment loaded.")
-            ])]),
+            chatHistoryStore: chatHistoryStore,
             shareIngestionQueue: shareIngestionQueue,
             kairoRecipeStore: kairoRecipeStore,
             permissionService: StubPermissionService(),
