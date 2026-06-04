@@ -19,9 +19,6 @@ targets:
     dependencies:
       - package: KairoCore
         product: KairoCore
-      - framework: .build/local-runtime/llama.xcframework
-        embed: true
-        codeSign: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.kairo.ios

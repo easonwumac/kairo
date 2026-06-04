@@ -261,6 +261,13 @@ Generate the Xcode project:
 xcodegen generate
 ```
 
+Generate an Xcode project that embeds the local `llama.xcframework` runtime after bootstrapping it:
+
+```bash
+scripts/bootstrap_llama_xcframework.sh
+scripts/generate_xcodeproj_with_local_runtime.sh
+```
+
 The package is intentionally dependency-light. Core logic lives in `KairoCore` so safety and lifecycle behavior can be tested without relying on a simulator for every change.
 
 ## Roadmap priorities
