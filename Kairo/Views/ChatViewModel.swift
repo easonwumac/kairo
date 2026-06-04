@@ -417,6 +417,8 @@ public final class ChatViewModel: ObservableObject {
                 return "OpenAI API key 尚未設定。請到 Settings 儲存 API key，或切換到可用的 local-only fallback 後再試。"
             case .unsupported:
                 return "目前選用的 local-only fallback 無法完成這類請求。請切回 cloud provider 或選擇支援的本機模型。"
+            case .localInferenceUnavailable(let message):
+                return "\(message) Chat 已停止，不會假裝 iPhone 本機推論已可用。請切回 Cloud 或先下載並選擇支援的本機模型。"
             case .requestFailed(let message):
                 return "OpenAI 回覆失敗：\(message)"
             }

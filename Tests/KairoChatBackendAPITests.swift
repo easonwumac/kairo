@@ -65,7 +65,7 @@ final class KairoChatBackendAPITests: XCTestCase {
     func testChatViewModelSurfacesLocalOnlyUnavailableAsFailedMessage() async throws {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
-            agent: AgentCore(aiProvider: FailingChatBackendAIProvider(error: AIProviderError.unsupported))
+            agent: AgentCore(aiProvider: FailingChatBackendAIProvider(error: AIProviderError.localInferenceUnavailable("Local Only is active but no downloaded model is selected.")))
         )
 
         await viewModel.send("Draft a private reply")
@@ -73,9 +73,9 @@ final class KairoChatBackendAPITests: XCTestCase {
         let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
         XCTAssertEqual(assistantMessage.role, .assistant)
         XCTAssertEqual(assistantMessage.status, .failed)
-        XCTAssertTrue(assistantMessage.text.contains("local-only fallback 無法完成"), assistantMessage.text)
-        XCTAssertTrue(assistantMessage.text.contains("切回 cloud provider"), assistantMessage.text)
-        XCTAssertTrue(assistantMessage.text.contains("選擇支援的本機模型"), assistantMessage.text)
+        XCTAssertTrue(assistantMessage.text.contains("Local Only is active but no downloaded model is selected."), assistantMessage.text)
+        XCTAssertTrue(assistantMessage.text.contains("不會假裝 iPhone 本機推論已可用"), assistantMessage.text)
+        XCTAssertTrue(assistantMessage.text.contains("切回 Cloud"), assistantMessage.text)
         XCTAssertEqual(viewModel.errorMessage, assistantMessage.text)
     }
 

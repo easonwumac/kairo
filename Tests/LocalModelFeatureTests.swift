@@ -889,7 +889,7 @@ final class LocalModelFeatureTests: XCTestCase {
             systemPrompt: "Test",
             userPrompt: "Draft a private reply."
         ))) { error in
-            XCTAssertEqual(error as? AIProviderError, .unsupported)
+            XCTAssertEqual(error as? AIProviderError, .localInferenceUnavailable("Local Only is active but no downloaded model is selected."))
         }
     }
 
@@ -908,7 +908,7 @@ final class LocalModelFeatureTests: XCTestCase {
             systemPrompt: "Test",
             userPrompt: "Draft a private reply."
         ))) { error in
-            XCTAssertEqual(error as? AIProviderError, .unsupported)
+            XCTAssertEqual(error as? AIProviderError, .localInferenceUnavailable("Local Only is active but no downloaded model is selected."))
         }
 
         let completionCallCount = await cloudProvider.completionCallCount
@@ -1742,7 +1742,7 @@ final class LocalModelFeatureTests: XCTestCase {
         )
 
         await XCTAssertThrowsErrorAsync(try await provider.complete(request)) { error in
-            XCTAssertEqual(error as? AIProviderError, .unsupported)
+            XCTAssertEqual(error as? AIProviderError, .localInferenceUnavailable("No downloaded local model is selected for this private/offline request."))
         }
         let completionCallCount = await cloudProvider.completionCalls()
         XCTAssertEqual(completionCallCount, 0)

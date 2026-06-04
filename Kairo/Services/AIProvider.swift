@@ -8,6 +8,7 @@ public protocol AIProvider: Sendable {
 public enum AIProviderError: Error, Equatable {
     case missingCredential
     case unsupported
+    case localInferenceUnavailable(String)
     case requestFailed(String)
 }
 

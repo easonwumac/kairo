@@ -25,6 +25,10 @@ public struct LocalModelRoutingAIProvider: AIProvider {
             cloudProvider: cloudProvider,
             localProvider: LocalFallbackProvider(installedModelID: status.selectedModelID)
         )
+        let decision = router.decision(for: request, context: context)
+        if decision.route == .unavailable {
+            throw AIProviderError.localInferenceUnavailable(Self.unavailableMessage(status: status, decision: decision))
+        }
         return try await router.complete(request, context: context)
     }
 
@@ -91,5 +95,21 @@ public struct LocalModelRoutingAIProvider: AIProvider {
 
     private static func containsAny(_ text: String, _ needles: [String]) -> Bool {
         needles.contains { text.contains($0.lowercased()) }
+    }
+
+    private static func unavailableMessage(
+        status: LocalModelSettingsStatus,
+        decision: ProviderRouteDecision
+    ) -> String {
+        if status.preference == .localOnly && !status.localModelInstalled {
+            return "Local Only is active but no downloaded model is selected."
+        }
+        if status.preference == .localOnly && status.localModelInstalled {
+            return "Local Only is active, but iOS production local inference is unavailable in this beta."
+        }
+        if decision.reason == .localUnavailable {
+            return "No downloaded local model is selected for this private/offline request."
+        }
+        return "The selected local route cannot complete this request on iPhone yet."
     }
 }
