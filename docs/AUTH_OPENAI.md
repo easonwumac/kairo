@@ -61,10 +61,10 @@ Current scope:
 - reports `connected`, `readyToAuthorize`, `needsClientConfiguration`, or `needsReauthorization`;
 - exposes granted scopes from stored token sets without leaking token values;
 - creates authorization sessions from per-provider iOS client configuration;
-- completes configured public-client login by accepting a pasted callback URL and exchanging it for tokens without storing the raw authorization code;
+- completes configured public-client login by receiving the registered callback URL from the platform web authentication session and exchanging it for tokens without storing the raw authorization code;
 - records redacted callback previews in the shared app storage path so Settings can show callback status without exposing code/token values.
 
-`SettingsView` surfaces these login options as a status list. It can open an authorization URL only when the app has a provider client configuration; otherwise it labels the connector as needing iOS OAuth client setup. Settings also includes an OAuth callback field for validating callback routing and completing public-client token exchange. It shows only redacted status and never displays the raw authorization code or token values.
+`SettingsView` surfaces these login options as a status list. It starts OAuth with the platform web authentication session when the app has a provider client configuration, receives the registered `kairo` callback URL directly, validates `state`, and exchanges the authorization code without persisting the code. The manual OAuth callback field is a fallback/debug path for validating callback routing and completing public-client token exchange when automatic callback capture is unavailable. It shows only redacted status and never displays the raw authorization code or token values.
 
 Runtime OAuth client configuration is intentionally external to source control. Kairo loads public-client metadata from either:
 

@@ -336,3 +336,40 @@ public actor OAuthConnectorLoginCenter {
         return (providerKey: pathComponents[0], queryItems: components.queryItems ?? [])
     }
 }
+
+public actor OAuthConnectorInteractiveLoginService {
+    private let loginCenter: OAuthConnectorLoginCenter
+    private let webAuthenticationRunner: any OAuthWebAuthenticationRunner
+
+    public init(
+        loginCenter: OAuthConnectorLoginCenter,
+        webAuthenticationRunner: any OAuthWebAuthenticationRunner
+    ) {
+        self.loginCenter = loginCenter
+        self.webAuthenticationRunner = webAuthenticationRunner
+    }
+
+    public func signIn(for integrationKey: String) async throws -> OAuthTokenSet {
+        let session = try await loginCenter.makeAuthorizationSession(for: integrationKey)
+        let callbackScheme = try Self.callbackScheme(from: session.authorizationURL)
+        let callbackURL = try await webAuthenticationRunner.authenticate(
+            authorizationURL: session.authorizationURL,
+            callbackScheme: callbackScheme
+        )
+        return try await loginCenter.exchangeCallback(
+            callbackURL,
+            expectedState: session.state,
+            codeVerifier: session.codeVerifier
+        )
+    }
+
+    private static func callbackScheme(from authorizationURL: URL) throws -> String {
+        guard let components = URLComponents(url: authorizationURL, resolvingAgainstBaseURL: false),
+              let redirectURI = components.queryItems?.first(where: { $0.name == "redirect_uri" })?.value,
+              let scheme = URLComponents(string: redirectURI)?.scheme,
+              !scheme.isEmpty else {
+            throw OAuthWebAuthenticationError.unavailable
+        }
+        return scheme
+    }
+}

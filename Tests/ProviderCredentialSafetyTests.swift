@@ -421,6 +421,48 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertEqual(options.first { $0.providerKey == "chatgpt" }?.readiness, .connected)
     }
 
+    @MainActor
+    func testOAuthConnectorInteractiveLoginServiceCompletesChatGPTLoginFromSystemCallback() async throws {
+        let credentials = InMemoryCredentialStore()
+        let httpClient = ChatBackendCapturingHTTPClient(body: """
+        {
+          "access_token": "access-token",
+          "scope": "openid profile"
+        }
+        """)
+        let center = OAuthConnectorLoginCenter(
+            registry: IntegrationRegistry(),
+            credentialStore: credentials,
+            clientConfigurations: [
+                "chatgpt": OAuthConnectorClientConfiguration(
+                    clientID: "chatgpt-client",
+                    redirectURI: "kairo://oauth/chatgpt/callback"
+                )
+            ],
+            tokenExchangeHTTPClient: httpClient
+        )
+        let runner = FakeOAuthWebAuthenticationRunner { authorizationURL, callbackScheme in
+            let components = try XCTUnwrap(URLComponents(url: authorizationURL, resolvingAgainstBaseURL: false))
+            let state = try XCTUnwrap(components.queryItems?.first { $0.name == "state" }?.value)
+            return URL(string: "\(callbackScheme)://oauth/chatgpt/callback?code=auth-code-abc&state=\(state)")!
+        }
+
+        let tokens = try await OAuthConnectorInteractiveLoginService(
+            loginCenter: center,
+            webAuthenticationRunner: runner
+        ).signIn(for: "chatgpt")
+
+        XCTAssertEqual(tokens.accessToken, "access-token")
+        XCTAssertEqual(runner.receivedCallbackScheme, "kairo")
+        XCTAssertEqual(runner.receivedAuthorizationURL?.host, "auth.openai.com")
+        let request = try await httpClient.lastRequest()
+        let requestBody = String(data: try XCTUnwrap(request.httpBody), encoding: .utf8) ?? ""
+        XCTAssertTrue(requestBody.contains("code=auth-code-abc"))
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "chatgpt"))
+        XCTAssertNotNil(storedRaw)
+        XCTAssertFalse(storedRaw?.contains("auth-code-abc") == true)
+    }
+
     func testOAuthConnectorLoginCenterRejectsPKCETokenExchangeWithoutVerifier() async throws {
         let center = OAuthConnectorLoginCenter(
             registry: IntegrationRegistry(),
@@ -504,5 +546,22 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
             .appendingPathComponent(name)
+    }
+}
+
+@MainActor
+private final class FakeOAuthWebAuthenticationRunner: OAuthWebAuthenticationRunner {
+    private let callback: (URL, String) throws -> URL
+    private(set) var receivedAuthorizationURL: URL?
+    private(set) var receivedCallbackScheme: String?
+
+    init(callback: @escaping (URL, String) throws -> URL) {
+        self.callback = callback
+    }
+
+    func authenticate(authorizationURL: URL, callbackScheme: String) async throws -> URL {
+        receivedAuthorizationURL = authorizationURL
+        receivedCallbackScheme = callbackScheme
+        return try callback(authorizationURL, callbackScheme)
     }
 }
