@@ -428,6 +428,15 @@ Stage 44 makes Settings connection setup quieter:
 - Account editing, OAuth connectors, and privacy cleanup keep their existing
   progressive disclosure after the setup section is opened.
 
+Stage 45 makes empty Memory action-only:
+
+- Memory no longer adds a separate "No memories yet" explanation card on the
+  first layer when the library is empty; Search and Add context are enough.
+- A compact no-results message appears only after an active search has no
+  matches, so feedback is tied to the user's action.
+- Record details and library export remain progressive, keeping the memory
+  surface focused on finding or adding context.
+
 ## Next UI stages
 
 1. Product surface audit

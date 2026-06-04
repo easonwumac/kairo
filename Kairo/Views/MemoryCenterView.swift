@@ -68,16 +68,18 @@ public struct MemoryCenterView: View {
     private var memoryRecordsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             if memories.isEmpty {
-                KairoGroupedSurface {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(KairoL10n.string("memory.empty.title"))
-                            .font(.subheadline.weight(.semibold))
-                            .accessibilityIdentifier("memory.empty")
-                        Text(KairoL10n.string("memory.empty.subtitle"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                if !trimmedSearchQuery.isEmpty {
+                    KairoGroupedSurface {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(KairoL10n.string("memory.search.empty.title"))
+                                .font(.subheadline.weight(.semibold))
+                                .accessibilityIdentifier("memory.empty")
+                            Text(KairoL10n.string("memory.search.empty.subtitle"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 10)
                     }
-                    .padding(.vertical, 10)
                 }
             } else {
                 ForEach(memories) { memory in
