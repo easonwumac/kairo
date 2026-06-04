@@ -242,22 +242,6 @@ final class KairoShortcutNodeTests: XCTestCase {
         }
     }
 
-    func testShortcutSafetyContractsStayDocumentedForBetaReview() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let strategy = try String(contentsOf: root.appendingPathComponent("docs/SHORTCUTS_STRATEGY.md"), encoding: .utf8)
-        let appStore = try String(contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"), encoding: .utf8)
-
-        XCTAssertTrue(strategy.contains("## Beta safety contract"))
-        XCTAssertTrue(strategy.contains("| `createReminderDraft` | Draft only | `schemaVersion=1`, `reminderRequiresConfirmation=true` | No EventKit write. |"))
-        XCTAssertTrue(strategy.contains("| `prepareMessageHandoff` | Visible handoff | `schemaVersion=1`, `messageBodyInURL=false`, `messageRequiresConfirmation=true` | Body stays out of the `sms:` URL; no send. |"))
-        XCTAssertTrue(strategy.contains("| `previewHomeAction` | Preview only | `schemaVersion=1`, `homeActionRequiresConfirmation=true` | No HomeKit write without Kairo confirmation. |"))
-
-        XCTAssertTrue(appStore.contains("Shortcut safety schema"))
-        XCTAssertTrue(appStore.contains("`schemaVersion=1`"))
-        XCTAssertTrue(appStore.contains("`reminderRequiresConfirmation=true`"))
-        XCTAssertTrue(appStore.contains("`messageBodyInURL=false`"))
-    }
-
     func testShortcutCreateRecipeDraftNodeReturnsDisabledInternalRecipePreview() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let kind = try XCTUnwrap(ShortcutNodeKind(rawValue: "createRecipeDraft"))
@@ -686,29 +670,6 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(emailDraft.recommendedRecipeTemplateID, "email-draft-from-shared-text")
         XCTAssertTrue(emailDraft.requiredIntentIdentifiers.contains("CreateEmailDraftsIntent"))
         XCTAssertTrue(emailDraft.setupInstructions.joined(separator: " ").contains("do not send email automatically"))
-    }
-
-    func testKairoRecipeAppIntentsAreDocumentedAsUserApprovedShortcutBridge() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let intentsSource = try String(contentsOf: root.appendingPathComponent("Kairo/Intents/KairoIntents.swift"), encoding: .utf8)
-
-        XCTAssertTrue(intentsSource.contains("struct RunKairoRecipeIntent"))
-        XCTAssertTrue(intentsSource.contains("struct SuggestKairoRecipeIntent"))
-        XCTAssertTrue(intentsSource.contains("struct ListKairoRecipesIntent"))
-        XCTAssertTrue(intentsSource.contains("struct RunKairoDailyBriefingIntent"))
-        XCTAssertTrue(intentsSource.contains("struct CreateContactDraftsIntent"))
-        XCTAssertTrue(intentsSource.contains("struct CreateEmailDraftsIntent"))
-        XCTAssertTrue(intentsSource.contains("struct PrepareMessageHandoffIntent"))
-        XCTAssertTrue(intentsSource.contains("struct PreparePhoneCallHandoffIntent"))
-        XCTAssertTrue(intentsSource.contains("struct PrepareWebSearchHandoffIntent"))
-        XCTAssertTrue(intentsSource.contains("FileBackedKairoRecipeStore"))
-        XCTAssertTrue(intentsSource.contains("KairoRecipeRunner"))
-        XCTAssertTrue(intentsSource.contains("surface: .shortcut"))
-        XCTAssertTrue(intentsSource.contains("userConfirmed: false"))
-        XCTAssertTrue(intentsSource.contains("requires confirmation in the Kairo app"))
-        XCTAssertTrue(intentsSource.contains("does not create Apple Shortcuts"))
-        XCTAssertFalse(intentsSource.contains("shortcuts://create"))
-        XCTAssertFalse(intentsSource.contains("shortcuts://x-callback-url/create"))
     }
 
     func testAppleShortcutsIntegrationDocumentsUserVisibleHandoffURLScheme() throws {

@@ -127,6 +127,11 @@
 "automations.message.runFailed" = "無法執行 %@。";
 "automations.message.toggleResult" = "%@ %@。";
 "automations.message.toggleFailed" = "無法更新 %@。";
+"intents.recipe.run.requiresConfirmation" = "Kairo 已準備 recipe 預覽，需要回到 Kairo app 確認：%@";
+"intents.recipe.suggest.none" = "Kairo 無法從這個 request 建議 recipe。";
+"intents.recipe.suggest.savedDraft" = "Kairo 已儲存停用中的 recipe 草稿「%@」。請到 Kairo Automations 檢查並啟用；這不會建立 Apple Shortcuts。";
+"intents.recipe.list.empty" = "目前沒有已啟用的 Kairo recipes。請打開 Kairo Automations 新增或啟用 recipes。";
+"intents.recipe.daily.requiresConfirmation" = "Kairo 已準備 Daily Briefing 預覽，需要回到 Kairo app 確認：%@";
 "recipes.localFallback.output" = "Kairo local fallback：%@";
 "chat.share.action.extractReminders" = "抽出提醒事項";
 "chat.share.action.summarize" = "摘要分享內容";

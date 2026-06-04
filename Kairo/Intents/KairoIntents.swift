@@ -377,7 +377,7 @@ public struct RunKairoRecipeIntent: AppIntent {
         if result.requiresConfirmation {
             return .result(
                 value: value,
-                dialog: IntentDialog(stringLiteral: "Kairo prepared a recipe preview that requires confirmation in the Kairo app: \(result.summary)")
+                dialog: IntentDialog(stringLiteral: KairoL10n.string("intents.recipe.run.requiresConfirmation", result.summary))
             )
         }
 
@@ -401,7 +401,7 @@ public struct SuggestKairoRecipeIntent: AppIntent {
         guard let recipe = recipes.first else {
             return .result(
                 value: "[]",
-                dialog: IntentDialog(stringLiteral: "Kairo could not suggest a recipe from that request.")
+                dialog: IntentDialog(stringLiteral: KairoL10n.string("intents.recipe.suggest.none"))
             )
         }
 
@@ -410,7 +410,7 @@ public struct SuggestKairoRecipeIntent: AppIntent {
         let encoded = try KairoRecipeIntentSupport.encode(recipe)
         return .result(
             value: encoded,
-            dialog: IntentDialog(stringLiteral: "Kairo saved a disabled recipe draft named \(recipe.title). Review and enable it in Kairo Automations; this does not create Apple Shortcuts.")
+            dialog: IntentDialog(stringLiteral: KairoL10n.string("intents.recipe.suggest.savedDraft", recipe.title))
         )
     }
 }
@@ -428,7 +428,7 @@ public struct ListKairoRecipesIntent: AppIntent {
         let enabledRecipes = recipes.filter(\.isEnabled)
         let summary: String
         if enabledRecipes.isEmpty {
-            summary = "No enabled Kairo recipes. Open Kairo Automations to add or enable recipes."
+            summary = KairoL10n.string("intents.recipe.list.empty")
         } else {
             summary = enabledRecipes.map { "\($0.title) (\($0.id))" }.joined(separator: "\n")
         }
@@ -467,7 +467,7 @@ public struct RunKairoDailyBriefingIntent: AppIntent {
         if result.requiresConfirmation {
             return .result(
                 value: value,
-                dialog: IntentDialog(stringLiteral: "Kairo prepared a Daily Briefing preview that requires confirmation in the Kairo app: \(result.summary)")
+                dialog: IntentDialog(stringLiteral: KairoL10n.string("intents.recipe.daily.requiresConfirmation", result.summary))
             )
         }
 

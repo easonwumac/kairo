@@ -127,6 +127,11 @@
 "automations.message.runFailed" = "Unable to run %@.";
 "automations.message.toggleResult" = "%@ %@.";
 "automations.message.toggleFailed" = "Unable to update %@.";
+"intents.recipe.run.requiresConfirmation" = "Kairo prepared a recipe preview that requires confirmation in the Kairo app: %@";
+"intents.recipe.suggest.none" = "Kairo could not suggest a recipe from that request.";
+"intents.recipe.suggest.savedDraft" = "Kairo saved a disabled recipe draft named %@. Review and enable it in Kairo Automations; this does not create Apple Shortcuts.";
+"intents.recipe.list.empty" = "No enabled Kairo recipes. Open Kairo Automations to add or enable recipes.";
+"intents.recipe.daily.requiresConfirmation" = "Kairo prepared a Daily Briefing preview that requires confirmation in the Kairo app: %@";
 "recipes.localFallback.output" = "Kairo local fallback: %@";
 "chat.share.action.extractReminders" = "Extract reminders";
 "chat.share.action.summarize" = "Summarize";
