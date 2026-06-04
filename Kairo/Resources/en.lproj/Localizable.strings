@@ -214,6 +214,8 @@
 "chat.error.localInference.reason.localOnlyRuntimeUnavailable" = "Local Only is active, but iOS production local inference is unavailable in this beta.";
 "chat.error.localInference.reason.privateNoModel" = "No downloaded local model is selected for this private or offline request.";
 "chat.error.localInference.reason.routeUnavailable" = "The selected local route cannot complete this request on iPhone yet.";
+"chat.error.localInference.reason.runtimeEmpty" = "The selected local model runtime returned an empty reply.";
+"chat.error.localInference.reason.runtimeFailed" = "The selected local model runtime failed while generating a reply.";
 "chat.error.requestFailed" = "OpenAI reply failed: %@";
 "chat.error.genericReplyFailed" = "Kairo cannot reply right now: %@";
 "chat.provider.openAI.requestFailedStatus" = "OpenAI request failed with status %lld%@.";

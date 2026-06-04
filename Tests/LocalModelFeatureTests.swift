@@ -852,9 +852,18 @@ final class LocalModelFeatureTests: XCTestCase {
             preference: .preferLocal,
             installedAndSelectedModelID: "qwen-small"
         )
+        let runtime = DeterministicLocalModelReplyCheckRuntime(
+            runtimePackage: "deterministic-chat-runtime",
+            responseText: "Runtime-backed local answer.",
+            generationTokensPerSecond: 12.5
+        )
         let provider = LocalModelRoutingAIProvider(
             cloudProvider: MockAIProvider(),
-            localModelSettingsService: service
+            localModelSettingsService: service,
+            localProvider: LocalModelRuntimeAIProvider(
+                localModelSettingsService: service,
+                runtime: runtime
+            )
         )
 
         let response = try await provider.complete(AICompletionRequest(
@@ -862,14 +871,36 @@ final class LocalModelFeatureTests: XCTestCase {
             userPrompt: "Draft a private reply for this message."
         ))
 
-        XCTAssertEqual(
-            response.message,
-            KairoL10n.string(
-                "chat.provider.localFallback.response",
-                KairoL10n.string("chat.provider.localFallback.named", "qwen-small"),
-                KairoL10n.string("chat.provider.localFallback.quotedRequest", "Draft a private reply for this message.")
+        XCTAssertEqual(response.message, "Runtime-backed local answer.")
+        XCTAssertTrue(response.proposedActions.isEmpty)
+    }
+
+    func testLocalModelRoutingAIProviderFailsClosedWhenSelectedRuntimeIsUnavailable() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .localOnly,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let cloudProvider = RecordingAIProvider()
+        let provider = LocalModelRoutingAIProvider(
+            cloudProvider: cloudProvider,
+            localModelSettingsService: service,
+            localProvider: LocalModelRuntimeAIProvider(
+                localModelSettingsService: service,
+                runtime: UnavailableLocalModelReplyCheckRuntime(reason: "runtime unavailable for test")
             )
         )
+
+        await XCTAssertThrowsErrorAsync(try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Draft a private reply."
+        ))) { error in
+            guard case .localInferenceUnavailable? = error as? AIProviderError else {
+                XCTFail("Expected local inference to fail closed")
+                return
+            }
+        }
+        let completionCallCount = await cloudProvider.completionCalls()
+        XCTAssertEqual(completionCallCount, 0)
     }
 
     func testLocalModelRoutingAIProviderKeepsToolRequestsOnCloudWhenPreferLocal() async throws {

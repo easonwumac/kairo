@@ -3,13 +3,16 @@ import Foundation
 public struct LocalModelRoutingAIProvider: AIProvider {
     private let cloudProvider: any AIProvider
     private let localModelSettingsService: LocalModelSettingsService
+    private let localProvider: any AIProvider
 
     public init(
         cloudProvider: any AIProvider,
-        localModelSettingsService: LocalModelSettingsService
+        localModelSettingsService: LocalModelSettingsService,
+        localProvider: (any AIProvider)? = nil
     ) {
         self.cloudProvider = cloudProvider
         self.localModelSettingsService = localModelSettingsService
+        self.localProvider = localProvider ?? LocalFallbackProvider()
     }
 
     public func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
@@ -23,7 +26,7 @@ public struct LocalModelRoutingAIProvider: AIProvider {
         )
         let router = ProviderRouter(
             cloudProvider: cloudProvider,
-            localProvider: LocalFallbackProvider(installedModelID: status.selectedModelID)
+            localProvider: localProvider
         )
         let decision = router.decision(for: request, context: context)
         if decision.route == .unavailable {

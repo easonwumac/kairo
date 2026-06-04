@@ -214,6 +214,8 @@
 "chat.error.localInference.reason.localOnlyRuntimeUnavailable" = "Local Only 已啟用，但此 beta 尚未提供 iOS production local inference。";
 "chat.error.localInference.reason.privateNoModel" = "此私密或離線請求尚未選擇已下載的 local model。";
 "chat.error.localInference.reason.routeUnavailable" = "目前選擇的 local route 還不能在 iPhone 上完成這個請求。";
+"chat.error.localInference.reason.runtimeEmpty" = "選定的本機模型 runtime 回傳空白回覆。";
+"chat.error.localInference.reason.runtimeFailed" = "選定的本機模型 runtime 產生回覆時失敗。";
 "chat.error.requestFailed" = "OpenAI 回覆失敗：%@";
 "chat.error.genericReplyFailed" = "Kairo 暫時無法回覆：%@";
 "chat.provider.openAI.requestFailedStatus" = "OpenAI 請求失敗，狀態碼 %lld%@。";

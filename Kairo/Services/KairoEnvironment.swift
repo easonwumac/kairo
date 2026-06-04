@@ -202,14 +202,28 @@ public struct KairoEnvironment: KairoBackendDependencies {
             resultStore: localModelBenchmarkStore,
             engine: localModelBenchmarkEngineOverride ?? UnavailableLocalModelBenchmarkEngine()
         )
+        let localModelReplyRuntime = localModelReplyCheckRuntimeOverride ?? DeterministicLocalModelReplyCheckRuntime(
+            responseText: "Local model reply is alive.",
+            generationTokensPerSecond: 38.5
+        )
         let localModelReplyCheckService = LocalModelReplyCheckService(
             catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
-            runtime: localModelReplyCheckRuntimeOverride ?? DeterministicLocalModelReplyCheckRuntime(
-                responseText: "Local model reply is alive.",
-                generationTokensPerSecond: 38.5
-            )
+            runtime: localModelReplyRuntime
         )
+        let aiProvider: any AIProvider
+        if localModelReplyCheckRuntimeOverride != nil {
+            aiProvider = LocalModelRoutingAIProvider(
+                cloudProvider: MockAIProvider(),
+                localModelSettingsService: localModelSettingsService,
+                localProvider: LocalModelRuntimeAIProvider(
+                    localModelSettingsService: localModelSettingsService,
+                    runtime: localModelReplyRuntime
+                )
+            )
+        } else {
+            aiProvider = MockAIProvider()
+        }
         let credentialStore = InMemoryCredentialStore()
         let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(
             fileURL: rootDirectory
@@ -257,7 +271,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         return KairoEnvironment(
             memoryStore: memoryStore,
             credentialStore: credentialStore,
-            aiProvider: MockAIProvider(),
+            aiProvider: aiProvider,
             chatHistoryStore: chatHistoryStore,
             shareIngestionQueue: shareIngestionQueue,
             kairoRecipeStore: kairoRecipeStore,
@@ -508,10 +522,11 @@ public struct KairoEnvironment: KairoBackendDependencies {
             resultStore: localModelBenchmarkStore,
             engine: localModelBenchmarkEngineOverride ?? localModelCommandRuntime
         )
+        let localModelReplyRuntime = localModelReplyCheckRuntimeOverride ?? localModelCommandRuntime
         let localModelReplyCheckService = LocalModelReplyCheckService(
             catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
-            runtime: localModelReplyCheckRuntimeOverride ?? localModelCommandRuntime
+            runtime: localModelReplyRuntime
         )
         #else
         let localModelBenchmarkService = LocalModelBenchmarkService(
@@ -520,16 +535,21 @@ public struct KairoEnvironment: KairoBackendDependencies {
             resultStore: localModelBenchmarkStore,
             engine: localModelBenchmarkEngineOverride ?? UnavailableLocalModelBenchmarkEngine()
         )
+        let localModelReplyRuntime = localModelReplyCheckRuntimeOverride ?? UnavailableLocalModelReplyCheckRuntime()
         let localModelReplyCheckService = LocalModelReplyCheckService(
             catalog: localModelCatalog,
             installRegistry: localModelInstallRegistry,
-            runtime: localModelReplyCheckRuntimeOverride ?? UnavailableLocalModelReplyCheckRuntime()
+            runtime: localModelReplyRuntime
         )
         #endif
         let credentialStore = KeychainCredentialStore()
         let aiProvider = LocalModelRoutingAIProvider(
             cloudProvider: OpenAIProvider(credentialStore: credentialStore),
-            localModelSettingsService: localModelSettingsService
+            localModelSettingsService: localModelSettingsService,
+            localProvider: LocalModelRuntimeAIProvider(
+                localModelSettingsService: localModelSettingsService,
+                runtime: localModelReplyRuntime
+            )
         )
         let connectedOAuthProviderKeys = try await connectedOAuthProviderKeys(credentialStore: credentialStore)
         let runtimeContext = AgentSkillRuntimeContext.current(
