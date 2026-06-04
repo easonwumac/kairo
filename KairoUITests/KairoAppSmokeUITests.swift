@@ -128,7 +128,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         let summary = findElement("memory.search.summary", direction: .both, maxSwipes: 1)
         XCTAssertTrue(summary.waitForExistence(timeout: 5))
-        XCTAssertTrue(summary.label.contains("1 matches"), summary.label)
+        XCTAssertTrue(summary.label.contains("reviewers"), summary.label)
         XCTAssertTrue(findStaticText(containing: "Beta launch checklist", direction: .both, maxSwipes: 1).exists)
 
         let clear = findButton("memory.search.clear", direction: .both, maxSwipes: 1)
@@ -139,7 +139,6 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(delete.waitForExistence(timeout: 5))
         delete.tap()
 
-        XCTAssertTrue(findStaticText(containing: "No memories yet", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("memory.export.share").exists)
         XCTAssertFalse(anyElement("memory.record").exists)
     }

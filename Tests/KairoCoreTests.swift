@@ -1584,6 +1584,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(memoryView.contains(#""memory.add.save""#))
         XCTAssertTrue(memoryView.contains(#""memory.error""#))
         XCTAssertTrue(memoryView.contains(#""memory.list""#))
+        XCTAssertTrue(memoryView.contains(#""memory.empty""#))
         XCTAssertTrue(memoryView.contains(#""memory.record""#))
         XCTAssertTrue(memoryView.contains(#""memory.export.share""#))
         XCTAssertTrue(memoryView.contains(#""memory.record.delete""#))

@@ -24,9 +24,9 @@ public struct MemoryCenterView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     HStack(alignment: .top, spacing: 12) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Knowledge you approved")
+                            Text(KairoL10n.string("memory.title"))
                                 .font(.title2.bold())
-                            Text("Add, search, and review memories Kairo can cite later.")
+                            Text(KairoL10n.string("memory.subtitle"))
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -41,18 +41,18 @@ public struct MemoryCenterView: View {
                                 .background(Color.white.opacity(0.85), in: Circle())
                         }
                         .disabled(memories.isEmpty)
-                        .accessibilityLabel("Export memories")
+                        .accessibilityLabel(KairoL10n.string("memory.export.accessibility"))
                         .accessibilityIdentifier("memory.export.share")
                     }
 
                     KairoGroupedSurface {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(spacing: 10) {
-                                TextField("Search memories", text: $searchQuery)
+                                TextField(KairoL10n.string("memory.search.placeholder"), text: $searchQuery)
                                     .accessibilityIdentifier("memory.search.text")
 
                                 if !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                    Button("Clear") { searchQuery = "" }
+                                    Button(KairoL10n.string("memory.search.clear")) { searchQuery = "" }
                                         .font(.caption.weight(.semibold))
                                         .foregroundStyle(KairoDesign.blue)
                                         .accessibilityIdentifier("memory.search.clear")
@@ -67,11 +67,11 @@ public struct MemoryCenterView: View {
                             Divider()
 
                             HStack(spacing: 10) {
-                                TextField("Add a memory", text: $draft, axis: .vertical)
+                                TextField(KairoL10n.string("memory.add.placeholder"), text: $draft, axis: .vertical)
                                     .lineLimit(1...4)
                                     .accessibilityIdentifier("memory.add.text")
 
-                                Button("Save") { save() }
+                                Button(KairoL10n.string("memory.add.save")) { save() }
                                     .font(.subheadline.weight(.semibold))
                                     .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                                     .accessibilityIdentifier("memory.add.save")
@@ -90,9 +90,10 @@ public struct MemoryCenterView: View {
                     KairoGroupedSurface {
                         if memories.isEmpty {
                             VStack(alignment: .leading, spacing: 5) {
-                                Text("No memories yet")
+                                Text(KairoL10n.string("memory.empty.title"))
                                     .font(.subheadline.weight(.semibold))
-                                Text("Shared or manually saved context will appear here.")
+                                    .accessibilityIdentifier("memory.empty")
+                                Text(KairoL10n.string("memory.empty.subtitle"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -125,7 +126,7 @@ public struct MemoryCenterView: View {
                                     }
                                     .buttonStyle(.plain)
                                     .foregroundStyle(KairoDesign.red)
-                                    .accessibilityLabel("Delete memory")
+                                    .accessibilityLabel(KairoL10n.string("memory.delete.accessibility"))
                                     .accessibilityIdentifier("memory.record.delete")
                                 }
                                 .padding(.vertical, 10)
@@ -147,7 +148,7 @@ public struct MemoryCenterView: View {
             }
             .background(KairoDesign.background.ignoresSafeArea())
             .scrollIndicators(.hidden)
-            .navigationTitle("Memory")
+            .navigationTitle(KairoL10n.string("memory.navigationTitle"))
             .task(id: searchQuery) { await reload() }
             .refreshable { await reload() }
         }
@@ -159,9 +160,16 @@ public struct MemoryCenterView: View {
 
     private var searchSummary: String {
         guard !trimmedSearchQuery.isEmpty else {
-            return "\(memories.count) saved memories"
+            return KairoL10n.string(
+                memories.count == 1 ? "memory.search.summary.saved.one" : "memory.search.summary.saved.many",
+                Int64(memories.count)
+            )
         }
-        return "\(memories.count) matches for \"\(trimmedSearchQuery)\""
+        return KairoL10n.string(
+            memories.count == 1 ? "memory.search.summary.matches.one" : "memory.search.summary.matches.many",
+            Int64(memories.count),
+            trimmedSearchQuery
+        )
     }
 
     private func save() {
