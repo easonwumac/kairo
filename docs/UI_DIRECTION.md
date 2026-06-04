@@ -704,6 +704,16 @@ Stage 73 makes Settings setup controls action-first:
 - Connection setup, API key, privacy cleanup, OAuth details, and existing
   Settings smoke flows keep their current paths.
 
+Stage 74 makes Chat tool suggestions scan-first:
+
+- Tool candidate cards no longer add a separate Details disclosure to every
+  suggested handoff.
+- Each card now shows title, review status, risk, and a short handoff summary
+  in one layer, so Chat reads as a next-step surface instead of a list of
+  expandable implementation notes.
+- Tool candidate, risk, summary, proposed action, and existing Chat smoke
+  identifiers keep their current paths.
+
 ## Next UI stages
 
 1. Product surface audit

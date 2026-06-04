@@ -100,7 +100,6 @@ struct ProposedActionsStrip: View {
 
 struct ToolCandidatesStrip: View {
     let candidates: [AgentToolInvocationCandidate]
-    @State private var expandedCandidateID: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -114,7 +113,6 @@ struct ToolCandidatesStrip: View {
     private func toolCandidateCard(_ candidate: AgentToolInvocationCandidate) -> some View {
         let candidateID = candidateIdentifier(for: candidate)
         let riskSummary = toolRiskSummary(for: candidate)
-        let isExpanded = expandedCandidateID == candidateID
 
         return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 10) {
@@ -157,34 +155,12 @@ struct ToolCandidatesStrip: View {
             }
             .accessibilityIdentifier("chat.tool-candidate.\(candidateID)")
 
-            Button {
-                expandedCandidateID = isExpanded ? nil : candidateID
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(toolRiskColor(for: candidate))
-
-                    Text(KairoL10n.string("chat.option.details"))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(KairoDesign.ink)
-
-                    Spacer(minLength: 0)
-                }
-                .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isExpanded ? KairoL10n.string("chat.option.details.hide") : KairoL10n.string("chat.option.details.show"))
-            .accessibilityIdentifier("chat.tool-candidate.\(candidateID).details.toggle")
-
-            if isExpanded {
-                Text(candidate.handoffSummary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).summary")
-            }
+            Text(candidate.handoffSummary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).summary")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 11)

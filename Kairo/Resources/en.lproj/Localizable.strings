@@ -387,9 +387,6 @@
 "chat.action.card.intent" = "Suggested action";
 "chat.tool.card.intent" = "Suggested skill";
 "chat.action.card.review" = "Review";
-"chat.option.details" = "Details";
-"chat.option.details.show" = "Show details";
-"chat.option.details.hide" = "Hide details";
 "chat.action.confirmation.willAskFirst" = "Will ask first";
 "chat.action.confirmation.noChanges" = "No changes";
 "chat.action.risk.readOnly" = "Read only";
