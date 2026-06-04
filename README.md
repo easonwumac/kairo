@@ -2,122 +2,246 @@
 
 ![Kairo GitHub cover](Assets/github-readme-cover.svg)
 
-Kairo is an open-source Swift/SwiftUI iOS agent scaffold for building a **universal, sandbox-compliant iPhone assistant**. It combines chat, long-term memory, Share Extension ingestion, App Intents/Shortcuts, permission-aware tools, audit logs, OpenAI-compatible cloud models, and local-model fallback planning without pretending iOS apps can bypass sandbox rules.
+Kairo is an open-source iOS agent scaffold for building a practical, sandbox-compliant iPhone assistant.
 
-> Product principle: if a capability is allowed by user consent, iOS public APIs, App Intents, Shortcuts, extensions, or official third-party APIs, Kairo should make it useful. If iOS does not allow it, Kairo must explain the boundary and offer a safe alternative.
+It is designed for makers and Swift developers who want a real mobile agent without pretending iOS apps can bypass sandbox rules. Kairo brings together chat, memory, share-sheet ingestion, App Intents, internal recipes, tool catalogs, model routing, action previews, and explicit confirmation inside App Store-safe boundaries.
 
-## What Kairo is
+> Product principle: if iOS allows a capability through public APIs, user consent, App Intents, Shortcuts, extensions, URL handoff, or official provider APIs, Kairo should make it useful. If iOS does not allow it, Kairo should say so and offer a safe alternative.
 
-Kairo is a source-first iOS agent reference implementation for developers who want to ship an App Store-safe assistant that can:
+## What Kairo can do
 
-- Chat with the user and preserve conversation history.
-- Remember user-approved facts in an editable memory store.
-- Understand files, links, text, and images shared into the app.
-- Preview sandbox-safe actions before execution.
-- Use App Intents and Shortcuts for user-triggered automation.
-- Call official model/provider APIs or route eligible work to a local fallback model.
-- Keep a clear audit trail of what the agent saw, suggested, and did.
+### Chat with memory
 
-## Sandbox-first scope
+- Ask questions in a chat-first iPhone app.
+- Keep persistent chat history.
+- Save, search, delete, purge, and export long-term memory.
+- Use user-approved memory as context for future answers.
+- Run private chat paths that avoid memory lookup and fail closed for local-only routing when no local model is available.
 
-Kairo does **not** promise capabilities that normal App Store apps cannot provide:
+### Turn shared content into actions
 
-- Arbitrary reading of other apps' private data.
-- Background screen watching or screenshots.
-- Unprompted control of other app UIs.
-- Permission bypasses, private APIs, jailbreak-only APIs, or background daemons.
-- Unapproved access to Messages, Mail, Notes, or ChatGPT web sessions/cookies.
+- Share text, URLs, images, PDFs, and file metadata into Kairo.
+- Import shared content through a queue-only Share Extension.
+- Summarize shared content in chat.
+- Extract tasks and draft next steps.
+- Create reminder or calendar drafts from shared material.
 
-Instead, Kairo uses iOS-supported entry points: Share Extension, EventKit, Contacts.framework, UserNotifications, App Intents, Shortcuts, `mailto:`/`sms:`/`tel:`/Apple Maps/URL handoff, OAuth connectors, and explicit user confirmation. Shared file and image handling is limited to user-shared metadata/files delivered through the Share Extension; the beta does not request full Photo Library access.
+### Preview and confirm actions
 
-## Current implementation
+- Create reminders through EventKit Reminders.
+- Create calendar events through EventKit Calendar.
+- Schedule local notifications through UserNotifications.
+- Create contacts through Contacts.framework.
+- Open visible handoffs for email, messages, phone, web search, and Apple Maps.
+- Always show a preview before a write, notification, or external handoff.
 
-- Swift Package product: `KairoCore`.
-- SwiftUI app scaffold: Chat, Memory Center, Access/Permissions, Settings.
-- Persistent chat threads with JSON-backed history store.
-- Memory store protocols plus in-memory and JSON file implementations.
-- OpenAI provider abstraction, credential store, Keychain-backed credential store, ChatGPT OAuth scaffold, generic OAuth connector authorization core, redacted callback preview store, connector login status center, and Settings connector status/callback UI.
-- Downloadable local-model starter catalog entries for a deliberately tiny set of popular public GGUF models, currently Qwen3.5 0.8B and Llama 3.2 1B, plus `LocalModelCatalogService` for the planned `kairo-models` static backend, catalog trust-store verification, verified downloader, install registry, selected-model settings, compact model management UI/catalog refresh, foreground progress/cancel UI, license-approval preview, stale download cleanup, benchmark metadata, macOS/dev `llama-cli` external reply/benchmark adapter, MLX reference metadata, local reply-check runtime abstraction, and provider-routing scaffold. Model weights are not bundled in the app or repository.
-- Chat messages support text selection/copy and compact reply references, so replying to a previous message does not require pasting the whole source message into the composer.
-- Capability registry, sandbox action catalog, safety policy engine, action preview UI, and sandbox action executor.
-- Chat can surface executable local notification actions through `UserNotifications`, reminder actions through EventKit Reminders, calendar-event actions through EventKit Calendar, contact-create actions through Contacts.framework, email draft handoffs through `mailto:`, Messages recipient handoffs through `sms:`, Phone handoffs through `tel:`, Safari web-search handoffs through a visible DuckDuckGo HTTPS URL, and Apple Maps directions handoffs through `maps.apple.com`, but all stay behind visible action preview, runtime permission or visible handoff, and explicit user confirmation. Messages handoff keeps body text in Kairo preview because Apple's SMS link does not carry message body text; Phone handoff opens only a visible dial surface and does not place calls silently; Web Search handoff does not browse, scrape pages, or read web content inside Kairo.
-- Kairo-owned internal recipe engine with sample recipes, file-backed recipe store, deterministic preview/run runner, risk confirmation gates, App Intents bridge (`Run/Suggest/List Kairo Recipe`, `Run Kairo Daily Briefing`), Shortcut template registry, and a Shortcuts drawer screen for adding, previewing, running, enabling, disabling recipes, and reviewing user-installed Shortcut template guidance. These are not Apple Shortcuts workflows.
-- Agent skill catalog, all official Shortcut demo recipes as built-in skills, deterministic tool invocation planner, chat-visible tool candidates for Shortcut/OAuth handoffs, local user-created skill drafts with explicit capability and confirmation-policy selection, manifest signature metadata, SHA-256 checksum validation, public-key trust-store verification with rotation/revocation metadata, signed manifest JSON import, update preview with changelog, version downgrade protection, compatibility gates for iOS version/entitlements/OAuth providers/downloaded local models, file-backed skill install lifecycle, backend API facade, and environment-backed Access Skill Manager UI, so installed tools can be shown to the model and managed by the user without enabling compatibility-blocked skills as executable tools.
-- Static skill marketplace seed under `Website/skills`, mirrored to the independent `easonwumac/kairo-skills` repo, plus app-side catalog refresh and manifest-download preview from the published GitHub Pages catalog.
-- Static model catalog seed under `Website/models`, intended to be mirrored to the planned independent `easonwumac/kairo-models` repo for signed model-list updates and runtime benchmark metadata.
-- Popular app integration registry covering App Intents, Shortcuts, URL schemes/universal links, Share Extension handoff, and OAuth connector metadata.
-- BGTaskScheduler-compatible background task policy for bounded app refresh/processing work without daemon overclaims.
-- Share Extension ingestion queue for text, URLs, files, and images.
-- Structured Shortcut node runtime, executable official demo recipe runner, Settings demo recipe UI including Email Triage, Message Reply Handoff, Phone Call Handoff, Web Search Handoff, Contact Draft, Email Draft, Request to Recipe Draft, Meeting Text to Calendar Draft, and Home Action Preview, and App Intents for asking, saving, searching, summarizing, task extraction, draft replies, reminder drafts, calendar drafts, contact drafts, email drafts, visible message/phone/web-search handoffs, disabled internal recipe draft previews, daily briefings, and generic node-kind plus JSON input/output chaining.
-- User-visible Shortcuts handoff URL builder with encoded input payloads and structured callback parsing.
-- HomeKit-safe action model, executor injection, and Access demo UI for confirmed scene/accessory control.
-- XcodeGen UI test target scaffold, UI smoke scenario catalog, deterministic `--ui-testing` Skill Manager environment, Access/HomeKit/Skill Manager interaction and compatibility-blocked install coverage, signed skill update and user-created remove smoke coverage, chat notification/reminder/calendar/contact/email-draft/Messages/Apple-Maps action-preview e2e coverage, Shortcut tool-candidate e2e coverage, and stable SwiftUI accessibility identifiers. These simulator/package checks are not real-device sign-off.
-- App icon source plus GitHub/README visual assets.
-- Privacy manifest, purpose-string notes, capability matrix, App Store readiness docs, and unit tests.
+### Automate through Shortcuts
 
-## Current beta feature state
+- Use App Intents as small, safe nodes.
+- Run Kairo Recipes, which are Kairo-owned internal workflows.
+- Return structured JSON for downstream Apple Shortcuts.
+- Keep high-risk nodes draft/preview oriented.
+- Do not silently create or edit Apple Shortcuts.
 
-Use these labels throughout the docs:
+### Manage tools and models
+
+- Show available and installed tools in Skill Manager.
+- Install, disable, enable, remove, and preview signed skill manifests.
+- Refresh a local model catalog, download models, select a preferred model, and delete installed models.
+- Choose route preferences such as automatic, prefer local, prefer cloud, or local only.
+- Keep macOS/dev local model runtime checks separate from iPhone production inference.
+
+## Example flows
+
+### Flow A: Shared text to reminder
+
+Share a paragraph, note, or task list into Kairo. Kairo imports it into chat, summarizes it, extracts tasks, prepares a reminder preview, and waits for confirmation before writing to Reminders.
+
+```mermaid
+flowchart LR
+    A[Share text] --> B[Kairo imports content]
+    B --> C[Summarize / extract tasks]
+    C --> D[Preview reminder]
+    D --> E[User confirms]
+    E --> F[Create reminder]
+```
+
+### Flow B: Chat to calendar event
+
+Ask Kairo to schedule something from natural language. Kairo drafts the calendar fields, shows the event preview, requests EventKit permission when needed, and creates the event only after confirmation.
+
+```mermaid
+flowchart LR
+    A[Ask in Chat] --> B[Draft calendar event]
+    B --> C[Preview date / time / title]
+    C --> D[User confirms]
+    D --> E[Create calendar event]
+```
+
+### Flow C: Chat to visible system handoff
+
+Ask Kairo to draft an email, message someone, call a number, search the web, or open directions. Kairo previews the target and payload, then opens a visible system handoff after confirmation.
+
+```mermaid
+flowchart LR
+    A[Ask in Chat] --> B[Prepare handoff]
+    B --> C[Preview email / message / phone / web / maps]
+    C --> D[User confirms]
+    D --> E[Open visible iOS handoff]
+```
+
+## Why Kairo exists
+
+Most "phone agent" ideas either under-deliver because they stay inside one chat box, or overclaim by implying hidden access to other apps. Kairo takes the narrower but shippable path: compose the capabilities iOS actually gives apps, make every action inspectable, and keep the user in control.
+
+For users and makers, that means an assistant that can remember context, handle shared content, turn intent into concrete drafts, and connect to safe system surfaces. For iOS developers, it is a source-first reference for building agent features with SwiftUI, App Intents, Share Extension ingestion, EventKit, UserNotifications, Contacts, URL handoff, provider credentials, skill manifests, and model catalogs.
+
+For reviewers and security-minded developers, the boundary is explicit: Kairo is not a jailbreak tool, not an arbitrary iPhone RPA layer, and not a way to read other apps' private data.
+
+## Sandbox-safe by design
+
+Kairo does not claim capabilities that normal App Store apps cannot provide:
+
+- No arbitrary reading of other apps' private data.
+- No background screen watching or hidden screenshots.
+- No unprompted control of other app UIs.
+- No private APIs, jailbreak APIs, background daemons, or permission bypasses.
+- No Apple Mail, Messages, Notes, Safari, or ChatGPT web-session scraping.
+- No silent Apple Shortcuts creation or modification.
+
+Instead, Kairo uses iOS-supported entry points:
+
+- Share Extension for user-shared content.
+- EventKit for user-confirmed reminders and calendar events.
+- UserNotifications for user-confirmed local notifications.
+- Contacts.framework for create-only contact actions.
+- App Intents and Shortcuts for user-triggered automation nodes.
+- URL handoff for visible email, message, phone, web search, and maps flows.
+- OAuth/API-key scaffolds for official provider integrations.
+- Metadata-only audit logs for action outcomes and capability use.
+
+![Kairo capability board](Assets/github-capability-board.svg)
+
+## Current beta status
+
+Use these labels when reading the code and docs:
 
 | Status | Meaning |
 |---|---|
 | Implemented | Usable in the app/core path and covered by tests for the stated scope. |
-| Scaffolded | Code, UI, models, or protocols exist, but beta hardening remains. |
-| Test-only / Mock | Deterministic test/demo path only; not a real runtime capability. |
+| Scaffolded | Code, UI, models, or protocols exist, but production hardening remains. |
+| Test-only / Mock | Deterministic test or demo path only; not a real runtime capability. |
 | Planned | Accepted direction, not implemented yet. |
 | Not allowed | Outside App Store-safe public API boundaries for this app. |
 
+### Implemented
+
+- Chat-first SwiftUI app shell.
+- Persistent chat history.
+- Long-term memory save/search/delete/purge/export.
+- Share Extension ingestion for text, URLs, images, PDFs, and file metadata.
+- Action preview and explicit confirmation flow.
+- EventKit reminders and calendar actions from chat.
+- UserNotifications scheduling from chat.
+- Contacts create-only action from chat.
+- Visible email, message, phone, web search, and Apple Maps handoffs.
+- App Intents / Shortcut nodes with `schemaVersion=1` safety contracts.
+- Kairo-owned internal Recipes with preview/run lifecycle.
+- Metadata-only audit log persistence.
+- Swift Package test coverage for core safety, lifecycle, catalog, and source-health boundaries.
+
+### Scaffolded
+
+- Skill Manager marketplace lifecycle, signed manifest preview/install/update, compatibility gates, and effective tool catalog.
+- Local model catalog/download/select/delete. The built-in starter catalog currently Qwen3.5 0.8B and Llama 3.2 1B, with progress/cancel UI, license approval, cleanup, checksum, and trust-store verification exist; remaining blockers are production signed catalog/public-key publication and real-device runtime proof.
+- OAuth connector authorization, callback redaction, status UI, disconnect, and Keychain-backed token storage.
+- Background task policy for bounded app refresh and processing work.
+- HomeKit typed preview/action model and demo/test path.
+- Xcode UI test target and simulator smoke coverage. These simulator/package checks are not real-device sign-off.
+
 | Area | Status | Current scope |
 |---|---|---|
-| Chat-first app shell | Implemented | Chat is the launch surface; More holds support surfaces. |
-| Memory | Implemented | Save/search/delete/export stores exist; deleted JSON records can be purged from disk. |
-| Share Extension ingestion | Implemented | Text/URL/image/PDF/file metadata import into Chat; extension stays queue-only and action-free. |
-| App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA, not more nodes. |
-| Kairo Recipes | Implemented | Internal Kairo-owned workflows; not silent Apple Shortcuts edits. |
-| Skill Manager | Scaffolded | Access lifecycle, backend API facade, signed install/update, user-created drafts, and compatibility gates exist; remaining blockers are production signed `skills.json` and public trust material from the standalone repo plus real-device sign-off. |
-| Email / Message / Phone / Web / Maps handoffs | Implemented | Visible handoff only, preview + explicit confirmation. |
-| EventKit / Notifications / Contacts actions | Implemented | Confirmed Chat actions exist; Shortcut nodes stay draft/preview oriented. |
-| HomeKit | Scaffolded | Typed preview/action model and test/demo UI exist; real HomeKit entitlement path is not complete. |
-| OAuth provider APIs | Scaffolded | Authorization/callback/status scaffolds exist; real provider read/write integrations are planned. |
 | Local model catalog/download/select/delete | Scaffolded | User-triggered catalog/download/settings path, progress/cancel UI, license approval, cleanup, checksum, and trust-store verification exist; remaining blockers are production signed catalog/public-key publication and real-device runtime proof. |
-| macOS/dev local model runtime adapter | Test-only / Mock | External command validation path for development. |
-| iOS production local model inference | Planned | Not implemented; do not treat macOS/dev reply checks as iPhone runtime proof. |
-| Audit / memory lifecycle hardening | Implemented | Live audit logs persist metadata-only events; Memory Center supports export/delete; current deletion proof is on-device only because the beta has no backend account. |
-| Keyboard Extension | Planned | Not built. |
-| Widget | Planned | Not built. |
-| Arbitrary cross-app UI control / background screen watching | Not allowed | No private APIs, hidden tapping, or background screenshots. |
 
-## Visual overview
+### Planned or deliberately deferred
 
-![Kairo capability board](Assets/github-capability-board.svg)
+- iOS production local model inference runtime.
+- Production signed model catalog and public trust material from the planned standalone `kairo-models` repo.
+- Additional real OAuth provider API integrations beyond the current scaffolds.
+- Real HomeKit entitlement/live-control path.
+- Keyboard Extension.
+- Widget.
+
+### Not allowed
+
+- Arbitrary cross-app UI clicking.
+- Background screen watching.
+- Reading Messages, Mail, Notes, Safari history, or other private app stores.
+- ChatGPT browser-session takeover.
+- Silent Shortcut creation or modification.
+
+## Product architecture
+
+Kairo is split so the user-facing app stays simple while safety, routing, permissions, and persistence live in testable core services.
+
+```text
+SwiftUI App
+  - Chat
+  - Memory Center
+  - Access / Skill Manager
+  - Settings
+  - Action Preview
+        |
+        v
+KairoBackendAPI
+  - Chat API
+  - Memory API
+  - Share Import API
+  - Recipe API
+  - Local Model API
+  - Skill API
+  - Settings / OAuth API
+  - Access API
+        |
+        v
+Agent Core
+  - Planner
+  - Memory retrieval
+  - Safety policy engine
+  - Capability registry
+  - Tool invocation planner
+  - Audit logger
+        |
+        v
+iOS System Surfaces
+  - App Intents / Shortcuts
+  - Share Extension
+  - EventKit
+  - UserNotifications
+  - Contacts.framework
+  - URL handoff
+```
+
+The core rule is simple: the model can propose, Kairo can preview, but writes and external handoffs require a user-visible confirmation path.
 
 ![Kairo Shortcut recipes](Assets/github-shortcut-recipes.svg)
-
-## Brand assets
-
-<img src="Assets/kairo-app-icon.svg" alt="Kairo app icon source" width="140">
-
-- App icon source: [Assets/kairo-app-icon.svg](Assets/kairo-app-icon.svg)
-- GitHub cover / social preview source: [Assets/github-readme-cover.svg](Assets/github-readme-cover.svg)
-- Capability overview: [Assets/github-capability-board.svg](Assets/github-capability-board.svg)
-- Shortcut recipes overview: [Assets/github-shortcut-recipes.svg](Assets/github-shortcut-recipes.svg)
 
 ## Repository layout
 
 ```text
 kairo/
-├── Assets/                         # Open-source SVG logo, icon, and GitHub visual assets
+├── Assets/                         # SVG logo, icon, cover, and README visuals
 ├── Config/                         # Info.plist and purpose-string notes
 ├── Kairo/
 │   ├── App/                        # SwiftUI app entry point
-│   ├── Extensions/ShareExtension/  # Share ingestion scaffold
-│   ├── Intents/                    # App Intents scaffold
+│   ├── Extensions/ShareExtension/  # Share ingestion
+│   ├── Intents/                    # App Intents
 │   ├── Models/                     # Agent, chat, attachment, memory models
 │   ├── Resources/                  # Privacy manifest
 │   ├── Services/                   # Stores, providers, permissions, actions
 │   └── Views/                      # SwiftUI screens and components
 ├── Tests/                          # Swift Package tests
-├── Website/                        # Static marketplace seed for standalone skill repo hosting
+├── Website/                        # Static skill/model catalog seeds
 ├── docs/                           # Product, architecture, safety, release docs
 ├── Package.swift
 └── project.yml                     # XcodeGen project scaffold
@@ -125,25 +249,26 @@ kairo/
 
 ## Quick start
 
+Run the package tests:
+
 ```bash
 swift test
 ```
 
-Optional Xcode project generation:
+Generate the Xcode project:
 
 ```bash
 xcodegen generate
 ```
 
-The package is intentionally dependency-free. The iOS app target is described in `project.yml`; the core logic stays in `KairoCore` so it can be tested without an iOS simulator.
+The package is intentionally dependency-light. Core logic lives in `KairoCore` so safety and lifecycle behavior can be tested without relying on a simulator for every change.
 
-## Product roadmap
+## Roadmap priorities
 
-1. Finish real-device beta sign-off before release: Chat / Memory / Access / Settings, Share Extension import, App Intents Ask/Save/Search, restart persistence, notification/reminder/calendar previews, and email/message/phone/web/maps handoffs.
-2. Publish production signed catalogs and public trust material for `kairo-skills` and the planned `kairo-models`; app-repo catalog seeds are reference-only until then.
+1. Finish real-device beta sign-off before release for Chat, Memory, Access, Settings, Share Extension import, App Intents Ask/Save/Search, restart persistence, notification/reminder/calendar previews, and email/message/phone/web/maps handoffs.
+2. Publish production signed catalogs and public trust material for `kairo-skills` and the planned `kairo-models`.
 3. Keep iOS production local inference marked Planned until an App Store-compatible runtime is implemented and verified on physical devices.
-4. Keep App Review/privacy copy aligned with the current no-backend-account, no-collection/no-tracking, on-device deletion scope.
-5. Defer Keyboard Extension, Widget, real HomeKit entitlement/live-control path, and additional OAuth providers until stabilization blockers are closed.
+4. Keep Keyboard Extension, Widget, real HomeKit live control, and additional OAuth providers deferred until stabilization blockers are closed.
 
 ## Documentation
 
@@ -157,6 +282,15 @@ The package is intentionally dependency-free. The iOS app target is described in
 - [Skill management](docs/SKILL_MANAGEMENT.md)
 - [App Store readiness](docs/APP_STORE_READINESS.md)
 - [Roadmap](docs/ROADMAP.md)
+
+## Brand assets
+
+<img src="Assets/kairo-app-icon.svg" alt="Kairo app icon source" width="140">
+
+- App icon source: [Assets/kairo-app-icon.svg](Assets/kairo-app-icon.svg)
+- GitHub cover / social preview source: [Assets/github-readme-cover.svg](Assets/github-readme-cover.svg)
+- Capability overview: [Assets/github-capability-board.svg](Assets/github-capability-board.svg)
+- Shortcut recipes overview: [Assets/github-shortcut-recipes.svg](Assets/github-shortcut-recipes.svg)
 
 ## License
 
