@@ -44,26 +44,26 @@ public enum ProviderRoutePreference: String, Codable, Equatable, Sendable {
     public var settingsTitle: String {
         switch self {
         case .automatic:
-            return "Automatic"
+            return KairoL10n.string("settings.route.automatic.title")
         case .preferLocal:
-            return "Prefer Local"
+            return KairoL10n.string("settings.route.preferLocal.title")
         case .preferCloud:
-            return "Prefer Cloud"
+            return KairoL10n.string("settings.route.preferCloud.title")
         case .localOnly:
-            return "Local Only"
+            return KairoL10n.string("settings.route.localOnly.title")
         }
     }
 
     public var settingsDetailText: String {
         switch self {
         case .automatic:
-            return "Routes eligible private/offline work locally when policy requires it."
+            return KairoL10n.string("settings.route.automatic.detail")
         case .preferLocal:
-            return "Uses the selected local model for eligible low-risk work when installed."
+            return KairoL10n.string("settings.route.preferLocal.detail")
         case .preferCloud:
-            return "Uses the cloud provider when network access is available."
+            return KairoL10n.string("settings.route.preferCloud.detail")
         case .localOnly:
-            return "Never routes prompts to cloud providers; unsupported local tasks fail closed."
+            return KairoL10n.string("settings.route.localOnly.detail")
         }
     }
 }

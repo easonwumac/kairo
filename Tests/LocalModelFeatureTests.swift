@@ -780,12 +780,12 @@ final class LocalModelFeatureTests: XCTestCase {
             .preferCloud,
             .localOnly
         ])
-        XCTAssertEqual(ProviderRoutePreference.automatic.settingsTitle, "Automatic")
-        XCTAssertEqual(ProviderRoutePreference.preferLocal.settingsTitle, "Prefer Local")
-        XCTAssertEqual(ProviderRoutePreference.preferCloud.settingsTitle, "Prefer Cloud")
-        XCTAssertEqual(ProviderRoutePreference.localOnly.settingsTitle, "Local Only")
-        XCTAssertTrue(ProviderRoutePreference.localOnly.settingsDetailText.contains("Never routes"))
-        XCTAssertTrue(ProviderRoutePreference.preferLocal.settingsDetailText.contains("eligible"))
+        XCTAssertEqual(ProviderRoutePreference.automatic.settingsTitle, KairoL10n.string("settings.route.automatic.title"))
+        XCTAssertEqual(ProviderRoutePreference.preferLocal.settingsTitle, KairoL10n.string("settings.route.preferLocal.title"))
+        XCTAssertEqual(ProviderRoutePreference.preferCloud.settingsTitle, KairoL10n.string("settings.route.preferCloud.title"))
+        XCTAssertEqual(ProviderRoutePreference.localOnly.settingsTitle, KairoL10n.string("settings.route.localOnly.title"))
+        XCTAssertEqual(ProviderRoutePreference.localOnly.settingsDetailText, KairoL10n.string("settings.route.localOnly.detail"))
+        XCTAssertEqual(ProviderRoutePreference.preferLocal.settingsDetailText, KairoL10n.string("settings.route.preferLocal.detail"))
     }
 
     func testChatProviderRouteStatusBuilderExplainsSelectedLocalModelAndWarnings() async throws {
@@ -1409,9 +1409,9 @@ final class LocalModelFeatureTests: XCTestCase {
         let downloadableRow = try XCTUnwrap(rows.first { $0.modelID == downloadableManifest.id })
 
         XCTAssertEqual(rows.map(\.modelID), [selectedManifest.id, downloadableManifest.id])
-        XCTAssertEqual(selectedRow.statusText, "已選用")
+        XCTAssertEqual(selectedRow.statusText, KairoL10n.string("settings.models.status.selected"))
         XCTAssertEqual(selectedRow.primaryAction, .selected)
-        XCTAssertEqual(downloadableRow.statusText, "可下載")
+        XCTAssertEqual(downloadableRow.statusText, KairoL10n.string("settings.models.status.downloadable"))
         XCTAssertEqual(downloadableRow.primaryAction, .download)
         XCTAssertTrue(selectedRow.canDelete)
         XCTAssertFalse(downloadableRow.canDelete)

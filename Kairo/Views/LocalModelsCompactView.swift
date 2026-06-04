@@ -24,11 +24,11 @@ struct LocalModelsCompactView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Local Models")
+                    Text(KairoL10n.string("settings.models.section"))
                         .font(compactSectionTitleFont)
                         .accessibilityIdentifier("settings.models.local")
 
-                    Text("Starter list: Qwen-first, then a few popular small models from kairo-models.")
+                    Text(KairoL10n.string("settings.models.compact.subtitle"))
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -40,7 +40,7 @@ struct LocalModelsCompactView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     if visibleModelRows.isEmpty {
-                        Text("尚未載入 local model catalog。")
+                        Text(KairoL10n.string("settings.models.emptyCatalog"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -87,7 +87,7 @@ struct LocalModelsCompactView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Route Preference")
+                    Text(KairoL10n.string("settings.models.routePreference"))
                         .font(compactSectionHeadingFont)
 
                     Text(localModelStatus.preference.settingsDetailText)
@@ -105,7 +105,7 @@ struct LocalModelsCompactView: View {
 
             HStack(alignment: .center, spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Catalog")
+                    Text(KairoL10n.string("settings.models.catalog"))
                         .font(compactSectionHeadingFont)
 
                     Text(localModelCatalogSourceText)
@@ -118,13 +118,13 @@ struct LocalModelsCompactView: View {
                 Spacer(minLength: 10)
 
                 compactActionButton(
-                    "Refresh",
+                    KairoL10n.string("settings.models.refresh"),
                     systemImage: "arrow.clockwise",
                     accessibilityIdentifier: "settings.models.refresh-catalog",
                     tint: .blue,
                     action: refreshLocalModelCatalog
                 )
-                .accessibilityLabel("Refresh Catalog")
+                .accessibilityLabel(KairoL10n.string("settings.models.refreshCatalog"))
             }
         }
         .padding(8)
@@ -145,7 +145,7 @@ struct LocalModelsCompactView: View {
                 .foregroundStyle(selectedModelSummaryIconColor)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Selected model")
+                Text(KairoL10n.string("settings.models.compact.selectedModel"))
                     .font(compactModelMetadataFont)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
@@ -172,12 +172,12 @@ struct LocalModelsCompactView: View {
 
     private var selectedModelSummaryText: String {
         if localModelStatus.localModelInstalled, let selectedModel = localModelStatus.selectedModel {
-            return "\(selectedModel.displayName) is active for eligible local tasks."
+            return KairoL10n.string("settings.models.compact.activeForLocalTasks", selectedModel.displayName)
         }
         if let downloadedModel {
-            return "\(downloadedModel.displayName) is downloaded. Select it to use local routing."
+            return KairoL10n.string("settings.models.compact.downloadedSelectForRouting", downloadedModel.displayName)
         }
-        return "No downloaded model selected yet."
+        return KairoL10n.string("settings.models.compact.noDownloadedModel")
     }
 
     private var selectedModelSummaryIconName: String {
@@ -218,7 +218,7 @@ struct LocalModelsCompactView: View {
     }
 
     private var trimmedModelSummaryText: String {
-        "Showing \(visibleModelRows.count) starter models only. More downloadable models stay in kairo-models."
+        KairoL10n.string("settings.models.compact.trimmed", Int64(visibleModelRows.count))
     }
 
     private var compactRoutePreferenceMenu: some View {
@@ -246,7 +246,7 @@ struct LocalModelsCompactView: View {
             .background(Color.blue.opacity(0.06), in: Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Route Preference")
+        .accessibilityLabel(KairoL10n.string("settings.models.routePreference"))
         .accessibilityIdentifier("settings.models.preference")
     }
 
@@ -300,7 +300,7 @@ struct LocalModelsCompactView: View {
 
                 if row.benchmarkSummaryText != nil {
                     compactActionButton(
-                        "Speed",
+                        KairoL10n.string("settings.models.speed"),
                         systemImage: "speedometer",
                         accessibilityIdentifier: "settings.models.\(row.modelID).benchmark-run",
                         tint: .blue
@@ -310,7 +310,7 @@ struct LocalModelsCompactView: View {
                 }
 
                 compactActionButton(
-                    "Reply",
+                    KairoL10n.string("settings.models.reply"),
                     systemImage: "text.bubble",
                     accessibilityIdentifier: "settings.models.\(row.modelID).reply-check",
                     tint: .blue
@@ -320,7 +320,7 @@ struct LocalModelsCompactView: View {
 
                 if row.canDelete {
                     compactActionButton(
-                        "Delete",
+                        KairoL10n.string("settings.models.delete"),
                         systemImage: "trash",
                         accessibilityIdentifier: "settings.models.\(row.modelID).delete",
                         tint: .red,
@@ -432,7 +432,7 @@ struct LocalModelsCompactView: View {
 
     private func downloadPreview(for row: LocalModelSettingsRow) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Download requires explicit approval.")
+            Text(KairoL10n.string("settings.models.download.approvalRequired"))
                 .font(compactModelStatusFont)
                 .fontWeight(.semibold)
 
@@ -464,7 +464,7 @@ struct LocalModelsCompactView: View {
 
             HStack(spacing: 6) {
                 compactActionButton(
-                    "Confirm Download",
+                    KairoL10n.string("settings.models.download.confirm"),
                     systemImage: "checkmark.circle",
                     accessibilityIdentifier: "settings.models.\(row.modelID).download-confirm",
                     tint: .blue
@@ -474,7 +474,7 @@ struct LocalModelsCompactView: View {
                 }
 
                 compactActionButton(
-                    "Cancel",
+                    KairoL10n.string("settings.models.download.cancel"),
                     systemImage: "xmark.circle",
                     accessibilityIdentifier: "settings.models.\(row.modelID).download-cancel",
                     tint: .secondary
@@ -510,14 +510,14 @@ struct LocalModelsCompactView: View {
 
             if progress.allowsCancellation {
                 HStack(spacing: 6) {
-                    Text("Keep this screen open while Kairo downloads, verifies checksum, and can clean up if the task is cancelled.")
+                    Text(KairoL10n.string("settings.models.download.keepOpen"))
                         .font(compactModelMetadataFont)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                         .accessibilityIdentifier("settings.models.\(progress.modelID).download-cancel-note")
 
                     compactActionButton(
-                        "Cancel Download",
+                        KairoL10n.string("settings.models.download.cancelActive"),
                         systemImage: "xmark.circle",
                         accessibilityIdentifier: "settings.models.\(progress.modelID).download-active-cancel",
                         tint: .secondary,

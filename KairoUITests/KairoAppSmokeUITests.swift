@@ -63,7 +63,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(anyElement("settings.form").waitForExistence(timeout: 5))
         let initialStatus = anyElement("settings.openai.api-key-status")
         XCTAssertTrue(initialStatus.waitForExistence(timeout: 5))
-        XCTAssertTrue(initialStatus.label.contains("未設定"), initialStatus.label)
+        XCTAssertTrue(initialStatus.label.contains("Not configured"), initialStatus.label)
         let field = anyElement("settings.openai.api-key-field")
         XCTAssertTrue(field.exists)
         field.tap()
@@ -72,22 +72,22 @@ final class KairoAppSmokeUITests: XCTestCase {
         let save = findButton("settings.openai.save-api-key", direction: .both, maxSwipes: 1)
         XCTAssertTrue(save.exists)
         save.tap()
-        XCTAssertTrue(findStaticText(containing: "已設定", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Configured", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
         let savedStatus = anyElement("settings.openai.api-key-status")
-        XCTAssertTrue(savedStatus.label.contains("已設定"), savedStatus.label)
+        XCTAssertTrue(savedStatus.label.contains("Configured"), savedStatus.label)
         let dryRun = findButton("settings.openai.dry-run-api-key", direction: .both, maxSwipes: 1)
         XCTAssertTrue(dryRun.exists)
         dryRun.tap()
         let dryRunMessage = findElement("settings.openai.status-message", direction: .both, maxSwipes: 1)
         XCTAssertTrue(dryRunMessage.waitForExistence(timeout: 5))
-        XCTAssertTrue(dryRunMessage.label.contains("OpenAI dry run 完成：ui-t...7890"), dryRunMessage.label)
-        XCTAssertTrue(dryRunMessage.label.contains("未送出網路請求"), dryRunMessage.label)
+        XCTAssertTrue(dryRunMessage.label.contains("OpenAI dry run completed: ui-t...7890"), dryRunMessage.label)
+        XCTAssertTrue(dryRunMessage.label.contains("no network request was sent"), dryRunMessage.label)
         let delete = findButton("settings.openai.delete-api-key", direction: .both, maxSwipes: 1)
         XCTAssertTrue(delete.exists)
         delete.tap()
-        XCTAssertTrue(findStaticText(containing: "未設定", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Not configured", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
         let deletedStatus = anyElement("settings.openai.api-key-status")
-        XCTAssertTrue(deletedStatus.label.contains("未設定"), deletedStatus.label)
+        XCTAssertTrue(deletedStatus.label.contains("Not configured"), deletedStatus.label)
     }
 
     func testMemoryCenterCanAddSearchAndDeleteMemory() throws {
@@ -224,7 +224,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         benchmarkButton.tap()
 
         XCTAssertTrue(findElement("settings.models.benchmark-message", direction: .both, maxSwipes: 2).exists)
-        XCTAssertTrue(findStaticText(containing: "請先下載 Qwen3.5 0.8B Q4_K_M 後再跑 benchmark。", direction: .both, maxSwipes: 2).exists)
+        XCTAssertTrue(findStaticText(containing: "Download Qwen3.5 0.8B Q4_K_M before running a benchmark.", direction: .both, maxSwipes: 2).exists)
     }
 
     func testSettingsRunsInstalledLocalModelReplyCheck() throws {

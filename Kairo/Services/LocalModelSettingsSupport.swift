@@ -18,11 +18,11 @@ public enum LocalModelDownloadPhase: String, Codable, Equatable, Sendable {
     public var statusPrefix: String {
         switch self {
         case .preparing:
-            return "準備下載"
+            return KairoL10n.string("settings.models.progress.preparing")
         case .downloading:
-            return "下載中"
+            return KairoL10n.string("settings.models.progress.downloading")
         case .verifying:
-            return "驗證中"
+            return KairoL10n.string("settings.models.progress.verifying")
         }
     }
 }
@@ -171,22 +171,22 @@ public struct LocalModelSettingsRow: Identifiable, Equatable, Sendable {
         self.installRecord = installRecord
 
         if isSelected {
-            self.statusText = "已選用"
+            self.statusText = KairoL10n.string("settings.models.status.selected")
             self.primaryAction = .selected
         } else if let installRecord {
             switch installRecord.status {
             case .installed:
-                self.statusText = "已安裝"
+                self.statusText = KairoL10n.string("settings.models.status.installed")
                 self.primaryAction = .select
             case .downloading:
-                self.statusText = "下載中"
+                self.statusText = KairoL10n.string("settings.models.status.downloading")
                 self.primaryAction = .unavailable
             case .failed:
-                self.statusText = "下載失敗"
+                self.statusText = KairoL10n.string("settings.models.status.failed")
                 self.primaryAction = .retryDownload
             }
         } else {
-            self.statusText = "可下載"
+            self.statusText = KairoL10n.string("settings.models.status.downloadable")
             self.primaryAction = .download
         }
     }

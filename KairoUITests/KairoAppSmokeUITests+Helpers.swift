@@ -116,7 +116,7 @@ extension KairoAppSmokeUITests {
         let localModelsToVerify = verifyAllLocalModels
             ? localModelExpectations
             : Array(localModelExpectations.prefix(2))
-        XCTAssertTrue(app.staticTexts["settings.models.\(localModelsToVerify[0].0).status"].label.contains("可下載"))
+        XCTAssertTrue(app.staticTexts["settings.models.\(localModelsToVerify[0].0).status"].label.contains("Downloadable"))
         XCTAssertTrue(app.buttons["settings.models.\(localModelsToVerify[0].0).download"].exists)
         for localModel in localModelsToVerify {
             verifyDownloadableLocalModel(

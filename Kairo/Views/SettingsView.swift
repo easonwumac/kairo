@@ -9,11 +9,11 @@ public enum SettingsViewMode: String, Sendable {
     var navigationTitle: String {
         switch self {
         case .all:
-            return "Settings"
+            return KairoL10n.string("settings.title.all")
         case .modelsOnly:
-            return "Models"
+            return KairoL10n.string("settings.title.models")
         case .shortcutDemosOnly:
-            return "Shortcut Demos"
+            return KairoL10n.string("settings.title.shortcutDemos")
         }
     }
 }
@@ -125,11 +125,11 @@ public struct SettingsView: View {
     private var settingsFormContent: some View {
         NavigationStack {
             Form {
-                Section("OpenAI") {
+                Section(KairoL10n.string("settings.openai.section")) {
                     HStack {
-                        Text("API Key")
+                        Text(KairoL10n.string("settings.openai.apiKey"))
                         Spacer()
-                        Text(hasAPIKey ? "已設定" : "未設定")
+                        Text(hasAPIKey ? KairoL10n.string("settings.openai.status.configured") : KairoL10n.string("settings.openai.status.notConfigured"))
                             .foregroundStyle(hasAPIKey ? .green : .secondary)
                             .accessibilityIdentifier("settings.openai.api-key-status")
                     }
@@ -139,20 +139,20 @@ public struct SettingsView: View {
                         .accessibilityIdentifier("settings.openai.api-key-field")
 
                     HStack {
-                        Button("Save API Key") {
+                        Button(KairoL10n.string("settings.openai.save")) {
                             saveAPIKey()
                         }
                         .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .accessibilityIdentifier("settings.openai.save-api-key")
 
-                        Button("Dry Run") {
+                        Button(KairoL10n.string("settings.openai.dryRun")) {
                             dryRunAPIKey()
                         }
                         .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasAPIKey)
                         .accessibilityIdentifier("settings.openai.dry-run-api-key")
                     }
 
-                    Button("Delete API Key", role: .destructive) {
+                    Button(KairoL10n.string("settings.openai.delete"), role: .destructive) {
                         deleteAPIKey()
                     }
                     .disabled(!hasAPIKey)
@@ -180,12 +180,12 @@ public struct SettingsView: View {
                 }
                 .accessibilityIdentifier("settings.oauth.connectors")
 
-                Section("Local Models") {
+                Section(KairoL10n.string("settings.models.section")) {
                     localModelPreferencePicker()
                     localModelCatalogControls()
 
                     if localModelStatus.settingsRows.isEmpty {
-                        Text("尚未載入 local model catalog。")
+                        Text(KairoL10n.string("settings.models.emptyCatalog"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -359,7 +359,7 @@ public struct SettingsView: View {
     @ViewBuilder
     private func localModelPreferencePicker() -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Picker("Route Preference", selection: Binding(
+            Picker(KairoL10n.string("settings.models.routePreference"), selection: Binding(
                 get: { localModelStatus.preference },
                 set: { preference in
                     setLocalModelPreference(preference)
@@ -385,13 +385,13 @@ public struct SettingsView: View {
     private func localModelCatalogControls() -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("Catalog")
+                Text(KairoL10n.string("settings.models.catalog"))
                     .font(.subheadline)
                     .fontWeight(.medium)
 
                 Spacer()
 
-                Button("Refresh Catalog") {
+                Button(KairoL10n.string("settings.models.refreshCatalog")) {
                     refreshLocalModelCatalog()
                 }
                 .accessibilityIdentifier("settings.models.refresh-catalog")
@@ -438,7 +438,7 @@ public struct SettingsView: View {
                     localModelAction(for: row)
 
                     if row.benchmarkSummaryText != nil {
-                        Button("Run Benchmark") {
+                        Button(KairoL10n.string("settings.models.runBenchmark")) {
                             runLocalModelBenchmark(row)
                         }
                         .font(.caption2)
@@ -449,7 +449,7 @@ public struct SettingsView: View {
                 }
 
                 HStack(spacing: 10) {
-                    Button("Run Reply Check") {
+                    Button(KairoL10n.string("settings.models.runReplyCheck")) {
                         runLocalModelReplyCheck(row)
                     }
                     .font(.caption2)
@@ -458,7 +458,7 @@ public struct SettingsView: View {
                     .accessibilityIdentifier("settings.models.\(row.modelID).reply-check")
 
                     if row.canDelete {
-                        Button("Delete", role: .destructive) {
+                        Button(KairoL10n.string("settings.models.delete"), role: .destructive) {
                             deleteLocalModel(row)
                         }
                         .font(.caption2)
@@ -528,12 +528,12 @@ public struct SettingsView: View {
                 try await settingsService.saveAPIKey(apiKey)
                 await MainActor.run {
                     apiKey = ""
-                    statusMessage = "OpenAI API key 已儲存。"
+                    statusMessage = KairoL10n.string("settings.openai.saved")
                 }
                 await reloadStatus()
             } catch {
                 await MainActor.run {
-                    statusMessage = "儲存失敗：\(error.localizedDescription)"
+                    statusMessage = KairoL10n.string("settings.openai.saveFailed", error.localizedDescription)
                 }
             }
         }
@@ -544,12 +544,12 @@ public struct SettingsView: View {
             do {
                 try await settingsService.deleteAPIKey()
                 await MainActor.run {
-                    statusMessage = "OpenAI API key 已刪除。"
+                    statusMessage = KairoL10n.string("settings.openai.deleted")
                 }
                 await reloadStatus()
             } catch {
                 await MainActor.run {
-                    statusMessage = "刪除失敗：\(error.localizedDescription)"
+                    statusMessage = KairoL10n.string("settings.openai.deleteFailed", error.localizedDescription)
                 }
             }
         }
@@ -561,11 +561,11 @@ public struct SettingsView: View {
                 let input = apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : apiKey
                 let result = try await settingsService.dryRunAPIKey(input)
                 await MainActor.run {
-                    statusMessage = "OpenAI dry run 完成：\(result.redactedKey) · 未送出網路請求。"
+                    statusMessage = KairoL10n.string("settings.openai.dryRunSuccess", result.redactedKey)
                 }
             } catch {
                 await MainActor.run {
-                    statusMessage = "Dry run 失敗：\(error.localizedDescription)"
+                    statusMessage = KairoL10n.string("settings.openai.dryRunFailed", error.localizedDescription)
                 }
             }
         }
@@ -654,7 +654,7 @@ public struct SettingsView: View {
             guard let localModelSettingsService else {
                 await MainActor.run {
                     localModelStatusMessageModelID = nil
-                    localModelStatusMessage = "尚未設定 local model settings service。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
                 }
                 return
             }
@@ -664,13 +664,13 @@ public struct SettingsView: View {
                 await MainActor.run {
                     localModelStatus.preference = preference
                     localModelStatusMessageModelID = nil
-                    localModelStatusMessage = "\(preference.settingsTitle) routing 已儲存。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.preferenceSaved", preference.settingsTitle)
                 }
                 await reloadLocalModelStatus()
             } catch {
                 await MainActor.run {
                     localModelStatusMessageModelID = nil
-                    localModelStatusMessage = "路由偏好儲存失敗：\(error.localizedDescription)"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.preferenceFailed", error.localizedDescription)
                 }
             }
         }
@@ -679,19 +679,19 @@ public struct SettingsView: View {
     private func downloadLocalModel(_ row: LocalModelSettingsRow) {
         if let progress = localModelDownloadProgress {
             localModelStatusMessageModelID = progress.modelID
-            localModelStatusMessage = "已有模型下載進行中，請先完成或取消目前下載。"
+            localModelStatusMessage = KairoL10n.string("settings.models.message.downloadInProgress")
             return
         }
 
         guard localModelSettingsService != nil else {
             localModelStatusMessageModelID = row.modelID
-            localModelStatusMessage = "尚未設定 local model settings service。"
+            localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
             return
         }
 
         guard let localModelDownloader else {
             localModelStatusMessageModelID = row.modelID
-            localModelStatusMessage = "尚未設定 local model downloader。"
+            localModelStatusMessage = KairoL10n.string("settings.models.message.downloaderMissing")
             return
         }
 
@@ -699,7 +699,7 @@ public struct SettingsView: View {
             do {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "正在下載 \(row.displayName)。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.downloading", row.displayName)
                     localModelDownloadProgress = LocalModelDownloadProgressState(
                         modelID: row.modelID,
                         fractionCompleted: 0.05
@@ -713,13 +713,13 @@ public struct SettingsView: View {
                         )
                     }
                 }
-                await MainActor.run { finishLocalModelDownload(row, message: "\(row.displayName) 已下載，可選用。") }
+                await MainActor.run { finishLocalModelDownload(row, message: KairoL10n.string("settings.models.message.downloaded", row.displayName)) }
                 await reloadLocalModelStatus()
             } catch LocalModelDownloadError.cancelled {
-                await MainActor.run { finishLocalModelDownload(row, message: "\(row.displayName) 下載已取消，partial state 已清理。") }
+                await MainActor.run { finishLocalModelDownload(row, message: KairoL10n.string("settings.models.message.downloadCancelled", row.displayName)) }
                 await reloadLocalModelStatus()
             } catch {
-                await MainActor.run { finishLocalModelDownload(row, message: "下載失敗：\(error.localizedDescription)") }
+                await MainActor.run { finishLocalModelDownload(row, message: KairoL10n.string("settings.models.message.downloadFailed", error.localizedDescription)) }
                 await reloadLocalModelStatus()
             }
         }
@@ -729,7 +729,7 @@ public struct SettingsView: View {
     private func cancelLocalModelDownload(_ row: LocalModelSettingsRow) {
         localModelDownloadTask?.cancel()
         localModelStatusMessageModelID = row.modelID
-        localModelStatusMessage = "正在取消 \(row.displayName) 下載。"
+        localModelStatusMessage = KairoL10n.string("settings.models.message.cancellingDownload", row.displayName)
     }
 
     private func finishLocalModelDownload(_ row: LocalModelSettingsRow, message: String) {
@@ -744,7 +744,7 @@ public struct SettingsView: View {
             guard let localModelSettingsService else {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "尚未設定 local model settings service。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
                 }
                 return
             }
@@ -756,13 +756,13 @@ public struct SettingsView: View {
                 )
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "\(row.displayName) 已選用。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.selected", row.displayName)
                 }
                 await reloadLocalModelStatus()
             } catch {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "選用失敗：\(error.localizedDescription)"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.selectFailed", error.localizedDescription)
                 }
             }
         }
@@ -773,7 +773,7 @@ public struct SettingsView: View {
             guard let localModelBenchmarkService else {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "尚未設定 local model benchmark service。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkServiceMissing")
                 }
                 return
             }
@@ -781,7 +781,7 @@ public struct SettingsView: View {
             do {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "正在 benchmark \(row.displayName)。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkRunning", row.displayName)
                 }
                 let result = try await localModelBenchmarkService.runBenchmark(
                     modelID: row.modelID,
@@ -789,24 +789,24 @@ public struct SettingsView: View {
                 )
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "\(row.displayName) benchmark：\(result.summaryText)。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkResult", row.displayName, result.summaryText)
                 }
             } catch let error as LocalModelBenchmarkError {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
                     switch error {
                     case .modelNotInstalled:
-                        localModelStatusMessage = "請先下載 \(row.displayName) 後再跑 benchmark。"
+                        localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkNeedsDownload", row.displayName)
                     case let .modelUnavailable(modelID):
-                        localModelStatusMessage = "benchmark 模型不可用：\(modelID)。"
+                        localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkModelUnavailable", modelID)
                     case let .runtimeUnavailable(reason):
-                        localModelStatusMessage = "本機 benchmark runtime 尚未接上：\(reason)"
+                        localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkRuntimeUnavailable", reason)
                     }
                 }
             } catch {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "benchmark 失敗：\(error.localizedDescription)"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkFailed", error.localizedDescription)
                 }
             }
         }
@@ -817,7 +817,7 @@ public struct SettingsView: View {
             guard let localModelReplyCheckService else {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "尚未設定 local model reply check service。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckServiceMissing")
                 }
                 return
             }
@@ -825,7 +825,7 @@ public struct SettingsView: View {
             do {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "正在產生 \(row.displayName) local reply。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckRunning", row.displayName)
                 }
                 let result = try await localModelReplyCheckService.runReplyCheck(
                     modelID: row.modelID,
@@ -833,24 +833,24 @@ public struct SettingsView: View {
                 )
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "\(row.displayName) reply check：\(result.summaryText)。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckResult", row.displayName, result.summaryText)
                 }
             } catch let error as LocalModelReplyCheckError {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
                     switch error {
                     case .modelNotInstalled:
-                        localModelStatusMessage = "請先下載 \(row.displayName) 後再跑 reply check。"
+                        localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckNeedsDownload", row.displayName)
                     case let .modelUnavailable(modelID):
-                        localModelStatusMessage = "reply check 模型不可用：\(modelID)。"
+                        localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckModelUnavailable", modelID)
                     case let .runtimeUnavailable(reason):
-                        localModelStatusMessage = "本機 reply runtime 尚未接上：\(reason)"
+                        localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckRuntimeUnavailable", reason)
                     }
                 }
             } catch {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "reply check 失敗：\(error.localizedDescription)"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.replyCheckFailed", error.localizedDescription)
                 }
             }
         }
@@ -861,7 +861,7 @@ public struct SettingsView: View {
             guard let localModelSettingsService else {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "尚未設定 local model settings service。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
                 }
                 return
             }
@@ -870,13 +870,13 @@ public struct SettingsView: View {
                 try await localModelSettingsService.deleteModel(id: row.modelID)
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "\(row.displayName) 已刪除。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.deleted", row.displayName)
                 }
                 await reloadLocalModelStatus()
             } catch {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
-                    localModelStatusMessage = "刪除模型失敗：\(error.localizedDescription)"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.deleteFailed", error.localizedDescription)
                 }
             }
         }
@@ -887,7 +887,7 @@ public struct SettingsView: View {
             guard let localModelCatalogService else {
                 await MainActor.run {
                     localModelStatusMessageModelID = nil
-                    localModelStatusMessage = "使用內建 local model catalog。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.usingBuiltInCatalog")
                 }
                 return
             }
@@ -895,7 +895,7 @@ public struct SettingsView: View {
             do {
                 await MainActor.run {
                     localModelStatusMessageModelID = nil
-                    localModelStatusMessage = "正在刷新 model catalog。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.refreshingCatalog")
                 }
                 let mergedCatalog = try await localModelCatalogService.fetchMergedCatalog(with: localModelCatalog)
                 if let localModelSettingsService {
@@ -913,13 +913,13 @@ public struct SettingsView: View {
                     let count = mergedCatalog.availableModels(
                         minimumSafetyPolicyVersion: mergedCatalog.minimumSafetyPolicyVersion
                     ).count
-                    localModelStatusMessage = "已刷新 model catalog：\(count) 個可用模型。"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.catalogRefreshed", Int64(count))
                 }
                 await reloadLocalModelStatus()
             } catch {
                 await MainActor.run {
                     localModelStatusMessageModelID = nil
-                    localModelStatusMessage = "刷新 model catalog 失敗：\(error.localizedDescription)"
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.catalogRefreshFailed", error.localizedDescription)
                 }
             }
         }
@@ -939,7 +939,7 @@ public struct SettingsView: View {
             }
         } catch {
             await MainActor.run {
-                statusMessage = "讀取設定失敗：\(error.localizedDescription)"
+                statusMessage = KairoL10n.string("settings.openai.loadFailed", error.localizedDescription)
             }
         }
     }
@@ -966,13 +966,13 @@ public struct SettingsView: View {
                     if !cleanedModelIDs.isEmpty {
                         await MainActor.run {
                             localModelStatusMessageModelID = nil
-                            localModelStatusMessage = "已清理未完成的 local model download state。"
+                            localModelStatusMessage = KairoL10n.string("settings.models.message.cleanedStaleDownload")
                         }
                     }
                 } catch {
                     await MainActor.run {
                         localModelStatusMessageModelID = nil
-                        localModelStatusMessage = "清理未完成 local model download state 失敗：\(error.localizedDescription)"
+                        localModelStatusMessage = KairoL10n.string("settings.models.message.cleanStaleDownloadFailed", error.localizedDescription)
                     }
                 }
             }
@@ -1009,7 +1009,7 @@ public struct SettingsView: View {
     }
 
     private var localModelCatalogSourceText: String {
-        localModelCatalog.sourceRepository?.absoluteString ?? "Built-in Kairo model catalog"
+        localModelCatalog.sourceRepository?.absoluteString ?? KairoL10n.string("settings.models.catalogBuiltIn")
     }
 
     private func statusColor(for readiness: OAuthConnectorLoginReadiness) -> Color {
