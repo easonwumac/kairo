@@ -121,6 +121,15 @@ Stage 11 makes Memory records feel like usable context:
 - Delete remains the only destructive action, so the record list reads as
   context Kairo can use rather than metadata the user must decode.
 
+Stage 12 makes Workflows recipe-first:
+
+- Shortcut templates and node demo previews now live behind an Advanced
+  References disclosure instead of competing with saved recipes on first load.
+- The first-level Workflows path is now status, sample recipes, and saved
+  recipe review cards.
+- The Apple Shortcuts boundary remains visible as a short safety status in the
+  recipe center, not as a long setup explanation.
+
 ## Next UI stages
 
 1. Memory Center
@@ -132,8 +141,8 @@ Stage 11 makes Memory records feel like usable context:
      to scan without reading every metadata line.
 
 3. Workflows
-   - Continue tightening recipe rows after runtime smoke tests reveal the most
-     common workflow states.
+   - Continue tightening recipe row actions after runtime smoke tests reveal
+     the most common workflow states.
 
 4. AI Setup and Settings
    - Continue moving deep diagnostics behind explicit advanced affordances

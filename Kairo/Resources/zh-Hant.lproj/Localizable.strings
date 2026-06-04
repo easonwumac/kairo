@@ -198,7 +198,12 @@
 "automations.status.previews" = "%lld 個預覽";
 "automations.recipeCenter.section" = "範例流程";
 "automations.recipeCenter.detail" = "從 Kairo 自有流程開始；可先預覽，再決定是否啟用。";
+"automations.recipeCenter.boundary" = "Kairo internal recipe；不會建立 Apple Shortcuts。";
 "automations.recipeCenter.addSamples" = "加入範例 Recipes";
+"automations.advanced.section" = "進階參考";
+"automations.advanced.detail" = "需要實作細節時，再查看 Shortcut handoff 與節點預覽。";
+"automations.advanced.show" = "顯示進階參考";
+"automations.advanced.hide" = "隱藏進階參考";
 "automations.shortcutTemplates.section" = "可見 Shortcut handoff";
 "automations.shortcutTemplates.detail" = "Template 維持明確操作：開啟、檢查、手動安裝。";
 "automations.shortcutTemplates.openTemplate" = "開啟 Template";

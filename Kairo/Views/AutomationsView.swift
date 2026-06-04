@@ -11,6 +11,7 @@ public struct AutomationsView: View {
     @State private var message: String?
     @State private var shortcutDemoPreviewMessages: [String: String] = [:]
     @State private var isLoading = false
+    @State private var showAdvancedWorkflowReferences = false
 
     public init(
         recipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
@@ -40,8 +41,7 @@ public struct AutomationsView: View {
                 workflowOverviewCard
                 recipeCenterCard
                 savedRecipesCard
-                shortcutTemplatesCard
-                shortcutDemoCard
+                advancedWorkflowReferenceCard
 
                 if let message {
                     statusCard(message)
@@ -110,6 +110,13 @@ public struct AutomationsView: View {
                     subtitle: KairoL10n.string("automations.recipeCenter.detail")
                 )
 
+                Label(KairoL10n.string("automations.recipeCenter.boundary"), systemImage: "checkmark.shield.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.green)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(KairoDesign.green.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
                 Button {
                     Task { await seedSampleRecipes() }
                 } label: {
@@ -151,41 +158,78 @@ public struct AutomationsView: View {
         .accessibilityIdentifier("automations.list")
     }
 
-    private var shortcutTemplatesCard: some View {
+    private var advancedWorkflowReferenceCard: some View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
-                automationSectionTitle(
-                    title: KairoL10n.string("automations.shortcutTemplates.section"),
-                    subtitle: KairoL10n.string("automations.shortcutTemplates.detail")
-                )
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showAdvancedWorkflowReferences.toggle()
+                    }
+                } label: {
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            automationSectionHeader(KairoL10n.string("automations.advanced.section"))
+                            Text(KairoL10n.string("automations.advanced.detail"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
 
-                Text(shortcutTemplateRegistry.manualInstallDisclaimer)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("automations.shortcut-template.disclaimer")
+                        Spacer(minLength: 8)
 
-                ForEach(shortcutTemplateRegistry.templates) { template in
-                    Divider()
-                    shortcutTemplateRow(template)
+                        Image(systemName: showAdvancedWorkflowReferences ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                            .frame(width: 36, height: 36)
+                            .background(KairoDesign.blue.opacity(0.10), in: Circle())
+                    }
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(showAdvancedWorkflowReferences ? KairoL10n.string("automations.advanced.hide") : KairoL10n.string("automations.advanced.show"))
+                .accessibilityIdentifier("automations.advanced.toggle")
+
+                if showAdvancedWorkflowReferences {
+                    Divider()
+                    shortcutTemplatesSection
+                    Divider()
+                    shortcutDemoSection
+                }
+            }
+        }
+        .accessibilityIdentifier("automations.advanced")
+    }
+
+    private var shortcutTemplatesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            automationSectionTitle(
+                title: KairoL10n.string("automations.shortcutTemplates.section"),
+                subtitle: KairoL10n.string("automations.shortcutTemplates.detail")
+            )
+
+            Text(shortcutTemplateRegistry.manualInstallDisclaimer)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("automations.shortcut-template.disclaimer")
+
+            ForEach(shortcutTemplateRegistry.templates) { template in
+                Divider()
+                shortcutTemplateRow(template)
             }
         }
         .accessibilityIdentifier("automations.shortcut-templates")
     }
 
-    private var shortcutDemoCard: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 12) {
-                automationSectionTitle(
-                    title: KairoL10n.string("automations.shortcutDemos.section"),
-                    subtitle: KairoL10n.string("automations.shortcutDemos.detail")
-                )
+    private var shortcutDemoSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            automationSectionTitle(
+                title: KairoL10n.string("automations.shortcutDemos.section"),
+                subtitle: KairoL10n.string("automations.shortcutDemos.detail")
+            )
 
-                ForEach(ShortcutDemoCatalog.default.recipes) { recipe in
-                    shortcutDemoRow(recipe)
-                    if recipe.id != ShortcutDemoCatalog.default.recipes.last?.id {
-                        Divider()
-                    }
+            ForEach(ShortcutDemoCatalog.default.recipes) { recipe in
+                shortcutDemoRow(recipe)
+                if recipe.id != ShortcutDemoCatalog.default.recipes.last?.id {
+                    Divider()
                 }
             }
         }

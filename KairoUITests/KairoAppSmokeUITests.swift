@@ -390,7 +390,10 @@ final class KairoAppSmokeUITests: XCTestCase {
     func testShortcutsSurfaceShowsNodeDemoContracts() throws {
         relaunchForUITesting(initialSection: "shortcuts")
 
-        XCTAssertTrue(findElement("automations.shortcut-demos", direction: .down).exists)
+        let advancedReferences = findButton(labeled: "Show advanced references", direction: .down, maxSwipes: 4)
+        XCTAssertTrue(advancedReferences.exists)
+        tapElement(advancedReferences)
+
         verifyShortcutDemoContract(
             namespace: "automations.shortcut-demo",
             id: "request-to-recipe-draft",
@@ -603,10 +606,13 @@ final class KairoAppSmokeUITests: XCTestCase {
     }
 
     func testAutomationsShowsShortcutTemplatesRequireUserApproval() throws {
-        assertPrimaryDrawerItemsExist()
-        selectDrawerSection(identifier: "root.drawer.shortcuts", label: "Shortcuts")
+        relaunchForUITesting(initialSection: "shortcuts")
 
-        XCTAssertTrue(findElement("automations.shortcut-templates", direction: .down, maxSwipes: 3).exists)
+        XCTAssertFalse(anyElement("automations.shortcut-templates").exists)
+        let advancedReferences = findButton(labeled: "Show advanced references", direction: .down, maxSwipes: 8)
+        XCTAssertTrue(advancedReferences.exists)
+        tapElement(advancedReferences)
+
         XCTAssertTrue(findStaticText(containing: "Apple Shortcuts installation requires user approval", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "Run Kairo Recipe Shortcut", direction: .down, maxSwipes: 8).exists)
         XCTAssertTrue(findStaticText(containing: "Run Kairo Recipe", direction: .both, maxSwipes: 2).exists)
