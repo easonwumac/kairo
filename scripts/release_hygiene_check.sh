@@ -12,6 +12,7 @@ Runs Kairo release hygiene checks:
   - App Review boundary scan
   - Share Extension action-free boundary scan
   - catalog publication boundary scan
+  - local model runtime boundary scan
   - focused secret scan
   - model artifact scan
   - optional GitHub Actions exact-HEAD gate with --require-ci
@@ -257,6 +258,64 @@ if failures:
     sys.exit(1)
 
 print("Catalog publication boundary scan passed.")
+
+PY
+
+echo
+echo "== local model runtime boundary scan =="
+python3 - <<'PY'
+import re
+import sys
+from pathlib import Path
+
+root = Path.cwd()
+failures = []
+
+environment_source = (root / "Kairo/Services/KairoEnvironment.swift").read_text(encoding="utf-8")
+reply_check_source = (root / "Kairo/Services/LocalModelReplyCheck.swift").read_text(encoding="utf-8")
+benchmark_source = (root / "Kairo/Services/LocalModelBenchmarking.swift").read_text(encoding="utf-8")
+
+if "#if os(macOS)" not in environment_source or "#else" not in environment_source:
+    failures.append("KairoEnvironment.live must keep macOS/dev local-model runtime wiring separated from iOS production wiring.")
+
+macos_block_match = re.search(r"#if os\(macOS\)(.*?)#else", environment_source, flags=re.S)
+ios_block_match = re.search(r"#else(.*?)#endif\s+let credentialStore", environment_source, flags=re.S)
+
+if not macos_block_match:
+    failures.append("KairoEnvironment.live is missing the macOS/dev local-model runtime block.")
+else:
+    macos_block = macos_block_match.group(1)
+    if "LocalModelExternalCommandRuntime" not in macos_block:
+        failures.append("macOS/dev local-model block should be the only live external command runtime path.")
+
+if not ios_block_match:
+    failures.append("KairoEnvironment.live is missing the non-macOS unavailable local-model runtime block.")
+else:
+    ios_block = ios_block_match.group(1)
+    forbidden_ios_runtime_tokens = [
+        "LocalModelExternalCommandRuntime",
+        "ProcessLocalModelCommandRunner",
+        "DeterministicLocalModelReplyCheckRuntime",
+        "DeterministicLocalModelBenchmarkEngine",
+        "runtime:",
+        "engine:",
+    ]
+    for token in forbidden_ios_runtime_tokens:
+        if token in ios_block:
+            failures.append(f"non-macOS live local-model path must stay unavailable and must not wire {token}.")
+
+if "runtime: any LocalModelReplyCheckRuntime = UnavailableLocalModelReplyCheckRuntime()" not in reply_check_source:
+    failures.append("LocalModelReplyCheckService default runtime must remain UnavailableLocalModelReplyCheckRuntime.")
+
+if "engine: any LocalModelBenchmarkEngine = UnavailableLocalModelBenchmarkEngine()" not in benchmark_source:
+    failures.append("LocalModelBenchmarkService default engine must remain UnavailableLocalModelBenchmarkEngine.")
+
+if failures:
+    for failure in failures:
+        print(f"- {failure}", file=sys.stderr)
+    sys.exit(1)
+
+print("Local model runtime boundary scan passed.")
 
 PY
 
