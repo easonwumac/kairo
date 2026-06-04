@@ -1,6 +1,6 @@
 # App Store Readiness
 
-Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App Store 允許的公開 API、使用者授權、App sandbox、App Intents、Shortcuts、Share Extension、通知、BackgroundTasks、官方 OAuth/API 整合與本機模型資產。
+Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App Store 允許的公開 API、使用者授權、App sandbox、App Intents、Shortcuts、Share Extension、通知、BackgroundTasks、官方 OAuth/API 整合與使用者觸發的本機模型 catalog/download 管理。
 
 ## Feature state for beta review
 
@@ -295,6 +295,7 @@ Submission-ready review note copy lives in `docs/APP_REVIEW_NOTES.md`; keep this
 - For the current beta, App Privacy Labels should remain no tracking and no collected data. The submitted binary has no analytics SDK, no backend account, no cloud memory sync, no crash/telemetry collection provider, and no provider-side sync beyond explicit user-configured API calls. If any of those are added later, the privacy labels and this review copy must be updated before submission.
 - Background tasks are bounded refresh/index/verify/cleanup jobs only. Kairo is not a daemon, does not watch the screen, and background work can be disabled by the user through iOS settings.
 - Any write or external action is previewed and requires explicit confirmation according to the app safety policy.
+- Email, Messages, Phone, Web, and Maps integrations are visible handoffs only. Kairo may prepare a reviewed draft or URL, then opens the corresponding system surface after user confirmation; it does not silently send email, send messages, place calls, browse web results, or start navigation.
 - Local model catalog/download/select/delete are present, but iOS production local inference is not complete. macOS/dev reply checks and benchmark numbers are not iPhone runtime proof.
 - HomeKit is limited to preview/demo/test scaffolding in this beta. Live HomeKit control requires a future entitlement, permission, provider, and real-device review pass.
 - Kairo does not create, edit, install, or reorder Apple Shortcuts silently. Users must configure Apple Shortcuts themselves; Kairo only exposes App Intents, internal Kairo recipes, and visible handoff metadata.

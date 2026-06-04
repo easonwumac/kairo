@@ -21,6 +21,8 @@ Background tasks are bounded refresh/index/verify/cleanup jobs only. Kairo is no
 
 Any write or external action is previewed and requires explicit confirmation according to the app safety policy.
 
+Email, Messages, Phone, Web, and Maps integrations are visible handoffs only. Kairo may prepare a reviewed draft or URL, then opens the corresponding system surface after user confirmation; it does not silently send email, send messages, place calls, browse web results, or start navigation.
+
 Local model catalog/download/select/delete are present, but iOS production local inference is not complete. macOS/dev reply checks and benchmark numbers are not iPhone runtime proof.
 
 HomeKit is limited to preview/demo/test scaffolding in this beta. Live HomeKit control requires a future entitlement, permission, provider, and real-device review pass.
