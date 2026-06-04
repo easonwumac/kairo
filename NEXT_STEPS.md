@@ -1,41 +1,61 @@
 # Next Steps
 
-Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut nodes, tabs, Keyboard, Widget, CarPlay, or extra OAuth providers before these release blockers are closed.
+Kairo is now scoped to the MVP Utility Gate. Only work that directly improves one of these user flows should be started.
 
-## Release-blocking gaps
+## Flow A: Share -> Kairo -> Tasks / Summary
 
-1. Real-device beta sign-off.
-   - Current `xcrun devicectl list devices` check on 2026-06-04 10:37 CST listed all available physical test devices as `unavailable`, so no real-device sign-off was completed in this pass.
-   - Re-run on a reachable physical iPhone or iPad: Chat / Memory / Access / Settings, Share Extension import, App Intents Ask / Save / Search, chat history restart persistence, local notification / reminder / calendar preview + confirm, and email / message / phone / web / maps handoff preview + confirm.
-   - Record physical-device results in `docs/REAL_DEVICE_BETA_SIGNOFF.md`.
-   - Write device results back to `docs/APP_STORE_READINESS.md`; do not substitute simulator or package tests for real-device evidence.
+Remaining gaps:
 
-2. Permission-denied and App Review final QA.
-   - Run real-device fallback checks for denied Calendar / Reminders / Notifications / Contacts permissions.
-   - Access permission status/request handling now has backend API coverage; keep device permission-denied fallback sign-off as real-device-only evidence.
-   - Memory lifecycle/export, Kairo-owned internal recipe lifecycle/run, Share Extension queue import, metadata-only audit log deletion, Settings credential/OAuth management, and Chat OpenAI provider request assembly now have backend API coverage; keep future deletion copy limited to on-device data unless a backend account exists.
-   - Privacy manifest no-collection/no-tracking, absence of HomeKit entitlement, purpose strings, and review-note claim boundaries must be checked through release hygiene and App Review QA; keep `docs/PRIVACY_LABELS_CHECKLIST.md` as an App Store handoff artifact, not as brittle Markdown copy-test coverage.
-   - Keep HomeKit live control out of beta claims until entitlement, permission copy, fallback UI, confirmation behavior, and real-device evidence are complete.
-   - Keep review notes from claiming iOS production local inference, real HomeKit live control, arbitrary cross-app reads/UI control, reuse of a user's ChatGPT browser session, or silent Apple Shortcuts creation.
+- Verify on simulator and then a real device that shared text, URL, PDF, and file metadata appear as pending shared content in the main app.
+- Confirm the user can send pending shared content into Chat without the Share Extension running inference or actions.
+- Confirm Chat can summarize shared content, extract tasks, and produce reminder, calendar, and email drafts.
+- Confirm every write or handoff from shared content uses preview plus explicit confirmation.
+- Confirm imported share queue items are cleared after the user sends them into Chat.
 
-3. Local model release hardening.
-   - Keep downloads explicitly user-triggered and continue blocking model weights, `.gguf`, tokenizer blobs, caches, and generated artifacts from the repo.
-   - Publish the production signed catalog and real release public-key material; app-side catalog payload signature verification now fails closed for unknown, revoked, pending-publication, out-of-window, unsupported, or invalid keys, default release keys remain `publicationStatus=pendingPublication`, and `docs/TRUST_STORE_RUNBOOK.md` plus `docs/CATALOG_RELEASE_CHECKLIST.md` define the publication and rotation/revocation gates.
-   - Settings now shows foreground download progress/cancel, cleans stale interrupted download state on status reload, requires an explicit license-approval preview before download confirmation, and local model management now has a backend API facade for status/select/preference/delete/stale cleanup.
-   - Qwen3.5 0.8B GGUF has host macOS `llama.cpp` CLI proof and app-internal iOS Simulator reply-check/Chat proof through embedded `llama.xcframework`; keep production iPhone inference marked `Planned` until real-device latency, memory, thermal, and packaging proof exists.
+Required evidence:
 
-4. Skill Manager / marketplace production hardening.
-   - Publish the production signed `skills.json` catalog and marketplace trust-store key material from the standalone repo; app-repo `Website/skills/skills.json` is only a `catalogSignatureStatus=referenceUnsigned` seed, `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` define rotation/revocation metadata and the publication gate, and app-side trust keys carry active/revoked metadata, `publicationStatus`, and validity windows.
-   - User-created skill drafts now require explicit capability selection and confirmation policy; keep this invariant covered.
-   - Skill Manager lifecycle now has a backend API facade for catalog/effective catalog/preview/install/disable/enable/remove/user drafts, including fail-closed behavior when the service is unavailable.
-   - Kairo-owned internal recipe lifecycle/run/sample seeding now has a backend API facade; keep the boundary clear that these are internal recipes and do not silently create Apple Shortcuts.
-   - Signed skill update and user-created remove flows now have simulator UI smoke coverage; keep these invariants covered without treating them as real-device sign-off.
-   - Preserve the invariant that compatibility-blocked skills never become executable tools.
+- Focused smoke coverage for text/URL/file metadata import into Chat.
+- Focused smoke coverage for shared text -> extracted task -> reminder preview -> confirm.
+- Real-device checklist entry when a reachable device is available.
 
-5. Release hygiene before each commit and submission.
-   - Run relevant tests, plus `swift test` before release handoff.
-   - Run `xcodegen generate` when `xcodegen` is available.
-   - Run a focused scan for secrets, tokens, credentials, model weights, tokenizer files, `.gguf`, caches, and generated build artifacts.
-   - Use `docs/RELEASE_HYGIENE.md` to verify local checks and confirm the latest `main` GitHub Actions `Swift Tests` run matches the submitted commit SHA.
-   - Use `docs/APP_STORE_SUBMISSION_CHECKLIST.md` as the final App Review handoff gate.
-   - Commit and push each completed, tested small stage.
+## Flow B: Chat + Memory -> Action Preview
+
+Remaining gaps:
+
+- Verify Chat uses saved memory context in normal chats and omits it in private chats.
+- Verify Chat can propose previewable actions for Reminder, Calendar, Notification, Contact, Email, Message, Phone, Web, and Maps.
+- Confirm every action can be cancelled before execution.
+- Confirm every supported write or handoff requires explicit confirmation before execution.
+- Confirm unsupported cross-app requests produce a clear safe alternative instead of pretending to control another app.
+- Confirm switching threads, deleting threads, creating a new chat, or toggling private chat clears transient action preview state.
+
+Required evidence:
+
+- Focused package or UI smoke coverage for Chat using memory context.
+- Focused package or UI smoke coverage for action preview -> cancel and preview -> confirm.
+- Real-device checklist entry for preview and confirmation when a reachable device is available.
+
+## Flow C: Daily Briefing / Recipe
+
+Remaining gaps:
+
+- Verify the user can run a Daily Briefing-style Kairo Recipe from the existing Recipe surface.
+- Confirm recipes only produce summaries, drafts, and suggested actions.
+- Confirm high-risk recipe steps do not execute automatically.
+- Confirm Shortcuts only invoke Kairo App Intents and do not silently create or modify Apple Shortcuts.
+
+Required evidence:
+
+- Focused smoke coverage for Daily Briefing / Recipe preview and run.
+- Focused package coverage that recipe output remains draft/suggested-action only.
+- Real-device checklist entry for recipe run and App Intent invocation when a reachable device is available.
+
+## Stop Conditions
+
+Do not start work in these categories unless it directly fixes a blocker in Flow A, Flow B, or Flow C:
+
+- Local model backend/API expansion.
+- Benchmark UI/API/runtime work.
+- New Shortcut nodes.
+- New Keyboard, Widget, CarPlay, HomeKit entitlement path, OAuth provider, app icon, brand assets, or release-hygiene scripts.
+- General copy polish, platformization, source-health work, or large refactors.
