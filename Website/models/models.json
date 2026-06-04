@@ -1,5 +1,6 @@
 {
   "generatedAt": "2026-06-02T00:00:00Z",
+  "catalogSignatureStatus": "referenceUnsigned",
   "minimumSafetyPolicyVersion": "2026.1",
   "models": [
     {

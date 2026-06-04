@@ -7,7 +7,7 @@ This checklist is the production handoff gate for standalone Kairo skill and mod
 - `easonwumac/kairo-skills` owns the production skill marketplace catalog, signed skill manifests, public trust-store metadata, changelogs, screenshots, compatibility metadata, and GitHub Pages hosting.
 - `easonwumac/kairo-models` owns the production model catalog metadata, public trust-store metadata, model manifest rows, rollout metadata, license metadata, and GitHub Pages hosting.
 - This app repo may keep reference seeds, tests, docs, and public trust metadata only.
-- `Website/skills/skills.json` in this app repo is an unsigned reference seed with `catalogSignatureStatus=referenceUnsigned`; it is not production signed catalog evidence.
+- `Website/skills/skills.json` and `Website/models/models.json` in this app repo are unsigned reference seeds with `catalogSignatureStatus=referenceUnsigned`; they are not production signed catalog evidence.
 - This app repo must not contain private signing keys, API tokens, generated credentials, model weights, tokenizer blobs, `.gguf`, `.safetensors`, `.onnx`, `.mlpackage`, `.mlmodelc`, or downloaded model caches.
 
 ## Skill Catalog Release Gate
