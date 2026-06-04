@@ -217,6 +217,38 @@ final class SourceHealthTests: XCTestCase {
         }
     }
 
+    func testAgentCoreActionPreviewCoverageLivesInFocusedTestFile() throws {
+        let root = packageRootURL()
+        let focusedTestsURL = root.appendingPathComponent("Tests/AgentCoreActionPreviewTests.swift")
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: focusedTestsURL.path),
+            "AgentCore action preview tests should live in a focused test file instead of the KairoCoreTests monolith."
+        )
+
+        let requiredFocusedTests = [
+            "testAgentCoreAddsDeterministicHomeKitPreviewAction",
+            "testAgentCoreReturnsShortcutToolCandidateWithoutActionExecution",
+            "testAgentCoreAddsDeterministicNotificationPreviewAction",
+            "testAgentCoreAddsDeterministicReminderPreviewAction",
+            "testAgentCoreAddsDeterministicCalendarPreviewAction",
+            "testAgentCoreAddsDeterministicContactPreviewAction",
+            "testAgentCoreAddsDeterministicEmailDraftPreviewAction",
+            "testAgentCoreAddsDeterministicMessagePreviewAction",
+            "testAgentCoreAddsDeterministicPhoneCallPreviewAction",
+            "testAgentCoreAddsDeterministicWebSearchPreviewAction"
+        ]
+        let focusedTests = try String(contentsOf: focusedTestsURL, encoding: .utf8)
+        for testName in requiredFocusedTests {
+            XCTAssertTrue(focusedTests.contains(testName), testName)
+        }
+        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 180)
+
+        let coreTests = try String(contentsOf: root.appendingPathComponent("Tests/KairoCoreTests.swift"))
+        for testName in requiredFocusedTests {
+            XCTAssertFalse(coreTests.contains(testName), testName)
+        }
+    }
+
     func testSandboxActionSupportStaysSplitAcrossFocusedFiles() throws {
         let root = packageRootURL()
         let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)
