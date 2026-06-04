@@ -48,6 +48,34 @@ final class AgentSkillFeatureTests: XCTestCase {
         XCTAssertEqual(homeKitSkill.compatibilityRequirements?.requiredEntitlements, ["com.apple.developer.homekit"])
     }
 
+    func testSkillMarketplaceReferenceSeedIsNotProductionSignedCatalogEvidence() throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let catalogURL = root.appendingPathComponent("Website/skills/skills.json")
+        let catalogData = try Data(contentsOf: catalogURL)
+        let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: catalogData) as? [String: Any])
+        let skills = try XCTUnwrap(catalog["skills"] as? [[String: Any]])
+
+        XCTAssertEqual(catalog["catalogSignatureStatus"] as? String, "referenceUnsigned")
+        XCTAssertEqual(catalog["sourceRepository"] as? String, "https://github.com/easonwumac/kairo-skills")
+        XCTAssertNil(catalog["signature"])
+        XCTAssertNil(catalog["publicKeyBase64"])
+        XCTAssertNil(catalog["publicationStatus"])
+        XCTAssertFalse(skills.isEmpty)
+
+        for entry in skills {
+            let manifestPath = try XCTUnwrap(entry["manifestURL"] as? String)
+            let manifestURL = root.appendingPathComponent("Website/skills/\(manifestPath)")
+            let manifestData = try Data(contentsOf: manifestURL)
+            let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: manifestData) as? [String: Any])
+            let signature = try XCTUnwrap(manifest["signature"] as? [String: Any])
+
+            XCTAssertEqual(signature["keyID"] as? String, "kairo-marketplace-2026")
+            XCTAssertEqual(signature["value"] as? String, "static-demo-signature")
+            XCTAssertNil(signature["publicKeyBase64"])
+            XCTAssertEqual(manifest["checksumAlgorithm"] as? String, "sha256")
+        }
+    }
+
     func testSkillMarketplaceManifestIsImportableBySkillManager() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let data = try Data(contentsOf: root.appendingPathComponent("Website/skills/skills.json"))
