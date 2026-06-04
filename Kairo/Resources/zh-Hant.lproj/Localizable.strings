@@ -112,6 +112,7 @@
 "access.skills.action.disable" = "停用";
 "access.skills.action.enable" = "啟用";
 "access.skills.action.remove" = "移除";
+"access.skills.action.details" = "細節";
 "access.skills.manifestPreview.noChangelog" = "沒有提供 changelog。";
 "access.skills.manifestPreview.confirmInstall" = "確認安裝";
 "access.skills.manifestPreview.versionUpdate" = "已安裝 %@ -> 即將安裝 %@";

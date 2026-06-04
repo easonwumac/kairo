@@ -715,6 +715,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         enableDraft.tap()
         XCTAssertTrue(findButton("access.skill.user-ui-created-skill.disable", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
 
+        openSkillDetailsIfNeeded(skillID: "user-ui-created-skill")
         let removeDraft = findButton("access.skill.user-ui-created-skill.remove", direction: .both, maxSwipes: 2)
         XCTAssertTrue(removeDraft.exists)
         removeDraft.tap()
@@ -747,6 +748,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         expandHomeKitPreviewDemos()
 
         XCTAssertTrue(findElement("access.skill.homekit-front-door-lock", direction: .down, maxSwipes: 8).exists)
+        openSkillDetailsIfNeeded(skillID: "homekit-front-door-lock")
         XCTAssertTrue(findButton("access.skill.homekit-front-door-lock.manage", direction: .both, maxSwipes: 6).exists)
         XCTAssertTrue(findElement("access.homekit.demo.front-door-lock", direction: .down, maxSwipes: 8).exists)
 

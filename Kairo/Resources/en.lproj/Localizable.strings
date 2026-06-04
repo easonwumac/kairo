@@ -112,6 +112,7 @@
 "access.skills.action.disable" = "Disable";
 "access.skills.action.enable" = "Enable";
 "access.skills.action.remove" = "Remove";
+"access.skills.action.details" = "Details";
 "access.skills.manifestPreview.noChangelog" = "No changelog provided.";
 "access.skills.manifestPreview.confirmInstall" = "Confirm Install";
 "access.skills.manifestPreview.versionUpdate" = "Installed %@ -> Incoming %@";

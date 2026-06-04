@@ -225,6 +225,16 @@ Stage 22 makes Settings support-first:
 - The cleanup toggle has a stable identifier so smoke coverage can verify the
   progressive control without asserting layout copy.
 
+Stage 23 makes Skill library rows action-first:
+
+- Skill rows now lead with the skill name, short summary, status, and the
+  current primary action instead of exposing every management control at once.
+- Management summary, Manage, and Remove now live behind a per-skill Details
+  disclosure so destructive or diagnostic controls do not compete with install,
+  enable, disable, or update.
+- Skill action buttons use an adaptive compact grid so longer labels can wrap
+  cleanly on phone widths instead of being squeezed into a single row.
+
 ## Next UI stages
 
 1. Memory Center

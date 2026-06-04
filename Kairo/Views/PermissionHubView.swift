@@ -16,6 +16,7 @@ public struct PermissionHubView: View {
     @State private var isDeveloperSkillSetupExpanded = false
     @State private var isHomeKitPreviewExpanded = false
     @State private var showMorePrimaryTools = false
+    @State private var expandedSkillDetails: Set<String> = []
     @State private var skillCatalog: AgentSkillCatalog
 
     private let registry = CapabilityRegistry()
@@ -784,28 +785,7 @@ public struct PermissionHubView: View {
                 )
             }
 
-            Label {
-                Text(skill.managementSummary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .accessibilityIdentifier("access.skill.\(skill.id).summary")
-            } icon: {
-                Image(systemName: "checklist.checked")
-                    .foregroundStyle(KairoDesign.teal)
-            }
-            .padding(10)
-            .background(KairoDesign.softSurface.opacity(0.45), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 8)], spacing: 8) {
-                skillActionButton(
-                    title: KairoL10n.string("access.skills.action.manage"),
-                    systemImage: "slider.horizontal.3",
-                    accessibilityIdentifier: "access.skill.\(skill.id).manage"
-                ) {
-                    skillManagerMessage = KairoL10n.string("access.skills.message.managementSummary", skill.displayName, skill.managementSummary)
-                }
-
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 128), spacing: 8)], spacing: 8) {
                 switch skill.installationStatus {
                 case .available:
                     skillActionButton(
@@ -851,14 +831,59 @@ public struct PermissionHubView: View {
                     }
                 }
 
-                skillActionButton(
-                    title: KairoL10n.string("access.skills.action.remove"),
-                    systemImage: "trash",
-                    role: .destructive,
-                    accessibilityIdentifier: "access.skill.\(skill.id).remove"
-                ) {
-                    Task {
-                        await removeSkill(skill)
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        toggleSkillDetails(skill.id)
+                    }
+                } label: {
+                    Label(
+                        KairoL10n.string("access.skills.action.details"),
+                        systemImage: isSkillDetailsExpanded(skill.id) ? "chevron.up.circle" : "chevron.down.circle"
+                    )
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .accessibilityIdentifier("access.skill.\(skill.id).details")
+            }
+
+            if isSkillDetailsExpanded(skill.id) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label {
+                        Text(skill.managementSummary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .accessibilityIdentifier("access.skill.\(skill.id).summary")
+                    } icon: {
+                        Image(systemName: "checklist.checked")
+                            .foregroundStyle(KairoDesign.teal)
+                    }
+                    .padding(10)
+                    .background(KairoDesign.softSurface.opacity(0.45), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                    HStack(spacing: 8) {
+                        skillActionButton(
+                            title: KairoL10n.string("access.skills.action.manage"),
+                            systemImage: "slider.horizontal.3",
+                            accessibilityIdentifier: "access.skill.\(skill.id).manage"
+                        ) {
+                            skillManagerMessage = KairoL10n.string("access.skills.message.managementSummary", skill.displayName, skill.managementSummary)
+                        }
+
+                        skillActionButton(
+                            title: KairoL10n.string("access.skills.action.remove"),
+                            systemImage: "trash",
+                            role: .destructive,
+                            accessibilityIdentifier: "access.skill.\(skill.id).remove"
+                        ) {
+                            Task {
+                                await removeSkill(skill)
+                            }
+                        }
                     }
                 }
             }
@@ -866,6 +891,18 @@ public struct PermissionHubView: View {
         .padding(.vertical, 8)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("access.skill.\(skill.id)")
+    }
+
+    private func isSkillDetailsExpanded(_ skillID: String) -> Bool {
+        expandedSkillDetails.contains(skillID)
+    }
+
+    private func toggleSkillDetails(_ skillID: String) {
+        if expandedSkillDetails.contains(skillID) {
+            expandedSkillDetails.remove(skillID)
+        } else {
+            expandedSkillDetails.insert(skillID)
+        }
     }
 
     private func skillActionButton(
@@ -878,8 +915,9 @@ public struct PermissionHubView: View {
         Button(role: role, action: action) {
             Label(title, systemImage: systemImage)
                 .font(.caption.weight(.semibold))
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .center)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
         }
         .buttonStyle(.bordered)
         .controlSize(.small)

@@ -51,6 +51,7 @@ extension KairoAppSmokeUITests {
         scrollTowardTop()
         expandAdvancedSkillSetup()
         XCTAssertTrue(findElement("access.skill.homekit-evening-scene", direction: .down).exists)
+        openSkillDetailsIfNeeded(skillID: "homekit-evening-scene")
         XCTAssertTrue(findButton("access.skill.homekit-evening-scene.manage", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-save-shared-text", direction: .down).exists)
         XCTAssertTrue(findElement("access.skill.shortcut-screenshot-to-reminders", direction: .down).exists)
@@ -130,6 +131,16 @@ extension KairoAppSmokeUITests {
         XCTAssertTrue(toggle.exists)
         tapElement(toggle)
         XCTAssertTrue(findElement("access.homekit.demos", direction: .down, maxSwipes: 4).waitForExistence(timeout: 5))
+    }
+
+    func openSkillDetailsIfNeeded(skillID: String) {
+        if anyElement("access.skill.\(skillID).manage").exists {
+            return
+        }
+        let details = findButton("access.skill.\(skillID).details", direction: .both, maxSwipes: 6)
+        XCTAssertTrue(details.exists)
+        tapElement(details)
+        XCTAssertTrue(findButton("access.skill.\(skillID).manage", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
     }
 
     func openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: Bool) {
