@@ -383,6 +383,15 @@ Stage 39 makes local model setup starter-led:
 - Existing model actions, download approval, trimmed catalog note, and advanced
   diagnostics remain unchanged and progressively disclosed.
 
+Stage 40 makes Settings route-first:
+
+- Settings overview now opens with the current answer route as the only
+  first-level status, matching the screen's primary job: how Kairo answers.
+- Cloud key, connected account count, and local model status move behind Setup
+  details so supporting setup no longer competes with the route decision.
+- Connection setup, account editing, OAuth details, privacy cleanup, and model
+  controls keep their existing progressive disclosures.
+
 ## Next UI stages
 
 1. Product surface audit
