@@ -302,6 +302,7 @@
 "settings.title.shortcutDemos" = "Shortcut Demos";
 "settings.openai.section" = "OpenAI";
 "settings.openai.apiKey" = "API Key";
+"settings.openai.apiKeyPlaceholder" = "sk-...";
 "settings.openai.status.configured" = "Configured";
 "settings.openai.status.notConfigured" = "Not configured";
 "settings.openai.save" = "Save API Key";
@@ -313,6 +314,8 @@
 "settings.openai.deleteFailed" = "Delete failed: %@";
 "settings.openai.dryRunSuccess" = "OpenAI dry run completed: %@ · no network request was sent.";
 "settings.openai.dryRunFailed" = "Dry run failed: %@";
+"settings.openai.dryRun.noNetwork" = "Dry run only. No network request was sent.";
+"settings.openai.error.emptyAPIKey" = "OpenAI API key is empty. Paste an API key before saving or running a dry run.";
 "settings.openai.loadFailed" = "Could not load settings: %@";
 "settings.oauth.section" = "OAuth Connectors";
 "settings.oauth.empty" = "Connector status has not loaded yet.";
@@ -327,6 +330,7 @@
 "settings.oauth.authorize" = "Authorize";
 "settings.oauth.disconnect" = "Disconnect";
 "settings.oauth.callbackPreview" = "OAuth Callback Preview";
+"settings.oauth.callbackPlaceholder" = "kairo://oauth/google/callback?code=...&state=...";
 "settings.oauth.previewCallback" = "Preview Callback";
 "settings.oauth.openingAuthorization" = "Opening %@ authorization.";
 "settings.oauth.authorizationFailed" = "Authorization failed to start: %@";

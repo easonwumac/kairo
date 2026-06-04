@@ -15,7 +15,7 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         let dryRun = try await api.dryRunOpenAIAPIKey(" openai-test-key-1234567890 ")
         XCTAssertFalse(dryRun.usesSavedKey)
         XCTAssertEqual(dryRun.redactedKey, "open...7890")
-        XCTAssertTrue(dryRun.message.contains("No network request was sent"))
+        XCTAssertEqual(dryRun.message, KairoL10n.string("settings.openai.dryRun.noNetwork"))
         let unsavedOpenAIKey = try await credentials.readSecret(for: CredentialKey.openAIAPIKey)
         XCTAssertNil(unsavedOpenAIKey)
 

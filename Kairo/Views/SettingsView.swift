@@ -134,7 +134,7 @@ public struct SettingsView: View {
                             .accessibilityIdentifier("settings.openai.api-key-status")
                     }
 
-                    SecureField("sk-...", text: $apiKey)
+                    SecureField(KairoL10n.string("settings.openai.apiKeyPlaceholder"), text: $apiKey)
                         .textContentType(.password)
                         .accessibilityIdentifier("settings.openai.api-key-field")
 
@@ -336,7 +336,7 @@ public struct SettingsView: View {
                 .font(.subheadline)
                 .fontWeight(.medium)
 
-            TextField("kairo://oauth/google/callback?code=...&state=...", text: $oauthCallbackURLText)
+            TextField(KairoL10n.string("settings.oauth.callbackPlaceholder"), text: $oauthCallbackURLText)
                 .autocorrectionDisabled()
                 .accessibilityIdentifier("settings.oauth.callback-url")
 

@@ -13,7 +13,7 @@ struct LocalModelDownloadProgressInlineView: View {
                 .accessibilityIdentifier("settings.models.\(modelID).download-progress")
 
             if progress.allowsCancellation {
-                Button("Cancel Download", role: .cancel, action: onCancel)
+                Button(KairoL10n.string("settings.models.download.cancelActive"), role: .cancel, action: onCancel)
                     .font(.caption2)
                     .buttonStyle(.bordered)
                     .controlSize(.small)

@@ -302,6 +302,7 @@
 "settings.title.shortcutDemos" = "Shortcut Demos";
 "settings.openai.section" = "OpenAI";
 "settings.openai.apiKey" = "API Key";
+"settings.openai.apiKeyPlaceholder" = "sk-...";
 "settings.openai.status.configured" = "已設定";
 "settings.openai.status.notConfigured" = "未設定";
 "settings.openai.save" = "儲存 API Key";
@@ -313,6 +314,8 @@
 "settings.openai.deleteFailed" = "刪除失敗：%@";
 "settings.openai.dryRunSuccess" = "OpenAI dry run 完成：%@ · 未送出網路請求。";
 "settings.openai.dryRunFailed" = "Dry run 失敗：%@";
+"settings.openai.dryRun.noNetwork" = "僅執行 dry run，未送出網路請求。";
+"settings.openai.error.emptyAPIKey" = "OpenAI API key 是空的。請先貼上 API key，再儲存或執行 dry run。";
 "settings.openai.loadFailed" = "讀取設定失敗：%@";
 "settings.oauth.section" = "OAuth Connectors";
 "settings.oauth.empty" = "尚未載入 connector 狀態。";
@@ -327,6 +330,7 @@
 "settings.oauth.authorize" = "Authorize";
 "settings.oauth.disconnect" = "Disconnect";
 "settings.oauth.callbackPreview" = "OAuth Callback Preview";
+"settings.oauth.callbackPlaceholder" = "kairo://oauth/google/callback?code=...&state=...";
 "settings.oauth.previewCallback" = "Preview Callback";
 "settings.oauth.openingAuthorization" = "正在開啟 %@ 授權。";
 "settings.oauth.authorizationFailed" = "授權啟動失敗：%@";

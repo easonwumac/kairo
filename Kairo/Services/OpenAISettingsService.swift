@@ -62,7 +62,7 @@ public actor OpenAISettingsService {
         return OpenAISettingsDryRunResult(
             usesSavedKey: usesSavedKey,
             redactedKey: Self.redactedKey(candidateKey),
-            message: "Dry run only. No network request was sent."
+            message: KairoL10n.string("settings.openai.dryRun.noNetwork")
         )
     }
 
@@ -87,7 +87,7 @@ public enum OpenAISettingsError: LocalizedError, Equatable {
     public var errorDescription: String? {
         switch self {
         case .emptyAPIKey:
-            return "OpenAI API key is empty. Paste an API key before saving or running a dry run."
+            return KairoL10n.string("settings.openai.error.emptyAPIKey")
         }
     }
 }

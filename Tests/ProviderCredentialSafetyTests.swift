@@ -28,7 +28,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
 
         XCTAssertFalse(result.usesSavedKey)
         XCTAssertEqual(result.redactedKey, "sk-t...7890")
-        XCTAssertTrue(result.message.contains("No network request was sent"))
+        XCTAssertEqual(result.message, KairoL10n.string("settings.openai.dryRun.noNetwork"))
         let savedSecret = try await credentials.readSecret(for: CredentialKey.openAIAPIKey)
         XCTAssertNil(savedSecret)
     }
@@ -51,14 +51,14 @@ final class ProviderCredentialSafetyTests: XCTestCase {
             try await service.saveAPIKey("   ")
             XCTFail("Expected empty API key save to fail.")
         } catch {
-            XCTAssertEqual(error.localizedDescription, "OpenAI API key is empty. Paste an API key before saving or running a dry run.")
+            XCTAssertEqual(error.localizedDescription, KairoL10n.string("settings.openai.error.emptyAPIKey"))
         }
 
         do {
             _ = try await service.dryRunAPIKey(nil as String?)
             XCTFail("Expected empty API key dry run to fail.")
         } catch {
-            XCTAssertEqual(error.localizedDescription, "OpenAI API key is empty. Paste an API key before saving or running a dry run.")
+            XCTAssertEqual(error.localizedDescription, KairoL10n.string("settings.openai.error.emptyAPIKey"))
         }
     }
 
