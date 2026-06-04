@@ -862,8 +862,14 @@ final class LocalModelFeatureTests: XCTestCase {
             userPrompt: "Draft a private reply for this message."
         ))
 
-        XCTAssertTrue(response.message.contains("Local fallback (qwen-small)"))
-        XCTAssertTrue(response.message.contains("local mode cannot browse the web"))
+        XCTAssertEqual(
+            response.message,
+            KairoL10n.string(
+                "chat.provider.localFallback.response",
+                KairoL10n.string("chat.provider.localFallback.named", "qwen-small"),
+                KairoL10n.string("chat.provider.localFallback.quotedRequest", "Draft a private reply for this message.")
+            )
+        )
     }
 
     func testLocalModelRoutingAIProviderKeepsToolRequestsOnCloudWhenPreferLocal() async throws {
@@ -885,7 +891,7 @@ final class LocalModelFeatureTests: XCTestCase {
             response.message,
             KairoL10n.string("chat.provider.mockPreviewResponse", "Use HomeKit to turn on the living room light.")
         )
-        XCTAssertFalse(response.message.contains("Local fallback"))
+        XCTAssertFalse(response.message.contains(KairoL10n.string("chat.provider.localFallback.generic")))
     }
 
     func testLocalModelRoutingAIProviderFailsClosedWhenLocalOnlyHasNoModel() async throws {
@@ -1675,8 +1681,14 @@ final class LocalModelFeatureTests: XCTestCase {
 
         let response = try await provider.complete(AICompletionRequest(systemPrompt: "system", userPrompt: "Draft a note"))
 
-        XCTAssertTrue(response.message.contains("Local fallback (qwen-small)"))
-        XCTAssertTrue(response.message.contains("cannot browse the web"))
+        XCTAssertEqual(
+            response.message,
+            KairoL10n.string(
+                "chat.provider.localFallback.response",
+                KairoL10n.string("chat.provider.localFallback.named", "qwen-small"),
+                KairoL10n.string("chat.provider.localFallback.quotedRequest", "Draft a note")
+            )
+        )
         XCTAssertTrue(response.proposedActions.isEmpty)
     }
 
@@ -1696,7 +1708,14 @@ final class LocalModelFeatureTests: XCTestCase {
         let response = try await router.complete(request, context: context)
 
         XCTAssertEqual(decision, ProviderRouteDecision(route: .local, reason: .cloudUnavailable))
-        XCTAssertTrue(response.message.contains("Local fallback"))
+        XCTAssertEqual(
+            response.message,
+            KairoL10n.string(
+                "chat.provider.localFallback.response",
+                KairoL10n.string("chat.provider.localFallback.named", "qwen-small"),
+                KairoL10n.string("chat.provider.localFallback.quotedRequest", "Summarize this note")
+            )
+        )
     }
 
     func testProviderRouterBlocksLocalForToolUseInOfflineMode() async throws {

@@ -9,10 +9,14 @@ public struct LocalFallbackProvider: AIProvider {
 
     public func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
         let trimmedPrompt = request.userPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        let prefix = installedModelID.map { "Local fallback (\($0))" } ?? "Local fallback"
-        let subject = trimmedPrompt.isEmpty ? "this request" : "\"\(String(trimmedPrompt.prefix(80)))\""
+        let prefix = installedModelID.map {
+            KairoL10n.string("chat.provider.localFallback.named", $0)
+        } ?? KairoL10n.string("chat.provider.localFallback.generic")
+        let subject = trimmedPrompt.isEmpty
+            ? KairoL10n.string("chat.provider.localFallback.emptyRequest")
+            : KairoL10n.string("chat.provider.localFallback.quotedRequest", String(trimmedPrompt.prefix(80)))
         return AICompletionResponse(
-            message: "\(prefix) is a placeholder for short private/offline drafts. I can help with \(subject), but local mode cannot browse the web, use tools, or perform account actions.",
+            message: KairoL10n.string("chat.provider.localFallback.response", prefix, subject),
             proposedActions: []
         )
     }

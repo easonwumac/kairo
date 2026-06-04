@@ -170,6 +170,11 @@
 "chat.provider.warning.preferLocalNoModel" = "Prefer Local 需要已下載且已選擇的 model，才能處理 private/offline route。";
 "chat.provider.warning.openAIKeyMissing" = "%@ API key 尚未儲存。";
 "chat.provider.mockPreviewResponse" = "Preview/test provider 回覆。這不是真實模型回覆：%@";
+"chat.provider.localFallback.generic" = "Local fallback";
+"chat.provider.localFallback.named" = "Local fallback（%@）";
+"chat.provider.localFallback.emptyRequest" = "這個請求";
+"chat.provider.localFallback.quotedRequest" = "「%@」";
+"chat.provider.localFallback.response" = "%@ 是短篇 private/offline 草稿的 placeholder。Kairo 可以協助處理 %@，但 local mode 不能瀏覽網頁、使用工具或執行帳號動作。";
 "chat.action.accessibility.preview" = "動作預覽：%@，%@，%@";
 "chat.option.accessibility.suggested" = "建議選項：%@，%@。%@。%@";
 "chat.action.confirmation.willAskFirst" = "會先詢問";

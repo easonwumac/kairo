@@ -170,6 +170,11 @@
 "chat.provider.warning.preferLocalNoModel" = "Prefer Local needs a downloaded selected model before private/offline work can route locally.";
 "chat.provider.warning.openAIKeyMissing" = "%@ API key is not saved.";
 "chat.provider.mockPreviewResponse" = "Preview/test provider response. This is not a live model reply: %@";
+"chat.provider.localFallback.generic" = "Local fallback";
+"chat.provider.localFallback.named" = "Local fallback (%@)";
+"chat.provider.localFallback.emptyRequest" = "this request";
+"chat.provider.localFallback.quotedRequest" = "\"%@\"";
+"chat.provider.localFallback.response" = "%@ is a placeholder for short private/offline drafts. I can help with %@, but local mode cannot browse the web, use tools, or perform account actions.";
 "chat.action.accessibility.preview" = "Action preview: %@, %@, %@";
 "chat.option.accessibility.suggested" = "Suggested option: %@, %@. %@. %@";
 "chat.action.confirmation.willAskFirst" = "Will ask first";

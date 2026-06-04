@@ -194,7 +194,12 @@ final class LocalizationCatalogTests: XCTestCase {
             "chat.error.localInference.reason.privateNoModel",
             "chat.error.localInference.reason.routeUnavailable",
             "chat.provider.warning.openAIKeyMissing",
-            "chat.provider.mockPreviewResponse"
+            "chat.provider.mockPreviewResponse",
+            "chat.provider.localFallback.generic",
+            "chat.provider.localFallback.named",
+            "chat.provider.localFallback.emptyRequest",
+            "chat.provider.localFallback.quotedRequest",
+            "chat.provider.localFallback.response"
         ]
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let english = try localizedStrings(at: root.appendingPathComponent("Kairo/Resources/en.lproj/Localizable.strings"))
