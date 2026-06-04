@@ -4,27 +4,43 @@ Kairo 要公開發布前，必須先確保 repo 不含 secrets、個人本機資
 
 ## 發布前檢查
 
-1. 測試通過：
+1. 跑 release hygiene runbook：
+
+`docs/RELEASE_HYGIENE.md` 是目前的權威 handoff 流程；GitHub 發布前不要只靠這份舊 checklist。
+
+2. 測試通過：
 
 ```bash
 swift test
+xcodegen generate
+git diff --check
 ```
 
-2. 檢查敏感字串：
+3. 檢查 secrets、credentials、model artifacts：
 
 ```bash
-rg -n "sk-|OPENAI_API_KEY|apiKey|password|secret|token|refresh_token|access_token" .
+rg -n --hidden --glob '!.git/**' --glob '!.build/**' --glob '!tmp/**' --glob '!Kairo.xcodeproj/**' --glob '!*.xcworkspace/**' --glob '!*.xcuserstate' --glob '!Package.resolved' '(sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA|EC|OPENSSH|PRIVATE) KEY-----|password\s*=\s*[^\s]+|api[_-]?key\s*=\s*[^\s]+|access[_-]?token\s*=\s*[^\s]+|refresh[_-]?token\s*=\s*[^\s]+)' .
+find . -path './.git' -prune -o -path './.build' -prune -o -path './tmp' -prune -o \( -iname '*.gguf' -o -iname '*.ggml' -o -iname '*tokenizer*' -o -iname '*.safetensors' -o -iname '*.bin' -o -iname '*.mlmodelc' -o -iname '*.mlpackage' -o -iname '*.onnx' -o -iname '*model-cache*' \) -print
 ```
 
-合理出現於文件或程式常數時可以保留；真正 credential 必須移除。
+這兩個 scan 必須沒有 tracked secrets、tokens、private keys、generated credentials、model weights、`.gguf`、tokenizer blobs、model packages 或 downloaded caches。`tmp/` screenshots 只能當非 release support artifact，不可提交或引用為真機證據。
 
-3. 檢查 git 狀態：
+4. 檢查 git 狀態：
 
 ```bash
-git status --short
+git status --short --branch
 ```
 
-4. 確認 `.gitignore` 包含：
+5. Push 後確認 GitHub Actions 對 submitted commit 成功：
+
+```bash
+git rev-parse HEAD
+gh run list --repo easonwumac/kairo --branch main --limit 5 --json databaseId,status,conclusion,workflowName,headSha,url
+```
+
+`Swift Tests` 的 `headSha` 必須等於 `HEAD`、`status=completed`、`conclusion=success`。舊的成功 run 不可當成本次提交證據。
+
+6. 確認 `.gitignore` 包含：
 
 - `.build/`
 - Xcode user files

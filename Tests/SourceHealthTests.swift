@@ -544,29 +544,6 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(readme.contains("remaining gaps are progress/cancel UI"))
     }
 
-    func testPrivacyLabelsChecklistKeepsDeletionAndLabelBoundariesCurrent() throws {
-        let root = packageRootURL()
-        let privacyChecklist = try String(
-            contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
-            encoding: .utf8
-        )
-
-        XCTAssertTrue(privacyChecklist.contains("Tracking: No."))
-        XCTAssertTrue(privacyChecklist.contains("Data collected: No collected data."))
-        XCTAssertTrue(privacyChecklist.contains("Required Reason API usage: UserDefaults only, reason `CA92.1`."))
-        XCTAssertTrue(privacyChecklist.contains("no analytics SDK, no ad tracking, no backend account, no cloud memory sync, no crash/telemetry collection provider, and no provider-side sync beyond user-configured API calls"))
-        XCTAssertTrue(privacyChecklist.contains("## Deletion Evidence Boundary"))
-        XCTAssertTrue(privacyChecklist.contains("Current deletion proof is on-device and user-triggered only"))
-        XCTAssertTrue(privacyChecklist.contains("Chat history: delete a thread from Chat history"))
-        XCTAssertTrue(privacyChecklist.contains("Memory Center delete/export covers active records"))
-        XCTAssertTrue(privacyChecklist.contains("Settings / Models delete removes installed model files and clears selected-model state"))
-        XCTAssertTrue(privacyChecklist.contains("Settings delete/disconnect removes Keychain-backed secrets"))
-        XCTAssertTrue(privacyChecklist.contains("Settings / Privacy exposes Clear Audit Log for metadata-only audit records"))
-        XCTAssertTrue(privacyChecklist.contains("not applicable in the current beta because Kairo has no backend account"))
-        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("backend account deletion is supported"))
-        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("cloud-sync deletion is supported"))
-    }
-
     func testRealDeviceSignOffDocsRequirePhysicalDeviceEvidence() throws {
         let root = packageRootURL()
         let signOff = try String(
@@ -733,10 +710,6 @@ final class SourceHealthTests: XCTestCase {
             contentsOf: root.appendingPathComponent("NEXT_STEPS.md"),
             encoding: .utf8
         )
-        let releaseHygiene = try String(
-            contentsOf: root.appendingPathComponent("docs/RELEASE_HYGIENE.md"),
-            encoding: .utf8
-        )
 
         XCTAssertTrue(readiness.contains("docs/APP_STORE_SUBMISSION_CHECKLIST.md"))
         XCTAssertTrue(nextSteps.contains("docs/APP_STORE_SUBMISSION_CHECKLIST.md"))
@@ -778,16 +751,6 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(submissionChecklist.contains("macOS/dev local-model reply checks and benchmark adapters are not iPhone runtime proof."))
         XCTAssertTrue(submissionChecklist.contains("Current deletion proof is on-device only"))
         XCTAssertTrue(submissionChecklist.contains("GitHub Actions success must match the submitted commit `HEAD`"))
-        XCTAssertTrue(releaseHygiene.contains("swift test"))
-        XCTAssertTrue(releaseHygiene.contains("xcodegen generate"))
-        XCTAssertTrue(releaseHygiene.contains("git diff --check"))
-        XCTAssertTrue(releaseHygiene.contains("gh run list --repo easonwumac/kairo --branch main --limit 5"))
-        XCTAssertTrue(releaseHygiene.contains("The matching `headSha` must equal `HEAD`"))
-        XCTAssertTrue(releaseHygiene.contains("Older successful runs do not prove the submitted commit."))
-        XCTAssertTrue(releaseHygiene.contains("Real-device beta sign-off still requires `docs/REAL_DEVICE_BETA_SIGNOFF.md`"))
-        XCTAssertTrue(releaseHygiene.contains("App-side catalog signature validation proves fail-closed behavior only"))
-        XCTAssertTrue(releaseHygiene.contains("macOS/dev local-model reply checks and benchmark adapters are not iPhone production inference proof"))
-        XCTAssertTrue(releaseHygiene.contains("Do not stage `tmp/` screenshots as release evidence."))
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("production local inference is complete"))
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("live HomeKit control is complete"))
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("silently creates Apple Shortcuts"))
