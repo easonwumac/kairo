@@ -29,7 +29,7 @@ final class ChatCalendarActionAuditTests: XCTestCase {
         await viewModel.confirmPendingAction()
 
         XCTAssertNil(viewModel.pendingAction)
-        XCTAssertEqual(viewModel.actionResultMessage, "Created calendar event.")
+        XCTAssertEqual(viewModel.actionResultMessage, "Created calendar event. 週五 10:00 Kairo roadmap review")
         let auditEvents = try await auditLogger.list(limit: 10)
         XCTAssertEqual(auditEvents.count, 1)
         XCTAssertEqual(auditEvents.first?.actionKind, .createCalendarDraft)

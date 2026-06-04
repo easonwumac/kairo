@@ -55,7 +55,7 @@ final class ShareToChatActionAuditTests: XCTestCase {
         await viewModel.confirmPendingAction()
 
         XCTAssertNil(viewModel.pendingAction)
-        XCTAssertEqual(viewModel.actionResultMessage, "Created reminder.")
+        XCTAssertEqual(viewModel.actionResultMessage, "Created reminder. Send prototype link")
         let auditEvents = try await auditLogger.list(limit: 10)
         XCTAssertEqual(auditEvents.count, 1)
         XCTAssertEqual(auditEvents.first?.actionKind, .createReminderDraft)

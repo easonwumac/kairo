@@ -238,7 +238,7 @@ public final class ChatViewModel: ObservableObject {
         guard let action = pendingAction else { return }
         do {
             let result = try await actionExecutor.execute(action, confirmed: true)
-            actionResultMessage = result.message
+            actionResultMessage = Self.actionResultMessage(for: result, action: action)
             actionResultSucceeded = result.completed
             errorMessage = result.completed ? nil : result.message
         } catch {
@@ -247,6 +247,18 @@ public final class ChatViewModel: ObservableObject {
             errorMessage = "Kairo 無法執行此動作。"
         }
         pendingAction = nil
+    }
+
+    private static func actionResultMessage(for result: ActionExecutionResult, action: AgentAction) -> String {
+        guard result.completed else { return result.message }
+        switch action.payload {
+        case .reminder(let draft):
+            return "\(result.message) \(draft.title)"
+        case .calendarEvent(let draft):
+            return "\(result.message) \(draft.title)"
+        default:
+            return result.message
+        }
     }
 
     private func persistCurrentThread() async {
