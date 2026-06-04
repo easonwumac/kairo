@@ -10,6 +10,7 @@ Runs Kairo release hygiene checks:
   - xcodegen generate when installed
   - git diff --check
   - App Review boundary scan
+  - product claim boundary scan
   - Share Extension action-free boundary scan
   - catalog publication boundary scan
   - local model runtime boundary scan
@@ -159,6 +160,63 @@ if failures:
     sys.exit(1)
 
 print("App Review boundary scan passed.")
+
+PY
+
+echo
+echo "== product claim boundary scan =="
+python3 - <<'PY'
+import re
+import sys
+from pathlib import Path
+
+root = Path.cwd()
+scan_roots = [
+    root / "Kairo/Resources",
+    root / "Kairo/Views",
+    root / "Kairo/Intents",
+]
+forbidden_claims = [
+    r"\bcontrols your entire iPhone\b",
+    r"\bcontrol your entire iPhone\b",
+    r"\bwatches your screen\b",
+    r"\bwatch your screen\b",
+    r"\bautomates any app UI\b",
+    r"\bautomate any app UI\b",
+    r"\bbypasses permissions\b",
+    r"\bbypass permissions\b",
+    r"\breads other apps'? private data\b",
+    r"\bread other apps'? private data\b",
+    r"\bChatGPT browser account takeover\b",
+    r"\bweb-session scraping\b",
+    r"\bsilently creates? Apple Shortcuts\b",
+    r"\bsilent Apple Shortcuts creation\b",
+    r"\biOS production local inference is (complete|implemented|ready|available)\b",
+    r"\blive HomeKit control is (complete|implemented|ready|available|enabled)\b",
+    r"\b(email|message) (was|has been) sent successfully\b",
+    r"\bKairo sent (the )?(email|message)\b",
+    r"\bcall (was|has been) connected\b",
+    r"\bKairo placed (the )?call\b",
+]
+combined = re.compile("|".join(forbidden_claims), flags=re.IGNORECASE)
+failures = []
+
+for scan_root in scan_roots:
+    for source in sorted(scan_root.rglob("*")):
+        if source.suffix not in {".swift", ".strings", ".xcstrings"}:
+            continue
+        text = source.read_text(encoding="utf-8")
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            if combined.search(line):
+                relative = source.relative_to(root)
+                failures.append(f"{relative}:{line_number}: prohibited product/App Review claim: {line.strip()}")
+
+if failures:
+    for failure in failures:
+        print(f"- {failure}", file=sys.stderr)
+    sys.exit(1)
+
+print("Product claim boundary scan passed.")
 
 PY
 
