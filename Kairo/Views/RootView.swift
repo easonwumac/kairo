@@ -30,6 +30,7 @@ public struct RootView: View {
 
                 VStack(spacing: 0) {
                     rootHeader(topInset: safeAreaInsets.top)
+                    primaryNavigationStrip
 
                     selectedContent
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -121,18 +122,18 @@ public struct RootView: View {
 
     private func rootHeader(topInset: CGFloat) -> some View {
         HStack(spacing: 12) {
-            if selectedSection == .chat {
-                KairoMark(size: 34)
-            } else {
+            KairoMark(size: 34)
+
+            if selectedSection != .chat {
                 Button {
                     selectedSection = .chat
                 } label: {
                     Label(KairoL10n.string("root.backToChat"), systemImage: "house")
+                        .labelStyle(.iconOnly)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(KairoDesign.blue)
-                        .padding(.horizontal, 10)
-                        .frame(height: 34)
-                        .background(KairoDesign.blue.opacity(0.10), in: Capsule())
+                        .frame(width: 34, height: 34)
+                        .background(KairoDesign.blue.opacity(0.10), in: Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(KairoL10n.string("root.backToChat"))
@@ -140,10 +141,10 @@ public struct RootView: View {
             }
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(selectedSection.title)
-                    .font(.headline)
+                Text(KairoL10n.string("root.product.title"))
+                    .font(.headline.weight(.bold))
                     .lineLimit(1)
-                Text(selectedSection.subtitle)
+                Text(KairoL10n.string("root.product.subtitle"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -154,7 +155,7 @@ public struct RootView: View {
             Button {
                 isMenuPresented = true
             } label: {
-                Label(KairoL10n.string("root.menu"), systemImage: "line.3.horizontal.circle")
+                Label(KairoL10n.string("root.menu"), systemImage: "square.grid.2x2")
                     .labelStyle(.iconOnly)
                     .font(.title3.weight(.semibold))
                     .frame(width: 42, height: 42)
@@ -172,6 +173,45 @@ public struct RootView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("root.safe-area-header")
+    }
+
+    private var primaryNavigationStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(RootSection.primaryTabs) { section in
+                    Button {
+                        selectedSection = section
+                    } label: {
+                        HStack(spacing: 7) {
+                            Image(systemName: section.systemImage)
+                                .font(.caption.weight(.bold))
+                            Text(section.shortTitle)
+                                .font(.caption.weight(.semibold))
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(selectedSection == section ? .white : KairoDesign.muted)
+                        .padding(.horizontal, 12)
+                        .frame(height: 34)
+                        .background(selectedSection == section ? section.tint : KairoDesign.elevatedSurface, in: Capsule())
+                        .overlay {
+                            Capsule()
+                                .stroke(selectedSection == section ? Color.clear : KairoDesign.line, lineWidth: 1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(section.title)
+                    .accessibilityIdentifier("root.tab.\(section.rawValue)")
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 9)
+        }
+        .background(KairoDesign.background)
+        .overlay(alignment: .bottom) {
+            Divider()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("root.primary-tabs")
     }
 
     private func navigationMenu(safeAreaInsets: EdgeInsets) -> some View {
@@ -304,6 +344,10 @@ private enum RootSection: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    static var primaryTabs: [RootSection] {
+        [.chat, .memory, .shortcuts, .access, .models]
+    }
+
     var title: String {
         switch self {
         case .chat:
@@ -335,6 +379,23 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return KairoL10n.string("root.section.models.subtitle")
         case .settings:
             return KairoL10n.string("root.section.settings.subtitle")
+        }
+    }
+
+    var shortTitle: String {
+        switch self {
+        case .chat:
+            return KairoL10n.string("root.section.chat.shortTitle")
+        case .memory:
+            return KairoL10n.string("root.section.memory.shortTitle")
+        case .shortcuts:
+            return KairoL10n.string("root.section.shortcuts.shortTitle")
+        case .access:
+            return KairoL10n.string("root.section.access.shortTitle")
+        case .models:
+            return KairoL10n.string("root.section.models.shortTitle")
+        case .settings:
+            return KairoL10n.string("root.section.settings.shortTitle")
         }
     }
 

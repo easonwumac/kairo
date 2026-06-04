@@ -81,11 +81,79 @@ public struct ChatView: View {
         }
     }
 
+    private var shouldShowFocusPanel: Bool {
+        viewModel.currentThread.messages.count <= 1
+    }
+
+    private var chatFocusPanel: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(KairoL10n.string("chat.focus.title"))
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(KairoDesign.ink)
+                        Text(KairoL10n.string("chat.focus.subtitle"))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    KairoStatusPill(
+                        title: KairoL10n.string("chat.focus.safety"),
+                        systemImage: "checkmark.shield.fill",
+                        tint: KairoDesign.green
+                    )
+                }
+
+                VStack(spacing: 8) {
+                    KairoCommandButton(
+                        title: KairoL10n.string("chat.focus.shared.title"),
+                        subtitle: KairoL10n.string("chat.focus.shared.subtitle"),
+                        systemImage: "square.and.arrow.down",
+                        tint: KairoDesign.blue
+                    ) {
+                        applyPrompt(KairoL10n.string("chat.tools.summarizeSharedContent.prompt"))
+                    }
+
+                    KairoCommandButton(
+                        title: KairoL10n.string("chat.focus.plan.title"),
+                        subtitle: KairoL10n.string("chat.focus.plan.subtitle"),
+                        systemImage: "calendar.badge.plus",
+                        tint: KairoDesign.amber
+                    ) {
+                        applyPrompt(KairoL10n.string("chat.tools.reminderCalendar.prompt"))
+                    }
+
+                    KairoCommandButton(
+                        title: KairoL10n.string("chat.focus.reply.title"),
+                        subtitle: KairoL10n.string("chat.focus.reply.subtitle"),
+                        systemImage: "envelope.open",
+                        tint: KairoDesign.violet
+                    ) {
+                        applyPrompt(KairoL10n.string("chat.tools.messageEmailDraft.prompt"))
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.focus-panel")
+    }
+
     private var chatSurface: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
+                        if shouldShowFocusPanel {
+                            chatFocusPanel
+                                .padding(.horizontal, 14)
+                                .padding(.bottom, 4)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+
                         ForEach(viewModel.currentThread.messages) { message in
                             VStack(alignment: .leading, spacing: 8) {
                                 ChatBubble(
@@ -362,11 +430,15 @@ public struct ChatView: View {
         prompt: String
     ) -> some View {
         Button {
-            viewModel.composerText = prompt
-            isComposerFocused = true
+            applyPrompt(prompt)
         } label: {
             Label(title, systemImage: systemImage)
         }
+    }
+
+    private func applyPrompt(_ prompt: String) {
+        viewModel.composerText = prompt
+        isComposerFocused = true
     }
 
     private var sendButtonBackground: Color {

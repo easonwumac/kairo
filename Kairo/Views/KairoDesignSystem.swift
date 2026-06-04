@@ -4,13 +4,18 @@ import SwiftUI
 enum KairoDesign {
     static let ink = Color(.sRGB, red: 0.07, green: 0.10, blue: 0.16, opacity: 1)
     static let muted = Color(.sRGB, red: 0.33, green: 0.38, blue: 0.45, opacity: 1)
-    static let background = Color(.sRGB, red: 0.97, green: 0.98, blue: 0.98, opacity: 1)
-    static let groupedSurface = Color(.sRGB, red: 1.00, green: 1.00, blue: 0.99, opacity: 0.94)
+    static let background = Color(.sRGB, red: 0.955, green: 0.965, blue: 0.972, opacity: 1)
+    static let groupedSurface = Color(.sRGB, red: 0.995, green: 0.997, blue: 1.00, opacity: 0.96)
+    static let elevatedSurface = Color(.sRGB, red: 1.00, green: 1.00, blue: 1.00, opacity: 0.98)
+    static let softSurface = Color(.sRGB, red: 0.92, green: 0.945, blue: 0.955, opacity: 1)
     static let line = Color.black.opacity(0.07)
     static let teal = Color(.sRGB, red: 0.38, green: 0.87, blue: 0.73, opacity: 1)
-    static let blue = Color(.sRGB, red: 0.55, green: 0.65, blue: 1.00, opacity: 1)
+    static let blue = Color(.sRGB, red: 0.29, green: 0.43, blue: 0.86, opacity: 1)
     static let amber = Color(.sRGB, red: 1.00, green: 0.72, blue: 0.42, opacity: 1)
     static let red = Color(.sRGB, red: 0.90, green: 0.20, blue: 0.25, opacity: 1)
+    static let green = Color(.sRGB, red: 0.11, green: 0.55, blue: 0.38, opacity: 1)
+    static let violet = Color(.sRGB, red: 0.45, green: 0.35, blue: 0.82, opacity: 1)
+    static let shadow = Color.black.opacity(0.08)
 }
 
 struct KairoMark: View {
@@ -49,6 +54,69 @@ struct KairoStatusPill: View {
             .padding(.vertical, 6)
             .foregroundStyle(tint)
             .background(tint.opacity(0.12), in: Capsule())
+    }
+}
+
+struct KairoFocusCard<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content
+        }
+        .padding(16)
+        .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(KairoDesign.line, lineWidth: 1)
+        }
+        .shadow(color: KairoDesign.shadow, radius: 22, x: 0, y: 12)
+    }
+}
+
+struct KairoCommandButton: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.headline.weight(.semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(tint)
+                    .frame(width: 36, height: 36)
+                    .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 6)
+
+                Image(systemName: "arrow.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(tint)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 
