@@ -288,21 +288,26 @@ Stage 29 makes Phone Tools status-first:
 - Phone Tools now reads more like everyday support for Chat instead of a
   capability inventory, while deeper permission context remains reachable.
 
+Stage 30 makes Skill Manager action-first again:
+
+- Skill rows now keep the first layer to skill name, install state, one primary
+  action, and Details.
+- Longer summaries, management summary, Disable, Manage, and Remove move behind
+  Details so the library does not read like a control table.
+- Marketplace updates remain first-level because they are review actions, while
+  lower-frequency management stays progressive.
+
 ## Next UI stages
 
-1. Skill Manager
-   - Continue tuning skill-card density inside Skill library after simulator
-     smoke confirms the new first screen.
-
-2. Workflows
+1. Workflows
    - Continue tuning saved recipe cards only after runtime smoke confirms the
-     new recipe-first order.
+     current recipe-first order.
 
-3. AI Setup and Settings
+2. AI Setup and Settings
    - Continue tightening starter model rows after simulator smoke confirms which
      local-model states users need on the first screen.
 
-4. Action Preview
+3. Action Preview
    - Continue tuning action-specific summaries after smoke coverage shows which
      destination or permission states are still ambiguous.
 

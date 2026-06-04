@@ -676,6 +676,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         confirmInstall.tap()
 
         XCTAssertTrue(findStaticText(containing: "Weather Briefing installed from signed manifest.", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        openSkillDetailsIfNeeded(skillID: "marketplace-weather-briefing")
         XCTAssertTrue(findButton("access.skill.marketplace-weather-briefing.disable", direction: .both, maxSwipes: 2).exists)
     }
 
@@ -710,9 +711,9 @@ final class KairoAppSmokeUITests: XCTestCase {
         let enableDraft = findButton("access.skill.user-ui-created-skill.enable", direction: .both, maxSwipes: 10)
         XCTAssertTrue(enableDraft.exists)
         enableDraft.tap()
+        openSkillDetailsIfNeeded(skillID: "user-ui-created-skill")
         XCTAssertTrue(findButton("access.skill.user-ui-created-skill.disable", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
 
-        openSkillDetailsIfNeeded(skillID: "user-ui-created-skill")
         let removeDraft = findButton("access.skill.user-ui-created-skill.remove", direction: .both, maxSwipes: 2)
         XCTAssertTrue(removeDraft.exists)
         removeDraft.tap()
