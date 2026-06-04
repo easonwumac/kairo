@@ -104,6 +104,13 @@ Stage 9 clarifies the chat route control:
 - The same menu still owns private chat and route preference, keeping advanced
   routing editable without making Chat feel like a settings page.
 
+Stage 10 improves Skill Manager scanning:
+
+- Skill rows now read as managed cards with status, a compact management
+  summary, and a predictable action grid.
+- Install, update, enable, disable, manage, and remove remain available, but no
+  longer appear as a vertical wall of tiny text buttons.
+
 ## Next UI stages
 
 1. Memory Center

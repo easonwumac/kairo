@@ -638,100 +638,151 @@ public struct PermissionHubView: View {
 
     @ViewBuilder
     private func skillManagerRow(_ skill: AgentSkill) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(skill.displayName)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                    .lineLimit(2)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(skill.displayName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                        .lineLimit(2)
+
+                    Text(skill.summary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
 
                 Spacer(minLength: 8)
 
-                Text(skill.installationStatus.rawValue)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                KairoStatusPill(
+                    title: skill.installationStatus.rawValue,
+                    systemImage: skillStatusIcon(for: skill),
+                    tint: skillStatusTint(for: skill)
+                )
             }
 
-            Text(skill.summary)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            Label {
+                Text(skill.managementSummary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityIdentifier("access.skill.\(skill.id).summary")
+            } icon: {
+                Image(systemName: "checklist.checked")
+                    .foregroundStyle(KairoDesign.teal)
+            }
+            .padding(10)
+            .background(KairoDesign.softSurface.opacity(0.45), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
-            Text(skill.managementSummary)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .accessibilityIdentifier("access.skill.\(skill.id).summary")
-
-            VStack(alignment: .leading, spacing: 6) {
-                Button {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 8)], spacing: 8) {
+                skillActionButton(
+                    title: KairoL10n.string("access.skills.action.manage"),
+                    systemImage: "slider.horizontal.3",
+                    accessibilityIdentifier: "access.skill.\(skill.id).manage"
+                ) {
                     skillManagerMessage = KairoL10n.string("access.skills.message.managementSummary", skill.displayName, skill.managementSummary)
-                } label: {
-                    Label(KairoL10n.string("access.skills.action.manage"), systemImage: "slider.horizontal.3")
-                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .accessibilityIdentifier("access.skill.\(skill.id).manage")
 
                 switch skill.installationStatus {
                 case .available:
-                    Button {
+                    skillActionButton(
+                        title: KairoL10n.string("access.skills.action.install"),
+                        systemImage: "square.and.arrow.down",
+                        accessibilityIdentifier: "access.skill.\(skill.id).install"
+                    ) {
                         Task {
                             await installSkill(skill)
                         }
-                    } label: {
-                        Label(KairoL10n.string("access.skills.action.install"), systemImage: "square.and.arrow.down")
-                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .accessibilityIdentifier("access.skill.\(skill.id).install")
                 case .installed:
                     if skill.source == .marketplace, skill.downloadURL != nil {
-                        Button {
+                        skillActionButton(
+                            title: KairoL10n.string("access.skills.action.previewUpdate"),
+                            systemImage: "arrow.triangle.2.circlepath",
+                            accessibilityIdentifier: "access.skill.\(skill.id).update"
+                        ) {
                             Task {
                                 await installSkill(skill)
                             }
-                        } label: {
-                            Label(KairoL10n.string("access.skills.action.previewUpdate"), systemImage: "arrow.triangle.2.circlepath")
-                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .accessibilityIdentifier("access.skill.\(skill.id).update")
                     }
 
-                    Button {
+                    skillActionButton(
+                        title: KairoL10n.string("access.skills.action.disable"),
+                        systemImage: "pause.circle",
+                        accessibilityIdentifier: "access.skill.\(skill.id).disable"
+                    ) {
                         Task {
                             await disableSkill(skill)
                         }
-                    } label: {
-                        Label(KairoL10n.string("access.skills.action.disable"), systemImage: "pause.circle")
-                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .accessibilityIdentifier("access.skill.\(skill.id).disable")
                 case .disabled:
-                    Button {
+                    skillActionButton(
+                        title: KairoL10n.string("access.skills.action.enable"),
+                        systemImage: "play.circle",
+                        accessibilityIdentifier: "access.skill.\(skill.id).enable"
+                    ) {
                         Task {
                             await enableSkill(skill)
                         }
-                    } label: {
-                        Label(KairoL10n.string("access.skills.action.enable"), systemImage: "play.circle")
-                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .accessibilityIdentifier("access.skill.\(skill.id).enable")
                 }
 
-                Button(role: .destructive) {
+                skillActionButton(
+                    title: KairoL10n.string("access.skills.action.remove"),
+                    systemImage: "trash",
+                    role: .destructive,
+                    accessibilityIdentifier: "access.skill.\(skill.id).remove"
+                ) {
                     Task {
                         await removeSkill(skill)
                     }
-                } label: {
-                    Label(KairoL10n.string("access.skills.action.remove"), systemImage: "trash")
-                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .accessibilityIdentifier("access.skill.\(skill.id).remove")
             }
-            .font(.caption)
-            .buttonStyle(.borderless)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("access.skill.\(skill.id)")
+    }
+
+    private func skillActionButton(
+        title: String,
+        systemImage: String,
+        role: ButtonRole? = nil,
+        accessibilityIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(role: role, action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+
+    private func skillStatusIcon(for skill: AgentSkill) -> String {
+        switch skill.installationStatus {
+        case .available:
+            return "square.and.arrow.down"
+        case .installed:
+            return "checkmark.seal.fill"
+        case .disabled:
+            return "pause.circle.fill"
+        }
+    }
+
+    private func skillStatusTint(for skill: AgentSkill) -> Color {
+        switch skill.installationStatus {
+        case .available:
+            return KairoDesign.blue
+        case .installed:
+            return KairoDesign.green
+        case .disabled:
+            return KairoDesign.amber
+        }
     }
 
     private var filteredSkills: [AgentSkill] {
