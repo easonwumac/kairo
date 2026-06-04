@@ -392,6 +392,15 @@ Stage 40 makes Settings route-first:
 - Connection setup, account editing, OAuth details, privacy cleanup, and model
   controls keep their existing progressive disclosures.
 
+Stage 41 makes Memory search-first:
+
+- Memory no longer opens with export and status pills competing with the search
+  path.
+- Memory count, user-approved status, and export move behind Library details so
+  the first layer reads as a context library users can search or add to.
+- Record metadata and delete controls remain behind per-record Details, keeping
+  lower-frequency management secondary.
+
 ## Next UI stages
 
 1. Product surface audit

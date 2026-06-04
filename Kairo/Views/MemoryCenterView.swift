@@ -12,6 +12,7 @@ public struct MemoryCenterView: View {
     @State private var errorMessage: String?
     @State private var exportText: String = "{}"
     @State private var showAddContext = false
+    @State private var showLibraryDetails = false
     @State private var expandedMemoryDetailID: UUID?
 
     private let memoryAPI: any KairoMemoryAPI
@@ -204,45 +205,70 @@ public struct MemoryCenterView: View {
     private var memoryLibraryHeader: some View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 15) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(KairoL10n.string("memory.title"))
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(KairoDesign.ink)
-                        Text(KairoL10n.string("memory.subtitle"))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(KairoL10n.string("memory.title"))
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(KairoL10n.string("memory.subtitle"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
-                    Spacer(minLength: 8)
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showLibraryDetails.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(KairoL10n.string("memory.details.title"))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                            Text(KairoL10n.string("memory.details.subtitle"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: showLibraryDetails ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("memory.details.toggle")
+
+                if showLibraryDetails {
+                    HStack(spacing: 8) {
+                        KairoStatusPill(
+                            title: KairoL10n.string(
+                                memories.count == 1 ? "memory.status.count.one" : "memory.status.count.many",
+                                Int64(memories.count)
+                            ),
+                            systemImage: "brain.head.profile",
+                            tint: KairoDesign.teal
+                        )
+                        KairoStatusPill(
+                            title: KairoL10n.string("memory.status.userApproved"),
+                            systemImage: "checkmark.shield.fill",
+                            tint: KairoDesign.green
+                        )
+                    }
 
                     ShareLink(item: exportText) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.headline.weight(.semibold))
-                            .frame(width: 38, height: 38)
-                            .foregroundStyle(memories.isEmpty ? .secondary : KairoDesign.teal)
-                            .background(KairoDesign.softSurface, in: Circle())
+                        Label(KairoL10n.string("memory.export.accessibility"), systemImage: "square.and.arrow.up")
+                            .font(.caption.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 32)
                     }
+                    .buttonStyle(.bordered)
                     .disabled(memories.isEmpty)
                     .accessibilityLabel(KairoL10n.string("memory.export.accessibility"))
                     .accessibilityIdentifier("memory.export.share")
-                }
-
-                HStack(spacing: 8) {
-                    KairoStatusPill(
-                        title: KairoL10n.string(
-                            memories.count == 1 ? "memory.status.count.one" : "memory.status.count.many",
-                            Int64(memories.count)
-                        ),
-                        systemImage: "brain.head.profile",
-                        tint: KairoDesign.teal
-                    )
-                    KairoStatusPill(
-                        title: KairoL10n.string("memory.status.userApproved"),
-                        systemImage: "checkmark.shield.fill",
-                        tint: KairoDesign.green
-                    )
                 }
             }
         }

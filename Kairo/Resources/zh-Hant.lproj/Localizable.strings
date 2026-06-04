@@ -29,6 +29,8 @@
 "memory.status.count.one" = "%lld 筆 memory";
 "memory.status.count.many" = "%lld 筆 memories";
 "memory.status.userApproved" = "使用者核准";
+"memory.details.title" = "資料庫細節";
+"memory.details.subtitle" = "需要時再查看匯出與儲存狀態。";
 "memory.search.section" = "尋找脈絡";
 "memory.search.placeholder" = "搜尋 memories";
 "memory.search.clear" = "清除";

@@ -29,6 +29,8 @@
 "memory.status.count.one" = "%lld memory";
 "memory.status.count.many" = "%lld memories";
 "memory.status.userApproved" = "User approved";
+"memory.details.title" = "Library details";
+"memory.details.subtitle" = "Export and storage status stay here when you need them.";
 "memory.search.section" = "Find context";
 "memory.search.placeholder" = "Search memories";
 "memory.search.clear" = "Clear";
