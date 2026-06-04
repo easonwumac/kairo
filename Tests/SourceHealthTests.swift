@@ -220,6 +220,7 @@ final class SourceHealthTests: XCTestCase {
         let settingsTestsURL = root.appendingPathComponent("Tests/KairoSettingsBackendAPITests.swift")
         let skillTestsURL = root.appendingPathComponent("Tests/KairoSkillBackendAPITests.swift")
         let localModelTestsURL = root.appendingPathComponent("Tests/KairoLocalModelBackendAPITests.swift")
+        let deletionTestsURL = root.appendingPathComponent("Tests/KairoDeletionBackendAPITests.swift")
         let backendTestSupportURL = root.appendingPathComponent("Tests/KairoBackendTestSupport.swift")
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: backendTestsURL.path))
@@ -227,6 +228,7 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: settingsTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: skillTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: localModelTestsURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: deletionTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: backendTestSupportURL.path))
 
         let backendTests = try String(contentsOf: backendTestsURL, encoding: .utf8)
@@ -234,6 +236,7 @@ final class SourceHealthTests: XCTestCase {
         let settingsTests = try String(contentsOf: settingsTestsURL, encoding: .utf8)
         let skillTests = try String(contentsOf: skillTestsURL, encoding: .utf8)
         let localModelTests = try String(contentsOf: localModelTestsURL, encoding: .utf8)
+        let deletionTests = try String(contentsOf: deletionTestsURL, encoding: .utf8)
         let backendTestSupport = try String(contentsOf: backendTestSupportURL, encoding: .utf8)
 
         XCTAssertTrue(accessTests.contains("final class KairoAccessBackendAPITests"))
@@ -251,6 +254,9 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(localModelTests.contains("testLocalModelBackendAPIForwardsManagementCallsThroughCoreService"))
         XCTAssertTrue(localModelTests.contains("testLocalModelBackendAPIFailsClosedWhenServiceIsUnavailable"))
         XCTAssertTrue(localModelTests.contains("testEnvironmentBackendAPIExposesLocalModelManagementFacade"))
+        XCTAssertTrue(deletionTests.contains("final class KairoDeletionBackendAPITests"))
+        XCTAssertTrue(deletionTests.contains("testDeletionBackendAPIDeletesOnDevicePrivacyDataThroughCoreInterfaces"))
+        XCTAssertTrue(deletionTests.contains("testDeletionBackendAPIFailsClosedWhenLocalModelServiceIsUnavailable"))
         XCTAssertTrue(backendTestSupport.contains("makeBackendTestAgentSkillManagerService"))
         XCTAssertTrue(backendTestSupport.contains("makeBackendTestLocalModelSettingsService"))
         XCTAssertFalse(backendTests.contains("testAccessBackendAPIResolvesPermissionStatusesWithoutRequestingPrompts"))
@@ -259,11 +265,13 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(backendTests.contains("testSkillBackendAPIBlocksIncompatibleMarketplaceSkillsFromExecutableCatalog"))
         XCTAssertFalse(backendTests.contains("testLocalModelBackendAPIForwardsManagementCallsThroughCoreService"))
         XCTAssertFalse(backendTests.contains("testEnvironmentBackendAPIExposesLocalModelManagementFacade"))
+        XCTAssertFalse(backendTests.contains("testDeletionBackendAPIDeletesOnDevicePrivacyDataThroughCoreInterfaces"))
         XCTAssertLessThan(backendTests.split(separator: "\n").count, 720)
         XCTAssertLessThan(accessTests.split(separator: "\n").count, 180)
         XCTAssertLessThan(settingsTests.split(separator: "\n").count, 180)
         XCTAssertLessThan(skillTests.split(separator: "\n").count, 240)
         XCTAssertLessThan(localModelTests.split(separator: "\n").count, 160)
+        XCTAssertLessThan(deletionTests.split(separator: "\n").count, 160)
         XCTAssertLessThan(backendTestSupport.split(separator: "\n").count, 140)
     }
 

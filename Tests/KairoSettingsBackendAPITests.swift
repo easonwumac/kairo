@@ -95,6 +95,48 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         XCTAssertEqual(connectedOptions.first { $0.providerKey == "google" }?.readiness, .readyToAuthorize)
     }
 
+    func testSettingsBackendAPITreatsMalformedOAuthTokenAsReauthorizationRequired() async throws {
+        let credentials = InMemoryCredentialStore()
+        let api = KairoSettingsBackendService(
+            openAISettingsService: OpenAISettingsService(credentialStore: credentials),
+            oauthLoginCenter: OAuthConnectorLoginCenter(
+                credentialStore: credentials,
+                clientConfigurations: [
+                    "google": OAuthConnectorClientConfiguration(
+                        clientID: "google-client",
+                        redirectURI: "kairo://oauth/google/callback",
+                        scopes: ["openid", "email"]
+                    )
+                ]
+            )
+        )
+
+        try await credentials.saveSecret(
+            "raw-broken-oauth-secret",
+            for: CredentialKey.oauthTokenSet(providerKey: "google")
+        )
+
+        var options = try await api.oauthLoginOptions()
+        var googleOption = try XCTUnwrap(options.first { $0.providerKey == "google" })
+        XCTAssertEqual(googleOption.readiness, .needsReauthorization)
+        XCTAssertTrue(googleOption.canStartAuthorization)
+        XCTAssertTrue(googleOption.grantedScopes.isEmpty)
+        XCTAssertFalse(googleOption.settingsDetailText.contains("raw-broken-oauth-secret"))
+
+        let malformedJSON = Data(#"{"accessToken":42}"#.utf8).base64EncodedString()
+        try await credentials.saveSecret(
+            malformedJSON,
+            for: CredentialKey.oauthTokenSet(providerKey: "google")
+        )
+
+        options = try await api.oauthLoginOptions()
+        googleOption = try XCTUnwrap(options.first { $0.providerKey == "google" })
+        XCTAssertEqual(googleOption.readiness, .needsReauthorization)
+        XCTAssertTrue(googleOption.canStartAuthorization)
+        XCTAssertTrue(googleOption.grantedScopes.isEmpty)
+        XCTAssertFalse(googleOption.settingsDetailText.contains(malformedJSON))
+    }
+
     private func temporaryFileURL(named name: String) -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
