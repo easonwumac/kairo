@@ -4,6 +4,7 @@ import SwiftUI
 struct ShareImportBanner: View {
     let notice: String
     let canSend: Bool
+    let actionTitle: String
     let send: () -> Void
 
     var body: some View {
@@ -14,7 +15,7 @@ struct ShareImportBanner: View {
                 .lineLimit(2)
             Spacer(minLength: 8)
             Button(action: send) {
-                Text("Send to Chat")
+                Text(actionTitle)
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)

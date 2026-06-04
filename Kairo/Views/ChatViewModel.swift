@@ -22,6 +22,9 @@ public final class ChatViewModel: ObservableObject {
     public var canSendImportedShareToChat: Bool {
         shareImportNotice != nil && (!composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty)
     }
+    public var shareImportPrimaryActionTitle: String {
+        composerText.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("建立提醒事項：") ? "Extract Tasks" : "Send to Chat"
+    }
 
     private let historyStore: ChatHistoryStore
     private let shareImportAPI: any KairoShareImportAPI
@@ -120,6 +123,7 @@ public final class ChatViewModel: ObservableObject {
     public func sendImportedShareToChat() async {
         guard canSendImportedShareToChat else { return }
         await sendComposerMessage()
+        previewFirstReminderActionFromLatestAssistantMessage()
     }
 
     public func addAttachment(_ attachment: ChatAttachment) {
@@ -242,6 +246,15 @@ public final class ChatViewModel: ObservableObject {
         } catch {
             errorMessage = "無法儲存聊天紀錄：\(error.localizedDescription)"
         }
+    }
+
+    private func previewFirstReminderActionFromLatestAssistantMessage() {
+        guard pendingAction == nil else { return }
+        let latestActions = currentThread.messages
+            .reversed()
+            .first { $0.role == .assistant && !$0.proposedActions.isEmpty }?
+            .proposedActions ?? []
+        pendingAction = latestActions.first { $0.kind == .createReminderDraft }
     }
 
     private func composedMessageText(text: String, replyTarget: ChatMessage?, hasAttachments: Bool) -> String {

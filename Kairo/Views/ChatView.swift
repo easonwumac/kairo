@@ -158,6 +158,7 @@ public struct ChatView: View {
                 ShareImportBanner(
                     notice: shareImportNotice,
                     canSend: viewModel.canSendImportedShareToChat,
+                    actionTitle: viewModel.shareImportPrimaryActionTitle,
                     send: {
                         Task { await viewModel.sendImportedShareToChat() }
                     }
