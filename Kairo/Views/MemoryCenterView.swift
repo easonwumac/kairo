@@ -30,8 +30,6 @@ public struct MemoryCenterView: View {
             ScrollViewReader { scrollProxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        memoryLibraryHeader
-
                         memorySearchSection
                             .id(Self.searchSectionScrollID)
 
@@ -45,6 +43,8 @@ public struct MemoryCenterView: View {
                         }
 
                         memoryRecordsSection
+
+                        memoryLibraryHeader
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 18)

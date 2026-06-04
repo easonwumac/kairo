@@ -496,6 +496,14 @@ Stage 51 makes Models route-first:
   source, runtime fit, manifest details, and the compact setup explanation stay
   behind Advanced diagnostics.
 
+Stage 52 makes Memory search-first again:
+
+- Memory now opens with Find context, then Add context, then records.
+- Library details, storage status, and export move below the working memory
+  list so they read as support controls instead of the page's main job.
+- No memory behavior changes: manual save, search, record details, delete, and
+  export remain reachable with the same identifiers.
+
 ## Next UI stages
 
 1. Product surface audit
