@@ -61,6 +61,24 @@ final class KairoChatBackendAPITests: XCTestCase {
         XCTAssertEqual(viewModel.errorMessage, assistantMessage.text)
     }
 
+    @MainActor
+    func testChatViewModelSurfacesLocalOnlyUnavailableAsFailedMessage() async throws {
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            agent: AgentCore(aiProvider: FailingChatBackendAIProvider(error: AIProviderError.unsupported))
+        )
+
+        await viewModel.send("Draft a private reply")
+
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        XCTAssertEqual(assistantMessage.role, .assistant)
+        XCTAssertEqual(assistantMessage.status, .failed)
+        XCTAssertTrue(assistantMessage.text.contains("local-only fallback 無法完成"), assistantMessage.text)
+        XCTAssertTrue(assistantMessage.text.contains("切回 cloud provider"), assistantMessage.text)
+        XCTAssertTrue(assistantMessage.text.contains("選擇支援的本機模型"), assistantMessage.text)
+        XCTAssertEqual(viewModel.errorMessage, assistantMessage.text)
+    }
+
     func testChatBackendAPIForwardsPrivacyModeThroughAgentCore() async throws {
         let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Private response"))
         let api = KairoChatBackendService(agent: AgentCore(
