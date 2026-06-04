@@ -7,6 +7,12 @@ This runbook is the repeatable evidence path before each beta handoff, App Revie
 Run these before committing release-blocking work:
 
 ```bash
+scripts/release_hygiene_check.sh
+```
+
+Or run the equivalent checks manually:
+
+```bash
 swift test
 xcodegen generate
 git diff --check
@@ -28,6 +34,12 @@ Both scans must return no tracked secrets, tokens, private keys, generated crede
 ## GitHub Actions Gate
 
 After pushing the release candidate commit to `main`, verify the `Swift Tests` workflow succeeded for that exact submitted commit:
+
+```bash
+scripts/release_hygiene_check.sh --skip-swift-test --require-ci
+```
+
+Or verify the GitHub Actions gate manually:
 
 ```bash
 git rev-parse HEAD
