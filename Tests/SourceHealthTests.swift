@@ -531,6 +531,9 @@ final class SourceHealthTests: XCTestCase {
 
         XCTAssertTrue(chatTests.contains("final class KairoChatBackendAPITests"))
         XCTAssertTrue(chatTests.contains("testChatBackendAPIForwardsPrivacyModeThroughAgentCore"))
+        XCTAssertTrue(chatTests.contains("testChatViewModelSurfacesMissingOpenAIKeyAsActionableSettingsError"))
+        XCTAssertTrue(chatTests.contains("OpenAI API key 尚未設定"))
+        XCTAssertTrue(chatTests.contains("local-only fallback"))
         XCTAssertTrue(memoryTests.contains("final class KairoMemoryBackendAPITests"))
         XCTAssertTrue(memoryTests.contains("testMemoryBackendAPIForwardsLifecycleAndExportThroughStore"))
         XCTAssertTrue(recipeTests.contains("final class KairoRecipeBackendAPITests"))
