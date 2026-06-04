@@ -526,7 +526,7 @@ public struct LocalModelCatalogTrustStore: Codable, Equatable, Sendable {
     }
 }
 
-public enum LocalModelCatalogServiceError: Error, Equatable {
+public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
     case invalidJSON
     case missingSignature
     case unknownSigningKey(String)
@@ -539,6 +539,35 @@ public enum LocalModelCatalogServiceError: Error, Equatable {
     case nonProductionCatalogSignatureStatus(String)
     case unsafeDownloadURL(modelID: String, url: String)
     case invalidChecksum(modelID: String, sha256: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidJSON:
+            return "Model catalog JSON is invalid."
+        case .missingSignature:
+            return "Model catalog is missing a production signature."
+        case .unknownSigningKey(let keyID):
+            return "Model catalog signing key is unknown: \(keyID)."
+        case .revokedSigningKey(let keyID):
+            return "Model catalog signing key has been revoked: \(keyID)."
+        case .signingKeyPendingPublication(let keyID):
+            return "Model catalog signing key is pending publication: \(keyID)."
+        case .signingKeyNotYetValid(let keyID):
+            return "Model catalog signing key is not active yet: \(keyID)."
+        case .signingKeyExpired(let keyID):
+            return "Model catalog signing key has expired: \(keyID)."
+        case .unsupportedSignatureAlgorithm(let algorithm):
+            return "Model catalog signature algorithm is unsupported: \(algorithm)."
+        case .invalidSignature:
+            return "Model catalog signature is invalid."
+        case .nonProductionCatalogSignatureStatus(let status):
+            return "Model catalog is marked \(status), not productionSigned."
+        case .unsafeDownloadURL(let modelID, let url):
+            return "Model catalog has an unsafe download URL for \(modelID): \(url)."
+        case .invalidChecksum(let modelID, let sha256):
+            return "Model catalog has an invalid checksum for \(modelID): \(sha256)."
+        }
+    }
 }
 
 public struct LocalModelCatalogService: Sendable {

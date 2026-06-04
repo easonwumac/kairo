@@ -237,6 +237,7 @@ final class AgentSkillFeatureTests: XCTestCase {
             XCTFail("Expected reference marketplace catalog status to fail closed.")
         } catch let error as AgentSkillMarketplaceCatalogError {
             XCTAssertEqual(error, .nonProductionCatalogSignatureStatus("referenceUnsigned"))
+            XCTAssertEqual(error.localizedDescription, "Marketplace catalog is marked referenceUnsigned, not productionSigned.")
         }
     }
 

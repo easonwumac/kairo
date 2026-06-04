@@ -56,11 +56,24 @@ public enum AgentSkillInstallError: Error, Equatable, Sendable {
     case compatibilityBlocked(skillID: String, issues: [AgentSkillCompatibilityIssue])
 }
 
-public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable {
+public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable, LocalizedError {
     case invalidPermission(skillID: String, permission: String)
     case invalidManifestURL(skillID: String, manifestURL: String)
     case nonProductionCatalogSignatureStatus(String)
     case invalidJSON
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidPermission(let skillID, let permission):
+            return "Marketplace skill \(skillID) uses an unknown permission: \(permission)."
+        case .invalidManifestURL(let skillID, let manifestURL):
+            return "Marketplace skill \(skillID) has an invalid manifest URL: \(manifestURL)."
+        case .nonProductionCatalogSignatureStatus(let status):
+            return "Marketplace catalog is marked \(status), not productionSigned."
+        case .invalidJSON:
+            return "Marketplace catalog JSON is invalid."
+        }
+    }
 }
 
 public enum AgentSkillMarketplaceCatalogSignatureStatus: String, Codable, Equatable, Sendable {

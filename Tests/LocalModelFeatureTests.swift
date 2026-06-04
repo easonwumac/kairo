@@ -355,6 +355,7 @@ final class LocalModelFeatureTests: XCTestCase {
             XCTFail("Expected reference catalog status to fail closed.")
         } catch let error as LocalModelCatalogServiceError {
             XCTAssertEqual(error, .nonProductionCatalogSignatureStatus("referenceUnsigned"))
+            XCTAssertEqual(error.localizedDescription, "Model catalog is marked referenceUnsigned, not productionSigned.")
         }
     }
 

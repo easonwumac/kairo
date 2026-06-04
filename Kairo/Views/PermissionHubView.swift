@@ -471,7 +471,7 @@ public struct PermissionHubView: View {
             skillCatalog = skillCatalog.mergingMarketplaceCatalog(remoteCatalog.catalog)
             skillManagerMessage = "Loaded \(remoteCatalog.catalog.skills.count) marketplace skills from \(remoteCatalog.sourceRepository.host ?? "repository")."
         } catch {
-            skillManagerMessage = "Unable to refresh marketplace skills."
+            skillManagerMessage = "Unable to refresh marketplace skills: \(error.localizedDescription)"
         }
     }
 
