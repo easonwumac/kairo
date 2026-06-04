@@ -468,6 +468,44 @@ final class AgentSkillFeatureTests: XCTestCase {
         XCTAssertNoThrow(try fetchedManifest.validateForInstall())
     }
 
+    func testAgentSkillMarketplaceCatalogServiceRejectsMismatchedManifestSkillID() async throws {
+        let requestedSkill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-weather-briefing",
+            displayName: "Weather Briefing",
+            summary: "Summarizes weather through an approved provider API.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://easonwumac.github.io/kairo-skills/manifests/weather-briefing.json")!
+        )
+        let unexpectedSkill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-homekit-scene-guard",
+            displayName: "HomeKit Scene Guard",
+            summary: "Wraps confirmed HomeKit scene controls.",
+            requiredCapabilities: [.homeKit],
+            downloadURL: URL(string: "https://easonwumac.github.io/kairo-skills/manifests/homekit-scene-guard.json")!,
+            kind: .homeKitControl
+        )
+        let manifest = try AgentSkillManifest.signedForTesting(skill: unexpectedSkill, packageVersion: "2026.6")
+        let manifestJSON = try AgentSkillManifest.encodeJSONString(manifest)
+        let httpClient = AgentSkillMockHTTPClient(statusCode: 200, body: manifestJSON)
+        let service = AgentSkillMarketplaceCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-skills/skills.json")!,
+            httpClient: httpClient
+        )
+
+        do {
+            _ = try await service.fetchManifest(for: requestedSkill)
+            XCTFail("Expected mismatched marketplace manifest skill id to fail closed.")
+        } catch let error as AgentSkillMarketplaceCatalogError {
+            XCTAssertEqual(
+                error,
+                .manifestSkillMismatch(
+                    expectedSkillID: "marketplace-weather-briefing",
+                    actualSkillID: "marketplace-homekit-scene-guard"
+                )
+            )
+        }
+    }
+
     func testAgentSkillCatalogMergesRemoteMarketplaceWithoutReplacingInstalledSkills() {
         var installedWeather = AgentSkill.marketplaceTemplate(
             id: "marketplace-weather-briefing",

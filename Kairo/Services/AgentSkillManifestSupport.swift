@@ -60,6 +60,7 @@ public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable, Local
     case invalidPermission(skillID: String, permission: String)
     case invalidManifestURL(skillID: String, manifestURL: String)
     case duplicateSkillID(String)
+    case manifestSkillMismatch(expectedSkillID: String, actualSkillID: String)
     case nonProductionCatalogSignatureStatus(String)
     case invalidJSON
 
@@ -71,6 +72,8 @@ public enum AgentSkillMarketplaceCatalogError: Error, Equatable, Sendable, Local
             return "Marketplace skill \(skillID) has an invalid manifest URL: \(manifestURL)."
         case .duplicateSkillID(let skillID):
             return "Marketplace catalog contains a duplicate skill id: \(skillID)."
+        case .manifestSkillMismatch(let expectedSkillID, let actualSkillID):
+            return "Marketplace manifest skill id mismatch: expected \(expectedSkillID), got \(actualSkillID)."
         case .nonProductionCatalogSignatureStatus(let status):
             return "Marketplace catalog is marked \(status), not productionSigned."
         case .invalidJSON:
@@ -218,7 +221,16 @@ public struct AgentSkillMarketplaceCatalogService: Sendable {
         }
 
         do {
-            return try JSONDecoder().decode(AgentSkillManifest.self, from: data)
+            let manifest = try JSONDecoder().decode(AgentSkillManifest.self, from: data)
+            guard manifest.skill.id == skill.id else {
+                throw AgentSkillMarketplaceCatalogError.manifestSkillMismatch(
+                    expectedSkillID: skill.id,
+                    actualSkillID: manifest.skill.id
+                )
+            }
+            return manifest
+        } catch let error as AgentSkillMarketplaceCatalogError {
+            throw error
         } catch {
             throw AgentSkillManifestImportError.invalidJSON
         }
