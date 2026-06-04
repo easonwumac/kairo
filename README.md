@@ -148,7 +148,7 @@ Use these labels when reading the code and docs:
 - App Intents / Shortcut nodes with `schemaVersion=1` safety contracts.
 - Kairo-owned internal Recipes with preview/run lifecycle.
 - Metadata-only audit log persistence.
-- Swift Package test coverage for core safety, lifecycle, catalog, and source-health boundaries.
+- Swift Package test coverage for core safety, lifecycle, catalog, and fail-closed behavior.
 
 ### Scaffolded
 

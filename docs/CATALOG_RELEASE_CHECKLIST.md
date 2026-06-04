@@ -38,5 +38,5 @@ Before marking local model catalog publication production-ready:
 
 - App-side trust-store validation is not proof that production catalogs have been published.
 - Signed catalog validation is not proof of iPhone local inference.
-- Simulator UI smoke, package tests, source-health tests, and screenshots from `tmp/` are supporting evidence only; real-device beta sign-off still requires `docs/REAL_DEVICE_BETA_SIGNOFF.md`.
+- Simulator UI smoke, package tests, release hygiene checks, and screenshots from `tmp/` are supporting evidence only; real-device beta sign-off still requires `docs/REAL_DEVICE_BETA_SIGNOFF.md`.
 - Do not claim real HomeKit live control, silent Apple Shortcut creation, arbitrary cross-app UI control, private cross-app reads, or iOS production local inference from catalog publication alone.

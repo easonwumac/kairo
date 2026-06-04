@@ -31,7 +31,7 @@ Do not submit until all gates below are true:
 
 ## Evidence Boundaries
 
-- Simulator UI smoke, package tests, source-health tests, and screenshots from `tmp/` are support evidence only.
+- Simulator UI smoke, package tests, release hygiene checks, and screenshots from `tmp/` are support evidence only.
 - App-side signature verification proves fail-closed validation behavior, not that production catalogs have been published.
 - macOS/dev local-model reply checks and benchmark adapters are not iPhone runtime proof.
 - Current deletion proof is on-device only; do not add backend account deletion copy unless a backend account exists.

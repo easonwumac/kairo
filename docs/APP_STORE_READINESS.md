@@ -45,7 +45,7 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 
 - **Real device blocked:** `xcrun devicectl list devices` on 2026-06-04 10:37 CST listed all paired physical devices as `unavailable`, so this pass did not produce real-device sign-off.
 - **Copy QA scope:** Review notes avoid claiming iOS production local inference, live HomeKit control, private cross-app data reads, arbitrary UI control, reuse of a user's ChatGPT browser session, or silent Apple Shortcuts creation.
-- **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking, and package source-health tests parse the privacy manifest plus entitlement/review-note boundaries. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
+- **Privacy Labels scope:** Current privacy manifest declares no collected data and no tracking; keep Privacy Labels aligned through release hygiene and App Review QA. Recheck labels if analytics, backend accounts, cloud sync, crash provider collection, or connector sync are added.
 - **Deletion scope:** Current deletion proof is on-device only. Backend account deletion must stay out of shipped copy unless a backend account exists.
 - **Purpose string scope:** Beta app plist includes only currently exercised Calendar, Reminders, Contacts, and Notifications purpose strings; HomeKit, Location, and Photo Library purpose strings stay future-only until those capabilities ship.
 - **Catalog trust scope:** App-side trust stores fail closed for unknown, revoked, pending-publication, out-of-window, unsupported, or invalid signing keys. Skill marketplace and local model release keys must remain `publicationStatus=pendingPublication` until matching standalone catalogs and public trust metadata are published. The app-repo `Website/skills/skills.json` and `Website/models/models.json` seeds are marked `catalogSignatureStatus=referenceUnsigned` and are not production signed catalog evidence. `docs/TRUST_STORE_RUNBOOK.md` and `docs/CATALOG_RELEASE_CHECKLIST.md` define the production publication and rotation/revocation gates, but production signed catalogs and release public-key material still need publication in the standalone repos.
@@ -160,7 +160,7 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 - [x] Settings UI 可刪除已安裝模型並清除 selected-model state。
 - [x] Settings download preview 顯示模型大小、授權、license approval、用途、儲存/備份政策與刪除方式。
 - [x] Complete final copy QA for App Review；copy 已保留 iOS local inference / HomeKit live control / private cross-app access / silent Shortcut modification 的限制。
-- [x] Package source-health tests cover no-collected-data/no-tracking privacy manifest claims, absence of HomeKit entitlement, and review-note boundary copy for local inference, HomeKit, cross-app access, and silent Shortcut modification.
+- [x] Release hygiene and App Review QA keep no-collected-data/no-tracking privacy manifest claims, absence of HomeKit entitlement, and review-note boundaries aligned for local inference, HomeKit, cross-app access, and silent Shortcut modification.
 - [x] Core downloader supports HTTPS + checksum verification.
 - [x] Core settings can persist and validate the user-selected installed model.
 - [x] Live Settings wiring creates the verified downloader from `KairoEnvironment.live`.
@@ -200,8 +200,8 @@ Final submission gate: `docs/APP_STORE_SUBMISSION_CHECKLIST.md`.
 
 ### 11. Deferred surfaces
 
-- [x] Keyboard Extension is intentionally not part of the current beta; project target/source-health checks keep it out of beta builds.
-- [x] Widget is intentionally not part of the current beta; project target/source-health checks keep it out of beta builds.
+- [x] Keyboard Extension is intentionally not part of the current beta; project configuration keeps it out of beta builds.
+- [x] Widget is intentionally not part of the current beta; project configuration keeps it out of beta builds.
 - [x] Real HomeKit entitlement path is intentionally not part of the current beta until entitlement/device/fallback work is done; beta entitlements remain App Group only.
 - [x] Additional OAuth providers are deferred until one provider path is fully reviewed and secure.
 

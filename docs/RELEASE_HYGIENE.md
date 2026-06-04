@@ -50,7 +50,7 @@ The matching `headSha` must equal `HEAD`, `workflowName` must be `Swift Tests`, 
 
 ## Evidence Boundaries
 
-- `swift test`, source-health tests, simulator UI smoke, screenshots from `tmp/`, and GitHub Actions success are support evidence only.
+- `swift test`, release hygiene checks, simulator UI smoke, screenshots from `tmp/`, and GitHub Actions success are support evidence only.
 - Real-device beta sign-off still requires `docs/REAL_DEVICE_BETA_SIGNOFF.md` to have physical-device evidence and no `Blocked - device unavailable` rows.
 - App-side catalog signature validation proves fail-closed behavior only; it does not prove production signed catalogs or public trust metadata were published.
 - macOS/dev local-model reply checks and benchmark adapters are not iPhone production inference proof.

@@ -1,6 +1,6 @@
 # Real-Device Beta Sign-Off
 
-This file is the release-blocking physical-device evidence log for the Kairo beta. Do not mark any item as passed from simulator runs, package tests, source-health tests, screenshots from `tmp/`, or code inspection alone.
+This file is the release-blocking physical-device evidence log for the Kairo beta. Do not mark any item as passed from simulator runs, package tests, release hygiene checks, screenshots from `tmp/`, or code inspection alone.
 
 ## Evidence rules
 

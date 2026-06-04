@@ -75,11 +75,11 @@ These identifiers are mirrored in `Config/KairoApp-Info.plist` under `BGTaskSche
 - [x] Task planning 不會直接執行 tier2/tier3 action；高風險 action 只能走前景 preview + explicit confirmation。
 - [x] 文件明確說明 iOS 不保證背景任務準時。
 
-Package/source-health evidence:
+Package evidence:
 
 - `BackgroundTaskPolicy.defaultTasks` defines the beta catalog and bounded runtime limits.
 - `testBackgroundTaskIdentifiersMatchInfoPlist` keeps `BGTaskSchedulerPermittedIdentifiers` aligned with the policy catalog.
 - `testBackgroundTaskPolicySchedulesBoundedRefreshAndRejectsDaemonClaims` rejects continuous background daemon requests.
 - `testBackgroundTaskPolicyDefersOversizedConnectorWork` defers work that exceeds the task budget.
 
-This is package/source evidence only. Real-device background launch behavior, App Group access, permission prompts, App Intents execution, Share Extension import, and persistence still require physical-device sign-off.
+This is package evidence only. Real-device background launch behavior, App Group access, permission prompts, App Intents execution, Share Extension import, and persistence still require physical-device sign-off.

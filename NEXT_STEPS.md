@@ -14,7 +14,7 @@ Kairo is in beta stabilization / App Review preparation. Do not add new Shortcut
    - Run real-device fallback checks for denied Calendar / Reminders / Notifications / Contacts permissions.
    - Access permission status/request handling now has backend API coverage; keep device permission-denied fallback sign-off as real-device-only evidence.
    - Memory lifecycle/export, Kairo-owned internal recipe lifecycle/run, Share Extension queue import, metadata-only audit log deletion, Settings credential/OAuth management, and Chat OpenAI provider request assembly now have backend API coverage; keep future deletion copy limited to on-device data unless a backend account exists.
-   - Privacy manifest no-collection/no-tracking, absence of HomeKit entitlement, purpose strings, and review-note claim boundaries are package-tested through structured plist/source checks; keep `docs/PRIVACY_LABELS_CHECKLIST.md` as an App Store handoff artifact, not as brittle Markdown copy-test coverage.
+   - Privacy manifest no-collection/no-tracking, absence of HomeKit entitlement, purpose strings, and review-note claim boundaries must be checked through release hygiene and App Review QA; keep `docs/PRIVACY_LABELS_CHECKLIST.md` as an App Store handoff artifact, not as brittle Markdown copy-test coverage.
    - Keep HomeKit live control out of beta claims until entitlement, permission copy, fallback UI, confirmation behavior, and real-device evidence are complete.
    - Keep review notes from claiming iOS production local inference, real HomeKit live control, arbitrary cross-app reads/UI control, reuse of a user's ChatGPT browser session, or silent Apple Shortcuts creation.
 
