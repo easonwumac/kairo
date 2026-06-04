@@ -13,6 +13,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public var errorMessage: String?
     @Published public var pendingAction: AgentAction?
     @Published public private(set) var actionResultMessage: String?
+    @Published public private(set) var actionResultSucceeded: Bool?
     @Published public private(set) var replyTarget: ChatMessage?
     @Published public private(set) var providerRouteStatus: ChatProviderRouteStatus
     @Published public private(set) var privacyMode: ChatPrivacyMode = .standard
@@ -174,6 +175,7 @@ public final class ChatViewModel: ObservableObject {
     public func previewAction(_ action: AgentAction) {
         pendingAction = action
         actionResultMessage = nil
+        actionResultSucceeded = nil
     }
 
     public func replyToMessage(_ message: ChatMessage) {
@@ -221,9 +223,11 @@ public final class ChatViewModel: ObservableObject {
         do {
             let result = try await actionExecutor.execute(action, confirmed: true)
             actionResultMessage = result.message
+            actionResultSucceeded = result.completed
             errorMessage = nil
         } catch {
             actionResultMessage = "Action failed: \(error.localizedDescription)"
+            actionResultSucceeded = false
             errorMessage = "Kairo 無法執行此動作。"
         }
         pendingAction = nil

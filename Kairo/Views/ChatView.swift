@@ -145,9 +145,9 @@ public struct ChatView: View {
             }
 
             if let actionResultMessage = viewModel.actionResultMessage {
-                Label(actionResultMessage, systemImage: "checkmark.circle.fill")
+                Label(actionResultMessage, systemImage: viewModel.actionResultSucceeded == false ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                     .font(.caption)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(viewModel.actionResultSucceeded == false ? .orange : .green)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
                     .padding(.top, 8)

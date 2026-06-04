@@ -31,6 +31,29 @@ final class ChatActionConfirmationTests: XCTestCase {
     }
 
     @MainActor
+    func testChatViewModelSurfacesDeniedCalendarPermissionAsFailedActionResult() async throws {
+        let deniedMessage = "Calendar permission was not granted."
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            actionExecutor: DeniedActionExecutor(message: deniedMessage)
+        )
+
+        await viewModel.send("建立行程：週五 10:00 Kairo roadmap review")
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createCalendarDraft })
+
+        viewModel.previewAction(action)
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertEqual(viewModel.actionResultMessage, deniedMessage)
+        XCTAssertEqual(viewModel.actionResultSucceeded, false)
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
+    @MainActor
     func testChatViewModelConfirmsContactActionThroughInjectedExecutor() async throws {
         try await assertConfirmedAction(
             prompt: "建立聯絡人：王小明 0912-345-678 ming@example.com",
@@ -149,6 +172,14 @@ private actor ChatActionConfirmationMockExecutor: ActionExecutor {
         default:
             return ActionExecutionResult(completed: true, message: "Scheduled notification.", createdIdentifier: "notification-id")
         }
+    }
+}
+
+private struct DeniedActionExecutor: ActionExecutor {
+    let message: String
+
+    func execute(_ action: AgentAction, confirmed: Bool) async throws -> ActionExecutionResult {
+        ActionExecutionResult(completed: false, message: message)
     }
 }
 #endif
