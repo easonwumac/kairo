@@ -128,17 +128,17 @@ struct HandoffActionReviewBanner: View {
         let displayName = catalog.descriptor(for: action.kind)?.displayName ?? action.title
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
-                Label("已準備可見 handoff", systemImage: "arrow.up.forward.app")
+                Label("已準備開啟系統 App", systemImage: "arrow.up.forward.app")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
-                Text("\(displayName)：需確認後才會開啟系統 App")
+                Text("\(displayName)：確認後只會開啟 App，不會自動送出或完成操作")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
             Spacer(minLength: 8)
             Button(action: review) {
-                Text("Review Handoff")
+                Text("檢查後開啟")
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)

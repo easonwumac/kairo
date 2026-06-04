@@ -1422,7 +1422,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmEmailDraftHandoff"))
         XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.composeEmailDraft""#))
         XCTAssertTrue(uiTestSources.contains("Opened visible Mail draft handoff. No email has been sent."))
-        XCTAssertTrue(actionPreviewView.contains("tel: opens Phone visibly; the call still requires user action."))
+        XCTAssertTrue(actionPreviewView.contains("Phone opens visibly; the call still requires user action."))
         XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmMapDirectionsHandoff"))
         XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.openMapDirections""#))
         XCTAssertTrue(uiTestSources.contains("Opened visible Apple Maps handoff. Navigation still requires user action in Maps."))

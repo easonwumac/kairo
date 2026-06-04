@@ -179,7 +179,7 @@ public struct ActionPreviewView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(draft.destinationQuery.isEmpty ? "Apple Maps Destination" : draft.destinationQuery).font(.headline)
                 Text("Mode: \(draft.mode.displayName)").font(.caption)
-                Text("Visible Apple Maps handoff").font(.caption).foregroundStyle(.secondary)
+                Text("Apple Maps opens visibly; navigation still requires user action.").font(.caption).foregroundStyle(.secondary)
             }
         case .message(let draft):
             VStack(alignment: .leading, spacing: 4) {
@@ -187,7 +187,7 @@ public struct ActionPreviewView: View {
                 if !draft.body.isEmpty {
                     Text(draft.body).font(.caption)
                 }
-                Text("Body stays in Kairo preview; sms: opens only the recipient handoff.").font(.caption).foregroundStyle(.secondary)
+                Text("Body stays in Kairo preview; Messages opens visibly with the recipient only.").font(.caption).foregroundStyle(.secondary)
             }
         case .phoneCall(let draft):
             VStack(alignment: .leading, spacing: 4) {
@@ -200,7 +200,7 @@ public struct ActionPreviewView: View {
                 if let notes = draft.notes, !notes.isEmpty {
                     Text(notes).font(.caption)
                 }
-                Text("tel: opens Phone visibly; the call still requires user action.").font(.caption).foregroundStyle(.secondary)
+                Text("Phone opens visibly; the call still requires user action.").font(.caption).foregroundStyle(.secondary)
             }
         case .webSearch(let draft):
             VStack(alignment: .leading, spacing: 4) {

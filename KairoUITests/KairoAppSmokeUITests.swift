@@ -760,7 +760,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             actionIdentifier: "chat.proposed-action.openMapDirections",
             reviewIdentifier: "chat.handoff.review-action",
             reviewBannerIdentifier: "chat.handoff.review-banner",
-            previewContains: ["Open Apple Maps Directions", "Apple Park"],
+            previewContains: ["Open Apple Maps Directions", "Apple Park", "Apple Maps opens visibly"],
             resultText: "Opened visible Apple Maps handoff. Navigation still requires user action in Maps."
         )
     }
@@ -782,7 +782,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             actionIdentifier: "chat.proposed-action.openPhoneCallHandoff",
             reviewIdentifier: "chat.handoff.review-action",
             reviewBannerIdentifier: "chat.handoff.review-banner",
-            previewContains: ["Phone Handoff", "0912-345-678", "tel: opens Phone visibly"],
+            previewContains: ["Phone Handoff", "0912-345-678", "Phone opens visibly"],
             resultText: "Opened visible Phone handoff. No call has been placed"
         )
     }
