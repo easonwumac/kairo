@@ -728,6 +728,8 @@
 "settings.models.compact.downloadedSelectForRouting" = "%@ 已下載。選用後可用於本機路由。";
 "settings.models.compact.noDownloadedModel" = "尚未選擇已下載的模型。";
 "settings.models.compact.trimmed" = "目前只顯示 %lld 個 starter models。更多可下載模型保留在 kairo-models。";
+"settings.models.starter.title" = "先選一個本機模型";
+"settings.models.starter.subtitle" = "只有在你想讓 Kairo 於裝置上回答符合條件的問題時，才下載或選用 starter。";
 "settings.models.advanced.section" = "進階診斷";
 "settings.models.advanced.detail" = "Catalog 刷新、runtime fit、manifest 細節與 dev checks 只在需要排查時顯示。";
 "settings.models.advanced.show" = "顯示進階診斷";

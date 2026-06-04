@@ -373,6 +373,16 @@ Stage 38 makes Access setup details secondary:
 - The everyday tool list remains directly under the overview; advanced skill
   library, developer manifest import, and HomeKit previews stay progressive.
 
+Stage 39 makes local model setup starter-led:
+
+- AI setup no longer drops users directly into model rows after the route card;
+  the starter model section now names the job as starting with one local model.
+- Supporting copy explains that downloads are only for on-device eligible
+  prompts, so the section reads like an opt-in product step instead of a model
+  catalog.
+- Existing model actions, download approval, trimmed catalog note, and advanced
+  diagnostics remain unchanged and progressively disclosed.
+
 ## Next UI stages
 
 1. Product surface audit
