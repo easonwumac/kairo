@@ -342,6 +342,7 @@ extension KairoAppSmokeUITests {
         seedInstalledLocalModel: Bool = false,
         seedInstalledWeatherSkill: Bool = false,
         seedExpandedLocalModelCatalog: Bool = false,
+        seedSharedTaskText: Bool = false,
         settingsShortcutDemosOnly: Bool = false
     ) {
         app.terminate()
@@ -356,6 +357,9 @@ extension KairoAppSmokeUITests {
         }
         if seedExpandedLocalModelCatalog {
             app.launchArguments.append("--ui-testing-expanded-local-model-catalog")
+        }
+        if seedSharedTaskText {
+            app.launchArguments.append("--ui-testing-seed-shared-task")
         }
         if settingsShortcutDemosOnly {
             app.launchArguments.append("--ui-testing-settings-shortcut-demos-only")

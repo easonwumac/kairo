@@ -596,11 +596,25 @@ final class SourceHealthTests: XCTestCase {
 
         let smokeSource = try String(contentsOf: smokeURL, encoding: .utf8)
         let helperSource = try String(contentsOf: helpersURL, encoding: .utf8)
+        let appSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/App/KairoApp.swift"),
+            encoding: .utf8
+        )
+        let environmentSource = try String(
+            contentsOf: root.appendingPathComponent("Kairo/Services/KairoEnvironment.swift"),
+            encoding: .utf8
+        )
         XCTAssertLessThan(smokeSource.split(separator: "\n").count, 720, "Keep smoke scenarios readable.")
         XCTAssertTrue(helperSource.contains("extension KairoAppSmokeUITests"))
         XCTAssertTrue(helperSource.contains("func openAccessAndVerifyHomeKitDemos()"))
         XCTAssertTrue(helperSource.contains("func findStaticText("))
         XCTAssertTrue(helperSource.contains("func relaunchForUITesting("))
+        XCTAssertTrue(smokeSource.contains("testFlowASharedTextToReminderPreviewConfirm"))
+        XCTAssertTrue(smokeSource.contains("seedSharedTaskText: true"))
+        XCTAssertTrue(helperSource.contains("--ui-testing-seed-shared-task"))
+        XCTAssertTrue(appSource.contains("--ui-testing-seed-shared-task"))
+        XCTAssertTrue(environmentSource.contains("seedSharedTaskText: Bool"))
+        XCTAssertTrue(environmentSource.contains("InMemoryShareIngestionQueue(seed: [sharedItem])"))
     }
 
     func testRootShellIsChatFirstInsteadOfBriefingInboxFirst() throws {
@@ -1089,6 +1103,9 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(readiness.contains("Skill marketplace and local model release keys must remain `publicationStatus=pendingPublication`"))
         XCTAssertTrue(readiness.contains("catalogSignatureStatus=referenceUnsigned"))
         XCTAssertTrue(readiness.contains("Marketplace trust store supports key rotation, publication, and revocation metadata"))
+        XCTAssertTrue(readiness.contains("Publish production signed model catalog and public trust-store key material"))
+        XCTAssertTrue(readiness.contains("Capture real-device iOS runtime proof for latency, memory, thermal behavior, and App Store-compatible packaging"))
+        XCTAssertFalse(readiness.contains("Publish production signed catalog/public key material and runtime speed proof"))
     }
 
     func testAppStoreSubmissionChecklistGatesReleaseEvidence() throws {

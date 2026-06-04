@@ -41,7 +41,8 @@ struct KairoApp: App {
                                 resetPersistentState: arguments.contains("--reset-ui-testing-data"),
                                 seedInstalledLocalModel: arguments.contains("--ui-testing-installed-local-model"),
                                 seedInstalledWeatherSkill: arguments.contains("--ui-testing-installed-weather-skill"),
-                                seedExpandedLocalModelCatalog: arguments.contains("--ui-testing-expanded-local-model-catalog")
+                                seedExpandedLocalModelCatalog: arguments.contains("--ui-testing-expanded-local-model-catalog"),
+                                seedSharedTaskText: arguments.contains("--ui-testing-seed-shared-task")
                             )
                             environment = uiTestingEnvironment
                             environmentRevision += 1

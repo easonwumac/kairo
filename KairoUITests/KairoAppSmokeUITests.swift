@@ -568,6 +568,40 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findStaticText(containing: "Will ask first", direction: .down).exists)
     }
 
+    func testFlowASharedTextToReminderPreviewConfirm() throws {
+        relaunchForUITesting(initialSection: "chat", seedSharedTaskText: true)
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+
+        XCTAssertTrue(anyElement("chat.share-import.banner").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "已匯入 1 個分享項目", direction: .both, maxSwipes: 1).exists)
+        let composer = anyElement("chat.composer.text")
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        let composerValue = composer.value as? String ?? ""
+        XCTAssertTrue(composerValue.contains("建立提醒事項：Send prototype link"), composerValue)
+
+        let sendShare = findButton("chat.share-import.send", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(sendShare.exists)
+        sendShare.tap()
+
+        XCTAssertTrue(anyElement("chat.message.user").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
+        let action = findButton("chat.proposed-action.createReminderDraft", direction: .down, maxSwipes: 4)
+        XCTAssertTrue(action.exists)
+        action.tap()
+
+        XCTAssertTrue(anyElement("chat.action-preview").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Create Reminder", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Send prototype link", direction: .both, maxSwipes: 1).exists)
+        let confirm = findButton(labeled: "Confirm", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(confirm.exists)
+        confirm.tap()
+
+        XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Created reminder.", direction: .both, maxSwipes: 1).exists)
+    }
+
     func testChatCanPreviewAndConfirmNotificationAction() throws {
         verifyChatActionPreview(
             prompt: "通知我喝水",

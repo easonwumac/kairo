@@ -101,7 +101,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
         resetPersistentState: Bool = true,
         seedInstalledLocalModel: Bool = false,
         seedInstalledWeatherSkill: Bool = false,
-        seedExpandedLocalModelCatalog: Bool = false
+        seedExpandedLocalModelCatalog: Bool = false,
+        seedSharedTaskText: Bool = false
     ) async throws -> KairoEnvironment {
         let rootDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("KairoUITesting", isDirectory: true)
@@ -200,6 +201,26 @@ public struct KairoEnvironment: KairoBackendDependencies {
         )
         let memoryStore = InMemoryMemoryStore()
         let auditLogger = InMemoryAuditLogger()
+        let shareIngestionQueue: ShareIngestionQueue
+        if seedSharedTaskText {
+            let builder = ShareAttachmentBuilder()
+            let sharedItem = ShareIngestionItem(
+                attachments: [
+                    builder.text(
+                        """
+                        TODO: Send prototype link
+                        Reminder: Book beta review meeting
+                        """,
+                        displayName: "Launch Notes"
+                    )
+                ],
+                sourceApplication: "UITestShareSheet",
+                receivedAt: Date(timeIntervalSince1970: 10)
+            )
+            shareIngestionQueue = InMemoryShareIngestionQueue(seed: [sharedItem])
+        } else {
+            shareIngestionQueue = InMemoryShareIngestionQueue()
+        }
 
         return KairoEnvironment(
             memoryStore: memoryStore,
@@ -208,7 +229,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
             chatHistoryStore: InMemoryChatHistoryStore(seed: [ChatThread(messages: [
                 ChatMessage(role: .assistant, text: "UI testing Kairo environment loaded.")
             ])]),
-            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            shareIngestionQueue: shareIngestionQueue,
             kairoRecipeStore: kairoRecipeStore,
             permissionService: StubPermissionService(),
             auditLogger: auditLogger,
