@@ -46,11 +46,6 @@ struct LocalModelsCompactView: View {
                 Text(KairoL10n.string("settings.models.starter.title"))
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
-
-                Text(KairoL10n.string("settings.models.starter.subtitle"))
-                    .font(compactModelMetadataFont)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 2)
             .accessibilityIdentifier("settings.models.starter")
@@ -150,6 +145,11 @@ struct LocalModelsCompactView: View {
 
                 if showAdvancedDiagnostics {
                     Divider()
+
+                    Text(KairoL10n.string("settings.models.starter.subtitle"))
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text(KairoL10n.string("settings.models.compact.subtitle"))
                         .font(compactModelMetadataFont)

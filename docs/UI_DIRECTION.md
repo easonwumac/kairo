@@ -522,6 +522,14 @@ Stage 54 makes Access overview terse:
 - Everyday tools remain directly below the overview, and advanced skill library
   controls keep their existing progressive path.
 
+Stage 55 makes Models starter action-first:
+
+- The starter model section no longer opens with explanatory subtitle copy.
+- Starter rows now follow the answer route as direct download/select actions,
+  keeping the Models first layer route-first and action-first.
+- The starter purpose boundary and local-download reminder move into Advanced
+  diagnostics with the existing catalog and runtime context.
+
 ## Next UI stages
 
 1. Product surface audit
