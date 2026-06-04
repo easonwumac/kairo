@@ -537,6 +537,7 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
     case unsupportedSignatureAlgorithm(String)
     case invalidSignature
     case nonProductionCatalogSignatureStatus(String)
+    case invalidModelID(String)
     case duplicateModelID(String)
     case unsafeDownloadURL(modelID: String, url: String)
     case invalidChecksum(modelID: String, sha256: String)
@@ -563,6 +564,8 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
             return "Model catalog signature is invalid."
         case .nonProductionCatalogSignatureStatus(let status):
             return "Model catalog is marked \(status), not productionSigned."
+        case .invalidModelID(let modelID):
+            return "Model catalog contains an invalid model id: \(modelID)."
         case .duplicateModelID(let modelID):
             return "Model catalog contains a duplicate model id: \(modelID)."
         case .unsafeDownloadURL(let modelID, let url):
@@ -684,6 +687,9 @@ public struct LocalModelCatalogService: Sendable {
     private func validateUniqueModelIDs(_ models: [LocalModelManifest]) throws {
         var seenModelIDs = Set<String>()
         for model in models {
+            guard !model.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw LocalModelCatalogServiceError.invalidModelID(model.id)
+            }
             guard seenModelIDs.insert(model.id).inserted else {
                 throw LocalModelCatalogServiceError.duplicateModelID(model.id)
             }

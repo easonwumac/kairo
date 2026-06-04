@@ -199,6 +199,31 @@ final class LocalModelFeatureTests: XCTestCase {
         }
     }
 
+    func testLocalModelCatalogServiceRejectsBlankModelID() async throws {
+        let signedCatalog = try signedRemoteModelCatalogJSON(
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "   ",
+                    displayName: "Blank Model"
+                )
+            ]
+        )
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+        let service = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: httpClient,
+            trustStore: signedCatalog.trustStore
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected blank model IDs to fail closed.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .invalidModelID("   "))
+            XCTAssertEqual(error.localizedDescription, "Model catalog contains an invalid model id:    .")
+        }
+    }
+
     func testLocalModelCatalogServiceRejectsNonHexChecksum() async throws {
         let invalidChecksum = String(repeating: "z", count: 64)
         let manifestJSON = remoteModelManifestJSON(
