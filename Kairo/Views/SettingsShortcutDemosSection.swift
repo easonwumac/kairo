@@ -5,9 +5,24 @@ struct SettingsShortcutDemosSection: View {
     var recipes: [ShortcutDemoRecipe] = ShortcutDemoCatalog.default.recipes
 
     var body: some View {
-        Section("Shortcut Demos") {
+        VStack(alignment: .leading, spacing: 14) {
+            KairoFocusCard {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Shortcut Demos")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(KairoDesign.ink)
+
+                    Text(KairoL10n.string("settings.shortcuts.demos.detail"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
             ForEach(recipes) { recipe in
-                shortcutDemoRow(recipe)
+                KairoFocusCard {
+                    shortcutDemoRow(recipe)
+                }
             }
         }
         .accessibilityIdentifier("settings.shortcuts.demos")
@@ -15,31 +30,39 @@ struct SettingsShortcutDemosSection: View {
 
     @ViewBuilder
     private func shortcutDemoRow(_ recipe: ShortcutDemoRecipe) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(recipe.title)
-                .font(.subheadline)
-                .fontWeight(.medium)
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(recipe.title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
 
-            Text(recipe.summary)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                Text(recipe.summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
 
-            Text(recipe.triggerSummary)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                KairoStatusPill(
+                    title: recipe.triggerSummary,
+                    systemImage: "square.and.arrow.down",
+                    tint: KairoDesign.blue
+                )
+            }
 
             Text(recipe.settingsStepSummary)
                 .font(.caption)
+                .fontWeight(.semibold)
                 .accessibilityIdentifier("settings.shortcuts.demo.\(recipe.id).steps")
 
             Text(recipe.settingsInputSummary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(2)
                 .accessibilityIdentifier("settings.shortcuts.demo.\(recipe.id).input")
 
             Text(recipe.settingsOutputSummary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(2)
                 .accessibilityIdentifier("settings.shortcuts.demo.\(recipe.id).output")
 
             if !recipe.settingsSampleInputPreview.isEmpty {

@@ -534,6 +534,7 @@
 "settings.title.all" = "Settings";
 "settings.title.models" = "AI engine";
 "settings.title.shortcutDemos" = "Shortcut Demos";
+"settings.shortcuts.demos.detail" = "Reference contracts for user-installed Shortcut examples. These are not primary workflows.";
 "settings.routing.section" = "How Kairo answers";
 "settings.routing.detail" = "Set the everyday route first. API keys, accounts, and local models are supporting setup.";
 "settings.routing.cloudReady" = "Cloud ready";

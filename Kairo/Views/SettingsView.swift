@@ -363,9 +363,16 @@ public struct SettingsView: View {
 
     private var shortcutDemosOnlyContent: some View {
         NavigationStack {
-            Form {
-                SettingsShortcutDemosSection()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    SettingsShortcutDemosSection()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 18)
+                .padding(.bottom, 32)
             }
+            .scrollIndicators(.hidden)
+            .background(KairoDesign.background.ignoresSafeArea())
             .navigationTitle(mode.navigationTitle)
             .accessibilityIdentifier("settings.form")
         }

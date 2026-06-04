@@ -83,6 +83,13 @@ Stage 6 makes Action Preview a confirmation checklist:
 - The payload remains visible, but it is framed as content to review before
   the confirm button.
 
+Stage 7 removes the last native Settings demo form:
+
+- Shortcut demo-only Settings now uses the same focus-card language as the rest
+  of the app instead of a `Form` and `Section`.
+- Demo input/output contracts remain available for verification, but the page
+  reads as a reference gallery rather than a primary workflow.
+
 ## Next UI stages
 
 1. Memory Center

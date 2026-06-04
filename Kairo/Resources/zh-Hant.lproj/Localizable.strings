@@ -534,6 +534,7 @@
 "settings.title.all" = "設定";
 "settings.title.models" = "AI 引擎";
 "settings.title.shortcutDemos" = "Shortcut Demos";
+"settings.shortcuts.demos.detail" = "使用者自行安裝 Shortcut 範例時可參考的 input/output contracts；這不是主要操作流程。";
 "settings.routing.section" = "Kairo 如何回答";
 "settings.routing.detail" = "先設定日常回答路線；API key、帳號與 local model 都是支援設定。";
 "settings.routing.cloudReady" = "Cloud 可用";
