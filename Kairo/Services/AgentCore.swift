@@ -128,7 +128,7 @@ public actor AgentCore {
         guard privacyMode == .privateChat else {
             return actions
         }
-        return actions.filter { $0.kind != .saveMemory }
+        return []
     }
 
     private static func filteredToolCandidates(

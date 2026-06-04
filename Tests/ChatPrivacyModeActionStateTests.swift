@@ -1,4 +1,5 @@
 import XCTest
+import Foundation
 @testable import KairoCore
 
 #if canImport(SwiftUI)
@@ -27,6 +28,32 @@ final class ChatPrivacyModeActionStateTests: XCTestCase {
         XCTAssertNil(viewModel.handoffReviewAction)
         XCTAssertNil(viewModel.shareImportReviewAction)
         XCTAssertNil(viewModel.actionResultMessage)
+    }
+
+    func testPrivateChatSuppressesProviderProposedActions() async throws {
+        let providerAction = AgentAction(
+            kind: .createCalendarDraft,
+            title: "Create Calendar Event",
+            rationale: "Provider suggested a calendar write.",
+            payload: .calendarEvent(CalendarEventDraft(
+                title: "Private planning",
+                notes: nil,
+                startDate: Date(timeIntervalSince1970: 10),
+                endDate: Date(timeIntervalSince1970: 70)
+            )),
+            riskTier: .tier2LowRiskWrite
+        )
+        let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(
+            message: "Private response",
+            proposedActions: [providerAction]
+        ))
+        let api = KairoChatBackendService(agent: AgentCore(aiProvider: provider))
+
+        let response = try await api.respond(to: "建立私人行程", attachments: [], privacyMode: .privateChat)
+
+        XCTAssertEqual(response.message, "Private response")
+        XCTAssertTrue(response.proposedActions.isEmpty)
+        XCTAssertTrue(response.toolCandidates.isEmpty)
     }
 }
 #endif
