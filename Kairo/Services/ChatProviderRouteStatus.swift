@@ -23,12 +23,17 @@ public struct ChatProviderRouteStatus: Equatable, Sendable {
 }
 
 public enum ChatProviderRouteStatusBuilder {
-    public static func build(from status: LocalModelSettingsStatus?) -> ChatProviderRouteStatus {
+    public static func build(
+        from status: LocalModelSettingsStatus?,
+        openAIStatus: OpenAISettingsStatus? = nil
+    ) -> ChatProviderRouteStatus {
+        let cloudWarning = cloudProviderWarning(from: openAIStatus)
         guard let status else {
             return ChatProviderRouteStatus(
                 title: "Route: Cloud",
-                detail: "Using the configured app provider. Local model settings are not available for this chat surface.",
-                badge: "Cloud"
+                detail: cloudProviderDetail(from: openAIStatus),
+                badge: "Cloud",
+                warning: cloudWarning
             )
         }
 
@@ -72,6 +77,8 @@ public enum ChatProviderRouteStatusBuilder {
             warning = "Local Only is active but no downloaded model is selected."
         } else if status.preference == .preferLocal && !status.localModelInstalled {
             warning = "Prefer Local needs a downloaded selected model before private/offline work can route locally."
+        } else if status.preference != .localOnly {
+            warning = cloudWarning
         } else {
             warning = nil
         }
@@ -83,6 +90,21 @@ public enum ChatProviderRouteStatusBuilder {
             warning: warning,
             preference: status.preference
         )
+    }
+
+    private static func cloudProviderDetail(from status: OpenAISettingsStatus?) -> String {
+        guard let status else {
+            return "Cloud provider route is available for this chat surface. Save an OpenAI API key in Settings before sending cloud chat."
+        }
+        if status.hasAPIKey {
+            return "\(status.providerName) is configured for cloud chat."
+        }
+        return "\(status.providerName) API key is not saved. Chat will fail closed until Settings has a key or a supported local route is selected."
+    }
+
+    private static func cloudProviderWarning(from status: OpenAISettingsStatus?) -> String? {
+        guard let status, !status.hasAPIKey else { return nil }
+        return "\(status.providerName) API key is not saved."
     }
 }
 

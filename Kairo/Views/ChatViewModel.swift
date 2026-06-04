@@ -39,6 +39,7 @@ public final class ChatViewModel: ObservableObject {
     private let chatAPI: any KairoChatAPI
     private let actionExecutor: any ActionExecutor
     private let localModelSettingsService: LocalModelSettingsService?
+    private let openAISettingsService: OpenAISettingsService?
     private var pendingActionSource: PendingActionSource?
 
     public init(
@@ -48,13 +49,15 @@ public final class ChatViewModel: ObservableObject {
         shareImportAPI: (any KairoShareImportAPI)? = nil,
         chatAPI: (any KairoChatAPI)? = nil,
         actionExecutor: any ActionExecutor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore()),
-        localModelSettingsService: LocalModelSettingsService? = nil
+        localModelSettingsService: LocalModelSettingsService? = nil,
+        openAISettingsService: OpenAISettingsService? = nil
     ) {
         self.historyStore = historyStore
         self.shareImportAPI = shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue)
         self.chatAPI = chatAPI ?? KairoChatBackendService(agent: agent)
         self.actionExecutor = actionExecutor
         self.localModelSettingsService = localModelSettingsService
+        self.openAISettingsService = openAISettingsService
         self.currentThread = ChatThread(messages: [Self.welcomeMessage])
         self.providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil)
     }
@@ -65,7 +68,8 @@ public final class ChatViewModel: ObservableObject {
             shareImportAPI: environment.backendAPI.shareImports,
             chatAPI: environment.backendAPI.chat,
             actionExecutor: environment.actionExecutor,
-            localModelSettingsService: environment.localModelSettingsService
+            localModelSettingsService: environment.localModelSettingsService,
+            openAISettingsService: OpenAISettingsService(credentialStore: environment.credentialStore)
         )
     }
 
@@ -239,11 +243,15 @@ public final class ChatViewModel: ObservableObject {
     }
 
     public func refreshProviderRouteStatus() async {
+        let openAIStatus = try? await openAISettingsService?.status()
         guard let localModelSettingsService else {
-            providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil)
+            providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil, openAIStatus: openAIStatus)
             return
         }
-        providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: await localModelSettingsService.status())
+        providerRouteStatus = ChatProviderRouteStatusBuilder.build(
+            from: await localModelSettingsService.status(),
+            openAIStatus: openAIStatus
+        )
     }
 
     public func setProviderRoutePreference(_ preference: ProviderRoutePreference) async {
