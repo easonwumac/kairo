@@ -10,6 +10,7 @@ Runs Kairo release hygiene checks:
   - xcodegen generate when installed
   - git diff --check
   - App Review boundary scan
+  - Share Extension action-free boundary scan
   - focused secret scan
   - model artifact scan
   - optional GitHub Actions exact-HEAD gate with --require-ci
@@ -156,6 +157,49 @@ if failures:
     sys.exit(1)
 
 print("App Review boundary scan passed.")
+
+PY
+
+echo
+echo "== Share Extension action-free boundary scan =="
+python3 - <<'PY'
+import re
+import sys
+from pathlib import Path
+
+root = Path.cwd()
+extension_root = root / "Kairo/Extensions/ShareExtension"
+forbidden_patterns = [
+    r"\bAgentCore\b",
+    r"\bAIProvider\b",
+    r"\bOpenAIProvider\b",
+    r"\bActionExecutor\b",
+    r"\bSandboxActionExecutor\b",
+    r"\bLocalModel[A-Za-z0-9_]*\b",
+    r"\bEventKit\b",
+    r"\bUserNotifications\b",
+    r"\bContacts\b",
+    r"\bCNContact[A-Za-z0-9_]*\b",
+    r"\bEKEvent[A-Za-z0-9_]*\b",
+    r"\bEKReminder\b",
+    r"\bUNUserNotification[A-Za-z0-9_]*\b",
+]
+combined = re.compile("|".join(forbidden_patterns))
+failures = []
+
+for source in sorted(extension_root.rglob("*.swift")):
+    text = source.read_text(encoding="utf-8")
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        if combined.search(line):
+            relative = source.relative_to(root)
+            failures.append(f"{relative}:{line_number}: Share Extension must stay queue-only and action/model-free: {line.strip()}")
+
+if failures:
+    for failure in failures:
+        print(f"- {failure}", file=sys.stderr)
+    sys.exit(1)
+
+print("Share Extension action-free boundary scan passed.")
 
 PY
 
