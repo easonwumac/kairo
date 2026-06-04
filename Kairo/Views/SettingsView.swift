@@ -165,9 +165,9 @@ public struct SettingsView: View {
                     }
                 }
 
-                Section("OAuth Connectors") {
+                Section(KairoL10n.string("settings.oauth.section")) {
                     if connectorOptions.isEmpty {
-                        Text("尚未載入 connector 狀態。")
+                        Text(KairoL10n.string("settings.oauth.empty"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -205,18 +205,18 @@ public struct SettingsView: View {
 
                 SettingsShortcutDemosSection()
 
-                Section("Privacy") {
-                    Text("API key 只應儲存在 Keychain。Kairo 不應把 secret 寫入 UserDefaults、log 或 analytics。")
+                Section(KairoL10n.string("settings.privacy.section")) {
+                    Text(KairoL10n.string("settings.privacy.keychainBoundary"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    Button("Clear Audit Log", role: .destructive) {
+                    Button(KairoL10n.string("settings.privacy.clearAuditLog"), role: .destructive) {
                         clearAuditLog()
                     }
                     .disabled(deletionAPI == nil)
                     .accessibilityIdentifier("settings.privacy.clear-audit-log")
 
-                    Text("Clears the local metadata-only audit log. It does not delete chat history, memories, API keys, OAuth tokens, or downloaded models.")
+                    Text(KairoL10n.string("settings.privacy.auditLogDetail"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("settings.privacy.audit-log-detail")
@@ -230,7 +230,7 @@ public struct SettingsView: View {
                 .accessibilityIdentifier("settings.privacy")
 
                 if connectorStatusMessage != nil {
-                    Section("Status") {
+                    Section(KairoL10n.string("settings.status.section")) {
                         if let connectorStatusMessage {
                             Text(connectorStatusMessage)
                                 .font(.caption)
@@ -295,7 +295,7 @@ public struct SettingsView: View {
                 .accessibilityIdentifier("settings.oauth.\(option.providerKey).detail")
 
             if option.requiresBackendTokenExchange {
-                Text("需要後端 token exchange。")
+                Text(KairoL10n.string("settings.oauth.backendExchangeRequired"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("settings.oauth.\(option.providerKey).backend-exchange")
@@ -304,21 +304,21 @@ public struct SettingsView: View {
         if option.canStartAuthorization || option.readiness == .connected {
             HStack {
                 if option.canStartAuthorization {
-                    Button("Authorize") {
+                    Button(KairoL10n.string("settings.oauth.authorize")) {
                         authorizeConnector(option)
                     }
                     .accessibilityIdentifier("settings.oauth.\(option.providerKey).authorize")
                 }
 
                 if option.readiness == .connected || option.readiness == .needsReauthorization {
-                    Button("Disconnect", role: .destructive) {
+                    Button(KairoL10n.string("settings.oauth.disconnect"), role: .destructive) {
                         disconnectConnector(option)
                     }
                     .accessibilityIdentifier("settings.oauth.\(option.providerKey).disconnect")
                 }
             }
         } else if option.readiness == .needsClientConfiguration {
-            Text("尚未設定 iOS OAuth client。")
+            Text(KairoL10n.string("settings.oauth.clientNotConfigured"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -331,7 +331,7 @@ public struct SettingsView: View {
     @ViewBuilder
     private func oauthCallbackPreviewControls() -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("OAuth Callback Preview")
+            Text(KairoL10n.string("settings.oauth.callbackPreview"))
                 .font(.subheadline)
                 .fontWeight(.medium)
 
@@ -339,7 +339,7 @@ public struct SettingsView: View {
                 .autocorrectionDisabled()
                 .accessibilityIdentifier("settings.oauth.callback-url")
 
-            Button("Preview Callback") {
+            Button(KairoL10n.string("settings.oauth.previewCallback")) {
                 previewOAuthCallback()
             }
             .disabled(oauthCallbackURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -575,18 +575,18 @@ public struct SettingsView: View {
         Task {
             guard let deletionAPI else {
                 await MainActor.run {
-                    privacyStatusMessage = "Audit log deletion is unavailable in this environment."
+                    privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogUnavailable")
                 }
                 return
             }
             do {
                 try await deletionAPI.clearAuditLog()
                 await MainActor.run {
-                    privacyStatusMessage = "Metadata-only audit log 已清除。"
+                    privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogCleared")
                 }
             } catch {
                 await MainActor.run {
-                    privacyStatusMessage = "Audit log 清除失敗：\(error.localizedDescription)"
+                    privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogClearFailed", error.localizedDescription)
                 }
             }
         }
@@ -598,12 +598,12 @@ public struct SettingsView: View {
                 let center = connectorLoginCenter()
                 let session = try await center.makeAuthorizationSession(for: option.integrationKey)
                 await MainActor.run {
-                    connectorStatusMessage = "正在開啟 \(option.displayName) 授權。"
+                    connectorStatusMessage = KairoL10n.string("settings.oauth.openingAuthorization", option.displayName)
                     openURL(session.authorizationURL)
                 }
             } catch {
                 await MainActor.run {
-                    connectorStatusMessage = "授權啟動失敗：\(error.localizedDescription)"
+                    connectorStatusMessage = KairoL10n.string("settings.oauth.authorizationFailed", error.localizedDescription)
                 }
             }
         }
@@ -615,11 +615,11 @@ public struct SettingsView: View {
                 try await connectorLoginCenter().disconnect(providerKey: option.providerKey)
                 await reloadConnectorOptions()
                 await MainActor.run {
-                    connectorStatusMessage = "\(option.displayName) 已登出並刪除儲存 token。"
+                    connectorStatusMessage = KairoL10n.string("settings.oauth.disconnected", option.displayName)
                 }
             } catch {
                 await MainActor.run {
-                    connectorStatusMessage = "刪除 OAuth token 失敗：\(error.localizedDescription)"
+                    connectorStatusMessage = KairoL10n.string("settings.oauth.disconnectFailed", error.localizedDescription)
                 }
             }
         }
@@ -630,7 +630,7 @@ public struct SettingsView: View {
             let trimmed = oauthCallbackURLText.trimmingCharacters(in: .whitespacesAndNewlines)
             guard let url = URL(string: trimmed) else {
                 await MainActor.run {
-                    oauthCallbackPreviewMessage = "OAuth callback URL 格式不正確。"
+                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.callbackInvalidURL")
                 }
                 return
             }
@@ -643,7 +643,7 @@ public struct SettingsView: View {
                 await reloadConnectorOptions()
             } catch {
                 await MainActor.run {
-                    oauthCallbackPreviewMessage = "OAuth callback preview 失敗：\(error.localizedDescription)"
+                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.callbackPreviewFailed", error.localizedDescription)
                 }
             }
         }
@@ -952,7 +952,7 @@ public struct SettingsView: View {
             }
         } catch {
             await MainActor.run {
-                connectorStatusMessage = "讀取 OAuth connector 失敗：\(error.localizedDescription)"
+                connectorStatusMessage = KairoL10n.string("settings.oauth.loadFailed", error.localizedDescription)
             }
         }
     }

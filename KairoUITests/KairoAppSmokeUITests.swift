@@ -407,13 +407,13 @@ final class KairoAppSmokeUITests: XCTestCase {
         verifyOAuthConnector(
             providerKey: "google",
             displayName: "Gmail / Google Workspace",
-            detailText: "預設 scopes: openid, email, profile, https://www.googleapis.com/auth/gmail.readonly",
+            detailText: "Default scopes: openid, email, profile, https://www.googleapis.com/auth/gmail.readonly",
             expectsBackendExchange: true
         )
         verifyOAuthConnector(
             providerKey: "microsoft",
             displayName: "Microsoft 365 / Outlook",
-            detailText: "預設 scopes: openid, profile, offline_access, User.Read, Mail.Read, Calendars.ReadWrite",
+            detailText: "Default scopes: openid, profile, offline_access, User.Read, Mail.Read, Calendars.ReadWrite",
             expectsBackendExchange: true
         )
         verifyOAuthConnector(
@@ -425,19 +425,19 @@ final class KairoAppSmokeUITests: XCTestCase {
         verifyOAuthConnector(
             providerKey: "slack",
             displayName: "Slack",
-            detailText: "預設 scopes: channels:history, chat:write",
+            detailText: "Default scopes: channels:history, chat:write",
             expectsBackendExchange: true
         )
         verifyOAuthConnector(
             providerKey: "chatgpt",
             displayName: "ChatGPT",
-            detailText: "預設 scopes: openid, profile, email",
+            detailText: "Default scopes: openid, profile, email",
             expectsBackendExchange: false
         )
         verifyOAuthConnector(
             providerKey: "github",
             displayName: "GitHub",
-            detailText: "預設 scopes: read:user, repo",
+            detailText: "Default scopes: read:user, repo",
             expectsBackendExchange: true
         )
     }

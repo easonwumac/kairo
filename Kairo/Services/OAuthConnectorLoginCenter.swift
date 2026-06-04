@@ -21,13 +21,13 @@ public enum OAuthConnectorLoginReadiness: String, Codable, Equatable, Sendable {
     public var settingsStatusText: String {
         switch self {
         case .connected:
-            return "已連線"
+            return KairoL10n.string("settings.oauth.status.connected")
         case .readyToAuthorize:
-            return "可授權"
+            return KairoL10n.string("settings.oauth.status.readyToAuthorize")
         case .needsClientConfiguration:
-            return "需要 Client 設定"
+            return KairoL10n.string("settings.oauth.status.needsClientConfiguration")
         case .needsReauthorization:
-            return "需要重新授權"
+            return KairoL10n.string("settings.oauth.status.needsReauthorization")
         }
     }
 }
@@ -74,10 +74,10 @@ public struct OAuthConnectorLoginOption: Identifiable, Equatable, Sendable {
 
     public var settingsDetailText: String {
         if !grantedScopes.isEmpty {
-            return "已授權 scopes: \(grantedScopes.joined(separator: ", "))"
+            return KairoL10n.string("settings.oauth.grantedScopes", grantedScopes.joined(separator: ", "))
         }
         if !defaultScopes.isEmpty {
-            return "預設 scopes: \(defaultScopes.joined(separator: ", "))"
+            return KairoL10n.string("settings.oauth.defaultScopes", defaultScopes.joined(separator: ", "))
         }
         return accountDataBoundary
     }

@@ -29,9 +29,14 @@ public struct OAuthConnectorCallbackPreview: Codable, Equatable, Identifiable, S
 
     public var settingsStatusText: String {
         let exchange = requiresBackendTokenExchange
-            ? "requires backend token exchange"
-            : "ready for configured token exchange"
-        return "\(providerKey) authorization code received (\(authorizationCodeLength) chars); \(exchange)."
+            ? KairoL10n.string("settings.oauth.callback.backendExchangeRequired")
+            : KairoL10n.string("settings.oauth.callback.readyForTokenExchange")
+        return KairoL10n.string(
+            "settings.oauth.callback.authorizationCodeReceived",
+            providerKey,
+            Int64(authorizationCodeLength),
+            exchange
+        )
     }
 }
 

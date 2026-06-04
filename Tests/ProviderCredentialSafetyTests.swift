@@ -63,10 +63,10 @@ final class ProviderCredentialSafetyTests: XCTestCase {
     }
 
     func testOAuthConnectorReadinessProvidesSettingsCopyAndActionState() {
-        XCTAssertEqual(OAuthConnectorLoginReadiness.connected.settingsStatusText, "已連線")
-        XCTAssertEqual(OAuthConnectorLoginReadiness.readyToAuthorize.settingsStatusText, "可授權")
-        XCTAssertEqual(OAuthConnectorLoginReadiness.needsClientConfiguration.settingsStatusText, "需要 Client 設定")
-        XCTAssertEqual(OAuthConnectorLoginReadiness.needsReauthorization.settingsStatusText, "需要重新授權")
+        XCTAssertEqual(OAuthConnectorLoginReadiness.connected.settingsStatusText, KairoL10n.string("settings.oauth.status.connected"))
+        XCTAssertEqual(OAuthConnectorLoginReadiness.readyToAuthorize.settingsStatusText, KairoL10n.string("settings.oauth.status.readyToAuthorize"))
+        XCTAssertEqual(OAuthConnectorLoginReadiness.needsClientConfiguration.settingsStatusText, KairoL10n.string("settings.oauth.status.needsClientConfiguration"))
+        XCTAssertEqual(OAuthConnectorLoginReadiness.needsReauthorization.settingsStatusText, KairoL10n.string("settings.oauth.status.needsReauthorization"))
 
         let readyOption = OAuthConnectorLoginOption(
             integrationKey: "gmail-google-workspace",
@@ -90,7 +90,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
 
         XCTAssertTrue(readyOption.canStartAuthorization)
         XCTAssertFalse(connectedOption.canStartAuthorization)
-        XCTAssertEqual(connectedOption.settingsDetailText, "已授權 scopes: repo")
+        XCTAssertEqual(connectedOption.settingsDetailText, KairoL10n.string("settings.oauth.grantedScopes", "repo"))
     }
 
     func testChatGPTOAuthServiceBuildsPKCEAuthorizationURL() async throws {
@@ -296,7 +296,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertEqual(preview.authorizationCodeLength, "sample-sensitive-code".count)
         XCTAssertTrue(preview.requiresBackendTokenExchange)
         XCTAssertTrue(preview.settingsStatusText.contains("google"))
-        XCTAssertTrue(preview.settingsStatusText.contains("backend token exchange"))
+        XCTAssertTrue(preview.settingsStatusText.contains(KairoL10n.string("settings.oauth.callback.backendExchangeRequired")))
         XCTAssertFalse(preview.settingsStatusText.contains("sample-sensitive-code"))
 
         let latest = await store.latestPreview(for: "google")

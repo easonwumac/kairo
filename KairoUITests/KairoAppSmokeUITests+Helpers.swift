@@ -191,11 +191,11 @@ extension KairoAppSmokeUITests {
     ) {
         XCTAssertFalse(providerKey.isEmpty)
         XCTAssertTrue(findStaticText(containing: displayName, direction: .both, maxSwipes: 6).exists)
-        XCTAssertTrue(findStaticText(containing: "需要 Client 設定", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Client configuration required", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: detailText, direction: .both, maxSwipes: 2).exists)
 
         if expectsBackendExchange {
-            XCTAssertTrue(findStaticText(containing: "需要後端 token exchange。", direction: .both, maxSwipes: 1).exists)
+            XCTAssertTrue(findStaticText(containing: "Requires backend token exchange.", direction: .both, maxSwipes: 1).exists)
         }
     }
 

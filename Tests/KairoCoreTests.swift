@@ -539,7 +539,7 @@ final class KairoCoreTests: XCTestCase {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
 
-        XCTAssertTrue(settingsView.contains("OAuth Connectors"))
+        XCTAssertTrue(settingsView.contains(#""settings.oauth.section""#))
         XCTAssertTrue(settingsView.contains(#""settings.oauth.connectors""#))
         XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).disconnect""#))
         XCTAssertTrue(settingsView.contains("disconnectConnector(option)"))
@@ -560,14 +560,14 @@ final class KairoCoreTests: XCTestCase {
         let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
         let rootView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
 
-        XCTAssertTrue(settingsView.contains("Clear Audit Log"))
+        XCTAssertTrue(settingsView.contains(#""settings.privacy.clearAuditLog""#))
         XCTAssertTrue(settingsView.contains("clearAuditLog()"))
         XCTAssertTrue(settingsView.contains("deletionAPI.clearAuditLog()"))
         XCTAssertTrue(settingsView.contains(#""settings.privacy""#))
         XCTAssertTrue(settingsView.contains(#""settings.privacy.clear-audit-log""#))
         XCTAssertTrue(settingsView.contains(#""settings.privacy.audit-log-detail""#))
         XCTAssertTrue(settingsView.contains(#""settings.privacy.status""#))
-        XCTAssertTrue(settingsView.contains("does not delete chat history, memories, API keys, OAuth tokens, or downloaded models"))
+        XCTAssertTrue(settingsView.contains(#""settings.privacy.auditLogDetail""#))
         XCTAssertTrue(rootView.contains("deletionAPI: environment.backendAPI.deletion"))
     }
 
@@ -1465,8 +1465,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains(#"providerKey: "google""#))
         XCTAssertTrue(uiTestSources.contains("Gmail / Google Workspace"))
         XCTAssertTrue(uiTestSources.contains(#"providerKey: "chatgpt""#))
-        XCTAssertTrue(uiTestSources.contains("需要 Client 設定"))
-        XCTAssertTrue(uiTestSources.contains("需要後端 token exchange。"))
+        XCTAssertTrue(uiTestSources.contains("Client configuration required"))
+        XCTAssertTrue(uiTestSources.contains("Requires backend token exchange."))
         XCTAssertTrue(uiTestSources.contains("Only pages/databases selected during Notion authorization may be read or written."))
         XCTAssertTrue(uiTestSources.contains("testSettingsShowsShortcutDemoInputOutputContracts"))
         let settingsShortcutDemoStart = try XCTUnwrap(
