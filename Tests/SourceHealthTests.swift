@@ -157,6 +157,26 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(coreTests.contains("testAgentSkillMarketplaceCatalogServiceFetchesStandaloneRepoCatalog"))
     }
 
+    func testProviderCredentialSafetyCoverageLivesInFocusedTestFile() throws {
+        let root = packageRootURL()
+        let focusedTestsURL = root.appendingPathComponent("Tests/ProviderCredentialSafetyTests.swift")
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: focusedTestsURL.path),
+            "Provider credential safety tests should live in a focused test file instead of the KairoCoreTests monolith."
+        )
+
+        let focusedTests = try String(contentsOf: focusedTestsURL, encoding: .utf8)
+        XCTAssertTrue(focusedTests.contains("testOpenAISettingsServiceSavesAndDeletesAPIKey"))
+        XCTAssertTrue(focusedTests.contains("testOpenAISettingsServiceDryRunRedactsProvidedKeyWithoutSaving"))
+        XCTAssertTrue(focusedTests.contains("testOpenAISettingsServiceDryRunUsesSavedKeyWhenInputIsEmpty"))
+        XCTAssertTrue(focusedTests.contains("testOAuthConnectorReadinessProvidesSettingsCopyAndActionState"))
+        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 140)
+
+        let coreTests = try String(contentsOf: root.appendingPathComponent("Tests/KairoCoreTests.swift"))
+        XCTAssertFalse(coreTests.contains("testOpenAISettingsServiceSavesAndDeletesAPIKey"))
+        XCTAssertFalse(coreTests.contains("testOAuthConnectorReadinessProvidesSettingsCopyAndActionState"))
+    }
+
     func testSandboxActionSupportStaysSplitAcrossFocusedFiles() throws {
         let root = packageRootURL()
         let services = root.appendingPathComponent("Kairo/Services", isDirectory: true)
