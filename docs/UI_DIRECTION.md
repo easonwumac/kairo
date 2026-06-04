@@ -271,25 +271,29 @@ Stage 27 makes Chat start-path-first:
 - The review-first promise stays in short supporting copy instead of a separate
   status pill competing with the user's first action.
 
+Stage 28 makes Chat suggestions review-first:
+
+- Proposed action cards no longer lead with generic capability/category labels;
+  they now show the action, risk, and Review affordance first.
+- Tool candidate cards keep title, review state, and risk on the first layer.
+- Long handoff summaries move behind Details, so Chat suggestions read as
+  decisions to review instead of implementation explanations.
+
 ## Next UI stages
 
-1. Chat suggested actions
-   - Continue reducing proposed action and tool-candidate cards so review,
-     risk, and destination appear before capability labels or handoff prose.
-
-2. Phone Tools and Skill Manager
+1. Phone Tools and Skill Manager
    - Continue tuning skill-card density inside Skill library after simulator
      smoke confirms the new first screen.
 
-3. Workflows
+2. Workflows
    - Continue tuning saved recipe cards only after runtime smoke confirms the
      new recipe-first order.
 
-4. AI Setup and Settings
+3. AI Setup and Settings
    - Continue tightening starter model rows after simulator smoke confirms which
      local-model states users need on the first screen.
 
-5. Action Preview
+4. Action Preview
    - Continue tuning action-specific summaries after smoke coverage shows which
      destination or permission states are still ambiguous.
 

@@ -373,6 +373,9 @@
 "chat.action.card.intent" = "建議動作";
 "chat.tool.card.intent" = "建議 Skill";
 "chat.action.card.review" = "檢查";
+"chat.option.details" = "細節";
+"chat.option.details.show" = "顯示細節";
+"chat.option.details.hide" = "隱藏細節";
 "chat.action.confirmation.willAskFirst" = "會先詢問";
 "chat.action.confirmation.noChanges" = "不會改動";
 "chat.action.risk.readOnly" = "唯讀";

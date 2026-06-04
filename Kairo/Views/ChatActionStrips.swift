@@ -22,26 +22,16 @@ struct ProposedActionsStrip: View {
                                 .frame(width: 24, height: 24)
 
                             VStack(alignment: .leading, spacing: 6) {
-                                Text(KairoL10n.string("chat.action.card.intent"))
-                                    .font(.caption2.weight(.bold))
-                                    .textCase(.uppercase)
-                                    .foregroundStyle(.secondary)
-                                    .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue).intent")
-
                                 Text(descriptor.displayName)
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(KairoDesign.ink)
                                     .lineLimit(2)
 
-                                HStack(spacing: 6) {
-                                    CapabilityChipView(descriptor: descriptor)
-
-                                    Text(riskSummary)
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(actionRiskColor(for: action))
-                                        .lineLimit(1)
-                                        .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue).risk")
-                                }
+                                Text(riskSummary)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(actionRiskColor(for: action))
+                                    .lineLimit(1)
+                                    .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue).risk")
                             }
 
                             Spacer(minLength: 8)
@@ -110,78 +100,106 @@ struct ProposedActionsStrip: View {
 
 struct ToolCandidatesStrip: View {
     let candidates: [AgentToolInvocationCandidate]
+    @State private var expandedCandidateID: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(candidates) { candidate in
-                let riskSummary = toolRiskSummary(for: candidate)
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(alignment: .center, spacing: 10) {
-                        Image(systemName: iconName(for: candidate.skillKind))
-                            .font(.subheadline.weight(.semibold))
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(toolRiskColor(for: candidate))
-                            .frame(width: 24, height: 24)
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(KairoL10n.string("chat.tool.card.intent"))
-                                .font(.caption2.weight(.bold))
-                                .textCase(.uppercase)
-                                .foregroundStyle(.secondary)
-                                .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).intent")
-
-                            Text(candidate.title)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(KairoDesign.ink)
-                                .lineLimit(2)
-
-                            Text(candidate.handoffSummary)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).summary")
-
-                            HStack(spacing: 6) {
-                                KairoStatusPill(
-                                    title: optionDetail(for: candidate),
-                                    systemImage: candidate.requiresConfirmation ? "checkmark.shield" : "arrow.up.right",
-                                    tint: toolRiskColor(for: candidate)
-                                )
-
-                                Text(riskSummary)
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(toolRiskColor(for: candidate))
-                                    .lineLimit(1)
-                                    .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).risk")
-                            }
-                        }
-
-                        Spacer(minLength: 8)
-
-                        Text(KairoL10n.string("chat.action.card.review"))
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(KairoDesign.ink)
-                            .lineLimit(1)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(KairoDesign.ink.opacity(0.08), in: Capsule())
-                    }
-                    .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id)")
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 11)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.black.opacity(0.07), lineWidth: 1)
-                }
-                .accessibilityLabel(KairoL10n.string("chat.option.accessibility.suggested", candidate.title, optionDetail(for: candidate), candidate.handoffSummary, riskSummary))
-                .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id)")
+                toolCandidateCard(candidate)
             }
         }
         .accessibilityIdentifier("chat.tool-candidates")
+    }
+
+    private func toolCandidateCard(_ candidate: AgentToolInvocationCandidate) -> some View {
+        let candidateID = candidateIdentifier(for: candidate)
+        let riskSummary = toolRiskSummary(for: candidate)
+        let isExpanded = expandedCandidateID == candidateID
+
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: iconName(for: candidate.skillKind))
+                    .font(.subheadline.weight(.semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(toolRiskColor(for: candidate))
+                    .frame(width: 24, height: 24)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(candidate.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                        .lineLimit(2)
+
+                    HStack(spacing: 6) {
+                        KairoStatusPill(
+                            title: optionDetail(for: candidate),
+                            systemImage: candidate.requiresConfirmation ? "checkmark.shield" : "arrow.up.right",
+                            tint: toolRiskColor(for: candidate)
+                        )
+
+                        Text(riskSummary)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(toolRiskColor(for: candidate))
+                            .lineLimit(1)
+                            .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).risk")
+                    }
+                }
+
+                Spacer(minLength: 8)
+
+                Text(KairoL10n.string("chat.action.card.review"))
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(KairoDesign.ink.opacity(0.08), in: Capsule())
+            }
+            .accessibilityIdentifier("chat.tool-candidate.\(candidateID)")
+
+            Button {
+                expandedCandidateID = isExpanded ? nil : candidateID
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(toolRiskColor(for: candidate))
+
+                    Text(KairoL10n.string("chat.option.details"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isExpanded ? KairoL10n.string("chat.option.details.hide") : KairoL10n.string("chat.option.details.show"))
+            .accessibilityIdentifier("chat.tool-candidate.\(candidateID).details.toggle")
+
+            if isExpanded {
+                Text(candidate.handoffSummary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).summary")
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.black.opacity(0.07), lineWidth: 1)
+        }
+        .accessibilityLabel(KairoL10n.string("chat.option.accessibility.suggested", candidate.title, optionDetail(for: candidate), candidate.handoffSummary, riskSummary))
+        .accessibilityIdentifier("chat.tool-candidate.\(candidateID)")
+    }
+
+    private func candidateIdentifier(for candidate: AgentToolInvocationCandidate) -> String {
+        candidate.skillID ?? candidate.integrationKey ?? candidate.id
     }
 
     private func toolRiskSummary(for candidate: AgentToolInvocationCandidate) -> String {
