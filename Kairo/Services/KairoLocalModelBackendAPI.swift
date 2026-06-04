@@ -2,6 +2,12 @@ import Foundation
 
 public protocol KairoLocalModelAPI: Sendable {
     func status() async throws -> LocalModelSettingsStatus
+    func latestBenchmarkResult(for modelID: String) async throws -> LocalModelBenchmarkRunResult?
+    func runBenchmark(
+        modelID: String,
+        prompt: String,
+        generatedTokenTarget: Int
+    ) async throws -> LocalModelBenchmarkRunResult
     func selectModel(id: String) async throws
     func clearSelectedModel() async throws
     func setPreference(_ preference: ProviderRoutePreference) async throws
@@ -16,40 +22,68 @@ public enum KairoLocalModelAPIError: Error, Equatable {
 
 public struct KairoLocalModelBackendService: KairoLocalModelAPI {
     private let localModelSettingsService: LocalModelSettingsService?
+    private let localModelBenchmarkService: LocalModelBenchmarkService?
 
-    public init(localModelSettingsService: LocalModelSettingsService?) {
+    public init(
+        localModelSettingsService: LocalModelSettingsService?,
+        localModelBenchmarkService: LocalModelBenchmarkService? = nil
+    ) {
         self.localModelSettingsService = localModelSettingsService
+        self.localModelBenchmarkService = localModelBenchmarkService
     }
 
     public func status() async throws -> LocalModelSettingsStatus {
-        try await service().status()
+        try await settingsService().status()
+    }
+
+    public func latestBenchmarkResult(for modelID: String) async throws -> LocalModelBenchmarkRunResult? {
+        try await benchmarkService().latestResult(for: modelID)
+    }
+
+    public func runBenchmark(
+        modelID: String,
+        prompt: String,
+        generatedTokenTarget: Int
+    ) async throws -> LocalModelBenchmarkRunResult {
+        try await benchmarkService().runBenchmark(
+            modelID: modelID,
+            prompt: prompt,
+            generatedTokenTarget: generatedTokenTarget
+        )
     }
 
     public func selectModel(id: String) async throws {
-        try await service().selectModel(id: id)
+        try await settingsService().selectModel(id: id)
     }
 
     public func clearSelectedModel() async throws {
-        try await service().clearSelectedModel()
+        try await settingsService().clearSelectedModel()
     }
 
     public func setPreference(_ preference: ProviderRoutePreference) async throws {
-        try await service().setPreference(preference)
+        try await settingsService().setPreference(preference)
     }
 
     @discardableResult
     public func cleanupStaleDownloadingRecords() async throws -> [String] {
-        try await service().cleanupStaleDownloadingRecords()
+        try await settingsService().cleanupStaleDownloadingRecords()
     }
 
     public func deleteModel(id: String) async throws {
-        try await service().deleteModel(id: id)
+        try await settingsService().deleteModel(id: id)
     }
 
-    private func service() throws -> LocalModelSettingsService {
+    private func settingsService() throws -> LocalModelSettingsService {
         guard let localModelSettingsService else {
             throw KairoLocalModelAPIError.unavailable
         }
         return localModelSettingsService
+    }
+
+    private func benchmarkService() throws -> LocalModelBenchmarkService {
+        guard let localModelBenchmarkService else {
+            throw KairoLocalModelAPIError.unavailable
+        }
+        return localModelBenchmarkService
     }
 }
