@@ -935,8 +935,10 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(localModelFallback.contains("unknown, revoked, pending-publication, out-of-window, unsupported, or invalid signing keys"))
         XCTAssertTrue(localModelFallback.contains("production key material is absent, unpublished, or mismatched"))
         XCTAssertTrue(readme.contains("| Local model catalog/download/select/delete | Scaffolded |"))
-        XCTAssertTrue(readme.contains("progress/cancel UI, and runtime-unavailable handling are in the beta path"))
+        XCTAssertTrue(readme.contains("progress/cancel UI, license approval, cleanup, checksum, and trust-store verification exist"))
         XCTAssertTrue(readme.contains("remaining blockers are production signed catalog/public-key publication and real-device runtime proof"))
+        XCTAssertTrue(readme.contains("These simulator/package checks are not real-device sign-off."))
+        XCTAssertTrue(readme.contains("Finish real-device beta sign-off before release"))
         XCTAssertFalse(readme.contains("| Local model catalog/download/select/delete | Implemented |"))
         XCTAssertFalse(readme.contains("remaining gaps are progress/cancel UI"))
     }
