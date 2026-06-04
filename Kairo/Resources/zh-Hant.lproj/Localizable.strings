@@ -275,6 +275,9 @@
 "chat.action.preview.cancel" = "返回修改";
 "chat.action.preview.confirm" = "確認執行";
 "chat.action.preview.dismiss" = "知道了";
+"chat.action.preview.outcomeLabel" = "下一步";
+"chat.action.preview.outcomeDetail" = "確認後，Kairo 才會把這個動作送到 %@。";
+"chat.action.preview.outcomeUnavailable" = "這個動作無法從 iOS 上的 Kairo 安全執行。";
 "chat.action.error.failed" = "動作失敗：%@";
 "chat.action.result.shareClearedSuffix" = " 分享內容已從匯入佇列清除。";
 "chat.action.result.reminder.success" = "已建立提醒事項：%@%@";

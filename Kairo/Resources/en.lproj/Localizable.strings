@@ -275,6 +275,9 @@
 "chat.action.preview.cancel" = "Go back";
 "chat.action.preview.confirm" = "Confirm";
 "chat.action.preview.dismiss" = "OK";
+"chat.action.preview.outcomeLabel" = "Next step";
+"chat.action.preview.outcomeDetail" = "Kairo will send this to %@ only after you confirm.";
+"chat.action.preview.outcomeUnavailable" = "This cannot run safely from Kairo on iOS.";
 "chat.action.error.failed" = "Action failed: %@";
 "chat.action.result.shareClearedSuffix" = " Shared content was cleared from the import queue.";
 "chat.action.result.reminder.success" = "Created reminder: %@%@";

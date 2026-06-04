@@ -343,11 +343,23 @@ Stage 35 makes privacy cleanup review-first:
 - The destructive action remains reachable and smoke-tested, but Settings reads
   as retention status first, cleanup second.
 
+Stage 36 makes Action Preview outcome-first:
+
+- Action Preview now opens with the concrete next step as the primary object,
+  using the draft title, destination, handoff target, or requested action instead
+  of leading with review/checklist framing.
+- Confirm and Go back sit directly under the outcome so the decision is visible
+  before payload and safety disclosures.
+- Exact payload, confirmation rules, capability, and rationale remain available
+  below the decision path, preserving review safety without making the sheet feel
+  like a metadata table.
+
 ## Next UI stages
 
-1. Action Preview
-   - Continue tuning action-specific summaries after smoke coverage shows which
-     destination or permission states are still ambiguous.
+1. Product surface audit
+   - Re-scan Chat, Memory, Workflows, Access, Models, and Settings for remaining
+     first-level text blocks, duplicated status rows, or table-like disclosures
+     that still compete with the primary product path.
 
 ## What to avoid
 

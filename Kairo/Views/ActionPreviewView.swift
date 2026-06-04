@@ -31,61 +31,77 @@ public struct ActionPreviewView: View {
                     .frame(maxWidth: .infinity)
                     .accessibilityHidden(true)
 
-                previewHeader
-                reviewChecklistCard
+                outcomeHeroCard
+                actionButtons
 
                 payloadDetailsCard
-
-                HStack(spacing: 12) {
-                    Button(role: .cancel, action: onCancel) {
-                        Text(KairoL10n.string("chat.action.preview.cancel"))
-                            .frame(maxWidth: .infinity)
-                            .accessibilityIdentifier("chat.action.cancel.label")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                    .accessibilityIdentifier("chat.action.cancel")
-
-                    Button(action: onConfirm) {
-                        Text(KairoL10n.string(action.kind == .unsupportedSandboxAction ? "chat.action.preview.dismiss" : "chat.action.preview.confirm"))
-                            .frame(maxWidth: .infinity)
-                            .accessibilityIdentifier("chat.action.confirm.label")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .disabled(descriptor?.supportStatus == .unsupportedBySandbox)
-                    .accessibilityIdentifier("chat.action.confirm")
-                }
+                reviewChecklistCard
             }
             .padding(.horizontal, 18)
             .padding(.top, 12)
             .padding(.bottom, 24)
         }
         .background(KairoDesign.background.ignoresSafeArea())
+        .accessibilityLabel(KairoL10n.string("chat.action.preview.title"))
+        .accessibilityHint(KairoL10n.string("chat.action.preview.safetyNote"))
         .accessibilityIdentifier("chat.action-preview")
     }
 
-    private var previewHeader: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: action.kind == .unsupportedSandboxAction ? "exclamationmark.triangle.fill" : "checkmark.shield.fill")
-                .font(.title2)
-                .foregroundStyle(action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal)
-                .frame(width: 42, height: 42)
-                .background((action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    private var outcomeHeroCard: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: action.kind == .unsupportedSandboxAction ? "exclamationmark.triangle.fill" : primaryActionIcon)
+                        .font(.title2)
+                        .foregroundStyle(action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal)
+                        .frame(width: 44, height: 44)
+                        .background((action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(KairoL10n.string("chat.action.preview.title"))
-                    .font(.title3.bold())
-                Text(action.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                Text(KairoL10n.string("chat.action.preview.safetyNote"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(KairoL10n.string("chat.action.preview.outcomeLabel"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text(primaryActionSummary)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(KairoDesign.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("chat.action.outcome")
+                        Text(outcomeDetail)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HStack(spacing: 8) {
+                    KairoStatusPill(title: destinationLabel, systemImage: "arrow.up.right.square.fill", tint: KairoDesign.violet)
+                    KairoStatusPill(title: riskLabel, systemImage: "gauge.medium", tint: riskColor)
+                }
+                .fixedSize(horizontal: false, vertical: true)
             }
+        }
+    }
 
-            Spacer(minLength: 0)
+    private var actionButtons: some View {
+        HStack(spacing: 12) {
+            Button(role: .cancel, action: onCancel) {
+                Text(KairoL10n.string("chat.action.preview.cancel"))
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("chat.action.cancel.label")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .accessibilityIdentifier("chat.action.cancel")
+
+            Button(action: onConfirm) {
+                Text(KairoL10n.string(action.kind == .unsupportedSandboxAction ? "chat.action.preview.dismiss" : "chat.action.preview.confirm"))
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("chat.action.confirm.label")
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .disabled(descriptor?.supportStatus == .unsupportedBySandbox)
+            .accessibilityIdentifier("chat.action.confirm")
         }
     }
 
@@ -139,23 +155,8 @@ public struct ActionPreviewView: View {
     }
 
     private var reviewChecklistCard: some View {
-        KairoFocusCard {
+        KairoGroupedSurface {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
-                    if let descriptor {
-                        CapabilityChipView(descriptor: descriptor)
-                    }
-                    KairoStatusPill(title: riskLabel, systemImage: "gauge.medium", tint: riskColor)
-                }
-
-                Divider()
-
-                checklistRow(
-                    title: KairoL10n.string("chat.action.preview.field.destination"),
-                    value: destinationLabel,
-                    systemImage: "arrow.up.right.square.fill",
-                    tint: KairoDesign.violet
-                )
                 checklistRow(
                     title: KairoL10n.string("chat.action.preview.field.confirmation"),
                     value: confirmationLabel,
@@ -222,6 +223,78 @@ public struct ActionPreviewView: View {
                     tint: KairoDesign.teal
                 )
             }
+        }
+    }
+
+    private var primaryActionSummary: String {
+        switch action.payload {
+        case .text(let text):
+            return text.isEmpty ? action.title : text
+        case .reminder(let draft):
+            return draft.title.isEmpty ? action.title : draft.title
+        case .calendarEvent(let draft):
+            return draft.title.isEmpty ? action.title : draft.title
+        case .contact(let draft):
+            return draft.displayName.isEmpty ? KairoL10n.string("chat.action.preview.contactFallback") : draft.displayName
+        case .email(let draft):
+            return draft.subject.isEmpty ? KairoL10n.string("chat.action.preview.emailDraftFallback") : draft.subject
+        case .mapDirections(let draft):
+            return draft.destinationQuery.isEmpty ? KairoL10n.string("chat.action.preview.mapsDestinationFallback") : draft.destinationQuery
+        case .message(let draft):
+            return draft.recipients.isEmpty ? KairoL10n.string("chat.action.preview.messagesFallback") : draft.recipients.joined(separator: ", ")
+        case .phoneCall(let draft):
+            if let label = draft.label, !label.isEmpty { return label }
+            return draft.phoneNumber.isEmpty ? KairoL10n.string("chat.action.preview.phoneFallback") : draft.phoneNumber
+        case .webSearch(let draft):
+            return draft.query.isEmpty ? KairoL10n.string("chat.action.preview.webFallback") : draft.query
+        case .notification(let draft):
+            return draft.title.isEmpty ? action.title : draft.title
+        case .url(let url):
+            return url
+        case .homeControl(let request):
+            return request.targetName
+        case .unsupported(let explanation):
+            return explanation.requestedAction
+        case .empty:
+            return action.title
+        }
+    }
+
+    private var outcomeDetail: String {
+        if descriptor?.supportStatus == .unsupportedBySandbox {
+            return KairoL10n.string("chat.action.preview.outcomeUnavailable")
+        }
+        return KairoL10n.string("chat.action.preview.outcomeDetail", destinationLabel)
+    }
+
+    private var primaryActionIcon: String {
+        switch action.payload {
+        case .reminder:
+            return "checklist"
+        case .calendarEvent:
+            return "calendar.badge.plus"
+        case .contact:
+            return "person.crop.circle.badge.plus"
+        case .email:
+            return "envelope.open.fill"
+        case .mapDirections:
+            return "map.fill"
+        case .message:
+            return "message.fill"
+        case .phoneCall:
+            return "phone.fill"
+        case .webSearch:
+            return "safari.fill"
+        case .notification:
+            return "bell.badge.fill"
+        case .homeControl:
+            return "house.fill"
+        case .text:
+            return "text.bubble.fill"
+        case .url:
+            return "link"
+        case .unsupported, .empty:
+            return "checkmark.shield.fill"
         }
     }
 
