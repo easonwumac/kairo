@@ -42,6 +42,10 @@ struct ChatBubble: View {
                             .foregroundStyle(.orange)
                     }
                     Text(message.createdAt, style: .time)
+                    if !isUser, message.memoryContextCount > 0 {
+                        Label(memoryContextLabel, systemImage: "brain.head.profile")
+                            .accessibilityIdentifier("chat.message.memory-context")
+                    }
                     messageActionButton(
                         title: "Copy",
                         systemImage: "doc.on.doc",
@@ -75,6 +79,11 @@ struct ChatBubble: View {
         if isUser { return .accentColor }
         if message.status == .failed { return Color.orange.opacity(0.16) }
         return Color.primary.opacity(0.06)
+    }
+
+    private var memoryContextLabel: String {
+        let suffix = message.memoryContextCount == 1 ? "" : "s"
+        return "Used \(message.memoryContextCount) memory item\(suffix)"
     }
 
     private func messageActionButton(

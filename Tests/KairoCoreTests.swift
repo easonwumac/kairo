@@ -77,12 +77,13 @@ final class KairoCoreTests: XCTestCase {
         let provider = CapturingAIProvider(response: AICompletionResponse(message: "Standard response"))
         let agent = AgentCore(memoryStore: store, aiProvider: provider)
 
-        _ = try await agent.respond(to: "launch")
+        let response = try await agent.respond(to: "launch")
         let request = await provider.capturedRequest()
         let capturedRequest = try XCTUnwrap(request)
 
         XCTAssertEqual(capturedRequest.privacyMode, .standard)
         XCTAssertEqual(capturedRequest.memoryContext.map(\.id), [memory.id])
+        XCTAssertEqual(response.memoryContextCount, 1)
     }
 
     func testJSONFileMemoryStorePersistsSavedMemory() async throws {
@@ -255,6 +256,7 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertEqual(message.text, "Old assistant message")
         XCTAssertTrue(message.toolCandidates.isEmpty)
+        XCTAssertEqual(message.memoryContextCount, 0)
     }
 
     func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {

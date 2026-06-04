@@ -25,6 +25,7 @@ final class KairoChatBackendAPITests: XCTestCase {
         )
 
         XCTAssertEqual(response.message, "Live provider response")
+        XCTAssertEqual(response.memoryContextCount, 1)
         let request = try await httpClient.lastRequest()
         XCTAssertEqual(request.url?.absoluteString, "https://api.openai.com/v1/responses")
         XCTAssertEqual(request.httpMethod, "POST")
@@ -86,22 +87,32 @@ final class KairoChatBackendAPITests: XCTestCase {
         XCTAssertEqual(capturedRequest.privacyMode, .privateChat)
         XCTAssertTrue(capturedRequest.memoryContext.isEmpty)
     }
-}
 
-private actor FailingChatBackendAIProvider: AIProvider {
-    private let error: Error
+    @MainActor
+    func testChatViewModelPersistsAssistantMemoryContextCount() async throws {
+        let memory = MemoryRecord(
+            title: "Launch memory",
+            summary: "Use this context in Chat.",
+            content: "Kairo should visibly report memory context usage.",
+            source: .manual
+        )
+        let historyStore = InMemoryChatHistoryStore()
+        let viewModel = ChatViewModel(
+            historyStore: historyStore,
+            agent: AgentCore(
+                memoryStore: InMemoryMemoryStore(seed: [memory]),
+                aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Used memory."))
+            )
+        )
 
-    init(error: Error) {
-        self.error = error
-    }
+        await viewModel.send("memory context")
 
-    func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
-        _ = request
-        throw error
-    }
+        let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
+        XCTAssertEqual(assistantMessage.role, .assistant)
+        XCTAssertEqual(assistantMessage.memoryContextCount, 1)
 
-    func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
-        _ = request
-        throw error
+        let savedThreadResult = try await historyStore.thread(id: viewModel.currentThread.id)
+        let savedThread = try XCTUnwrap(savedThreadResult)
+        XCTAssertEqual(savedThread.messages.last?.memoryContextCount, 1)
     }
 }

@@ -62,6 +62,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
     public var toolCandidates: [AgentToolInvocationCandidate]
     public var attachments: [ChatAttachment]
     public var status: ChatMessageStatus
+    public var memoryContextCount: Int
 
     public init(
         id: UUID = UUID(),
@@ -71,7 +72,8 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         proposedActions: [AgentAction] = [],
         toolCandidates: [AgentToolInvocationCandidate] = [],
         attachments: [ChatAttachment] = [],
-        status: ChatMessageStatus = .sent
+        status: ChatMessageStatus = .sent,
+        memoryContextCount: Int = 0
     ) {
         self.id = id
         self.role = role
@@ -81,6 +83,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.toolCandidates = toolCandidates
         self.attachments = attachments
         self.status = status
+        self.memoryContextCount = memoryContextCount
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -92,6 +95,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         case toolCandidates
         case attachments
         case status
+        case memoryContextCount
     }
 
     public init(from decoder: Decoder) throws {
@@ -104,6 +108,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.toolCandidates = try container.decodeIfPresent([AgentToolInvocationCandidate].self, forKey: .toolCandidates) ?? []
         self.attachments = try container.decodeIfPresent([ChatAttachment].self, forKey: .attachments) ?? []
         self.status = try container.decodeIfPresent(ChatMessageStatus.self, forKey: .status) ?? .sent
+        self.memoryContextCount = try container.decodeIfPresent(Int.self, forKey: .memoryContextCount) ?? 0
     }
 }
 

@@ -80,7 +80,8 @@ public actor AgentCore {
         return AICompletionResponse(
             message: response.message,
             proposedActions: privacyFilteredActions,
-            toolCandidates: toolCandidates
+            toolCandidates: toolCandidates,
+            memoryContextCount: memories.count
         )
     }
 

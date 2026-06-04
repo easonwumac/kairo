@@ -5,23 +5,26 @@ actor BackendAPICapturingAIProvider: AIProvider {
     private var lastRequest: AICompletionRequest?
     private let response: AICompletionResponse
 
-    init(response: AICompletionResponse) {
-        self.response = response
-    }
+    init(response: AICompletionResponse) { self.response = response }
 
     func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
         lastRequest = request
         return response
     }
 
-    func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
-        _ = request
-        return AIEmbeddingResponse(vector: [])
-    }
+    func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse { AIEmbeddingResponse(vector: []) }
 
-    func capturedRequest() -> AICompletionRequest? {
-        lastRequest
-    }
+    func capturedRequest() -> AICompletionRequest? { lastRequest }
+}
+
+actor FailingChatBackendAIProvider: AIProvider {
+    private let error: Error
+
+    init(error: Error) { self.error = error }
+
+    func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse { throw error }
+
+    func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse { throw error }
 }
 
 actor ChatBackendCapturingHTTPClient: HTTPClient {
@@ -29,10 +32,7 @@ actor ChatBackendCapturingHTTPClient: HTTPClient {
     private let body: String
     private var capturedRequest: URLRequest?
 
-    init(statusCode: Int = 200, body: String) {
-        self.statusCode = statusCode
-        self.body = body
-    }
+    init(statusCode: Int = 200, body: String) { self.statusCode = statusCode; self.body = body }
 
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         capturedRequest = request
