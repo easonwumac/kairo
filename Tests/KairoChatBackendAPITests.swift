@@ -55,9 +55,7 @@ final class KairoChatBackendAPITests: XCTestCase {
         let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
         XCTAssertEqual(assistantMessage.role, .assistant)
         XCTAssertEqual(assistantMessage.status, .failed)
-        XCTAssertTrue(assistantMessage.text.contains("OpenAI API key 尚未設定"), assistantMessage.text)
-        XCTAssertTrue(assistantMessage.text.contains("Settings"), assistantMessage.text)
-        XCTAssertTrue(assistantMessage.text.contains("local-only fallback"), assistantMessage.text)
+        XCTAssertEqual(assistantMessage.text, KairoL10n.string("chat.error.openAIKeyMissing"))
         XCTAssertEqual(viewModel.errorMessage, assistantMessage.text)
     }
 
@@ -73,9 +71,8 @@ final class KairoChatBackendAPITests: XCTestCase {
         let assistantMessage = try XCTUnwrap(viewModel.currentThread.messages.last)
         XCTAssertEqual(assistantMessage.role, .assistant)
         XCTAssertEqual(assistantMessage.status, .failed)
-        XCTAssertTrue(assistantMessage.text.contains("Local Only is active but no downloaded model is selected."), assistantMessage.text)
-        XCTAssertTrue(assistantMessage.text.contains("不會假裝 iPhone 本機推論已可用"), assistantMessage.text)
-        XCTAssertTrue(assistantMessage.text.contains("切回 Cloud"), assistantMessage.text)
+        let expected = KairoL10n.string("chat.error.localInferenceUnavailable", "Local Only is active but no downloaded model is selected.")
+        XCTAssertEqual(assistantMessage.text, expected)
         XCTAssertEqual(viewModel.errorMessage, assistantMessage.text)
     }
 

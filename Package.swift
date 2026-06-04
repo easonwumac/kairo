@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Kairo",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v17),
         .macOS(.v14)
@@ -17,10 +18,11 @@ let package = Package(
             exclude: [
                 "App/KairoApp.swift",
                 "Extensions/ShareExtension/ShareExtensionNotes.md",
-                "Extensions/ShareExtension/ShareViewController.swift",
-                "Resources"
+                "Extensions/ShareExtension/ShareViewController.swift"
             ],
-            resources: []
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "KairoCoreTests",

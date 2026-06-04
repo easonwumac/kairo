@@ -368,6 +368,7 @@ extension KairoAppSmokeUITests {
         app = XCUIApplication()
         app.launchArguments.append("--ui-testing")
         app.launchArguments.append("--reset-ui-testing-data")
+        app.launchArguments.append(contentsOf: ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"])
         if seedInstalledLocalModel {
             app.launchArguments.append("--ui-testing-installed-local-model")
         }

@@ -29,9 +29,11 @@ public final class ChatViewModel: ObservableObject {
     public var shareImportPrimaryActionTitle: String {
         let prompt = composerText.trimmingCharacters(in: .whitespacesAndNewlines)
         if prompt.hasPrefix("建立提醒事項：") {
-            return "抽出提醒事項"
+            return KairoL10n.string("chat.share.action.extractReminders")
         }
-        return prompt.localizedCaseInsensitiveContains("summarize") ? "摘要分享內容" : "送進 Chat"
+        return prompt.localizedCaseInsensitiveContains("summarize")
+            ? KairoL10n.string("chat.share.action.summarize")
+            : KairoL10n.string("chat.share.action.sendToChat")
     }
 
     private let historyStore: ChatHistoryStore
@@ -288,7 +290,7 @@ public final class ChatViewModel: ObservableObject {
             actionResultSucceeded = result.completed
             errorMessage = nil
         } catch {
-            actionResultMessage = "Action failed: \(error.localizedDescription)"
+            actionResultMessage = KairoL10n.string("chat.action.error.failed", error.localizedDescription)
             actionResultSucceeded = false
             errorMessage = "Kairo 無法執行此動作。"
         }
@@ -316,21 +318,57 @@ public final class ChatViewModel: ObservableObject {
         guard result.completed else {
             switch action.payload {
             case .reminder:
-                return "Reminder was not created. \(result.message)"
+                return KairoL10n.string("chat.action.result.reminder.failure", localizedExecutionDetail(for: result.message))
             case .calendarEvent:
-                return "Calendar event was not created. \(result.message)"
+                return KairoL10n.string("chat.action.result.calendar.failure", localizedExecutionDetail(for: result.message))
             default:
-                return result.message
+                return localizedActionResultPrefix(for: action, completed: false)
             }
         }
-        let suffix = source == .importedShare ? " Shared content was cleared from the import queue." : ""
+        let suffix = source == .importedShare ? KairoL10n.string("chat.action.result.shareClearedSuffix") : ""
         switch action.payload {
         case .reminder(let draft):
-            return "\(result.message) \(draft.title)\(suffix)"
+            return KairoL10n.string("chat.action.result.reminder.success", draft.title, suffix)
         case .calendarEvent(let draft):
-            return "\(result.message) \(draft.title)\(suffix)"
+            return KairoL10n.string("chat.action.result.calendar.success", draft.title, suffix)
         default:
-            return "\(result.message)\(suffix)"
+            return "\(localizedActionResultPrefix(for: action, completed: true))\(suffix)"
+        }
+    }
+
+    private static func localizedActionResultPrefix(for action: AgentAction, completed: Bool) -> String {
+        switch action.kind {
+        case .composeEmailDraft:
+            return KairoL10n.string(completed ? "chat.action.result.email.success" : "chat.action.result.email.failure")
+        case .openMapDirections:
+            return KairoL10n.string(completed ? "chat.action.result.maps.success" : "chat.action.result.maps.failure")
+        case .openMessageHandoff:
+            return KairoL10n.string(completed ? "chat.action.result.message.success" : "chat.action.result.message.failure")
+        case .openPhoneCallHandoff:
+            return KairoL10n.string(completed ? "chat.action.result.phone.success" : "chat.action.result.phone.failure")
+        case .openWebSearchHandoff:
+            return KairoL10n.string(completed ? "chat.action.result.web.success" : "chat.action.result.web.failure")
+        case .createContactDraft:
+            return KairoL10n.string(completed ? "chat.action.result.contact.success" : "chat.action.result.contact.failure")
+        case .sendNotification:
+            return KairoL10n.string(completed ? "chat.action.result.notification.success" : "chat.action.result.notification.failure")
+        case .saveMemory:
+            return KairoL10n.string(completed ? "chat.action.result.memory.success" : "chat.action.result.memory.failure")
+        case .openURL:
+            return KairoL10n.string(completed ? "chat.action.result.url.success" : "chat.action.result.url.failure")
+        default:
+            return KairoL10n.string(completed ? "chat.action.result.generic.success" : "chat.action.result.generic.failure")
+        }
+    }
+
+    private static func localizedExecutionDetail(for message: String) -> String {
+        switch message {
+        case "Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again.":
+            return KairoL10n.string("chat.action.permission.reminders.off")
+        case "Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again.":
+            return KairoL10n.string("chat.action.permission.calendar.off")
+        default:
+            return message
         }
     }
 
@@ -395,9 +433,9 @@ public final class ChatViewModel: ObservableObject {
 
     private static func shareImportNotice(importedCount: Int) -> String {
         if importedCount == 1 {
-            return "已匯入 1 個分享項目，可送進 Chat 摘要或抽任務。"
+            return KairoL10n.string("chat.share.import.notice.one")
         }
-        return "已匯入 \(importedCount) 個分享項目，可送進 Chat 摘要或抽任務。"
+        return KairoL10n.string("chat.share.import.notice.many", Int64(importedCount))
     }
 
     private static func shareImportPreview(for attachments: [ChatAttachment]) -> String? {
@@ -422,16 +460,16 @@ public final class ChatViewModel: ObservableObject {
         if let providerError = error as? AIProviderError {
             switch providerError {
             case .missingCredential:
-                return "OpenAI API key 尚未設定。請到 Settings 儲存 API key，或切換到可用的 local-only fallback 後再試。"
+                return KairoL10n.string("chat.error.openAIKeyMissing")
             case .unsupported:
-                return "目前選用的 local-only fallback 無法完成這類請求。請切回 cloud provider 或選擇支援的本機模型。"
+                return KairoL10n.string("chat.error.localOnlyUnsupported")
             case .localInferenceUnavailable(let message):
-                return "\(message) Chat 已停止，不會假裝 iPhone 本機推論已可用。請切回 Cloud 或先下載並選擇支援的本機模型。"
+                return KairoL10n.string("chat.error.localInferenceUnavailable", message)
             case .requestFailed(let message):
-                return "OpenAI 回覆失敗：\(message)"
+                return KairoL10n.string("chat.error.requestFailed", message)
             }
         }
-        return "Kairo 暫時無法回覆：\(error.localizedDescription)"
+        return KairoL10n.string("chat.error.genericReplyFailed", error.localizedDescription)
     }
 
     public static let welcomeMessage = ChatMessage(

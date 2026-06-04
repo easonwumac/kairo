@@ -630,9 +630,9 @@ final class SourceHealthTests: XCTestCase {
             encoding: .utf8
         )
 
-        XCTAssertTrue(actionStripSource.contains("Read only"))
-        XCTAssertTrue(actionStripSource.contains("Draft only"))
-        XCTAssertTrue(actionStripSource.contains("Will ask first"))
+        XCTAssertTrue(actionStripSource.contains(#""chat.action.risk.readOnly""#))
+        XCTAssertTrue(actionStripSource.contains(#""chat.action.risk.draftOnly""#))
+        XCTAssertTrue(actionStripSource.contains(#""chat.action.confirmation.willAskFirst""#))
         XCTAssertFalse(actionStripSource.contains("Tier 0"))
         XCTAssertFalse(actionStripSource.contains("Tier 1"))
         XCTAssertFalse(actionStripSource.contains("No write"))

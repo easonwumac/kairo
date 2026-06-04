@@ -10,35 +10,35 @@ final class ChatHandoffActionAuditTests: XCTestCase {
             expectedKind: .composeEmailDraft,
             expectedCapability: .mail,
             expectedURLScheme: "mailto",
-            expectedResult: "Opened visible Mail draft handoff. No email has been sent."
+            expectedResult: KairoL10n.string("chat.action.result.email.success")
         )
         try await assertConfirmedHandoff(
             prompt: "Text 0912-345-678 body I am running late.",
             expectedKind: AgentActionKind(rawValue: "openMessageHandoff")!,
             expectedCapability: .messages,
             expectedURLScheme: "sms",
-            expectedResult: "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview."
+            expectedResult: KairoL10n.string("chat.action.result.message.success")
         )
         try await assertConfirmedHandoff(
             prompt: "Call 0912-345-678",
             expectedKind: .openPhoneCallHandoff,
             expectedCapability: .phone,
             expectedURLScheme: "tel",
-            expectedResult: "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone."
+            expectedResult: KairoL10n.string("chat.action.result.phone.success")
         )
         try await assertConfirmedHandoff(
             prompt: "Search web for SwiftUI App Intents examples",
             expectedKind: .openWebSearchHandoff,
             expectedCapability: .web,
             expectedURLScheme: "https",
-            expectedResult: "Opened visible Safari web search handoff. No browsing has happened inside Kairo."
+            expectedResult: KairoL10n.string("chat.action.result.web.success")
         )
         try await assertConfirmedHandoff(
             prompt: "Drive to Apple Park",
             expectedKind: .openMapDirections,
             expectedCapability: .location,
             expectedURLScheme: "https",
-            expectedResult: "Opened visible Apple Maps handoff. Navigation still requires user action in Maps."
+            expectedResult: KairoL10n.string("chat.action.result.maps.success")
         )
     }
 

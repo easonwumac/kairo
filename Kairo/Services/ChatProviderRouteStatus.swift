@@ -30,9 +30,9 @@ public enum ChatProviderRouteStatusBuilder {
         let cloudWarning = cloudProviderWarning(from: openAIStatus)
         guard let status else {
             return ChatProviderRouteStatus(
-                title: "Route: Cloud",
+                title: KairoL10n.string("chat.provider.route.title", KairoL10n.string("chat.provider.route.cloud")),
                 detail: cloudProviderDetail(from: openAIStatus),
-                badge: "Cloud",
+                badge: KairoL10n.string("chat.provider.route.cloud"),
                 warning: cloudWarning
             )
         }
@@ -41,42 +41,42 @@ public enum ChatProviderRouteStatusBuilder {
         let badge: String
         switch status.preference {
         case .automatic:
-            badge = "Auto"
+            badge = KairoL10n.string("chat.provider.route.auto")
         case .preferLocal:
-            badge = "Local"
+            badge = KairoL10n.string("chat.provider.route.local")
         case .preferCloud:
-            badge = "Cloud"
+            badge = KairoL10n.string("chat.provider.route.cloud")
         case .localOnly:
-            badge = "Local only"
+            badge = KairoL10n.string("chat.provider.route.localOnly")
         }
 
         let detail: String
         switch status.preference {
         case .preferCloud:
-            detail = "Cloud routing is preferred for chat. Local models stay available only after switching route preference."
+            detail = KairoL10n.string("chat.provider.detail.preferCloud")
         case .localOnly:
             if status.localModelInstalled, let selectedModelName {
-                detail = "Local Only selected \(selectedModelName), but iOS production local inference is not available in this beta. Chat fails closed instead of pretending the phone can answer locally."
+                detail = KairoL10n.string("chat.provider.detail.localOnlyInstalledUnavailable", selectedModelName)
             } else {
-                detail = "Local Only is active. Download and select a local model before chat can answer locally."
+                detail = KairoL10n.string("chat.provider.detail.localOnlyNeedsModel")
             }
         case .automatic, .preferLocal:
             if status.localModelInstalled, let selectedModelName {
-                detail = "Selected local model: \(selectedModelName). Catalog/download/select/delete are available; iOS production local inference remains unavailable until a runtime is implemented and verified on device."
+                detail = KairoL10n.string("chat.provider.detail.localSelectedUnavailable", selectedModelName)
             } else if selectedModelName != nil {
-                detail = "Selected local model is not installed yet. Download it before local routing can answer."
+                detail = KairoL10n.string("chat.provider.detail.localSelectedNotInstalled")
             } else {
-                detail = "No local model selected. General chat uses the configured cloud provider when policy allows."
+                detail = KairoL10n.string("chat.provider.detail.noLocalModel")
             }
         }
 
         let warning: String?
         if status.preference == .localOnly && status.localModelInstalled {
-            warning = "iOS production local inference is unavailable in this beta."
+            warning = KairoL10n.string("chat.provider.warning.localInferenceUnavailable")
         } else if status.preference == .localOnly && !status.localModelInstalled {
-            warning = "Local Only is active but no downloaded model is selected."
+            warning = KairoL10n.string("chat.provider.warning.localOnlyNoModel")
         } else if status.preference == .preferLocal && !status.localModelInstalled {
-            warning = "Prefer Local needs a downloaded selected model before private/offline work can route locally."
+            warning = KairoL10n.string("chat.provider.warning.preferLocalNoModel")
         } else if status.preference != .localOnly {
             warning = cloudWarning
         } else {
@@ -84,7 +84,7 @@ public enum ChatProviderRouteStatusBuilder {
         }
 
         return ChatProviderRouteStatus(
-            title: "Route: \(status.preference.settingsTitle)",
+            title: KairoL10n.string("chat.provider.route.title", localizedPreferenceTitle(for: status.preference)),
             detail: detail,
             badge: badge,
             warning: warning,
@@ -94,17 +94,30 @@ public enum ChatProviderRouteStatusBuilder {
 
     private static func cloudProviderDetail(from status: OpenAISettingsStatus?) -> String {
         guard let status else {
-            return "Cloud provider route is available for this chat surface. Save an OpenAI API key in Settings before sending cloud chat."
+            return KairoL10n.string("chat.provider.detail.cloudNeedsKey")
         }
         if status.hasAPIKey {
-            return "\(status.providerName) is configured for cloud chat."
+            return KairoL10n.string("chat.provider.detail.cloudConfigured", status.providerName)
         }
-        return "\(status.providerName) API key is not saved. Chat will fail closed until Settings has a key or a supported local route is selected."
+        return KairoL10n.string("chat.provider.detail.cloudKeyMissing", status.providerName)
     }
 
     private static func cloudProviderWarning(from status: OpenAISettingsStatus?) -> String? {
         guard let status, !status.hasAPIKey else { return nil }
-        return "\(status.providerName) API key is not saved."
+        return KairoL10n.string("chat.provider.warning.openAIKeyMissing", status.providerName)
+    }
+
+    private static func localizedPreferenceTitle(for preference: ProviderRoutePreference) -> String {
+        switch preference {
+        case .automatic:
+            return KairoL10n.string("chat.provider.route.auto")
+        case .preferLocal:
+            return KairoL10n.string("chat.provider.route.local")
+        case .preferCloud:
+            return KairoL10n.string("chat.provider.route.cloud")
+        case .localOnly:
+            return KairoL10n.string("chat.provider.route.localOnly")
+        }
     }
 }
 

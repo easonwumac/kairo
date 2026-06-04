@@ -781,8 +781,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(rootView.contains("case memory"))
         XCTAssertFalse(rootView.contains("TabView"))
         XCTAssertFalse(chatView.contains("KairoBriefingStrip()"))
-        XCTAssertTrue(actionPreview.contains("確認前先檢查"))
-        XCTAssertTrue(actionPreview.contains("你按下確認之前，Kairo 不會寫入資料或開啟外部 App。"))
+        XCTAssertTrue(actionPreview.contains(#""chat.action.preview.title""#))
+        XCTAssertTrue(actionPreview.contains(#""chat.action.preview.safetyNote""#))
     }
 
     func testRootShellKeepsChatFirstForMobileUse() throws {
@@ -905,8 +905,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(chatView.contains("replyToMessage"))
         XCTAssertTrue(chatActionStripsView.contains("actionRiskSummary(for: action)"))
         XCTAssertTrue(chatActionStripsView.contains(#""chat.proposed-action.\(action.kind.rawValue).risk""#))
-        XCTAssertTrue(chatActionStripsView.contains("Will ask first"))
-        XCTAssertTrue(chatActionStripsView.contains("Draft only"))
+        XCTAssertTrue(chatActionStripsView.contains(#""chat.action.confirmation.willAskFirst""#))
+        XCTAssertTrue(chatActionStripsView.contains(#""chat.action.risk.draftOnly""#))
         XCTAssertTrue(chatActionStripsView.contains("candidate.handoffSummary"))
         XCTAssertTrue(chatActionStripsView.contains(#""chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).summary""#))
         XCTAssertTrue(chatActionStripsView.contains("toolRiskSummary(for: candidate)"))
@@ -928,14 +928,20 @@ final class KairoCoreTests: XCTestCase {
 
         await viewModel.load()
 
-        XCTAssertEqual(viewModel.providerRouteStatus.title, "Route: Prefer Local")
+        XCTAssertEqual(
+            viewModel.providerRouteStatus.title,
+            KairoL10n.string("chat.provider.route.title", KairoL10n.string("chat.provider.route.local"))
+        )
         XCTAssertTrue(viewModel.providerRouteStatus.detail.contains("Qwen Small Test"))
         XCTAssertNil(viewModel.providerRouteStatus.warning)
 
         await viewModel.setProviderRoutePreference(.preferCloud)
 
-        XCTAssertEqual(viewModel.providerRouteStatus.title, "Route: Prefer Cloud")
-        XCTAssertEqual(viewModel.providerRouteStatus.badge, "Cloud")
+        XCTAssertEqual(
+            viewModel.providerRouteStatus.title,
+            KairoL10n.string("chat.provider.route.title", KairoL10n.string("chat.provider.route.cloud"))
+        )
+        XCTAssertEqual(viewModel.providerRouteStatus.badge, KairoL10n.string("chat.provider.route.cloud"))
         XCTAssertEqual(viewModel.providerRouteStatus.preference, .preferCloud)
         let persistedStatus = await service.status()
         XCTAssertEqual(persistedStatus.preference, .preferCloud)
@@ -1412,10 +1418,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains(#""chat.action-result""#))
         XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmReminderAction"))
         XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.createReminderDraft""#))
-        XCTAssertTrue(uiTestSources.contains("Created reminder."))
+        XCTAssertTrue(uiTestSources.contains("Created reminder:"))
         XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmCalendarAction"))
         XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.createCalendarDraft""#))
-        XCTAssertTrue(uiTestSources.contains("Created calendar event."))
+        XCTAssertTrue(uiTestSources.contains("Created calendar event:"))
         XCTAssertTrue(uiTestSources.contains("testChatCanPreviewAndConfirmContactAction"))
         XCTAssertTrue(uiTestSources.contains(#""chat.proposed-action.createContactDraft""#))
         XCTAssertTrue(uiTestSources.contains("Created contact."))

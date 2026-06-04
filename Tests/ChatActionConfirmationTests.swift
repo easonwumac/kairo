@@ -8,7 +8,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "通知我喝水",
             expectedKind: .sendNotification,
-            expectedMessage: "Scheduled notification."
+            expectedMessage: KairoL10n.string("chat.action.result.notification.success")
         )
     }
 
@@ -17,7 +17,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "建立提醒事項：下班前整理 Kairo model list",
             expectedKind: .createReminderDraft,
-            expectedMessage: "Created reminder."
+            expectedMessage: KairoL10n.string("chat.action.result.reminder.success", "", "")
         )
     }
 
@@ -26,7 +26,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "建立行程：週五 10:00 Kairo roadmap review",
             expectedKind: .createCalendarDraft,
-            expectedMessage: "Created calendar event."
+            expectedMessage: KairoL10n.string("chat.action.result.calendar.success", "", "")
         )
     }
 
@@ -36,7 +36,10 @@ final class ChatActionConfirmationTests: XCTestCase {
             prompt: "建立行程：週五 10:00 Kairo roadmap review",
             expectedKind: .createCalendarDraft,
             executorMessage: "Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again.",
-            expectedResultMessage: "Calendar event was not created. Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
+            expectedResultMessage: KairoL10n.string(
+                "chat.action.result.calendar.failure",
+                KairoL10n.string("chat.action.permission.calendar.off")
+            )
         )
     }
 
@@ -46,7 +49,10 @@ final class ChatActionConfirmationTests: XCTestCase {
             prompt: "建立提醒事項：下班前整理 Kairo model list",
             expectedKind: .createReminderDraft,
             executorMessage: "Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again.",
-            expectedResultMessage: "Reminder was not created. Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
+            expectedResultMessage: KairoL10n.string(
+                "chat.action.result.reminder.failure",
+                KairoL10n.string("chat.action.permission.reminders.off")
+            )
         )
     }
 
@@ -55,7 +61,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "建立聯絡人：王小明 0912-345-678 ming@example.com",
             expectedKind: .createContactDraft,
-            expectedMessage: "Created contact."
+            expectedMessage: KairoL10n.string("chat.action.result.contact.success")
         )
     }
 
@@ -64,7 +70,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "Draft an email to alex@example.com subject Kairo update body Please review the roadmap.",
             expectedKind: .composeEmailDraft,
-            expectedMessage: "Opened visible Mail draft handoff. No email has been sent."
+            expectedMessage: KairoL10n.string("chat.action.result.email.success")
         )
     }
 
@@ -73,7 +79,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "Drive to Apple Park",
             expectedKind: .openMapDirections,
-            expectedMessage: "Opened visible Apple Maps handoff. Navigation still requires user action in Maps."
+            expectedMessage: KairoL10n.string("chat.action.result.maps.success")
         )
     }
 
@@ -82,7 +88,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "Text 0912-345-678 body I am running late.",
             expectedKind: AgentActionKind(rawValue: "openMessageHandoff")!,
-            expectedMessage: "Opened visible Messages recipient handoff. No message has been sent; body remains in Kairo preview."
+            expectedMessage: KairoL10n.string("chat.action.result.message.success")
         )
     }
 
@@ -91,7 +97,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "Call 0912-345-678",
             expectedKind: .openPhoneCallHandoff,
-            expectedMessage: "Opened visible Phone handoff. No call has been placed; calling still requires user action in Phone."
+            expectedMessage: KairoL10n.string("chat.action.result.phone.success")
         )
     }
 
@@ -100,7 +106,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         try await assertConfirmedAction(
             prompt: "Search web for SwiftUI App Intents examples",
             expectedKind: .openWebSearchHandoff,
-            expectedMessage: "Opened visible Safari web search handoff. No browsing has happened inside Kairo."
+            expectedMessage: KairoL10n.string("chat.action.result.web.success")
         )
     }
 

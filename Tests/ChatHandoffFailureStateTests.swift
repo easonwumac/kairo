@@ -29,7 +29,7 @@ final class ChatHandoffFailureStateTests: XCTestCase {
         XCTAssertNil(viewModel.pendingAction)
         XCTAssertNil(viewModel.handoffReviewAction)
         XCTAssertEqual(viewModel.actionResultMessage,
-            "Could not open the Messages handoff. No message has been sent; body remains in Kairo preview."
+            KairoL10n.string("chat.action.result.message.failure")
         )
         XCTAssertEqual(viewModel.actionResultSucceeded, false)
         XCTAssertNil(viewModel.errorMessage)

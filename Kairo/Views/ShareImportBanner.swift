@@ -52,7 +52,7 @@ struct ShareActionReviewBanner: View {
     var body: some View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
-                Label("已抽出提醒事項草稿", systemImage: "checklist.checked")
+                Label(KairoL10n.string("chat.share.review.reminderReady"), systemImage: "checklist.checked")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
                 Text(action.title)
@@ -62,7 +62,7 @@ struct ShareActionReviewBanner: View {
             }
             Spacer(minLength: 8)
             Button(action: review) {
-                Text("檢查提醒事項")
+                Text(KairoL10n.string("chat.action.reviewReminder"))
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
@@ -89,7 +89,7 @@ struct CalendarActionReviewBanner: View {
     var body: some View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
-                Label("已準備行程草稿", systemImage: "calendar.badge.plus")
+                Label(KairoL10n.string("chat.share.review.calendarReady"), systemImage: "calendar.badge.plus")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
                 Text(action.title)
@@ -99,7 +99,7 @@ struct CalendarActionReviewBanner: View {
             }
             Spacer(minLength: 8)
             Button(action: review) {
-                Text("檢查行程")
+                Text(KairoL10n.string("chat.action.reviewCalendar"))
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
@@ -128,17 +128,17 @@ struct HandoffActionReviewBanner: View {
         let displayName = catalog.descriptor(for: action.kind)?.displayName ?? action.title
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
-                Label("已準備開啟系統 App", systemImage: "arrow.up.forward.app")
+                Label(KairoL10n.string("chat.share.review.handoffReady"), systemImage: "arrow.up.forward.app")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
-                Text("\(displayName)：確認後只會開啟 App，不會自動送出或完成操作")
+                Text(KairoL10n.string("chat.share.review.handoffDetail", displayName))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
             Spacer(minLength: 8)
             Button(action: review) {
-                Text("檢查後開啟")
+                Text(KairoL10n.string("chat.action.reviewHandoff"))
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)

@@ -14,17 +14,32 @@ final class ChatProviderRouteStatusTests: XCTestCase {
         )
 
         await viewModel.refreshProviderRouteStatus()
-        XCTAssertEqual(viewModel.providerRouteStatus.title, "Route: Cloud")
-        XCTAssertEqual(viewModel.providerRouteStatus.warning, "OpenAI API key is not saved.")
-        XCTAssertTrue(viewModel.providerRouteStatus.detail.contains("Chat will fail closed"))
+        XCTAssertEqual(
+            viewModel.providerRouteStatus.title,
+            KairoL10n.string("chat.provider.route.title", KairoL10n.string("chat.provider.route.cloud"))
+        )
+        XCTAssertEqual(
+            viewModel.providerRouteStatus.warning,
+            KairoL10n.string("chat.provider.warning.openAIKeyMissing", "OpenAI")
+        )
+        XCTAssertEqual(
+            viewModel.providerRouteStatus.detail,
+            KairoL10n.string("chat.provider.detail.cloudKeyMissing", "OpenAI")
+        )
 
         try await settingsService.saveAPIKey("sk-test-chat-route")
         await viewModel.refreshProviderRouteStatus()
         XCTAssertNil(viewModel.providerRouteStatus.warning)
-        XCTAssertTrue(viewModel.providerRouteStatus.detail.contains("OpenAI is configured"))
+        XCTAssertEqual(
+            viewModel.providerRouteStatus.detail,
+            KairoL10n.string("chat.provider.detail.cloudConfigured", "OpenAI")
+        )
 
         try await settingsService.deleteAPIKey()
         await viewModel.refreshProviderRouteStatus()
-        XCTAssertEqual(viewModel.providerRouteStatus.warning, "OpenAI API key is not saved.")
+        XCTAssertEqual(
+            viewModel.providerRouteStatus.warning,
+            KairoL10n.string("chat.provider.warning.openAIKeyMissing", "OpenAI")
+        )
     }
 }

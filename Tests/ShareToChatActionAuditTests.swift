@@ -30,9 +30,12 @@ final class ShareToChatActionAuditTests: XCTestCase {
         await flow.viewModel.confirmPendingAction()
 
         XCTAssertNil(flow.viewModel.pendingAction)
-        XCTAssertEqual(flow.viewModel.actionResultMessage,
-            "Created reminder. Send prototype link Shared content was cleared from the import queue."
+        let successMessage = KairoL10n.string(
+            "chat.action.result.reminder.success",
+            "Send prototype link",
+            KairoL10n.string("chat.action.result.shareClearedSuffix")
         )
+        XCTAssertEqual(flow.viewModel.actionResultMessage, successMessage)
         let auditEvents = try await flow.auditLogger.list(limit: 10)
         XCTAssertEqual(auditEvents.count, 1)
         XCTAssertEqual(auditEvents.first?.actionKind, .createReminderDraft)
@@ -53,9 +56,11 @@ final class ShareToChatActionAuditTests: XCTestCase {
         await flow.viewModel.confirmPendingAction()
 
         XCTAssertNil(flow.viewModel.pendingAction)
-        XCTAssertEqual(flow.viewModel.actionResultMessage,
-            "Reminder was not created. Reminders permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
+        let failureMessage = KairoL10n.string(
+            "chat.action.result.reminder.failure",
+            KairoL10n.string("chat.action.permission.reminders.off")
         )
+        XCTAssertEqual(flow.viewModel.actionResultMessage, failureMessage)
         XCTAssertEqual(flow.viewModel.actionResultSucceeded, false)
         XCTAssertNil(flow.viewModel.errorMessage)
         let auditEvents = try await flow.auditLogger.list(limit: 10)
@@ -75,22 +80,14 @@ final class ShareToChatActionAuditTests: XCTestCase {
         TODO: Send prototype link
         Reminder: Book beta review meeting
         """
-        let sharedItem = ShareIngestionItem(
-            attachments: [builder.text(text, displayName: "Launch Notes")],
-            sourceApplication: "ShareSheet",
-            receivedAt: Date(timeIntervalSince1970: 10)
-        )
+        let sharedItem = ShareIngestionItem(attachments: [builder.text(text, displayName: "Launch Notes")], sourceApplication: "ShareSheet", receivedAt: Date(timeIntervalSince1970: 10))
         let shareQueue = InMemoryShareIngestionQueue(seed: [sharedItem])
         let auditLogger = InMemoryAuditLogger()
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: shareQueue,
             agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
-            actionExecutor: SandboxActionExecutor(
-                memoryStore: InMemoryMemoryStore(),
-                reminderScheduler: reminderScheduler,
-                auditLogger: auditLogger
-            )
+            actionExecutor: SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), reminderScheduler: reminderScheduler, auditLogger: auditLogger)
         )
         return (viewModel, shareQueue, auditLogger)
     }

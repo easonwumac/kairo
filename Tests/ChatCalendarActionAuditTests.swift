@@ -24,7 +24,10 @@ final class ChatCalendarActionAuditTests: XCTestCase {
         await viewModel.confirmPendingAction()
 
         XCTAssertNil(viewModel.pendingAction)
-        XCTAssertEqual(viewModel.actionResultMessage, "Created calendar event. Kairo roadmap review")
+        XCTAssertEqual(
+            viewModel.actionResultMessage,
+            KairoL10n.string("chat.action.result.calendar.success", "Kairo roadmap review", "")
+        )
         let auditEvents = try await auditLogger.list(limit: 10)
         XCTAssertEqual(auditEvents.count, 1)
         XCTAssertEqual(auditEvents.first?.actionKind, .createCalendarDraft)
@@ -49,7 +52,10 @@ final class ChatCalendarActionAuditTests: XCTestCase {
         XCTAssertNil(viewModel.pendingAction)
         XCTAssertNil(viewModel.calendarReviewAction)
         XCTAssertEqual(viewModel.actionResultMessage,
-            "Calendar event was not created. Calendar permission is off. Open iOS Settings > Kairo and allow access, then confirm again."
+            KairoL10n.string(
+                "chat.action.result.calendar.failure",
+                KairoL10n.string("chat.action.permission.calendar.off")
+            )
         )
         XCTAssertEqual(viewModel.actionResultSucceeded, false)
         XCTAssertNil(viewModel.errorMessage)

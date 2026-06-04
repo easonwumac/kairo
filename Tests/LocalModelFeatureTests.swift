@@ -795,11 +795,15 @@ final class LocalModelFeatureTests: XCTestCase {
         )
         let selectedStatus = ChatProviderRouteStatusBuilder.build(from: await service.status())
 
-        XCTAssertEqual(selectedStatus.title, "Route: Prefer Local")
-        XCTAssertEqual(selectedStatus.badge, "Local")
-        XCTAssertTrue(selectedStatus.detail.contains("Selected local model: Qwen Small Test"))
-        XCTAssertTrue(selectedStatus.detail.contains("Catalog/download/select/delete are available"))
-        XCTAssertTrue(selectedStatus.detail.contains("iOS production local inference remains unavailable"))
+        XCTAssertEqual(
+            selectedStatus.title,
+            KairoL10n.string("chat.provider.route.title", KairoL10n.string("chat.provider.route.local"))
+        )
+        XCTAssertEqual(selectedStatus.badge, KairoL10n.string("chat.provider.route.local"))
+        XCTAssertEqual(
+            selectedStatus.detail,
+            KairoL10n.string("chat.provider.detail.localSelectedUnavailable", "Qwen Small Test")
+        )
         XCTAssertNil(selectedStatus.warning)
 
         let installedManifest = makeLocalModelManifest(id: "qwen-small")
@@ -820,8 +824,11 @@ final class LocalModelFeatureTests: XCTestCase {
             installedModels: [installedRecord]
         ))
 
-        XCTAssertTrue(localOnlyInstalledStatus.detail.contains("Chat fails closed"))
-        XCTAssertEqual(localOnlyInstalledStatus.warning, "iOS production local inference is unavailable in this beta.")
+        XCTAssertEqual(
+            localOnlyInstalledStatus.detail,
+            KairoL10n.string("chat.provider.detail.localOnlyInstalledUnavailable", "Qwen Small Test")
+        )
+        XCTAssertEqual(localOnlyInstalledStatus.warning, KairoL10n.string("chat.provider.warning.localInferenceUnavailable"))
 
         let warningStatus = ChatProviderRouteStatusBuilder.build(from: LocalModelSettingsStatus(
             selectedModelID: nil,
@@ -832,9 +839,12 @@ final class LocalModelFeatureTests: XCTestCase {
             installedModels: []
         ))
 
-        XCTAssertEqual(warningStatus.title, "Route: Local Only")
-        XCTAssertEqual(warningStatus.badge, "Local only")
-        XCTAssertEqual(warningStatus.warning, "Local Only is active but no downloaded model is selected.")
+        XCTAssertEqual(
+            warningStatus.title,
+            KairoL10n.string("chat.provider.route.title", KairoL10n.string("chat.provider.route.localOnly"))
+        )
+        XCTAssertEqual(warningStatus.badge, KairoL10n.string("chat.provider.route.localOnly"))
+        XCTAssertEqual(warningStatus.warning, KairoL10n.string("chat.provider.warning.localOnlyNoModel"))
     }
 
     func testLocalModelRoutingAIProviderUsesSelectedLocalModelForEligiblePreferLocalWork() async throws {

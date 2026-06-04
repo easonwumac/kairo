@@ -18,6 +18,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments.append("--ui-testing")
         app.launchArguments.append("--reset-ui-testing-data")
+        app.launchArguments.append(contentsOf: ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"])
         app.launch()
     }
 
@@ -674,7 +675,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         openCurrentThreadIfNeeded()
 
         XCTAssertTrue(anyElement("chat.share-import.banner").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "已匯入 1 個分享項目", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Imported 1 shared item", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "Launch Notes: TODO: Send prototype link", direction: .both, maxSwipes: 1).exists)
         let composer = anyElement("chat.composer.text")
         XCTAssertTrue(composer.waitForExistence(timeout: 5))
@@ -688,7 +689,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(anyElement("chat.message.user").waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("chat.share-import.review-banner").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "已抽出提醒事項草稿", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Reminder draft ready", direction: .both, maxSwipes: 1).exists)
         let action = findButton("chat.share-import.review-action", direction: .both, maxSwipes: 1)
         XCTAssertTrue(action.exists)
         tapElement(action)
@@ -703,7 +704,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         tapElement(confirm)
 
         XCTAssertTrue(anyElement("chat.action-result").waitForExistence(timeout: 5))
-        XCTAssertTrue(findStaticText(containing: "Created reminder. Send prototype link", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Created reminder: Send prototype link", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "Shared content was cleared from the import queue.", direction: .both, maxSwipes: 1).exists)
     }
 
@@ -712,7 +713,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             prompt: "通知我喝水",
             actionIdentifier: "chat.proposed-action.sendNotification",
             previewContains: ["Schedule Local Notification"],
-            resultText: "Scheduled notification."
+            resultText: "Scheduled local notification."
         )
     }
 
@@ -721,7 +722,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             prompt: "建立提醒事項：下班前整理 Kairo model list",
             actionIdentifier: "chat.proposed-action.createReminderDraft",
             previewContains: ["Create Reminder"],
-            resultText: "Created reminder. 下班前整理 Kairo model list"
+            resultText: "Created reminder: 下班前整理 Kairo model list"
         )
     }
 
@@ -731,7 +732,7 @@ final class KairoAppSmokeUITests: XCTestCase {
             actionIdentifier: "chat.proposed-action.createCalendarDraft",
             reviewIdentifier: "chat.calendar.review-action",
             previewContains: ["Create Calendar Event", "Kairo roadmap review", "Creates calendar event"],
-            resultText: "Created calendar event. Kairo roadmap review"
+            resultText: "Created calendar event: Kairo roadmap review"
         )
     }
 

@@ -36,7 +36,7 @@ struct ProposedActionsStrip: View {
                         .buttonStyle(.plain)
                         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Action preview: \(descriptor.displayName), \(descriptor.supportStatus.displayName), \(riskSummary)")
+                        .accessibilityLabel(KairoL10n.string("chat.action.accessibility.preview", descriptor.displayName, descriptor.supportStatus.displayName, riskSummary))
                         .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
                     }
                 }
@@ -46,20 +46,22 @@ struct ProposedActionsStrip: View {
     }
 
     private func actionRiskSummary(for action: AgentAction) -> String {
-        let confirmation = action.requiresConfirmation ? "Will ask first" : "No changes"
+        let confirmation = action.requiresConfirmation
+            ? KairoL10n.string("chat.action.confirmation.willAskFirst")
+            : KairoL10n.string("chat.action.confirmation.noChanges")
         return "\(actionRiskTierLabel(for: action.riskTier)) · \(confirmation)"
     }
 
     private func actionRiskTierLabel(for riskTier: ActionRiskTier) -> String {
         switch riskTier {
         case .tier0ReadOnly:
-            return "Read only"
+            return KairoL10n.string("chat.action.risk.readOnly")
         case .tier1Draft:
-            return "Draft only"
+            return KairoL10n.string("chat.action.risk.draftOnly")
         case .tier2LowRiskWrite:
-            return "Phone change"
+            return KairoL10n.string("chat.action.risk.phoneChange")
         case .tier3HighRiskExternal:
-            return "External handoff"
+            return KairoL10n.string("chat.action.risk.externalHandoff")
         }
     }
 
@@ -115,7 +117,7 @@ struct ToolCandidatesStrip: View {
                     .padding(.vertical, 8)
                     .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Suggested option: \(candidate.title), \(optionDetail(for: candidate)). \(candidate.handoffSummary). \(riskSummary)")
+                    .accessibilityLabel(KairoL10n.string("chat.option.accessibility.suggested", candidate.title, optionDetail(for: candidate), candidate.handoffSummary, riskSummary))
                     .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id)")
                 }
             }
@@ -124,36 +126,38 @@ struct ToolCandidatesStrip: View {
     }
 
     private func toolRiskSummary(for candidate: AgentToolInvocationCandidate) -> String {
-        let confirmation = candidate.requiresConfirmation ? "Will ask first" : "No changes"
+        let confirmation = candidate.requiresConfirmation
+            ? KairoL10n.string("chat.action.confirmation.willAskFirst")
+            : KairoL10n.string("chat.action.confirmation.noChanges")
         return "\(toolRiskTierLabel(for: candidate.riskTier)) · \(confirmation)"
     }
 
     private func optionDetail(for candidate: AgentToolInvocationCandidate) -> String {
         if candidate.requiresConfirmation {
-            return "Review first"
+            return KairoL10n.string("chat.option.reviewFirst")
         }
         switch candidate.riskTier {
         case .tier0ReadOnly:
-            return "No changes"
+            return KairoL10n.string("chat.action.confirmation.noChanges")
         case .tier1Draft:
-            return "Visible handoff"
+            return KairoL10n.string("chat.option.visibleHandoff")
         case .tier2LowRiskWrite:
-            return "Phone change"
+            return KairoL10n.string("chat.action.risk.phoneChange")
         case .tier3HighRiskExternal:
-            return "External handoff"
+            return KairoL10n.string("chat.action.risk.externalHandoff")
         }
     }
 
     private func toolRiskTierLabel(for riskTier: ActionRiskTier) -> String {
         switch riskTier {
         case .tier0ReadOnly:
-            return "Read only"
+            return KairoL10n.string("chat.action.risk.readOnly")
         case .tier1Draft:
-            return "Draft only"
+            return KairoL10n.string("chat.action.risk.draftOnly")
         case .tier2LowRiskWrite:
-            return "Phone change"
+            return KairoL10n.string("chat.action.risk.phoneChange")
         case .tier3HighRiskExternal:
-            return "External handoff"
+            return KairoL10n.string("chat.action.risk.externalHandoff")
         }
     }
 
