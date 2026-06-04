@@ -634,6 +634,8 @@ final class SourceHealthTests: XCTestCase {
             XCTAssertTrue(source.contains("docs/CATALOG_RELEASE_CHECKLIST.md"))
         }
         XCTAssertTrue(skillManagement.contains("Publish the production marketplace trust-store key material"))
+        XCTAssertTrue(skillManagement.contains("app-side trust keys now fail closed while `publicationStatus=pendingPublication`"))
+        XCTAssertTrue(skillManagement.contains("blocking `pendingPublication` release keys until standalone marketplace publication is complete"))
         XCTAssertTrue(skillManagement.contains("publicationStatus"))
         XCTAssertTrue(skillManagement.contains("pendingPublication"))
         XCTAssertTrue(skillManagement.contains("Static marketplace seed entries and signed manifests carry compatibility requirements"))
@@ -648,6 +650,7 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(catalogReleaseChecklist.contains("publicKeyBase64"))
         XCTAssertTrue(catalogReleaseChecklist.contains("publicationStatus"))
         XCTAssertTrue(catalogReleaseChecklist.contains("publicationStatus=pendingPublication"))
+        XCTAssertTrue(catalogReleaseChecklist.contains("Keep default app-side marketplace release keys at `publicationStatus=pendingPublication`"))
         XCTAssertTrue(catalogReleaseChecklist.contains("pending-publication-key"))
         XCTAssertTrue(catalogReleaseChecklist.contains("compatibility-blocked skills remain preview-only"))
         XCTAssertTrue(catalogReleaseChecklist.contains("App-side trust-store validation is not proof that production catalogs have been published."))
@@ -657,6 +660,8 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(catalogReleaseChecklist.contains("-----BEGIN"))
         XCTAssertFalse(catalogReleaseChecklist.localizedCaseInsensitiveContains("private signing key:"))
         XCTAssertFalse(catalogReleaseChecklist.localizedCaseInsensitiveContains("api token:"))
+        XCTAssertTrue(readiness.contains("Skill marketplace and local model release keys must remain `publicationStatus=pendingPublication`"))
+        XCTAssertTrue(readiness.contains("Marketplace trust store supports key rotation, publication, and revocation metadata"))
     }
 
     func testAppStoreSubmissionChecklistGatesReleaseEvidence() throws {
