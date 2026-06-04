@@ -176,6 +176,14 @@ public struct ChatView: View {
                 .padding(.top, 8)
             }
 
+            if let calendarReviewAction = viewModel.calendarReviewAction {
+                CalendarActionReviewBanner(action: calendarReviewAction) {
+                    viewModel.reviewCalendarAction()
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+            }
+
             if !viewModel.pendingAttachments.isEmpty {
                 AttachmentTray(attachments: viewModel.pendingAttachments) { id in
                     viewModel.removeAttachment(id: id)

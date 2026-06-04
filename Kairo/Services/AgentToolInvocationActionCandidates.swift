@@ -235,13 +235,7 @@ extension AgentToolInvocationPlanner {
             return nil
         }
 
-        let startDate = Date().addingTimeInterval(3600)
-        let draft = CalendarEventDraft(
-            title: calendarTitle(from: userText),
-            notes: "Drafted from a Kairo chat request.",
-            startDate: startDate,
-            endDate: startDate.addingTimeInterval(3600)
-        )
+        let draft = calendarDraft(from: userText)
         let action = AgentAction(
             kind: .createCalendarDraft,
             title: "Create Calendar Event",

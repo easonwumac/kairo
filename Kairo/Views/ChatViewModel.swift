@@ -11,6 +11,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var shareImportNotice: String?
     @Published public private(set) var shareImportPreview: String?
     @Published public private(set) var shareImportReviewAction: AgentAction?
+    @Published public private(set) var calendarReviewAction: AgentAction?
     @Published public var composerText: String = ""
     @Published public var errorMessage: String?
     @Published public var pendingAction: AgentAction?
@@ -89,6 +90,7 @@ public final class ChatViewModel: ObservableObject {
         shareImportNotice = nil
         shareImportPreview = nil
         shareImportReviewAction = nil
+        calendarReviewAction = nil
         errorMessage = nil
     }
 
@@ -175,7 +177,7 @@ public final class ChatViewModel: ObservableObject {
             )
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
             await persistCurrentThread()
-            previewFirstCalendarActionFromLatestAssistantMessage()
+            calendarReviewAction = firstCalendarActionFromLatestAssistantMessage()
             previewFirstHandoffActionFromLatestAssistantMessage()
         } catch {
             let userFacingMessage = Self.userFacingChatErrorMessage(for: error)
@@ -196,12 +198,20 @@ public final class ChatViewModel: ObservableObject {
         if shareImportReviewAction?.id == action.id {
             shareImportReviewAction = nil
         }
+        if calendarReviewAction?.id == action.id {
+            calendarReviewAction = nil
+        }
         actionResultMessage = nil
         actionResultSucceeded = nil
     }
 
     public func reviewImportedShareAction() {
         guard let action = shareImportReviewAction else { return }
+        previewAction(action)
+    }
+
+    public func reviewCalendarAction() {
+        guard let action = calendarReviewAction else { return }
         previewAction(action)
     }
 
@@ -289,13 +299,12 @@ public final class ChatViewModel: ObservableObject {
         return latestActions.first { $0.kind == .createReminderDraft }
     }
 
-    private func previewFirstCalendarActionFromLatestAssistantMessage() {
-        guard pendingAction == nil else { return }
+    private func firstCalendarActionFromLatestAssistantMessage() -> AgentAction? {
         let latestActions = currentThread.messages
             .reversed()
             .first { $0.role == .assistant && !$0.proposedActions.isEmpty }?
             .proposedActions ?? []
-        pendingAction = latestActions.first { $0.kind == .createCalendarDraft }
+        return latestActions.first { $0.kind == .createCalendarDraft }
     }
 
     private func previewFirstHandoffActionFromLatestAssistantMessage() {

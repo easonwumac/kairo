@@ -81,4 +81,41 @@ struct ShareActionReviewBanner: View {
         .accessibilityIdentifier("chat.share-import.review-banner")
     }
 }
+
+struct CalendarActionReviewBanner: View {
+    let action: AgentAction
+    let review: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Label("已準備行程草稿", systemImage: "calendar.badge.plus")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                Text(action.title)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 8)
+            Button(action: review) {
+                Text("Review Calendar")
+                    .font(.caption.weight(.bold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(Color.accentColor, in: Capsule())
+                    .foregroundStyle(.white)
+            }
+            .accessibilityIdentifier("chat.calendar.review-action")
+        }
+        .padding(12)
+        .background(KairoDesign.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(KairoDesign.blue.opacity(0.22), lineWidth: 1)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.calendar.review-banner")
+    }
+}
 #endif

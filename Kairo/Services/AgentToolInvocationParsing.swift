@@ -2,7 +2,7 @@ import Foundation
 
 extension AgentToolInvocationPlanner {
     func isCalendarWriteRequest(_ normalizedText: String) -> Bool {
-        containsAny(normalizedText, [
+        if containsAny(normalizedText, [
             "create a calendar event",
             "create calendar event",
             "add a calendar event",
@@ -10,14 +10,28 @@ extension AgentToolInvocationPlanner {
             "create an event",
             "add an event",
             "schedule event",
+            "schedule a meeting",
+            "schedule meeting",
             "calendar event",
             "建立行程",
             "新增行程",
             "加入行程",
             "建立日曆",
             "新增日曆",
-            "加入日曆"
-        ])
+            "加入日曆",
+            "安排會議",
+            "安排会议",
+            "新增會議",
+            "新增会议",
+            "建立會議",
+            "建立会议"
+        ]) {
+            return true
+        }
+
+        return (normalizedText.contains("meeting") && containsAny(normalizedText, ["schedule", "create", "add"]))
+            || (normalizedText.contains("會議") && containsAny(normalizedText, ["安排", "新增", "建立", "開"]))
+            || (normalizedText.contains("会议") && containsAny(normalizedText, ["安排", "新增", "建立", "开"]))
     }
 
     func isReminderWriteRequest(_ normalizedText: String) -> Bool {
@@ -196,7 +210,17 @@ extension AgentToolInvocationPlanner {
             "建立日曆：",
             "建立日曆:",
             "新增日曆：",
-            "新增日曆:"
+            "新增日曆:",
+            "Schedule a meeting:",
+            "Schedule meeting:",
+            "安排會議：",
+            "安排會議:",
+            "安排会议：",
+            "安排会议:",
+            "新增會議：",
+            "新增會議:",
+            "新增会议：",
+            "新增会议:"
         ]
 
         for prefix in prefixes where title.lowercased().hasPrefix(prefix.lowercased()) {
@@ -205,7 +229,159 @@ extension AgentToolInvocationPlanner {
             break
         }
 
+        title = strippingCalendarDateTokens(from: title)
+        title = strippingCalendarMeetingWords(from: title)
         return title.isEmpty ? "Kairo calendar event" : title
+    }
+
+    func calendarDraft(from userText: String, now: Date = Date()) -> CalendarEventDraft {
+        let startDate = calendarStartDate(from: userText, now: now) ?? now.addingTimeInterval(3_600)
+        return CalendarEventDraft(
+            title: calendarTitle(from: userText),
+            notes: "Drafted from a Kairo chat request.",
+            startDate: startDate,
+            endDate: startDate.addingTimeInterval(3_600)
+        )
+    }
+
+    func calendarStartDate(from userText: String, now: Date = Date()) -> Date? {
+        let text = userText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let timeMatch = firstMatch(
+            pattern: #"(?<!\d)([01]?\d|2[0-3])[:：點时時]([0-5]\d)?"#,
+            in: text
+        ), let hour = Int(timeMatch.groups[0]) else {
+            return nil
+        }
+        let minuteText = timeMatch.groups.indices.contains(1) ? timeMatch.groups[1] : ""
+        let minute = minuteText.isEmpty ? 0 : Int(minuteText) ?? 0
+
+        let calendar = Calendar.current
+        let weekday = calendarWeekday(from: text)
+        let targetDay = weekday.flatMap { nextDate(for: $0, hour: hour, minute: minute, after: now, calendar: calendar) }
+            ?? nextDate(hour: hour, minute: minute, after: now, calendar: calendar)
+        return targetDay
+    }
+
+    private func strippingCalendarDateTokens(from text: String) -> String {
+        let patterns = [
+            #"(週|星期|禮拜|礼拜)[一二三四五六日天1-7]\s*([01]?\d|2[0-3])[:：點时時]([0-5]\d)?"#,
+            #"(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+([01]?\d|2[0-3])[:：]([0-5]\d)?"#,
+            #"(?<!\d)([01]?\d|2[0-3])[:：點时時]([0-5]\d)?"#
+        ]
+        return patterns.reduce(text) { value, pattern in
+            replacingMatches(pattern: pattern, in: value, with: " ")
+        }
+        .trimmingCharacters(in: CharacterSet(charactersIn: " \t:-：，,"))
+    }
+
+    private func strippingCalendarMeetingWords(from text: String) -> String {
+        let patterns = [
+            #"^(幫我|請幫我|麻煩幫我|請)?\s*(安排|新增|建立|加入|開|开)\s*"#,
+            #"\s*(會議|会议|行程|日曆|日历|meeting|calendar event)$"#
+        ]
+        return patterns.reduce(text) { value, pattern in
+            replacingMatches(pattern: pattern, in: value, with: " ")
+        }
+        .replacingOccurrences(of: #"\s{2,}"#, with: " ", options: .regularExpression)
+        .trimmingCharacters(in: CharacterSet(charactersIn: " \t:-：，,"))
+    }
+
+    private func calendarWeekday(from text: String) -> Int? {
+        if let match = firstMatch(pattern: #"(週|星期|禮拜|礼拜)([一二三四五六日天1-7])"#, in: text) {
+            return weekdayNumber(from: match.groups[1])
+        }
+        if let match = firstMatch(pattern: #"(monday|tuesday|wednesday|thursday|friday|saturday|sunday)"#, in: text.lowercased()) {
+            return weekdayNumber(fromEnglish: match.groups[0])
+        }
+        return nil
+    }
+
+    private func weekdayNumber(from value: String) -> Int? {
+        switch value {
+        case "日", "天", "7":
+            return 1
+        case "一", "1":
+            return 2
+        case "二", "2":
+            return 3
+        case "三", "3":
+            return 4
+        case "四", "4":
+            return 5
+        case "五", "5":
+            return 6
+        case "六", "6":
+            return 7
+        default:
+            return nil
+        }
+    }
+
+    private func weekdayNumber(fromEnglish value: String) -> Int? {
+        switch value {
+        case "sunday":
+            return 1
+        case "monday":
+            return 2
+        case "tuesday":
+            return 3
+        case "wednesday":
+            return 4
+        case "thursday":
+            return 5
+        case "friday":
+            return 6
+        case "saturday":
+            return 7
+        default:
+            return nil
+        }
+    }
+
+    private func nextDate(for weekday: Int, hour: Int, minute: Int, after now: Date, calendar: Calendar) -> Date? {
+        var components = DateComponents()
+        components.weekday = weekday
+        components.hour = hour
+        components.minute = minute
+        components.second = 0
+        return calendar.nextDate(after: now, matching: components, matchingPolicy: .nextTime, direction: .forward)
+    }
+
+    private func nextDate(hour: Int, minute: Int, after now: Date, calendar: Calendar) -> Date? {
+        var components = calendar.dateComponents([.year, .month, .day], from: now)
+        components.hour = hour
+        components.minute = minute
+        components.second = 0
+        guard let today = calendar.date(from: components) else {
+            return nil
+        }
+        return today > now ? today : calendar.date(byAdding: .day, value: 1, to: today)
+    }
+
+    private func firstMatch(pattern: String, in text: String) -> (range: Range<String.Index>, groups: [String])? {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+            return nil
+        }
+        let nsRange = NSRange(text.startIndex..<text.endIndex, in: text)
+        guard let match = regex.firstMatch(in: text, range: nsRange),
+              let range = Range(match.range, in: text) else {
+            return nil
+        }
+        let groups = (1..<match.numberOfRanges).map { index -> String in
+            guard let groupRange = Range(match.range(at: index), in: text) else {
+                return ""
+            }
+            return String(text[groupRange])
+        }
+        return (range, groups)
+    }
+
+    private func replacingMatches(pattern: String, in text: String, with replacement: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+            return text
+        }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        return regex.stringByReplacingMatches(in: text, range: range, withTemplate: replacement)
     }
 
     func reminderTitle(from userText: String) -> String {

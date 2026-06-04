@@ -657,10 +657,11 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     func testChatCanPreviewAndConfirmCalendarAction() throws {
         verifyChatActionPreview(
-            prompt: "建立行程：週五 10:00 Kairo roadmap review",
+            prompt: "幫我安排週五 10:00 Kairo roadmap review 會議",
             actionIdentifier: "chat.proposed-action.createCalendarDraft",
-            previewContains: ["Create Calendar Event"],
-            resultText: "Created calendar event. 週五 10:00 Kairo roadmap review"
+            reviewIdentifier: "chat.calendar.review-action",
+            previewContains: ["Create Calendar Event", "Kairo roadmap review"],
+            resultText: "Created calendar event. Kairo roadmap review"
         )
     }
 

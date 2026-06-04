@@ -173,6 +173,23 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertFalse(plan.candidates.contains { $0.id == "action-send-notification" })
     }
 
+    func testAgentToolInvocationPlannerExtractsNaturalLanguageMeetingDraft() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "幫我安排週五 10:00 Kairo roadmap review 會議"))
+        let action = try XCTUnwrap(plan.candidates.first { $0.id == "action-create-calendar-event" }?.action)
+
+        guard case let .calendarEvent(draft) = action.payload else {
+            return XCTFail("Expected calendar payload.")
+        }
+        let components = Calendar.current.dateComponents([.weekday, .hour, .minute], from: draft.startDate)
+        XCTAssertEqual(draft.title, "Kairo roadmap review")
+        XCTAssertEqual(components.weekday, 6)
+        XCTAssertEqual(components.hour, 10)
+        XCTAssertEqual(components.minute, 0)
+        XCTAssertEqual(draft.endDate.timeIntervalSince(draft.startDate), 3600, accuracy: 0.1)
+    }
+
     func testAgentToolInvocationPlannerSuggestsContactActionWithConfirmation() throws {
         let planner = AgentToolInvocationPlanner(skillCatalog: .default)
 

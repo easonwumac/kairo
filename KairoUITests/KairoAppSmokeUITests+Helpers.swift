@@ -202,6 +202,7 @@ extension KairoAppSmokeUITests {
     func verifyChatActionPreview(
         prompt: String,
         actionIdentifier: String,
+        reviewIdentifier: String? = nil,
         previewContains: [String],
         resultText: String
     ) {
@@ -215,7 +216,10 @@ extension KairoAppSmokeUITests {
         anyElement("chat.composer.send").tap()
 
         XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
-        let action = findButton(actionIdentifier, direction: .down)
+        if let reviewIdentifier {
+            XCTAssertTrue(findElement("chat.calendar.review-banner", direction: .both, maxSwipes: 1).waitForExistence(timeout: 5))
+        }
+        let action = findButton(reviewIdentifier ?? actionIdentifier, direction: .down)
         XCTAssertTrue(action.exists)
         tapElement(action)
 
