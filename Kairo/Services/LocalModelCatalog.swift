@@ -666,12 +666,18 @@ public struct LocalModelCatalogService: Sendable {
                     url: model.downloadURL.absoluteString
                 )
             }
-            guard model.sha256.count == 64 else {
+            guard Self.isValidSHA256Hex(model.sha256) else {
                 throw LocalModelCatalogServiceError.invalidChecksum(
                     modelID: model.id,
                     sha256: model.sha256
                 )
             }
+        }
+    }
+
+    private static func isValidSHA256Hex(_ value: String) -> Bool {
+        value.count == 64 && value.allSatisfy { character in
+            character.isHexDigit
         }
     }
 

@@ -199,6 +199,35 @@ final class LocalModelFeatureTests: XCTestCase {
         }
     }
 
+    func testLocalModelCatalogServiceRejectsNonHexChecksum() async throws {
+        let invalidChecksum = String(repeating: "z", count: 64)
+        let manifestJSON = remoteModelManifestJSON(
+            id: "qwen-small",
+            displayName: "Qwen Small"
+        ).replacingOccurrences(
+            of: String(repeating: "a", count: 64),
+            with: invalidChecksum
+        )
+        let signedCatalog = try signedRemoteModelCatalogJSON(
+            modelsJSON: [
+                manifestJSON
+            ]
+        )
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+        let service = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: httpClient,
+            trustStore: signedCatalog.trustStore
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected non-hex SHA-256 checksums to fail closed.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .invalidChecksum(modelID: "qwen-small", sha256: invalidChecksum))
+        }
+    }
+
     func testLocalModelCatalogServiceRejectsInvalidCatalogSignature() async throws {
         var signedCatalog = try signedRemoteModelCatalogJSON(
             modelsJSON: [
