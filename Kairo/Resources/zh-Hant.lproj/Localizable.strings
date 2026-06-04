@@ -152,6 +152,9 @@
 "chat.error.localInference.reason.routeUnavailable" = "目前選擇的 local route 還不能在 iPhone 上完成這個請求。";
 "chat.error.requestFailed" = "OpenAI 回覆失敗：%@";
 "chat.error.genericReplyFailed" = "Kairo 暫時無法回覆：%@";
+"chat.provider.openAI.requestFailedStatus" = "OpenAI 請求失敗，狀態碼 %lld%@。";
+"chat.provider.openAI.errorType" = "，類型 %@";
+"chat.provider.openAI.embeddingMissingVector" = "Embedding 回應沒有包含 vector。";
 "chat.provider.route.title" = "路由：%@";
 "chat.provider.route.accessibilityStatus" = "%@。%@";
 "chat.provider.route.cloud" = "Cloud";

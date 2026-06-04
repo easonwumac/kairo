@@ -152,6 +152,9 @@
 "chat.error.localInference.reason.routeUnavailable" = "The selected local route cannot complete this request on iPhone yet.";
 "chat.error.requestFailed" = "OpenAI reply failed: %@";
 "chat.error.genericReplyFailed" = "Kairo cannot reply right now: %@";
+"chat.provider.openAI.requestFailedStatus" = "OpenAI request failed with status %lld%@.";
+"chat.provider.openAI.errorType" = " type=%@";
+"chat.provider.openAI.embeddingMissingVector" = "Embedding response did not include a vector.";
 "chat.provider.route.title" = "Route: %@";
 "chat.provider.route.accessibilityStatus" = "%@. %@";
 "chat.provider.route.cloud" = "Cloud";

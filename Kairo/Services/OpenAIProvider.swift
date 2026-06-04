@@ -63,7 +63,7 @@ public struct OpenAIProvider: AIProvider {
 
         let decoded = try JSONDecoder().decode(OpenAIEmbeddingResponse.self, from: responseData)
         guard let vector = decoded.data.first?.embedding else {
-            throw AIProviderError.requestFailed("Embedding response did not include a vector.")
+            throw AIProviderError.requestFailed(KairoL10n.string("chat.provider.openAI.embeddingMissingVector"))
         }
         return AIEmbeddingResponse(vector: vector)
     }
@@ -120,8 +120,8 @@ public struct OpenAIProvider: AIProvider {
         }
 
         let decoded = try? JSONDecoder().decode(APIErrorEnvelope.self, from: data)
-        let type = decoded?.error?.type.map { " type=\($0)" } ?? ""
-        return "OpenAI request failed with status \(statusCode)\(type)."
+        let type = decoded?.error?.type.map { KairoL10n.string("chat.provider.openAI.errorType", $0) } ?? ""
+        return KairoL10n.string("chat.provider.openAI.requestFailedStatus", statusCode, type)
     }
 }
 

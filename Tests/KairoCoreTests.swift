@@ -1675,7 +1675,11 @@ final class KairoCoreTests: XCTestCase {
             _ = try await provider.complete(AICompletionRequest(systemPrompt: "system", userPrompt: "hello"))
             XCTFail("Expected requestFailed error")
         } catch let error as AIProviderError {
-            XCTAssertEqual(error, .requestFailed("OpenAI request failed with status 429 type=rate_limit_error."))
+            XCTAssertEqual(error, .requestFailed(KairoL10n.string(
+                "chat.provider.openAI.requestFailedStatus",
+                429,
+                KairoL10n.string("chat.provider.openAI.errorType", "rate_limit_error")
+            )))
         }
     }
 
