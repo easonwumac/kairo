@@ -2,6 +2,7 @@
   "marketplaceVersion": "2026.6",
   "sourceRepository": "https://github.com/easonwumac/kairo-skills",
   "generatedAt": "2026-06-02T00:00:00Z",
+  "catalogSignatureStatus": "referenceUnsigned",
   "skills": [
     {
       "id": "marketplace-weather-briefing",

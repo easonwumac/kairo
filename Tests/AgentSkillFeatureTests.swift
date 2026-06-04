@@ -25,6 +25,7 @@ final class AgentSkillFeatureTests: XCTestCase {
 
         XCTAssertEqual(index.marketplaceVersion, "2026.6")
         XCTAssertEqual(index.sourceRepository, "https://github.com/easonwumac/kairo-skills")
+        XCTAssertEqual(index.catalogSignatureStatus, "referenceUnsigned")
         XCTAssertGreaterThanOrEqual(index.skills.count, 3)
         XCTAssertTrue(index.skills.allSatisfy { !$0.permissions.isEmpty })
         XCTAssertTrue(index.skills.allSatisfy { !$0.changelog.isEmpty })
@@ -228,6 +229,7 @@ final class AgentSkillFeatureTests: XCTestCase {
     private struct SkillMarketplaceIndex: Decodable {
         var marketplaceVersion: String
         var sourceRepository: String
+        var catalogSignatureStatus: String
         var skills: [SkillMarketplaceEntry]
     }
 

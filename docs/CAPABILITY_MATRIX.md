@@ -40,8 +40,8 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 | BGTaskScheduler policy | Scaffolded | BGAppRefreshTask / BGProcessingTask | 系統與使用者設定 | Policy model exists；不可宣稱 daemon。 |
 | HomeKit action model | Scaffolded | HomeKit typed request / executor injection | 是 | Preview/demo/test path exists；real entitlement/live home control 尚未完成。 |
 | Real HomeKit entitlement path | Planned | HomeKit entitlement + Home permission | 是 | 需 entitlement、purpose copy、device tests、fallback UI。 |
-| Local model catalog | Implemented | Signed/static catalog path | 使用者刷新/選擇 | Catalog metadata exists；production signing/key rotation still planned。 |
-| Local model download/select/delete | Implemented | Explicit download to app storage | 使用者明確觸發 | Verified download/checksum/select/delete exists；不得 commit weights/GGUF/cache。 |
+| Local model catalog | Scaffolded | Signed/static catalog path | 使用者刷新/選擇 | Catalog metadata and trust-store validation exist, but production signed catalog/public-key publication remains release-blocking；default release keys must stay `publicationStatus=pendingPublication` until standalone publication is complete。 |
+| Local model download/select/delete | Scaffolded | Explicit download to app storage | 使用者明確觸發 | Package-tested download/checksum/progress/cancel/select/delete paths exist, but real-device iOS runtime proof remains release-blocking；不得 commit weights/GGUF/tokenizer/cache。 |
 | macOS/dev local model reply check | Test-only / Mock | External command adapter | 開發者本機 | 用於 dev validation，不是 iOS production runtime。 |
 | iOS production local model inference | Planned | App Store-compatible on-device runtime | 使用者選擇模型 | 尚未完成；不可假裝成功。 |
 | Audit log persistence | Implemented | File-backed metadata-only audit log | 否 | Live app persists action kind, capability, memory ids, confirmation/result metadata only。 |
@@ -80,4 +80,5 @@ Kairo 的策略：最大化使用 iOS 公開 API、使用者授權、App Intents
 17. Phone call handoff 只能在使用者明確要求撥打電話時產生 `tel:` handoff；Kairo 不讀通話紀錄、不靜默撥號、不宣稱電話已接通。
 18. Web search handoff 只能在使用者明確要求搜尋網路時產生 HTTPS search URL；Kairo 不背景瀏覽、不抓取網頁、不讀 Safari history/cookies，也不宣稱已閱讀搜尋結果。
 19. Apple Maps directions handoff 只能在使用者明確要求導航/路線時產生 `maps.apple.com` link；Kairo 不讀目前位置、不追蹤定位、不自動開始導航。
-20. Local model download 只能由使用者明確觸發；repo 不可包含 model weights、GGUF、tokenizer、cache 或 generated credentials。
+20. Local model download 只能由使用者明確觸發；repo 不可包含 model weights、GGUF、tokenizer、cache 或 generated credentials；catalog/download/select/delete 目前是 beta scaffolded path，不是 iPhone production inference proof。
+21. Skill marketplace 與 local model release keys 必須維持 `publicationStatus=pendingPublication`，直到 standalone signed catalogs 與 public trust metadata 實際發布；source/package validation 只能證明 fail-closed behavior，不能取代 production publication 或真機 runtime sign-off。

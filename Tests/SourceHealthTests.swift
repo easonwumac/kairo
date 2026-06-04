@@ -647,7 +647,10 @@ final class SourceHealthTests: XCTestCase {
             XCTAssertTrue(source.contains("docs/TRUST_STORE_RUNBOOK.md"))
             XCTAssertTrue(source.contains("docs/CATALOG_RELEASE_CHECKLIST.md"))
         }
-        XCTAssertTrue(skillManagement.contains("Publish the production marketplace trust-store key material"))
+        XCTAssertTrue(skillManagement.contains("Publish the production signed `skills.json` catalog"))
+        XCTAssertTrue(skillManagement.contains("marketplace trust-store key material from the standalone repo"))
+        XCTAssertTrue(skillManagement.contains("catalogSignatureStatus=referenceUnsigned"))
+        XCTAssertTrue(skillManagement.contains("must not be treated as production signed catalog evidence"))
         XCTAssertTrue(skillManagement.contains("app-side trust keys now fail closed while `publicationStatus=pendingPublication`"))
         XCTAssertTrue(skillManagement.contains("blocking `pendingPublication` release keys until standalone marketplace publication is complete"))
         XCTAssertTrue(skillManagement.contains("publicationStatus"))
@@ -664,6 +667,8 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(catalogReleaseChecklist.contains("publicKeyBase64"))
         XCTAssertTrue(catalogReleaseChecklist.contains("publicationStatus"))
         XCTAssertTrue(catalogReleaseChecklist.contains("publicationStatus=pendingPublication"))
+        XCTAssertTrue(catalogReleaseChecklist.contains("catalogSignatureStatus=referenceUnsigned"))
+        XCTAssertTrue(catalogReleaseChecklist.contains("not production signed catalog evidence"))
         XCTAssertTrue(catalogReleaseChecklist.contains("Keep default app-side marketplace release keys at `publicationStatus=pendingPublication`"))
         XCTAssertTrue(catalogReleaseChecklist.contains("pending-publication-key"))
         XCTAssertTrue(catalogReleaseChecklist.contains("compatibility-blocked skills remain preview-only"))
@@ -675,6 +680,7 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(catalogReleaseChecklist.localizedCaseInsensitiveContains("private signing key:"))
         XCTAssertFalse(catalogReleaseChecklist.localizedCaseInsensitiveContains("api token:"))
         XCTAssertTrue(readiness.contains("Skill marketplace and local model release keys must remain `publicationStatus=pendingPublication`"))
+        XCTAssertTrue(readiness.contains("Website/skills/skills.json` is marked `catalogSignatureStatus=referenceUnsigned`"))
         XCTAssertTrue(readiness.contains("Marketplace trust store supports key rotation, publication, and revocation metadata"))
     }
 
@@ -763,6 +769,25 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(roadmap.contains("Published production model catalog with device gating, rollout metadata, and real-device iPhone runtime proof"))
         XCTAssertFalse(roadmap.contains("| Local model catalog/download/select/delete | Implemented |"))
         XCTAssertFalse(roadmap.contains("Signed production skill catalog key rotation/revocation."))
+    }
+
+    func testCapabilityMatrixKeepsReleaseBlockingBoundariesCurrent() throws {
+        let root = packageRootURL()
+        let capabilityMatrix = try String(
+            contentsOf: root.appendingPathComponent("docs/CAPABILITY_MATRIX.md"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(capabilityMatrix.contains("| Local model catalog | Scaffolded |"))
+        XCTAssertTrue(capabilityMatrix.contains("| Local model download/select/delete | Scaffolded |"))
+        XCTAssertTrue(capabilityMatrix.contains("production signed catalog/public-key publication remains release-blocking"))
+        XCTAssertTrue(capabilityMatrix.contains("default release keys must stay `publicationStatus=pendingPublication`"))
+        XCTAssertTrue(capabilityMatrix.contains("real-device iOS runtime proof remains release-blocking"))
+        XCTAssertTrue(capabilityMatrix.contains("catalog/download/select/delete 目前是 beta scaffolded path，不是 iPhone production inference proof"))
+        XCTAssertTrue(capabilityMatrix.contains("source/package validation 只能證明 fail-closed behavior"))
+        XCTAssertTrue(capabilityMatrix.contains("不能取代 production publication 或真機 runtime sign-off"))
+        XCTAssertFalse(capabilityMatrix.contains("| Local model catalog | Implemented |"))
+        XCTAssertFalse(capabilityMatrix.contains("| Local model download/select/delete | Implemented |"))
     }
 
     func testShortcutDemoCatalogStaysSplitAcrossFocusedFiles() throws {

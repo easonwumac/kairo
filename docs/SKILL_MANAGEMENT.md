@@ -52,7 +52,7 @@ This does not grant permissions or install models automatically. Users must stil
 
 ## Marketplace website target
 
-The static seed lives in `Website/skills` and is mirrored to the standalone GitHub repository `https://github.com/easonwumac/kairo-skills`. The app repo keeps the tests and reference artifacts; the standalone skills repo owns live skill updates, GitHub Pages hosting, screenshots, and signed manifest downloads.
+The static seed lives in `Website/skills` and is mirrored to the standalone GitHub repository `https://github.com/easonwumac/kairo-skills`. The app repo keeps the tests and reference artifacts; the standalone skills repo owns live skill updates, GitHub Pages hosting, screenshots, signed catalog publication, and signed manifest downloads. The app-repo `Website/skills/skills.json` carries `catalogSignatureStatus=referenceUnsigned` and must not be treated as production signed catalog evidence.
 
 The management website provides:
 
@@ -66,7 +66,7 @@ The management website provides:
 
 ## Near-term implementation order
 
-1. Publish the production marketplace trust-store key material; app-side trust keys now fail closed while `publicationStatus=pendingPublication`, and `docs/TRUST_STORE_RUNBOOK.md` plus `docs/CATALOG_RELEASE_CHECKLIST.md` define the publication and rotation/revocation release gate.
+1. Publish the production signed `skills.json` catalog and marketplace trust-store key material from the standalone repo; app-side trust keys now fail closed while `publicationStatus=pendingPublication`, and `docs/TRUST_STORE_RUNBOOK.md` plus `docs/CATALOG_RELEASE_CHECKLIST.md` define the publication and rotation/revocation release gate.
 2. Keep simulator UI smoke coverage for signed marketplace install/update, compatibility-blocked marketplace install, and user-created remove flows; package tests cover prompt-context availability through the live effective catalog.
 3. Run real-device Access sign-off before App Review. Simulator UI smoke and package tests remain support evidence only.
 4. Connect compatibility gates to production entitlement inspection and per-provider OAuth readiness details beyond the current package-tested seed metadata.
