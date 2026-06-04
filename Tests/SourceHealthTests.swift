@@ -670,6 +670,10 @@ final class SourceHealthTests: XCTestCase {
             contentsOf: root.appendingPathComponent("docs/APP_STORE_SUBMISSION_CHECKLIST.md"),
             encoding: .utf8
         )
+        let iosTargetReadiness = try String(
+            contentsOf: root.appendingPathComponent("docs/IOS_TARGET_READINESS.md"),
+            encoding: .utf8
+        )
         let readiness = try String(
             contentsOf: root.appendingPathComponent("docs/APP_STORE_READINESS.md"),
             encoding: .utf8
@@ -687,6 +691,7 @@ final class SourceHealthTests: XCTestCase {
             "docs/APP_REVIEW_NOTES.md",
             "docs/PRIVACY_LABELS_CHECKLIST.md",
             "docs/REAL_DEVICE_BETA_SIGNOFF.md",
+            "docs/IOS_TARGET_READINESS.md",
             "docs/CATALOG_RELEASE_CHECKLIST.md",
             "docs/TRUST_STORE_RUNBOOK.md"
         ]
@@ -699,6 +704,7 @@ final class SourceHealthTests: XCTestCase {
             "App Review notes do not claim iOS production local inference",
             "Privacy labels match `Kairo/Resources/PrivacyInfo.xcprivacy`",
             "Purpose strings match current beta capabilities",
+            "iOS target readiness has signed-build evidence for Apple Developer entitlement resolution",
             "iOS production inference runtime, which remains Planned",
             "standalone signed catalogs and public trust-store metadata",
             "Focused scans find no secrets, tokens, private keys, generated credentials, model weights, `.gguf`, tokenizer blobs, model packages, or downloaded caches"
@@ -714,6 +720,14 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("production local inference is complete"))
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("live HomeKit control is complete"))
         XCTAssertFalse(submissionChecklist.localizedCaseInsensitiveContains("silently creates Apple Shortcuts"))
+
+        XCTAssertTrue(iosTargetReadiness.contains("## Release evidence boundary"))
+        XCTAssertTrue(iosTargetReadiness.contains("all listed physical devices were `unavailable`"))
+        XCTAssertTrue(iosTargetReadiness.contains("requires Apple Developer team signing evidence"))
+        XCTAssertTrue(iosTargetReadiness.contains("requires signed physical-device runtime evidence"))
+        XCTAssertTrue(iosTargetReadiness.contains("requires physical-device permission prompts"))
+        XCTAssertTrue(iosTargetReadiness.contains("requires inspection of the signed app bundle/archive"))
+        XCTAssertTrue(iosTargetReadiness.contains("simulator build evidence only"))
     }
 
     func testShortcutDemoCatalogStaysSplitAcrossFocusedFiles() throws {
