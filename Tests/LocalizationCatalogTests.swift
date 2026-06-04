@@ -193,6 +193,7 @@ final class LocalizationCatalogTests: XCTestCase {
             "chat.error.localInference.reason.localOnlyRuntimeUnavailable",
             "chat.error.localInference.reason.privateNoModel",
             "chat.error.localInference.reason.routeUnavailable",
+            "chat.provider.route.accessibilityStatus",
             "chat.provider.warning.openAIKeyMissing",
             "chat.provider.mockPreviewResponse",
             "chat.provider.localFallback.generic",

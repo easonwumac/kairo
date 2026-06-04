@@ -153,6 +153,7 @@
 "chat.error.requestFailed" = "OpenAI reply failed: %@";
 "chat.error.genericReplyFailed" = "Kairo cannot reply right now: %@";
 "chat.provider.route.title" = "Route: %@";
+"chat.provider.route.accessibilityStatus" = "%@. %@";
 "chat.provider.route.cloud" = "Cloud";
 "chat.provider.route.auto" = "Auto";
 "chat.provider.route.local" = "Local";

@@ -26,7 +26,7 @@ struct ChatProviderRouteBar: View {
             routePreferenceMenu
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(status.title). \(status.detail)")
+        .accessibilityLabel(KairoL10n.string("chat.provider.route.accessibilityStatus", status.title, status.detail))
         .accessibilityIdentifier("chat.provider-route")
     }
 
