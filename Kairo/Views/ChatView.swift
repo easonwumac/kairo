@@ -157,6 +157,7 @@ public struct ChatView: View {
             if let shareImportNotice = viewModel.shareImportNotice {
                 ShareImportBanner(
                     notice: shareImportNotice,
+                    preview: viewModel.shareImportPreview,
                     canSend: viewModel.canSendImportedShareToChat,
                     actionTitle: viewModel.shareImportPrimaryActionTitle,
                     send: {

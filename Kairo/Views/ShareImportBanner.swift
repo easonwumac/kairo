@@ -3,16 +3,25 @@ import SwiftUI
 
 struct ShareImportBanner: View {
     let notice: String
+    let preview: String?
     let canSend: Bool
     let actionTitle: String
     let send: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
-            Label(notice, systemImage: "square.and.arrow.down.fill")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(KairoDesign.ink)
-                .lineLimit(2)
+            VStack(alignment: .leading, spacing: 4) {
+                Label(notice, systemImage: "square.and.arrow.down.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                if let preview {
+                    Text(preview)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .accessibilityIdentifier("chat.share-import.preview")
+                }
+            }
             Spacer(minLength: 8)
             Button(action: send) {
                 Text(actionTitle)

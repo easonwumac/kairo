@@ -51,6 +51,10 @@ final class ShareExtensionLifecycleTests: XCTestCase {
             "Summarize this shared content: Article, example.com, photo.png, brief.pdf"
         )
         XCTAssertEqual(viewModel.shareImportPrimaryActionTitle, "Summarize")
+        XCTAssertEqual(
+            viewModel.shareImportPreview,
+            "Article: Shared article text • example.com: https://example.com/story • photo.png"
+        )
         let remaining = try await queue.pendingItems(limit: 10)
         XCTAssertTrue(remaining.isEmpty)
 
@@ -60,6 +64,7 @@ final class ShareExtensionLifecycleTests: XCTestCase {
         XCTAssertEqual(userMessage.text, "Summarize this shared content: Article, example.com, photo.png, brief.pdf")
         XCTAssertEqual(userMessage.attachments.map(\.kind), [.text, .url, .image, .pdf])
         XCTAssertNil(viewModel.shareImportNotice)
+        XCTAssertNil(viewModel.shareImportPreview)
         XCTAssertTrue(viewModel.pendingAttachments.isEmpty)
     }
     #endif

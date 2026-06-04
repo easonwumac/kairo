@@ -9,6 +9,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var isLoading: Bool = false
     @Published public private(set) var pendingAttachments: [ChatAttachment] = []
     @Published public private(set) var shareImportNotice: String?
+    @Published public private(set) var shareImportPreview: String?
     @Published public var composerText: String = ""
     @Published public var errorMessage: String?
     @Published public var pendingAction: AgentAction?
@@ -85,6 +86,7 @@ public final class ChatViewModel: ObservableObject {
         replyTarget = nil
         pendingAttachments = []
         shareImportNotice = nil
+        shareImportPreview = nil
         errorMessage = nil
     }
 
@@ -118,6 +120,7 @@ public final class ChatViewModel: ObservableObject {
                 composerText = imported.suggestedPrompt ?? "Summarize the shared content."
             }
             shareImportNotice = Self.shareImportNotice(importedCount: imported.importedItemIDs.count)
+            shareImportPreview = Self.shareImportPreview(for: imported.attachments)
             errorMessage = nil
         } catch {
             errorMessage = "無法匯入分享內容：\(error.localizedDescription)"
@@ -147,6 +150,7 @@ public final class ChatViewModel: ObservableObject {
         composerText = ""
         pendingAttachments = []
         shareImportNotice = nil
+        shareImportPreview = nil
         self.replyTarget = nil
         await send(composedMessageText(text: text, replyTarget: replyTarget, hasAttachments: !attachments.isEmpty), attachments: attachments)
     }
@@ -312,6 +316,24 @@ public final class ChatViewModel: ObservableObject {
             return "已匯入 1 個分享項目，可送進 Chat 摘要或抽任務。"
         }
         return "已匯入 \(importedCount) 個分享項目，可送進 Chat 摘要或抽任務。"
+    }
+
+    private static func shareImportPreview(for attachments: [ChatAttachment]) -> String? {
+        let previews = attachments.prefix(3).map { attachment in
+            let detail = attachment.textPreview.map(Self.singleLinePreview)
+            guard let detail, !detail.isEmpty else {
+                return attachment.displayName
+            }
+            return "\(attachment.displayName): \(String(detail.prefix(120)))"
+        }
+        guard !previews.isEmpty else { return nil }
+        return previews.joined(separator: " • ")
+    }
+
+    private static func singleLinePreview(_ text: String) -> String {
+        text.components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
     }
 
     private static func userFacingChatErrorMessage(for error: Error) -> String {
