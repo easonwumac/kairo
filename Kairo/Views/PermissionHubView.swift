@@ -121,8 +121,7 @@ public struct PermissionHubView: View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
                 accessSectionTitle(
-                    title: KairoL10n.string("access.capabilities.section"),
-                    subtitle: KairoL10n.string("access.capabilities.focusedFooter")
+                    title: KairoL10n.string("access.capabilities.section")
                 )
                 .accessibilityIdentifier("access.capabilities.section")
 
@@ -302,15 +301,17 @@ public struct PermissionHubView: View {
         }
     }
 
-    private func accessSectionTitle(title: String, subtitle: String) -> some View {
+    private func accessSectionTitle(title: String, subtitle: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title)
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(KairoDesign.ink)
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if let subtitle {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

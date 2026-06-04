@@ -446,6 +446,16 @@ Stage 46 makes navigation product-led:
 - Workflows drawer copy now describes reviewed flows instead of recipes, keeping
   the navigation language closer to what users do.
 
+Stage 47 makes Access tools list direct:
+
+- The Access tool list now starts with Everyday tools instead of the more
+  abstract Phone abilities label.
+- The explanatory footer under that list heading is removed from the first
+  layer; the overview already explains that Chat suggests tools only when
+  needed.
+- Per-tool details, setup status, and advanced skill library controls remain
+  progressive and unchanged.
+
 ## Next UI stages
 
 1. Product surface audit
