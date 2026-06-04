@@ -81,7 +81,7 @@ struct KairoFocusCard<Content: View>: View {
 
 struct KairoCommandButton: View {
     let title: String
-    let subtitle: String
+    var subtitle: String? = nil
     let systemImage: String
     let tint: Color
     let action: () -> Void
@@ -100,10 +100,12 @@ struct KairoCommandButton: View {
                     Text(title)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(KairoDesign.ink)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
                 }
 
                 Spacer(minLength: 6)

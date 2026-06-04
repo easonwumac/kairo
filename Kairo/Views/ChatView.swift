@@ -57,19 +57,12 @@ public struct ChatView: View {
     private var chatFocusPanel: some View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(KairoL10n.string("chat.focus.title"))
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(KairoDesign.ink)
-                    Text(KairoL10n.string("chat.focus.subtitle"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                Text(KairoL10n.string("chat.focus.title"))
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(KairoDesign.ink)
 
                 KairoCommandButton(
                     title: KairoL10n.string("chat.focus.shared.title"),
-                    subtitle: KairoL10n.string("chat.focus.shared.subtitle"),
                     systemImage: "square.and.arrow.down",
                     tint: KairoDesign.blue
                 ) {
@@ -90,10 +83,6 @@ public struct ChatView: View {
                             Text(KairoL10n.string("chat.focus.more.title"))
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(KairoDesign.ink)
-                            Text(KairoL10n.string("chat.focus.more.subtitle"))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
                         }
 
                         Spacer(minLength: 0)

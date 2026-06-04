@@ -466,6 +466,16 @@ Stage 48 makes Workflows starter action-only:
 - Advanced Shortcut references and per-recipe More actions remain unchanged and
   progressive.
 
+Stage 49 makes Chat starter terse:
+
+- The empty Chat panel now opens with a title and one primary starter action,
+  removing the explanatory subtitle from the first layer.
+- The shared-content starter no longer carries a second descriptive line; the
+  button title and icon should be enough to choose that path.
+- More starts is a compact disclosure label only. Plan and Reply remain
+  available after expansion, but the first screen reads less like onboarding
+  copy.
+
 ## Next UI stages
 
 1. Product surface audit
