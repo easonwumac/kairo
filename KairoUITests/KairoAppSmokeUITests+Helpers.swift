@@ -147,6 +147,7 @@ extension KairoAppSmokeUITests {
         selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
         openConnectionSetupIfNeeded()
         XCTAssertTrue(findElement("settings.openai.api-key-status").exists)
+        openAPIKeyEditorIfNeeded()
         XCTAssertTrue(anyElement("settings.openai.api-key-field").exists)
         XCTAssertTrue(findButton("settings.openai.save-api-key").exists)
         XCTAssertTrue(findElement("settings.oauth.connectors", direction: .down).exists)
@@ -170,6 +171,16 @@ extension KairoAppSmokeUITests {
         XCTAssertTrue(identifiedSetup.exists)
         tapElement(identifiedSetup)
         XCTAssertTrue(anyElement("settings.openai.api-key-status").waitForExistence(timeout: 2))
+    }
+
+    func openAPIKeyEditorIfNeeded() {
+        if anyElement("settings.openai.api-key-field").exists {
+            return
+        }
+        let editor = findButton("settings.openai.editor-toggle", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(editor.exists)
+        tapElement(editor)
+        XCTAssertTrue(anyElement("settings.openai.api-key-field").waitForExistence(timeout: 2))
     }
 
     func openPrivacyCleanupIfNeeded() {

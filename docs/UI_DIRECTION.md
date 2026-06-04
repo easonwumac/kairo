@@ -316,10 +316,19 @@ Stage 32 makes starter models action-first:
 - Runtime fit, manifest transparency, speed checks, reply checks, catalog
   source, and cleanup stay behind Advanced diagnostics.
 
+Stage 33 makes cloud key setup status-first:
+
+- Settings connection setup now shows the OpenAI API key card as status plus an
+  edit affordance first.
+- The SecureField, Save, Dry Run, and Delete controls move behind the API key
+  editor disclosure, reducing the form-heavy feel after opening setup.
+- Cloud key handling remains testable and Keychain-bound; only presentation
+  hierarchy changed.
+
 ## Next UI stages
 
 1. Settings
-   - Continue tightening connection setup rows after smoke confirms which account
+   - Continue tightening connected account rows after smoke confirms which OAuth
      states users need on the first screen.
 
 2. Action Preview

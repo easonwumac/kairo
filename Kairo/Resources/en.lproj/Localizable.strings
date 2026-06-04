@@ -598,6 +598,8 @@
 "settings.openai.keychainNote" = "Stored in Keychain only.";
 "settings.openai.status.configured" = "Configured";
 "settings.openai.status.notConfigured" = "Not configured";
+"settings.openai.editor.show" = "Edit API key";
+"settings.openai.editor.hide" = "Hide API key editor";
 "settings.openai.save" = "Save API Key";
 "settings.openai.dryRun" = "Dry Run";
 "settings.openai.delete" = "Delete API Key";

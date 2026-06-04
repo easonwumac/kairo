@@ -64,6 +64,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         let initialStatus = anyElement("settings.openai.api-key-status")
         XCTAssertTrue(initialStatus.waitForExistence(timeout: 5))
         XCTAssertTrue(initialStatus.label.contains("Not configured"), initialStatus.label)
+        openAPIKeyEditorIfNeeded()
         let field = anyElement("settings.openai.api-key-field")
         XCTAssertTrue(field.exists)
         field.tap()

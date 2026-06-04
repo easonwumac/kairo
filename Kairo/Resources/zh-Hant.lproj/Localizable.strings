@@ -598,6 +598,8 @@
 "settings.openai.keychainNote" = "只儲存在 Keychain。";
 "settings.openai.status.configured" = "已設定";
 "settings.openai.status.notConfigured" = "未設定";
+"settings.openai.editor.show" = "編輯 API Key";
+"settings.openai.editor.hide" = "隱藏 API Key 編輯";
 "settings.openai.save" = "儲存 API Key";
 "settings.openai.dryRun" = "Dry Run";
 "settings.openai.delete" = "刪除 API Key";

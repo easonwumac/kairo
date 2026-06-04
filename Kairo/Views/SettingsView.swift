@@ -36,6 +36,7 @@ public struct SettingsView: View {
     @State var localModelStatusMessageModelID: String?
     @State private var privacyStatusMessage: String?
     @State private var showConnectionSetup = false
+    @State private var showAPIKeyEditor = false
     @State private var showPrivacyControls = false
 
     private let settingsService: OpenAISettingsService
@@ -243,47 +244,63 @@ public struct SettingsView: View {
                             .padding(.vertical, 4)
                             .background((hasAPIKey ? Color.green : Color.secondary).opacity(0.10), in: Capsule())
                             .accessibilityIdentifier("settings.openai.api-key-status")
-                    }
 
-                    SecureField(KairoL10n.string("settings.openai.apiKeyPlaceholder"), text: $apiKey)
-                        .textContentType(.password)
-                        .autocorrectionDisabled()
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 9)
-                        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .accessibilityIdentifier("settings.openai.api-key-field")
-
-                    HStack(spacing: 8) {
-                        Button(KairoL10n.string("settings.openai.save")) {
-                            saveAPIKey()
+                        Button {
+                            withAnimation(.snappy(duration: 0.2)) {
+                                showAPIKeyEditor.toggle()
+                            }
+                        } label: {
+                            Image(systemName: showAPIKeyEditor ? "chevron.up.circle.fill" : "pencil.circle.fill")
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(KairoDesign.blue)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        .accessibilityIdentifier("settings.openai.save-api-key")
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(showAPIKeyEditor ? KairoL10n.string("settings.openai.editor.hide") : KairoL10n.string("settings.openai.editor.show"))
+                        .accessibilityIdentifier("settings.openai.editor-toggle")
+                    }
 
-                        Button(KairoL10n.string("settings.openai.dryRun")) {
-                            dryRunAPIKey()
+                    if showAPIKeyEditor {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SecureField(KairoL10n.string("settings.openai.apiKeyPlaceholder"), text: $apiKey)
+                                .textContentType(.password)
+                                .autocorrectionDisabled()
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 9)
+                                .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .accessibilityIdentifier("settings.openai.api-key-field")
+
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 8)], spacing: 8) {
+                                Button(KairoL10n.string("settings.openai.save")) {
+                                    saveAPIKey()
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                .accessibilityIdentifier("settings.openai.save-api-key")
+
+                                Button(KairoL10n.string("settings.openai.dryRun")) {
+                                    dryRunAPIKey()
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasAPIKey)
+                                .accessibilityIdentifier("settings.openai.dry-run-api-key")
+
+                                Button(KairoL10n.string("settings.openai.delete"), role: .destructive) {
+                                    deleteAPIKey()
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(!hasAPIKey)
+                                .accessibilityIdentifier("settings.openai.delete-api-key")
+                            }
+
+                            if let statusMessage {
+                                Text(statusMessage)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityIdentifier("settings.openai.status-message")
+                            }
                         }
-                        .buttonStyle(.bordered)
-                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasAPIKey)
-                        .accessibilityIdentifier("settings.openai.dry-run-api-key")
-
-                        Spacer(minLength: 0)
-                    }
-
-                    Button(KairoL10n.string("settings.openai.delete"), role: .destructive) {
-                        deleteAPIKey()
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .disabled(!hasAPIKey)
-                    .accessibilityIdentifier("settings.openai.delete-api-key")
-
-                    if let statusMessage {
-                        Text(statusMessage)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("settings.openai.status-message")
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
             }
