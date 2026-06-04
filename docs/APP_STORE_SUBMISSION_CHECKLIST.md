@@ -25,6 +25,8 @@ Do not submit until all gates below are true:
 - Local model copy distinguishes catalog/download/select/delete support from iOS production inference runtime, which remains Planned until real-device runtime proof exists.
 - Production skill and model catalog readiness is not claimed until standalone signed catalogs and public trust-store metadata are published outside this app repo.
 - Focused scans find no secrets, tokens, private keys, generated credentials, model weights, `.gguf`, tokenizer blobs, model packages, or downloaded caches in tracked files.
+- Latest `main` GitHub Actions run for `swift test` is successful for the submitted commit.
+- `git status --short --branch` is clean for tracked files before handoff; untracked `tmp/` screenshots may remain only as non-release support artifacts and must not be submitted or cited as physical-device evidence.
 
 ## Evidence Boundaries
 

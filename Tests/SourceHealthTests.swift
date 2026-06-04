@@ -722,7 +722,9 @@ final class SourceHealthTests: XCTestCase {
             "iOS target readiness has signed-build evidence for Apple Developer entitlement resolution",
             "iOS production inference runtime, which remains Planned",
             "standalone signed catalogs and public trust-store metadata",
-            "Focused scans find no secrets, tokens, private keys, generated credentials, model weights, `.gguf`, tokenizer blobs, model packages, or downloaded caches"
+            "Focused scans find no secrets, tokens, private keys, generated credentials, model weights, `.gguf`, tokenizer blobs, model packages, or downloaded caches",
+            "Latest `main` GitHub Actions run for `swift test` is successful for the submitted commit",
+            "`git status --short --branch` is clean for tracked files before handoff"
         ]
         for gate in requiredGates {
             XCTAssertTrue(submissionChecklist.contains(gate), gate)
@@ -743,6 +745,24 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(iosTargetReadiness.contains("requires physical-device permission prompts"))
         XCTAssertTrue(iosTargetReadiness.contains("requires inspection of the signed app bundle/archive"))
         XCTAssertTrue(iosTargetReadiness.contains("simulator build evidence only"))
+    }
+
+    func testRoadmapKeepsReleaseBlockingBoundariesCurrent() throws {
+        let root = packageRootURL()
+        let roadmap = try String(
+            contentsOf: root.appendingPathComponent("docs/ROADMAP.md"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(roadmap.contains("Local model catalog/download/select/delete | Scaffolded"))
+        XCTAssertTrue(roadmap.contains("production signed catalog publication and real-device iOS runtime proof remain release blockers"))
+        XCTAssertTrue(roadmap.contains("publicationStatus=pendingPublication"))
+        XCTAssertTrue(roadmap.contains("Real-device smoke checks for Chat, Memory, Access, Settings, Share Extension, App Intents Ask/Save/Search"))
+        XCTAssertTrue(roadmap.contains("Production signed skill and model catalog publication from standalone repositories"))
+        XCTAssertTrue(roadmap.contains("Published production skill catalog key material after `pendingPublication` keys are promoted"))
+        XCTAssertTrue(roadmap.contains("Published production model catalog with device gating, rollout metadata, and real-device iPhone runtime proof"))
+        XCTAssertFalse(roadmap.contains("| Local model catalog/download/select/delete | Implemented |"))
+        XCTAssertFalse(roadmap.contains("Signed production skill catalog key rotation/revocation."))
     }
 
     func testShortcutDemoCatalogStaysSplitAcrossFocusedFiles() throws {

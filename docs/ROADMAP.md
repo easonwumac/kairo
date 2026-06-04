@@ -27,7 +27,7 @@ Kairo has moved beyond the initial scaffold stage. The roadmap now prioritizes a
 | EventKit / Notifications / Contacts actions | Implemented | Chat preview + confirmation exists for current action scope. |
 | HomeKit | Scaffolded | Typed action model, demo UI, and tests exist; real entitlement/live home path is planned. |
 | OAuth connectors | Scaffolded | Auth/callback/status scaffolds exist; real provider APIs are planned. |
-| Local model catalog/download/select/delete | Implemented | User-triggered catalog/download/settings path exists. |
+| Local model catalog/download/select/delete | Scaffolded | User-triggered catalog/download/settings path exists with package-tested progress/cancel/delete/checksum/trust-store behavior, but production signed catalog publication and real-device iOS runtime proof remain release blockers. |
 | macOS/dev local model runtime adapter | Test-only / Mock | External command validation path only. |
 | iOS production local model inference | Planned | Requires real runtime, device proof, memory/thermal gating, and App Store packaging. |
 | Keyboard Extension | Planned | Deferred. |
@@ -56,6 +56,7 @@ Do first:
 4. **Local model beta path**
    - Keep downloads user-triggered.
    - Show model size, license, purpose, delete state, storage/backup policy, progress/cancel, and runtime availability honestly.
+   - Keep skill and model release keys `publicationStatus=pendingPublication` until standalone catalogs and public trust metadata are published.
    - Keep macOS/dev reply checks separate from iOS production inference.
 
 5. **Audit and memory lifecycle**
@@ -69,10 +70,11 @@ Do first:
 ## Phase 2: Production readiness
 
 - Privacy labels and App Store review notes.
-- Real device smoke checks for Chat, Memory, Access, Settings, Share Extension, App Intents, and confirmed actions.
+- Real-device smoke checks for Chat, Memory, Access, Settings, Share Extension, App Intents Ask/Save/Search, chat history restart persistence, permission-denied fallbacks, and confirmed notification/reminder/calendar/email/message/phone/web/maps actions.
 - Keychain/token deletion and provider disconnect flows.
 - Background task expiration handling and user-visible scheduling boundaries.
 - Data export/delete flows.
+- Production signed skill and model catalog publication from standalone repositories, with public trust metadata published outside this app repo.
 
 ## Phase 3: Integrations after beta safety
 
@@ -80,8 +82,8 @@ Add only after beta stabilization:
 
 - One real OAuth provider API path, such as Google Calendar/Gmail or Microsoft 365.
 - Real HomeKit entitlement path with explicit permission copy and fallback UI.
-- Signed production skill catalog key rotation/revocation.
-- Signed production model catalog with device gating and rollout metadata.
+- Published production skill catalog key material after `pendingPublication` keys are promoted with matching standalone catalog publication.
+- Published production model catalog with device gating, rollout metadata, and real-device iPhone runtime proof.
 
 ## Deferred work
 
