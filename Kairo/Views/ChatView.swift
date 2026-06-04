@@ -154,6 +154,18 @@ public struct ChatView: View {
                     .accessibilityIdentifier("chat.action-result")
             }
 
+            if let shareImportNotice = viewModel.shareImportNotice {
+                ShareImportBanner(
+                    notice: shareImportNotice,
+                    canSend: viewModel.canSendImportedShareToChat,
+                    send: {
+                        Task { await viewModel.sendImportedShareToChat() }
+                    }
+                )
+                .padding(.horizontal)
+                .padding(.top, 8)
+            }
+
             if !viewModel.pendingAttachments.isEmpty {
                 AttachmentTray(attachments: viewModel.pendingAttachments) { id in
                     viewModel.removeAttachment(id: id)

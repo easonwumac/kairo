@@ -8,6 +8,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var currentThread: ChatThread
     @Published public private(set) var isLoading: Bool = false
     @Published public private(set) var pendingAttachments: [ChatAttachment] = []
+    @Published public private(set) var shareImportNotice: String?
     @Published public var composerText: String = ""
     @Published public var errorMessage: String?
     @Published public var pendingAction: AgentAction?
@@ -17,6 +18,9 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var privacyMode: ChatPrivacyMode = .standard
     public var canEditProviderRoute: Bool { localModelSettingsService != nil }
     public var isPrivateChatEnabled: Bool { privacyMode == .privateChat }
+    public var canSendImportedShareToChat: Bool {
+        shareImportNotice != nil && (!composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty)
+    }
 
     private let historyStore: ChatHistoryStore
     private let shareImportAPI: any KairoShareImportAPI
@@ -72,6 +76,7 @@ public final class ChatViewModel: ObservableObject {
         composerText = ""
         replyTarget = nil
         pendingAttachments = []
+        shareImportNotice = nil
         errorMessage = nil
     }
 
@@ -103,10 +108,16 @@ public final class ChatViewModel: ObservableObject {
             if composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 composerText = imported.suggestedPrompt ?? "Review the shared content."
             }
+            shareImportNotice = Self.shareImportNotice(importedCount: imported.importedItemIDs.count)
             errorMessage = nil
         } catch {
             errorMessage = "無法匯入分享內容：\(error.localizedDescription)"
         }
+    }
+
+    public func sendImportedShareToChat() async {
+        guard canSendImportedShareToChat else { return }
+        await sendComposerMessage()
     }
 
     public func addAttachment(_ attachment: ChatAttachment) {
@@ -125,6 +136,7 @@ public final class ChatViewModel: ObservableObject {
         let replyTarget = replyTarget
         composerText = ""
         pendingAttachments = []
+        shareImportNotice = nil
         self.replyTarget = nil
         await send(composedMessageText(text: text, replyTarget: replyTarget, hasAttachments: !attachments.isEmpty), attachments: attachments)
     }
@@ -243,6 +255,13 @@ public final class ChatViewModel: ObservableObject {
             return "selected message"
         }
         return String(singleLine.prefix(140))
+    }
+
+    private static func shareImportNotice(importedCount: Int) -> String {
+        if importedCount == 1 {
+            return "已匯入 1 個分享項目，可送進 Chat 摘要或抽任務。"
+        }
+        return "已匯入 \(importedCount) 個分享項目，可送進 Chat 摘要或抽任務。"
     }
 
     public static let welcomeMessage = ChatMessage(
