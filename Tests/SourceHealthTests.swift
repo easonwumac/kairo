@@ -217,6 +217,7 @@ final class SourceHealthTests: XCTestCase {
         let root = packageRootURL()
         let backendTestsURL = root.appendingPathComponent("Tests/KairoBackendAPITests.swift")
         let chatTestsURL = root.appendingPathComponent("Tests/KairoChatBackendAPITests.swift")
+        let memoryTestsURL = root.appendingPathComponent("Tests/KairoMemoryBackendAPITests.swift")
         let accessTestsURL = root.appendingPathComponent("Tests/KairoAccessBackendAPITests.swift")
         let settingsTestsURL = root.appendingPathComponent("Tests/KairoSettingsBackendAPITests.swift")
         let skillTestsURL = root.appendingPathComponent("Tests/KairoSkillBackendAPITests.swift")
@@ -226,6 +227,7 @@ final class SourceHealthTests: XCTestCase {
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: backendTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: chatTestsURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: memoryTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: accessTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: settingsTestsURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: skillTestsURL.path))
@@ -235,6 +237,7 @@ final class SourceHealthTests: XCTestCase {
 
         let backendTests = try String(contentsOf: backendTestsURL, encoding: .utf8)
         let chatTests = try String(contentsOf: chatTestsURL, encoding: .utf8)
+        let memoryTests = try String(contentsOf: memoryTestsURL, encoding: .utf8)
         let accessTests = try String(contentsOf: accessTestsURL, encoding: .utf8)
         let settingsTests = try String(contentsOf: settingsTestsURL, encoding: .utf8)
         let skillTests = try String(contentsOf: skillTestsURL, encoding: .utf8)
@@ -244,6 +247,8 @@ final class SourceHealthTests: XCTestCase {
 
         XCTAssertTrue(chatTests.contains("final class KairoChatBackendAPITests"))
         XCTAssertTrue(chatTests.contains("testChatBackendAPIForwardsPrivacyModeThroughAgentCore"))
+        XCTAssertTrue(memoryTests.contains("final class KairoMemoryBackendAPITests"))
+        XCTAssertTrue(memoryTests.contains("testMemoryBackendAPIForwardsLifecycleAndExportThroughStore"))
         XCTAssertTrue(accessTests.contains("final class KairoAccessBackendAPITests"))
         XCTAssertTrue(accessTests.contains("testAccessBackendAPIResolvesPermissionStatusesWithoutRequestingPrompts"))
         XCTAssertTrue(accessTests.contains("testAccessBackendAPIForwardsExplicitPermissionRequests"))
@@ -266,6 +271,7 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(backendTestSupport.contains("makeBackendTestAgentSkillManagerService"))
         XCTAssertTrue(backendTestSupport.contains("makeBackendTestLocalModelSettingsService"))
         XCTAssertFalse(backendTests.contains("testChatBackendAPIForwardsPrivacyModeThroughAgentCore"))
+        XCTAssertFalse(backendTests.contains("testMemoryBackendAPIForwardsLifecycleAndExportThroughStore"))
         XCTAssertFalse(backendTests.contains("testAccessBackendAPIResolvesPermissionStatusesWithoutRequestingPrompts"))
         XCTAssertFalse(backendTests.contains("testSettingsBackendAPIManagesOpenAIKeyWithoutLeakingSecrets"))
         XCTAssertFalse(backendTests.contains("testSkillBackendAPIForwardsLifecycleThroughSkillManager"))
@@ -275,6 +281,7 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(backendTests.contains("testDeletionBackendAPIDeletesOnDevicePrivacyDataThroughCoreInterfaces"))
         XCTAssertLessThan(backendTests.split(separator: "\n").count, 720)
         XCTAssertLessThan(chatTests.split(separator: "\n").count, 120)
+        XCTAssertLessThan(memoryTests.split(separator: "\n").count, 120)
         XCTAssertLessThan(accessTests.split(separator: "\n").count, 180)
         XCTAssertLessThan(settingsTests.split(separator: "\n").count, 180)
         XCTAssertLessThan(skillTests.split(separator: "\n").count, 240)
