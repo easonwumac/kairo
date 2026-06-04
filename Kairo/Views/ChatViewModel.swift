@@ -164,6 +164,7 @@ public final class ChatViewModel: ObservableObject {
     }
 
     public func send(_ text: String, attachments: [ChatAttachment] = []) async {
+        clearTransientActionState()
         let userMessage = ChatMessage(role: .user, text: text, attachments: attachments)
         currentThread.append(userMessage, now: userMessage.createdAt)
         await persistCurrentThread()
