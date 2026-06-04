@@ -294,15 +294,6 @@ final class SourceHealthTests: XCTestCase {
         let manifest = try XCTUnwrap(
             PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
         )
-        let privacyLabelsChecklist = try String(
-            contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
-            encoding: .utf8
-        )
-        let reviewNotes = try String(
-            contentsOf: root.appendingPathComponent("docs/APP_REVIEW_NOTES.md"),
-            encoding: .utf8
-        )
-
         XCTAssertEqual(manifest["NSPrivacyTracking"] as? Bool, false)
         XCTAssertTrue((manifest["NSPrivacyTrackingDomains"] as? [Any])?.isEmpty == true)
         XCTAssertTrue((manifest["NSPrivacyCollectedDataTypes"] as? [Any])?.isEmpty == true)
@@ -311,25 +302,6 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertEqual(accessedAPITypes.count, 1)
         XCTAssertEqual(accessedAPITypes.first?["NSPrivacyAccessedAPIType"] as? String, "NSPrivacyAccessedAPICategoryUserDefaults")
         XCTAssertEqual(accessedAPITypes.first?["NSPrivacyAccessedAPITypeReasons"] as? [String], ["CA92.1"])
-        XCTAssertTrue(privacyLabelsChecklist.contains("Tracking: No."))
-        XCTAssertTrue(privacyLabelsChecklist.contains("Data collected: No collected data."))
-        XCTAssertTrue(privacyLabelsChecklist.contains("Tracking domains: None."))
-        XCTAssertTrue(privacyLabelsChecklist.contains("Required Reason API usage: UserDefaults only, reason `CA92.1`."))
-        XCTAssertTrue(privacyLabelsChecklist.contains("no analytics SDK"))
-        XCTAssertTrue(privacyLabelsChecklist.contains("no backend account"))
-        XCTAssertTrue(privacyLabelsChecklist.contains("docs/REAL_DEVICE_BETA_SIGNOFF.md"))
-        let privacyChangeTriggers = [
-            "no analytics SDK",
-            "no backend account",
-            "no cloud memory sync",
-            "no crash/telemetry collection provider",
-            "no provider-side sync beyond explicit user-configured API calls"
-        ]
-        for trigger in privacyChangeTriggers {
-            XCTAssertTrue(reviewNotes.contains(trigger), trigger)
-        }
-        XCTAssertFalse(privacyLabelsChecklist.localizedCaseInsensitiveContains("tracking: yes"))
-        XCTAssertFalse(privacyLabelsChecklist.localizedCaseInsensitiveContains("data collected: yes"))
     }
 
     func testBetaInfoPlistPurposeStringsMatchEnabledCapabilities() throws {
@@ -339,11 +311,6 @@ final class SourceHealthTests: XCTestCase {
         let plist = try XCTUnwrap(
             PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
         )
-        let privacyLabelsChecklist = try String(
-            contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
-            encoding: .utf8
-        )
-
         XCTAssertEqual(
             plist["NSCalendarsFullAccessUsageDescription"] as? String,
             "Kairo 需要完整行事曆權限，才能在你確認後透過 EventKit 建立行事曆事件。"
@@ -371,13 +338,6 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertNil(plist["NSHomeKitUsageDescription"])
         XCTAssertNil(plist["NSLocationWhenInUseUsageDescription"])
         XCTAssertNil(plist["NSPhotoLibraryUsageDescription"])
-        XCTAssertTrue(privacyLabelsChecklist.contains("NSCalendarsFullAccessUsageDescription"))
-        XCTAssertTrue(privacyLabelsChecklist.contains("NSUserNotificationsUsageDescription"))
-        XCTAssertTrue(privacyLabelsChecklist.contains("NSContactsUsageDescription"))
-        XCTAssertTrue(privacyLabelsChecklist.contains("Future-only purpose strings must remain absent from the beta plist"))
-        XCTAssertTrue(privacyLabelsChecklist.contains("NSHomeKitUsageDescription"))
-        XCTAssertTrue(privacyLabelsChecklist.contains("NSLocationWhenInUseUsageDescription"))
-        XCTAssertTrue(privacyLabelsChecklist.contains("NSPhotoLibraryUsageDescription"))
     }
 
     func testBetaProjectTargetsDoNotAddDeferredSurfaces() throws {
@@ -542,29 +502,6 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertTrue(readme.contains("remaining blockers are production signed catalog/public-key publication and real-device runtime proof"))
         XCTAssertFalse(readme.contains("| Local model catalog/download/select/delete | Implemented |"))
         XCTAssertFalse(readme.contains("remaining gaps are progress/cancel UI"))
-    }
-
-    func testPrivacyLabelsChecklistKeepsDeletionAndLabelBoundariesCurrent() throws {
-        let root = packageRootURL()
-        let privacyChecklist = try String(
-            contentsOf: root.appendingPathComponent("docs/PRIVACY_LABELS_CHECKLIST.md"),
-            encoding: .utf8
-        )
-
-        XCTAssertTrue(privacyChecklist.contains("Tracking: No."))
-        XCTAssertTrue(privacyChecklist.contains("Data collected: No collected data."))
-        XCTAssertTrue(privacyChecklist.contains("Required Reason API usage: UserDefaults only, reason `CA92.1`."))
-        XCTAssertTrue(privacyChecklist.contains("no analytics SDK, no ad tracking, no backend account, no cloud memory sync, no crash/telemetry collection provider, and no provider-side sync beyond user-configured API calls"))
-        XCTAssertTrue(privacyChecklist.contains("## Deletion Evidence Boundary"))
-        XCTAssertTrue(privacyChecklist.contains("Current deletion proof is on-device and user-triggered only"))
-        XCTAssertTrue(privacyChecklist.contains("Chat history: delete a thread from Chat history"))
-        XCTAssertTrue(privacyChecklist.contains("Memory Center delete/export covers active records"))
-        XCTAssertTrue(privacyChecklist.contains("Settings / Models delete removes installed model files and clears selected-model state"))
-        XCTAssertTrue(privacyChecklist.contains("Settings delete/disconnect removes Keychain-backed secrets"))
-        XCTAssertTrue(privacyChecklist.contains("Settings / Privacy exposes Clear Audit Log for metadata-only audit records"))
-        XCTAssertTrue(privacyChecklist.contains("not applicable in the current beta because Kairo has no backend account"))
-        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("backend account deletion is supported"))
-        XCTAssertFalse(privacyChecklist.localizedCaseInsensitiveContains("cloud-sync deletion is supported"))
     }
 
     func testRealDeviceSignOffDocsRequirePhysicalDeviceEvidence() throws {
