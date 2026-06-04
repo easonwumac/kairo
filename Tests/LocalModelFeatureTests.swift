@@ -224,6 +224,38 @@ final class LocalModelFeatureTests: XCTestCase {
         }
     }
 
+    func testLocalModelCatalogServiceRejectsMissingCapabilities() async throws {
+        let manifestJSON = remoteModelManifestJSON(
+            id: "qwen-small",
+            displayName: "Qwen Small"
+        ).replacingOccurrences(
+            of: #""capabilities": ["drafts", "summarization", "simpleQuestionAnswer", "offlineChat"]"#,
+            with: #""capabilities": []"#
+        )
+        let signedCatalog = try signedRemoteModelCatalogJSON(
+            modelsJSON: [
+                manifestJSON
+            ]
+        )
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+        let service = LocalModelCatalogService(
+            indexURL: URL(string: "https://easonwumac.github.io/kairo-models/models.json")!,
+            httpClient: httpClient,
+            trustStore: signedCatalog.trustStore
+        )
+
+        do {
+            _ = try await service.fetchCatalog()
+            XCTFail("Expected model catalogs without capabilities to fail closed.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .missingCapabilities(modelID: "qwen-small"))
+            XCTAssertEqual(
+                error.localizedDescription,
+                "Model catalog must declare at least one capability for qwen-small."
+            )
+        }
+    }
+
     func testLocalModelCatalogServiceRejectsNonHexChecksum() async throws {
         let invalidChecksum = String(repeating: "z", count: 64)
         let manifestJSON = remoteModelManifestJSON(

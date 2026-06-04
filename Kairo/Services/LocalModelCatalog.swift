@@ -538,6 +538,7 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
     case invalidSignature
     case nonProductionCatalogSignatureStatus(String)
     case invalidModelID(String)
+    case missingCapabilities(modelID: String)
     case duplicateModelID(String)
     case unsafeDownloadURL(modelID: String, url: String)
     case invalidChecksum(modelID: String, sha256: String)
@@ -566,6 +567,8 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
             return "Model catalog is marked \(status), not productionSigned."
         case .invalidModelID(let modelID):
             return "Model catalog contains an invalid model id: \(modelID)."
+        case .missingCapabilities(let modelID):
+            return "Model catalog must declare at least one capability for \(modelID)."
         case .duplicateModelID(let modelID):
             return "Model catalog contains a duplicate model id: \(modelID)."
         case .unsafeDownloadURL(let modelID, let url):
@@ -668,6 +671,9 @@ public struct LocalModelCatalogService: Sendable {
                     modelID: model.id,
                     url: model.downloadURL.absoluteString
                 )
+            }
+            guard !model.capabilities.isEmpty else {
+                throw LocalModelCatalogServiceError.missingCapabilities(modelID: model.id)
             }
             guard Self.isValidSHA256Hex(model.sha256) else {
                 throw LocalModelCatalogServiceError.invalidChecksum(
