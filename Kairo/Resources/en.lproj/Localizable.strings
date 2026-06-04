@@ -38,6 +38,8 @@
 "memory.search.summary.matches.many" = "%lld matches for \"%@\"";
 "memory.add.section" = "Add context";
 "memory.add.detail" = "Save only the context Kairo should reuse.";
+"memory.add.show" = "Show add context";
+"memory.add.hide" = "Hide add context";
 "memory.add.placeholder" = "Type something Kairo should remember";
 "memory.add.save" = "Save";
 "memory.empty.title" = "No memories yet";

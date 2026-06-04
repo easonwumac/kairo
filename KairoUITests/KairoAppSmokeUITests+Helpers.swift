@@ -161,6 +161,16 @@ extension KairoAppSmokeUITests {
         XCTAssertTrue(anyElement("settings.openai.api-key-status").waitForExistence(timeout: 2))
     }
 
+    func openMemoryAddContextIfNeeded() {
+        if anyElement("memory.add.text").exists {
+            return
+        }
+        let toggle = findButton("memory.add.toggle", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(toggle.exists)
+        tapElement(toggle)
+        XCTAssertTrue(anyElement("memory.add.text").waitForExistence(timeout: 3))
+    }
+
     func openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: Bool, selectFromDrawer: Bool = true) {
         if selectFromDrawer {
             selectDrawerSection(identifier: "root.drawer.models", label: "Models")

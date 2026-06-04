@@ -11,6 +11,7 @@ public struct MemoryCenterView: View {
     @State private var memories: [MemoryRecord] = []
     @State private var errorMessage: String?
     @State private var exportText: String = "{}"
+    @State private var showAddContext = false
 
     private let memoryAPI: any KairoMemoryAPI
 
@@ -236,45 +237,68 @@ public struct MemoryCenterView: View {
     private var memoryAddSection: some View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 10) {
-                    Image(systemName: "plus.message.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(KairoDesign.blue)
-                        .frame(width: 28, height: 28)
-                        .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(KairoL10n.string("memory.add.section"))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(KairoDesign.ink)
-                        Text(KairoL10n.string("memory.add.detail"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                TextField(KairoL10n.string("memory.add.placeholder"), text: $draft)
-                    .focused($isAddFieldFocused)
-                    .submitLabel(.done)
-                    .onSubmit {
-                        isAddFieldFocused = false
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .accessibilityIdentifier("memory.add.text")
-
                 Button {
-                    save()
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showAddContext.toggle()
+                        if !showAddContext {
+                            isAddFieldFocused = false
+                        }
+                    }
                 } label: {
-                    Label(KairoL10n.string("memory.add.save"), systemImage: "plus.circle.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .accessibilityIdentifier("memory.add.save")
+                    HStack(spacing: 10) {
+                        Image(systemName: "plus.message.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                            .frame(width: 28, height: 28)
+                            .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(KairoL10n.string("memory.add.section"))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                            Text(KairoL10n.string("memory.add.detail"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: showAddContext ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                            .frame(width: 34, height: 34)
+                            .background(KairoDesign.blue.opacity(0.10), in: Circle())
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityIdentifier("memory.add.save")
+                .buttonStyle(.plain)
+                .accessibilityLabel(showAddContext ? KairoL10n.string("memory.add.hide") : KairoL10n.string("memory.add.show"))
+                .accessibilityIdentifier("memory.add.toggle")
+
+                if showAddContext {
+                    TextField(KairoL10n.string("memory.add.placeholder"), text: $draft)
+                        .focused($isAddFieldFocused)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            isAddFieldFocused = false
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .accessibilityIdentifier("memory.add.text")
+
+                    Button {
+                        save()
+                    } label: {
+                        Label(KairoL10n.string("memory.add.save"), systemImage: "plus.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .accessibilityIdentifier("memory.add.save")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityIdentifier("memory.add.save")
+                }
             }
         }
     }
@@ -372,6 +396,10 @@ public struct MemoryCenterView: View {
             do {
                 try await memoryAPI.save(memory)
                 await reload()
+                await MainActor.run {
+                    showAddContext = false
+                    isAddFieldFocused = false
+                }
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription

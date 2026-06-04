@@ -38,6 +38,8 @@
 "memory.search.summary.matches.many" = "找到 %lld 筆「%@」符合項目";
 "memory.add.section" = "加入脈絡";
 "memory.add.detail" = "只儲存希望 Kairo 重複使用的內容。";
+"memory.add.show" = "顯示加入脈絡";
+"memory.add.hide" = "隱藏加入脈絡";
 "memory.add.placeholder" = "輸入希望 Kairo 記住的內容";
 "memory.add.save" = "儲存";
 "memory.empty.title" = "還沒有 memories";

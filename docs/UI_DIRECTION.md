@@ -189,11 +189,19 @@ Stage 18 makes root navigation job-first:
   the product spine: ask in Chat, use supporting rooms only when the job needs
   them.
 
+Stage 19 makes Memory capture on-demand:
+
+- Memory Center now keeps search and saved context as the first-level job.
+- Manual capture remains available, but it starts behind an Add context
+  disclosure instead of presenting a blank input form on first load.
+- Saving a memory collapses the capture controls again, returning the screen to
+  finding and reviewing usable context.
+
 ## Next UI stages
 
 1. Memory Center
-   - Continue tuning record actions only after smoke tests show which memory
-     states users need to act on most often.
+   - Continue tuning record actions only after smoke tests show which saved
+     memory states users need to act on most often.
 
 2. Phone Tools and Skill Manager
    - Continue tuning skill-card density inside Skill library after simulator

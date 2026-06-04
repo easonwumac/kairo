@@ -111,6 +111,8 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     func testMemoryCenterCanAddSearchAndDeleteMemory() throws {
         relaunchForUITesting(initialSection: "memory")
+        XCTAssertFalse(anyElement("memory.add.text").exists)
+        openMemoryAddContextIfNeeded()
 
         let addField = anyElement("memory.add.text")
         XCTAssertTrue(addField.waitForExistence(timeout: 5))
@@ -146,6 +148,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     func testChatShowsWhenAssistantUsedMemoryContext() throws {
         relaunchForUITesting(initialSection: "memory")
+        openMemoryAddContextIfNeeded()
 
         let addField = anyElement("memory.add.text")
         XCTAssertTrue(addField.waitForExistence(timeout: 5))
