@@ -158,6 +158,7 @@ public struct MemoryCenterView: View {
         Task {
             do {
                 try await memoryAPI.delete(id: memory.id)
+                try await memoryAPI.purgeDeleted()
                 await reload()
             } catch {
                 await MainActor.run {
