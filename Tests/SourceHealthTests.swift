@@ -157,6 +157,36 @@ final class SourceHealthTests: XCTestCase {
         XCTAssertFalse(coreTests.contains("testAgentSkillMarketplaceCatalogServiceFetchesStandaloneRepoCatalog"))
     }
 
+    func testAgentSkillManifestTrustCoverageLivesInFocusedTestFile() throws {
+        let root = packageRootURL()
+        let focusedTestsURL = root.appendingPathComponent("Tests/AgentSkillManifestTrustTests.swift")
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: focusedTestsURL.path),
+            "Skill manifest trust-store tests should live in a focused test file instead of the KairoCoreTests monolith."
+        )
+
+        let requiredFocusedTests = [
+            "testAgentSkillManifestRequiresSignatureAndVerifiesChecksum",
+            "testAgentSkillManifestTrustStoreVerifiesPublicKeySignatureAndRejectsUnknownKeys",
+            "testAgentSkillManifestTrustStoreRejectsRevokedAndOutOfWindowKeys",
+            "testAgentSkillManifestTrustStoreRejectsPendingPublicationSigningKeys",
+            "testAgentSkillTrustStoreDecodesISO8601RotationMetadata",
+            "testAgentSkillManagerUsesTrustStoreWhenProvided",
+            "testAgentSkillManagerBuildsSignedManifestUpdatePreviewWithChangelog",
+            "testAgentSkillManagerBuildsDowngradeBlockedPreviewFromManifestJSONString"
+        ]
+        let focusedTests = try String(contentsOf: focusedTestsURL, encoding: .utf8)
+        for testName in requiredFocusedTests {
+            XCTAssertTrue(focusedTests.contains(testName), testName)
+        }
+        XCTAssertLessThan(focusedTests.split(separator: "\n").count, 460)
+
+        let coreTests = try String(contentsOf: root.appendingPathComponent("Tests/KairoCoreTests.swift"))
+        for testName in requiredFocusedTests {
+            XCTAssertFalse(coreTests.contains(testName), testName)
+        }
+    }
+
     func testProviderCredentialSafetyCoverageLivesInFocusedTestFile() throws {
         let root = packageRootURL()
         let focusedTestsURL = root.appendingPathComponent("Tests/ProviderCredentialSafetyTests.swift")
