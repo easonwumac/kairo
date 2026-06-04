@@ -65,7 +65,7 @@ public protocol LocalModelReplyCheckRuntime: Sendable {
 public struct UnavailableLocalModelReplyCheckRuntime: LocalModelReplyCheckRuntime {
     private let reason: String
 
-    public init(reason: String = "No local inference runtime is wired for iOS yet.") {
+    public init(reason: String = KairoL10n.string("settings.models.runtimeUnavailable.iOSSimulatorQwen")) {
         self.reason = reason
     }
 

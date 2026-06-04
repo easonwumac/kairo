@@ -1170,6 +1170,33 @@ final class LocalModelFeatureTests: XCTestCase {
         }
     }
 
+    func testDefaultLocalModelBenchmarkUnavailableReasonNamesSimulatorQwenBoundary() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen3-5-0-8b-q4-k-m",
+            version: LocalModelManifest.qwen35Tiny.version,
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
+            sha256: LocalModelManifest.qwen35Tiny.sha256
+        ))
+        let service = LocalModelBenchmarkService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            resultStore: try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
+        )
+
+        do {
+            _ = try await service.runBenchmark(modelID: "qwen3-5-0-8b-q4-k-m")
+            XCTFail("Expected default unavailable runtime to fail closed.")
+        } catch let error as LocalModelBenchmarkError {
+            XCTAssertEqual(error, .runtimeUnavailable(KairoL10n.string("settings.models.runtimeUnavailable.iOSSimulatorQwen")))
+        }
+    }
+
     func testLocalModelReplyCheckRequiresDownloadedModelBeforeRunning() async throws {
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
         let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
@@ -1251,6 +1278,28 @@ final class LocalModelFeatureTests: XCTestCase {
             XCTFail("Expected unavailable reply runtime to fail closed.")
         } catch let error as LocalModelReplyCheckError {
             XCTAssertEqual(error, .runtimeUnavailable("Runtime not shipped in this beta."))
+        }
+    }
+
+    func testDefaultLocalModelReplyCheckUnavailableReasonNamesSimulatorQwenBoundary() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen3-5-0-8b-q4-k-m",
+            version: LocalModelManifest.qwen35Tiny.version,
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
+            sha256: LocalModelManifest.qwen35Tiny.sha256
+        ))
+        let service = LocalModelReplyCheckService(catalog: .kairoDefault, installRegistry: registry)
+
+        do {
+            _ = try await service.runReplyCheck(modelID: "qwen3-5-0-8b-q4-k-m")
+            XCTFail("Expected default unavailable reply runtime to fail closed.")
+        } catch let error as LocalModelReplyCheckError {
+            XCTAssertEqual(error, .runtimeUnavailable(KairoL10n.string("settings.models.runtimeUnavailable.iOSSimulatorQwen")))
         }
     }
 

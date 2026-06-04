@@ -427,6 +427,7 @@
 "settings.models.message.replyCheckModelUnavailable" = "reply check 模型不可用：%@。";
 "settings.models.message.replyCheckRuntimeUnavailable" = "本機 reply runtime 尚未接上：%@";
 "settings.models.message.replyCheckFailed" = "reply check 失敗：%@";
+"settings.models.runtimeUnavailable.iOSSimulatorQwen" = "Qwen App 內推論尚未接上 iOS 或 Simulator。此 beta 目前只支援 catalog、download、select、delete，以及 macOS/dev CLI 檢查。";
 "settings.models.message.deleted" = "%@ 已刪除。";
 "settings.models.message.deleteFailed" = "刪除模型失敗：%@";
 "settings.models.message.usingBuiltInCatalog" = "使用內建 local model catalog。";

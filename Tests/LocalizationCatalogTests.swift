@@ -48,6 +48,7 @@ final class LocalizationCatalogTests: XCTestCase {
             "settings.models.download.failure.checksumMismatch",
             "settings.models.download.failure.cancelled",
             "settings.models.download.failure.httpStatus",
+            "settings.models.runtimeUnavailable.iOSSimulatorQwen",
             "automations.title",
             "automations.subtitle",
             "automations.recipeCenter.section",
