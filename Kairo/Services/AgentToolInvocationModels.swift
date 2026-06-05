@@ -75,3 +75,10 @@ public struct AgentToolInvocationCandidate: Codable, Equatable, Identifiable, Se
         self.action = action
     }
 }
+
+extension Array where Element == AgentToolInvocationCandidate {
+    func containsAction(kind: AgentActionKind?) -> Bool {
+        guard let kind else { return false }
+        return contains { $0.action?.kind == kind }
+    }
+}

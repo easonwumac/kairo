@@ -83,13 +83,14 @@ extension AgentToolInvocationPlanner {
         )
     }
 
-    func candidate(for skill: AppIntegrationSkill, normalizedText: String) -> AgentToolInvocationCandidate? {
+    func candidate(for skill: AppIntegrationSkill, userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
         guard matchesAppIntegration(skill, normalizedText: normalizedText) else {
             return nil
         }
         guard skill.availabilityStatus != .disabled, skill.availabilityStatus != .unsupported else {
             return nil
         }
+        let action = visibleHandoffAction(for: skill, userText: userText, normalizedText: normalizedText)
 
         return AgentToolInvocationCandidate(
             id: "app-integration-\(skill.id.rawValue)",
@@ -101,7 +102,8 @@ extension AgentToolInvocationPlanner {
             requiredCapabilities: skill.audit.capabilityKeys,
             riskTier: skill.riskTier,
             requiresConfirmation: skill.requiresConfirmation,
-            handoffSummary: appIntegrationHandoffSummary(for: skill)
+            handoffSummary: appIntegrationHandoffSummary(for: skill),
+            action: action
         )
     }
 
@@ -226,4 +228,5 @@ extension AgentToolInvocationPlanner {
             return KairoL10n.string("chat.tool.summary.unsupportedSafeAlternative")
         }
     }
+
 }

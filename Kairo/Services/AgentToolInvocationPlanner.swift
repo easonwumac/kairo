@@ -42,26 +42,31 @@ public struct AgentToolInvocationPlanner: Sendable {
             candidate(for: skill, normalizedText: normalizedText)
         })
         candidates.append(contentsOf: appIntegrationSkillCatalog.skills.compactMap { skill in
-            candidate(for: skill, normalizedText: normalizedText)
+            candidate(for: skill, userText: request.userText, normalizedText: normalizedText)
         })
         let migratedIntegrationKeys = Set(appIntegrationSkillCatalog.skills.map(\.integrationKey))
         candidates.append(contentsOf: integrationRegistry.oauthConnectors.compactMap { integration in
             guard !migratedIntegrationKeys.contains(integration.key) else { return nil }
             return candidate(for: integration, normalizedText: normalizedText)
         })
-        if let emailCandidate = emailActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+        if let emailCandidate = emailActionCandidate(userText: request.userText, normalizedText: normalizedText),
+           !candidates.containsAction(kind: emailCandidate.action?.kind) {
             candidates.append(emailCandidate)
         }
-        if let mapDirectionsCandidate = mapDirectionsActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+        if let mapDirectionsCandidate = mapDirectionsActionCandidate(userText: request.userText, normalizedText: normalizedText),
+           !candidates.containsAction(kind: mapDirectionsCandidate.action?.kind) {
             candidates.append(mapDirectionsCandidate)
         }
-        if let messageCandidate = messageHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+        if let messageCandidate = messageHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText),
+           !candidates.containsAction(kind: messageCandidate.action?.kind) {
             candidates.append(messageCandidate)
         }
-        if let phoneCandidate = phoneCallHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+        if let phoneCandidate = phoneCallHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText),
+           !candidates.containsAction(kind: phoneCandidate.action?.kind) {
             candidates.append(phoneCandidate)
         }
-        if let webSearchCandidate = webSearchHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText) {
+        if let webSearchCandidate = webSearchHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText),
+           !candidates.containsAction(kind: webSearchCandidate.action?.kind) {
             candidates.append(webSearchCandidate)
         }
         if let contactCandidate = contactActionCandidate(userText: request.userText, normalizedText: normalizedText) {

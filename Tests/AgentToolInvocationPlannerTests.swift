@@ -101,6 +101,26 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
+    func testAgentToolInvocationPlannerBuildsAppleMailPreviewFromCatalogCandidate() throws {
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMailHandoff))
+        ])
+        let planner = AgentToolInvocationPlanner(
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: catalog
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(
+            userText: "Compose email to alex@example.com about the launch plan"
+        ))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == AppIntegrationSkillID.appleMailHandoff.rawValue })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(action.kind, .composeEmailDraft)
+        XCTAssertFalse(plan.candidates.contains { $0.id == "action-compose-email-draft" })
+    }
+
     func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithoutExecutableAction() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry(integrations: []))
 
@@ -112,6 +132,24 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(candidate.skillKind, .custom)
         XCTAssertTrue(candidate.requiresConfirmation)
         XCTAssertNil(candidate.action)
+    }
+
+    func testAgentToolInvocationPlannerBuildsAppleMapsPreviewFromCatalogCandidate() throws {
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMapsDirectionsHandoff))
+        ])
+        let planner = AgentToolInvocationPlanner(
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: catalog
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Open maps directions to Apple Park"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == AppIntegrationSkillID.appleMapsDirectionsHandoff.rawValue })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(action.kind, .openMapDirections)
+        XCTAssertFalse(plan.candidates.contains { $0.id == "action-open-map-directions" })
     }
 
     func testAgentToolInvocationPlannerFallsBackToLegacyIntegrationRegistryForUnmigratedConnectors() throws {
@@ -260,15 +298,15 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         let plan = planner.plan(for: AgentToolInvocationRequest(
             userText: "Draft an email to alex@example.com subject Kairo update body Please review the roadmap."
         ))
-        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-compose-email-draft" })
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.action?.kind == .composeEmailDraft })
         let action = try XCTUnwrap(candidate.action)
 
-        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.skillID, AppIntegrationSkillID.appleMailHandoff.rawValue)
         XCTAssertEqual(candidate.skillKind, .custom)
         XCTAssertEqual(candidate.requiredCapabilities, [.mail])
         XCTAssertEqual(candidate.riskTier, .tier1Draft)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertTrue(candidate.handoffSummary.contains("mailto"))
         XCTAssertEqual(action.kind, .composeEmailDraft)
         XCTAssertTrue(action.requiresConfirmation)
         guard case let .email(draft) = action.payload else {
@@ -307,15 +345,15 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         let plan = planner.plan(for: AgentToolInvocationRequest(
             userText: "Text 0912-345-678 body I am running late."
         ))
-        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-open-message-handoff" })
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.action?.kind == .openMessageHandoff })
         let action = try XCTUnwrap(candidate.action)
 
-        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.skillID, AppIntegrationSkillID.appleMessagesHandoff.rawValue)
         XCTAssertEqual(candidate.skillKind, .custom)
         XCTAssertEqual(candidate.requiredCapabilities.map(\.rawValue), ["messages"])
         XCTAssertEqual(candidate.riskTier, .tier1Draft)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertEqual(candidate.handoffSummary, KairoL10n.string("chat.action.handoffSummary.messages"))
         XCTAssertEqual(action.kind.rawValue, "openMessageHandoff")
         XCTAssertTrue(action.requiresConfirmation)
         let payloadData = try JSONEncoder().encode(action.payload)
@@ -329,15 +367,15 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         let planner = AgentToolInvocationPlanner(skillCatalog: .default)
 
         let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Call 0912-345-678"))
-        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-open-phone-call-handoff" })
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.action?.kind == .openPhoneCallHandoff })
         let action = try XCTUnwrap(candidate.action)
 
-        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.skillID, AppIntegrationSkillID.applePhoneHandoff.rawValue)
         XCTAssertEqual(candidate.skillKind, .custom)
         XCTAssertEqual(candidate.requiredCapabilities, [.phone])
         XCTAssertEqual(candidate.riskTier, .tier1Draft)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertTrue(candidate.handoffSummary.contains("tel:"))
         XCTAssertEqual(action.kind, .openPhoneCallHandoff)
         XCTAssertTrue(action.requiresConfirmation)
         guard case let .phoneCall(draft) = action.payload else {
@@ -352,15 +390,15 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         let planner = AgentToolInvocationPlanner(skillCatalog: .default)
 
         let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Search web for SwiftUI App Intents examples"))
-        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "action-open-web-search-handoff" })
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.action?.kind == .openWebSearchHandoff })
         let action = try XCTUnwrap(candidate.action)
 
-        XCTAssertEqual(candidate.source, .actionCatalog)
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.skillID, AppIntegrationSkillID.safariWebSearchHandoff.rawValue)
         XCTAssertEqual(candidate.skillKind, .custom)
         XCTAssertEqual(candidate.requiredCapabilities, [.web])
         XCTAssertEqual(candidate.riskTier, .tier1Draft)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertEqual(candidate.handoffSummary, KairoL10n.string("chat.action.handoffSummary.web"))
         XCTAssertEqual(action.kind, .openWebSearchHandoff)
         XCTAssertTrue(action.requiresConfirmation)
         guard case let .webSearch(draft) = action.payload else {
