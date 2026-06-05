@@ -167,6 +167,42 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(toolInvocationPlanner.receivedAllowsToolUse, false)
     }
 
+    func testAgentCoreCanBeBuiltFromDependencyBundle() async throws {
+        let memory = MemoryRecord(
+            title: "Bundled Memory",
+            summary: "Bundled summary",
+            content: "Bundled content",
+            source: .manual
+        )
+        let provider = CapturingAIProvider(response: AICompletionResponse(message: "Bundled response"))
+        let memoryContextProvider = StubAgentMemoryContextProvider(context: AgentMemoryContext(
+            relevantMemories: [memory],
+            deduplicationContext: [memory]
+        ))
+        let completionRequestBuilder = StubAgentCompletionRequestBuilder()
+        let agent = AgentCore(dependencies: AgentCoreDependencies(
+            memoryContextProvider: memoryContextProvider,
+            memoryWriter: StubAgentMemoryWriter(),
+            aiProvider: provider,
+            skillCatalogProvider: .constant(.default),
+            toolContextProvider: StubAgentCapabilityPromptContextProvider(),
+            toolInvocationPlanner: StubAgentToolInvocationPlanner(),
+            toolPlanningRequestBuilder: DefaultAgentToolPlanningRequestBuilder(),
+            responseActionPlanner: StubAgentResponseActionPlanner(plan: AgentResponseActionPlan(
+                proposedActions: [],
+                toolCandidates: []
+            )),
+            completionRequestBuilder: completionRequestBuilder
+        ))
+
+        let response = try await agent.respond(to: "Use bundled dependencies")
+
+        XCTAssertEqual(response.message, "Bundled response")
+        XCTAssertEqual(memoryContextProvider.requestCount, 1)
+        XCTAssertEqual(completionRequestBuilder.requestCount, 1)
+        XCTAssertEqual(completionRequestBuilder.receivedMemoryIDs, [memory.id])
+    }
+
     func testAgentCoreUsesInjectedResponseActionPlanner() async throws {
         let injectedAction = AgentAction(
             kind: .openURL,

@@ -11,6 +11,18 @@ public actor AgentCore {
     private let responseActionPlanner: any AgentResponseActionPlanning
     private let completionRequestBuilder: any AgentCompletionRequestBuilding
 
+    public init(dependencies: AgentCoreDependencies) {
+        self.memoryContextProvider = dependencies.memoryContextProvider
+        self.memoryWriter = dependencies.memoryWriter
+        self.aiProvider = dependencies.aiProvider
+        self.skillCatalogProvider = dependencies.skillCatalogProvider
+        self.toolContextProvider = dependencies.toolContextProvider
+        self.toolInvocationPlanner = dependencies.toolInvocationPlanner
+        self.toolPlanningRequestBuilder = dependencies.toolPlanningRequestBuilder
+        self.responseActionPlanner = dependencies.responseActionPlanner
+        self.completionRequestBuilder = dependencies.completionRequestBuilder
+    }
+
     public init(
         memoryStore: MemoryStore = InMemoryMemoryStore(),
         aiProvider: AIProvider = MockAIProvider(),
@@ -32,32 +44,34 @@ public actor AgentCore {
         memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
     ) {
         let resolvedActionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
-        self.memoryContextProvider = memoryContextProvider ?? DefaultAgentMemoryContextProvider(memoryStore: memoryStore)
-        self.memoryWriter = memoryWriter ?? DefaultAgentMemoryWriter(memoryStore: memoryStore)
-        self.aiProvider = aiProvider
-        self.skillCatalogProvider = skillCatalogProvider ?? .constant(skillCatalog)
-        self.toolContextProvider = toolContextProvider ?? DefaultAgentCapabilityPromptContextProvider(
-            capabilityRegistry: capabilityRegistry,
-            toolCatalog: toolCatalog,
-            integrationRegistry: integrationRegistry,
-            appIntegrationSkillCatalog: appIntegrationSkillCatalog
-        )
-        self.toolInvocationPlanner = toolInvocationPlanner ?? DefaultAgentToolInvocationPlannerProvider(
-            integrationRegistry: integrationRegistry,
-            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
-            toolCatalog: toolCatalog,
-            safetyPolicyEngine: safetyPolicyEngine
-        )
-        self.toolPlanningRequestBuilder = toolPlanningRequestBuilder ?? DefaultAgentToolPlanningRequestBuilder()
-        self.responseActionPlanner = responseActionPlanner ?? DefaultAgentResponseActionPlanner(
-            actionGate: resolvedActionGate,
-            safetyPolicyEngine: safetyPolicyEngine,
-            memoryCandidateExtractor: memoryCandidateExtractor
-        )
-        self.completionRequestBuilder = completionRequestBuilder ?? DefaultAgentCompletionRequestBuilder(
-            capabilityRegistry: capabilityRegistry,
-            systemPrompt: Self.systemPrompt
-        )
+        self.init(dependencies: AgentCoreDependencies(
+            memoryContextProvider: memoryContextProvider ?? DefaultAgentMemoryContextProvider(memoryStore: memoryStore),
+            memoryWriter: memoryWriter ?? DefaultAgentMemoryWriter(memoryStore: memoryStore),
+            aiProvider: aiProvider,
+            skillCatalogProvider: skillCatalogProvider ?? .constant(skillCatalog),
+            toolContextProvider: toolContextProvider ?? DefaultAgentCapabilityPromptContextProvider(
+                capabilityRegistry: capabilityRegistry,
+                toolCatalog: toolCatalog,
+                integrationRegistry: integrationRegistry,
+                appIntegrationSkillCatalog: appIntegrationSkillCatalog
+            ),
+            toolInvocationPlanner: toolInvocationPlanner ?? DefaultAgentToolInvocationPlannerProvider(
+                integrationRegistry: integrationRegistry,
+                appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+                toolCatalog: toolCatalog,
+                safetyPolicyEngine: safetyPolicyEngine
+            ),
+            toolPlanningRequestBuilder: toolPlanningRequestBuilder ?? DefaultAgentToolPlanningRequestBuilder(),
+            responseActionPlanner: responseActionPlanner ?? DefaultAgentResponseActionPlanner(
+                actionGate: resolvedActionGate,
+                safetyPolicyEngine: safetyPolicyEngine,
+                memoryCandidateExtractor: memoryCandidateExtractor
+            ),
+            completionRequestBuilder: completionRequestBuilder ?? DefaultAgentCompletionRequestBuilder(
+                capabilityRegistry: capabilityRegistry,
+                systemPrompt: Self.systemPrompt
+            )
+        ))
     }
 
     public func respond(
