@@ -187,6 +187,38 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(response.toolCandidates.map { $0.id }, [injectedCandidate.id])
     }
 
+    func testAgentCoreUsesInjectedCompletionRequestBuilder() async throws {
+        let memory = MemoryRecord(
+            title: "Builder Memory",
+            summary: "Builder summary",
+            content: "Builder content",
+            source: .manual
+        )
+        let provider = CapturingAIProvider(response: AICompletionResponse(message: "Builder response"))
+        let memoryContextProvider = StubAgentMemoryContextProvider(context: AgentMemoryContext(
+            relevantMemories: [memory],
+            deduplicationContext: [memory]
+        ))
+        let toolContextProvider = StubAgentCapabilityPromptContextProvider()
+        let completionRequestBuilder = StubAgentCompletionRequestBuilder()
+        let agent = AgentCore(
+            aiProvider: provider,
+            memoryContextProvider: memoryContextProvider,
+            toolContextProvider: toolContextProvider,
+            completionRequestBuilder: completionRequestBuilder
+        )
+
+        _ = try await agent.respond(to: "Build request", privacyMode: .privateChat)
+        let captured = await provider.capturedRequest()
+        let capturedRequest = try XCTUnwrap(captured)
+
+        XCTAssertEqual(completionRequestBuilder.requestCount, 1)
+        XCTAssertEqual(completionRequestBuilder.receivedMemoryIDs, [memory.id])
+        XCTAssertEqual(completionRequestBuilder.receivedPrivacyMode, ChatPrivacyMode.privateChat)
+        XCTAssertEqual(capturedRequest.allowedCapabilities, [.calendar])
+        XCTAssertEqual(capturedRequest.privacyMode, .privateChat)
+    }
+
     func testAgentCoreUsesInjectedMemoryContextProvider() async throws {
         let memory = MemoryRecord(
             title: "Injected Memory",
@@ -2218,6 +2250,33 @@ private final class StubAgentResponseActionPlanner: AgentResponseActionPlanning,
         requestCount += 1
         receivedPrivacyMode = request.privacyMode
         return suppliedPlan
+    }
+}
+
+private final class StubAgentCompletionRequestBuilder: AgentCompletionRequestBuilding, @unchecked Sendable {
+    private(set) var requestCount = 0
+    private(set) var receivedMemoryIDs: [UUID] = []
+    private(set) var receivedPrivacyMode: ChatPrivacyMode?
+
+    func buildCompletionRequest(
+        message: String,
+        attachments: [ChatAttachment],
+        memoryContext: AgentMemoryContext,
+        toolContext: String?,
+        privacyMode: ChatPrivacyMode
+    ) -> AICompletionRequest {
+        requestCount += 1
+        receivedMemoryIDs = memoryContext.relevantMemories.map { $0.id }
+        receivedPrivacyMode = privacyMode
+        return AICompletionRequest(
+            systemPrompt: "stub",
+            userPrompt: message,
+            memoryContext: [],
+            allowedCapabilities: [.calendar],
+            attachmentContext: attachments,
+            toolContext: toolContext,
+            privacyMode: privacyMode
+        )
     }
 }
 

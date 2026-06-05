@@ -4,11 +4,11 @@ public actor AgentCore {
     private let memoryContextProvider: any AgentMemoryContextProviding
     private let memoryWriter: any AgentMemoryWriting
     private let aiProvider: AIProvider
-    private let capabilityRegistry: CapabilityRegistry
     private let skillCatalogProvider: AgentSkillCatalogProvider
     private let toolContextProvider: any AgentCapabilityPromptContextProviding
     private let toolInvocationPlanner: any AgentToolInvocationPlanning
     private let responseActionPlanner: any AgentResponseActionPlanning
+    private let completionRequestBuilder: any AgentCompletionRequestBuilding
 
     public init(
         memoryStore: MemoryStore = InMemoryMemoryStore(),
@@ -24,6 +24,7 @@ public actor AgentCore {
         toolContextProvider: (any AgentCapabilityPromptContextProviding)? = nil,
         toolInvocationPlanner: (any AgentToolInvocationPlanning)? = nil,
         responseActionPlanner: (any AgentResponseActionPlanning)? = nil,
+        completionRequestBuilder: (any AgentCompletionRequestBuilding)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
@@ -32,7 +33,6 @@ public actor AgentCore {
         self.memoryContextProvider = memoryContextProvider ?? DefaultAgentMemoryContextProvider(memoryStore: memoryStore)
         self.memoryWriter = memoryWriter ?? DefaultAgentMemoryWriter(memoryStore: memoryStore)
         self.aiProvider = aiProvider
-        self.capabilityRegistry = capabilityRegistry
         self.skillCatalogProvider = skillCatalogProvider ?? .constant(skillCatalog)
         self.toolContextProvider = toolContextProvider ?? DefaultAgentCapabilityPromptContextProvider(
             capabilityRegistry: capabilityRegistry,
@@ -51,6 +51,10 @@ public actor AgentCore {
             safetyPolicyEngine: safetyPolicyEngine,
             memoryCandidateExtractor: memoryCandidateExtractor
         )
+        self.completionRequestBuilder = completionRequestBuilder ?? DefaultAgentCompletionRequestBuilder(
+            capabilityRegistry: capabilityRegistry,
+            systemPrompt: Self.systemPrompt
+        )
     }
 
     public func respond(
@@ -60,9 +64,6 @@ public actor AgentCore {
     ) async throws -> AICompletionResponse {
         let memoryContext = try await memoryContextProvider.context(for: message, privacyMode: privacyMode)
         let skillCatalog = try await skillCatalogProvider.catalog()
-        let allowedCapabilities = capabilityRegistry.capabilities
-            .filter { $0.status == .available || $0.status == .unknown }
-            .map(\.key)
         let toolContext = toolContextProvider.buildToolContext(skillCatalog: skillCatalog)
         let toolPlan = toolInvocationPlanner.plan(for: AgentToolInvocationRequest(
             userText: message,
@@ -70,12 +71,10 @@ public actor AgentCore {
             allowsToolUse: privacyMode != .privateChat
         ), skillCatalog: skillCatalog)
 
-        let request = AICompletionRequest(
-            systemPrompt: Self.systemPrompt,
-            userPrompt: message,
-            memoryContext: memoryContext.relevantMemories,
-            allowedCapabilities: allowedCapabilities,
-            attachmentContext: attachments,
+        let request = completionRequestBuilder.buildCompletionRequest(
+            message: message,
+            attachments: attachments,
+            memoryContext: memoryContext,
             toolContext: toolContext,
             privacyMode: privacyMode
         )
@@ -101,15 +100,7 @@ public actor AgentCore {
         try await memoryWriter.remember(content, title: title, source: source)
     }
 
-    public static let systemPrompt = """
-    你是 Kairo，一個有記憶的 iPhone Agent。
-    你只能使用使用者明確授權、iOS public API、App sandbox、App Intents、Shortcuts、Share Extension 與外部服務官方 API 允許的能力。
-    你不可聲稱可以任意讀取其他 App、偷看螢幕、繞過權限、控制未授權的 iOS 系統功能或使用 private API。
-    可執行的 sandbox 動作限於明確支援的儲存記憶、EventKit 提醒事項/行事曆、開啟使用者可見 URL、本機通知，以及使用者授權的 App Intents/Shortcuts/OAuth 整合。
-    HomeKit 在目前 beta 只限 preview/demo/test scaffolding；不要聲稱真實 HomeKit live control 已可用或已完成。
-    若使用者要求 iOS sandbox 或目前整合不允許的事，請用 unsupportedSandboxAction 清楚說明限制與安全替代方案，不要假裝已完成。
-    對高風險操作，你必須先產生預覽並要求使用者確認。
-    """
+    public static let systemPrompt = DefaultAgentCompletionRequestBuilder.defaultSystemPrompt
 
     private static func planningText(message: String, attachments: [ChatAttachment]) -> String {
         let attachmentText = attachments
