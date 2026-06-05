@@ -84,7 +84,7 @@ public struct AutomationsView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
-                .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromePageTopPadding)
+                .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
                 .padding(.bottom, max(proxy.safeAreaInsets.bottom, 0) + 28)
             }
             .scrollIndicators(.hidden)

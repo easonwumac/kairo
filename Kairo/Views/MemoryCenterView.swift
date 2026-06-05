@@ -51,7 +51,7 @@ public struct MemoryCenterView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 18)
-                        .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromePageTopPadding)
+                        .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
                         .padding(.bottom, 32)
                     }
                     .background(KairoDesign.background.ignoresSafeArea())

@@ -229,7 +229,7 @@ public struct SettingsView: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromePageTopPadding)
+                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
                     .padding(.bottom, 32)
                 }
                 .kairoHiddenNavigationChrome()
@@ -334,7 +334,7 @@ public struct SettingsView: View {
                         SettingsShortcutDemosSection()
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromePageTopPadding)
+                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
                     .padding(.bottom, 32)
                 }
                 .scrollIndicators(.hidden)
