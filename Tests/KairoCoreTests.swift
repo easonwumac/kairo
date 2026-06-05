@@ -139,6 +139,54 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(toolInvocationPlanner.receivedAllowsToolUse, true)
     }
 
+    func testAgentCoreUsesInjectedResponseActionPlanner() async throws {
+        let injectedAction = AgentAction(
+            kind: .openURL,
+            title: "Injected action",
+            rationale: "Response planner supplied this action.",
+            payload: .url("https://example.com"),
+            riskTier: .tier1Draft
+        )
+        let injectedCandidate = AgentToolInvocationCandidate(
+            id: "injected-response-candidate",
+            title: "Injected candidate",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Injected handoff",
+            action: injectedAction
+        )
+        let responseActionPlanner = StubAgentResponseActionPlanner(plan: AgentResponseActionPlan(
+            proposedActions: [injectedAction],
+            toolCandidates: [injectedCandidate]
+        ))
+        let provider = CapturingAIProvider(response: AICompletionResponse(
+            message: "Planner response",
+            proposedActions: [
+                AgentAction(
+                    kind: .createReminderDraft,
+                    title: "Provider action",
+                    rationale: "Provider supplied this action.",
+                    payload: .reminder(ReminderDraft(title: "Provider reminder", notes: nil, dueDate: nil)),
+                    riskTier: .tier2LowRiskWrite
+                )
+            ]
+        ))
+        let agent = AgentCore(
+            aiProvider: provider,
+            responseActionPlanner: responseActionPlanner
+        )
+
+        let response = try await agent.respond(to: "Open example.com")
+
+        XCTAssertEqual(responseActionPlanner.requestCount, 1)
+        XCTAssertEqual(responseActionPlanner.receivedPrivacyMode, ChatPrivacyMode.standard)
+        XCTAssertEqual(response.proposedActions.map { $0.id }, [injectedAction.id])
+        XCTAssertEqual(response.toolCandidates.map { $0.id }, [injectedCandidate.id])
+    }
+
     func testAgentCoreUsesInjectedMemoryContextProvider() async throws {
         let memory = MemoryRecord(
             title: "Injected Memory",
@@ -2154,6 +2202,22 @@ private final class StubAgentToolInvocationPlanner: AgentToolInvocationPlanning,
         receivedSkillIDs = skillCatalog.installedSkills.map(\.id)
         receivedAllowsToolUse = request.allowsToolUse
         return AgentToolInvocationPlan(candidates: [])
+    }
+}
+
+private final class StubAgentResponseActionPlanner: AgentResponseActionPlanning, @unchecked Sendable {
+    private let suppliedPlan: AgentResponseActionPlan
+    private(set) var requestCount = 0
+    private(set) var receivedPrivacyMode: ChatPrivacyMode?
+
+    init(plan: AgentResponseActionPlan) {
+        self.suppliedPlan = plan
+    }
+
+    func planActions(for request: AgentResponseActionPlanningRequest) -> AgentResponseActionPlan {
+        requestCount += 1
+        receivedPrivacyMode = request.privacyMode
+        return suppliedPlan
     }
 }
 

@@ -4,13 +4,11 @@ public actor AgentCore {
     private let memoryContextProvider: any AgentMemoryContextProviding
     private let memoryWriter: any AgentMemoryWriting
     private let aiProvider: AIProvider
-    private let safetyPolicyEngine: SafetyPolicyEngine
     private let capabilityRegistry: CapabilityRegistry
     private let skillCatalogProvider: AgentSkillCatalogProvider
-    private let actionGate: any PhoneToolActionGating
     private let toolContextProvider: any AgentCapabilityPromptContextProviding
     private let toolInvocationPlanner: any AgentToolInvocationPlanning
-    private let memoryCandidateExtractor: MemoryCandidateExtractor
+    private let responseActionPlanner: any AgentResponseActionPlanning
 
     public init(
         memoryStore: MemoryStore = InMemoryMemoryStore(),
@@ -25,17 +23,17 @@ public actor AgentCore {
         actionGate: (any PhoneToolActionGating)? = nil,
         toolContextProvider: (any AgentCapabilityPromptContextProviding)? = nil,
         toolInvocationPlanner: (any AgentToolInvocationPlanning)? = nil,
+        responseActionPlanner: (any AgentResponseActionPlanning)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
     ) {
+        let resolvedActionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         self.memoryContextProvider = memoryContextProvider ?? DefaultAgentMemoryContextProvider(memoryStore: memoryStore)
         self.memoryWriter = memoryWriter ?? DefaultAgentMemoryWriter(memoryStore: memoryStore)
         self.aiProvider = aiProvider
-        self.safetyPolicyEngine = safetyPolicyEngine
         self.capabilityRegistry = capabilityRegistry
         self.skillCatalogProvider = skillCatalogProvider ?? .constant(skillCatalog)
-        self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         self.toolContextProvider = toolContextProvider ?? DefaultAgentCapabilityPromptContextProvider(
             capabilityRegistry: capabilityRegistry,
             toolCatalog: toolCatalog,
@@ -48,7 +46,11 @@ public actor AgentCore {
             toolCatalog: toolCatalog,
             safetyPolicyEngine: safetyPolicyEngine
         )
-        self.memoryCandidateExtractor = memoryCandidateExtractor
+        self.responseActionPlanner = responseActionPlanner ?? DefaultAgentResponseActionPlanner(
+            actionGate: resolvedActionGate,
+            safetyPolicyEngine: safetyPolicyEngine,
+            memoryCandidateExtractor: memoryCandidateExtractor
+        )
     }
 
     public func respond(
@@ -79,36 +81,18 @@ public actor AgentCore {
         )
 
         let response = try await aiProvider.complete(request)
-        let toolCandidates = Self.filteredToolCandidates(
-            toolPlan.candidates,
-            privacyMode: privacyMode
-        )
-        var proposedActions = Self.mergeActionPreviews(
+        let actionPlan = responseActionPlanner.planActions(for: AgentResponseActionPlanningRequest(
+            userMessage: message,
             modelActions: response.proposedActions,
-            toolActions: toolCandidates.compactMap(\.action)
-        )
-        if privacyMode != .privateChat,
-           let memoryAction = memoryCandidateExtractor.proposedSaveMemoryAction(
-            from: message,
-            memoryContext: memoryContext.deduplicationContext
-           ) {
-            proposedActions = Self.mergeActionPreviews(modelActions: proposedActions, toolActions: [memoryAction])
-        }
-        let catalogFilteredActions = proposedActions.filter { action in
-            actionGate.allowsExecutablePreview(action)
-        }
-        let safeActions = catalogFilteredActions.filter { action in
-            safetyPolicyEngine.evaluate(action).allowed
-        }
-        let privacyFilteredActions = Self.filteredActions(
-            safeActions,
+            toolCandidates: toolPlan.candidates,
+            memoryContext: memoryContext,
             privacyMode: privacyMode
-        )
+        ))
 
         return AICompletionResponse(
             message: response.message,
-            proposedActions: privacyFilteredActions,
-            toolCandidates: toolCandidates,
+            proposedActions: actionPlan.proposedActions,
+            toolCandidates: actionPlan.toolCandidates,
             memoryContextCount: memoryContext.relevantMemories.count
         )
     }
@@ -138,41 +122,4 @@ public actor AgentCore {
             .joined(separator: "\n")
     }
 
-    private static func mergeActionPreviews(
-        modelActions: [AgentAction],
-        toolActions: [AgentAction]
-    ) -> [AgentAction] {
-        var merged = modelActions
-
-        for action in toolActions where !merged.contains(where: { existing in
-            existing.kind == action.kind && existing.payload == action.payload
-        }) {
-            merged.append(action)
-        }
-
-        return merged
-    }
-
-    private static func filteredActions(
-        _ actions: [AgentAction],
-        privacyMode: ChatPrivacyMode
-    ) -> [AgentAction] {
-        guard privacyMode == .privateChat else {
-            return actions
-        }
-        return []
-    }
-
-    private static func filteredToolCandidates(
-        _ candidates: [AgentToolInvocationCandidate],
-        privacyMode: ChatPrivacyMode
-    ) -> [AgentToolInvocationCandidate] {
-        guard privacyMode == .privateChat else {
-            return candidates
-        }
-        return candidates.filter { candidate in
-            !candidate.requiredCapabilities.contains(.memory)
-            && candidate.action?.kind != .saveMemory
-        }
-    }
 }
