@@ -369,18 +369,16 @@ public struct RootView: View {
                 let visibleThreads = isDrawerChatHistoryExpanded ? drawerChatThreads : Array(drawerChatThreads.prefix(3))
                 if !visibleThreads.isEmpty {
                     Divider()
-                        .padding(.leading, 46)
+                        .padding(.leading, 54)
 
                     ForEach(visibleThreads) { thread in
                         Button {
                             triggerChatChromeAction(.selectThread(thread.id))
                             closeDrawer()
                         } label: {
-                            drawerRowContent(
+                            drawerChatThreadRowContent(
                                 title: thread.title,
-                                subtitle: thread.lastMessagePreview,
-                                systemImage: "message",
-                                tint: KairoDesign.teal
+                                subtitle: thread.lastMessagePreview
                             )
                         }
                         .buttonStyle(.plain)
@@ -388,7 +386,7 @@ public struct RootView: View {
 
                         if thread.id != visibleThreads.last?.id || drawerChatThreads.count > 3 {
                             Divider()
-                                .padding(.leading, 46)
+                                .padding(.leading, 54)
                         }
                     }
                 }
@@ -399,11 +397,10 @@ public struct RootView: View {
                             isDrawerChatHistoryExpanded.toggle()
                         }
                     } label: {
-                        drawerRowContent(
+                        drawerChatThreadRowContent(
                             title: KairoL10n.string(isDrawerChatHistoryExpanded ? "root.menu.chat.showLess" : "root.menu.chat.showMore"),
                             subtitle: KairoL10n.string("root.menu.chat.history.subtitle", Int64(drawerChatThreads.count)),
-                            systemImage: isDrawerChatHistoryExpanded ? "chevron.up" : "chevron.down",
-                            tint: KairoDesign.muted
+                            systemImage: isDrawerChatHistoryExpanded ? "chevron.up" : "chevron.down"
                         )
                     }
                     .buttonStyle(.plain)
@@ -458,6 +455,37 @@ public struct RootView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 10)
+        .contentShape(Rectangle())
+    }
+
+    private func drawerChatThreadRowContent(
+        title: String,
+        subtitle: String,
+        systemImage: String = "circle.fill"
+    ) -> some View {
+        HStack(alignment: .top, spacing: 11) {
+            Image(systemName: systemImage)
+                .font(systemImage == "circle.fill" ? .system(size: 7, weight: .semibold) : .caption.weight(.bold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(KairoDesign.muted)
+                .frame(width: 20, height: 24)
+                .padding(.leading, 18)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink.opacity(0.92))
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
         .contentShape(Rectangle())
     }
 
