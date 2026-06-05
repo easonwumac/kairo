@@ -8,7 +8,7 @@ final class ChatMemorySuggestionTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: memoryStore, aiProvider: MockAIProvider()),
+            chatAPI: makeMemorySuggestionChatAPI(memoryStore: memoryStore),
             actionExecutor: SandboxActionExecutor(memoryStore: memoryStore)
         )
 
@@ -36,7 +36,7 @@ final class ChatMemorySuggestionTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: memoryStore, aiProvider: MockAIProvider()),
+            chatAPI: makeMemorySuggestionChatAPI(memoryStore: memoryStore),
             actionExecutor: SandboxActionExecutor(memoryStore: memoryStore)
         )
 
@@ -62,6 +62,10 @@ final class ChatMemorySuggestionTests: XCTestCase {
         let response = try await agent.respond(to: "Please remember that I prefer morning standups for Kairo planning.")
 
         XCTAssertFalse(response.proposedActions.contains { $0.kind == .saveMemory })
+    }
+
+    private func makeMemorySuggestionChatAPI(memoryStore: any MemoryStore) -> any KairoChatAPI {
+        KairoChatBackendService(agent: AgentCore(memoryStore: memoryStore, aiProvider: MockAIProvider()))
     }
 }
 
