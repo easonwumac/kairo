@@ -865,6 +865,25 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
+    func testAgentToolInvocationPlannerKeepsMigratedOAuthIntegrationsOutOfLegacyMapper() throws {
+        let mapper = RecordingLegacyIntegrationToolInvocationCandidateMapper()
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: []),
+            integrationRegistry: IntegrationRegistry(),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(),
+            visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
+            writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
+            legacyIntegrationCandidateMapper: mapper
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Create a Todoist task and open GitHub issue tracker"))
+
+        XCTAssertNotNil(plan.candidates.first { $0.skillID == AppIntegrationSkillID.todoistTaskAPI.rawValue })
+        XCTAssertNotNil(plan.candidates.first { $0.source == .integrationRegistry && $0.integrationKey == "github" })
+        XCTAssertFalse(mapper.seenKeys.contains("todoist"))
+        XCTAssertTrue(mapper.seenKeys.contains("github"))
+    }
+
     func testAgentToolInvocationPlannerDoesNotSuggestDisabledAppIntegrationsAndFallsBackForUnsupportedOnes() throws {
         let disabled = appIntegrationSkill(id: .slackOpenHandoff, availabilityStatus: .disabled)
         let unsupported = appIntegrationSkill(id: .lineShareHandoff, availabilityStatus: .unsupported)
@@ -1325,6 +1344,32 @@ private struct FixedLegacyIntegrationToolInvocationCandidateMapper: LegacyIntegr
         parser: any AgentToolInvocationActionParsing
     ) -> AgentToolInvocationCandidate? {
         candidate
+    }
+}
+
+private final class RecordingLegacyIntegrationToolInvocationCandidateMapper: LegacyIntegrationToolInvocationCandidateMapping, @unchecked Sendable {
+    private let lock = NSLock()
+    private var keys: [String] = []
+
+    var seenKeys: [String] {
+        lock.withLock { keys }
+    }
+
+    func candidate(
+        for integration: AppIntegration,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing
+    ) -> AgentToolInvocationCandidate? {
+        lock.withLock {
+            keys.append(integration.key)
+        }
+        return DefaultLegacyIntegrationToolInvocationCandidateMapper().candidate(
+            for: integration,
+            normalizedText: normalizedText,
+            matcher: matcher,
+            parser: parser
+        )
     }
 }
 
