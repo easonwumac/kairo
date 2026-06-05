@@ -430,6 +430,42 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(candidates, [injectedCandidate])
     }
 
+    func testPrimaryCandidateCollectorUsesInjectedLegacyIntegrationCollector() throws {
+        let injectedCandidate = AgentToolInvocationCandidate(
+            id: "legacy-source-output",
+            title: "Legacy Source Output",
+            source: .integrationRegistry,
+            integrationKey: "legacy-source",
+            skillKind: .oauthConnector,
+            requiredCapabilities: [.externalConnectors],
+            riskTier: .tier3HighRiskExternal,
+            requiresConfirmation: true,
+            handoffSummary: "Injected legacy source output"
+        )
+        let collector = DefaultAgentPrimaryToolCandidateCollector(
+            installedSkillCandidateCollector: FixedInstalledSkillCandidateCollector(candidates: []),
+            appIntegrationSkillCandidateCollector: FixedAppIntegrationSkillCandidateCollector(candidates: []),
+            legacyIntegrationCandidateCollector: FixedLegacyIntegrationCandidateCollector(candidates: [injectedCandidate])
+        )
+
+        let candidates = collector.candidates(
+            for: AgentToolInvocationRequest(userText: "legacy source route"),
+            normalizedText: "legacy source route",
+            skillCatalog: AgentSkillCatalog(skills: []),
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            appIntegrationActionMapper: NoOpAppIntegrationActionMapper(),
+            appIntegrationActionParser: DefaultAgentToolInvocationActionParser(),
+            candidateMatcher: FixedAgentToolInvocationCandidateMatcher(),
+            installedSkillCandidateMapper: FixedInstalledSkillToolInvocationCandidateMapper(candidate: nil),
+            legacyIntegrationCandidateMapper: FixedLegacyIntegrationToolInvocationCandidateMapper(candidate: nil),
+            appIntegrationCandidateMapper: FixedAppIntegrationToolInvocationCandidateMapper(candidate: nil),
+            safetyPolicyEngine: SafetyPolicyEngine()
+        )
+
+        XCTAssertEqual(candidates, [injectedCandidate])
+    }
+
     func testAgentToolInvocationPlannerUsesInjectedLegacyIntegrationCandidateMapper() throws {
         let integration = AppIntegration(
             key: "legacy-mapper-input",
@@ -1080,6 +1116,21 @@ private struct FixedAppIntegrationSkillCandidateCollector: AgentAppIntegrationSk
         parser: any AgentToolInvocationActionParsing,
         candidateMatcher: any AgentToolInvocationCandidateMatching,
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping
+    ) -> [AgentToolInvocationCandidate] {
+        candidates
+    }
+}
+
+private struct FixedLegacyIntegrationCandidateCollector: AgentLegacyIntegrationCandidateCollecting {
+    var candidates: [AgentToolInvocationCandidate]
+
+    func candidates(
+        normalizedText: String,
+        integrationRegistry: any AppIntegrationRegistryProviding,
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding,
+        parser: any AgentToolInvocationActionParsing,
+        candidateMatcher: any AgentToolInvocationCandidateMatching,
+        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping
     ) -> [AgentToolInvocationCandidate] {
         candidates
     }

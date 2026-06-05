@@ -20,13 +20,16 @@ public protocol AgentPrimaryToolCandidateCollecting: Sendable {
 public struct DefaultAgentPrimaryToolCandidateCollector: AgentPrimaryToolCandidateCollecting {
     private let installedSkillCandidateCollector: any AgentInstalledSkillCandidateCollecting
     private let appIntegrationSkillCandidateCollector: any AgentAppIntegrationSkillCandidateCollecting
+    private let legacyIntegrationCandidateCollector: any AgentLegacyIntegrationCandidateCollecting
 
     public init(
         installedSkillCandidateCollector: any AgentInstalledSkillCandidateCollecting = DefaultAgentInstalledSkillCandidateCollector(),
-        appIntegrationSkillCandidateCollector: any AgentAppIntegrationSkillCandidateCollecting = DefaultAgentAppIntegrationSkillCandidateCollector()
+        appIntegrationSkillCandidateCollector: any AgentAppIntegrationSkillCandidateCollecting = DefaultAgentAppIntegrationSkillCandidateCollector(),
+        legacyIntegrationCandidateCollector: any AgentLegacyIntegrationCandidateCollecting = DefaultAgentLegacyIntegrationCandidateCollector()
     ) {
         self.installedSkillCandidateCollector = installedSkillCandidateCollector
         self.appIntegrationSkillCandidateCollector = appIntegrationSkillCandidateCollector
+        self.legacyIntegrationCandidateCollector = legacyIntegrationCandidateCollector
     }
 
     public func candidates(
@@ -61,7 +64,7 @@ public struct DefaultAgentPrimaryToolCandidateCollector: AgentPrimaryToolCandida
             candidateMatcher: candidateMatcher,
             appIntegrationCandidateMapper: appIntegrationCandidateMapper
         ))
-        candidates.append(contentsOf: legacyIntegrationCandidates(
+        candidates.append(contentsOf: legacyIntegrationCandidateCollector.candidates(
             normalizedText: normalizedText,
             integrationRegistry: integrationRegistry,
             appIntegrationSkillCatalog: appIntegrationSkillCatalog,
@@ -70,23 +73,5 @@ public struct DefaultAgentPrimaryToolCandidateCollector: AgentPrimaryToolCandida
             legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper
         ))
         return candidates
-    }
-
-    private func legacyIntegrationCandidates(
-        normalizedText: String,
-        integrationRegistry: any AppIntegrationRegistryProviding,
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding,
-        parser: any AgentToolInvocationActionParsing,
-        candidateMatcher: any AgentToolInvocationCandidateMatching,
-        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping
-    ) -> [AgentToolInvocationCandidate] {
-        integrationRegistry.oauthConnectorsNotMigrated(to: appIntegrationSkillCatalog).compactMap { integration in
-            legacyIntegrationCandidateMapper.candidate(
-                for: integration,
-                normalizedText: normalizedText,
-                matcher: candidateMatcher,
-                parser: parser
-            )
-        }
     }
 }
