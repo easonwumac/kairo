@@ -56,7 +56,8 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         let appIntegrationSkillCatalog = AppIntegrationSkillCatalog()
         let shortcutRuntime = try await LiveShortcutNodeRuntimeProvider(
             paths: paths,
-            toolCatalog: toolCatalog
+            toolCatalog: toolCatalog,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
         ).makeRuntime()
         let actionExecutor = KairoLiveActionFactory(
             memoryStore: storeComponents.memoryStore,

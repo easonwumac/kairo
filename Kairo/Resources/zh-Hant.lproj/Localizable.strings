@@ -773,3 +773,4 @@
 "settings.route.localOnly.detail" = "不會把 prompt 路由到 cloud provider；本機不支援的任務會 fail closed。";
 "shortcut.integration.blocked.missingCatalog" = "這個 Shortcut demo 參照 %@，但該 integration 不在 App Integration Catalog 中。";
 "shortcut.integration.blocked.setupRequired" = "%@ 尚未可執行。請先完成設定，或改用可見 fallback，再執行這個 Shortcut step。";
+"shortcut.integration.blocked.nodeMismatch" = "%@ 尚未接到這個 Shortcut node。請使用支援的可見 handoff，或只保留 preview。";

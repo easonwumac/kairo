@@ -3,27 +3,39 @@ import Foundation
 public actor ShortcutNodeRuntime {
     private let memoryStore: MemoryStore
     private let actionGate: any PhoneToolActionGating
+    private let integrationGate: any ShortcutNodeIntegrationGating
 
     public init(
         memoryStore: MemoryStore,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        actionGate: (any PhoneToolActionGating)? = nil
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        actionGate: (any PhoneToolActionGating)? = nil,
+        integrationGate: (any ShortcutNodeIntegrationGating)? = nil
     ) {
         self.memoryStore = memoryStore
         self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        self.integrationGate = integrationGate ?? CatalogBackedShortcutNodeIntegrationGate(
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
+        )
     }
 
     public static func live(
         paths: KairoPaths = KairoSharedAppStorage.paths(),
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) async throws -> ShortcutNodeRuntime {
         try await LiveShortcutNodeRuntimeProvider(
             paths: paths,
-            toolCatalog: toolCatalog
+            toolCatalog: toolCatalog,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
         ).makeRuntime()
     }
 
     public func run(_ kind: ShortcutNodeKind, input: ShortcutNodeInput) async throws -> ShortcutNodeOutput {
+        if let blockedOutput = integrationGate.blockedOutput(for: kind, input: input) {
+            return blockedOutput
+        }
+
         if let blockedTool = actionGate.blockedTool(for: kind) {
             return blockedOutput(kind: kind, tool: blockedTool)
         }

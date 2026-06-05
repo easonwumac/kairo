@@ -466,6 +466,49 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(draft.body, body)
     }
 
+    func testShortcutNodeRuntimeBlocksIntegrationIDMissingFromCatalog() async throws {
+        let runtime = ShortcutNodeRuntime(
+            memoryStore: InMemoryMemoryStore(),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [])
+        )
+        let input = ShortcutNodeInput(
+            text: "To: 0912345678\nBody: Running late.",
+            variables: [
+                "integrationSkillID": AppIntegrationSkillID.appleMessagesHandoff.rawValue,
+                "recipient": "0912345678",
+                "body": "Running late."
+            ]
+        )
+
+        let output = try await runtime.run(.prepareMessageHandoff, input: input)
+
+        XCTAssertEqual(output.kind, .prepareMessageHandoff)
+        XCTAssertEqual(output.fields["integrationSkillID"], AppIntegrationSkillID.appleMessagesHandoff.rawValue)
+        XCTAssertEqual(output.fields["success"], "false")
+        XCTAssertEqual(output.fields["integrationAvailability"], AppIntegrationSkillAvailabilityStatus.unsupported.rawValue)
+        XCTAssertTrue(output.proposedActions.isEmpty)
+    }
+
+    func testShortcutNodeRuntimeDoesNotUseAppleMessagesNodeForThirdPartyMessageIntegration() async throws {
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let input = ShortcutNodeInput(
+            text: "To: 0912345678\nBody: Running late.",
+            variables: [
+                "integrationSkillID": AppIntegrationSkillID.whatsappMessageHandoff.rawValue,
+                "recipient": "0912345678",
+                "body": "Running late."
+            ]
+        )
+
+        let output = try await runtime.run(.prepareMessageHandoff, input: input)
+
+        XCTAssertEqual(output.kind, .prepareMessageHandoff)
+        XCTAssertEqual(output.fields["integrationSkillID"], AppIntegrationSkillID.whatsappMessageHandoff.rawValue)
+        XCTAssertEqual(output.fields["success"], "false")
+        XCTAssertEqual(output.fields["integrationExecutionMode"], AppIntegrationExecutionMode.openURL.rawValue)
+        XCTAssertTrue(output.proposedActions.isEmpty)
+    }
+
     func testShortcutPreparePhoneCallHandoffNodeReturnsVisibleTelHandoffWithoutCalling() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let kind = try XCTUnwrap(ShortcutNodeKind(rawValue: "preparePhoneCallHandoff"))

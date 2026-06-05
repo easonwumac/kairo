@@ -97,7 +97,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
         self.shortcutDemoRecipeRunner = shortcutDemoRecipeRunner ?? ShortcutDemoRecipeRunner(
             runtime: ShortcutNodeRuntime(
                 memoryStore: memoryStore,
-                toolCatalog: toolCatalog
+                toolCatalog: toolCatalog,
+                appIntegrationSkillCatalog: appIntegrationSkillCatalog
             ),
             appIntegrationSkillCatalog: appIntegrationSkillCatalog
         )

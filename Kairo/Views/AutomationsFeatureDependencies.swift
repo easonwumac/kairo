@@ -44,7 +44,8 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
             shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(
                 runtime: ShortcutNodeRuntime(
                     memoryStore: runtimeMemoryStore,
-                    toolCatalog: toolCatalog
+                    toolCatalog: toolCatalog,
+                    appIntegrationSkillCatalog: appIntegrationSkillCatalog
                 ),
                 appIntegrationSkillCatalog: appIntegrationSkillCatalog
             )
@@ -63,7 +64,8 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
             shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(
                 runtime: ShortcutNodeRuntime(
                     memoryStore: memoryStore,
-                    toolCatalog: toolCatalog
+                    toolCatalog: toolCatalog,
+                    appIntegrationSkillCatalog: appIntegrationSkillCatalog
                 ),
                 appIntegrationSkillCatalog: appIntegrationSkillCatalog
             )

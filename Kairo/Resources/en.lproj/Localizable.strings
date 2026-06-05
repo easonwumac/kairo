@@ -773,3 +773,4 @@
 "settings.route.localOnly.detail" = "Never routes prompts to cloud providers; unsupported local tasks fail closed.";
 "shortcut.integration.blocked.missingCatalog" = "This Shortcut demo references %@, but that integration is not in the app integration catalog.";
 "shortcut.integration.blocked.setupRequired" = "%@ is not ready for execution. Finish setup or use a visible fallback before running this Shortcut step.";
+"shortcut.integration.blocked.nodeMismatch" = "%@ is not wired to this Shortcut node. Use a supported visible handoff or keep this as a preview.";
