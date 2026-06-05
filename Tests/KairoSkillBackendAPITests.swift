@@ -182,6 +182,39 @@ final class KairoSkillBackendAPITests: XCTestCase {
         XCTAssertEqual(storedPreview?.integrationKey, "google-calendar")
     }
 
+    func testLiveEnvironmentComposerBuildsUsableBackendEnvironment() async throws {
+        let rootDirectory = temporaryDirectory(named: "KairoLiveEnvironmentComposer")
+        let paths = KairoPaths(
+            appName: "KairoLiveEnvironmentComposerTests",
+            appGroupIdentifier: "group.kairo.tests"
+        ) { _ in rootDirectory }
+        let environment = try await KairoLiveEnvironmentComposer(
+            paths: paths,
+            credentialStore: InMemoryCredentialStore()
+        ).makeEnvironment()
+        let memory = MemoryRecord(
+            title: "Composer memory",
+            summary: "Composer can persist through the composed environment.",
+            content: "The live composer wires file stores and the action executor together.",
+            source: .manual
+        )
+
+        try await environment.memoryStore.save(memory)
+        let storedMemories = try await environment.memoryStore.search(query: "composer", limit: 10)
+        let result = try await environment.actionExecutor.execute(AgentAction(
+            kind: .saveMemory,
+            title: "Save via action executor",
+            rationale: "Exercise the composed action boundary.",
+            payload: .text("Action executor writes through the composed memory store."),
+            riskTier: .tier0ReadOnly
+        ), confirmed: false)
+        let auditEvents = try await environment.auditLogger.list(limit: 10)
+
+        XCTAssertEqual(storedMemories.map(\.id), [memory.id])
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(auditEvents.map(\.actionKind), [.saveMemory])
+    }
+
     func testSkillBackendAPIFailsClosedWhenServiceIsUnavailable() async throws {
         let api = KairoSkillBackendService(agentSkillManagerService: nil)
 

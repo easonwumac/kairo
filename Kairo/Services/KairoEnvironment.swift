@@ -170,48 +170,12 @@ public struct KairoEnvironment: KairoBackendDependencies {
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) async throws -> KairoEnvironment {
-        let paths = KairoPaths(appName: appName, appGroupIdentifier: appGroupIdentifier)
-        let storeComponents = try await KairoLiveStoreFactory(paths: paths).makeComponents()
-        let credentialStore = KeychainCredentialStore()
-        let localModelComponents = try await KairoLiveLocalModelFactory(
-            paths: paths,
-            credentialStore: credentialStore,
-            replyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
-            benchmarkEngineOverride: localModelBenchmarkEngineOverride
-        ).makeComponents()
-        let accessComponents = try await KairoLiveAccessFactory(
-            paths: paths,
-            credentialStore: credentialStore,
-            installedLocalModelIDs: localModelComponents.installedModelIDs
-        ).makeComponents()
-        let actionExecutor = KairoLiveActionFactory(
-            memoryStore: storeComponents.memoryStore,
-            auditLogger: storeComponents.auditLogger
-        ).makeActionExecutor()
-
-        return KairoEnvironment(
-            memoryStore: storeComponents.memoryStore,
-            credentialStore: credentialStore,
-            aiProvider: localModelComponents.aiProvider,
-            chatHistoryStore: storeComponents.chatHistoryStore,
-            shareIngestionQueue: storeComponents.shareIngestionQueue,
-            sharedFilesDirectory: storeComponents.sharedFilesDirectory,
-            kairoRecipeStore: storeComponents.kairoRecipeStore,
-            permissionService: SystemPermissionService(),
-            auditLogger: storeComponents.auditLogger,
-            oauthConnectorCallbackStore: accessComponents.oauthCallbackStore,
-            oauthClientConfigurations: accessComponents.oauthClientConfigurations,
-            agentSkillManagerService: accessComponents.skillManagerService,
-            agentSkillMarketplaceCatalogService: accessComponents.marketplaceCatalogService,
-            localModelCatalog: localModelComponents.catalog,
-            localModelCatalogService: localModelComponents.catalogService,
-            localModelSettingsService: localModelComponents.settingsService,
-            localModelDownloader: localModelComponents.downloader,
-            localModelBenchmarkService: localModelComponents.benchmarkService,
-            localModelReplyCheckService: localModelComponents.replyCheckService,
-            localModelChatRuntimeAvailable: localModelComponents.chatRuntimeAvailable,
-            actionExecutor: actionExecutor
-        )
+        try await KairoLiveEnvironmentComposer(
+            appName: appName,
+            appGroupIdentifier: appGroupIdentifier,
+            localModelReplyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
+            localModelBenchmarkEngineOverride: localModelBenchmarkEngineOverride
+        ).makeEnvironment()
     }
 
     static func connectedOAuthProviderKeys(credentialStore: CredentialStore) async throws -> [String] {
