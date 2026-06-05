@@ -417,7 +417,7 @@ final class KairoRecipeLifecycleTests: XCTestCase {
                     id: "maps",
                     title: "Prepare Google Maps Handoff",
                     kind: .enqueueActionDraft,
-                    input: .literal("Open Google Maps directions to Taipei 101"),
+                    input: .literal("Open Google Maps directions to Taipei 101 private route memo"),
                     integrationSkillID: .googleMapsDirectionsHandoff
                 )
             ],
@@ -448,6 +448,31 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertEqual(components.host, "www.google.com")
         XCTAssertEqual(components.path, "/maps/dir/")
         XCTAssertTrue(result.stepResults.first?.success ?? false)
+
+        let urlOpener = ScenarioRecipeURLOpener()
+        let auditLogger = InMemoryAuditLogger()
+        let executor = SandboxActionExecutor(
+            memoryStore: InMemoryMemoryStore(),
+            urlOpener: urlOpener,
+            auditLogger: auditLogger
+        )
+        let previewOnlyResult = try await executor.execute(action, confirmed: false)
+        let openedBeforeConfirmation = await urlOpener.openedURLs
+
+        XCTAssertFalse(previewOnlyResult.completed)
+        XCTAssertTrue(openedBeforeConfirmation.isEmpty)
+
+        let confirmedResult = try await executor.execute(action, confirmed: true)
+        let openedAfterConfirmation = await urlOpener.openedURLs
+        let auditEvents = try await auditLogger.list(limit: 10)
+        let encodedAudit = String(data: try JSONEncoder().encode(auditEvents), encoding: .utf8) ?? ""
+
+        XCTAssertTrue(confirmedResult.completed)
+        XCTAssertTrue(confirmedResult.requiresExternalUI)
+        XCTAssertEqual(openedAfterConfirmation.first?.host, "www.google.com")
+        XCTAssertEqual(auditEvents.filter { $0.result == .rejected }.count, 1)
+        XCTAssertEqual(auditEvents.filter { $0.result == .completed }.count, 1)
+        XCTAssertFalse(encodedAudit.contains("private route memo"))
     }
 
     func testKairoRecipeRunnerDoesNotConvertOAuthSetupRequiredCatalogSkillIntoExecutableAction() async throws {
@@ -661,6 +686,15 @@ private actor ScenarioReminderScheduler: ReminderScheduling {
     func createReminder(from draft: ReminderDraft) async throws -> String {
         createdDrafts.append(draft)
         return "scenario-reminder-id"
+    }
+}
+
+private actor ScenarioRecipeURLOpener: URLOpener {
+    private(set) var openedURLs: [URL] = []
+
+    func open(_ url: URL) async -> Bool {
+        openedURLs.append(url)
+        return true
     }
 }
 
