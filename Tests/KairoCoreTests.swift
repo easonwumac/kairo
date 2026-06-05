@@ -139,6 +139,34 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(toolInvocationPlanner.receivedAllowsToolUse, true)
     }
 
+    func testAgentCoreUsesInjectedToolPlanningRequestBuilder() async throws {
+        let provider = CapturingAIProvider(response: AICompletionResponse(message: "Tool request builder response"))
+        let toolInvocationPlanner = StubAgentToolInvocationPlanner()
+        let toolPlanningRequestBuilder = StubAgentToolPlanningRequestBuilder(request: AgentToolInvocationRequest(
+            userText: "builder-user-text",
+            matchingText: "builder-matching-text",
+            allowsToolUse: false
+        ))
+        let agent = AgentCore(
+            aiProvider: provider,
+            toolInvocationPlanner: toolInvocationPlanner,
+            toolPlanningRequestBuilder: toolPlanningRequestBuilder
+        )
+
+        _ = try await agent.respond(
+            to: "Original message",
+            attachments: [ChatAttachment(kind: .text, displayName: "note.txt", textPreview: "Attachment body")],
+            privacyMode: .privateChat
+        )
+
+        XCTAssertEqual(toolPlanningRequestBuilder.requestCount, 1)
+        XCTAssertEqual(toolPlanningRequestBuilder.receivedAttachmentCount, 1)
+        XCTAssertEqual(toolPlanningRequestBuilder.receivedPrivacyMode, ChatPrivacyMode.privateChat)
+        XCTAssertEqual(toolInvocationPlanner.receivedUserText, "builder-user-text")
+        XCTAssertEqual(toolInvocationPlanner.receivedMatchingText, "builder-matching-text")
+        XCTAssertEqual(toolInvocationPlanner.receivedAllowsToolUse, false)
+    }
+
     func testAgentCoreUsesInjectedResponseActionPlanner() async throws {
         let injectedAction = AgentAction(
             kind: .openURL,
@@ -2224,6 +2252,8 @@ private final class StubAgentCapabilityPromptContextProvider: AgentCapabilityPro
 private final class StubAgentToolInvocationPlanner: AgentToolInvocationPlanning, @unchecked Sendable {
     private(set) var planCount = 0
     private(set) var receivedSkillIDs: [String] = []
+    private(set) var receivedUserText: String?
+    private(set) var receivedMatchingText: String?
     private(set) var receivedAllowsToolUse: Bool?
 
     func plan(
@@ -2232,8 +2262,32 @@ private final class StubAgentToolInvocationPlanner: AgentToolInvocationPlanning,
     ) -> AgentToolInvocationPlan {
         planCount += 1
         receivedSkillIDs = skillCatalog.installedSkills.map(\.id)
+        receivedUserText = request.userText
+        receivedMatchingText = request.matchingText
         receivedAllowsToolUse = request.allowsToolUse
         return AgentToolInvocationPlan(candidates: [])
+    }
+}
+
+private final class StubAgentToolPlanningRequestBuilder: AgentToolPlanningRequestBuilding, @unchecked Sendable {
+    private let suppliedRequest: AgentToolInvocationRequest
+    private(set) var requestCount = 0
+    private(set) var receivedAttachmentCount = 0
+    private(set) var receivedPrivacyMode: ChatPrivacyMode?
+
+    init(request: AgentToolInvocationRequest) {
+        self.suppliedRequest = request
+    }
+
+    func buildToolPlanningRequest(
+        message: String,
+        attachments: [ChatAttachment],
+        privacyMode: ChatPrivacyMode
+    ) -> AgentToolInvocationRequest {
+        requestCount += 1
+        receivedAttachmentCount = attachments.count
+        receivedPrivacyMode = privacyMode
+        return suppliedRequest
     }
 }
 

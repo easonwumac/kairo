@@ -7,6 +7,7 @@ public actor AgentCore {
     private let skillCatalogProvider: AgentSkillCatalogProvider
     private let toolContextProvider: any AgentCapabilityPromptContextProviding
     private let toolInvocationPlanner: any AgentToolInvocationPlanning
+    private let toolPlanningRequestBuilder: any AgentToolPlanningRequestBuilding
     private let responseActionPlanner: any AgentResponseActionPlanning
     private let completionRequestBuilder: any AgentCompletionRequestBuilding
 
@@ -23,6 +24,7 @@ public actor AgentCore {
         actionGate: (any PhoneToolActionGating)? = nil,
         toolContextProvider: (any AgentCapabilityPromptContextProviding)? = nil,
         toolInvocationPlanner: (any AgentToolInvocationPlanning)? = nil,
+        toolPlanningRequestBuilder: (any AgentToolPlanningRequestBuilding)? = nil,
         responseActionPlanner: (any AgentResponseActionPlanning)? = nil,
         completionRequestBuilder: (any AgentCompletionRequestBuilding)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
@@ -46,6 +48,7 @@ public actor AgentCore {
             toolCatalog: toolCatalog,
             safetyPolicyEngine: safetyPolicyEngine
         )
+        self.toolPlanningRequestBuilder = toolPlanningRequestBuilder ?? DefaultAgentToolPlanningRequestBuilder()
         self.responseActionPlanner = responseActionPlanner ?? DefaultAgentResponseActionPlanner(
             actionGate: resolvedActionGate,
             safetyPolicyEngine: safetyPolicyEngine,
@@ -65,11 +68,12 @@ public actor AgentCore {
         let memoryContext = try await memoryContextProvider.context(for: message, privacyMode: privacyMode)
         let skillCatalog = try await skillCatalogProvider.catalog()
         let toolContext = toolContextProvider.buildToolContext(skillCatalog: skillCatalog)
-        let toolPlan = toolInvocationPlanner.plan(for: AgentToolInvocationRequest(
-            userText: message,
-            matchingText: Self.planningText(message: message, attachments: attachments),
-            allowsToolUse: privacyMode != .privateChat
-        ), skillCatalog: skillCatalog)
+        let toolRequest = toolPlanningRequestBuilder.buildToolPlanningRequest(
+            message: message,
+            attachments: attachments,
+            privacyMode: privacyMode
+        )
+        let toolPlan = toolInvocationPlanner.plan(for: toolRequest, skillCatalog: skillCatalog)
 
         let request = completionRequestBuilder.buildCompletionRequest(
             message: message,
@@ -101,16 +105,5 @@ public actor AgentCore {
     }
 
     public static let systemPrompt = DefaultAgentCompletionRequestBuilder.defaultSystemPrompt
-
-    private static func planningText(message: String, attachments: [ChatAttachment]) -> String {
-        let attachmentText = attachments
-            .map(\.promptSummary)
-            .joined(separator: "\n")
-        guard !attachmentText.isEmpty else { return message }
-        return [message, attachmentText]
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-            .joined(separator: "\n")
-    }
 
 }
