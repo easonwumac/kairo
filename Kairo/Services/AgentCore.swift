@@ -41,7 +41,7 @@ public actor AgentCore {
         completionRequestBuilder: (any AgentCompletionRequestBuilding)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
-        memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
+        memoryCandidateExtractor: any MemoryCandidateExtracting = MemoryCandidateExtractor()
     ) {
         let resolvedActionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         let toolCandidatePlanningDependencies = Self.makeToolCandidatePlanningDependencies(

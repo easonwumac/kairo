@@ -1,6 +1,13 @@
 import Foundation
 
-public struct MemoryCandidateExtractor: Sendable {
+public protocol MemoryCandidateExtracting: Sendable {
+    func proposedSaveMemoryAction(
+        from userMessage: String,
+        memoryContext: [MemoryRecord]
+    ) -> AgentAction?
+}
+
+public struct MemoryCandidateExtractor: MemoryCandidateExtracting {
     public init() {}
 
     public func proposedSaveMemoryAction(

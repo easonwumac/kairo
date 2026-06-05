@@ -89,6 +89,31 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         XCTAssertTrue(plan.proposedActions.isEmpty)
     }
 
+    func testResponseActionPlannerUsesInjectedMemoryCandidateExtractor() throws {
+        let expectedAction = AgentAction(
+            kind: .saveMemory,
+            title: "Save Memory",
+            rationale: "Injected memory candidate.",
+            payload: .text("Kairo prefers catalog-backed app integrations."),
+            riskTier: .tier2LowRiskWrite
+        )
+        let planner = DefaultAgentResponseActionPlanner(
+            actionGate: BuiltInPhoneToolActionGate(),
+            memoryCandidateExtractor: FixedMemoryCandidateExtractor(action: expectedAction)
+        )
+
+        let plan = planner.planActions(for: AgentResponseActionPlanningRequest(
+            userMessage: "Remember this architecture preference.",
+            modelActions: [],
+            toolCandidates: [],
+            memoryContext: AgentMemoryContext(relevantMemories: [], deduplicationContext: [MemoryRecord]()),
+            privacyMode: .standard
+        ))
+
+        XCTAssertEqual(plan.proposedActions.map(\.kind), [.saveMemory])
+        XCTAssertEqual(plan.proposedActions.first?.payload, expectedAction.payload)
+    }
+
     func testAgentCoreKeepsUnsupportedSandboxExplanationOutsideExecutableCatalog() async throws {
         let explanation = UnsupportedActionExplanation(
             requestedAction: "Read another app",
@@ -251,5 +276,16 @@ private struct BlockingResponseActionSafetyPolicy: ActionSafetyPolicyEvaluating 
             requiresConfirmation: false,
             reason: "blocked"
         )
+    }
+}
+
+private struct FixedMemoryCandidateExtractor: MemoryCandidateExtracting {
+    var action: AgentAction?
+
+    func proposedSaveMemoryAction(
+        from userMessage: String,
+        memoryContext: [MemoryRecord]
+    ) -> AgentAction? {
+        action
     }
 }
