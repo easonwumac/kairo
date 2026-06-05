@@ -60,11 +60,23 @@ public struct DefaultChatFeatureDependencyComposer: ChatFeatureDependencyComposi
         ChatFeatureDependencies(
             historyStore: historyStore,
             shareImportAPI: shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue),
-            chatAPI: chatAPI ?? KairoChatBackendService(agent: AgentCore()),
+            chatAPI: chatAPI ?? UnavailableChatAPI(),
             actionAPI: actionAPI ?? KairoActionBackendService(actionExecutor: actionExecutor),
             localModelSettingsService: localModelSettingsService,
             openAISettingsService: openAISettingsService,
             localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
+        )
+    }
+}
+
+private struct UnavailableChatAPI: KairoChatAPI {
+    func respond(
+        to message: String,
+        attachments: [ChatAttachment],
+        privacyMode: ChatPrivacyMode
+    ) async throws -> AICompletionResponse {
+        throw AIProviderError.localInferenceUnavailable(
+            KairoL10n.string("chat.error.localInference.reason.runtimeUnavailable")
         )
     }
 }
