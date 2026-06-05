@@ -72,9 +72,9 @@ public struct AutomationsView: View {
                         recipeCenterCard
                         workflowOverviewCard
                     } else {
-                        workflowOverviewCard
                         savedRecipesCard
                         recipeCenterCard
+                        workflowOverviewCard
                     }
                     advancedWorkflowReferenceCard
 
