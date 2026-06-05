@@ -540,6 +540,8 @@
 "chat.tools.summarizeSharedContent.prompt" = "把我分享的內容整理成重點和待辦。";
 "chat.message.copy" = "複製";
 "chat.message.reply" = "回覆";
+"chat.message.remember" = "加入記憶";
+"chat.message.remember.privateUnavailable" = "私密聊天不會儲存到記憶。";
 "chat.message.copyAccessibility" = "複製訊息";
 "chat.message.replyAccessibility" = "回覆訊息";
 "chat.message.reasoning" = "思考過程";

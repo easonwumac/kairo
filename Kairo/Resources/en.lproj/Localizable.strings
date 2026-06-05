@@ -540,6 +540,8 @@
 "chat.tools.summarizeSharedContent.prompt" = "Summarize my shared content into key points and tasks.";
 "chat.message.copy" = "Copy";
 "chat.message.reply" = "Reply";
+"chat.message.remember" = "Add to Memory";
+"chat.message.remember.privateUnavailable" = "Private chats are not saved to Memory.";
 "chat.message.copyAccessibility" = "Copy message";
 "chat.message.replyAccessibility" = "Reply to message";
 "chat.message.reasoning" = "Reasoning";

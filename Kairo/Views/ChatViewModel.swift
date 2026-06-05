@@ -360,6 +360,34 @@ public final class ChatViewModel: ObservableObject {
         errorMessage = nil
     }
 
+    public func rememberMessage(_ message: ChatMessage) async {
+        let memoryText = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !memoryText.isEmpty else { return }
+        guard privacyMode != .privateChat else {
+            actionResultMessage = KairoL10n.string("chat.message.remember.privateUnavailable")
+            actionResultSucceeded = false
+            return
+        }
+
+        let action = AgentAction(
+            kind: .saveMemory,
+            title: KairoL10n.string("chat.message.remember"),
+            rationale: KairoL10n.string("chat.memory.proposal.rationale"),
+            payload: .text(memoryText),
+            riskTier: .tier2LowRiskWrite
+        )
+        do {
+            let result = try await actionAPI.confirm(action)
+            actionResultMessage = Self.actionResultMessage(for: result, action: action, source: nil)
+            actionResultSucceeded = result.completed
+            errorMessage = nil
+        } catch {
+            actionResultMessage = KairoL10n.string("chat.action.error.failed", error.localizedDescription)
+            actionResultSucceeded = false
+            errorMessage = KairoL10n.string("chat.error.actionUnavailable")
+        }
+    }
+
     public func cancelReplyTarget() {
         replyTarget = nil
     }

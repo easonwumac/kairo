@@ -5,13 +5,17 @@ struct ChatBubble: View {
     let message: ChatMessage
     let onCopy: (String) -> Void
     let onReply: (ChatMessage) -> Void
+    let onRemember: (ChatMessage) -> Void
     @State private var isReasoningExpanded = false
 
     private var isUser: Bool { message.role == .user }
+    private var bubbleMaxWidth: CGFloat { isUser ? 306 : 334 }
+    private var oppositeSideSpacerWidth: CGFloat { isUser ? 42 : 34 }
+    private var bubbleAlignment: Alignment { isUser ? .trailing : .leading }
 
     var body: some View {
         HStack(alignment: .bottom) {
-            if isUser { Spacer(minLength: 76) }
+            if isUser { Spacer(minLength: oppositeSideSpacerWidth) }
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 5) {
                 Text(message.text)
@@ -21,8 +25,9 @@ struct ChatBubble: View {
                     .lineSpacing(1)
                     .padding(.horizontal, 11)
                     .padding(.vertical, 8)
-                    .frame(maxWidth: isUser ? 236 : 270, alignment: isUser ? .trailing : .leading)
+                    .fixedSize(horizontal: false, vertical: true)
                     .background(bubbleColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .frame(maxWidth: bubbleMaxWidth, alignment: bubbleAlignment)
                     .contextMenu {
                         Button {
                             onCopy(message.text)
@@ -37,6 +42,13 @@ struct ChatBubble: View {
                             Label(KairoL10n.string("chat.message.reply"), systemImage: "arrowshape.turn.up.left")
                         }
                         .accessibilityIdentifier("chat.message.reply-menu.\(message.id.uuidString)")
+
+                        Button {
+                            onRemember(message)
+                        } label: {
+                            Label(KairoL10n.string("chat.message.remember"), systemImage: "brain.head.profile")
+                        }
+                        .accessibilityIdentifier("chat.message.remember-menu.\(message.id.uuidString)")
                     }
 
                 if let reasoningText = message.reasoningText, !reasoningText.isEmpty, !isUser {
@@ -47,7 +59,7 @@ struct ChatBubble: View {
                                 .font(.caption)
                                 .foregroundStyle(KairoDesign.muted)
                                 .textSelection(.enabled)
-                                .frame(maxWidth: 270, alignment: .leading)
+                                .frame(maxWidth: bubbleMaxWidth, alignment: .leading)
                                 .padding(.top, 4)
                         },
                         label: {
@@ -58,7 +70,7 @@ struct ChatBubble: View {
                     )
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
-                    .frame(maxWidth: 270, alignment: .leading)
+                    .frame(maxWidth: bubbleMaxWidth, alignment: .leading)
                     .background(KairoDesign.softSurface.opacity(0.48), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .accessibilityIdentifier("chat.message.reasoning.\(message.id.uuidString)")
                 }
@@ -98,7 +110,7 @@ struct ChatBubble: View {
                 .padding(.horizontal, 6)
             }
 
-            if !isUser { Spacer(minLength: 66) }
+            if !isUser { Spacer(minLength: oppositeSideSpacerWidth) }
         }
         .padding(.horizontal, 14)
         .accessibilityElement(children: .contain)
