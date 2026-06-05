@@ -368,10 +368,10 @@ public struct ChatView: View {
             .padding(.trailing, 6)
             .padding(.vertical, 4)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 19, style: .continuous))
-            .background(KairoDesign.background.opacity(0.28), in: RoundedRectangle(cornerRadius: 19, style: .continuous))
+            .background(KairoDesign.background.opacity(0.46), in: RoundedRectangle(cornerRadius: 19, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 19, style: .continuous)
-                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
             )
             .overlay(alignment: .topLeading) {
                 Color.clear

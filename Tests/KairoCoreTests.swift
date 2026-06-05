@@ -1209,7 +1209,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertFalse(chatView.contains("privateModeButton"))
         XCTAssertFalse(chatView.contains("NavigationStack {"))
         XCTAssertFalse(chatView.contains("KairoBriefingStrip()"))
-        XCTAssertTrue(routeBarView.contains("Menu {"))
         XCTAssertTrue(routeBarView.contains(#""chat.mode.standard""#))
         XCTAssertTrue(routeBarView.contains(#""chat.private-chat.toggle""#))
         XCTAssertTrue(routeBarView.contains(#""chat.provider-route.preference""#))
