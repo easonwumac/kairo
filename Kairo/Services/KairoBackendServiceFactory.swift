@@ -92,15 +92,34 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
     }
 }
 
+public struct KairoRecipeBackendServiceFactory<Dependencies: KairoBackendDependencies>: Sendable {
+    private let dependencies: Dependencies
+
+    public init(dependencies: Dependencies) {
+        self.dependencies = dependencies
+    }
+
+    public func makeRecipeAPI() -> any KairoRecipeAPI {
+        KairoRecipeBackendService(
+            recipeStore: dependencies.kairoRecipeStore,
+            memoryStore: dependencies.memoryStore,
+            aiProvider: dependencies.aiProvider,
+            toolCatalog: dependencies.toolCatalog
+        )
+    }
+}
+
 public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDependencies>: KairoBackendServiceMaking {
     private let dependencies: Dependencies
     private let chatFactory: KairoChatBackendServiceFactory<Dependencies>
+    private let recipeFactory: KairoRecipeBackendServiceFactory<Dependencies>
     private let settingsFactory: KairoSettingsBackendServiceFactory<Dependencies>
     private let accessFactory: KairoAccessBackendServiceFactory<Dependencies>
 
     public init(dependencies: Dependencies) {
         self.dependencies = dependencies
         self.chatFactory = KairoChatBackendServiceFactory(dependencies: dependencies)
+        self.recipeFactory = KairoRecipeBackendServiceFactory(dependencies: dependencies)
         self.settingsFactory = KairoSettingsBackendServiceFactory(dependencies: dependencies)
         self.accessFactory = KairoAccessBackendServiceFactory(dependencies: dependencies)
     }
@@ -114,12 +133,7 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
     }
 
     public func makeRecipeAPI() -> any KairoRecipeAPI {
-        KairoRecipeBackendService(
-            recipeStore: dependencies.kairoRecipeStore,
-            memoryStore: dependencies.memoryStore,
-            aiProvider: dependencies.aiProvider,
-            toolCatalog: dependencies.toolCatalog
-        )
+        recipeFactory.makeRecipeAPI()
     }
 
     public func makeShareImportAPI() -> any KairoShareImportAPI {

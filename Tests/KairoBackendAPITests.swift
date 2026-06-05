@@ -184,6 +184,48 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
+    func testRecipeBackendServiceFactoryBuildsRecipeAPIFromInjectedDependencies() async throws {
+        let recipeStore = InMemoryKairoRecipeStore()
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            kairoRecipeStore: recipeStore
+        )
+        let recipeAPI = KairoRecipeBackendServiceFactory(dependencies: environment).makeRecipeAPI()
+        let recipe = KairoRecipe(
+            id: "factory-noop-recipe",
+            title: "Factory Noop Recipe",
+            summary: "Recipe backend factory wiring.",
+            steps: [
+                KairoRecipeStep(
+                    id: "noop",
+                    title: "No operation",
+                    kind: .noOp,
+                    input: .literal("factory")
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier0ReadOnly,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+
+        try await recipeAPI.save(recipe)
+        let savedRecipes = try await recipeStore.listRecipes()
+        let result = try await recipeAPI.run(KairoRecipeRunRequest(
+            recipeID: "factory-noop-recipe",
+            surface: .appIntent,
+            input: nil,
+            dryRun: true,
+            userConfirmed: false
+        ))
+
+        XCTAssertEqual(savedRecipes.map(\.id), ["factory-noop-recipe"])
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.recipeID, "factory-noop-recipe")
+    }
+
     func testBackendCompositionSharesInjectedPhoneToolCatalogAcrossAccessAndChat() async throws {
         let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
         let toolCatalog = BuiltInPhoneToolCatalog(tools: [calendarTool])
