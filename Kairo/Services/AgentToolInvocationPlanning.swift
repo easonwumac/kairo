@@ -25,6 +25,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping = DefaultInstalledSkillToolInvocationCandidateMapper(),
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping = DefaultLegacyIntegrationToolInvocationCandidateMapper(),
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = DefaultAppIntegrationToolInvocationCandidateMapper(),
+        fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending = DefaultAgentFallbackActionCandidateAppender(),
         candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
@@ -41,6 +42,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
                 installedSkillCandidateMapper: installedSkillCandidateMapper,
                 legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper,
                 appIntegrationCandidateMapper: appIntegrationCandidateMapper,
+                fallbackActionCandidateAppender: fallbackActionCandidateAppender,
                 candidatePipeline: candidatePipeline,
                 toolCatalog: toolCatalog,
                 safetyPolicyEngine: safetyPolicyEngine

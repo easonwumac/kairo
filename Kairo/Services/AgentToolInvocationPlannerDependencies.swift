@@ -11,6 +11,7 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
     public var installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping
     public var legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping
     public var appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping
+    public var fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending
     public var candidatePipeline: any AgentToolInvocationCandidatePipelining
     public var candidateFilter: any AgentToolCandidateFiltering
     public var safetyPolicyEngine: SafetyPolicyEngine
@@ -26,6 +27,7 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping = DefaultInstalledSkillToolInvocationCandidateMapper(),
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping = DefaultLegacyIntegrationToolInvocationCandidateMapper(),
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = DefaultAppIntegrationToolInvocationCandidateMapper(),
+        fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending = DefaultAgentFallbackActionCandidateAppender(),
         candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
@@ -41,6 +43,7 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
         self.installedSkillCandidateMapper = installedSkillCandidateMapper
         self.legacyIntegrationCandidateMapper = legacyIntegrationCandidateMapper
         self.appIntegrationCandidateMapper = appIntegrationCandidateMapper
+        self.fallbackActionCandidateAppender = fallbackActionCandidateAppender
         self.candidatePipeline = candidatePipeline
         self.candidateFilter = candidateFilter ?? PhoneToolCandidateFilter(
             actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)

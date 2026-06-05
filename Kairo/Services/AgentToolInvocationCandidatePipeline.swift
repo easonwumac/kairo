@@ -15,6 +15,7 @@ public protocol AgentToolInvocationCandidatePipelining: Sendable {
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
+        fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending,
         safetyPolicyEngine: SafetyPolicyEngine
     ) -> [AgentToolInvocationCandidate]
 }
@@ -36,6 +37,7 @@ public struct DefaultAgentToolInvocationCandidatePipeline: AgentToolInvocationCa
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
+        fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending,
         safetyPolicyEngine: SafetyPolicyEngine
     ) -> [AgentToolInvocationCandidate] {
         var candidates: [AgentToolInvocationCandidate] = []
@@ -70,21 +72,14 @@ public struct DefaultAgentToolInvocationCandidatePipeline: AgentToolInvocationCa
             )
         })
 
-        for handoffCandidate in visibleHandoffCandidateProvider.candidates(
+        fallbackActionCandidateAppender.appendFallbackCandidates(
+            to: &candidates,
             userText: request.userText,
             normalizedText: normalizedText,
-            parser: appIntegrationActionParser
-        ) where !candidates.containsAction(kind: handoffCandidate.action?.kind) {
-            candidates.append(handoffCandidate)
-        }
-
-        for writeCandidate in writeActionCandidateProvider.candidates(
-            userText: request.userText,
-            normalizedText: normalizedText,
-            parser: appIntegrationActionParser
-        ) where !candidates.containsAction(kind: writeCandidate.action?.kind) {
-            candidates.append(writeCandidate)
-        }
+            parser: appIntegrationActionParser,
+            visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
+            writeActionCandidateProvider: writeActionCandidateProvider
+        )
 
         return uniqueCandidates(candidates)
     }

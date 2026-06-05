@@ -266,6 +266,40 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertTrue(plan.proposedActions.contains(injectedAction))
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedFallbackActionCandidateAppender() throws {
+        let injectedAction = AgentAction(
+            kind: .openWebSearchHandoff,
+            title: "Injected Fallback",
+            rationale: "Injected fallback appender candidate.",
+            payload: .webSearch(WebSearchDraft(query: "injected fallback")),
+            riskTier: .tier1Draft
+        )
+        let injectedCandidate = AgentToolInvocationCandidate(
+            id: "injected-fallback-appender",
+            title: "Injected Fallback",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.web],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Injected",
+            action: injectedAction
+        )
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: []),
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
+            writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
+            fallbackActionCandidateAppender: FixedFallbackActionCandidateAppender(candidate: injectedCandidate)
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "fallback appender route"))
+
+        XCTAssertEqual(plan.candidates, [injectedCandidate])
+        XCTAssertEqual(plan.proposedActions, [injectedAction])
+    }
+
     func testAgentToolInvocationPlannerUsesInjectedCandidateMatcher() throws {
         let skill = AgentSkill(
             id: "custom-injected-skill",
@@ -998,9 +1032,25 @@ private struct FixedAgentToolInvocationCandidatePipeline: AgentToolInvocationCan
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
+        fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending,
         safetyPolicyEngine: SafetyPolicyEngine
     ) -> [AgentToolInvocationCandidate] {
         candidates
+    }
+}
+
+private struct FixedFallbackActionCandidateAppender: AgentFallbackActionCandidateAppending {
+    var candidate: AgentToolInvocationCandidate
+
+    func appendFallbackCandidates(
+        to candidates: inout [AgentToolInvocationCandidate],
+        userText: String,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing,
+        visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding,
+        writeActionCandidateProvider: any AgentWriteActionCandidateProviding
+    ) {
+        candidates.append(candidate)
     }
 }
 

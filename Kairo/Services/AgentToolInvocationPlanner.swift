@@ -24,6 +24,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping = DefaultInstalledSkillToolInvocationCandidateMapper(),
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping = DefaultLegacyIntegrationToolInvocationCandidateMapper(),
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = DefaultAppIntegrationToolInvocationCandidateMapper(),
+        fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending = DefaultAgentFallbackActionCandidateAppender(),
         candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
@@ -42,6 +43,7 @@ public struct AgentToolInvocationPlanner: Sendable {
                 installedSkillCandidateMapper: installedSkillCandidateMapper,
                 legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper,
                 appIntegrationCandidateMapper: appIntegrationCandidateMapper,
+                fallbackActionCandidateAppender: fallbackActionCandidateAppender,
                 candidatePipeline: candidatePipeline,
                 toolCatalog: toolCatalog,
                 candidateFilter: candidateFilter,
@@ -77,6 +79,7 @@ public struct AgentToolInvocationPlanner: Sendable {
             installedSkillCandidateMapper: dependencies.installedSkillCandidateMapper,
             legacyIntegrationCandidateMapper: dependencies.legacyIntegrationCandidateMapper,
             appIntegrationCandidateMapper: dependencies.appIntegrationCandidateMapper,
+            fallbackActionCandidateAppender: dependencies.fallbackActionCandidateAppender,
             safetyPolicyEngine: dependencies.safetyPolicyEngine
         )
 
