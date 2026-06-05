@@ -312,6 +312,45 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(viewModel.currentThread.messages.last?.text, "Composer response")
     }
 
+    func testChatFeatureDependencyFactoryWiresCredentialStoreAndRuntimeBoundaries() async throws {
+        let credentialStore = InMemoryCredentialStore()
+        let historyStore = InMemoryChatHistoryStore()
+        let dependencies = ChatFeatureDependencyFactory().makeDependencies(
+            historyStore: historyStore,
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            credentialStore: credentialStore,
+            chatAPI: KairoChatBackendService(
+                agent: AgentCore(
+                    memoryStore: InMemoryMemoryStore(),
+                    aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory chat"))
+                )
+            ),
+            shareImportAPI: KairoShareImportBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
+            actionAPI: KairoActionBackendService(actionExecutor: AllowingBackendActionExecutor()),
+            actionExecutor: AllowingBackendActionExecutor(),
+            localModelSettingsService: nil,
+            localModelChatRuntimeAvailable: true
+        )
+
+        try await dependencies.openAISettingsService?.saveAPIKey("openai-chat-factory-key")
+        let savedKey = try await credentialStore.readSecret(for: CredentialKey.openAIAPIKey)
+        let response = try await dependencies.chatAPI.respond(
+            to: "factory",
+            attachments: [],
+            privacyMode: .standard
+        )
+        let thread = ChatThread(messages: [
+            ChatMessage(role: .user, text: "Factory thread")
+        ])
+        try await dependencies.historyStore.saveThread(thread)
+        let savedThreads = try await historyStore.listThreads(limit: 10)
+
+        XCTAssertEqual(savedThreads.map(\.id), [thread.id])
+        XCTAssertEqual(savedKey, "openai-chat-factory-key")
+        XCTAssertEqual(response.message, "Factory chat")
+        XCTAssertTrue(dependencies.localModelChatRuntimeAvailable)
+    }
+
     func testKairoEnvironmentBuildsMemoryFeatureDependenciesForCompositionRoot() async throws {
         let memoryStore = InMemoryMemoryStore()
         let environment = KairoEnvironment(

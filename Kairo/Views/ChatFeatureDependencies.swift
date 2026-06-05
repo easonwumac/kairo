@@ -69,6 +69,39 @@ public struct DefaultChatFeatureDependencyComposer: ChatFeatureDependencyComposi
     }
 }
 
+public struct ChatFeatureDependencyFactory: Sendable {
+    private let composer: any ChatFeatureDependencyComposing
+
+    public init(composer: any ChatFeatureDependencyComposing = DefaultChatFeatureDependencyComposer()) {
+        self.composer = composer
+    }
+
+    public func makeDependencies(
+        historyStore: any ChatHistoryStore,
+        shareIngestionQueue: any ShareIngestionQueue,
+        credentialStore: any CredentialStore,
+        chatAPI: (any KairoChatAPI)?,
+        shareImportAPI: (any KairoShareImportAPI)?,
+        actionAPI: (any KairoActionAPI)?,
+        actionExecutor: any ActionExecutor,
+        localModelSettingsService: LocalModelSettingsService?,
+        openAISettingsService: OpenAISettingsService? = nil,
+        localModelChatRuntimeAvailable: Bool
+    ) -> ChatFeatureDependencies {
+        composer.makeDependencies(
+            historyStore: historyStore,
+            shareIngestionQueue: shareIngestionQueue,
+            chatAPI: chatAPI,
+            shareImportAPI: shareImportAPI,
+            actionAPI: actionAPI,
+            actionExecutor: actionExecutor,
+            localModelSettingsService: localModelSettingsService,
+            openAISettingsService: openAISettingsService ?? OpenAISettingsService(credentialStore: credentialStore),
+            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
+        )
+    }
+}
+
 private struct UnavailableChatAPI: KairoChatAPI {
     func respond(
         to message: String,
@@ -83,13 +116,15 @@ private struct UnavailableChatAPI: KairoChatAPI {
 
 public extension KairoEnvironment {
     var chatFeatureDependencies: ChatFeatureDependencies {
-        ChatFeatureDependencies(
+        ChatFeatureDependencyFactory().makeDependencies(
             historyStore: chatHistoryStore,
-            shareImportAPI: backendAPI.shareImports,
+            shareIngestionQueue: shareIngestionQueue,
+            credentialStore: credentialStore,
             chatAPI: backendAPI.chat,
+            shareImportAPI: backendAPI.shareImports,
             actionAPI: backendAPI.actions,
+            actionExecutor: actionExecutor,
             localModelSettingsService: localModelSettingsService,
-            openAISettingsService: OpenAISettingsService(credentialStore: credentialStore),
             localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
         )
     }
