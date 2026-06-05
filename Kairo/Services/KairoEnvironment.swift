@@ -210,26 +210,10 @@ public struct KairoEnvironment: KairoBackendDependencies {
             credentialStore: credentialStore,
             installedLocalModelIDs: localModelComponents.installedModelIDs
         ).makeComponents()
-        #if canImport(UIKit)
-        let urlOpener: any URLOpener = UIApplicationURLOpener()
-        #else
-        let urlOpener: any URLOpener = NoOpURLOpener()
-        #endif
-        let actionExecutor: any ActionExecutor
-        #if canImport(UserNotifications)
-        actionExecutor = SandboxActionExecutor(
+        let actionExecutor = KairoLiveActionFactory(
             memoryStore: storeComponents.memoryStore,
-            urlOpener: urlOpener,
-            notificationScheduler: UserNotificationScheduler(),
             auditLogger: storeComponents.auditLogger
-        )
-        #else
-        actionExecutor = SandboxActionExecutor(
-            memoryStore: storeComponents.memoryStore,
-            urlOpener: urlOpener,
-            auditLogger: storeComponents.auditLogger
-        )
-        #endif
+        ).makeActionExecutor()
 
         return KairoEnvironment(
             memoryStore: storeComponents.memoryStore,

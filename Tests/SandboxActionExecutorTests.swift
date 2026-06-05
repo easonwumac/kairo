@@ -432,6 +432,34 @@ final class SandboxActionExecutorTests: XCTestCase {
         XCTAssertEqual(auditEvents.first?.result, .completed)
     }
 
+    func testKairoLiveActionFactoryBuildsAuditedHandoffExecutor() async throws {
+        let opener = MockURLOpener()
+        let auditLogger = InMemoryAuditLogger()
+        let executor = KairoLiveActionFactory(
+            memoryStore: InMemoryMemoryStore(),
+            auditLogger: auditLogger,
+            urlOpener: opener,
+            notificationScheduler: MockNotificationScheduler(granted: true)
+        ).makeActionExecutor()
+        let action = AgentAction(
+            kind: .openURL,
+            title: "Open website",
+            rationale: "User confirmed Kairo may open a visible handoff URL.",
+            payload: .url("https://example.com"),
+            riskTier: .tier1Draft
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+        let openedURLs = await opener.openedURLs
+        let auditEvents = try await auditLogger.list(limit: 10)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertTrue(result.requiresExternalUI)
+        XCTAssertEqual(openedURLs, [URL(string: "https://example.com")!])
+        XCTAssertEqual(auditEvents.first?.actionKind, .openURL)
+        XCTAssertEqual(auditEvents.first?.result, .completed)
+    }
+
     func testSandboxActionExecutorCreatesCalendarEventThroughInjectedScheduler() async throws {
         let scheduler = MockCalendarScheduler(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), calendarScheduler: scheduler)
