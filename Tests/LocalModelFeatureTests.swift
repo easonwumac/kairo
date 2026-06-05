@@ -102,6 +102,45 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(components.chatRuntimeAvailable, false)
     }
 
+    func testKairoLiveLocalModelFactoryBuildsRoutedProviderFromPersistentInstallState() async throws {
+        let rootDirectory = temporaryDirectory(named: "KairoLiveLocalModelFactory")
+        let paths = KairoPaths(
+            appName: "KairoLiveLocalModelFactoryTests",
+            appGroupIdentifier: "group.kairo.tests"
+        ) { _ in rootDirectory }
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: paths.localModelInstallRegistryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: LocalModelManifest.qwen35Tiny.id,
+            version: LocalModelManifest.qwen35Tiny.version,
+            status: .installed,
+            fileURL: paths.localModelsDirectory.appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf"),
+            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
+            sha256: LocalModelManifest.qwen35Tiny.sha256
+        ))
+        let components = try await KairoLiveLocalModelFactory(
+            paths: paths,
+            credentialStore: InMemoryCredentialStore(),
+            replyCheckRuntimeOverride: DeterministicLocalModelReplyCheckRuntime(
+                responseText: "Live factory local reply",
+                generationTokensPerSecond: 42
+            )
+        ).makeComponents()
+
+        try await components.settingsService.selectModel(id: LocalModelManifest.qwen35Tiny.id)
+        try await components.settingsService.setPreference(.localOnly)
+        let status = await components.settingsService.status()
+        let response = try await components.aiProvider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Summarize this offline"
+        ))
+
+        XCTAssertEqual(components.installedModelIDs, [LocalModelManifest.qwen35Tiny.id])
+        XCTAssertEqual(status.selectedModelID, LocalModelManifest.qwen35Tiny.id)
+        XCTAssertEqual(status.preference, .localOnly)
+        XCTAssertEqual(response.message, "Live factory local reply")
+        XCTAssertTrue(components.chatRuntimeAvailable)
+    }
+
     func testLocalModelManifestTransparencyTextIsCompactForSettingsList() throws {
         let qwenTiny = LocalModelManifest.qwen35Tiny
         let text = qwenTiny.manifestTransparencyText
@@ -1937,6 +1976,12 @@ final class LocalModelFeatureTests: XCTestCase {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
             .appendingPathComponent(name)
+    }
+
+    private func temporaryDirectory(named name: String) -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+            .appendingPathComponent(name, isDirectory: true)
     }
 
     private func makeLocalModelSettingsService(

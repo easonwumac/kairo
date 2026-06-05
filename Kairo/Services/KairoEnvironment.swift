@@ -203,73 +203,18 @@ public struct KairoEnvironment: KairoBackendDependencies {
         let shareIngestionQueue = try await JSONFileShareIngestionQueue(fileURL: paths.shareIngestionQueueURL)
         let kairoRecipeStore = try await FileBackedKairoRecipeStore(fileURL: paths.kairoRecipeStoreURL)
         let agentSkillStore = try await FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)
-        let localModelCatalog = LocalModelCatalog.kairoDefault
-        let localModelInstallRegistry = try await FileBackedLocalModelInstallRegistry(
-            fileURL: paths.localModelInstallRegistryURL
-        )
-        let localModelSettingsStore = try await FileBackedLocalModelSettingsStore(
-            fileURL: paths.localModelSettingsURL
-        )
-        let localModelSettingsService = LocalModelSettingsService(
-            catalog: localModelCatalog,
-            installRegistry: localModelInstallRegistry,
-            settingsStore: localModelSettingsStore
-        )
-        let localModelDownloader = VerifiedLocalModelDownloader(
-            installRegistry: localModelInstallRegistry,
-            modelsDirectory: paths.localModelsDirectory
-        )
-        let localModelBenchmarkStore = try await FileBackedLocalModelBenchmarkStore(fileURL: paths.localModelBenchmarkResultsURL)
-        #if os(macOS)
-        let localModelCommandRuntime = LocalModelExternalCommandRuntime(
-            configuration: .llamaCLI(
-                executableURL: URL(fileURLWithPath: "/opt/homebrew/bin/llama-cli")
-            ),
-            commandRunner: ProcessLocalModelCommandRunner()
-        )
-        let localModelBenchmarkService = LocalModelBenchmarkService(
-            catalog: localModelCatalog,
-            installRegistry: localModelInstallRegistry,
-            resultStore: localModelBenchmarkStore,
-            engine: localModelBenchmarkEngineOverride ?? localModelCommandRuntime
-        )
-        let localModelReplyRuntime = localModelReplyCheckRuntimeOverride ?? localModelCommandRuntime
-        let localModelReplyCheckService = LocalModelReplyCheckService(
-            catalog: localModelCatalog,
-            installRegistry: localModelInstallRegistry,
-            runtime: localModelReplyRuntime
-        )
-        let localModelChatRuntimeAvailable = true
-        #else
-        let localModelBenchmarkService = LocalModelBenchmarkService(
-            catalog: localModelCatalog,
-            installRegistry: localModelInstallRegistry,
-            resultStore: localModelBenchmarkStore,
-            engine: localModelBenchmarkEngineOverride ?? UnavailableLocalModelBenchmarkEngine()
-        )
-        let localModelReplyRuntime = localModelReplyCheckRuntimeOverride ?? UnavailableLocalModelReplyCheckRuntime()
-        let localModelReplyCheckService = LocalModelReplyCheckService(
-            catalog: localModelCatalog,
-            installRegistry: localModelInstallRegistry,
-            runtime: localModelReplyRuntime
-        )
-        let localModelChatRuntimeAvailable = localModelReplyCheckRuntimeOverride != nil
-        #endif
         let credentialStore = KeychainCredentialStore()
-        let aiProvider = LocalModelRoutingAIProvider(
-            cloudProvider: OpenAIProvider(credentialStore: credentialStore),
-            localModelSettingsService: localModelSettingsService,
-            localProvider: LocalModelRuntimeAIProvider(
-                localModelSettingsService: localModelSettingsService,
-                runtime: localModelReplyRuntime
-            ),
-            localRuntimeAvailable: localModelChatRuntimeAvailable
-        )
+        let localModelComponents = try await KairoLiveLocalModelFactory(
+            paths: paths,
+            credentialStore: credentialStore,
+            replyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
+            benchmarkEngineOverride: localModelBenchmarkEngineOverride
+        ).makeComponents()
         let connectedOAuthProviderKeys = try await connectedOAuthProviderKeys(credentialStore: credentialStore)
         let runtimeContext = AgentSkillRuntimeContext.current(
             grantedEntitlements: [],
             connectedOAuthProviderKeys: connectedOAuthProviderKeys,
-            installedLocalModelIDs: await localModelInstallRegistry.installedRecords().map(\.modelID)
+            installedLocalModelIDs: localModelComponents.installedModelIDs
         )
         let agentSkillManagerService = AgentSkillManagerService(
             store: agentSkillStore,
@@ -278,7 +223,6 @@ public struct KairoEnvironment: KairoBackendDependencies {
             runtimeContext: runtimeContext
         )
         let agentSkillMarketplaceCatalogService = AgentSkillMarketplaceCatalogService.defaultStandaloneRepository
-        let localModelCatalogService = LocalModelCatalogService.defaultStandaloneRepository
         let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(fileURL: paths.oauthConnectorCallbackPreviewsURL)
         let oauthClientConfigurations = OAuthConnectorClientConfigurationLoader().load()
         #if canImport(UIKit)
@@ -305,7 +249,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         return KairoEnvironment(
             memoryStore: memoryStore,
             credentialStore: credentialStore,
-            aiProvider: aiProvider,
+            aiProvider: localModelComponents.aiProvider,
             chatHistoryStore: chatHistoryStore,
             shareIngestionQueue: shareIngestionQueue,
             sharedFilesDirectory: paths.sharedFilesDirectory,
@@ -316,13 +260,13 @@ public struct KairoEnvironment: KairoBackendDependencies {
             oauthClientConfigurations: oauthClientConfigurations,
             agentSkillManagerService: agentSkillManagerService,
             agentSkillMarketplaceCatalogService: agentSkillMarketplaceCatalogService,
-            localModelCatalog: localModelCatalog,
-            localModelCatalogService: localModelCatalogService,
-            localModelSettingsService: localModelSettingsService,
-            localModelDownloader: localModelDownloader,
-            localModelBenchmarkService: localModelBenchmarkService,
-            localModelReplyCheckService: localModelReplyCheckService,
-            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable,
+            localModelCatalog: localModelComponents.catalog,
+            localModelCatalogService: localModelComponents.catalogService,
+            localModelSettingsService: localModelComponents.settingsService,
+            localModelDownloader: localModelComponents.downloader,
+            localModelBenchmarkService: localModelComponents.benchmarkService,
+            localModelReplyCheckService: localModelComponents.replyCheckService,
+            localModelChatRuntimeAvailable: localModelComponents.chatRuntimeAvailable,
             actionExecutor: actionExecutor
         )
     }

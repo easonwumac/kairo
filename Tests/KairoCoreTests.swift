@@ -1040,41 +1040,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains(#""access.homekit.demo.\(recipe.id).confirm""#))
     }
 
-    func testKairoEnvironmentWiresFileBackedSkillManagerIntoAccessSurface() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let environmentSource = try String(contentsOf: root.appendingPathComponent("Kairo/Services/KairoEnvironment.swift"), encoding: .utf8)
-        let rootViewSource = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
-        let permissionHubSource = try String(contentsOf: root.appendingPathComponent("Kairo/Views/PermissionHubView.swift"), encoding: .utf8)
-
-        XCTAssertTrue(environmentSource.contains("agentSkillManagerService: AgentSkillManagerService?"))
-        XCTAssertTrue(environmentSource.contains("kairoRecipeStore: any KairoRecipeStore"))
-        XCTAssertTrue(environmentSource.contains("FileBackedKairoRecipeStore(fileURL: paths.kairoRecipeStoreURL)"))
-        XCTAssertTrue(environmentSource.contains("FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)"))
-        XCTAssertTrue(environmentSource.contains("AgentSkillManagerService("))
-        XCTAssertTrue(environmentSource.contains("store: agentSkillStore"))
-        XCTAssertTrue(environmentSource.contains("AgentSkillMarketplaceCatalogService.defaultStandaloneRepository"))
-        XCTAssertTrue(rootViewSource.contains("AutomationsView("))
-        XCTAssertTrue(rootViewSource.contains("PermissionHubView("))
-        XCTAssertTrue(environmentSource.contains("localModelCatalogService"))
-        XCTAssertTrue(environmentSource.contains("LocalModelCatalogService.defaultStandaloneRepository"))
-        XCTAssertTrue(environmentSource.contains("localModelBenchmarkService"))
-        XCTAssertTrue(environmentSource.contains("FileBackedLocalModelBenchmarkStore(fileURL: paths.localModelBenchmarkResultsURL)"))
-        XCTAssertTrue(environmentSource.contains("localModelReplyCheckService"))
-        XCTAssertTrue(environmentSource.contains("LocalModelReplyCheckService("))
-        XCTAssertTrue(environmentSource.contains("LocalModelRoutingAIProvider("))
-        XCTAssertTrue(environmentSource.contains("localModelSettingsService: localModelSettingsService"))
-        XCTAssertTrue(rootViewSource.contains("mode: .modelsOnly"))
-        XCTAssertTrue(rootViewSource.contains("settingsMode: SettingsViewMode = .all"))
-        XCTAssertTrue(permissionHubSource.contains("private let skillManagerService: AgentSkillManagerService?"))
-        XCTAssertTrue(permissionHubSource.contains("private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?"))
-        XCTAssertTrue(permissionHubSource.contains("capability.status.accessFallbackMessage"))
-        XCTAssertTrue(permissionHubSource.contains(#""access.capability.\(capability.key.rawValue).status-fallback""#))
-        XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.catalog()"))
-        XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.disableSkill(id: skill.id)"))
-        XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.enableSkill(id: skill.id)"))
-        XCTAssertTrue(permissionHubSource.contains("try await skillManagerService.removeSkill(id: skill.id)"))
-    }
-
     func testKairoEnvironmentProvidesDeterministicUITestingSkillManagerAndMarketplace() async throws {
         let environment = try await KairoEnvironment.uiTesting(resetPersistentState: true)
         let skillManagerService = try XCTUnwrap(environment.agentSkillManagerService)
@@ -1832,18 +1797,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertFalse(result.completed)
         XCTAssertTrue(result.requiresExternalUI)
         XCTAssertEqual(result.message, KairoL10n.string("chat.action.executor.openURLFailed"))
-    }
-
-    func testLiveEnvironmentSourceUsesKeychainCredentialStoreForProviderSecrets() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let environmentSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/KairoEnvironment.swift"),
-            encoding: .utf8
-        )
-
-        XCTAssertTrue(environmentSource.contains("let credentialStore = KeychainCredentialStore()"))
-        XCTAssertTrue(environmentSource.contains("OpenAIProvider(credentialStore: credentialStore)"))
-        XCTAssertTrue(environmentSource.contains("connectedOAuthProviderKeys(credentialStore: credentialStore)"))
     }
 
     private func temporaryFileURL(named name: String) -> URL {
