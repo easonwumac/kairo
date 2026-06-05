@@ -309,6 +309,62 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(confirmations, [true])
     }
 
+    func testDeletionBackendServiceFactoryBuildsDeletionAPIFromInjectedDependencies() async throws {
+        let threadID = UUID(uuidString: "66666666-6666-6666-6666-666666666666")!
+        let memoryID = UUID(uuidString: "77777777-7777-7777-7777-777777777777")!
+        let chatHistoryStore = InMemoryChatHistoryStore(seed: [
+            ChatThread(id: threadID, messages: [
+                ChatMessage(role: .user, text: "Factory delete thread")
+            ])
+        ])
+        let memoryStore = InMemoryMemoryStore(seed: [
+            MemoryRecord(
+                id: memoryID,
+                title: "Factory memory",
+                summary: "Deletion backend factory wiring.",
+                content: "Factory deletion content",
+                source: .manual
+            )
+        ])
+        let credentialStore = InMemoryCredentialStore()
+        let auditLogger = InMemoryAuditLogger()
+        let environment = KairoEnvironment(
+            memoryStore: memoryStore,
+            credentialStore: credentialStore,
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            chatHistoryStore: chatHistoryStore,
+            auditLogger: auditLogger
+        )
+        let deletionAPI = KairoDeletionBackendServiceFactory(dependencies: environment).makeDeletionAPI()
+
+        try await credentialStore.saveSecret("factory-openai-key", for: CredentialKey.openAIAPIKey)
+        try await auditLogger.record(AuditEvent(
+            actionKind: .saveMemory,
+            memoryIDs: [memoryID],
+            capabilityKeys: [.memory],
+            usedCloudModel: false,
+            requiredConfirmation: true,
+            userConfirmed: true,
+            result: .completed
+        ))
+        try await deletionAPI.deleteChatThread(id: threadID)
+        try await deletionAPI.purgeDeletedChatThreads()
+        try await deletionAPI.deleteMemory(id: memoryID)
+        try await deletionAPI.purgeDeletedMemories()
+        try await deletionAPI.deleteOpenAIAPIKey()
+        try await deletionAPI.clearAuditLog()
+
+        let deletedThread = try await chatHistoryStore.thread(id: threadID)
+        let memories = try await memoryStore.list(limit: 10)
+        let openAIAPIKey = try await credentialStore.readSecret(for: CredentialKey.openAIAPIKey)
+        let auditEvents = try await auditLogger.list(limit: 10)
+
+        XCTAssertNil(deletedThread)
+        XCTAssertTrue(memories.isEmpty)
+        XCTAssertNil(openAIAPIKey)
+        XCTAssertTrue(auditEvents.isEmpty)
+    }
+
     func testBackendCompositionSharesInjectedPhoneToolCatalogAcrossAccessAndChat() async throws {
         let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
         let toolCatalog = BuiltInPhoneToolCatalog(tools: [calendarTool])

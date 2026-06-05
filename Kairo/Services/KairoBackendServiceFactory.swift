@@ -136,12 +136,31 @@ public struct KairoActionBackendServiceFactory<Dependencies: KairoBackendDepende
     }
 }
 
+public struct KairoDeletionBackendServiceFactory<Dependencies: KairoBackendDependencies>: Sendable {
+    private let dependencies: Dependencies
+
+    public init(dependencies: Dependencies) {
+        self.dependencies = dependencies
+    }
+
+    public func makeDeletionAPI() -> any KairoDeletionAPI {
+        KairoDeletionBackendService(
+            chatHistoryStore: dependencies.chatHistoryStore,
+            memoryStore: dependencies.memoryStore,
+            credentialStore: dependencies.credentialStore,
+            auditLogger: dependencies.auditLogger,
+            localModelSettingsService: dependencies.localModelSettingsService
+        )
+    }
+}
+
 public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDependencies>: KairoBackendServiceMaking {
     private let dependencies: Dependencies
     private let chatFactory: KairoChatBackendServiceFactory<Dependencies>
     private let recipeFactory: KairoRecipeBackendServiceFactory<Dependencies>
     private let shareImportFactory: KairoShareImportBackendServiceFactory<Dependencies>
     private let actionFactory: KairoActionBackendServiceFactory<Dependencies>
+    private let deletionFactory: KairoDeletionBackendServiceFactory<Dependencies>
     private let settingsFactory: KairoSettingsBackendServiceFactory<Dependencies>
     private let accessFactory: KairoAccessBackendServiceFactory<Dependencies>
 
@@ -151,6 +170,7 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
         self.recipeFactory = KairoRecipeBackendServiceFactory(dependencies: dependencies)
         self.shareImportFactory = KairoShareImportBackendServiceFactory(dependencies: dependencies)
         self.actionFactory = KairoActionBackendServiceFactory(dependencies: dependencies)
+        self.deletionFactory = KairoDeletionBackendServiceFactory(dependencies: dependencies)
         self.settingsFactory = KairoSettingsBackendServiceFactory(dependencies: dependencies)
         self.accessFactory = KairoAccessBackendServiceFactory(dependencies: dependencies)
     }
@@ -176,13 +196,7 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
     }
 
     public func makeDeletionAPI() -> any KairoDeletionAPI {
-        KairoDeletionBackendService(
-            chatHistoryStore: dependencies.chatHistoryStore,
-            memoryStore: dependencies.memoryStore,
-            credentialStore: dependencies.credentialStore,
-            auditLogger: dependencies.auditLogger,
-            localModelSettingsService: dependencies.localModelSettingsService
-        )
+        deletionFactory.makeDeletionAPI()
     }
 
     public func makeLocalModelAPI() -> any KairoLocalModelAPI {
