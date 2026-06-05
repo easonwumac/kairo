@@ -505,17 +505,6 @@
 "chat.thread.fork.title" = "Fork: %@";
 "chat.thread.compact.prompt" = "Compact this conversation into a concise summary with decisions, open tasks, and useful context for the next reply:\n%@";
 "chat.loading" = "Kairo is thinking...";
-"chat.focus.title" = "Start in Chat";
-"chat.focus.subtitle" = "Give Kairo one thing to prepare, then review before it changes anything.";
-"chat.focus.safety" = "Review first";
-"chat.focus.shared.title" = "Organize shared content";
-"chat.focus.shared.subtitle" = "Summarize notes, links, files, or screenshots.";
-"chat.focus.more.title" = "More starts";
-"chat.focus.more.subtitle" = "Plan a next step or draft a reply.";
-"chat.focus.plan.title" = "Plan";
-"chat.focus.plan.subtitle" = "Draft the next step before anything is saved.";
-"chat.focus.reply.title" = "Reply";
-"chat.focus.reply.subtitle" = "Shape an email or message handoff.";
 "chat.reply.cancel" = "Cancel reply";
 "chat.reply.preview" = "Reply preview";
 "chat.replyingTo" = "Replying to %@";

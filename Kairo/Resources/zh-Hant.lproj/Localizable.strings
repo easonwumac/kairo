@@ -505,17 +505,6 @@
 "chat.thread.fork.title" = "Fork：%@";
 "chat.thread.compact.prompt" = "請把這段對話壓縮成精簡摘要，保留決策、待辦事項，以及下一次回覆需要的脈絡：\n%@";
 "chat.loading" = "Kairo 正在思考...";
-"chat.focus.title" = "從 Chat 開始";
-"chat.focus.subtitle" = "交給 Kairo 一件要準備的事，確認後才會改動。";
-"chat.focus.safety" = "先檢查";
-"chat.focus.shared.title" = "整理分享內容";
-"chat.focus.shared.subtitle" = "摘要筆記、連結、檔案或截圖。";
-"chat.focus.more.title" = "更多起點";
-"chat.focus.more.subtitle" = "規劃下一步或草擬回覆。";
-"chat.focus.plan.title" = "規劃";
-"chat.focus.plan.subtitle" = "先產生草稿，確認後才儲存。";
-"chat.focus.reply.title" = "回覆";
-"chat.focus.reply.subtitle" = "草擬 email 或訊息 handoff。";
 "chat.reply.cancel" = "取消回覆";
 "chat.reply.preview" = "回覆預覽";
 "chat.replyingTo" = "正在回覆 %@";

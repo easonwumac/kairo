@@ -10,7 +10,6 @@ public struct ChatView: View {
     @StateObject private var viewModel: ChatViewModel
     private let actionDescriptorProvider: any AgentActionDescriptorProviding
     private let chromeActionRequest: ChatChromeActionRequest?
-    @State private var showMoreFocusStarts = false
     @State private var showToolPalette = false
     @FocusState private var isComposerFocused: Bool
 
@@ -85,89 +84,11 @@ public struct ChatView: View {
         }
     }
 
-    private var shouldShowFocusPanel: Bool {
-        viewModel.currentThread.messages.count <= 1
-    }
-
-    private var chatFocusPanel: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(KairoL10n.string("chat.focus.title"))
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(KairoDesign.ink)
-
-                KairoCommandButton(
-                    title: KairoL10n.string("chat.focus.shared.title"),
-                    systemImage: "square.and.arrow.down",
-                    tint: KairoDesign.blue
-                ) {
-                    applyPrompt(KairoL10n.string("chat.tools.summarizeSharedContent.prompt"))
-                }
-
-                Button {
-                    withAnimation(.snappy(duration: 0.2)) {
-                        showMoreFocusStarts.toggle()
-                    }
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: showMoreFocusStarts ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(KairoDesign.blue)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(KairoL10n.string("chat.focus.more.title"))
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(KairoDesign.ink)
-                        }
-
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 9)
-                    .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("chat.focus.more.toggle")
-
-                if showMoreFocusStarts {
-                    HStack(spacing: 8) {
-                        ChatFocusChip(
-                            title: KairoL10n.string("chat.focus.plan.title"),
-                            systemImage: "calendar.badge.plus",
-                            tint: KairoDesign.amber
-                        ) {
-                            applyPrompt(KairoL10n.string("chat.tools.reminderCalendar.prompt"))
-                        }
-
-                        ChatFocusChip(
-                            title: KairoL10n.string("chat.focus.reply.title"),
-                            systemImage: "envelope.open",
-                            tint: KairoDesign.violet
-                        ) {
-                            applyPrompt(KairoL10n.string("chat.tools.messageEmailDraft.prompt"))
-                        }
-                    }
-                }
-            }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("chat.focus-panel")
-    }
-
     private var chatSurface: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        if shouldShowFocusPanel {
-                            chatFocusPanel
-                                .padding(.horizontal, 14)
-                                .padding(.bottom, 4)
-                                .transition(.opacity.combined(with: .move(edge: .top)))
-                        }
-
                         ForEach(viewModel.currentThread.messages) { message in
                             VStack(alignment: .leading, spacing: 8) {
                                 ChatBubble(
@@ -209,7 +130,8 @@ public struct ChatView: View {
                             .id("loading")
                         }
                     }
-                    .padding(.vertical, 16)
+                    .padding(.top, chatMessagesTopPadding)
+                    .padding(.bottom, 16)
                 }
                 .background(Color.clear)
                 .onChange(of: viewModel.currentThread.messages.count) { _, _ in
@@ -298,6 +220,10 @@ public struct ChatView: View {
                 viewModel.cancelPendingAction()
             }
         }
+    }
+
+    private var chatMessagesTopPadding: CGFloat {
+        viewModel.currentThread.messages.count <= 1 ? 92 : 16
     }
 
     private var composer: some View {
@@ -559,42 +485,6 @@ public struct ChatView: View {
         #else
         _ = text
         #endif
-    }
-}
-
-private struct ChatFocusChip: View {
-    let title: String
-    let systemImage: String
-    let tint: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: systemImage)
-                    .font(.caption.weight(.semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(tint)
-
-                Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
-            .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(tint.opacity(0.16), lineWidth: 1)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-        .buttonStyle(.plain)
     }
 }
 
