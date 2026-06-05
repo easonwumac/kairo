@@ -99,6 +99,32 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(response.message, "Factory response")
     }
 
+    func testChatBackendServiceFactoryBuildsAgentDependencyBundle() async throws {
+        let memory = MemoryRecord(
+            title: "Factory agent memory",
+            summary: "Dependency bundle memory",
+            content: "Factory-built agent dependencies should use the injected memory store.",
+            source: .manual
+        )
+        let memoryStore = InMemoryMemoryStore(seed: [memory])
+        let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Agent bundle response"))
+        let environment = KairoEnvironment(
+            memoryStore: memoryStore,
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: provider
+        )
+        let dependencies = KairoChatBackendServiceFactory(dependencies: environment)
+            .makeAgentCoreDependencies()
+        let agent = AgentCore(dependencies: dependencies)
+
+        let response = try await agent.respond(to: "Factory agent memory")
+        let captured = await provider.capturedRequest()
+        let capturedRequest = try XCTUnwrap(captured)
+
+        XCTAssertEqual(response.message, "Agent bundle response")
+        XCTAssertEqual(capturedRequest.memoryContext.map(\.id), [memory.id])
+    }
+
     func testSettingsBackendServiceFactoryBuildsSettingsAPIFromInjectedDependencies() async throws {
         let credentialStore = InMemoryCredentialStore()
         let environment = KairoEnvironment(

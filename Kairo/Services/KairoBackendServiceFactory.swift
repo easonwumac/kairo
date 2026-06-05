@@ -75,20 +75,41 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
     }
 
     public func makeChatAPI() -> any KairoChatAPI {
+        KairoChatBackendService(agent: AgentCore(dependencies: makeAgentCoreDependencies()))
+    }
+
+    public func makeAgentCoreDependencies() -> AgentCoreDependencies {
         let skillCatalogProvider: AgentSkillCatalogProvider
         if let agentSkillManagerService = dependencies.agentSkillManagerService {
             skillCatalogProvider = .skillManager(agentSkillManagerService)
         } else {
             skillCatalogProvider = .default
         }
-        return KairoChatBackendService(agent: AgentCore(
-            memoryStore: dependencies.memoryStore,
+        let actionGate = BuiltInPhoneToolActionGate(toolCatalog: dependencies.toolCatalog)
+        let safetyPolicyEngine = SafetyPolicyEngine()
+        return AgentCoreDependencies(
+            memoryContextProvider: DefaultAgentMemoryContextProvider(memoryStore: dependencies.memoryStore),
+            memoryWriter: DefaultAgentMemoryWriter(memoryStore: dependencies.memoryStore),
             aiProvider: dependencies.aiProvider,
             skillCatalogProvider: skillCatalogProvider,
-            integrationRegistry: dependencies.oauthConnectorRegistry,
-            toolCatalog: dependencies.toolCatalog,
-            appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog
-        ))
+            toolContextProvider: DefaultAgentCapabilityPromptContextProvider(
+                toolCatalog: dependencies.toolCatalog,
+                integrationRegistry: dependencies.oauthConnectorRegistry,
+                appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog
+            ),
+            toolInvocationPlanner: DefaultAgentToolInvocationPlannerProvider(
+                integrationRegistry: dependencies.oauthConnectorRegistry,
+                appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog,
+                toolCatalog: dependencies.toolCatalog,
+                safetyPolicyEngine: safetyPolicyEngine
+            ),
+            toolPlanningRequestBuilder: DefaultAgentToolPlanningRequestBuilder(),
+            responseActionPlanner: DefaultAgentResponseActionPlanner(
+                actionGate: actionGate,
+                safetyPolicyEngine: safetyPolicyEngine
+            ),
+            completionRequestBuilder: DefaultAgentCompletionRequestBuilder()
+        )
     }
 }
 
