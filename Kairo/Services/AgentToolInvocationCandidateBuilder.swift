@@ -134,12 +134,14 @@ public struct DefaultAgentToolInvocationCandidateBuilder: AgentToolInvocationCan
         guard skill.availabilityStatus != .disabled, skill.availabilityStatus != .unsupported else {
             return nil
         }
-        let action = actionMapper.visibleHandoffAction(
-            for: skill,
-            userText: userText,
-            normalizedText: normalizedText,
-            parser: parser
-        )
+        let action = skill.canBeSuggestedAsExecutable
+            ? actionMapper.visibleHandoffAction(
+                for: skill,
+                userText: userText,
+                normalizedText: normalizedText,
+                parser: parser
+            )
+            : nil
 
         return AgentToolInvocationCandidate(
             id: "app-integration-\(skill.id.rawValue)",

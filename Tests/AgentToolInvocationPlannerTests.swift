@@ -359,6 +359,39 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
+    func testAgentToolInvocationPlannerDoesNotExecuteCatalogSetupRequiredIntegrationsEvenWithInjectedMapper() throws {
+        let injectedAction = AgentAction(
+            kind: .openWebSearchHandoff,
+            title: "Injected Action",
+            rationale: "Injected mapper action.",
+            payload: .webSearch(WebSearchDraft(query: "injected")),
+            riskTier: .tier1Draft
+        )
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .gmailDraftAPI)),
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .draftsCreateHandoff))
+        ])
+        let planner = AgentToolInvocationPlanner(
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: catalog,
+            appIntegrationActionMapper: FixedAppIntegrationActionMapper(action: injectedAction),
+            candidateMatcher: FixedAgentToolInvocationCandidateMatcher(appIntegrationSkillMatches: true)
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "integration setup route"))
+        let candidates = Dictionary(uniqueKeysWithValues: plan.candidates.compactMap { candidate in
+            candidate.skillID.map { ($0, candidate) }
+        })
+
+        let gmailCandidate = try XCTUnwrap(candidates[AppIntegrationSkillID.gmailDraftAPI.rawValue])
+        let draftsCandidate = try XCTUnwrap(candidates[AppIntegrationSkillID.draftsCreateHandoff.rawValue])
+        XCTAssertEqual(gmailCandidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(draftsCandidate.source, .appIntegrationCatalog)
+        XCTAssertNil(gmailCandidate.action)
+        XCTAssertNil(draftsCandidate.action)
+        XCTAssertTrue(plan.proposedActions.isEmpty)
+    }
+
     func testAgentToolInvocationPlannerBuildsAppleMapsPreviewFromCatalogCandidate() throws {
         let catalog = AppIntegrationSkillCatalog(skills: [
             try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMapsDirectionsHandoff))
