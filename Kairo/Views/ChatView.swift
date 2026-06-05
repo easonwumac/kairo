@@ -10,6 +10,7 @@ public struct ChatView: View {
     @StateObject private var viewModel: ChatViewModel
     private let actionDescriptorProvider: any AgentActionDescriptorProviding
     @State private var showMoreFocusStarts = false
+    @State private var showToolPalette = false
     @FocusState private var isComposerFocused: Bool
 
     public init(dependencies: ChatFeatureDependencies) {
@@ -313,6 +314,11 @@ public struct ChatView: View {
 
             composerStatusRow
 
+            if showToolPalette {
+                toolPalette
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
             HStack(alignment: .bottom, spacing: 8) {
                 toolMenu
 
@@ -334,13 +340,25 @@ public struct ChatView: View {
 
                 Button {
                     isComposerFocused = false
+                    showToolPalette = false
                     Task { await viewModel.sendComposerMessage() }
                 } label: {
                     Image(systemName: viewModel.isLoading ? "hourglass" : "arrow.up")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
                         .frame(width: 34, height: 34)
-                        .background(sendButtonBackground, in: Circle())
+                        .background {
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .overlay {
+                                    Circle()
+                                        .fill(sendButtonBackground.opacity(sendButtonOverlayOpacity))
+                                }
+                        }
+                        .overlay {
+                            Circle()
+                                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                        }
                 }
                 .disabled((viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading)
                 .accessibilityLabel(KairoL10n.string("chat.composer.send"))
@@ -350,10 +368,10 @@ public struct ChatView: View {
             .padding(.trailing, 6)
             .padding(.vertical, 4)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 19, style: .continuous))
-            .background(KairoDesign.elevatedSurface.opacity(0.52), in: RoundedRectangle(cornerRadius: 19, style: .continuous))
+            .background(KairoDesign.background.opacity(0.28), in: RoundedRectangle(cornerRadius: 19, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 19, style: .continuous)
-                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
             )
             .overlay(alignment: .topLeading) {
                 Color.clear
@@ -367,14 +385,14 @@ public struct ChatView: View {
             .accessibilityIdentifier("chat.composer.input-shell")
         }
         .padding(.horizontal, 16)
-        .padding(.top, 6)
-        .padding(.bottom, 8)
+        .padding(.top, 4)
+        .padding(.bottom, 2)
         .background(
             LinearGradient(
                 colors: [
                     KairoDesign.background.opacity(0.02),
-                    KairoDesign.background.opacity(0.58),
-                    KairoDesign.background.opacity(0.82)
+                    KairoDesign.background.opacity(0.22),
+                    KairoDesign.background.opacity(0.56)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -400,7 +418,35 @@ public struct ChatView: View {
     }
 
     private var toolMenu: some View {
-        Menu {
+        Button {
+            withAnimation(.spring(response: 0.24, dampingFraction: 0.88)) {
+                showToolPalette.toggle()
+            }
+        } label: {
+            Image(systemName: "plus")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+                .frame(width: 34, height: 34)
+                .background {
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                        .overlay {
+                            Circle()
+                                .fill(Color.white.opacity(showToolPalette ? 0.18 : 0.08))
+                        }
+                }
+                .overlay {
+                    Circle()
+                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(KairoL10n.string("chat.tools.open"))
+        .accessibilityIdentifier("chat.tools.menu")
+    }
+
+    private var toolPalette: some View {
+        VStack(spacing: 7) {
             capabilityPromptButton(
                 title: KairoL10n.string("chat.tools.phoneTools"),
                 systemImage: "iphone.gen3",
@@ -421,15 +467,17 @@ public struct ChatView: View {
                 systemImage: "doc.text.magnifyingglass",
                 prompt: KairoL10n.string("chat.tools.summarizeSharedContent.prompt")
             )
-        } label: {
-            Image(systemName: "plus")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(KairoDesign.ink)
-                .frame(width: 34, height: 34)
-                .background(Color.white.opacity(0.10), in: Circle())
         }
-        .accessibilityLabel(KairoL10n.string("chat.tools.open"))
-        .accessibilityIdentifier("chat.tools.menu")
+        .padding(8)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(KairoDesign.background.opacity(0.34), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.16), lineWidth: 1)
+        }
+        .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 16, x: 0, y: 10)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.tools.palette")
     }
 
     private func capabilityPromptButton(
@@ -440,18 +488,40 @@ public struct ChatView: View {
         Button {
             applyPrompt(prompt)
         } label: {
-            Label(title, systemImage: systemImage)
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .frame(width: 30, height: 30)
+                    .background(Color.white.opacity(0.08), in: Circle())
+
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(KairoDesign.elevatedSurface.opacity(0.38), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
         }
+        .buttonStyle(.plain)
     }
 
     private func applyPrompt(_ prompt: String) {
+        showToolPalette = false
         viewModel.composerText = prompt
         isComposerFocused = true
     }
 
     private var sendButtonBackground: Color {
         let isDisabled = (viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading
-        return isDisabled ? Color.gray.opacity(0.45) : Color.accentColor
+        return isDisabled ? KairoDesign.muted : KairoDesign.blue
+    }
+
+    private var sendButtonOverlayOpacity: Double {
+        let isDisabled = (viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading
+        return isDisabled ? 0.26 : 0.82
     }
 
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
