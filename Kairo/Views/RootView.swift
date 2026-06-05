@@ -8,6 +8,7 @@ public struct RootView: View {
     @AppStorage(KairoAppearancePreference.storageKey) private var appearancePreferenceRawValue = KairoAppearancePreference.system.rawValue
     @State private var selectedSection: RootSection = .chat
     @State private var isMenuPresented = false
+    @State private var isPageActionsPresented = false
 
     public init(
         environment: KairoEnvironment = .preview(),
@@ -39,9 +40,15 @@ public struct RootView: View {
                     .zIndex(5)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
 
+                if isPageActionsPresented && !isMenuPresented {
+                    pageActionsOverlay(topInset: safeAreaInsets.top)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        .zIndex(6)
+                }
+
                 if isMenuPresented {
                     drawerOverlay(safeAreaInsets: safeAreaInsets, containerWidth: proxy.size.width)
-                        .transition(.opacity)
+                        .transition(.move(edge: .leading))
                         .zIndex(10)
                 }
             }
@@ -126,10 +133,11 @@ public struct RootView: View {
         HStack(spacing: 8) {
             Button {
                 withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                    isPageActionsPresented = false
                     isMenuPresented = true
                 }
             } label: {
-                Label(KairoL10n.string("root.menu"), systemImage: "chevron.left")
+                Label(KairoL10n.string("root.menu"), systemImage: "line.3.horizontal")
                     .labelStyle(.iconOnly)
                     .font(.headline.weight(.semibold))
                     .glassCircleControl()
@@ -138,7 +146,7 @@ public struct RootView: View {
             .accessibilityLabel(KairoL10n.string("root.menu.open"))
             .accessibilityIdentifier("root.drawer.toggle")
 
-            Text(selectedSection.chromeTitle)
+            Text(selectedSection.shortTitle)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(KairoDesign.ink)
                 .lineLimit(1)
@@ -152,7 +160,8 @@ public struct RootView: View {
 
             Button {
                 withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
-                    isMenuPresented = true
+                    isMenuPresented = false
+                    isPageActionsPresented.toggle()
                 }
             } label: {
                 Label(KairoL10n.string("root.moreActions"), systemImage: "ellipsis")
@@ -172,10 +181,12 @@ public struct RootView: View {
 
     private func drawerOverlay(safeAreaInsets: EdgeInsets, containerWidth: CGFloat) -> some View {
         ZStack(alignment: .leading) {
+            Self.fullScreenBackground
+                .ignoresSafeArea()
+
             navigationMenu(safeAreaInsets: safeAreaInsets)
                 .frame(width: containerWidth, alignment: .leading)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .background(KairoDesign.background)
                 .transition(.move(edge: .leading).combined(with: .opacity))
         }
         .ignoresSafeArea()
@@ -185,6 +196,86 @@ public struct RootView: View {
         withAnimation(.spring(response: 0.24, dampingFraction: 0.9)) {
             isMenuPresented = false
         }
+    }
+
+    private func pageActionsOverlay(topInset: CGFloat) -> some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            pageActionsPalette
+                .padding(.top, max(topInset - 8, 0) + 44)
+                .padding(.trailing, 14)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        .allowsHitTesting(true)
+        .accessibilityIdentifier("root.page-actions.overlay")
+    }
+
+    private var pageActionsPalette: some View {
+        VStack(spacing: 7) {
+            pageActionRow(
+                title: KairoL10n.string("root.pageActions.chat.tools"),
+                systemImage: "plus.message",
+                tint: KairoDesign.blue
+            ) {
+                isPageActionsPresented = false
+            }
+
+            pageActionRow(
+                title: KairoL10n.string("root.section.access.shortTitle"),
+                systemImage: RootSection.access.systemImage,
+                tint: RootSection.access.tint
+            ) {
+                selectedSection = .access
+                isPageActionsPresented = false
+            }
+
+            pageActionRow(
+                title: KairoL10n.string("root.section.models.shortTitle"),
+                systemImage: RootSection.models.systemImage,
+                tint: RootSection.models.tint
+            ) {
+                selectedSection = .models
+                isPageActionsPresented = false
+            }
+        }
+        .padding(8)
+        .frame(width: 190)
+        .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(KairoDesign.line, lineWidth: 1)
+        }
+        .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 14, x: 0, y: 9)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("root.page-actions.palette")
+    }
+
+    private func pageActionRow(
+        title: String,
+        systemImage: String,
+        tint: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 30, height: 30)
+                    .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
+
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private func navigationMenu(safeAreaInsets: EdgeInsets) -> some View {
@@ -256,6 +347,7 @@ public struct RootView: View {
     private func navigationRow(_ section: RootSection) -> some View {
         Button {
             selectedSection = section
+            isPageActionsPresented = false
             closeDrawer()
         } label: {
             HStack(spacing: 13) {
