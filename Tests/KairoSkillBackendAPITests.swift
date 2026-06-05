@@ -215,6 +215,30 @@ final class KairoSkillBackendAPITests: XCTestCase {
         XCTAssertEqual(auditEvents.map(\.actionKind), [.saveMemory])
     }
 
+    func testUITestingEnvironmentComposerBuildsSeededFlowEnvironment() async throws {
+        let rootDirectory = temporaryDirectory(named: "KairoUITestingEnvironmentComposer")
+        let environment = try await KairoUITestingEnvironmentComposer(
+            rootDirectory: rootDirectory,
+            seedInstalledWeatherSkill: true,
+            seedSharedTaskText: true
+        ).makeEnvironment()
+        let pendingShares = try await environment.shareIngestionQueue.pendingItems(limit: 10)
+        let effectiveCatalog = try await environment.agentSkillManagerService?.effectiveCatalog()
+        let result = try await environment.actionExecutor.execute(AgentAction(
+            kind: .createReminderDraft,
+            title: "Create reminder",
+            rationale: "Exercise the deterministic UI testing action boundary.",
+            payload: .reminder(ReminderDraft(title: "Review seeded share")),
+            riskTier: .tier2LowRiskWrite
+        ), confirmed: true)
+        let auditEvents = try await environment.auditLogger.list(limit: 10)
+
+        XCTAssertEqual(pendingShares.count, 1)
+        XCTAssertTrue(effectiveCatalog?.installedSkills.map(\.id).contains("marketplace-weather-briefing") == true)
+        XCTAssertEqual(result.createdIdentifier, "ui-testing-reminder-id")
+        XCTAssertEqual(auditEvents.map(\.actionKind), [.createReminderDraft])
+    }
+
     func testSkillBackendAPIFailsClosedWhenServiceIsUnavailable() async throws {
         let api = KairoSkillBackendService(agentSkillManagerService: nil)
 

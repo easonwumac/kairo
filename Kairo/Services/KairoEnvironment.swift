@@ -113,55 +113,18 @@ public struct KairoEnvironment: KairoBackendDependencies {
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) async throws -> KairoEnvironment {
-        let rootDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("KairoUITesting", isDirectory: true)
-        if resetPersistentState {
-            try? FileManager.default.removeItem(at: rootDirectory)
-        }
-
-        let skillComponents = try await KairoUITestingSkillFactory(
-            rootDirectory: rootDirectory,
-            seedInstalledWeatherSkill: seedInstalledWeatherSkill
-        ).makeComponents()
-        let localModelComponents = try await KairoUITestingLocalModelFactory(
-            rootDirectory: rootDirectory,
+        try await KairoUITestingEnvironmentComposer(
+            resetPersistentState: resetPersistentState,
             seedInstalledLocalModel: seedInstalledLocalModel,
+            seedInstalledWeatherSkill: seedInstalledWeatherSkill,
             seedExpandedLocalModelCatalog: seedExpandedLocalModelCatalog,
+            seedSharedTaskText: seedSharedTaskText,
             selectInstalledLocalModel: selectInstalledLocalModel,
-            routePreference: localModelRoutePreference,
+            localModelRoutePreference: localModelRoutePreference,
             installedLocalModelFileURL: installedLocalModelFileURL,
-            replyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
-            benchmarkEngineOverride: localModelBenchmarkEngineOverride
-        ).makeComponents()
-        let storeComponents = try await KairoUITestingStoreFactory(
-            rootDirectory: rootDirectory,
-            seedSharedTaskText: seedSharedTaskText
-        ).makeComponents()
-        let credentialStore = InMemoryCredentialStore()
-
-        return KairoEnvironment(
-            memoryStore: storeComponents.memoryStore,
-            credentialStore: credentialStore,
-            aiProvider: localModelComponents.aiProvider,
-            chatHistoryStore: storeComponents.chatHistoryStore,
-            shareIngestionQueue: storeComponents.shareIngestionQueue,
-            kairoRecipeStore: storeComponents.kairoRecipeStore,
-            permissionService: StubPermissionService(),
-            auditLogger: storeComponents.auditLogger,
-            oauthConnectorCallbackStore: storeComponents.oauthCallbackStore,
-            agentSkillManagerService: skillComponents.managerService,
-            agentSkillMarketplaceCatalogService: skillComponents.marketplaceCatalogService,
-            localModelCatalog: localModelComponents.catalog,
-            localModelCatalogService: localModelComponents.catalogService,
-            localModelSettingsService: localModelComponents.settingsService,
-            localModelBenchmarkService: localModelComponents.benchmarkService,
-            localModelReplyCheckService: localModelComponents.replyCheckService,
-            localModelChatRuntimeAvailable: localModelComponents.chatRuntimeAvailable,
-            actionExecutor: KairoUITestingActionFactory(
-                memoryStore: storeComponents.memoryStore,
-                auditLogger: storeComponents.auditLogger
-            ).makeActionExecutor()
-        )
+            localModelReplyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
+            localModelBenchmarkEngineOverride: localModelBenchmarkEngineOverride
+        ).makeEnvironment()
     }
 
     public static func live(
