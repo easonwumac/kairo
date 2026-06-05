@@ -21,10 +21,6 @@ public struct MemoryCenterView: View {
         self.memoryAPI = dependencies.memoryAPI
     }
 
-    public init(store: MemoryStore = InMemoryMemoryStore()) {
-        self.memoryAPI = KairoMemoryBackendService(memoryStore: store)
-    }
-
     public init(memoryAPI: any KairoMemoryAPI) {
         self.memoryAPI = memoryAPI
     }
