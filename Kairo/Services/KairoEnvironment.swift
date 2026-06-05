@@ -150,7 +150,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
 
     static func connectedOAuthProviderKeys(
         credentialStore: CredentialStore,
-        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
+        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) async throws -> [String] {
         try await KairoLiveAccessFactory.connectedOAuthProviderKeys(

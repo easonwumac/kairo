@@ -182,6 +182,42 @@ final class KairoSkillBackendAPITests: XCTestCase {
         XCTAssertEqual(storedPreview?.integrationKey, "google-calendar")
     }
 
+    func testLiveAccessFactoryDefaultsOAuthRuntimeContextToHarnessRegistry() async throws {
+        let rootDirectory = temporaryDirectory(named: "KairoLiveAccessFactoryHarnessRegistry")
+        let paths = KairoPaths(
+            appName: "KairoLiveAccessFactoryHarnessRegistryTests",
+            appGroupIdentifier: "group.kairo.tests"
+        ) { _ in rootDirectory }
+        let credentials = InMemoryCredentialStore()
+        try await credentials.saveSecret(
+            OAuthTokenSet(accessToken: "todoist-token", scopes: ["data:read_write"]).encodedForStorage(),
+            for: CredentialKey.oauthTokenSet(providerKey: "todoist")
+        )
+        let store = try await FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)
+        var skill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-todoist-review",
+            displayName: "Todoist Review",
+            summary: "Requires a catalog-owned Todoist OAuth provider.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/todoist-review.json")!,
+            kind: .oauthConnector
+        )
+        skill.installationStatus = .installed
+        skill.compatibilityRequirements = AgentSkillCompatibilityRequirements(
+            requiredOAuthProviderKeys: ["todoist"]
+        )
+        try await store.upsert(skill)
+
+        let components = try await KairoLiveAccessFactory(
+            paths: paths,
+            credentialStore: credentials,
+            installedLocalModelIDs: []
+        ).makeComponents()
+        let effectiveCatalog = try await components.skillManagerService.effectiveCatalog()
+
+        XCTAssertTrue(effectiveCatalog.installedSkills.map(\.id).contains("marketplace-todoist-review"))
+    }
+
     func testLiveEnvironmentComposerBuildsUsableBackendEnvironment() async throws {
         let rootDirectory = temporaryDirectory(named: "KairoLiveEnvironmentComposer")
         let paths = KairoPaths(

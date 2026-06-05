@@ -32,7 +32,7 @@ public struct KairoLiveAccessFactory: Sendable {
         credentialStore: any CredentialStore,
         installedLocalModelIDs: [String],
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]? = nil,
-        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
+        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) {
         self.paths = paths
@@ -76,7 +76,7 @@ public struct KairoLiveAccessFactory: Sendable {
 
     public static func connectedOAuthProviderKeys(
         credentialStore: CredentialStore,
-        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
+        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) async throws -> [String] {
         let catalogProviderKeys = appIntegrationSkillCatalog.oauthProviderKeys
