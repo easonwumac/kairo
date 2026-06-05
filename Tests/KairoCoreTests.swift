@@ -163,6 +163,87 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.unsupportedDescriptors.contains { $0.kind == .unsupportedSandboxAction })
     }
 
+    func testBuiltInPhoneToolCatalogDefinesRequiredPhoneHarnessTools() throws {
+        let catalog = BuiltInPhoneToolCatalog()
+        let expectedIDs = Set(BuiltInPhoneToolID.allCases)
+
+        XCTAssertEqual(Set(catalog.tools.map(\.id)), expectedIDs)
+        XCTAssertEqual(catalog.tools.count, expectedIDs.count)
+
+        for tool in catalog.tools {
+            XCTAssertFalse(tool.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            XCTAssertFalse(tool.schema.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            XCTAssertFalse(tool.schema.output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            XCTAssertFalse(tool.lifecycle.previewRenderer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            XCTAssertFalse(tool.lifecycle.executor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            XCTAssertFalse(tool.audit.capabilityKeys.isEmpty)
+            XCTAssertEqual(tool.audit.sensitivePayloadPolicy, "redactedPayloadOnly")
+            XCTAssertFalse(tool.fallback.safeAlternative.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+    }
+
+    func testBuiltInPhoneToolCatalogCentralizesExistingActionShortcutAndRecipeMappings() throws {
+        let catalog = BuiltInPhoneToolCatalog()
+
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.saveMemory)?.id, .memorySave)
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.createReminderDraft)?.id, .reminderWrite)
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.createCalendarDraft)?.id, .calendarWrite)
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.createContactDraft)?.id, .contactCreate)
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.composeEmailDraft)?.id, .emailHandoff)
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.openMessageHandoff)?.id, .messageHandoff)
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.openPhoneCallHandoff)?.id, .phoneHandoff)
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.openWebSearchHandoff)?.id, .webSearchHandoff)
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.openMapDirections)?.id, .mapsDirectionsHandoff)
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.sendNotification)?.id, .notificationSchedule)
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.controlHome)?.id, .homeKitPreview)
+
+        XCTAssertEqual(catalog.tool(for: ShortcutNodeKind.saveMemory)?.id, .memorySave)
+        XCTAssertEqual(catalog.tool(for: ShortcutNodeKind.searchMemory)?.id, .memorySearch)
+        XCTAssertEqual(catalog.tool(for: ShortcutNodeKind.createReminderDraft)?.id, .reminderWrite)
+        XCTAssertEqual(catalog.tool(for: ShortcutNodeKind.createCalendarDraft)?.id, .calendarWrite)
+        XCTAssertEqual(catalog.tool(for: ShortcutNodeKind.createContactDraft)?.id, .contactCreate)
+        XCTAssertEqual(catalog.tool(for: ShortcutNodeKind.createEmailDraft)?.id, .emailHandoff)
+        XCTAssertEqual(catalog.tool(for: ShortcutNodeKind.prepareMessageHandoff)?.id, .messageHandoff)
+        XCTAssertEqual(catalog.tool(for: ShortcutNodeKind.preparePhoneCallHandoff)?.id, .phoneHandoff)
+        XCTAssertEqual(catalog.tool(for: ShortcutNodeKind.prepareWebSearchHandoff)?.id, .webSearchHandoff)
+        XCTAssertEqual(catalog.tool(for: ShortcutNodeKind.previewHomeAction)?.id, .homeKitPreview)
+
+        XCTAssertEqual(catalog.tool(for: KairoRecipeStepKind.saveMemory)?.id, .memorySave)
+        XCTAssertEqual(catalog.tool(for: KairoRecipeStepKind.searchMemory)?.id, .memorySearch)
+        XCTAssertEqual(catalog.tool(for: KairoRecipeStepKind.createReminderDraft)?.id, .reminderWrite)
+        XCTAssertEqual(catalog.tool(for: KairoRecipeStepKind.createCalendarDraft)?.id, .calendarWrite)
+        XCTAssertEqual(catalog.tool(for: KairoRecipeStepKind.sendLocalNotificationDraft)?.id, .notificationSchedule)
+        XCTAssertEqual(catalog.tool(for: KairoRecipeStepKind.proposeHomeAction)?.id, .homeKitPreview)
+    }
+
+    func testBuiltInPhoneToolCatalogEnforcesLifecycleSafetyMetadata() throws {
+        let catalog = BuiltInPhoneToolCatalog()
+
+        let riskyTools = catalog.tools.filter { $0.riskTier.requiresConfirmation }
+        XCTAssertFalse(riskyTools.isEmpty)
+        XCTAssertTrue(riskyTools.allSatisfy { $0.confirmationPolicy != .notRequired })
+
+        let handoffTools = catalog.tools.filter { $0.executionKind == .visibleHandoff }
+        XCTAssertEqual(Set(handoffTools.map(\.id)), [
+            .emailHandoff,
+            .messageHandoff,
+            .phoneHandoff,
+            .webSearchHandoff,
+            .mapsDirectionsHandoff
+        ])
+        XCTAssertTrue(handoffTools.allSatisfy { $0.confirmationPolicy == .previewAndExplicitConfirmation })
+        XCTAssertTrue(handoffTools.allSatisfy { $0.fallback.safeAlternative.localizedCaseInsensitiveContains("show") })
+
+        let setupOnlyTool = try XCTUnwrap(catalog.tool(id: .oauthConnectorSetupStatus))
+        XCTAssertEqual(setupOnlyTool.executionKind, .setupStatusOnly)
+        XCTAssertFalse(setupOnlyTool.canBeSuggestedAsExecutable)
+
+        let homeKitTool = try XCTUnwrap(catalog.tool(id: .homeKitPreview))
+        XCTAssertEqual(homeKitTool.executionKind, .scaffoldPreviewOnly)
+        XCTAssertEqual(homeKitTool.riskTier, .tier3HighRiskExternal)
+        XCTAssertEqual(homeKitTool.confirmationPolicy, .previewAndExplicitConfirmation)
+    }
+
     func testCapabilityPromptContextListsToolsAndUnsupportedBoundaries() {
         let context = CapabilityPromptContextBuilder().build()
 
