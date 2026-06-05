@@ -8,6 +8,7 @@ public actor AgentCore {
     private let skillCatalogProvider: AgentSkillCatalogProvider
     private let integrationRegistry: IntegrationRegistry
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
+    private let actionGate: BuiltInPhoneToolActionGate
     private let memoryCandidateExtractor: MemoryCandidateExtractor
 
     public init(
@@ -28,6 +29,7 @@ public actor AgentCore {
         self.skillCatalogProvider = skillCatalogProvider ?? .constant(skillCatalog)
         self.integrationRegistry = integrationRegistry
         self.toolCatalog = toolCatalog
+        self.actionGate = BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         self.memoryCandidateExtractor = memoryCandidateExtractor
     }
 
@@ -86,7 +88,7 @@ public actor AgentCore {
             proposedActions = Self.mergeActionPreviews(modelActions: proposedActions, toolActions: [memoryAction])
         }
         let catalogFilteredActions = proposedActions.filter { action in
-            catalogAllowsActionPreview(action)
+            actionGate.allowsExecutablePreview(action)
         }
         let safeActions = catalogFilteredActions.filter { action in
             safetyPolicyEngine.evaluate(action).allowed
@@ -172,16 +174,6 @@ public actor AgentCore {
             return actions
         }
         return []
-    }
-
-    private func catalogAllowsActionPreview(_ action: AgentAction) -> Bool {
-        if action.kind == .unsupportedSandboxAction {
-            return true
-        }
-        guard let tool = toolCatalog.tool(for: action.kind) else {
-            return false
-        }
-        return tool.canBeSuggestedAsExecutable
     }
 
     private static func filteredToolCandidates(

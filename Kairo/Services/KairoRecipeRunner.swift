@@ -4,15 +4,18 @@ public struct KairoRecipeRunner: Sendable {
     private let recipeStore: any KairoRecipeStore
     private let memoryStore: (any MemoryStore)?
     private let aiProvider: (any AIProvider)?
+    private let actionGate: BuiltInPhoneToolActionGate
 
     public init(
         recipeStore: any KairoRecipeStore,
         memoryStore: (any MemoryStore)? = nil,
-        aiProvider: (any AIProvider)? = nil
+        aiProvider: (any AIProvider)? = nil,
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
     ) {
         self.recipeStore = recipeStore
         self.memoryStore = memoryStore
         self.aiProvider = aiProvider
+        self.actionGate = BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
     }
 
     public func run(_ request: KairoRecipeRunRequest) async throws -> KairoRecipeRunResult {
@@ -69,7 +72,7 @@ public struct KairoRecipeRunner: Sendable {
                 recipe: recipe
             )
             stepResults.append(execution.result)
-            proposedActions.append(contentsOf: execution.actions)
+            proposedActions.append(contentsOf: filterRecipeActions(execution.actions))
             if let outputText = execution.result.outputText, !outputText.isEmpty {
                 previousOutput = outputText
             }
@@ -91,6 +94,12 @@ public struct KairoRecipeRunner: Sendable {
             success: stepResults.allSatisfy(\.success),
             errorMessage: stepResults.first(where: { !$0.success })?.errorMessage
         )
+    }
+
+    private func filterRecipeActions(_ actions: [AgentAction]) -> [AgentAction] {
+        actions.filter { action in
+            action.kind == .answer || actionGate.allowsExecutablePreview(action)
+        }
     }
 
     private func failureResult(

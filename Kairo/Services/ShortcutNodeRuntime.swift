@@ -2,9 +2,14 @@ import Foundation
 
 public actor ShortcutNodeRuntime {
     private let memoryStore: MemoryStore
+    private let actionGate: BuiltInPhoneToolActionGate
 
-    public init(memoryStore: MemoryStore) {
+    public init(
+        memoryStore: MemoryStore,
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+    ) {
         self.memoryStore = memoryStore
+        self.actionGate = BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
     }
 
     public static func live(paths: KairoPaths = KairoSharedAppStorage.paths()) async throws -> ShortcutNodeRuntime {
@@ -13,40 +18,48 @@ public actor ShortcutNodeRuntime {
     }
 
     public func run(_ kind: ShortcutNodeKind, input: ShortcutNodeInput) async throws -> ShortcutNodeOutput {
+        let output: ShortcutNodeOutput
         switch kind {
         case .saveMemory:
-            return try await saveMemory(input)
+            output = try await saveMemory(input)
         case .searchMemory:
-            return try await searchMemory(input)
+            output = try await searchMemory(input)
         case .extractTasks:
-            return try extractTasks(input)
+            output = try extractTasks(input)
         case .createReminderDraft:
-            return try createReminderDrafts(input)
+            output = try createReminderDrafts(input)
         case .createCalendarDraft:
-            return try createCalendarDraft(input)
+            output = try createCalendarDraft(input)
         case .createContactDraft:
-            return try createContactDraft(input)
+            output = try createContactDraft(input)
         case .createEmailDraft:
-            return try createEmailDraft(input)
+            output = try createEmailDraft(input)
         case .prepareMessageHandoff:
-            return try prepareMessageHandoff(input)
+            output = try prepareMessageHandoff(input)
         case .preparePhoneCallHandoff:
-            return try preparePhoneCallHandoff(input)
+            output = try preparePhoneCallHandoff(input)
         case .prepareWebSearchHandoff:
-            return try prepareWebSearchHandoff(input)
+            output = try prepareWebSearchHandoff(input)
         case .createRecipeDraft:
-            return try createRecipeDraft(input)
+            output = try createRecipeDraft(input)
         case .draftReply:
-            return try draftReply(input)
+            output = try draftReply(input)
         case .summarize:
-            return try summarize(input)
+            output = try summarize(input)
         case .dailyBriefing:
-            return try dailyBriefing(input)
+            output = try dailyBriefing(input)
         case .previewHomeAction:
-            return try previewHomeAction(input)
+            output = try previewHomeAction(input)
         case .ask:
-            return try await ask(input)
+            output = try await ask(input)
         }
+        return filteredOutput(output)
+    }
+
+    private func filteredOutput(_ output: ShortcutNodeOutput) -> ShortcutNodeOutput {
+        var filtered = output
+        filtered.proposedActions = actionGate.filterExecutablePreviews(output.proposedActions)
+        return filtered
     }
 
     private func saveMemory(_ input: ShortcutNodeInput) async throws -> ShortcutNodeOutput {

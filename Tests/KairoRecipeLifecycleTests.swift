@@ -153,6 +153,28 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertTrue(result.stepResults.allSatisfy(\.success))
     }
 
+    func testKairoRecipeRunnerFiltersPhoneActionsThroughBuiltInToolCatalog() async throws {
+        var reminderTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .reminderWrite))
+        reminderTool.availabilityStatus = .unsupported
+        let recipe = try XCTUnwrap(KairoRecipeTemplateFactory.sampleCatalog().recipe(id: "shared-text-to-tasks"))
+        let runner = KairoRecipeRunner(
+            recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]),
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [reminderTool])
+        )
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .shareExtension,
+            input: "TODO: Follow up with design",
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertTrue(result.success)
+        XCTAssertTrue(result.proposedActions.isEmpty)
+        XCTAssertTrue(result.stepResults.contains { $0.summary.contains("reminder draft") })
+    }
+
     func testKairoRecipeRunnerUsesLocalizedLocalFallbackWhenAskStepHasNoProvider() async throws {
         let recipe = KairoRecipe(
             id: "ask-local-fallback",

@@ -313,6 +313,24 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(request.value, .bool(true))
     }
 
+    func testShortcutRuntimeFiltersProposedActionsThroughBuiltInToolCatalog() async throws {
+        var homeTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .homeKitPreview))
+        homeTool.availabilityStatus = .unsupported
+        let runtime = ShortcutNodeRuntime(
+            memoryStore: InMemoryMemoryStore(),
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [homeTool])
+        )
+        let input = ShortcutNodeInput(
+            text: "Turn on the office desk lamp",
+            sourceName: "Home Shortcut"
+        )
+
+        let output = try await runtime.run(.previewHomeAction, input: input)
+
+        XCTAssertTrue(output.proposedActions.isEmpty)
+        XCTAssertEqual(output.kind, .previewHomeAction)
+    }
+
     func testShortcutDraftReplyNodeReturnsDraftWithoutSending() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let input = ShortcutNodeInput(
