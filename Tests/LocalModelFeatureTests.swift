@@ -947,15 +947,9 @@ final class LocalModelFeatureTests: XCTestCase {
         )
         let selectedStatus = ChatProviderRouteStatusBuilder.build(from: await service.status())
 
-        XCTAssertEqual(
-            selectedStatus.title,
-            KairoL10n.string("chat.provider.route.title", KairoL10n.string("chat.provider.route.local"))
-        )
-        XCTAssertEqual(selectedStatus.badge, KairoL10n.string("chat.provider.route.local"))
-        XCTAssertEqual(
-            selectedStatus.detail,
-            KairoL10n.string("chat.provider.detail.localSelectedUnavailable", "Qwen Small Test")
-        )
+        XCTAssertEqual(selectedStatus.selectedOptionID, "local.qwen-small")
+        XCTAssertEqual(selectedStatus.options.map(\.id), ["cloud.openai", "local.qwen-small"])
+        XCTAssertEqual(selectedStatus.options.first { $0.id == "local.qwen-small" }?.isEnabled, false)
         XCTAssertNil(selectedStatus.warning)
 
         let installedManifest = makeLocalModelManifest(id: "qwen-small")
@@ -976,11 +970,9 @@ final class LocalModelFeatureTests: XCTestCase {
             installedModels: [installedRecord]
         ))
 
-        XCTAssertEqual(
-            localOnlyInstalledStatus.detail,
-            KairoL10n.string("chat.provider.detail.localOnlyInstalledUnavailable", "Qwen Small Test")
-        )
-        XCTAssertEqual(localOnlyInstalledStatus.warning, KairoL10n.string("chat.provider.warning.localInferenceUnavailable"))
+        XCTAssertEqual(localOnlyInstalledStatus.selectedOptionID, "local.qwen-small")
+        XCTAssertEqual(localOnlyInstalledStatus.options.first { $0.id == "local.qwen-small" }?.isEnabled, false)
+        XCTAssertNotNil(localOnlyInstalledStatus.warning)
 
         let localOnlyRuntimeReadyStatus = ChatProviderRouteStatusBuilder.build(
             from: LocalModelSettingsStatus(
@@ -994,6 +986,7 @@ final class LocalModelFeatureTests: XCTestCase {
             localRuntimeAvailable: true
         )
         XCTAssertNil(localOnlyRuntimeReadyStatus.warning)
+        XCTAssertEqual(localOnlyRuntimeReadyStatus.options.first { $0.id == "local.qwen-small" }?.isEnabled, true)
 
         let warningStatus = ChatProviderRouteStatusBuilder.build(from: LocalModelSettingsStatus(
             selectedModelID: nil,
@@ -1004,12 +997,10 @@ final class LocalModelFeatureTests: XCTestCase {
             installedModels: []
         ))
 
-        XCTAssertEqual(
-            warningStatus.title,
-            KairoL10n.string("chat.provider.route.title", KairoL10n.string("chat.provider.route.localOnly"))
-        )
-        XCTAssertEqual(warningStatus.badge, KairoL10n.string("chat.provider.route.localOnly"))
-        XCTAssertEqual(warningStatus.warning, KairoL10n.string("chat.provider.warning.localOnlyNoModel"))
+        XCTAssertEqual(warningStatus.selectedOptionID, "local.none")
+        XCTAssertEqual(warningStatus.options.map(\.id), ["cloud.openai", "local.none"])
+        XCTAssertEqual(warningStatus.options.first { $0.id == "local.none" }?.isEnabled, false)
+        XCTAssertNotNil(warningStatus.warning)
     }
 
     func testLocalModelRoutingAIProviderUsesSelectedLocalModelForEligiblePreferLocalWork() async throws {

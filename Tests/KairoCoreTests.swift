@@ -1139,23 +1139,43 @@ final class KairoCoreTests: XCTestCase {
 
         await viewModel.load()
 
-        XCTAssertEqual(
-            viewModel.providerRouteStatus.title,
-            KairoL10n.string("chat.provider.route.title", KairoL10n.string("chat.provider.route.local"))
-        )
-        XCTAssertTrue(viewModel.providerRouteStatus.detail.contains("Qwen Small Test"))
+        XCTAssertEqual(viewModel.providerRouteStatus.selectedOptionID, "local.qwen-small")
+        XCTAssertEqual(viewModel.providerRouteStatus.options.map(\.id), ["cloud.openai", "local.qwen-small"])
         XCTAssertNil(viewModel.providerRouteStatus.warning)
 
         await viewModel.setProviderRoutePreference(.preferCloud)
 
-        XCTAssertEqual(
-            viewModel.providerRouteStatus.title,
-            KairoL10n.string("chat.provider.route.title", KairoL10n.string("chat.provider.route.cloud"))
-        )
-        XCTAssertEqual(viewModel.providerRouteStatus.badge, KairoL10n.string("chat.provider.route.cloud"))
+        XCTAssertEqual(viewModel.providerRouteStatus.selectedOptionID, "cloud.openai")
         XCTAssertEqual(viewModel.providerRouteStatus.preference, .preferCloud)
         let persistedStatus = await service.status()
         XCTAssertEqual(persistedStatus.preference, .preferCloud)
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
+    @MainActor
+    func testChatViewModelSelectsProviderRouteOptionByModelID() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .preferCloud,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            chatAPI: makeKairoCoreChatAPI(),
+            localModelSettingsService: service,
+            localModelChatRuntimeAvailable: true
+        )
+
+        await viewModel.load()
+        let localOption = try XCTUnwrap(viewModel.providerRouteStatus.options.first { $0.id == "local.qwen-small" })
+
+        await viewModel.selectProviderRouteOption(localOption)
+
+        XCTAssertEqual(viewModel.providerRouteStatus.selectedOptionID, "local.qwen-small")
+        XCTAssertEqual(viewModel.providerRouteStatus.preference, .localOnly)
+        let persistedStatus = await service.status()
+        XCTAssertEqual(persistedStatus.selectedModelID, "qwen-small")
+        XCTAssertEqual(persistedStatus.preference, .localOnly)
         XCTAssertNil(viewModel.errorMessage)
     }
 

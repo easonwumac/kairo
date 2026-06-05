@@ -52,33 +52,19 @@ final class ChatProviderRouteStatusTests: XCTestCase {
         )
 
         await viewModel.refreshProviderRouteStatus()
-        XCTAssertEqual(
-            viewModel.providerRouteStatus.title,
-            KairoL10n.string("chat.provider.route.title", KairoL10n.string("chat.provider.route.cloud"))
-        )
-        XCTAssertEqual(
-            viewModel.providerRouteStatus.warning,
-            KairoL10n.string("chat.provider.warning.openAIKeyMissing", "OpenAI")
-        )
-        XCTAssertEqual(
-            viewModel.providerRouteStatus.detail,
-            KairoL10n.string("chat.provider.detail.cloudKeyMissing", "OpenAI")
-        )
+        XCTAssertEqual(viewModel.providerRouteStatus.selectedOptionID, "cloud.openai")
+        XCTAssertEqual(viewModel.providerRouteStatus.options.first?.id, "cloud.openai")
+        XCTAssertEqual(viewModel.providerRouteStatus.options.first?.isEnabled, false)
 
         try await settingsService.saveAPIKey("sk-test-chat-route")
         await viewModel.refreshProviderRouteStatus()
         XCTAssertNil(viewModel.providerRouteStatus.warning)
-        XCTAssertEqual(
-            viewModel.providerRouteStatus.detail,
-            KairoL10n.string("chat.provider.detail.cloudConfigured", "OpenAI")
-        )
+        XCTAssertEqual(viewModel.providerRouteStatus.selectedOptionID, "cloud.openai")
+        XCTAssertEqual(viewModel.providerRouteStatus.options.first?.isEnabled, true)
 
         try await settingsService.deleteAPIKey()
         await viewModel.refreshProviderRouteStatus()
-        XCTAssertEqual(
-            viewModel.providerRouteStatus.warning,
-            KairoL10n.string("chat.provider.warning.openAIKeyMissing", "OpenAI")
-        )
+        XCTAssertEqual(viewModel.providerRouteStatus.options.first?.isEnabled, false)
     }
 
     private func makeProviderRouteChatAPI() -> any KairoChatAPI {

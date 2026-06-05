@@ -390,6 +390,24 @@ public final class ChatViewModel: ObservableObject {
         }
     }
 
+    public func selectProviderRouteOption(_ option: ChatProviderRouteOption) async {
+        guard option.isEnabled else { return }
+        guard let localModelSettingsService else {
+            errorMessage = KairoL10n.string("chat.error.routeUnavailable")
+            return
+        }
+        do {
+            if let modelID = option.modelID {
+                try await localModelSettingsService.selectModel(id: modelID)
+            }
+            try await localModelSettingsService.setPreference(option.preference)
+            await refreshProviderRouteStatus()
+            errorMessage = nil
+        } catch {
+            errorMessage = KairoL10n.string("chat.error.updateRoute", error.localizedDescription)
+        }
+    }
+
     public func setPrivateChatEnabled(_ enabled: Bool) {
         privacyMode = enabled ? .privateChat : .standard
         errorMessage = nil

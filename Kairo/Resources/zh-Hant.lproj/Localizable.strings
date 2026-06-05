@@ -549,9 +549,13 @@
 "chat.message.accessibility" = "%@ 訊息";
 "chat.provider.route.settingsUnavailable" = "無法調整聊天路由";
 "chat.provider.route.label" = "路由";
+"chat.provider.model.label" = "模型";
 "chat.provider.route.menuTitle" = "路由";
 "chat.provider.route.accessibility" = "聊天路由";
 "chat.provider.route.only" = "僅本機";
+"chat.provider.source.cloud" = "雲端";
+"chat.provider.source.local" = "本地";
+"chat.provider.localModelUnavailable.title" = "本地模型";
 "chat.error.loadHistory" = "無法載入聊天紀錄：%@";
 "chat.error.deleteHistory" = "無法刪除聊天紀錄：%@";
 "chat.error.importShare" = "無法匯入分享內容：%@";

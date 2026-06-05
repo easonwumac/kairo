@@ -357,8 +357,8 @@ public struct ChatView: View {
         ChatProviderRouteBar(
             status: viewModel.providerRouteStatus,
             canEdit: viewModel.canEditProviderRoute,
-            setPreference: { preference in
-                Task { await viewModel.setProviderRoutePreference(preference) }
+            selectOption: { option in
+                Task { await viewModel.selectProviderRouteOption(option) }
             }
         )
         .accessibilityElement(children: .contain)

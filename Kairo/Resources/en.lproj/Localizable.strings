@@ -549,9 +549,13 @@
 "chat.message.accessibility" = "%@ message";
 "chat.provider.route.settingsUnavailable" = "Route settings unavailable";
 "chat.provider.route.label" = "Route";
+"chat.provider.model.label" = "Model";
 "chat.provider.route.menuTitle" = "Route";
 "chat.provider.route.accessibility" = "Chat route";
 "chat.provider.route.only" = "Local only";
+"chat.provider.source.cloud" = "Cloud";
+"chat.provider.source.local" = "Local";
+"chat.provider.localModelUnavailable.title" = "Local model";
 "chat.error.loadHistory" = "Could not load chat history: %@";
 "chat.error.deleteHistory" = "Could not delete chat history: %@";
 "chat.error.importShare" = "Could not import shared content: %@";
