@@ -52,6 +52,19 @@ final class AppIntegrationSkillCatalogTests: XCTestCase {
         XCTAssertTrue(catalog.skills.allSatisfy { !$0.examplePromptKey.isEmpty })
     }
 
+    func testCatalogCanBeBuiltFromInjectedSeedSource() throws {
+        let injectedSkill = catalogSkill(
+            id: .googleMapsDirectionsHandoff,
+            availabilityStatus: .available,
+            executionMode: .openURL
+        )
+        let catalog = AppIntegrationSkillCatalog(seedSource: StubAppIntegrationSkillSeedSource(skills: [injectedSkill]))
+
+        XCTAssertEqual(catalog.skills.map(\.id), [.googleMapsDirectionsHandoff])
+        XCTAssertEqual(catalog.skill(id: .googleMapsDirectionsHandoff), injectedSkill)
+        XCTAssertNil(catalog.skill(id: .appleMailHandoff))
+    }
+
     func testDefaultCatalogSkillsProvideCompleteHarnessMetadata() {
         let catalog = AppIntegrationSkillCatalog()
         let integrationKeys = catalog.skills.map(\.integrationKey)
@@ -544,4 +557,8 @@ private struct CatalogSeedExpectation {
     var permissionRequirement: PermissionRequirement
     var capabilityKeys: [CapabilityKey]
     var requiresOAuth: Bool
+}
+
+private struct StubAppIntegrationSkillSeedSource: AppIntegrationSkillSeeding {
+    var skills: [AppIntegrationSkill]
 }
