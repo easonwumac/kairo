@@ -264,6 +264,31 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertNotNil(dependencies.deletionAPI)
     }
 
+    func testSettingsFeatureDependencyFactoryWiresCredentialStoreAndOAuthBoundary() async throws {
+        let credentialStore = InMemoryCredentialStore()
+        let dependencies = SettingsFeatureDependencyFactory().makeDependencies(
+            credentialStore: credentialStore,
+            oauthConnectorRegistry: IntegrationRegistry(integrations: [
+                backendTestOAuthIntegration(key: "custom-mail", displayName: "Custom Mail", providerKey: "custom-mail")
+            ]),
+            oauthClientConfigurations: [
+                "custom-mail": OAuthConnectorClientConfiguration(
+                    clientID: "custom-client",
+                    redirectURI: "kairo://oauth/custom-mail/callback"
+                )
+            ],
+            oauthWebAuthenticationRunner: nil
+        )
+
+        try await dependencies.settingsService.saveAPIKey("openai-test-key")
+        let savedKey = try await credentialStore.readSecret(for: CredentialKey.openAIAPIKey)
+
+        XCTAssertEqual(savedKey, "openai-test-key")
+        XCTAssertEqual(dependencies.oauthConnectorRegistry.oauthConnectors.map(\.key), ["custom-mail"])
+        XCTAssertEqual(dependencies.oauthClientConfigurations["custom-mail"]?.clientID, "custom-client")
+        XCTAssertNil(dependencies.oauthWebAuthenticationRunner)
+    }
+
     @MainActor
     func testKairoEnvironmentBuildsChatFeatureDependenciesForCompositionRoot() async throws {
         let chatHistoryStore = InMemoryChatHistoryStore()

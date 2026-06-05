@@ -89,30 +89,25 @@ public struct SettingsView: View {
         localModelReplyCheckService: LocalModelReplyCheckService? = nil,
         deletionAPI: (any KairoDeletionAPI)? = nil
     ) {
-        self.openAIKeyCoordinator = SettingsOpenAIKeyCoordinator(
-            settingsService: OpenAISettingsService(credentialStore: credentialStore)
+        self.init(
+            dependencies: SettingsFeatureDependencyFactory().makeDependencies(
+                credentialStore: credentialStore,
+                oauthConnectorRegistry: oauthConnectorRegistry,
+                oauthClientConfigurations: oauthClientConfigurations,
+                oauthCallbackStore: oauthCallbackStore,
+                oauthLoginService: oauthLoginService,
+                oauthWebAuthenticationRunner: oauthWebAuthenticationRunner,
+                localModelCatalog: localModelCatalog,
+                localModelCatalogService: localModelCatalogService,
+                localModelSettingsService: localModelSettingsService,
+                localModelDownloader: localModelDownloader,
+                localModelBenchmarkService: localModelBenchmarkService,
+                localModelReplyCheckService: localModelReplyCheckService,
+                deletionAPI: deletionAPI
+            ),
+            mode: mode,
+            deletionAPI: deletionAPI
         )
-        self.mode = mode
-        self.credentialStore = credentialStore
-        let oauthLoginService = Self.defaultOAuthLoginService(
-            override: oauthLoginService,
-            credentialStore: credentialStore,
-            oauthConnectorRegistry: oauthConnectorRegistry,
-            oauthClientConfigurations: oauthClientConfigurations,
-            oauthCallbackStore: oauthCallbackStore
-        )
-        self.oauthCoordinator = SettingsOAuthConnectorCoordinator(
-            loginService: oauthLoginService,
-            webAuthenticationRunner: oauthWebAuthenticationRunner
-        )
-        self.localModelCatalogService = localModelCatalogService
-        self.localModelSettingsService = localModelSettingsService
-        self.localModelDownloader = localModelDownloader
-        self.localModelBenchmarkService = localModelBenchmarkService
-        self.localModelReplyCheckService = localModelReplyCheckService
-        self.privacyCoordinator = SettingsPrivacyCoordinator(deletionAPI: deletionAPI)
-        self._localModelCatalog = State(initialValue: localModelCatalog)
-        self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
 
     public init(

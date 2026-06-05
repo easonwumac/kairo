@@ -50,10 +50,46 @@ public struct SettingsFeatureDependencies {
     }
 }
 
-public extension KairoEnvironment {
-    var settingsFeatureDependencies: SettingsFeatureDependencies {
+public struct SettingsFeatureDependencyFactory: Sendable {
+    public init() {}
+
+    public func makeDependencies(
+        credentialStore: any CredentialStore,
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
+        oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
+        oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
+        oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)? = SettingsView.defaultOAuthWebAuthenticationRunner(),
+        localModelCatalog: LocalModelCatalog = .kairoDefault,
+        localModelCatalogService: LocalModelCatalogService? = nil,
+        localModelSettingsService: LocalModelSettingsService? = nil,
+        localModelDownloader: (any LocalModelDownloader)? = nil,
+        localModelBenchmarkService: LocalModelBenchmarkService? = nil,
+        localModelReplyCheckService: LocalModelReplyCheckService? = nil,
+        deletionAPI: (any KairoDeletionAPI)? = nil
+    ) -> SettingsFeatureDependencies {
         SettingsFeatureDependencies(
             settingsService: OpenAISettingsService(credentialStore: credentialStore),
+            credentialStore: credentialStore,
+            oauthConnectorRegistry: oauthConnectorRegistry,
+            oauthClientConfigurations: oauthClientConfigurations,
+            oauthCallbackStore: oauthCallbackStore,
+            oauthLoginService: oauthLoginService,
+            oauthWebAuthenticationRunner: oauthWebAuthenticationRunner,
+            localModelCatalog: localModelCatalog,
+            localModelCatalogService: localModelCatalogService,
+            localModelSettingsService: localModelSettingsService,
+            localModelDownloader: localModelDownloader,
+            localModelBenchmarkService: localModelBenchmarkService,
+            localModelReplyCheckService: localModelReplyCheckService,
+            deletionAPI: deletionAPI
+        )
+    }
+}
+
+public extension KairoEnvironment {
+    var settingsFeatureDependencies: SettingsFeatureDependencies {
+        SettingsFeatureDependencyFactory().makeDependencies(
             credentialStore: credentialStore,
             oauthConnectorRegistry: oauthConnectorRegistry,
             oauthClientConfigurations: oauthClientConfigurations,
