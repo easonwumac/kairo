@@ -29,7 +29,8 @@ struct ProposedActionsStrip: View {
                                 .font(.subheadline.weight(.semibold))
                                 .symbolRenderingMode(.hierarchical)
                                 .foregroundStyle(actionRiskColor(for: action))
-                                .frame(width: 24, height: 24)
+                                .frame(width: 28, height: 28)
+                                .background(actionRiskColor(for: action).opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
 
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(descriptor.displayName)
@@ -48,20 +49,20 @@ struct ProposedActionsStrip: View {
 
                             Text(KairoL10n.string("chat.action.card.review"))
                                 .font(.caption.weight(.bold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(KairoDesign.ink)
                                 .lineLimit(1)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .background(KairoDesign.ink, in: Capsule())
+                                .background(KairoDesign.softSurface.opacity(0.62), in: Capsule())
                         }
                         .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
                         .padding(.horizontal, 12)
                         .padding(.vertical, 11)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(KairoDesign.elevatedSurface.opacity(0.76), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         .overlay {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(Color.black.opacity(0.07), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(KairoDesign.line, lineWidth: 1)
                         }
                     }
                     .buttonStyle(.plain)
@@ -97,13 +98,13 @@ struct ProposedActionsStrip: View {
     private func actionRiskColor(for action: AgentAction) -> Color {
         switch action.riskTier {
         case .tier0ReadOnly:
-            return .secondary
+            return KairoDesign.muted
         case .tier1Draft:
-            return .blue
+            return KairoDesign.blue
         case .tier2LowRiskWrite:
-            return .orange
+            return KairoDesign.amber
         case .tier3HighRiskExternal:
-            return .red
+            return KairoDesign.red
         }
     }
 }
@@ -130,7 +131,8 @@ struct ToolCandidatesStrip: View {
                     .font(.subheadline.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(toolRiskColor(for: candidate))
-                    .frame(width: 24, height: 24)
+                    .frame(width: 28, height: 28)
+                    .background(toolRiskColor(for: candidate).opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(candidate.title)
@@ -161,13 +163,13 @@ struct ToolCandidatesStrip: View {
                     .lineLimit(1)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(KairoDesign.ink.opacity(0.08), in: Capsule())
+                    .background(KairoDesign.softSurface.opacity(0.62), in: Capsule())
             }
             .accessibilityIdentifier("chat.tool-candidate.\(candidateID)")
 
             Text(candidate.handoffSummary)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(KairoDesign.muted)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("chat.tool-candidate.\(candidate.skillID ?? candidate.integrationKey ?? candidate.id).summary")
@@ -175,10 +177,10 @@ struct ToolCandidatesStrip: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(KairoDesign.elevatedSurface.opacity(0.76), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.black.opacity(0.07), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(KairoDesign.line, lineWidth: 1)
         }
         .accessibilityLabel(KairoL10n.string("chat.option.accessibility.suggested", candidate.title, optionDetail(for: candidate), candidate.handoffSummary, riskSummary))
         .accessibilityIdentifier("chat.tool-candidate.\(candidateID)")
@@ -227,13 +229,13 @@ struct ToolCandidatesStrip: View {
     private func toolRiskColor(for candidate: AgentToolInvocationCandidate) -> Color {
         switch candidate.riskTier {
         case .tier0ReadOnly:
-            return .secondary
+            return KairoDesign.muted
         case .tier1Draft:
-            return .blue
+            return KairoDesign.blue
         case .tier2LowRiskWrite:
-            return .orange
+            return KairoDesign.amber
         case .tier3HighRiskExternal:
-            return .red
+            return KairoDesign.red
         }
     }
 
