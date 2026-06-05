@@ -117,13 +117,12 @@ struct ChatProviderRouteBar: View {
             }
         }
         .padding(8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .background(KairoDesign.background.opacity(0.36), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                .stroke(Color.white.opacity(0.10), lineWidth: 1)
         }
-        .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 16, x: 0, y: 10)
+        .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 14, x: 0, y: 9)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.provider-route.palette")
     }
@@ -134,7 +133,7 @@ struct ChatProviderRouteBar: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(isSelected ? KairoDesign.blue : KairoDesign.ink)
                 .frame(width: 30, height: 30)
-                .background(Color.white.opacity(0.08), in: Circle())
+                .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
 
             Text(title)
                 .font(.subheadline.weight(.semibold))
@@ -151,7 +150,7 @@ struct ChatProviderRouteBar: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(KairoDesign.elevatedSurface.opacity(0.38), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .background(KairoDesign.softSurface.opacity(isSelected ? 0.70 : 0.55), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
     }
 
     private func routePill(label: String, value: String, systemImage: String, tint: Color) -> some View {

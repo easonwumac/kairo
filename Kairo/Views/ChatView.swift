@@ -367,11 +367,10 @@ public struct ChatView: View {
             .padding(.leading, 0)
             .padding(.trailing, 6)
             .padding(.vertical, 4)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 19, style: .continuous))
-            .background(KairoDesign.background.opacity(0.46), in: RoundedRectangle(cornerRadius: 19, style: .continuous))
+            .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 19, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 19, style: .continuous)
-                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
             )
             .overlay(alignment: .topLeading) {
                 Color.clear
@@ -429,15 +428,11 @@ public struct ChatView: View {
                 .frame(width: 34, height: 34)
                 .background {
                     Circle()
-                        .fill(.ultraThinMaterial)
-                        .overlay {
-                            Circle()
-                                .fill(Color.white.opacity(showToolPalette ? 0.18 : 0.08))
-                        }
+                        .fill(KairoDesign.elevatedSurface.opacity(showToolPalette ? 0.88 : 0.72))
                 }
                 .overlay {
                     Circle()
-                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
                 }
         }
         .buttonStyle(.plain)
@@ -469,11 +464,10 @@ public struct ChatView: View {
             )
         }
         .padding(8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .background(KairoDesign.background.opacity(0.34), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                .stroke(Color.white.opacity(0.10), lineWidth: 1)
         }
         .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 16, x: 0, y: 10)
         .accessibilityElement(children: .contain)
@@ -493,7 +487,7 @@ public struct ChatView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
                     .frame(width: 30, height: 30)
-                    .background(Color.white.opacity(0.08), in: Circle())
+                    .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
 
                 Text(title)
                     .font(.subheadline.weight(.semibold))
@@ -503,7 +497,7 @@ public struct ChatView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(KairoDesign.elevatedSurface.opacity(0.38), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
         }
         .buttonStyle(.plain)
     }
