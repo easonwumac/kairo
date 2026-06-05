@@ -15,16 +15,23 @@ public struct AutomationsFeatureDependencies {
         self.shortcutTemplateRegistry = shortcutTemplateRegistry
         self.shortcutDemoRecipeRunner = shortcutDemoRecipeRunner
     }
+}
 
-    public init(
+public struct AutomationsFeatureDependencyFactory: Sendable {
+    public var shortcutTemplateRegistry: ShortcutTemplateRegistry
+
+    public init(shortcutTemplateRegistry: ShortcutTemplateRegistry = .default) {
+        self.shortcutTemplateRegistry = shortcutTemplateRegistry
+    }
+
+    public func makeDependencies(
         recipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
-        shortcutTemplateRegistry: ShortcutTemplateRegistry = .default,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
-    ) {
+    ) -> AutomationsFeatureDependencies {
         let runtimeMemoryStore = memoryStore ?? InMemoryMemoryStore()
-        self.init(
+        return AutomationsFeatureDependencies(
             recipeAPI: KairoRecipeBackendService(
                 recipeStore: recipeStore,
                 memoryStore: memoryStore,
@@ -41,13 +48,12 @@ public struct AutomationsFeatureDependencies {
         )
     }
 
-    public init(
+    public func makeDependencies(
         recipeAPI: any KairoRecipeAPI,
-        shortcutTemplateRegistry: ShortcutTemplateRegistry = .default,
         memoryStore: any MemoryStore = InMemoryMemoryStore(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
-    ) {
-        self.init(
+    ) -> AutomationsFeatureDependencies {
+        AutomationsFeatureDependencies(
             recipeAPI: recipeAPI,
             shortcutTemplateRegistry: shortcutTemplateRegistry,
             shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(
@@ -56,6 +62,17 @@ public struct AutomationsFeatureDependencies {
                     toolCatalog: toolCatalog
                 )
             )
+        )
+    }
+
+    public func makeDependencies(
+        recipeAPI: any KairoRecipeAPI,
+        shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol
+    ) -> AutomationsFeatureDependencies {
+        AutomationsFeatureDependencies(
+            recipeAPI: recipeAPI,
+            shortcutTemplateRegistry: shortcutTemplateRegistry,
+            shortcutDemoRecipeRunner: shortcutDemoRecipeRunner
         )
     }
 }

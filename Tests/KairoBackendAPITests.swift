@@ -365,6 +365,41 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertTrue(demoRun.steps.isEmpty)
     }
 
+    func testAutomationsFeatureDependencyFactoryWiresRecipeAPIAndShortcutDemoRunner() async throws {
+        let recipeStore = InMemoryKairoRecipeStore()
+        let memoryStore = InMemoryMemoryStore()
+        let dependencies = AutomationsFeatureDependencyFactory().makeDependencies(
+            recipeStore: recipeStore,
+            memoryStore: memoryStore
+        )
+        let recipe = KairoRecipe(
+            id: "factory-recipe",
+            title: "Factory Recipe",
+            summary: "Factory dependency wiring",
+            steps: [
+                KairoRecipeStep(
+                    id: "noop",
+                    title: "No operation",
+                    kind: .noOp,
+                    input: .literal("factory")
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier0ReadOnly,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+
+        try await dependencies.recipeAPI.save(recipe)
+        let demoRecipe = try XCTUnwrap(ShortcutDemoCatalog.default.recipe(id: "save-shared-text"))
+        _ = try await dependencies.shortcutDemoRecipeRunner.runSample(demoRecipe)
+        let savedRecipes = try await recipeStore.listRecipes()
+        let memories = try await memoryStore.list(limit: 10)
+
+        XCTAssertEqual(savedRecipes.map(\.id), ["factory-recipe"])
+        XCTAssertEqual(memories.count, 1)
+    }
+
     func testKairoEnvironmentBuildsAccessFeatureDependenciesForCompositionRoot() async throws {
         let skillManagerService = try await makeBackendTestAgentSkillManagerService()
         let environment = KairoEnvironment(

@@ -29,11 +29,12 @@ public struct AutomationsView: View {
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
     ) {
         self.init(
-            dependencies: AutomationsFeatureDependencies(
+            dependencies: AutomationsFeatureDependencyFactory(
+                shortcutTemplateRegistry: shortcutTemplateRegistry
+            ).makeDependencies(
                 recipeStore: recipeStore,
                 memoryStore: memoryStore,
                 aiProvider: aiProvider,
-                shortcutTemplateRegistry: shortcutTemplateRegistry,
                 toolCatalog: toolCatalog
             )
         )
@@ -46,17 +47,20 @@ public struct AutomationsView: View {
     ) {
         if let shortcutDemoRecipeRunner {
             self.init(
-                dependencies: AutomationsFeatureDependencies(
+                dependencies: AutomationsFeatureDependencyFactory(
+                    shortcutTemplateRegistry: shortcutTemplateRegistry
+                ).makeDependencies(
                     recipeAPI: recipeAPI,
-                    shortcutTemplateRegistry: shortcutTemplateRegistry,
                     shortcutDemoRecipeRunner: shortcutDemoRecipeRunner
                 )
             )
         } else {
             self.init(
-                dependencies: AutomationsFeatureDependencies(
-                    recipeAPI: recipeAPI,
+                dependencies: AutomationsFeatureDependencyFactory(
                     shortcutTemplateRegistry: shortcutTemplateRegistry
+                ).makeDependencies(
+                    recipeAPI: recipeAPI,
+                    memoryStore: InMemoryMemoryStore()
                 )
             )
         }
