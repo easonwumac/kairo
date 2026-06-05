@@ -44,7 +44,7 @@ enum KairoAppearancePreference: String, CaseIterable, Identifiable {
 }
 
 enum KairoDesign {
-    static let rootChromeTopPadding: CGFloat = 72
+    static let rootChromeTopPadding: CGFloat = 86
 
     static var ink: Color {
         color(
