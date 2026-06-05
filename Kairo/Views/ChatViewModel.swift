@@ -77,9 +77,8 @@ public final class ChatViewModel: ObservableObject {
             dependencies: dependencyComposer.makeDependencies(
                 historyStore: historyStore,
                 shareIngestionQueue: shareIngestionQueue,
-                agent: agent,
+                makeChatAPI: { chatAPI ?? KairoChatBackendService(agent: agent) },
                 shareImportAPI: shareImportAPI,
-                chatAPI: chatAPI,
                 actionAPI: actionAPI,
                 actionExecutor: actionExecutor,
                 localModelSettingsService: localModelSettingsService,
