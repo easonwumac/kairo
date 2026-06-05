@@ -883,6 +883,47 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(memories.count, 1)
     }
 
+    func testAutomationsFeatureDependencyComposerCanInjectIntegrationCatalogBoundary() async throws {
+        let composer: any AutomationsFeatureDependencyComposing = AutomationsFeatureDependencyFactory()
+        let recipe = KairoRecipe(
+            id: "automations-composer-catalog-gate",
+            title: "Automations Composer Catalog Gate",
+            summary: "Automations feature composition must not bypass injected integration catalog.",
+            steps: [
+                KairoRecipeStep(
+                    id: "mail",
+                    title: "Prepare Mail Handoff",
+                    kind: .enqueueActionDraft,
+                    input: .literal("Draft an email to alex@example.com"),
+                    integrationSkillID: .appleMailHandoff
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let dependencies = composer.makeDependencies(
+            recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]),
+            memoryStore: InMemoryMemoryStore(),
+            aiProvider: nil,
+            toolCatalog: BuiltInPhoneToolCatalog(),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [])
+        )
+
+        let result = try await dependencies.recipeAPI.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .app,
+            input: nil,
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertFalse(result.success)
+        XCTAssertTrue(result.proposedActions.isEmpty)
+        XCTAssertFalse(result.stepResults.first?.success ?? true)
+    }
+
     func testKairoEnvironmentBuildsAccessFeatureDependenciesForCompositionRoot() async throws {
         let skillManagerService = try await makeBackendTestAgentSkillManagerService()
         let environment = KairoEnvironment(

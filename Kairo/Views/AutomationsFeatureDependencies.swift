@@ -17,6 +17,32 @@ public struct AutomationsFeatureDependencies {
     }
 }
 
+public protocol AutomationsFeatureDependencyComposing: Sendable {
+    func makeDependencies(
+        recipeStore: any KairoRecipeStore,
+        memoryStore: (any MemoryStore)?,
+        aiProvider: (any AIProvider)?,
+        toolCatalog: any BuiltInPhoneToolCatalogProviding,
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
+    ) -> AutomationsFeatureDependencies
+
+    func makeDependencies(
+        recipeAPI: any KairoRecipeAPI,
+        memoryStore: any MemoryStore,
+        toolCatalog: any BuiltInPhoneToolCatalogProviding,
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
+    ) -> AutomationsFeatureDependencies
+
+    func makeDependencies(
+        recipeAPI: any KairoRecipeAPI
+    ) -> AutomationsFeatureDependencies
+
+    func makeDependencies(
+        recipeAPI: any KairoRecipeAPI,
+        shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol
+    ) -> AutomationsFeatureDependencies
+}
+
 public struct AutomationsFeatureDependencyFactory: Sendable {
     public var shortcutTemplateRegistry: ShortcutTemplateRegistry
 
@@ -73,6 +99,17 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
     }
 
     public func makeDependencies(
+        recipeAPI: any KairoRecipeAPI
+    ) -> AutomationsFeatureDependencies {
+        makeDependencies(
+            recipeAPI: recipeAPI,
+            memoryStore: InMemoryMemoryStore(),
+            toolCatalog: BuiltInPhoneToolCatalog(),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog()
+        )
+    }
+
+    public func makeDependencies(
         recipeAPI: any KairoRecipeAPI,
         shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol
     ) -> AutomationsFeatureDependencies {
@@ -83,6 +120,8 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
         )
     }
 }
+
+extension AutomationsFeatureDependencyFactory: AutomationsFeatureDependencyComposing {}
 
 public extension KairoEnvironment {
     var automationsFeatureDependencies: AutomationsFeatureDependencies {

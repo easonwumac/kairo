@@ -26,16 +26,18 @@ public struct AutomationsView: View {
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
         shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        dependencyComposer: (any AutomationsFeatureDependencyComposing)? = nil
     ) {
+        let composer = dependencyComposer ?? AutomationsFeatureDependencyFactory(shortcutTemplateRegistry: shortcutTemplateRegistry)
         self.init(
-            dependencies: AutomationsFeatureDependencyFactory(
-                shortcutTemplateRegistry: shortcutTemplateRegistry
-            ).makeDependencies(
+            dependencies: composer.makeDependencies(
                 recipeStore: recipeStore,
                 memoryStore: memoryStore,
                 aiProvider: aiProvider,
-                toolCatalog: toolCatalog
+                toolCatalog: toolCatalog,
+                appIntegrationSkillCatalog: appIntegrationSkillCatalog
             )
         )
     }
@@ -43,25 +45,20 @@ public struct AutomationsView: View {
     public init(
         recipeAPI: any KairoRecipeAPI,
         shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default,
-        shortcutDemoRecipeRunner: (any ShortcutDemoRecipeRunnerProtocol)? = nil
+        shortcutDemoRecipeRunner: (any ShortcutDemoRecipeRunnerProtocol)? = nil,
+        dependencyComposer: (any AutomationsFeatureDependencyComposing)? = nil
     ) {
+        let composer = dependencyComposer ?? AutomationsFeatureDependencyFactory(shortcutTemplateRegistry: shortcutTemplateRegistry)
         if let shortcutDemoRecipeRunner {
             self.init(
-                dependencies: AutomationsFeatureDependencyFactory(
-                    shortcutTemplateRegistry: shortcutTemplateRegistry
-                ).makeDependencies(
+                dependencies: composer.makeDependencies(
                     recipeAPI: recipeAPI,
                     shortcutDemoRecipeRunner: shortcutDemoRecipeRunner
                 )
             )
         } else {
             self.init(
-                dependencies: AutomationsFeatureDependencyFactory(
-                    shortcutTemplateRegistry: shortcutTemplateRegistry
-                ).makeDependencies(
-                    recipeAPI: recipeAPI,
-                    memoryStore: InMemoryMemoryStore()
-                )
+                dependencies: composer.makeDependencies(recipeAPI: recipeAPI)
             )
         }
     }
