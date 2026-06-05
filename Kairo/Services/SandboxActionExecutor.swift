@@ -64,7 +64,7 @@ public protocol ActionExecutor: Sendable {
 
 public actor SandboxActionExecutor: ActionExecutor {
     private let memoryStore: MemoryStore
-    private let safetyPolicyEngine: SafetyPolicyEngine
+    private let safetyPolicyEngine: any ActionSafetyPolicyEvaluating
     private let eventKitService: EventKitService
     private let reminderScheduler: any ReminderScheduling
     private let calendarScheduler: any CalendarScheduling
@@ -76,7 +76,7 @@ public actor SandboxActionExecutor: ActionExecutor {
 
     public init(
         memoryStore: MemoryStore,
-        safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine(),
         eventKitService: EventKitService = EventKitService(),
         reminderScheduler: (any ReminderScheduling)? = nil,
         calendarScheduler: (any CalendarScheduling)? = nil,

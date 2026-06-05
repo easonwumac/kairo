@@ -24,6 +24,27 @@ final class SandboxActionExecutorTests: XCTestCase {
         XCTAssertEqual(memories.count, 1)
     }
 
+    func testSandboxActionExecutorUsesInjectedSafetyPolicyBeforeExecuting() async throws {
+        let store = InMemoryMemoryStore()
+        let executor = SandboxActionExecutor(
+            memoryStore: store,
+            safetyPolicyEngine: BlockingSandboxActionSafetyPolicy()
+        )
+        let action = AgentAction(
+            kind: .saveMemory,
+            title: "Save memory",
+            rationale: "This should be blocked by the injected policy.",
+            payload: .text("Do not write this blocked memory."),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+        let memories = try await store.search(query: "blocked", limit: 10)
+
+        XCTAssertFalse(result.completed)
+        XCTAssertTrue(memories.isEmpty)
+    }
+
     func testSandboxActionExecutorReportsUnsupportedSandboxActionWithoutExecuting() async throws {
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore())
         let action = AgentAction(
@@ -583,6 +604,16 @@ final class SandboxActionExecutorTests: XCTestCase {
         XCTAssertEqual(result.message, KairoL10n.string("chat.action.executor.permission.contactsDenied"))
         let createdNames = await scheduler.createdDrafts.map(\.givenName)
         XCTAssertEqual(createdNames, [])
+    }
+}
+
+private struct BlockingSandboxActionSafetyPolicy: ActionSafetyPolicyEvaluating {
+    func evaluate(_ action: AgentAction) -> SafetyPolicyDecision {
+        SafetyPolicyDecision(
+            allowed: false,
+            requiresConfirmation: false,
+            reason: "blocked"
+        )
     }
 }
 
