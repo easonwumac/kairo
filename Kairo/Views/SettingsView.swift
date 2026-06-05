@@ -56,6 +56,29 @@ public struct SettingsView: View {
     private let deletionAPI: (any KairoDeletionAPI)?
 
     public init(
+        dependencies: SettingsFeatureDependencies,
+        mode: SettingsViewMode = .all,
+        deletionAPI: (any KairoDeletionAPI)? = nil
+    ) {
+        self.init(
+            settingsService: dependencies.settingsService,
+            mode: mode,
+            credentialStore: dependencies.credentialStore,
+            oauthClientConfigurations: dependencies.oauthClientConfigurations,
+            oauthCallbackStore: dependencies.oauthCallbackStore,
+            oauthLoginService: dependencies.oauthLoginService,
+            oauthWebAuthenticationRunner: dependencies.oauthWebAuthenticationRunner,
+            localModelCatalog: dependencies.localModelCatalog,
+            localModelCatalogService: dependencies.localModelCatalogService,
+            localModelSettingsService: dependencies.localModelSettingsService,
+            localModelDownloader: dependencies.localModelDownloader,
+            localModelBenchmarkService: dependencies.localModelBenchmarkService,
+            localModelReplyCheckService: dependencies.localModelReplyCheckService,
+            deletionAPI: deletionAPI ?? dependencies.deletionAPI
+        )
+    }
+
+    public init(
         mode: SettingsViewMode = .all,
         credentialStore: any CredentialStore = InMemoryCredentialStore(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],

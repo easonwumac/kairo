@@ -93,32 +93,14 @@ public struct RootView: View {
             )
         case .models:
             SettingsView(
-                settingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
+                dependencies: environment.settingsFeatureDependencies,
                 mode: .modelsOnly,
-                credentialStore: environment.credentialStore,
-                oauthClientConfigurations: environment.oauthClientConfigurations,
-                oauthCallbackStore: environment.oauthConnectorCallbackStore,
-                localModelCatalog: environment.localModelCatalog,
-                localModelCatalogService: environment.localModelCatalogService,
-                localModelSettingsService: environment.localModelSettingsService,
-                localModelDownloader: environment.localModelDownloader,
-                localModelBenchmarkService: environment.localModelBenchmarkService,
-                localModelReplyCheckService: environment.localModelReplyCheckService
+                deletionAPI: nil
             )
         case .settings:
             SettingsView(
-                settingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
-                mode: settingsMode,
-                credentialStore: environment.credentialStore,
-                oauthClientConfigurations: environment.oauthClientConfigurations,
-                oauthCallbackStore: environment.oauthConnectorCallbackStore,
-                localModelCatalog: environment.localModelCatalog,
-                localModelCatalogService: environment.localModelCatalogService,
-                localModelSettingsService: environment.localModelSettingsService,
-                localModelDownloader: environment.localModelDownloader,
-                localModelBenchmarkService: environment.localModelBenchmarkService,
-                localModelReplyCheckService: environment.localModelReplyCheckService,
-                deletionAPI: environment.backendAPI.deletion
+                dependencies: environment.settingsFeatureDependencies,
+                mode: settingsMode
             )
         }
     }

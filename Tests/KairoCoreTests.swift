@@ -556,7 +556,6 @@ final class KairoCoreTests: XCTestCase {
     func testSettingsViewDefinesPrivacyDeletionControls() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
-        let rootView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
 
         XCTAssertTrue(settingsView.contains(#""settings.privacy.clearAuditLog""#))
         XCTAssertTrue(settingsView.contains("clearAuditLog()"))
@@ -565,7 +564,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(settingsView.contains(#""settings.privacy.audit-log-detail""#))
         XCTAssertTrue(settingsView.contains(#""settings.privacy.status""#))
         XCTAssertTrue(settingsView.contains(#""settings.privacy.auditLogDetail""#))
-        XCTAssertTrue(rootView.contains("deletionAPI: environment.backendAPI.deletion"))
     }
 
     func testSettingsViewDefinesShortcutDemoSectionAccessibilityIdentifiers() throws {
@@ -1064,13 +1062,10 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(rootViewSource.contains("marketplaceCatalogService: environment.agentSkillMarketplaceCatalogService"))
         XCTAssertTrue(environmentSource.contains("localModelCatalogService"))
         XCTAssertTrue(environmentSource.contains("LocalModelCatalogService.defaultStandaloneRepository"))
-        XCTAssertTrue(rootViewSource.contains("localModelCatalogService: environment.localModelCatalogService"))
         XCTAssertTrue(environmentSource.contains("localModelBenchmarkService"))
         XCTAssertTrue(environmentSource.contains("FileBackedLocalModelBenchmarkStore(fileURL: paths.localModelBenchmarkResultsURL)"))
-        XCTAssertTrue(rootViewSource.contains("localModelBenchmarkService: environment.localModelBenchmarkService"))
         XCTAssertTrue(environmentSource.contains("localModelReplyCheckService"))
         XCTAssertTrue(environmentSource.contains("LocalModelReplyCheckService("))
-        XCTAssertTrue(rootViewSource.contains("localModelReplyCheckService: environment.localModelReplyCheckService"))
         XCTAssertTrue(environmentSource.contains("LocalModelRoutingAIProvider("))
         XCTAssertTrue(environmentSource.contains("localModelSettingsService: localModelSettingsService"))
         XCTAssertTrue(rootViewSource.contains("mode: .modelsOnly"))

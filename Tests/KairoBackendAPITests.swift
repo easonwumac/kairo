@@ -92,4 +92,27 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertTrue(chatGPT.canStartAuthorization)
     }
 
+    func testKairoEnvironmentBuildsSettingsFeatureDependenciesForCompositionRoot() async throws {
+        let credentialStore = InMemoryCredentialStore()
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: credentialStore,
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
+            oauthClientConfigurations: [
+                "chatgpt": OAuthConnectorClientConfiguration(
+                    clientID: "chatgpt-client",
+                    redirectURI: "kairo://oauth/chatgpt/callback"
+                )
+            ]
+        )
+
+        let dependencies = environment.settingsFeatureDependencies
+
+        try await dependencies.settingsService.saveAPIKey("openai-test-key")
+        let savedKey = try await credentialStore.readSecret(for: CredentialKey.openAIAPIKey)
+        XCTAssertEqual(savedKey, "openai-test-key")
+        XCTAssertEqual(dependencies.oauthClientConfigurations["chatgpt"]?.clientID, "chatgpt-client")
+        XCTAssertNotNil(dependencies.deletionAPI)
+    }
+
 }
