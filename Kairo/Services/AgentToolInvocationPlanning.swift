@@ -14,6 +14,10 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         self.dependencies = dependencies
     }
 
+    public init(candidatePlanning: AgentToolCandidatePlanningDependencies) {
+        self.init(dependencies: AgentToolInvocationPlannerDependencies(candidatePlanning: candidatePlanning))
+    }
+
     public init(
         integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
@@ -32,7 +36,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
     ) {
         self.init(
-            dependencies: AgentToolInvocationPlannerDependencies(
+            candidatePlanning: AgentToolCandidatePlanningDependencies(
                 integrationRegistry: integrationRegistry,
                 appIntegrationSkillCatalog: appIntegrationSkillCatalog,
                 appIntegrationActionMapper: appIntegrationActionMapper,
