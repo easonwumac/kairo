@@ -45,9 +45,9 @@ public struct MemoryCenterView: View {
                                     .accessibilityIdentifier("memory.error")
                             }
 
-                            memoryRecordsSection
-
                             memoryLibraryHeader
+
+                            memoryRecordsSection
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 18)
@@ -79,6 +79,19 @@ public struct MemoryCenterView: View {
                                 .font(.subheadline.weight(.semibold))
                                 .accessibilityIdentifier("memory.empty")
                             Text(KairoL10n.string("memory.search.empty.subtitle"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 10)
+                    }
+                } else {
+                    KairoGroupedSurface {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(KairoL10n.string("memory.empty.title"))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                                .accessibilityIdentifier("memory.empty")
+                            Text(KairoL10n.string("memory.empty.subtitle"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -210,31 +223,39 @@ public struct MemoryCenterView: View {
 
     private var memoryLibraryHeader: some View {
         KairoFocusCard {
-            VStack(alignment: .leading, spacing: 15) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(KairoL10n.string("memory.title"))
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(KairoDesign.ink)
-                }
-
+            VStack(alignment: .leading, spacing: 12) {
                 Button {
                     withAnimation(.snappy(duration: 0.2)) {
                         showLibraryDetails.toggle()
                     }
                 } label: {
                     HStack(spacing: 12) {
-                        Label(KairoL10n.string("memory.details.title"), systemImage: "ellipsis")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(KairoDesign.ink)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Label(KairoL10n.string("memory.details.title"), systemImage: "square.and.arrow.up")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                            Text(KairoL10n.string("memory.details.subtitle"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: showLibraryDetails ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(KairoDesign.teal)
+                            .frame(width: 34, height: 34)
+                            .background(KairoDesign.teal.opacity(0.10), in: Circle())
                     }
                     .padding(.horizontal, 12)
-                    .frame(height: 38)
+                    .padding(.vertical, 10)
                     .background(KairoDesign.softSurface.opacity(0.55), in: Capsule())
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
+                .accessibilityLabel(showLibraryDetails ? KairoL10n.string("memory.details.hide") : KairoL10n.string("memory.details.show"))
                 .accessibilityIdentifier("memory.details.toggle")
 
                 if showLibraryDetails {
