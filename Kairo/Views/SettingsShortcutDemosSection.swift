@@ -8,7 +8,7 @@ struct SettingsShortcutDemosSection: View {
         VStack(alignment: .leading, spacing: 14) {
             KairoFocusCard {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Shortcut Demos")
+                    Text(KairoL10n.string("settings.title.shortcutDemos"))
                         .font(.title2.weight(.bold))
                         .foregroundStyle(KairoDesign.ink)
 
