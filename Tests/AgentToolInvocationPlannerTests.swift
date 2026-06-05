@@ -101,6 +101,36 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
+    func testAgentToolInvocationPlannerBuildsCatalogCandidatesWithIntegrationSkillIDs() throws {
+        let catalog = AppIntegrationSkillCatalog()
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: []),
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: catalog,
+            appIntegrationActionMapper: NoOpAppIntegrationActionMapper(),
+            visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
+            writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
+            candidateMatcher: FixedAgentToolInvocationCandidateMatcher(appIntegrationSkillMatches: true)
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "catalog route"))
+        let candidates = Dictionary(uniqueKeysWithValues: plan.candidates.compactMap { candidate in
+            candidate.skillID.flatMap(AppIntegrationSkillID.init(rawValue:)).map { ($0, candidate) }
+        })
+
+        XCTAssertEqual(Set(candidates.keys), Set(catalog.skills.map(\.id)))
+        for skill in catalog.skills {
+            let candidate = try XCTUnwrap(candidates[skill.id])
+            XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+            XCTAssertEqual(candidate.skillID, skill.id.rawValue)
+            XCTAssertEqual(candidate.integrationKey, skill.integrationKey)
+            XCTAssertEqual(candidate.requiredCapabilities, skill.audit.capabilityKeys)
+            XCTAssertEqual(candidate.riskTier, skill.riskTier)
+            XCTAssertEqual(candidate.requiresConfirmation, skill.requiresConfirmation)
+            XCTAssertNil(candidate.action)
+        }
+    }
+
     func testAgentToolInvocationPlannerBuildsAppleMailPreviewFromCatalogCandidate() throws {
         let catalog = AppIntegrationSkillCatalog(skills: [
             try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMailHandoff))

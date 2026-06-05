@@ -52,6 +52,34 @@ final class AppIntegrationSkillCatalogTests: XCTestCase {
         XCTAssertTrue(catalog.skills.allSatisfy { !$0.examplePromptKey.isEmpty })
     }
 
+    func testDefaultCatalogSkillsProvideCompleteHarnessMetadata() {
+        let catalog = AppIntegrationSkillCatalog()
+        let integrationKeys = catalog.skills.map(\.integrationKey)
+
+        XCTAssertEqual(Set(catalog.skills.map(\.id)), Set(AppIntegrationSkillID.allCases))
+        XCTAssertEqual(Set(integrationKeys).count, integrationKeys.count)
+
+        for skill in catalog.skills {
+            XCTAssertFalse(skill.supportedSurfaces.isEmpty)
+            XCTAssertFalse(skill.audit.capabilityKeys.isEmpty)
+            XCTAssertNotEqual(skill.confirmationPolicy, .notRequired)
+
+            switch skill.executionMode {
+            case .openURL, .runUserShortcut:
+                XCTAssertFalse(skill.endpoints.isEmpty)
+                XCTAssertTrue(skill.permissionRequirement == .userInitiated || skill.permissionRequirement == .unsupported)
+            case .apiCall:
+                XCTAssertNotNil(skill.oauth)
+                XCTAssertFalse(skill.endpoints.isEmpty)
+                XCTAssertEqual(skill.setupRequirement, .connectOAuth)
+                XCTAssertEqual(skill.permissionRequirement, .oauth)
+                XCTAssertFalse(skill.canBeSuggestedAsExecutable)
+            case .draftOnly, .previewOnly:
+                XCTAssertFalse(skill.canBeSuggestedAsExecutable)
+            }
+        }
+    }
+
     func testRecipeStepCanBindToCatalogIntegrationSkillID() throws {
         let catalog = AppIntegrationSkillCatalog()
         let step = KairoRecipeStep(
