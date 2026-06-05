@@ -85,6 +85,23 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertFalse(availableModels.contains { $0.id == "smollm2-1-7b-instruct-q4-k-m" })
     }
 
+    func testKairoUITestingLocalModelFactorySeedsAndSelectsInstalledModel() async throws {
+        let rootDirectory = temporaryFileURL(named: "KairoUITestingLocalModels")
+        let components = try await KairoUITestingLocalModelFactory(
+            rootDirectory: rootDirectory,
+            seedInstalledLocalModel: true,
+            selectInstalledLocalModel: true,
+            routePreference: .localOnly
+        ).makeComponents()
+
+        let status = await components.settingsService.status()
+
+        XCTAssertEqual(status.selectedModelID, LocalModelManifest.qwen35Tiny.id)
+        XCTAssertEqual(status.installedRecord?.status, .installed)
+        XCTAssertEqual(status.preference, .localOnly)
+        XCTAssertEqual(components.chatRuntimeAvailable, false)
+    }
+
     func testLocalModelManifestTransparencyTextIsCompactForSettingsList() throws {
         let qwenTiny = LocalModelManifest.qwen35Tiny
         let text = qwenTiny.manifestTransparencyText

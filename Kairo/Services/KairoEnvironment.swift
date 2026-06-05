@@ -1,5 +1,4 @@
 import Foundation
-import CryptoKit
 
 public enum KairoSharedAppStorage {
     public static let appName = "Kairo"
@@ -15,10 +14,6 @@ public enum KairoSharedAppStorage {
             appGroupContainerProvider: appGroupContainerProvider
         )
     }
-}
-
-private enum KairoEnvironmentError: Error {
-    case invalidUITestingLocalModelURL
 }
 
 public struct KairoEnvironment: KairoBackendDependencies {
@@ -143,102 +138,16 @@ public struct KairoEnvironment: KairoBackendDependencies {
             try await skillStore.upsert(uiTestingInstalledWeatherSkill(version: "2.0.0"))
         }
         let marketplaceCatalogService = try uiTestingMarketplaceCatalogService()
-        let localModelCatalog: LocalModelCatalog
-        if seedExpandedLocalModelCatalog {
-            localModelCatalog = try LocalModelCatalog.kairoDefault.mergingRemoteCatalog(LocalModelCatalog(
-                generatedAt: Date(timeIntervalSince1970: 1_767_225_600),
-                signingKeyID: "kairo-ui-testing-expanded-local-models",
-                signature: "unsigned-ui-testing-placeholder",
-                sourceRepository: URL(string: "https://github.com/easonwumac/kairo-models"),
-                minimumSafetyPolicyVersion: LocalModelCatalog.kairoDefault.minimumSafetyPolicyVersion,
-                models: [uiTestingRemoteCatalogModel()]
-            ))
-        } else {
-            localModelCatalog = .kairoDefault
-        }
-        let localModelCatalogService = try uiTestingLocalModelCatalogService(catalog: localModelCatalog)
-        let localModelInstallRegistry = try await FileBackedLocalModelInstallRegistry(
-            fileURL: rootDirectory
-                .appendingPathComponent("LocalModels", isDirectory: true)
-                .appendingPathComponent("install-registry.json")
-        )
-        if seedInstalledLocalModel {
-            let defaultInstalledModelURL = rootDirectory
-                .appendingPathComponent("LocalModels", isDirectory: true)
-                .appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
-            let installedModelURL: URL
-            if let installedLocalModelFileURL {
-                try FileManager.default.createDirectory(
-                    at: defaultInstalledModelURL.deletingLastPathComponent(),
-                    withIntermediateDirectories: true
-                )
-                if FileManager.default.fileExists(atPath: defaultInstalledModelURL.path) {
-                    try FileManager.default.removeItem(at: defaultInstalledModelURL)
-                }
-                try FileManager.default.copyItem(at: installedLocalModelFileURL, to: defaultInstalledModelURL)
-                installedModelURL = defaultInstalledModelURL
-            } else {
-                installedModelURL = defaultInstalledModelURL
-            }
-            try await localModelInstallRegistry.upsert(LocalModelInstallRecord(
-                modelID: LocalModelManifest.qwen35Tiny.id,
-                version: LocalModelManifest.qwen35Tiny.version,
-                status: .installed,
-                fileURL: installedModelURL,
-                installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
-                sha256: LocalModelManifest.qwen35Tiny.sha256
-            ))
-        }
-        let localModelSettingsStore = try await FileBackedLocalModelSettingsStore(
-            fileURL: rootDirectory
-                .appendingPathComponent("LocalModels", isDirectory: true)
-                .appendingPathComponent("settings.json")
-        )
-        let localModelSettingsService = LocalModelSettingsService(
-            catalog: localModelCatalog,
-            installRegistry: localModelInstallRegistry,
-            settingsStore: localModelSettingsStore
-        )
-        if selectInstalledLocalModel {
-            try await localModelSettingsService.selectModel(id: LocalModelManifest.qwen35Tiny.id)
-        }
-        if let localModelRoutePreference {
-            try await localModelSettingsService.setPreference(localModelRoutePreference)
-        }
-        let localModelBenchmarkStore = try await FileBackedLocalModelBenchmarkStore(
-            fileURL: rootDirectory
-                .appendingPathComponent("LocalModels", isDirectory: true)
-                .appendingPathComponent("benchmarks.json")
-        )
-        let localModelBenchmarkService = LocalModelBenchmarkService(
-            catalog: localModelCatalog,
-            installRegistry: localModelInstallRegistry,
-            resultStore: localModelBenchmarkStore,
-            engine: localModelBenchmarkEngineOverride ?? UnavailableLocalModelBenchmarkEngine()
-        )
-        let localModelReplyRuntime = localModelReplyCheckRuntimeOverride ?? DeterministicLocalModelReplyCheckRuntime(
-            responseText: "Local model reply is alive.",
-            generationTokensPerSecond: 38.5
-        )
-        let localModelReplyCheckService = LocalModelReplyCheckService(
-            catalog: localModelCatalog,
-            installRegistry: localModelInstallRegistry,
-            runtime: localModelReplyRuntime
-        )
-        let aiProvider: any AIProvider
-        if localModelReplyCheckRuntimeOverride != nil {
-            aiProvider = LocalModelRoutingAIProvider(
-                cloudProvider: MockAIProvider(),
-                localModelSettingsService: localModelSettingsService,
-                localProvider: LocalModelRuntimeAIProvider(
-                    localModelSettingsService: localModelSettingsService,
-                    runtime: localModelReplyRuntime
-                ),
-                localRuntimeAvailable: true
-            )
-        } else {
-            aiProvider = MockAIProvider()
-        }
+        let localModelComponents = try await KairoUITestingLocalModelFactory(
+            rootDirectory: rootDirectory,
+            seedInstalledLocalModel: seedInstalledLocalModel,
+            seedExpandedLocalModelCatalog: seedExpandedLocalModelCatalog,
+            selectInstalledLocalModel: selectInstalledLocalModel,
+            routePreference: localModelRoutePreference,
+            installedLocalModelFileURL: installedLocalModelFileURL,
+            replyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
+            benchmarkEngineOverride: localModelBenchmarkEngineOverride
+        ).makeComponents()
         let credentialStore = InMemoryCredentialStore()
         let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(
             fileURL: rootDirectory
@@ -269,7 +178,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         return KairoEnvironment(
             memoryStore: memoryStore,
             credentialStore: credentialStore,
-            aiProvider: aiProvider,
+            aiProvider: localModelComponents.aiProvider,
             chatHistoryStore: chatHistoryStore,
             shareIngestionQueue: shareIngestionQueue,
             kairoRecipeStore: kairoRecipeStore,
@@ -278,12 +187,12 @@ public struct KairoEnvironment: KairoBackendDependencies {
             oauthConnectorCallbackStore: oauthCallbackStore,
             agentSkillManagerService: skillManagerService,
             agentSkillMarketplaceCatalogService: marketplaceCatalogService,
-            localModelCatalog: localModelCatalog,
-            localModelCatalogService: localModelCatalogService,
-            localModelSettingsService: localModelSettingsService,
-            localModelBenchmarkService: localModelBenchmarkService,
-            localModelReplyCheckService: localModelReplyCheckService,
-            localModelChatRuntimeAvailable: localModelReplyCheckRuntimeOverride != nil,
+            localModelCatalog: localModelComponents.catalog,
+            localModelCatalogService: localModelComponents.catalogService,
+            localModelSettingsService: localModelComponents.settingsService,
+            localModelBenchmarkService: localModelComponents.benchmarkService,
+            localModelReplyCheckService: localModelComponents.replyCheckService,
+            localModelChatRuntimeAvailable: localModelComponents.chatRuntimeAvailable,
             actionExecutor: SandboxActionExecutor(
                 memoryStore: memoryStore,
                 reminderScheduler: AllowingReminderScheduler(identifier: "ui-testing-reminder-id"),
@@ -293,41 +202,6 @@ public struct KairoEnvironment: KairoBackendDependencies {
                 notificationScheduler: AllowingNotificationScheduler(identifier: "ui-testing-notification-id"),
                 auditLogger: auditLogger
             )
-        )
-    }
-
-    private static func uiTestingRemoteCatalogModel() throws -> LocalModelManifest {
-        guard let licenseURL = URL(string: "https://www.apache.org/licenses/LICENSE-2.0"),
-              let downloadURL = URL(string: "https://example.com/kairo/remote-catalog-test-model-q4_k_m.gguf")
-        else {
-            throw KairoEnvironmentError.invalidUITestingLocalModelURL
-        }
-
-        return LocalModelManifest(
-            id: "remote-catalog-test-model-q4-k-m",
-            displayName: "Remote Catalog Test Model Q4_K_M",
-            family: "Remote Catalog Test",
-            version: "1.0",
-            parameterCount: "1B",
-            quantization: "Q4_K_M",
-            runtime: .gguf,
-            fileSizeBytes: 640_000_000,
-            installedSizeBytes: 1_000 * 1024 * 1024,
-            contextWindow: 8_192,
-            tokenizerID: "remote-catalog-test-tokenizer",
-            licenseName: "Apache-2.0",
-            licenseURL: licenseURL,
-            minOSVersion: "17.0",
-            minDeviceClass: "A15",
-            minRAMGB: 4,
-            supportedLocales: ["en", "zh-Hant"],
-            capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat],
-            disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
-            downloadURL: downloadURL,
-            sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-            createdAt: Date(timeIntervalSince1970: 1_767_225_600),
-            updatedAt: Date(timeIntervalSince1970: 1_767_225_600),
-            safetyPolicyVersion: "2026.1"
         )
     }
 
@@ -445,37 +319,6 @@ public struct KairoEnvironment: KairoBackendDependencies {
         skill.author = "Kairo Marketplace"
         skill.installationStatus = .installed
         return skill
-    }
-
-    private static func uiTestingLocalModelCatalogService(catalog: LocalModelCatalog = .kairoDefault) throws -> LocalModelCatalogService {
-        let indexURL = LocalModelCatalogService.defaultIndexURL
-        let signingKey = P256.Signing.PrivateKey()
-        let signedCatalog = try LocalModelCatalog.signedForTesting(
-            catalog: catalog,
-            keyID: catalog.signingKeyID,
-            signingKey: signingKey
-        )
-        let catalogJSON = String(data: try signedCatalog.encoded(), encoding: .utf8) ?? "{}"
-        let httpClient = StaticHTTPClient(routes: [
-            indexURL: StaticHTTPResponse(body: catalogJSON)
-        ])
-        var trustedKeys = LocalModelCatalogService.defaultTrustStore.trustedKeys
-        let fixtureKey = LocalModelTrustedSigningKey(
-            keyID: signedCatalog.signingKeyID,
-            algorithm: "p256-sha256",
-            status: .active,
-            publicKeyBase64: signingKey.publicKey.derRepresentation.base64EncodedString()
-        )
-        if let index = trustedKeys.firstIndex(where: { $0.keyID == signedCatalog.signingKeyID }) {
-            trustedKeys[index] = fixtureKey
-        } else {
-            trustedKeys.append(fixtureKey)
-        }
-        return LocalModelCatalogService(
-            indexURL: indexURL,
-            httpClient: httpClient,
-            trustStore: LocalModelCatalogTrustStore(trustedKeys: trustedKeys)
-        )
     }
 
     public static func live(
