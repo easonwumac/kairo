@@ -226,6 +226,57 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(result.recipeID, "factory-noop-recipe")
     }
 
+    func testShareImportBackendServiceFactoryBuildsShareImportAPIFromInjectedDependencies() async throws {
+        let rootDirectory = temporaryDirectory(named: "KairoShareImportFactory")
+        let sharedFilesDirectory = rootDirectory.appendingPathComponent("SharedFiles", isDirectory: true)
+        try FileManager.default.createDirectory(at: sharedFilesDirectory, withIntermediateDirectories: true)
+        let copiedFileURL = sharedFilesDirectory.appendingPathComponent("factory-share.txt")
+        let externalFileURL = rootDirectory.appendingPathComponent("external-share.txt")
+        try Data("copied share".utf8).write(to: copiedFileURL)
+        try Data("external share".utf8).write(to: externalFileURL)
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.file(
+                    url: copiedFileURL,
+                    displayName: "factory-share.txt",
+                    uniformTypeIdentifier: "public.plain-text",
+                    byteCount: 12
+                ),
+                builder.file(
+                    url: externalFileURL,
+                    displayName: "external-share.txt",
+                    uniformTypeIdentifier: "public.plain-text",
+                    byteCount: 14
+                )
+            ],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            shareIngestionQueue: queue,
+            sharedFilesDirectory: sharedFilesDirectory
+        )
+        let shareImportAPI = KairoShareImportBackendServiceFactory(dependencies: environment).makeShareImportAPI()
+
+        let imported = try await shareImportAPI.importPendingShares(limit: 10)
+        XCTAssertEqual(imported.importedItemIDs, [item.id])
+
+        try await shareImportAPI.clearImportedShares(
+            ids: imported.importedItemIDs,
+            attachments: imported.attachments
+        )
+        let remaining = try await queue.pendingItems(limit: 10)
+
+        XCTAssertTrue(remaining.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: copiedFileURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: externalFileURL.path))
+    }
+
     func testBackendCompositionSharesInjectedPhoneToolCatalogAcrossAccessAndChat() async throws {
         let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
         let toolCatalog = BuiltInPhoneToolCatalog(tools: [calendarTool])
@@ -737,6 +788,11 @@ final class KairoBackendAPITests: XCTestCase {
             sandboxNotes: "Test connector.",
             status: .requiresBackend
         )
+    }
+
+    private func temporaryDirectory(named name: String) -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(name)-\(UUID().uuidString)", isDirectory: true)
     }
 }
 
