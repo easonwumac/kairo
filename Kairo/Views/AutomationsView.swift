@@ -28,37 +28,38 @@ public struct AutomationsView: View {
         shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
     ) {
-        let runtimeMemoryStore = memoryStore ?? InMemoryMemoryStore()
-        let runtime = ShortcutNodeRuntime(
-            memoryStore: runtimeMemoryStore,
-            toolCatalog: toolCatalog
-        )
         self.init(
-            recipeAPI: KairoRecipeBackendService(
+            dependencies: AutomationsFeatureDependencies(
                 recipeStore: recipeStore,
                 memoryStore: memoryStore,
                 aiProvider: aiProvider,
+                shortcutTemplateRegistry: shortcutTemplateRegistry,
                 toolCatalog: toolCatalog
-            ),
-            shortcutTemplateRegistry: shortcutTemplateRegistry,
-            shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(runtime: runtime)
+            )
         )
     }
 
     public init(
         recipeAPI: any KairoRecipeAPI,
         shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default,
-        shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol = ShortcutDemoRecipeRunner(
-            runtime: ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
-        )
+        shortcutDemoRecipeRunner: (any ShortcutDemoRecipeRunnerProtocol)? = nil
     ) {
-        self.init(
-            dependencies: AutomationsFeatureDependencies(
-                recipeAPI: recipeAPI,
-                shortcutTemplateRegistry: shortcutTemplateRegistry,
-                shortcutDemoRecipeRunner: shortcutDemoRecipeRunner
+        if let shortcutDemoRecipeRunner {
+            self.init(
+                dependencies: AutomationsFeatureDependencies(
+                    recipeAPI: recipeAPI,
+                    shortcutTemplateRegistry: shortcutTemplateRegistry,
+                    shortcutDemoRecipeRunner: shortcutDemoRecipeRunner
+                )
             )
-        )
+        } else {
+            self.init(
+                dependencies: AutomationsFeatureDependencies(
+                    recipeAPI: recipeAPI,
+                    shortcutTemplateRegistry: shortcutTemplateRegistry
+                )
+            )
+        }
     }
 
     public var body: some View {
