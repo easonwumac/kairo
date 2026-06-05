@@ -4,6 +4,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
     public var paths: KairoPaths
     public var credentialStore: any CredentialStore
     public var oauthConnectorRegistry: any OAuthConnectorRegistryProviding
+    public var oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var capabilityRegistry: any CapabilityRegistryProviding
@@ -16,6 +17,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier,
         credentialStore: any CredentialStore = KeychainCredentialStore(),
         oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
+        oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking = OAuthConnectorLoginServiceFactory(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
@@ -27,6 +29,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             paths: KairoPaths(appName: appName, appGroupIdentifier: appGroupIdentifier),
             credentialStore: credentialStore,
             oauthConnectorRegistry: oauthConnectorRegistry,
+            oauthLoginServiceFactory: oauthLoginServiceFactory,
             toolCatalog: toolCatalog,
             appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             capabilityRegistry: capabilityRegistry,
@@ -40,6 +43,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         paths: KairoPaths,
         credentialStore: any CredentialStore,
         oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
+        oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking = OAuthConnectorLoginServiceFactory(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
@@ -50,6 +54,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         self.paths = paths
         self.credentialStore = credentialStore
         self.oauthConnectorRegistry = oauthConnectorRegistry
+        self.oauthLoginServiceFactory = oauthLoginServiceFactory
         self.toolCatalog = toolCatalog
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.capabilityRegistry = capabilityRegistry
@@ -100,6 +105,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             oauthConnectorRegistry: integrationRegistry,
             oauthConnectorCallbackStore: accessComponents.oauthCallbackStore,
             oauthClientConfigurations: accessComponents.oauthClientConfigurations,
+            oauthLoginServiceFactory: oauthLoginServiceFactory,
             agentSkillManagerService: accessComponents.skillManagerService,
             agentSkillMarketplaceCatalogService: accessComponents.marketplaceCatalogService,
             localModelCatalog: localModelComponents.catalog,

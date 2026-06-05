@@ -1,3 +1,13 @@
+public protocol OAuthConnectorLoginServiceMaking: Sendable {
+    func makeLoginService(
+        override: (any OAuthConnectorLoginServicing)?,
+        credentialStore: any CredentialStore,
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding,
+        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration],
+        oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
+    ) -> any OAuthConnectorLoginServicing
+}
+
 public struct OAuthConnectorLoginServiceFactory: Sendable {
     public init() {}
 
@@ -19,3 +29,5 @@ public struct OAuthConnectorLoginServiceFactory: Sendable {
         )
     }
 }
+
+extension OAuthConnectorLoginServiceFactory: OAuthConnectorLoginServiceMaking {}

@@ -13,6 +13,7 @@ public protocol KairoBackendDependencies: Sendable {
     var auditLogger: AuditLogger { get }
     var oauthConnectorRegistry: any OAuthConnectorRegistryProviding { get }
     var oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] { get }
+    var oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking { get }
     var agentSkillManagerService: AgentSkillManagerService? { get }
     var localModelSettingsService: LocalModelSettingsService? { get }
     var toolCatalog: any BuiltInPhoneToolCatalogProviding { get }
@@ -44,7 +45,7 @@ public struct KairoSettingsBackendServiceFactory<Dependencies: KairoBackendDepen
     public func makeSettingsAPI() -> any KairoSettingsAPI {
         KairoSettingsBackendService(
             openAISettingsService: OpenAISettingsService(credentialStore: dependencies.credentialStore),
-            oauthLoginCenter: OAuthConnectorLoginServiceFactory().makeLoginService(
+            oauthLoginCenter: dependencies.oauthLoginServiceFactory.makeLoginService(
                 override: nil,
                 credentialStore: dependencies.credentialStore,
                 oauthConnectorRegistry: dependencies.oauthConnectorRegistry,
@@ -196,7 +197,7 @@ public struct KairoDeletionBackendServiceFactory<Dependencies: KairoBackendDepen
             memoryStore: dependencies.memoryStore,
             credentialStore: dependencies.credentialStore,
             auditLogger: dependencies.auditLogger,
-            oauthLoginService: OAuthConnectorLoginServiceFactory().makeLoginService(
+            oauthLoginService: dependencies.oauthLoginServiceFactory.makeLoginService(
                 override: nil,
                 credentialStore: dependencies.credentialStore,
                 oauthConnectorRegistry: dependencies.oauthConnectorRegistry,

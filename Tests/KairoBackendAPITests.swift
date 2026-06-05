@@ -485,6 +485,23 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertTrue(auditEvents.isEmpty)
     }
 
+    func testBackendFactoriesUseInjectedOAuthLoginServiceFactory() async throws {
+        let loginService = CapturingOAuthLoginService()
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            oauthLoginServiceFactory: BackendFixedOAuthLoginServiceFactory(loginService: loginService)
+        )
+        let factory = ProductionKairoBackendServiceFactory(dependencies: environment)
+
+        try await factory.makeSettingsAPI().disconnectOAuthProvider(providerKey: "todoist")
+        try await factory.makeDeletionAPI().disconnectOAuthProvider(providerKey: "github")
+
+        let disconnectedProviderKeys = await loginService.disconnectedProviderKeys()
+        XCTAssertEqual(disconnectedProviderKeys, ["todoist", "github"])
+    }
+
     func testBackendCompositionSharesInjectedPhoneToolCatalogAcrossAccessAndChat() async throws {
         let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
         let toolCatalog = BuiltInPhoneToolCatalog(tools: [calendarTool])
@@ -1497,9 +1514,14 @@ final class KairoBackendAPITests: XCTestCase {
 
 private actor CapturingOAuthLoginService: OAuthConnectorLoginServicing {
     private var callbackURLs: [URL] = []
+    private var disconnectedKeys: [String] = []
 
     func handledCallbackURLs() -> [URL] {
         callbackURLs
+    }
+
+    func disconnectedProviderKeys() -> [String] {
+        disconnectedKeys
     }
 
     func loginOptions() async throws -> [OAuthConnectorLoginOption] {
@@ -1534,7 +1556,23 @@ private actor CapturingOAuthLoginService: OAuthConnectorLoginServicing {
         throw OAuthConnectorLoginCenterError.missingIntegration(callbackURL.absoluteString)
     }
 
-    func disconnect(providerKey: String) async throws {}
+    func disconnect(providerKey: String) async throws {
+        disconnectedKeys.append(providerKey)
+    }
+}
+
+private struct BackendFixedOAuthLoginServiceFactory: OAuthConnectorLoginServiceMaking {
+    let loginService: any OAuthConnectorLoginServicing
+
+    func makeLoginService(
+        override: (any OAuthConnectorLoginServicing)?,
+        credentialStore: any CredentialStore,
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding,
+        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration],
+        oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
+    ) -> any OAuthConnectorLoginServicing {
+        override ?? loginService
+    }
 }
 
 private struct FixedShortcutDemoRecipeRunner: ShortcutDemoRecipeRunnerProtocol {

@@ -29,6 +29,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public let oauthConnectorRegistry: any OAuthConnectorRegistryProviding
     public let oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore?
     public let oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
+    public let oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking
     public let agentSkillManagerService: AgentSkillManagerService?
     public let agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService?
     public let localModelCatalog: LocalModelCatalog
@@ -58,6 +59,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         oauthConnectorRegistry: (any OAuthConnectorRegistryProviding)? = nil,
         oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
+        oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking = OAuthConnectorLoginServiceFactory(),
         agentSkillManagerService: AgentSkillManagerService? = nil,
         agentSkillMarketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil,
         localModelCatalog: LocalModelCatalog = .kairoDefault,
@@ -88,6 +90,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         )
         self.oauthConnectorCallbackStore = oauthConnectorCallbackStore
         self.oauthClientConfigurations = oauthClientConfigurations
+        self.oauthLoginServiceFactory = oauthLoginServiceFactory
         self.agentSkillManagerService = agentSkillManagerService
         self.agentSkillMarketplaceCatalogService = agentSkillMarketplaceCatalogService
         self.localModelCatalog = localModelCatalog
@@ -145,6 +148,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public static func live(
         appName: String = KairoSharedAppStorage.appName,
         appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier,
+        oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking = OAuthConnectorLoginServiceFactory(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
@@ -155,6 +159,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         try await KairoLiveEnvironmentComposer(
             appName: appName,
             appGroupIdentifier: appGroupIdentifier,
+            oauthLoginServiceFactory: oauthLoginServiceFactory,
             toolCatalog: toolCatalog,
             appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             capabilityRegistry: capabilityRegistry,
