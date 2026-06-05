@@ -68,8 +68,20 @@ public struct RootView: View {
             .accessibilityIdentifier("root.shell")
     }
 
-    private static var fullScreenBackground: Color {
-        KairoDesign.background
+    private static var fullScreenBackground: some View {
+        ZStack {
+            KairoDesign.background
+            LinearGradient(
+                colors: [
+                    KairoDesign.blue.opacity(0.13),
+                    KairoDesign.teal.opacity(0.08),
+                    Color.white.opacity(0.18)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .blendMode(.softLight)
+        }
     }
 
     @ViewBuilder
@@ -151,49 +163,63 @@ public struct RootView: View {
         .padding(.horizontal, 16)
         .padding(.top, max(topInset, 0) + 8)
         .padding(.bottom, 10)
-        .background(.regularMaterial)
+        .background {
+            Rectangle()
+                .fill(.regularMaterial)
+                .shadow(color: KairoDesign.shadow, radius: 18, x: 0, y: 10)
+        }
         .overlay(alignment: .bottom) {
-            Divider()
+            Rectangle()
+                .fill(KairoDesign.line)
+                .frame(height: 1)
+                .padding(.horizontal, 16)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("root.safe-area-header")
     }
 
     private var primaryNavigationStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(RootSection.primaryTabs) { section in
-                    Button {
-                        selectedSection = section
-                    } label: {
-                        HStack(spacing: 7) {
-                            Image(systemName: section.systemImage)
-                                .font(.caption.weight(.bold))
-                            Text(section.shortTitle)
-                                .font(.caption.weight(.semibold))
-                                .lineLimit(1)
+        VStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(RootSection.primaryTabs) { section in
+                        Button {
+                            selectedSection = section
+                        } label: {
+                            HStack(spacing: 7) {
+                                Image(systemName: section.systemImage)
+                                    .font(.caption.weight(.bold))
+                                Text(section.shortTitle)
+                                    .font(.caption.weight(.semibold))
+                                    .lineLimit(1)
+                            }
+                            .foregroundStyle(selectedSection == section ? .white : KairoDesign.muted)
+                            .padding(.horizontal, 12)
+                            .frame(height: 34)
+                            .background(selectedSection == section ? section.tint : KairoDesign.elevatedSurface, in: Capsule())
+                            .overlay {
+                                Capsule()
+                                    .stroke(selectedSection == section ? Color.clear : KairoDesign.line, lineWidth: 1)
+                            }
                         }
-                        .foregroundStyle(selectedSection == section ? .white : KairoDesign.muted)
-                        .padding(.horizontal, 12)
-                        .frame(height: 34)
-                        .background(selectedSection == section ? section.tint : KairoDesign.elevatedSurface, in: Capsule())
-                        .overlay {
-                            Capsule()
-                                .stroke(selectedSection == section ? Color.clear : KairoDesign.line, lineWidth: 1)
-                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(section.title)
+                        .accessibilityIdentifier("root.tab.\(section.rawValue)")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(section.title)
-                    .accessibilityIdentifier("root.tab.\(section.rawValue)")
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(KairoDesign.groupedSurface, in: Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke(Color.white.opacity(0.72), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow, radius: 16, x: 0, y: 8)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 9)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 9)
         }
-        .background(KairoDesign.background)
-        .overlay(alignment: .bottom) {
-            Divider()
-        }
+        .background(KairoDesign.background.opacity(0.72))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("root.primary-tabs")
     }
@@ -267,7 +293,15 @@ public struct RootView: View {
                 .padding(.bottom, max(safeAreaInsets.bottom, 0) + 24)
             }
         }
-        .background(KairoDesign.background)
+        .background {
+            ZStack(alignment: .leading) {
+                Self.fullScreenBackground
+                Rectangle()
+                    .fill(KairoDesign.ink.opacity(0.04))
+                    .frame(width: 10)
+                    .ignoresSafeArea()
+            }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(KairoL10n.string("root.menu.accessibility"))
         .accessibilityIdentifier("root.drawer")
