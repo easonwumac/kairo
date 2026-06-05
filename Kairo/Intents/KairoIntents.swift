@@ -341,8 +341,7 @@ public struct RunKairoShortcutNodeIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let runtime = try await KairoShortcutIntentSupport.runtime()
-        let service = ShortcutNodeInvocationService(runtime: runtime)
+        let service = try await KairoShortcutIntentSupport.invocationService()
         let outputJSON = try await service.run(nodeKindRawValue: nodeKind, inputJSON: inputJSON)
         let output = try JSONDecoder().decode(ShortcutNodeOutput.self, from: Data(outputJSON.utf8))
         return .result(value: outputJSON, dialog: IntentDialog(stringLiteral: output.displayText))
@@ -395,8 +394,7 @@ public struct SuggestKairoRecipeIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let planner = KairoRecipePlanner()
-        let recipes = planner.suggestRecipes(for: automationRequest)
+        let recipes = KairoRecipeIntentSupport.suggestRecipes(for: automationRequest)
         guard let recipe = recipes.first else {
             return .result(
                 value: "[]",
@@ -499,6 +497,14 @@ enum KairoRecipeIntentSupport {
         )
     }
 
+    static func suggestRecipes(
+        for request: String,
+        planner: any KairoRecipePlanning = KairoRecipePlanner(),
+        now: Date = Date()
+    ) -> [KairoRecipe] {
+        planner.suggestRecipes(for: request, now: now)
+    }
+
     static func encode<T: Encodable>(_ value: T) throws -> String {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -516,11 +522,18 @@ private enum KairoAgentIntentSupport {
     }
 }
 
-private enum KairoShortcutIntentSupport {
+enum KairoShortcutIntentSupport {
     static func runtime(
         provider: any ShortcutNodeRuntimeProviding = LiveShortcutNodeRuntimeProvider()
     ) async throws -> ShortcutNodeRuntime {
         try await provider.makeRuntime()
+    }
+
+    static func invocationService(
+        provider: any ShortcutNodeRuntimeProviding = LiveShortcutNodeRuntimeProvider()
+    ) async throws -> ShortcutNodeInvocationService {
+        let runtime = try await runtime(provider: provider)
+        return ShortcutNodeInvocationService(runtime: runtime)
     }
 }
 #endif

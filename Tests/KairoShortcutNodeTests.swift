@@ -134,6 +134,28 @@ final class KairoShortcutNodeTests: XCTestCase {
         }
     }
 
+#if canImport(AppIntents)
+    func testShortcutIntentSupportBuildsInvocationServiceFromInjectedRuntimeProvider() async throws {
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let provider = StubShortcutNodeRuntimeProvider(runtime: runtime)
+        let service = try await KairoShortcutIntentSupport.invocationService(provider: provider)
+        let input = ShortcutNodeInput(
+            text: "Action: Validate injected runtime provider",
+            sourceName: "Injected Shortcut Runtime"
+        )
+
+        let outputJSON = try await service.run(
+            nodeKindRawValue: "extractTasks",
+            inputJSON: try input.encodedJSONString()
+        )
+        let output = try JSONDecoder().decode(ShortcutNodeOutput.self, from: Data(outputJSON.utf8))
+
+        XCTAssertEqual(output.kind, .extractTasks)
+        XCTAssertEqual(output.tasks.map(\.title), ["Validate injected runtime provider"])
+        XCTAssertEqual(output.fields["sourceName"], "Injected Shortcut Runtime")
+    }
+#endif
+
     func testLiveAgentProviderUsesFileBackedMemoryAndInjectedToolCatalog() async throws {
         let paths = KairoPaths(appName: "LiveAgentProvider-\(UUID().uuidString)")
         let memoryStore = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
@@ -1451,6 +1473,16 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(run.totalTaskCount, 2)
     }
 }
+
+#if canImport(AppIntents)
+private struct StubShortcutNodeRuntimeProvider: ShortcutNodeRuntimeProviding {
+    var runtime: ShortcutNodeRuntime
+
+    func makeRuntime() async throws -> ShortcutNodeRuntime {
+        runtime
+    }
+}
+#endif
 
 private final class StubShortcutIntegrationBlockedOutputBuilder: ShortcutIntegrationBlockedOutputBuilding, @unchecked Sendable {
     private(set) var receivedKinds: [ShortcutNodeKind] = []

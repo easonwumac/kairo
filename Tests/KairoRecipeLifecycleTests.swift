@@ -504,6 +504,39 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertFalse(result.stepResults.first?.success ?? true)
     }
 
+#if canImport(AppIntents)
+    func testRecipeIntentSupportUsesInjectedPlannerForSuggestions() {
+        let recipe = KairoRecipe(
+            id: "injected-intent-recipe",
+            title: "Injected Intent Recipe",
+            summary: "Planner injection boundary.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "ask",
+                    title: "Ask",
+                    kind: .askKairo,
+                    input: .literal("Injected")
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: false
+        )
+        let planner = StubKairoRecipePlanner(recipes: [recipe])
+
+        let suggestions = KairoRecipeIntentSupport.suggestRecipes(
+            for: "ignored by stub planner",
+            planner: planner,
+            now: Date(timeIntervalSince1970: 20)
+        )
+
+        XCTAssertEqual(suggestions.map(\.id), [recipe.id])
+        XCTAssertEqual(suggestions.map(\.steps.count), [1])
+    }
+#endif
+
     func testKairoRecipeRunnerUsesLocalizedLocalFallbackWhenAskStepHasNoProvider() async throws {
         let recipe = KairoRecipe(
             id: "ask-local-fallback",
@@ -541,6 +574,14 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
             .appendingPathComponent(name)
+    }
+}
+
+private struct StubKairoRecipePlanner: KairoRecipePlanning {
+    var recipes: [KairoRecipe]
+
+    func suggestRecipes(for request: String, now: Date) -> [KairoRecipe] {
+        recipes
     }
 }
 

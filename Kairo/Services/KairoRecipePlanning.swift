@@ -1,5 +1,9 @@
 import Foundation
 
+public protocol KairoRecipePlanning: Sendable {
+    func suggestRecipes(for request: String, now: Date) -> [KairoRecipe]
+}
+
 public struct KairoRecipePlanner: Sendable {
     public init() {}
 
@@ -89,3 +93,5 @@ public struct KairoRecipePlanner: Sendable {
         needles.contains { text.contains($0) }
     }
 }
+
+extension KairoRecipePlanner: KairoRecipePlanning {}
