@@ -144,6 +144,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) async throws -> KairoEnvironment {
@@ -152,6 +153,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
             appGroupIdentifier: appGroupIdentifier,
             toolCatalog: toolCatalog,
             appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+            capabilityRegistry: capabilityRegistry,
             localModelReplyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
             localModelBenchmarkEngineOverride: localModelBenchmarkEngineOverride
         ).makeEnvironment()

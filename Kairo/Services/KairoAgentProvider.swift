@@ -11,6 +11,7 @@ public struct LiveKairoAgentProvider: KairoAgentProviding {
     private let integrationRegistry: any AppIntegrationRegistryProviding
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
     private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
+    private let capabilityRegistry: CapabilityRegistry
 
     public init(
         paths: KairoPaths = KairoSharedAppStorage.paths(),
@@ -18,13 +19,15 @@ public struct LiveKairoAgentProvider: KairoAgentProviding {
         aiProvider: (any AIProvider)? = nil,
         integrationRegistry: (any AppIntegrationRegistryProviding)? = nil,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        capabilityRegistry: CapabilityRegistry = CapabilityRegistry()
     ) {
         self.paths = paths
         self.credentialStore = credentialStore
         self.aiProviderOverride = aiProvider
         self.toolCatalog = toolCatalog
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
+        self.capabilityRegistry = capabilityRegistry
         self.integrationRegistry = integrationRegistry ?? IntegrationRegistry.appIntegrationHarnessRegistry(
             catalog: appIntegrationSkillCatalog
         )
@@ -55,7 +58,8 @@ public struct LiveKairoAgentProvider: KairoAgentProviding {
             aiProvider: aiProvider,
             oauthConnectorRegistry: integrationRegistry,
             toolCatalog: toolCatalog,
-            appIntegrationSkillCatalog: appIntegrationSkillCatalog
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+            capabilityRegistry: capabilityRegistry
         )
     }
 }

@@ -177,11 +177,22 @@ final class KairoShortcutNodeTests: XCTestCase {
             proposedActions: [proposedAction]
         ))
         let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
+        let capabilityRegistry = CapabilityRegistry(capabilities: [
+            Capability(
+                key: .calendar,
+                displayName: "Injected Calendar",
+                description: "Injected live agent capability boundary.",
+                permission: .runtimePrompt,
+                status: .available,
+                isMVP: true
+            )
+        ])
         let provider = LiveKairoAgentProvider(
             paths: paths,
             credentialStore: InMemoryCredentialStore(),
             aiProvider: aiProvider,
-            toolCatalog: BuiltInPhoneToolCatalog(tools: [calendarTool])
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [calendarTool]),
+            capabilityRegistry: capabilityRegistry
         )
 
         let agent = try await provider.makeAgent()
@@ -191,6 +202,7 @@ final class KairoShortcutNodeTests: XCTestCase {
 
         XCTAssertEqual(response.message, "Provider response")
         XCTAssertEqual(capturedRequest.memoryContext.map(\.title), ["Project Alpha"])
+        XCTAssertEqual(capturedRequest.allowedCapabilities, [.calendar])
         XCTAssertTrue(response.proposedActions.isEmpty)
     }
 
