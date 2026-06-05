@@ -207,6 +207,7 @@ public struct KairoRecipeRunResult: Codable, Equatable, Sendable {
 
 public struct KairoRecipeStepResult: Codable, Equatable, Sendable {
     public var stepID: String
+    public var integrationSkillID: AppIntegrationSkillID?
     public var summary: String
     public var outputText: String?
     public var success: Bool
@@ -214,12 +215,14 @@ public struct KairoRecipeStepResult: Codable, Equatable, Sendable {
 
     public init(
         stepID: String,
+        integrationSkillID: AppIntegrationSkillID? = nil,
         summary: String,
         outputText: String?,
         success: Bool,
         errorMessage: String? = nil
     ) {
         self.stepID = stepID
+        self.integrationSkillID = integrationSkillID
         self.summary = summary
         self.outputText = outputText
         self.success = success

@@ -437,6 +437,7 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         ))
 
         XCTAssertTrue(result.success)
+        XCTAssertEqual(result.stepResults.first?.integrationSkillID, .googleMapsDirectionsHandoff)
         let action = try XCTUnwrap(result.proposedActions.first)
         XCTAssertEqual(action.kind, .openURL)
         XCTAssertTrue(action.requiresConfirmation)
@@ -506,6 +507,7 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         ))
 
         XCTAssertFalse(result.success)
+        XCTAssertEqual(result.stepResults.first?.integrationSkillID, .todoistTaskAPI)
         XCTAssertTrue(result.proposedActions.isEmpty)
         XCTAssertFalse(result.stepResults.first?.success ?? true)
     }

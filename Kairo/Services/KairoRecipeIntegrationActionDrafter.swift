@@ -42,6 +42,7 @@ public struct CatalogBackedKairoRecipeIntegrationActionDrafter: KairoRecipeInteg
             return KairoRecipeIntegrationActionDraftResult(
                 stepResult: KairoRecipeStepResult(
                     stepID: step.id,
+                    integrationSkillID: integrationSkillID,
                     summary: KairoL10n.string("recipes.integration.missingCatalog.summary"),
                     outputText: KairoL10n.string("recipes.integration.missingCatalog.output"),
                     success: false,
@@ -54,6 +55,7 @@ public struct CatalogBackedKairoRecipeIntegrationActionDrafter: KairoRecipeInteg
                 return KairoRecipeIntegrationActionDraftResult(
                     stepResult: KairoRecipeStepResult(
                         stepID: step.id,
+                        integrationSkillID: skill.id,
                         summary: KairoL10n.string("recipes.integration.setupRequired.summary"),
                         outputText: KairoL10n.string("recipes.integration.setupRequired.output", skill.appName),
                         success: false,
@@ -71,6 +73,7 @@ public struct CatalogBackedKairoRecipeIntegrationActionDrafter: KairoRecipeInteg
                 return KairoRecipeIntegrationActionDraftResult(
                     stepResult: KairoRecipeStepResult(
                         stepID: step.id,
+                        integrationSkillID: skill.id,
                         summary: KairoL10n.string("recipes.integration.previewUnavailable.summary"),
                         outputText: KairoL10n.string("recipes.integration.previewUnavailable.output", skill.appName),
                         success: false,
@@ -83,6 +86,7 @@ public struct CatalogBackedKairoRecipeIntegrationActionDrafter: KairoRecipeInteg
             return KairoRecipeIntegrationActionDraftResult(
                 stepResult: KairoRecipeStepResult(
                     stepID: step.id,
+                    integrationSkillID: skill.id,
                     summary: KairoL10n.string("recipes.integration.prepared.summary", skill.appName),
                     outputText: inputText,
                     success: true
