@@ -2,6 +2,23 @@
 
 Kairo is now scoped to the MVP Utility Gate. Only work that directly improves one of these user flows should be started.
 
+## App Integration Harness Scenario Evidence
+
+Verified in focused package tests on 2026-06-05:
+
+- Google Maps navigation request selects `googleMapsDirectionsHandoff` from `AppIntegrationSkillCatalog`, produces a confirmation-gated visible HTTPS handoff, and avoids legacy `IntegrationRegistry` duplicates.
+- Google Maps unavailable state falls back to an Apple Maps catalog candidate without making the unavailable Google Maps skill executable.
+- Todoist task request selects `todoistTaskAPI` from `AppIntegrationSkillCatalog`; without OAuth it remains setup-required with no executable action.
+- LINE private message read request selects the LINE catalog skill as unsupported and returns a safe fallback with no executable handoff.
+- Shared text import can produce reminder, calendar, and email draft previews while keeping writes and external app opens blocked before confirmation.
+
+Evidence commands:
+
+- `swift test --filter KairoBackendAPITests/testScenarioGoogleMapsDirectionsUsesCatalogHandoffPreview`
+- `swift test --filter KairoBackendAPITests/testScenarioTodoistOAuthRequiredStaysSetupOnly`
+- `swift test --filter KairoBackendAPITests/testScenarioLinePrivateDataReadUsesUnsupportedCatalogFallback`
+- `swift test --filter KairoBackendAPITests/testScenarioShareImportToReminderCalendarAndEmailDraftPreviewsWithoutExecution`
+
 ## Flow A: Share -> Kairo -> Tasks / Summary
 
 Remaining gaps:
