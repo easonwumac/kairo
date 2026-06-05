@@ -489,6 +489,27 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(output.proposedActions.isEmpty)
     }
 
+    func testShortcutNodeIntegrationGateUsesInjectedBlockedOutputBuilder() throws {
+        let builder = StubShortcutIntegrationBlockedOutputBuilder()
+        let gate = CatalogBackedShortcutNodeIntegrationGate(
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            outputBuilder: builder
+        )
+        let input = ShortcutNodeInput(
+            text: "To: 0912345678\nBody: Running late.",
+            variables: [
+                ShortcutNodeInput.integrationSkillIDVariableKey: AppIntegrationSkillID.appleMessagesHandoff.rawValue
+            ]
+        )
+
+        let output = try XCTUnwrap(gate.blockedOutput(for: .prepareMessageHandoff, input: input))
+
+        XCTAssertEqual(output.fields["builder"], "stub")
+        XCTAssertEqual(builder.receivedSkillIDs, [.appleMessagesHandoff])
+        XCTAssertEqual(builder.receivedKinds, [.prepareMessageHandoff])
+        XCTAssertEqual(builder.receivedSourceNamePolicies, [.omitWhenMissing])
+    }
+
     func testShortcutNodeInputResolvesIntegrationSkillThroughCatalogReference() throws {
         let input = ShortcutNodeInput(
             text: "To: 0912345678\nBody: Running late.",
@@ -1185,6 +1206,29 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(output.proposedActions.isEmpty)
     }
 
+    func testShortcutDemoIntegrationGateUsesInjectedBlockedOutputBuilder() throws {
+        let builder = StubShortcutIntegrationBlockedOutputBuilder()
+        let gate = CatalogBackedShortcutDemoIntegrationGate(
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            outputBuilder: builder
+        )
+        let step = ShortcutDemoStep(
+            shortcutActionTitle: "Prepare Message",
+            nodeKind: .prepareMessageHandoff,
+            integrationSkillID: .appleMessagesHandoff,
+            inputContract: ShortcutNodeContract(requiredFields: ["text"], description: "Message input"),
+            outputContract: ShortcutNodeContract(requiredFields: ["success"], description: "Blocked output"),
+            sampleInput: ShortcutNodeInput(text: "Message Alex")
+        )
+
+        let output = try XCTUnwrap(gate.blockedOutput(for: step, input: step.sampleInput))
+
+        XCTAssertEqual(output.fields["builder"], "stub")
+        XCTAssertEqual(builder.receivedSkillIDs, [.appleMessagesHandoff])
+        XCTAssertEqual(builder.receivedKinds, [.prepareMessageHandoff])
+        XCTAssertEqual(builder.receivedSourceNamePolicies, [.includeEmptyWhenMissing])
+    }
+
     func testShortcutDemoRecipeRunnerDoesNotExecuteOAuthMetadataIntegrationBinding() async throws {
         let recipe = ShortcutDemoRecipe(
             id: "gmail-oauth-metadata-only",
@@ -1388,5 +1432,33 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(run.steps[1].input.text, expectedChainText)
         XCTAssertEqual(run.steps[1].output.fields["taskCount"], "2")
         XCTAssertEqual(run.totalTaskCount, 2)
+    }
+}
+
+private final class StubShortcutIntegrationBlockedOutputBuilder: ShortcutIntegrationBlockedOutputBuilding, @unchecked Sendable {
+    private(set) var receivedKinds: [ShortcutNodeKind] = []
+    private(set) var receivedSkillIDs: [AppIntegrationSkillID] = []
+    private(set) var receivedSourceNamePolicies: [ShortcutIntegrationBlockedOutputSourceNamePolicy] = []
+
+    func blockedOutput(
+        kind: ShortcutNodeKind,
+        input: ShortcutNodeInput,
+        skillID: AppIntegrationSkillID,
+        displayText: String,
+        fields: [String: String],
+        sourceNamePolicy: ShortcutIntegrationBlockedOutputSourceNamePolicy
+    ) -> ShortcutNodeOutput {
+        receivedKinds.append(kind)
+        receivedSkillIDs.append(skillID)
+        receivedSourceNamePolicies.append(sourceNamePolicy)
+
+        return ShortcutNodeOutput(
+            kind: kind,
+            displayText: displayText,
+            fields: [
+                "builder": "stub",
+                ShortcutNodeInput.integrationSkillIDVariableKey: skillID.rawValue
+            ]
+        )
     }
 }

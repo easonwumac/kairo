@@ -6,9 +6,14 @@ public protocol ShortcutNodeIntegrationGating: Sendable {
 
 public struct CatalogBackedShortcutNodeIntegrationGate: ShortcutNodeIntegrationGating {
     private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
+    private let outputBuilder: any ShortcutIntegrationBlockedOutputBuilding
 
-    public init(appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()) {
+    public init(
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        outputBuilder: any ShortcutIntegrationBlockedOutputBuilding = DefaultShortcutIntegrationBlockedOutputBuilder()
+    ) {
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
+        self.outputBuilder = outputBuilder
     }
 
     public func blockedOutput(for kind: ShortcutNodeKind, input: ShortcutNodeInput) -> ShortcutNodeOutput? {
@@ -16,59 +21,38 @@ public struct CatalogBackedShortcutNodeIntegrationGate: ShortcutNodeIntegrationG
         case .notReferenced:
             return nil
         case .missing(let skillID):
-            return blockedOutput(
+            return outputBuilder.blockedOutput(
                 kind: kind,
                 input: input,
                 skillID: skillID,
                 displayText: KairoL10n.string("shortcut.integration.blocked.missingCatalog", skillID.rawValue),
-                fields: AppIntegrationSkillResolution.missing(skillID).blockedExecutionFields
+                fields: AppIntegrationSkillResolution.missing(skillID).blockedExecutionFields,
+                sourceNamePolicy: .omitWhenMissing
             )
         case .resolved(let skill):
             guard skill.canBeSuggestedAsExecutable else {
-                return blockedOutput(
+                return outputBuilder.blockedOutput(
                     kind: kind,
                     input: input,
                     skillID: skill.id,
                     displayText: KairoL10n.string("shortcut.integration.blocked.setupRequired", skill.appName),
-                    fields: skill.blockedExecutionFields
+                    fields: skill.blockedExecutionFields,
+                    sourceNamePolicy: .omitWhenMissing
                 )
             }
 
             guard skill.shortcutNodeKind == kind else {
-                return blockedOutput(
+                return outputBuilder.blockedOutput(
                     kind: kind,
                     input: input,
                     skillID: skill.id,
                     displayText: KairoL10n.string("shortcut.integration.blocked.nodeMismatch", skill.appName),
-                    fields: skill.blockedExecutionFields
+                    fields: skill.blockedExecutionFields,
+                    sourceNamePolicy: .omitWhenMissing
                 )
             }
 
             return nil
         }
-    }
-
-    private func blockedOutput(
-        kind: ShortcutNodeKind,
-        input: ShortcutNodeInput,
-        skillID: AppIntegrationSkillID,
-        displayText: String,
-        fields: [String: String]
-    ) -> ShortcutNodeOutput {
-        var outputFields = input.variables
-        if let sourceName = input.sourceName {
-            outputFields["sourceName"] = sourceName
-        }
-        outputFields[ShortcutNodeInput.integrationSkillIDVariableKey] = skillID.rawValue
-        outputFields["success"] = "false"
-        for (key, value) in fields {
-            outputFields[key] = value
-        }
-
-        return ShortcutNodeOutput(
-            kind: kind,
-            displayText: displayText,
-            fields: outputFields
-        )
     }
 }
