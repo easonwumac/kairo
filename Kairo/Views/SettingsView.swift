@@ -229,7 +229,7 @@ public struct SettingsView: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
+                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeSectionTopPadding)
                     .padding(.bottom, 32)
                 }
                 .kairoHiddenNavigationChrome()
