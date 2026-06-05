@@ -45,6 +45,7 @@ enum KairoAppearancePreference: String, CaseIterable, Identifiable {
 
 enum KairoDesign {
     static let rootChromeTopPadding: CGFloat = 86
+    static let rootChromeContentTopPadding: CGFloat = rootChromeTopPadding + 32
 
     static var ink: Color {
         color(
@@ -169,6 +170,17 @@ enum KairoDesign {
 
     private static func fixedColor(_ palette: (red: Double, green: Double, blue: Double, opacity: Double)) -> Color {
         Color(.sRGB, red: palette.red, green: palette.green, blue: palette.blue, opacity: palette.opacity)
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func kairoHiddenNavigationChrome() -> some View {
+        #if os(iOS)
+        self.toolbar(.hidden, for: .navigationBar)
+        #else
+        self
+        #endif
     }
 }
 

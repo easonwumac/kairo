@@ -714,6 +714,7 @@
 "settings.privacy.section" = "Privacy";
 "settings.privacy.keychainBoundary" = "API keys should only be stored in Keychain. Kairo should not write secrets to UserDefaults, logs, or analytics.";
 "settings.privacy.auditLog" = "Safety log";
+"settings.privacy.summary" = "Manage the local safety log.";
 "settings.privacy.clearAuditLog" = "Clear safety log";
 "settings.privacy.auditLogDetail" = "Clears the local safety log. It does not delete chat history, memories, API keys, saved logins, or downloaded models.";
 "settings.privacy.statusReady" = "Safety log controls ready.";
@@ -729,7 +730,7 @@
 "settings.models.default.change" = "Change";
 "settings.models.default.cloud.openai" = "OpenAI · Cloud";
 "settings.models.default.local" = "%@ · Local";
-"settings.models.routePreference" = "Answer preference";
+"settings.models.routePreference" = "Reply route";
 "settings.models.entry.accessibility" = "Open model settings. %@";
 "settings.models.entry.summary" = "%@ · %lld connected accounts · %@";
 "settings.models.entry.cloudConfigured" = "Cloud model ready";
@@ -778,7 +779,7 @@
 "settings.models.message.settingsServiceMissing" = "Local model settings are unavailable in this build.";
 "settings.models.message.downloaderMissing" = "Local model download is unavailable in this build.";
 "settings.models.message.downloadInProgress" = "A model download is already in progress. Finish or cancel it first.";
-"settings.models.message.preferenceSaved" = "%@ answer preference saved.";
+"settings.models.message.preferenceSaved" = "%@ reply route saved.";
 "settings.models.message.preferenceFailed" = "Could not save route preference: %@";
 "settings.models.message.runtimeParametersSaved" = "%@ model parameters saved.";
 "settings.models.message.runtimeParametersFailed" = "Could not save model parameters: %@";

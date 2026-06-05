@@ -51,12 +51,12 @@ public struct MemoryCenterView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 18)
-                        .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding)
+                        .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
                         .padding(.bottom, 32)
                     }
                     .background(KairoDesign.background.ignoresSafeArea())
                     .scrollIndicators(.hidden)
-                    .navigationTitle(KairoL10n.string("memory.navigationTitle"))
+                    .kairoHiddenNavigationChrome()
                     .task(id: searchQuery) { await reload() }
                     .refreshable { await reload() }
                     .onChange(of: memories.count) { _, _ in

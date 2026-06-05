@@ -714,6 +714,7 @@
 "settings.privacy.section" = "隱私";
 "settings.privacy.keychainBoundary" = "API key 只應儲存在 Keychain。Kairo 不應把 secret 寫入 UserDefaults、log 或 analytics。";
 "settings.privacy.auditLog" = "安全記錄";
+"settings.privacy.summary" = "管理本機安全記錄。";
 "settings.privacy.clearAuditLog" = "清除安全記錄";
 "settings.privacy.auditLogDetail" = "清除本機安全記錄。這不會刪除聊天紀錄、記憶、API keys、已儲存登入資料或已下載模型。";
 "settings.privacy.statusReady" = "安全記錄控制已就緒。";
@@ -729,7 +730,7 @@
 "settings.models.default.change" = "更改";
 "settings.models.default.cloud.openai" = "OpenAI · 雲端";
 "settings.models.default.local" = "%@ · 本地";
-"settings.models.routePreference" = "回答偏好";
+"settings.models.routePreference" = "回覆路由";
 "settings.models.entry.accessibility" = "開啟模型設定。%@";
 "settings.models.entry.summary" = "%@ · %lld 個已連接帳號 · %@";
 "settings.models.entry.cloudConfigured" = "雲端模型可用";
@@ -778,7 +779,7 @@
 "settings.models.message.settingsServiceMissing" = "此版本無法使用本機模型設定。";
 "settings.models.message.downloaderMissing" = "此版本無法下載本機模型。";
 "settings.models.message.downloadInProgress" = "已有模型下載進行中，請先完成或取消目前下載。";
-"settings.models.message.preferenceSaved" = "%@ 回答偏好已儲存。";
+"settings.models.message.preferenceSaved" = "%@ 回覆路由已儲存。";
 "settings.models.message.preferenceFailed" = "路由偏好儲存失敗：%@";
 "settings.models.message.runtimeParametersSaved" = "%@ 模型參數已儲存。";
 "settings.models.message.runtimeParametersFailed" = "模型參數儲存失敗：%@";

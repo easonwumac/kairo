@@ -35,8 +35,6 @@ public struct SettingsView: View {
     @State var localModelStatusMessageModelID: String?
     @State var localModelBenchmarkRunInfo: LocalModelBenchmarkRunInfo?
     @State private var privacyStatusMessage: String?
-    @State private var showConnectionSetup = false
-    @State private var showConnectionDetails = false
     @State private var showAPIKeyEditor = false
     @State private var expandedOAuthConnectorDetails: Set<String> = []
 
@@ -217,14 +215,8 @@ public struct SettingsView: View {
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("settings.models.entry")
 
-                        SettingsAnswerOverviewCard(
-                            hasAPIKey: hasAPIKey,
-                            routePreference: localModelStatus.preference,
-                            connectedConnectorCount: connectedConnectorCount,
-                            localModelInstalled: localModelStatus.localModelInstalled
-                        )
                         appearanceSettingsSection
-                        connectionSetupSection
+                        privacySettingsSection
 
                         if let connectorStatusMessage {
                             KairoGroupedSurface {
@@ -237,26 +229,13 @@ public struct SettingsView: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding)
+                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
                     .padding(.bottom, 32)
                 }
-                .navigationTitle(mode.navigationTitle)
+                .kairoHiddenNavigationChrome()
                 .background(KairoDesign.background.ignoresSafeArea())
                 .accessibilityIdentifier("settings.form")
             }
-        }
-    }
-
-    private var connectionSetupSection: some View {
-        SettingsConnectionSetupSection(
-            showsConnectionSetup: $showConnectionSetup,
-            showsConnectionDetails: $showConnectionDetails,
-            hasAPIKey: hasAPIKey,
-            connectedConnectorCount: connectedConnectorCount
-        ) {
-            accountSettingsSection
-            oauthConnectorsSection
-            privacySettingsSection
         }
     }
 
@@ -289,27 +268,6 @@ public struct SettingsView: View {
         .accessibilityIdentifier("settings.appearance.section")
     }
 
-    private var accountSettingsSection: some View {
-        SettingsOpenAIAccountSection(
-            apiKey: $apiKey,
-            showAPIKeyEditor: $showAPIKeyEditor,
-            hasAPIKey: hasAPIKey,
-            statusMessage: statusMessage,
-            saveAPIKey: saveAPIKey,
-            dryRunAPIKey: dryRunAPIKey,
-            deleteAPIKey: deleteAPIKey
-        )
-    }
-
-    private var oauthConnectorsSection: some View {
-        SettingsOAuthConnectorsSection(
-            connectorOptions: connectorOptions,
-            expandedConnectorDetails: $expandedOAuthConnectorDetails,
-            authorizeConnector: authorizeConnector,
-            disconnectConnector: disconnectConnector
-        )
-    }
-
     private var privacySettingsSection: some View {
         SettingsPrivacySection(
             statusMessage: privacyStatusMessage,
@@ -332,7 +290,7 @@ public struct SettingsView: View {
     private var modelsOnlyContent: some View {
         GeometryReader { proxy in
             LocalModelsCompactView(
-                topPadding: max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding + 32,
+                topPadding: max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding,
                 apiKey: $apiKey,
                 showAPIKeyEditor: $showAPIKeyEditor,
                 expandedOAuthConnectorDetails: $expandedOAuthConnectorDetails,
@@ -376,12 +334,12 @@ public struct SettingsView: View {
                         SettingsShortcutDemosSection()
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding)
+                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
                     .padding(.bottom, 32)
                 }
                 .scrollIndicators(.hidden)
                 .background(KairoDesign.background.ignoresSafeArea())
-                .navigationTitle(mode.navigationTitle)
+                .kairoHiddenNavigationChrome()
                 .accessibilityIdentifier("settings.form")
             }
         }

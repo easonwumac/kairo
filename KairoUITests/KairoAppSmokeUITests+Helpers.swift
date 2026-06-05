@@ -146,7 +146,7 @@ extension KairoAppSmokeUITests {
     func openSettingsAndVerifyAPIKeyStatus(verifyAllLocalModels: Bool) {
         selectDrawerSection(identifier: "root.drawer.settings", label: "Settings")
         scrollTowardTop()
-        openConnectionSetupIfNeeded()
+        openModelSettingsFromSettingsIfNeeded()
         XCTAssertTrue(findElement("settings.openai.editor-toggle", direction: .down, maxSwipes: 8).exists)
         openAPIKeyEditorIfNeeded()
         XCTAssertTrue(anyElement("settings.openai.api-key-field").exists)
@@ -157,11 +157,11 @@ extension KairoAppSmokeUITests {
         }
     }
 
-    func openConnectionSetupIfNeeded() {
+    func openModelSettingsFromSettingsIfNeeded() {
         if anyElement("settings.openai.api-key-status").exists {
             return
         }
-        let setup = findButton(labeled: "Show connection setup", direction: .both, maxSwipes: 3)
+        let setup = findButton("settings.models.entry", direction: .both, maxSwipes: 2)
         XCTAssertTrue(setup.exists)
         tapElement(setup)
         XCTAssertTrue(findElement("settings.openai.editor-toggle", direction: .down, maxSwipes: 8).waitForExistence(timeout: 5))

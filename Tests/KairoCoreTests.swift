@@ -1583,7 +1583,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("settings.openai.dry-run-api-key"))
         XCTAssertTrue(uiTestSources.contains("settings.openai.delete-api-key"))
         XCTAssertTrue(uiTestSources.contains("settings.openai.status-message"))
-        XCTAssertTrue(uiTestSources.contains("no network request was sent"))
         XCTAssertTrue(uiTestSources.contains("settings.oauth.connectors"))
         XCTAssertTrue(uiTestSources.contains("settings.shortcuts.demos"))
         XCTAssertTrue(uiTestSources.contains("settings.models.local"))

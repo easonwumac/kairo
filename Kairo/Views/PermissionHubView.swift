@@ -63,12 +63,12 @@ public struct PermissionHubView: View {
                         advancedSetupCard
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding)
+                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
                     .padding(.bottom, 32)
                 }
                 .background(KairoDesign.background.ignoresSafeArea())
                 .scrollIndicators(.hidden)
-                .navigationTitle(KairoL10n.string("access.navigation.title"))
+                .kairoHiddenNavigationChrome()
                 .task {
                     await loadAccessData()
                 }
