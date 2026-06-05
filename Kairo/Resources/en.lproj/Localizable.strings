@@ -728,7 +728,13 @@
 "settings.models.entry.localConfigured" = "Local model selected";
 "settings.models.entry.localNeedsDownload" = "Local model optional";
 "settings.models.cloud.section" = "Cloud models";
-"settings.models.cloud.detail" = "Only configured providers are used for Chat. Other providers are listed as setup targets until their credentials and provider runtime are wired.";
+"settings.models.cloud.detail" = "Only providers you add are shown here. Add a provider to set its API key or OAuth account.";
+"settings.models.cloud.empty" = "No cloud model provider is configured yet.";
+"settings.models.cloud.add" = "Add cloud model";
+"settings.models.cloud.add.empty" = "No more cloud providers are available.";
+"settings.models.cloud.reconfigure" = "Reconfigure";
+"settings.models.cloud.remove" = "Remove";
+"settings.models.cloud.manage" = "Manage %@";
 "settings.models.cloud.method.apiKey" = "API key";
 "settings.models.cloud.method.oauth" = "OAuth account";
 "settings.models.cloud.method.apiKeyOrOAuth" = "API key or OAuth";

@@ -5,17 +5,28 @@ struct LocalModelsCompactView: View {
     private let starterModelIDs = LocalModelCatalog.kairoStarterModelIDs
     @State private var pendingDownloadModelID: String?
     @State private var showAdvancedDiagnostics = false
+    @State private var expandedCloudProviderID: String?
 
     var topPadding: CGFloat = 16
+    @Binding var apiKey: String
+    @Binding var showAPIKeyEditor: Bool
+    @Binding var expandedOAuthConnectorDetails: Set<String>
     let hasOpenAIAPIKey: Bool
     let isChatGPTOAuthConnected: Bool
     let isChatGPTOAuthAvailable: Bool
+    let openAIStatusMessage: String?
+    let connectorOptions: [OAuthConnectorLoginOption]
     let localModelStatus: LocalModelSettingsStatus
     let localModelDownloadProgress: LocalModelDownloadProgressState?
     let localModelStatusMessage: String?
     let localModelStatusMessageModelID: String?
     let localModelCatalogSourceText: String
     let localModelStatusColor: (LocalModelSettingsPrimaryAction) -> Color
+    let saveAPIKey: () -> Void
+    let dryRunAPIKey: () -> Void
+    let deleteAPIKey: () -> Void
+    let authorizeConnector: (OAuthConnectorLoginOption) -> Void
+    let disconnectConnector: (OAuthConnectorLoginOption) -> Void
     let setLocalModelPreference: (ProviderRoutePreference) -> Void
     let setResponseLanguage: (ChatResponseLanguagePreference) -> Void
     let refreshLocalModelCatalog: () -> Void
@@ -133,11 +144,26 @@ struct LocalModelsCompactView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                ForEach(cloudProviderRows) { row in
+                if configuredCloudProviderRows.isEmpty {
+                    Text(KairoL10n.string("settings.models.cloud.empty"))
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("settings.models.cloud.empty")
+                }
+
+                ForEach(configuredCloudProviderRows) { row in
                     cloudProviderRow(row)
-                    if row.id != cloudProviderRows.last?.id {
+                    if row.id != configuredCloudProviderRows.last?.id {
                         Divider()
                     }
+                }
+
+                cloudProviderAddMenu
+
+                if let expandedCloudProviderID {
+                    cloudProviderSetup(for: expandedCloudProviderID)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
         }
@@ -428,7 +454,8 @@ struct LocalModelsCompactView: View {
                 status: hasOpenAIAPIKey
                     ? KairoL10n.string("settings.models.cloud.status.configured")
                     : KairoL10n.string("settings.models.cloud.status.needsApiKey"),
-                isConfigured: hasOpenAIAPIKey
+                isConfigured: hasOpenAIAPIKey,
+                setupKind: .openAIAPIKey
             ),
             CloudModelProviderRow(
                 id: "chatgpt-oauth",
@@ -439,37 +466,44 @@ struct LocalModelsCompactView: View {
                     : isChatGPTOAuthAvailable
                         ? KairoL10n.string("settings.models.cloud.status.oauthSetup")
                         : KairoL10n.string("settings.models.cloud.status.metadataOnly"),
-                isConfigured: isChatGPTOAuthConnected
-            ),
-            CloudModelProviderRow(
-                id: "anthropic",
-                title: "Claude",
-                method: KairoL10n.string("settings.models.cloud.method.apiKey"),
-                status: KairoL10n.string("settings.models.cloud.status.metadataOnly"),
-                isConfigured: false
-            ),
-            CloudModelProviderRow(
-                id: "gemini",
-                title: "Gemini",
-                method: KairoL10n.string("settings.models.cloud.method.apiKeyOrOAuth"),
-                status: KairoL10n.string("settings.models.cloud.status.metadataOnly"),
-                isConfigured: false
-            ),
-            CloudModelProviderRow(
-                id: "mistral",
-                title: "Mistral",
-                method: KairoL10n.string("settings.models.cloud.method.apiKey"),
-                status: KairoL10n.string("settings.models.cloud.status.metadataOnly"),
-                isConfigured: false
-            ),
-            CloudModelProviderRow(
-                id: "perplexity",
-                title: "Perplexity",
-                method: KairoL10n.string("settings.models.cloud.method.apiKey"),
-                status: KairoL10n.string("settings.models.cloud.status.metadataOnly"),
-                isConfigured: false
+                isConfigured: isChatGPTOAuthConnected,
+                setupKind: .chatGPTOAuth
             )
         ]
+    }
+
+    private var configuredCloudProviderRows: [CloudModelProviderRow] {
+        cloudProviderRows.filter(\.isConfigured)
+    }
+
+    private var addableCloudProviderRows: [CloudModelProviderRow] {
+        cloudProviderRows.filter { !$0.isConfigured && $0.canConfigure }
+    }
+
+    private var cloudProviderAddMenu: some View {
+        Menu {
+            if addableCloudProviderRows.isEmpty {
+                Text(KairoL10n.string("settings.models.cloud.add.empty"))
+            }
+
+            ForEach(addableCloudProviderRows) { row in
+                Button {
+                    expandSetup(for: row)
+                } label: {
+                    Label(row.title, systemImage: row.setupKind.systemImage)
+                }
+                .accessibilityIdentifier("settings.models.cloud.add.\(row.id)")
+            }
+        } label: {
+            Label(KairoL10n.string("settings.models.cloud.add"), systemImage: "plus")
+                .font(compactButtonLabelFont)
+                .foregroundStyle(KairoDesign.blue)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(KairoDesign.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("settings.models.cloud.add")
     }
 
     private func cloudProviderRow(_ row: CloudModelProviderRow) -> some View {
@@ -497,9 +531,79 @@ struct LocalModelsCompactView: View {
                 .foregroundStyle(row.isConfigured ? .green : .secondary)
                 .multilineTextAlignment(.trailing)
                 .lineLimit(2)
+
+            Menu {
+                Button {
+                    expandSetup(for: row)
+                } label: {
+                    Label(KairoL10n.string("settings.models.cloud.reconfigure"), systemImage: "slider.horizontal.3")
+                }
+
+                Button(role: .destructive) {
+                    removeCloudProvider(row)
+                } label: {
+                    Label(KairoL10n.string("settings.models.cloud.remove"), systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle.fill")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(KairoDesign.blue)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(KairoL10n.string("settings.models.cloud.manage", row.title))
+            .accessibilityIdentifier("settings.models.cloud.\(row.id).manage")
         }
-        .accessibilityElement(children: .combine)
         .accessibilityIdentifier("settings.models.cloud.\(row.id)")
+    }
+
+    @ViewBuilder
+    private func cloudProviderSetup(for providerID: String) -> some View {
+        switch providerID {
+        case "openai-api":
+            SettingsOpenAIAccountSection(
+                apiKey: $apiKey,
+                showAPIKeyEditor: $showAPIKeyEditor,
+                hasAPIKey: hasOpenAIAPIKey,
+                statusMessage: openAIStatusMessage,
+                saveAPIKey: saveAPIKey,
+                dryRunAPIKey: dryRunAPIKey,
+                deleteAPIKey: deleteAPIKey
+            )
+            .accessibilityIdentifier("settings.models.cloud.openai.setup")
+        case "chatgpt-oauth":
+            SettingsOAuthConnectorsSection(
+                connectorOptions: connectorOptions.filter { $0.providerKey == "chatgpt" },
+                expandedConnectorDetails: $expandedOAuthConnectorDetails,
+                authorizeConnector: authorizeConnector,
+                disconnectConnector: disconnectConnector
+            )
+            .accessibilityIdentifier("settings.models.cloud.chatgpt.setup")
+        default:
+            EmptyView()
+        }
+    }
+
+    private func expandSetup(for row: CloudModelProviderRow) {
+        withAnimation(.snappy(duration: 0.2)) {
+            expandedCloudProviderID = row.id
+            switch row.setupKind {
+            case .openAIAPIKey:
+                showAPIKeyEditor = true
+            case .chatGPTOAuth:
+                expandedOAuthConnectorDetails.insert("chatgpt")
+            }
+        }
+    }
+
+    private func removeCloudProvider(_ row: CloudModelProviderRow) {
+        switch row.setupKind {
+        case .openAIAPIKey:
+            deleteAPIKey()
+        case .chatGPTOAuth:
+            if let option = connectorOptions.first(where: { $0.providerKey == "chatgpt" }) {
+                disconnectConnector(option)
+            }
+        }
     }
 
     private var selectedModelSummaryIconName: String {
@@ -883,5 +987,29 @@ private struct CloudModelProviderRow: Identifiable, Equatable {
     var method: String
     var status: String
     var isConfigured: Bool
+    var setupKind: CloudModelProviderSetupKind
+
+    var canConfigure: Bool {
+        switch setupKind {
+        case .openAIAPIKey:
+            return true
+        case .chatGPTOAuth:
+            return true
+        }
+    }
+}
+
+private enum CloudModelProviderSetupKind: Equatable {
+    case openAIAPIKey
+    case chatGPTOAuth
+
+    var systemImage: String {
+        switch self {
+        case .openAIAPIKey:
+            return "key.fill"
+        case .chatGPTOAuth:
+            return "person.crop.circle.badge.checkmark"
+        }
+    }
 }
 #endif

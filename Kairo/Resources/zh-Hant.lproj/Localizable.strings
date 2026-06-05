@@ -728,7 +728,13 @@
 "settings.models.entry.localConfigured" = "已選本地模型";
 "settings.models.entry.localNeedsDownload" = "本地模型可選";
 "settings.models.cloud.section" = "雲端模型";
-"settings.models.cloud.detail" = "Chat 只會使用已完成設定的 provider。其他 provider 先列為設定目標，等 credentials 和 provider runtime 接好後才會啟用。";
+"settings.models.cloud.detail" = "這裡只顯示你已加入的 provider。新增 provider 時會同時設定 API key 或 OAuth 帳號。";
+"settings.models.cloud.empty" = "尚未設定雲端模型 provider。";
+"settings.models.cloud.add" = "新增雲端模型";
+"settings.models.cloud.add.empty" = "目前沒有其他可新增的雲端 provider。";
+"settings.models.cloud.reconfigure" = "重新設定";
+"settings.models.cloud.remove" = "移除";
+"settings.models.cloud.manage" = "管理 %@";
 "settings.models.cloud.method.apiKey" = "API key";
 "settings.models.cloud.method.oauth" = "OAuth 帳號";
 "settings.models.cloud.method.apiKeyOrOAuth" = "API key 或 OAuth";
