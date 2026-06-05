@@ -102,6 +102,27 @@ public enum KairoAccessIntegrationReadiness: String, Codable, CaseIterable, Send
     case previewOnly
     case unsupported
     case disabled
+
+    public var displayName: String {
+        switch self {
+        case .available:
+            return KairoL10n.string("access.integration.readiness.available")
+        case .needsPermission:
+            return KairoL10n.string("access.integration.readiness.needsPermission")
+        case .needsInstalledApp:
+            return KairoL10n.string("access.integration.readiness.needsInstalledApp")
+        case .needsUserShortcut:
+            return KairoL10n.string("access.integration.readiness.needsUserShortcut")
+        case .needsOAuth:
+            return KairoL10n.string("access.integration.readiness.needsOAuth")
+        case .previewOnly:
+            return KairoL10n.string("access.integration.readiness.previewOnly")
+        case .unsupported:
+            return KairoL10n.string("access.integration.readiness.unsupported")
+        case .disabled:
+            return KairoL10n.string("access.integration.readiness.disabled")
+        }
+    }
 }
 
 public struct KairoAccessIntegrationSummary: Identifiable, Codable, Equatable, Sendable {

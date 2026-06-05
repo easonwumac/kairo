@@ -101,6 +101,14 @@
 "access.tool.readiness.needsSetup" = "需要設定";
 "access.tool.readiness.scaffolded" = "僅預覽";
 "access.tool.readiness.unavailable" = "不可用";
+"access.integration.readiness.available" = "可用";
+"access.integration.readiness.needsPermission" = "需要權限";
+"access.integration.readiness.needsInstalledApp" = "安裝 App";
+"access.integration.readiness.needsUserShortcut" = "建立捷徑";
+"access.integration.readiness.needsOAuth" = "連接帳號";
+"access.integration.readiness.previewOnly" = "僅預覽";
+"access.integration.readiness.unsupported" = "不支援";
+"access.integration.readiness.disabled" = "已停用";
 "access.skills.manager.title" = "已安裝 skills";
 "access.skills.manager.footer" = "Skills 會擴充 Chat 的建議。只啟用你希望 Kairo 提供的能力。";
 "access.skills.advanced.title" = "進階設定";

@@ -101,6 +101,14 @@
 "access.tool.readiness.needsSetup" = "Needs setup";
 "access.tool.readiness.scaffolded" = "Preview only";
 "access.tool.readiness.unavailable" = "Unavailable";
+"access.integration.readiness.available" = "Available";
+"access.integration.readiness.needsPermission" = "Needs permission";
+"access.integration.readiness.needsInstalledApp" = "Install app";
+"access.integration.readiness.needsUserShortcut" = "Create Shortcut";
+"access.integration.readiness.needsOAuth" = "Connect account";
+"access.integration.readiness.previewOnly" = "Preview only";
+"access.integration.readiness.unsupported" = "Unsupported";
+"access.integration.readiness.disabled" = "Disabled";
 "access.skills.manager.title" = "Installed skills";
 "access.skills.manager.footer" = "Skills extend Chat suggestions. Enable only the ones you want Kairo to offer.";
 "access.skills.advanced.title" = "Advanced setup";

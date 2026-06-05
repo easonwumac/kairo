@@ -311,9 +311,11 @@ final class KairoBackendAPITests: XCTestCase {
         let catalog = try await XCTUnwrap(dependencies.skillManagerService).catalog()
         let accessAPI = try XCTUnwrap(dependencies.accessAPI)
         let tools = await accessAPI.tools()
+        let integrations = await accessAPI.appIntegrations()
 
         XCTAssertFalse(catalog.skills.isEmpty)
         XCTAssertTrue(tools.contains { $0.toolID == .reminderWrite })
+        XCTAssertTrue(integrations.contains { $0.skillID == .googleMapsDirectionsHandoff })
         XCTAssertNil(dependencies.marketplaceCatalogService)
     }
 

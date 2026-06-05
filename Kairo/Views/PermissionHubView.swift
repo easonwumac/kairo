@@ -21,6 +21,7 @@ public struct PermissionHubView: View {
     @State private var expandedSkillDetails: Set<String> = []
     @State private var skillCatalog: AgentSkillCatalog
     @State private var accessToolSummaries: [KairoAccessToolSummary] = []
+    @State private var accessIntegrationSummaries: [KairoAccessIntegrationSummary] = []
 
     private let registry = CapabilityRegistry()
     private let homeKitDemoCatalog = HomeKitControlDemoCatalog.default
@@ -415,6 +416,9 @@ public struct PermissionHubView: View {
                             ForEach(toolSummaries(for: capability.key).prefix(2)) { toolSummary in
                                 AccessToolChipView(summary: toolSummary)
                             }
+                            ForEach(integrationSummaries(for: capability.key).prefix(2)) { integrationSummary in
+                                AccessIntegrationChipView(summary: integrationSummary)
+                            }
                         }
                     }
                     .accessibilityIdentifier("access.capability.\(capability.key.rawValue).details-content")
@@ -497,6 +501,12 @@ public struct PermissionHubView: View {
 
     private func toolSummaries(for capabilityKey: CapabilityKey) -> [KairoAccessToolSummary] {
         accessToolSummaries.filter { summary in
+            summary.capabilityStatuses.keys.contains(capabilityKey)
+        }
+    }
+
+    private func integrationSummaries(for capabilityKey: CapabilityKey) -> [KairoAccessIntegrationSummary] {
+        accessIntegrationSummaries.filter { summary in
             summary.capabilityStatuses.keys.contains(capabilityKey)
         }
     }
@@ -1184,6 +1194,7 @@ public struct PermissionHubView: View {
     private func loadToolSummaries() async {
         guard let accessAPI else { return }
         accessToolSummaries = await accessAPI.tools()
+        accessIntegrationSummaries = await accessAPI.appIntegrations()
     }
 
     @MainActor
@@ -1341,6 +1352,33 @@ private struct AccessToolChipView: View {
         case .needsPermission, .needsSetup, .scaffolded:
             return .orange
         case .unavailable:
+            return .red
+        }
+    }
+}
+
+private struct AccessIntegrationChipView: View {
+    let summary: KairoAccessIntegrationSummary
+
+    var body: some View {
+        Text(summary.readiness.displayName)
+            .font(.caption2.bold())
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .foregroundStyle(chipForeground)
+            .background(chipForeground.opacity(0.15), in: Capsule())
+            .accessibilityLabel(summary.appName)
+            .accessibilityValue(summary.readiness.displayName)
+            .accessibilityIdentifier("access.integration.\(summary.skillID.rawValue)")
+    }
+
+    private var chipForeground: Color {
+        switch summary.readiness {
+        case .available:
+            return .green
+        case .needsPermission, .needsInstalledApp, .needsUserShortcut, .needsOAuth, .previewOnly:
+            return .orange
+        case .unsupported, .disabled:
             return .red
         }
     }
