@@ -521,6 +521,38 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.candidates, [injectedCandidate])
     }
 
+    func testDefaultCandidatePipelineUsesContextCollectorsAndDeduplicatesCandidates() throws {
+        let primaryCandidate = AgentToolInvocationCandidate(
+            id: "pipeline-context-candidate",
+            title: "Pipeline Context Candidate",
+            source: .installedSkill,
+            skillKind: .custom,
+            requiredCapabilities: [.chat],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Primary context output"
+        )
+        let duplicateFallbackCandidate = AgentToolInvocationCandidate(
+            id: primaryCandidate.id,
+            title: "Duplicate Fallback",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.chat],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Fallback duplicate output"
+        )
+        let pipeline = DefaultAgentToolInvocationCandidatePipeline()
+
+        let candidates = pipeline.candidates(in: makePipelineContext(
+            userText: "pipeline context route",
+            primaryCandidateCollector: FixedPrimaryToolCandidateCollector(candidates: [primaryCandidate]),
+            fallbackActionCandidateAppender: FixedFallbackActionCandidateAppender(candidate: duplicateFallbackCandidate)
+        ))
+
+        XCTAssertEqual(candidates, [primaryCandidate])
+    }
+
     func testAgentToolInvocationPlannerUsesInjectedPrimaryCandidateCollector() throws {
         let injectedCandidate = AgentToolInvocationCandidate(
             id: "primary-collector-output",
@@ -1155,24 +1187,7 @@ private struct FixedAgentToolInvocationCandidateMatcher: AgentToolInvocationCand
 private struct FixedAgentToolInvocationCandidatePipeline: AgentToolInvocationCandidatePipelining {
     var candidates: [AgentToolInvocationCandidate]
 
-    func candidates(
-        for request: AgentToolInvocationRequest,
-        normalizedText: String,
-        skillCatalog: AgentSkillCatalog,
-        integrationRegistry: any AppIntegrationRegistryProviding,
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding,
-        appIntegrationActionMapper: any AppIntegrationActionMapping,
-        appIntegrationActionParser: any AgentToolInvocationActionParsing,
-        visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding,
-        writeActionCandidateProvider: any AgentWriteActionCandidateProviding,
-        candidateMatcher: any AgentToolInvocationCandidateMatching,
-        primaryCandidateCollector: any AgentPrimaryToolCandidateCollecting,
-        installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
-        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
-        appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
-        fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending,
-        safetyPolicyEngine: SafetyPolicyEngine
-    ) -> [AgentToolInvocationCandidate] {
+    func candidates(in context: AgentToolInvocationCandidatePipelineContext) -> [AgentToolInvocationCandidate] {
         candidates
     }
 }
@@ -1211,6 +1226,53 @@ private func makePrimaryCandidateContext(
         installedSkillCandidateMapper: installedSkillCandidateMapper,
         legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper,
         appIntegrationCandidateMapper: appIntegrationCandidateMapper,
+        safetyPolicyEngine: safetyPolicyEngine
+    )
+}
+
+private func makePipelineContext(
+    userText: String,
+    normalizedText: String? = nil,
+    skillCatalog: AgentSkillCatalog = AgentSkillCatalog(skills: []),
+    integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(integrations: []),
+    appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(skills: []),
+    appIntegrationActionMapper: any AppIntegrationActionMapping = NoOpAppIntegrationActionMapper(),
+    appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),
+    visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding = FixedVisibleHandoffCandidateProvider(candidates: []),
+    writeActionCandidateProvider: any AgentWriteActionCandidateProviding = FixedWriteActionCandidateProvider(candidates: []),
+    candidateMatcher: any AgentToolInvocationCandidateMatching = FixedAgentToolInvocationCandidateMatcher(),
+    primaryCandidateCollector: any AgentPrimaryToolCandidateCollecting = FixedPrimaryToolCandidateCollector(candidates: []),
+    installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping = FixedInstalledSkillToolInvocationCandidateMapper(candidate: nil),
+    legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping = FixedLegacyIntegrationToolInvocationCandidateMapper(candidate: nil),
+    appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = FixedAppIntegrationToolInvocationCandidateMapper(candidate: nil),
+    fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending = FixedFallbackActionCandidateAppender(candidate: AgentToolInvocationCandidate(
+        id: "fallback-helper",
+        title: "Fallback Helper",
+        source: .actionCatalog,
+        skillKind: .custom,
+        requiredCapabilities: [.chat],
+        riskTier: .tier1Draft,
+        requiresConfirmation: true,
+        handoffSummary: "Fallback helper"
+    )),
+    safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
+) -> AgentToolInvocationCandidatePipelineContext {
+    AgentToolInvocationCandidatePipelineContext(
+        request: AgentToolInvocationRequest(userText: userText),
+        normalizedText: normalizedText ?? userText,
+        skillCatalog: skillCatalog,
+        integrationRegistry: integrationRegistry,
+        appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+        appIntegrationActionMapper: appIntegrationActionMapper,
+        appIntegrationActionParser: appIntegrationActionParser,
+        visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
+        writeActionCandidateProvider: writeActionCandidateProvider,
+        candidateMatcher: candidateMatcher,
+        primaryCandidateCollector: primaryCandidateCollector,
+        installedSkillCandidateMapper: installedSkillCandidateMapper,
+        legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper,
+        appIntegrationCandidateMapper: appIntegrationCandidateMapper,
+        fallbackActionCandidateAppender: fallbackActionCandidateAppender,
         safetyPolicyEngine: safetyPolicyEngine
     )
 }

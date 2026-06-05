@@ -67,8 +67,8 @@ public struct AgentToolInvocationPlanner: Sendable {
             return AgentToolInvocationPlan(candidates: [])
         }
 
-        let candidates = dependencies.candidatePipeline.candidates(
-            for: request,
+        let candidates = dependencies.candidatePipeline.candidates(in: AgentToolInvocationCandidatePipelineContext(
+            request: request,
             normalizedText: normalizedText,
             skillCatalog: skillCatalog,
             integrationRegistry: dependencies.integrationRegistry,
@@ -84,7 +84,7 @@ public struct AgentToolInvocationPlanner: Sendable {
             appIntegrationCandidateMapper: dependencies.appIntegrationCandidateMapper,
             fallbackActionCandidateAppender: dependencies.fallbackActionCandidateAppender,
             safetyPolicyEngine: dependencies.safetyPolicyEngine
-        )
+        ))
 
         return AgentToolInvocationPlan(
             candidates: candidates.filter(dependencies.candidateFilter.allowsCandidate)
