@@ -1013,6 +1013,20 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(loginOptions.map(\.readiness), [.readyToAuthorize])
     }
 
+    func testSettingsFeatureDependencyFactoryUsesInjectedOAuthLoginServiceFactory() async throws {
+        let loginService = CapturingOAuthLoginService()
+        let dependencies = SettingsFeatureDependencyFactory().makeDependencies(
+            credentialStore: InMemoryCredentialStore(),
+            oauthLoginServiceFactory: BackendFixedOAuthLoginServiceFactory(loginService: loginService),
+            oauthWebAuthenticationRunner: nil
+        )
+
+        try await dependencies.oauthCoordinator.disconnect(providerKey: "todoist")
+
+        let disconnectedProviderKeys = await loginService.disconnectedProviderKeys()
+        XCTAssertEqual(disconnectedProviderKeys, ["todoist"])
+    }
+
     func testSettingsFeatureDependencyFactoryDefaultsToHarnessOAuthRegistry() throws {
         let dependencies = SettingsFeatureDependencyFactory().makeDependencies(
             credentialStore: InMemoryCredentialStore(),
@@ -1476,6 +1490,25 @@ final class KairoBackendAPITests: XCTestCase {
             oauthConnectorCallbackStore: callbackStore,
             credentialStore: InMemoryCredentialStore(),
             oauthLoginService: loginService
+        )
+
+        let callbackURL = URL(string: "kairo://oauth/custom-mail/callback?code=sample-code&state=state-123")!
+        let openURLHandler = try XCTUnwrap(dependencies.openURLHandler)
+        try await openURLHandler.handle(callbackURL)
+
+        let handledURLs = await loginService.handledCallbackURLs()
+        XCTAssertEqual(handledURLs, [callbackURL])
+    }
+
+    func testRootFeatureDependencyFactoryUsesInjectedOAuthLoginServiceFactoryForCallbacks() async throws {
+        let callbackStore = try await FileBackedOAuthConnectorCallbackStore(
+            fileURL: temporaryBackendTestFileURL(named: "factory-oauth-factory-callback-previews.json")
+        )
+        let loginService = CapturingOAuthLoginService()
+        let dependencies = RootFeatureDependencyFactory().makeDependencies(
+            oauthConnectorCallbackStore: callbackStore,
+            credentialStore: InMemoryCredentialStore(),
+            oauthLoginServiceFactory: BackendFixedOAuthLoginServiceFactory(loginService: loginService)
         )
 
         let callbackURL = URL(string: "kairo://oauth/custom-mail/callback?code=sample-code&state=state-123")!

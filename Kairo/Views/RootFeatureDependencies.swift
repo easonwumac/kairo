@@ -18,6 +18,7 @@ public struct RootFeatureDependencyFactory: Sendable {
         oauthConnectorRegistry: (any AppIntegrationRegistryProviding)? = nil,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
+        oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking = OAuthConnectorLoginServiceFactory(),
         openURLHandler: (any KairoOpenURLHandling)? = nil
     ) -> RootFeatureDependencies {
         if let openURLHandler {
@@ -29,7 +30,7 @@ public struct RootFeatureDependencyFactory: Sendable {
         }
 
         let runtimeOAuthConnectorRegistry = oauthConnectorRegistry ?? IntegrationRegistry.appIntegrationHarnessRegistry()
-        let oauthLoginService = OAuthConnectorLoginServiceFactory().makeLoginService(
+        let oauthLoginService = oauthLoginServiceFactory.makeLoginService(
             override: oauthLoginService,
             credentialStore: credentialStore,
             oauthConnectorRegistry: runtimeOAuthConnectorRegistry,
@@ -48,7 +49,8 @@ public extension KairoEnvironment {
             oauthConnectorCallbackStore: oauthConnectorCallbackStore,
             credentialStore: credentialStore,
             oauthConnectorRegistry: oauthConnectorRegistry,
-            oauthClientConfigurations: oauthClientConfigurations
+            oauthClientConfigurations: oauthClientConfigurations,
+            oauthLoginServiceFactory: oauthLoginServiceFactory
         )
     }
 }

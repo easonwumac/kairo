@@ -62,6 +62,7 @@ public struct SettingsView: View {
             oauthClientConfigurations: dependencies.oauthClientConfigurations,
             oauthCallbackStore: dependencies.oauthCallbackStore,
             oauthLoginService: dependencies.oauthLoginService,
+            oauthLoginServiceFactory: dependencies.oauthLoginServiceFactory,
             oauthWebAuthenticationRunner: dependencies.oauthWebAuthenticationRunner ?? Self.defaultOAuthWebAuthenticationRunner(),
             openAIKeyCoordinator: dependencies.openAIKeyCoordinator,
             oauthCoordinator: dependencies.oauthCoordinator,
@@ -83,6 +84,7 @@ public struct SettingsView: View {
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
+        oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking = OAuthConnectorLoginServiceFactory(),
         oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)? = Self.defaultOAuthWebAuthenticationRunner(),
         openAIKeyCoordinator: SettingsOpenAIKeyCoordinator? = nil,
         oauthCoordinator: SettingsOAuthConnectorCoordinator? = nil,
@@ -102,6 +104,7 @@ public struct SettingsView: View {
                 oauthClientConfigurations: oauthClientConfigurations,
                 oauthCallbackStore: oauthCallbackStore,
                 oauthLoginService: oauthLoginService,
+                oauthLoginServiceFactory: oauthLoginServiceFactory,
                 oauthWebAuthenticationRunner: oauthWebAuthenticationRunner,
                 openAIKeyCoordinator: openAIKeyCoordinator,
                 oauthCoordinator: oauthCoordinator,
@@ -127,6 +130,7 @@ public struct SettingsView: View {
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
+        oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking = OAuthConnectorLoginServiceFactory(),
         oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)? = Self.defaultOAuthWebAuthenticationRunner(),
         openAIKeyCoordinator: SettingsOpenAIKeyCoordinator? = nil,
         oauthCoordinator: SettingsOAuthConnectorCoordinator? = nil,
@@ -142,7 +146,7 @@ public struct SettingsView: View {
         self.openAIKeyCoordinator = openAIKeyCoordinator ?? SettingsOpenAIKeyCoordinator(settingsService: settingsService)
         self.mode = mode
         self.credentialStore = credentialStore
-        let oauthLoginService = OAuthConnectorLoginServiceFactory().makeLoginService(
+        let oauthLoginService = oauthLoginServiceFactory.makeLoginService(
             override: oauthLoginService,
             credentialStore: credentialStore,
             oauthConnectorRegistry: oauthConnectorRegistry,

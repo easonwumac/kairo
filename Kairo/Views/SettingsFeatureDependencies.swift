@@ -8,6 +8,7 @@ public struct SettingsFeatureDependencies {
     public var oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
     public var oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
     public var oauthLoginService: (any OAuthConnectorLoginServicing)?
+    public var oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking
     public var oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)?
     public var openAIKeyCoordinator: SettingsOpenAIKeyCoordinator
     public var oauthCoordinator: SettingsOAuthConnectorCoordinator
@@ -27,6 +28,7 @@ public struct SettingsFeatureDependencies {
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
+        oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking = OAuthConnectorLoginServiceFactory(),
         oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)? = nil,
         openAIKeyCoordinator: SettingsOpenAIKeyCoordinator? = nil,
         oauthCoordinator: SettingsOAuthConnectorCoordinator? = nil,
@@ -45,9 +47,10 @@ public struct SettingsFeatureDependencies {
         self.oauthClientConfigurations = oauthClientConfigurations
         self.oauthCallbackStore = oauthCallbackStore
         self.oauthLoginService = oauthLoginService
+        self.oauthLoginServiceFactory = oauthLoginServiceFactory
         self.oauthWebAuthenticationRunner = oauthWebAuthenticationRunner
         self.openAIKeyCoordinator = openAIKeyCoordinator ?? SettingsOpenAIKeyCoordinator(settingsService: settingsService)
-        let resolvedOAuthLoginService = OAuthConnectorLoginServiceFactory().makeLoginService(
+        let resolvedOAuthLoginService = oauthLoginServiceFactory.makeLoginService(
             override: oauthLoginService,
             credentialStore: credentialStore,
             oauthConnectorRegistry: oauthConnectorRegistry,
@@ -78,6 +81,7 @@ public struct SettingsFeatureDependencyFactory: Sendable {
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
+        oauthLoginServiceFactory: any OAuthConnectorLoginServiceMaking = OAuthConnectorLoginServiceFactory(),
         oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)? = nil,
         openAIKeyCoordinator: SettingsOpenAIKeyCoordinator? = nil,
         oauthCoordinator: SettingsOAuthConnectorCoordinator? = nil,
@@ -99,6 +103,7 @@ public struct SettingsFeatureDependencyFactory: Sendable {
             oauthClientConfigurations: oauthClientConfigurations,
             oauthCallbackStore: oauthCallbackStore,
             oauthLoginService: oauthLoginService,
+            oauthLoginServiceFactory: oauthLoginServiceFactory,
             oauthWebAuthenticationRunner: oauthWebAuthenticationRunner,
             openAIKeyCoordinator: openAIKeyCoordinator,
             oauthCoordinator: oauthCoordinator,
@@ -121,6 +126,7 @@ public extension KairoEnvironment {
             oauthConnectorRegistry: oauthConnectorRegistry,
             oauthClientConfigurations: oauthClientConfigurations,
             oauthCallbackStore: oauthConnectorCallbackStore,
+            oauthLoginServiceFactory: oauthLoginServiceFactory,
             localModelCatalog: localModelCatalog,
             localModelCatalogService: localModelCatalogService,
             localModelSettingsService: localModelSettingsService,
