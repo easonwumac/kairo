@@ -25,7 +25,13 @@ public protocol AgentToolInvocationCandidateBuilding: Sendable {
 }
 
 public struct DefaultAgentToolInvocationCandidateBuilder: AgentToolInvocationCandidateBuilding {
-    public init() {}
+    private let appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping
+
+    public init(
+        appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = DefaultAppIntegrationToolInvocationCandidateMapper()
+    ) {
+        self.appIntegrationCandidateMapper = appIntegrationCandidateMapper
+    }
 
     public func candidate(
         for skill: AgentSkill,
@@ -131,30 +137,12 @@ public struct DefaultAgentToolInvocationCandidateBuilder: AgentToolInvocationCan
         guard matcher.matches(appIntegrationSkill: skill, normalizedText: normalizedText, parser: parser) else {
             return nil
         }
-        guard skill.availabilityStatus != .disabled, skill.availabilityStatus != .unsupported else {
-            return nil
-        }
-        let action = skill.canBeSuggestedAsExecutable
-            ? actionMapper.visibleHandoffAction(
-                for: skill,
-                userText: userText,
-                normalizedText: normalizedText,
-                parser: parser
-            )
-            : nil
-
-        return AgentToolInvocationCandidate(
-            id: "app-integration-\(skill.id.rawValue)",
-            title: skill.appName,
-            source: .appIntegrationCatalog,
-            skillID: skill.id.rawValue,
-            integrationKey: skill.integrationKey,
-            skillKind: skill.executionMode == .apiCall ? .oauthConnector : .custom,
-            requiredCapabilities: skill.audit.capabilityKeys,
-            riskTier: skill.riskTier,
-            requiresConfirmation: skill.requiresConfirmation,
-            handoffSummary: appIntegrationHandoffSummary(for: skill),
-            action: action
+        return appIntegrationCandidateMapper.candidate(
+            for: skill,
+            userText: userText,
+            normalizedText: normalizedText,
+            parser: parser,
+            actionMapper: actionMapper
         )
     }
 
@@ -167,20 +155,5 @@ public struct DefaultAgentToolInvocationCandidateBuilder: AgentToolInvocationCan
             return boundary
         }
         return "\(boundary) \(recipe.settingsStepSummary). \(recipe.settingsInputSummary). \(recipe.settingsOutputSummary)."
-    }
-
-    private func appIntegrationHandoffSummary(for skill: AppIntegrationSkill) -> String {
-        switch skill.executionMode {
-        case .apiCall:
-            return KairoL10n.string("chat.tool.summary.integration", skill.appName)
-        case .openURL:
-            return KairoL10n.string("chat.tool.summary.visibleExternalApp", skill.appName)
-        case .runUserShortcut:
-            return KairoL10n.string("chat.tool.summary.shortcutBoundary")
-        case .draftOnly:
-            return KairoL10n.string("chat.tool.summary.managedSkill")
-        case .previewOnly:
-            return KairoL10n.string("chat.tool.summary.unsupportedSafeAlternative")
-        }
     }
 }

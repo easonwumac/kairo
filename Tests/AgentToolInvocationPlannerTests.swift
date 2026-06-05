@@ -327,6 +327,37 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.candidates.first, injectedCandidate)
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedAppIntegrationCandidateMapper() throws {
+        let skill = try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMailHandoff))
+        let injectedCandidate = AgentToolInvocationCandidate(
+            id: "mapped-app-integration",
+            title: "Mapped App Integration",
+            source: .appIntegrationCatalog,
+            skillID: skill.id.rawValue,
+            integrationKey: skill.integrationKey,
+            skillKind: .custom,
+            requiredCapabilities: skill.audit.capabilityKeys,
+            riskTier: skill.riskTier,
+            requiresConfirmation: skill.requiresConfirmation,
+            handoffSummary: "Mapped by injected app integration mapper"
+        )
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: []),
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [skill]),
+            visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
+            writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
+            candidateMatcher: FixedAgentToolInvocationCandidateMatcher(appIntegrationSkillMatches: true),
+            candidateBuilder: DefaultAgentToolInvocationCandidateBuilder(
+                appIntegrationCandidateMapper: FixedAppIntegrationToolInvocationCandidateMapper(candidate: injectedCandidate)
+            )
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "mapper route"))
+
+        XCTAssertEqual(plan.candidates, [injectedCandidate])
+    }
+
     func testAgentToolInvocationPlannerUsesInjectedCandidatePipeline() throws {
         let injectedCandidate = AgentToolInvocationCandidate(
             id: "pipeline-output-candidate",
@@ -824,6 +855,20 @@ private struct FixedAppIntegrationActionParser: AgentToolInvocationActionParsing
     func isPhoneToken(_ value: String) -> Bool { true }
     func normalize(_ value: String) -> String {
         value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+private struct FixedAppIntegrationToolInvocationCandidateMapper: AppIntegrationToolInvocationCandidateMapping {
+    var candidate: AgentToolInvocationCandidate?
+
+    func candidate(
+        for skill: AppIntegrationSkill,
+        userText: String,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing,
+        actionMapper: any AppIntegrationActionMapping
+    ) -> AgentToolInvocationCandidate? {
+        candidate
     }
 }
 
