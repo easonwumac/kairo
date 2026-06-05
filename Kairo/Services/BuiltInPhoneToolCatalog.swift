@@ -1,5 +1,9 @@
 import Foundation
 
+public protocol BuiltInPhoneToolCatalogProviding: Sendable {
+    var tools: [BuiltInPhoneToolDefinition] { get }
+}
+
 public enum BuiltInPhoneToolID: String, Codable, CaseIterable, Sendable, Identifiable {
     case memorySave = "memory.save"
     case memorySearch = "memory.search"
@@ -189,7 +193,7 @@ public struct BuiltInPhoneToolDefinition: Identifiable, Codable, Equatable, Send
     }
 }
 
-public struct BuiltInPhoneToolCatalog: Sendable {
+public struct BuiltInPhoneToolCatalog: BuiltInPhoneToolCatalogProviding {
     public var tools: [BuiltInPhoneToolDefinition]
 
     public init(tools: [BuiltInPhoneToolDefinition] = BuiltInPhoneToolCatalog.defaultTools) {

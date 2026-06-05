@@ -39,6 +39,53 @@ final class KairoAccessBackendAPITests: XCTestCase {
         XCTAssertEqual(requestedCapabilities, [.notifications])
     }
 
+    func testAccessBackendAPIResolvesBuiltInPhoneToolReadinessFromInjectedCatalog() async throws {
+        let toolCatalog = BuiltInPhoneToolCatalog(tools: [
+            try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .memorySave)),
+            try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .reminderWrite)),
+            try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .oauthConnectorSetupStatus)),
+            try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .homeKitPreview))
+        ])
+        let permissions = RecordingPermissionService(statuses: [
+            .memory: .available,
+            .reminders: .unknown,
+            .externalConnectors: .unknown,
+            .homeKit: .unknown
+        ])
+        let api = KairoAccessBackendService(toolCatalog: toolCatalog, permissionService: permissions)
+
+        let tools = await api.tools()
+        let summaries = Dictionary(uniqueKeysWithValues: tools.map { ($0.toolID, $0) })
+
+        XCTAssertEqual(summaries[.memorySave]?.readiness, .available)
+        XCTAssertEqual(summaries[.memorySave]?.requiresConfirmation, true)
+        XCTAssertEqual(summaries[.reminderWrite]?.readiness, .needsPermission)
+        XCTAssertEqual(summaries[.oauthConnectorSetupStatus]?.readiness, .needsSetup)
+        XCTAssertEqual(summaries[.oauthConnectorSetupStatus]?.canBeSuggestedAsExecutable, false)
+        XCTAssertEqual(summaries[.homeKitPreview]?.readiness, .scaffolded)
+        XCTAssertEqual(summaries[.homeKitPreview]?.executionKind, .scaffoldPreviewOnly)
+    }
+
+    func testAccessBackendAPIToolSummariesBlockExecutableSuggestionsWhenPermissionUnavailable() async throws {
+        let toolCatalog = BuiltInPhoneToolCatalog(tools: [
+            try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite)),
+            try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .emailHandoff))
+        ])
+        let permissions = RecordingPermissionService(statuses: [
+            .calendar: .denied,
+            .mail: .available
+        ])
+        let api = KairoAccessBackendService(toolCatalog: toolCatalog, permissionService: permissions)
+
+        let tools = await api.tools()
+        let summaries = Dictionary(uniqueKeysWithValues: tools.map { ($0.toolID, $0) })
+
+        XCTAssertEqual(summaries[.calendarWrite]?.readiness, .unavailable)
+        XCTAssertEqual(summaries[.calendarWrite]?.canBeSuggestedAsExecutable, false)
+        XCTAssertEqual(summaries[.emailHandoff]?.readiness, .available)
+        XCTAssertEqual(summaries[.emailHandoff]?.canBeSuggestedAsExecutable, true)
+    }
+
     func testAccessPermissionStatusFallbackCopyDoesNotBypassSystemPermissions() throws {
         XCTAssertEqual(
             CapabilityStatus.denied.accessFallbackMessage,
