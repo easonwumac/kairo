@@ -40,7 +40,7 @@ public struct SettingsView: View {
     @State private var showAPIKeyEditor = false
     @State private var expandedOAuthConnectorDetails: Set<String> = []
 
-    private let settingsService: OpenAISettingsService
+    private let openAIKeyCoordinator: SettingsOpenAIKeyCoordinator
     private let mode: SettingsViewMode
     private let credentialStore: any CredentialStore
     private let oauthCoordinator: SettingsOAuthConnectorCoordinator
@@ -89,7 +89,9 @@ public struct SettingsView: View {
         localModelReplyCheckService: LocalModelReplyCheckService? = nil,
         deletionAPI: (any KairoDeletionAPI)? = nil
     ) {
-        self.settingsService = OpenAISettingsService(credentialStore: credentialStore)
+        self.openAIKeyCoordinator = SettingsOpenAIKeyCoordinator(
+            settingsService: OpenAISettingsService(credentialStore: credentialStore)
+        )
         self.mode = mode
         self.credentialStore = credentialStore
         let oauthLoginService = Self.defaultOAuthLoginService(
@@ -128,7 +130,7 @@ public struct SettingsView: View {
         localModelReplyCheckService: LocalModelReplyCheckService? = nil,
         deletionAPI: (any KairoDeletionAPI)? = nil
     ) {
-        self.settingsService = settingsService
+        self.openAIKeyCoordinator = SettingsOpenAIKeyCoordinator(settingsService: settingsService)
         self.mode = mode
         self.credentialStore = credentialStore
         let oauthLoginService = Self.defaultOAuthLoginService(
@@ -830,7 +832,7 @@ public struct SettingsView: View {
     private func saveAPIKey() {
         Task {
             do {
-                try await settingsService.saveAPIKey(apiKey)
+                try await openAIKeyCoordinator.saveAPIKey(apiKey)
                 await MainActor.run {
                     apiKey = ""
                     statusMessage = KairoL10n.string("settings.openai.saved")
@@ -847,7 +849,7 @@ public struct SettingsView: View {
     private func deleteAPIKey() {
         Task {
             do {
-                try await settingsService.deleteAPIKey()
+                try await openAIKeyCoordinator.deleteAPIKey()
                 await MainActor.run {
                     statusMessage = KairoL10n.string("settings.openai.deleted")
                 }
@@ -864,7 +866,7 @@ public struct SettingsView: View {
         Task {
             do {
                 let input = apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : apiKey
-                let result = try await settingsService.dryRunAPIKey(input)
+                let result = try await openAIKeyCoordinator.dryRunAPIKey(input)
                 await MainActor.run {
                     statusMessage = KairoL10n.string("settings.openai.dryRunSuccess", result.redactedKey)
                 }
@@ -1004,7 +1006,7 @@ public struct SettingsView: View {
 
     private func reloadStatus() async {
         do {
-            let status = try await settingsService.status()
+            let status = try await openAIKeyCoordinator.status()
             await MainActor.run {
                 hasAPIKey = status.hasAPIKey
             }

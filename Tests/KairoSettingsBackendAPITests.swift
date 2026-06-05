@@ -36,6 +36,36 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         XCTAssertNil(deletedOpenAIKey)
     }
 
+    func testSettingsOpenAIKeyCoordinatorManagesCredentialLifecycle() async throws {
+        let credentials = InMemoryCredentialStore()
+        let coordinator = SettingsOpenAIKeyCoordinator(
+            settingsService: OpenAISettingsService(credentialStore: credentials)
+        )
+
+        var status = try await coordinator.status()
+        XCTAssertFalse(status.hasAPIKey)
+
+        let dryRun = try await coordinator.dryRunAPIKey(" openai-test-key-1234567890 ")
+        let unsavedOpenAIKey = try await credentials.readSecret(for: CredentialKey.openAIAPIKey)
+        XCTAssertFalse(dryRun.usesSavedKey)
+        XCTAssertNil(unsavedOpenAIKey)
+
+        try await coordinator.saveAPIKey(" openai-live-key-abcdef1234 ")
+        status = try await coordinator.status()
+        let savedOpenAIKey = try await credentials.readSecret(for: CredentialKey.openAIAPIKey)
+        XCTAssertTrue(status.hasAPIKey)
+        XCTAssertEqual(savedOpenAIKey, "openai-live-key-abcdef1234")
+
+        let savedDryRun = try await coordinator.dryRunAPIKey(nil)
+        XCTAssertTrue(savedDryRun.usesSavedKey)
+
+        try await coordinator.deleteAPIKey()
+        status = try await coordinator.status()
+        let deletedOpenAIKey = try await credentials.readSecret(for: CredentialKey.openAIAPIKey)
+        XCTAssertFalse(status.hasAPIKey)
+        XCTAssertNil(deletedOpenAIKey)
+    }
+
     func testSettingsBackendAPIDependsOnOAuthLoginServiceAbstraction() async throws {
         let oauthService = StubOAuthConnectorLoginService(
             options: [
