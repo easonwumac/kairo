@@ -10,6 +10,7 @@ public struct AgentToolInvocationPlanner: Sendable {
     public var writeActionCandidateProvider: any AgentWriteActionCandidateProviding
     public var candidateMatcher: any AgentToolInvocationCandidateMatching
     public var candidateBuilder: any AgentToolInvocationCandidateBuilding
+    public var candidatePipeline: any AgentToolInvocationCandidatePipelining
     public var candidateFilter: any AgentToolCandidateFiltering
     public var safetyPolicyEngine: SafetyPolicyEngine
 
@@ -23,6 +24,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding = DefaultAgentWriteActionCandidateProvider(),
         candidateMatcher: any AgentToolInvocationCandidateMatching = DefaultAgentToolInvocationCandidateMatcher(),
         candidateBuilder: any AgentToolInvocationCandidateBuilding = DefaultAgentToolInvocationCandidateBuilder(),
+        candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
@@ -36,6 +38,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         self.writeActionCandidateProvider = writeActionCandidateProvider
         self.candidateMatcher = candidateMatcher
         self.candidateBuilder = candidateBuilder
+        self.candidatePipeline = candidatePipeline
         self.candidateFilter = candidateFilter ?? PhoneToolCandidateFilter(
             actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         )
@@ -55,53 +58,23 @@ public struct AgentToolInvocationPlanner: Sendable {
             return AgentToolInvocationPlan(candidates: [])
         }
 
-        var candidates: [AgentToolInvocationCandidate] = []
-        candidates.append(contentsOf: skillCatalog.installedSkills.compactMap { skill in
-            candidateBuilder.candidate(
-                for: skill,
-                normalizedText: normalizedText,
-                matcher: candidateMatcher,
-                parser: appIntegrationActionParser,
-                safetyPolicyEngine: safetyPolicyEngine
-            )
-        })
-        candidates.append(contentsOf: appIntegrationSkillCatalog.skills.compactMap { skill in
-            candidateBuilder.candidate(
-                for: skill,
-                userText: request.userText,
-                normalizedText: normalizedText,
-                matcher: candidateMatcher,
-                parser: appIntegrationActionParser,
-                actionMapper: appIntegrationActionMapper
-            )
-        })
-        let migratedIntegrationKeys = Set(appIntegrationSkillCatalog.skills.map(\.integrationKey))
-        candidates.append(contentsOf: integrationRegistry.oauthConnectors.compactMap { integration in
-            guard !migratedIntegrationKeys.contains(integration.key) else { return nil }
-            return candidateBuilder.candidate(
-                for: integration,
-                normalizedText: normalizedText,
-                matcher: candidateMatcher,
-                parser: appIntegrationActionParser
-            )
-        })
-        for handoffCandidate in visibleHandoffCandidateProvider.candidates(
-            userText: request.userText,
+        let candidates = candidatePipeline.candidates(
+            for: request,
             normalizedText: normalizedText,
-            parser: appIntegrationActionParser
-        ) where !candidates.containsAction(kind: handoffCandidate.action?.kind) {
-            candidates.append(handoffCandidate)
-        }
-        for writeCandidate in writeActionCandidateProvider.candidates(
-            userText: request.userText,
-            normalizedText: normalizedText,
-            parser: appIntegrationActionParser
-        ) where !candidates.containsAction(kind: writeCandidate.action?.kind) {
-            candidates.append(writeCandidate)
-        }
+            skillCatalog: skillCatalog,
+            integrationRegistry: integrationRegistry,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+            appIntegrationActionMapper: appIntegrationActionMapper,
+            appIntegrationActionParser: appIntegrationActionParser,
+            visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
+            writeActionCandidateProvider: writeActionCandidateProvider,
+            candidateMatcher: candidateMatcher,
+            candidateBuilder: candidateBuilder,
+            safetyPolicyEngine: safetyPolicyEngine
+        )
 
         return AgentToolInvocationPlan(
-            candidates: uniqueCandidates(candidates).filter(candidateFilter.allowsCandidate)
+            candidates: candidates.filter(candidateFilter.allowsCandidate)
         )
     }
 }

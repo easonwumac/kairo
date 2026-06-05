@@ -297,6 +297,29 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.candidates.first, injectedCandidate)
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedCandidatePipeline() throws {
+        let injectedCandidate = AgentToolInvocationCandidate(
+            id: "pipeline-output-candidate",
+            title: "Pipeline Output",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.chat],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Injected pipeline output"
+        )
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: []),
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            candidatePipeline: FixedAgentToolInvocationCandidatePipeline(candidates: [injectedCandidate])
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "pipeline route"))
+
+        XCTAssertEqual(plan.candidates, [injectedCandidate])
+    }
+
     func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithoutExecutableAction() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry(integrations: []))
 
@@ -788,6 +811,27 @@ private struct FixedAgentToolInvocationCandidateBuilder: AgentToolInvocationCand
         actionMapper: any AppIntegrationActionMapping
     ) -> AgentToolInvocationCandidate? {
         nil
+    }
+}
+
+private struct FixedAgentToolInvocationCandidatePipeline: AgentToolInvocationCandidatePipelining {
+    var candidates: [AgentToolInvocationCandidate]
+
+    func candidates(
+        for request: AgentToolInvocationRequest,
+        normalizedText: String,
+        skillCatalog: AgentSkillCatalog,
+        integrationRegistry: any AppIntegrationRegistryProviding,
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding,
+        appIntegrationActionMapper: any AppIntegrationActionMapping,
+        appIntegrationActionParser: any AgentToolInvocationActionParsing,
+        visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding,
+        writeActionCandidateProvider: any AgentWriteActionCandidateProviding,
+        candidateMatcher: any AgentToolInvocationCandidateMatching,
+        candidateBuilder: any AgentToolInvocationCandidateBuilding,
+        safetyPolicyEngine: SafetyPolicyEngine
+    ) -> [AgentToolInvocationCandidate] {
+        candidates
     }
 }
 

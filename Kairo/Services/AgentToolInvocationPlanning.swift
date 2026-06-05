@@ -16,6 +16,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
     public var writeActionCandidateProvider: any AgentWriteActionCandidateProviding
     public var candidateMatcher: any AgentToolInvocationCandidateMatching
     public var candidateBuilder: any AgentToolInvocationCandidateBuilding
+    public var candidatePipeline: any AgentToolInvocationCandidatePipelining
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var safetyPolicyEngine: SafetyPolicyEngine
 
@@ -28,6 +29,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding = DefaultAgentWriteActionCandidateProvider(),
         candidateMatcher: any AgentToolInvocationCandidateMatching = DefaultAgentToolInvocationCandidateMatcher(),
         candidateBuilder: any AgentToolInvocationCandidateBuilding = DefaultAgentToolInvocationCandidateBuilder(),
+        candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
     ) {
@@ -39,6 +41,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         self.writeActionCandidateProvider = writeActionCandidateProvider
         self.candidateMatcher = candidateMatcher
         self.candidateBuilder = candidateBuilder
+        self.candidatePipeline = candidatePipeline
         self.toolCatalog = toolCatalog
         self.safetyPolicyEngine = safetyPolicyEngine
     }
@@ -57,6 +60,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
             writeActionCandidateProvider: writeActionCandidateProvider,
             candidateMatcher: candidateMatcher,
             candidateBuilder: candidateBuilder,
+            candidatePipeline: candidatePipeline,
             toolCatalog: toolCatalog,
             safetyPolicyEngine: safetyPolicyEngine
         ).plan(for: request)
