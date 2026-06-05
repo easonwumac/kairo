@@ -888,8 +888,7 @@ public struct PermissionHubView: View {
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
                 .accessibilityIdentifier("access.skill.\(skill.id).details")
             }
 
@@ -942,6 +941,7 @@ public struct PermissionHubView: View {
                             title: KairoL10n.string("access.skills.action.remove"),
                             systemImage: "trash",
                             role: .destructive,
+                            tint: KairoDesign.red,
                             accessibilityIdentifier: "access.skill.\(skill.id).remove"
                         ) {
                             Task {
@@ -1011,6 +1011,7 @@ public struct PermissionHubView: View {
         title: String,
         systemImage: String,
         role: ButtonRole? = nil,
+        tint: Color = KairoDesign.blue,
         accessibilityIdentifier: String,
         action: @escaping () -> Void
     ) -> some View {
@@ -1021,8 +1022,7 @@ public struct PermissionHubView: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
         }
-        .buttonStyle(.bordered)
-        .controlSize(.small)
+        .buttonStyle(KairoGlassButtonStyle(tint: tint, isCompact: true))
         .accessibilityIdentifier(accessibilityIdentifier)
     }
 

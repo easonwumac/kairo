@@ -188,15 +188,15 @@ public enum LocalModelSettingsPrimaryAction: String, Codable, Equatable, Sendabl
     public var title: String {
         switch self {
         case .download:
-            return "Download"
+            return KairoL10n.string("settings.models.action.download")
         case .retryDownload:
-            return "Retry"
+            return KairoL10n.string("settings.models.action.retry")
         case .select:
-            return "Select"
+            return KairoL10n.string("settings.models.action.select")
         case .selected:
-            return "Selected"
+            return KairoL10n.string("settings.models.action.selected")
         case .unavailable:
-            return "Unavailable"
+            return KairoL10n.string("settings.models.action.unavailable")
         }
     }
 

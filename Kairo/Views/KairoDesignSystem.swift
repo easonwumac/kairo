@@ -277,6 +277,39 @@ struct KairoCommandButton: View {
     }
 }
 
+struct KairoGlassButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    var tint: Color = KairoDesign.blue
+    var isProminent = false
+    var isCompact = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(isCompact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
+            .foregroundStyle(isProminent ? KairoDesign.ink : tint)
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, minHeight: isCompact ? 32 : 38)
+            .padding(.horizontal, isCompact ? 10 : 12)
+            .background(background(configuration: configuration), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(KairoDesign.line.opacity(isProminent ? 1 : 0.8), lineWidth: 1)
+            }
+            .shadow(color: KairoDesign.shadow.opacity(isProminent ? 0.45 : 0.24), radius: isProminent ? 14 : 8, x: 0, y: isProminent ? 8 : 4)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .opacity(isEnabled ? 1 : 0.42)
+    }
+
+    private func background(configuration: Configuration) -> Color {
+        let pressedOpacity = configuration.isPressed ? 0.72 : 1
+        if isProminent {
+            return KairoDesign.softSurface.opacity(0.82 * pressedOpacity)
+        }
+        return KairoDesign.groupedSurface.opacity(0.72 * pressedOpacity)
+    }
+}
+
 struct KairoActionRow: View {
     let title: String
     let subtitle: String

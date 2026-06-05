@@ -86,21 +86,21 @@ struct SettingsOpenAIAccountSection: View {
                 Button(KairoL10n.string("settings.openai.save")) {
                     saveAPIKey()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true, isCompact: true))
                 .disabled(trimmedAPIKey.isEmpty)
                 .accessibilityIdentifier("settings.openai.save-api-key")
 
                 Button(KairoL10n.string("settings.openai.dryRun")) {
                     dryRunAPIKey()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal, isCompact: true))
                 .disabled(trimmedAPIKey.isEmpty && !hasAPIKey)
                 .accessibilityIdentifier("settings.openai.dry-run-api-key")
 
                 Button(KairoL10n.string("settings.openai.delete"), role: .destructive) {
                     deleteAPIKey()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.red, isCompact: true))
                 .disabled(!hasAPIKey)
                 .accessibilityIdentifier("settings.openai.delete-api-key")
             }

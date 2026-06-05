@@ -16,7 +16,7 @@ struct ChatHistorySidebarView: View {
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
                 .accessibilityIdentifier("chat.new")
 
                 if threads.isEmpty {

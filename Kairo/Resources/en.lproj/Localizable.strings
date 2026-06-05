@@ -116,10 +116,10 @@
 "access.integration.readiness.disabled" = "Disabled";
 "access.skills.manager.title" = "Installed skills";
 "access.skills.manager.footer" = "Skills extend Chat suggestions. Enable only the ones you want Kairo to offer.";
-"access.skills.advanced.title" = "Advanced setup";
-"access.skills.advanced.footer" = "Import signed manifests or draft local skills only when you know what capability you are adding.";
-"access.skills.advanced.toggle.title" = "Skill library";
-"access.skills.advanced.toggle.subtitle" = "Manage installed skills, preview beta demos, or import signed manifests when setup needs attention.";
+"access.skills.advanced.title" = "Tool setup";
+"access.skills.advanced.footer" = "Use this only when you need to add or update a tool manually.";
+"access.skills.advanced.toggle.title" = "More tool settings";
+"access.skills.advanced.toggle.subtitle" = "Manage installed tools or add a signed tool package when needed.";
 "access.skills.advanced.toggle.collapsed" = "Collapsed";
 "access.skills.advanced.toggle.expanded" = "Expanded";
 "access.skills.manifestImport.title" = "Signed Manifest Import";
@@ -751,6 +751,11 @@
 "settings.models.message.catalogRefreshFailed" = "Could not refresh model catalog: %@";
 "settings.models.message.cleanedStaleDownload" = "Cleaned up unfinished local model download state.";
 "settings.models.message.cleanStaleDownloadFailed" = "Could not clean unfinished local model download state: %@";
+"settings.models.action.download" = "Download";
+"settings.models.action.retry" = "Retry";
+"settings.models.action.select" = "Select";
+"settings.models.action.selected" = "Selected";
+"settings.models.action.unavailable" = "Unavailable";
 "settings.models.status.selected" = "Selected";
 "settings.models.status.installed" = "Installed";
 "settings.models.status.downloading" = "Downloading";

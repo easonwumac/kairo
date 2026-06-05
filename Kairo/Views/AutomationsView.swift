@@ -175,7 +175,7 @@ public struct AutomationsView: View {
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
                 .disabled(isLoading)
                 .accessibilityLabel(KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.addStarter" : "automations.recipeCenter.addSamples"))
                 .accessibilityIdentifier("automations.seed-samples")
@@ -347,8 +347,7 @@ public struct AutomationsView: View {
                 } label: {
                     Label(KairoL10n.string("automations.shortcutTemplates.openTemplate"), systemImage: "arrow.up.right.square")
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
                 .accessibilityIdentifier("automations.shortcut-template.\(template.identifier).open")
             }
         }
@@ -397,8 +396,7 @@ public struct AutomationsView: View {
             }
             .accessibilityLabel(KairoL10n.string("automations.shortcutDemos.previewSampleAccessibility", recipe.title))
             .accessibilityIdentifier("automations.shortcut-demo.\(recipe.id).preview-sample")
-            .buttonStyle(.bordered)
-            .controlSize(.small)
+            .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
             .disabled(isLoading)
 
             if let previewMessage = shortcutDemoPreviewMessages[recipe.id] {
@@ -451,7 +449,7 @@ public struct AutomationsView: View {
                     Label(KairoL10n.string("automations.recipe.preview"), systemImage: "doc.text.magnifyingglass")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
                 .disabled(!recipe.isEnabled || isLoading)
                 .accessibilityIdentifier("automations.recipe.\(recipe.id).preview")
 
@@ -482,7 +480,7 @@ public struct AutomationsView: View {
                     }
                     .disabled(!recipe.isEnabled || isLoading)
                     .accessibilityIdentifier("automations.recipe.\(recipe.id).run")
-                    .buttonStyle(.bordered)
+                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.green, isCompact: true))
 
                     Button {
                         Task { await toggle(recipe) }
@@ -495,7 +493,7 @@ public struct AutomationsView: View {
                     }
                     .disabled(isLoading)
                     .accessibilityIdentifier("automations.recipe.\(recipe.id).toggle")
-                    .buttonStyle(.bordered)
+                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
                 }
                 .accessibilityIdentifier("automations.recipe.\(recipe.id).actions")
                 .transition(.opacity.combined(with: .move(edge: .top)))

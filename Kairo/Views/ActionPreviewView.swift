@@ -89,8 +89,7 @@ public struct ActionPreviewView: View {
                     .frame(maxWidth: .infinity)
                     .accessibilityIdentifier("chat.action.cancel.label")
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
+            .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.muted))
             .accessibilityIdentifier("chat.action.cancel")
 
             Button(action: onConfirm) {
@@ -98,8 +97,7 @@ public struct ActionPreviewView: View {
                     .frame(maxWidth: .infinity)
                     .accessibilityIdentifier("chat.action.confirm.label")
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
             .disabled(descriptor?.supportStatus == .unsupportedBySandbox)
             .accessibilityIdentifier("chat.action.confirm")
         }

@@ -422,8 +422,7 @@ public struct SettingsView: View {
                             runLocalModelBenchmark(row)
                         }
                         .font(.caption2)
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+                        .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal, isCompact: true))
                         .accessibilityIdentifier("settings.models.\(row.modelID).benchmark-run")
                     }
                 }
@@ -433,8 +432,7 @@ public struct SettingsView: View {
                         runLocalModelReplyCheck(row)
                     }
                     .font(.caption2)
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal, isCompact: true))
                     .accessibilityIdentifier("settings.models.\(row.modelID).reply-check")
 
                     if row.canDelete {
@@ -442,8 +440,7 @@ public struct SettingsView: View {
                             deleteLocalModel(row)
                         }
                         .font(.caption2)
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+                        .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.red, isCompact: true))
                         .accessibilityIdentifier("settings.models.\(row.modelID).delete")
                     }
                 }
@@ -478,16 +475,14 @@ public struct SettingsView: View {
                 downloadLocalModel(row)
             }
             .font(.caption2)
-            .buttonStyle(.bordered)
-            .controlSize(.small)
+            .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
             .accessibilityIdentifier("settings.models.\(row.modelID).download")
         case .select:
             Button(row.primaryAction.title) {
                 selectLocalModel(row)
             }
             .font(.caption2)
-            .buttonStyle(.bordered)
-            .controlSize(.small)
+            .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
             .accessibilityIdentifier("settings.models.\(row.modelID).select")
         case .selected:
             Label(row.primaryAction.title, systemImage: "checkmark.circle.fill")

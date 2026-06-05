@@ -259,7 +259,7 @@ public struct MemoryCenterView: View {
                             .font(.caption.weight(.semibold))
                             .frame(maxWidth: .infinity, minHeight: 32)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal, isCompact: true))
                     .disabled(memories.isEmpty)
                     .accessibilityLabel(KairoL10n.string("memory.export.accessibility"))
                     .accessibilityIdentifier("memory.export.share")
@@ -362,7 +362,7 @@ public struct MemoryCenterView: View {
                             .frame(maxWidth: .infinity, alignment: .center)
                             .accessibilityIdentifier("memory.add.save")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
                     .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityIdentifier("memory.add.save")
                 }

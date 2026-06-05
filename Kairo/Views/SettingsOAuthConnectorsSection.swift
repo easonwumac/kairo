@@ -106,7 +106,7 @@ struct SettingsOAuthConnectorsSection: View {
                 Button(KairoL10n.string("settings.oauth.authorize")) {
                     authorizeConnector(option)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
                 .accessibilityIdentifier("settings.oauth.\(option.providerKey).authorize")
             }
 
@@ -114,7 +114,7 @@ struct SettingsOAuthConnectorsSection: View {
                 Button(KairoL10n.string("settings.oauth.disconnect"), role: .destructive) {
                     disconnectConnector(option)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.red, isCompact: true))
                 .accessibilityIdentifier("settings.oauth.\(option.providerKey).disconnect")
             }
         }

@@ -116,10 +116,10 @@
 "access.integration.readiness.disabled" = "已停用";
 "access.skills.manager.title" = "已安裝 skills";
 "access.skills.manager.footer" = "Skills 會擴充 Chat 的建議。只啟用你希望 Kairo 提供的能力。";
-"access.skills.advanced.title" = "進階設定";
-"access.skills.advanced.footer" = "只有在你清楚要加入哪個能力時，才匯入 signed manifest 或建立 local skill 草稿。";
-"access.skills.advanced.toggle.title" = "Skill 資料庫";
-"access.skills.advanced.toggle.subtitle" = "需要時再管理已安裝 skills、預覽 beta demos，或匯入 signed manifests。";
+"access.skills.advanced.title" = "工具設定";
+"access.skills.advanced.footer" = "只有需要手動加入或更新工具時才使用。";
+"access.skills.advanced.toggle.title" = "更多工具設定";
+"access.skills.advanced.toggle.subtitle" = "需要時管理已安裝工具，或加入已簽署的工具套件。";
 "access.skills.advanced.toggle.collapsed" = "已收合";
 "access.skills.advanced.toggle.expanded" = "已展開";
 "access.skills.manifestImport.title" = "Signed Manifest 匯入";
@@ -751,6 +751,11 @@
 "settings.models.message.catalogRefreshFailed" = "刷新 model catalog 失敗：%@";
 "settings.models.message.cleanedStaleDownload" = "已清理未完成的 local model download state。";
 "settings.models.message.cleanStaleDownloadFailed" = "清理未完成 local model download state 失敗：%@";
+"settings.models.action.download" = "下載";
+"settings.models.action.retry" = "重試";
+"settings.models.action.select" = "選用";
+"settings.models.action.selected" = "已選用";
+"settings.models.action.unavailable" = "不可用";
 "settings.models.status.selected" = "已選用";
 "settings.models.status.installed" = "已安裝";
 "settings.models.status.downloading" = "下載中";
