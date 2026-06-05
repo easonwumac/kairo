@@ -27,14 +27,24 @@ public struct PermissionHubView: View {
     private let skillManagerService: AgentSkillManagerService?
     private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?
 
+    public init(dependencies: AccessFeatureDependencies) {
+        self.skillManagerService = dependencies.skillManagerService
+        self.marketplaceCatalogService = dependencies.marketplaceCatalogService
+        _skillCatalog = State(initialValue: dependencies.initialSkillCatalog)
+    }
+
     public init(
         skillManagerService: AgentSkillManagerService? = nil,
         marketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil,
         initialSkillCatalog: AgentSkillCatalog = .defaultWithMarketplaceSamples
     ) {
-        self.skillManagerService = skillManagerService
-        self.marketplaceCatalogService = marketplaceCatalogService
-        _skillCatalog = State(initialValue: initialSkillCatalog)
+        self.init(
+            dependencies: AccessFeatureDependencies(
+                skillManagerService: skillManagerService,
+                marketplaceCatalogService: marketplaceCatalogService,
+                initialSkillCatalog: initialSkillCatalog
+            )
+        )
     }
 
     public var body: some View {

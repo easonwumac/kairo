@@ -85,10 +85,7 @@ public struct RootView: View {
         case .shortcuts:
             AutomationsView(dependencies: environment.automationsFeatureDependencies)
         case .access:
-            PermissionHubView(
-                skillManagerService: environment.agentSkillManagerService,
-                marketplaceCatalogService: environment.agentSkillMarketplaceCatalogService
-            )
+            PermissionHubView(dependencies: environment.accessFeatureDependencies)
         case .models:
             SettingsView(
                 dependencies: environment.settingsFeatureDependencies,

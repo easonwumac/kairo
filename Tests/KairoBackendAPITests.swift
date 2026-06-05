@@ -192,4 +192,20 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(saved.map(\.id), ["composition-recipe"])
     }
 
+    func testKairoEnvironmentBuildsAccessFeatureDependenciesForCompositionRoot() async throws {
+        let skillManagerService = try await makeBackendTestAgentSkillManagerService()
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
+            agentSkillManagerService: skillManagerService
+        )
+
+        let dependencies = environment.accessFeatureDependencies
+        let catalog = try await XCTUnwrap(dependencies.skillManagerService).catalog()
+
+        XCTAssertFalse(catalog.skills.isEmpty)
+        XCTAssertNil(dependencies.marketplaceCatalogService)
+    }
+
 }

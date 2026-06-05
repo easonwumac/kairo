@@ -1055,8 +1055,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(environmentSource.contains("AgentSkillMarketplaceCatalogService.defaultStandaloneRepository"))
         XCTAssertTrue(rootViewSource.contains("AutomationsView("))
         XCTAssertTrue(rootViewSource.contains("PermissionHubView("))
-        XCTAssertTrue(rootViewSource.contains("skillManagerService: environment.agentSkillManagerService"))
-        XCTAssertTrue(rootViewSource.contains("marketplaceCatalogService: environment.agentSkillMarketplaceCatalogService"))
         XCTAssertTrue(environmentSource.contains("localModelCatalogService"))
         XCTAssertTrue(environmentSource.contains("LocalModelCatalogService.defaultStandaloneRepository"))
         XCTAssertTrue(environmentSource.contains("localModelBenchmarkService"))
