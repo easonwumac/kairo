@@ -604,6 +604,33 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.candidates, [injectedCandidate])
     }
 
+    func testAgentToolInvocationPlannerAcceptsCandidatePlanningBundle() throws {
+        let injectedCandidate = AgentToolInvocationCandidate(
+            id: "candidate-planning-bundle-candidate",
+            title: "Candidate Planning Bundle",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.chat],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Injected candidate planning bundle output"
+        )
+        let candidatePlanning = AgentToolCandidatePlanningDependencies(
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            candidatePipeline: FixedAgentToolInvocationCandidatePipeline(candidates: [injectedCandidate])
+        )
+        let dependencies = AgentToolInvocationPlannerDependencies(candidatePlanning: candidatePlanning)
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: []),
+            dependencies: dependencies
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "candidate planning dependency route"))
+
+        XCTAssertEqual(plan.candidates, [injectedCandidate])
+    }
+
     func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithoutExecutableAction() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry(integrations: []))
 

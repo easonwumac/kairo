@@ -67,27 +67,28 @@ public struct AgentToolInvocationPlanner: Sendable {
             return AgentToolInvocationPlan(candidates: [])
         }
 
-        let candidates = dependencies.candidatePipeline.candidates(in: AgentToolInvocationCandidatePipelineContext(
+        let candidatePlanning = dependencies.candidatePlanning
+        let candidates = candidatePlanning.candidatePipeline.candidates(in: AgentToolInvocationCandidatePipelineContext(
             request: request,
             normalizedText: normalizedText,
             skillCatalog: skillCatalog,
-            integrationRegistry: dependencies.integrationRegistry,
-            appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog,
-            appIntegrationActionMapper: dependencies.appIntegrationActionMapper,
-            appIntegrationActionParser: dependencies.appIntegrationActionParser,
-            visibleHandoffCandidateProvider: dependencies.visibleHandoffCandidateProvider,
-            writeActionCandidateProvider: dependencies.writeActionCandidateProvider,
-            candidateMatcher: dependencies.candidateMatcher,
-            primaryCandidateCollector: dependencies.primaryCandidateCollector,
-            installedSkillCandidateMapper: dependencies.installedSkillCandidateMapper,
-            legacyIntegrationCandidateMapper: dependencies.legacyIntegrationCandidateMapper,
-            appIntegrationCandidateMapper: dependencies.appIntegrationCandidateMapper,
-            fallbackActionCandidateAppender: dependencies.fallbackActionCandidateAppender,
-            safetyPolicyEngine: dependencies.safetyPolicyEngine
+            integrationRegistry: candidatePlanning.integrationRegistry,
+            appIntegrationSkillCatalog: candidatePlanning.appIntegrationSkillCatalog,
+            appIntegrationActionMapper: candidatePlanning.appIntegrationActionMapper,
+            appIntegrationActionParser: candidatePlanning.appIntegrationActionParser,
+            visibleHandoffCandidateProvider: candidatePlanning.visibleHandoffCandidateProvider,
+            writeActionCandidateProvider: candidatePlanning.writeActionCandidateProvider,
+            candidateMatcher: candidatePlanning.candidateMatcher,
+            primaryCandidateCollector: candidatePlanning.primaryCandidateCollector,
+            installedSkillCandidateMapper: candidatePlanning.installedSkillCandidateMapper,
+            legacyIntegrationCandidateMapper: candidatePlanning.legacyIntegrationCandidateMapper,
+            appIntegrationCandidateMapper: candidatePlanning.appIntegrationCandidateMapper,
+            fallbackActionCandidateAppender: candidatePlanning.fallbackActionCandidateAppender,
+            safetyPolicyEngine: candidatePlanning.safetyPolicyEngine
         ))
 
         return AgentToolInvocationPlan(
-            candidates: candidates.filter(dependencies.candidateFilter.allowsCandidate)
+            candidates: candidates.filter(candidatePlanning.candidateFilter.allowsCandidate)
         )
     }
 }
