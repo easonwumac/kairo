@@ -8,24 +8,26 @@ public actor ShortcutNodeRuntime {
 
     public init(
         memoryStore: MemoryStore,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        toolCatalog: (any BuiltInPhoneToolCatalogProviding)? = nil,
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)? = nil,
         actionGate: (any PhoneToolActionGating)? = nil,
         integrationGate: (any ShortcutNodeIntegrationGating)? = nil,
         recipePlanner: any KairoRecipePlanning = KairoRecipePlanner()
     ) {
+        let runtimeToolCatalog = toolCatalog ?? BuiltInPhoneToolCatalog()
+        let runtimeAppIntegrationSkillCatalog = appIntegrationSkillCatalog ?? AppIntegrationSkillCatalog()
         self.memoryStore = memoryStore
-        self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: runtimeToolCatalog)
         self.integrationGate = integrationGate ?? CatalogBackedShortcutNodeIntegrationGate(
-            appIntegrationSkillCatalog: appIntegrationSkillCatalog
+            appIntegrationSkillCatalog: runtimeAppIntegrationSkillCatalog
         )
         self.recipePlanner = recipePlanner
     }
 
     public static func live(
         paths: KairoPaths = KairoSharedAppStorage.paths(),
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
+        toolCatalog: (any BuiltInPhoneToolCatalogProviding)? = nil,
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)? = nil
     ) async throws -> ShortcutNodeRuntime {
         try await LiveShortcutNodeRuntimeProvider(
             paths: paths,

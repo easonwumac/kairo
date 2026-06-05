@@ -11,12 +11,12 @@ public struct LiveShortcutNodeRuntimeProvider: ShortcutNodeRuntimeProviding {
 
     public init(
         paths: KairoPaths = KairoSharedAppStorage.paths(),
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
+        toolCatalog: (any BuiltInPhoneToolCatalogProviding)? = nil,
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)? = nil
     ) {
         self.paths = paths
-        self.toolCatalog = toolCatalog
-        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
+        self.toolCatalog = toolCatalog ?? BuiltInPhoneToolCatalog()
+        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog ?? AppIntegrationSkillCatalog()
     }
 
     public func makeRuntime() async throws -> ShortcutNodeRuntime {
