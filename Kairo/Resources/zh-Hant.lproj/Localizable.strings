@@ -14,8 +14,6 @@
 "root.environment.liveLoadFailed" = "Kairo 無法載入 live app 環境。請重新啟動 App 後再試一次。";
 "root.environment.uiTestingLoadFailed" = "Kairo 無法載入 UI testing 環境。";
 "root.navigation.title" = "導覽";
-"root.product.title" = "Kairo";
-"root.product.subtitle" = "先對話、先檢查、再執行";
 "root.section.chat.title" = "Kairo Chat";
 "root.section.chat.subtitle" = "告訴 Kairo 要在這支手機上完成什麼";
 "root.section.chat.shortTitle" = "Chat";

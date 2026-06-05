@@ -14,8 +14,6 @@
 "root.environment.liveLoadFailed" = "Kairo could not load the live app environment. Restart the app and try again.";
 "root.environment.uiTestingLoadFailed" = "Kairo could not load the UI testing environment.";
 "root.navigation.title" = "Navigate";
-"root.product.title" = "Kairo";
-"root.product.subtitle" = "Chat, review, then run.";
 "root.section.chat.title" = "Kairo Chat";
 "root.section.chat.subtitle" = "Tell Kairo what to do on this phone";
 "root.section.chat.shortTitle" = "Chat";

@@ -32,7 +32,6 @@ public struct RootView: View {
 
                 VStack(spacing: 0) {
                     rootHeader(topInset: safeAreaInsets.top)
-                    primaryNavigationStrip
 
                     selectedContent
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -132,16 +131,6 @@ public struct RootView: View {
 
             KairoMark(size: 34)
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(KairoL10n.string("root.product.title"))
-                    .font(.headline.weight(.bold))
-                    .lineLimit(1)
-                Text(KairoL10n.string("root.product.subtitle"))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
             Spacer(minLength: 8)
 
             if selectedSection != .chat {
@@ -176,52 +165,6 @@ public struct RootView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("root.safe-area-header")
-    }
-
-    private var primaryNavigationStrip: some View {
-        VStack(spacing: 0) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(RootSection.primaryTabs) { section in
-                        Button {
-                            selectedSection = section
-                        } label: {
-                            HStack(spacing: 7) {
-                                Image(systemName: section.systemImage)
-                                    .font(.caption.weight(.bold))
-                                Text(section.shortTitle)
-                                    .font(.caption.weight(.semibold))
-                                    .lineLimit(1)
-                            }
-                            .foregroundStyle(selectedSection == section ? .white : KairoDesign.muted)
-                            .padding(.horizontal, 12)
-                            .frame(height: 34)
-                            .background(selectedSection == section ? section.tint : KairoDesign.elevatedSurface, in: Capsule())
-                            .overlay {
-                                Capsule()
-                                    .stroke(selectedSection == section ? Color.clear : KairoDesign.line, lineWidth: 1)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(section.title)
-                        .accessibilityIdentifier("root.tab.\(section.rawValue)")
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(KairoDesign.groupedSurface, in: Capsule())
-                .overlay {
-                    Capsule()
-                        .stroke(Color.white.opacity(0.72), lineWidth: 1)
-                }
-                .shadow(color: KairoDesign.shadow, radius: 16, x: 0, y: 8)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 9)
-            }
-        }
-        .background(KairoDesign.background.opacity(0.72))
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("root.primary-tabs")
     }
 
     private func drawerOverlay(safeAreaInsets: EdgeInsets, containerWidth: CGFloat) -> some View {
@@ -372,10 +315,6 @@ private enum RootSection: String, CaseIterable, Identifiable {
     case settings
 
     var id: String { rawValue }
-
-    static var primaryTabs: [RootSection] {
-        [.chat, .memory, .shortcuts]
-    }
 
     var title: String {
         switch self {
