@@ -40,7 +40,7 @@ public struct DefaultAgentCompletionRequestBuilder: AgentCompletionRequestBuildi
         privacyMode: ChatPrivacyMode
     ) -> AICompletionRequest {
         AICompletionRequest(
-            systemPrompt: systemPromptWithDeviceLanguage,
+            systemPrompt: systemPrompt,
             userPrompt: message,
             memoryContext: memoryContext.relevantMemories,
             allowedCapabilities: allowedCapabilities,
@@ -54,23 +54,5 @@ public struct DefaultAgentCompletionRequestBuilder: AgentCompletionRequestBuildi
         capabilityRegistry.capabilities
             .filter { $0.status == .available || $0.status == .unknown }
             .map(\.key)
-    }
-
-    private var systemPromptWithDeviceLanguage: String {
-        """
-        \(systemPrompt)
-
-        Reply in the user's current device language: \(Self.deviceLanguageDescription()).
-        If the user explicitly asks for another language, follow the user's explicit language request.
-        """
-    }
-
-    private static func deviceLanguageDescription() -> String {
-        let preferredIdentifier = Locale.preferredLanguages.first
-            ?? Locale.current.identifier
-        let locale = Locale.current
-        let localizedName = locale.localizedString(forIdentifier: preferredIdentifier)
-            ?? preferredIdentifier
-        return "\(localizedName) (\(preferredIdentifier))"
     }
 }

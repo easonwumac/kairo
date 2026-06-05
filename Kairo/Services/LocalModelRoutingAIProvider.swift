@@ -20,23 +20,27 @@ public struct LocalModelRoutingAIProvider: AIProvider {
 
     public func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
         let status = await localModelSettingsService.status()
+        let routedRequest = Self.request(
+            request,
+            applying: status.responseLanguage
+        )
         let context = await localModelSettingsService.routingContext(
-            taskClass: Self.taskClass(for: request),
-            privacyModeEnabled: request.privacyMode == .privateChat,
-            requiresToolUse: Self.requiresToolUse(request),
-            requiresCurrentInfo: Self.requiresCurrentInfo(request),
-            contextTokenEstimate: Self.estimatedTokenCount(for: request),
+            taskClass: Self.taskClass(for: routedRequest),
+            privacyModeEnabled: routedRequest.privacyMode == .privateChat,
+            requiresToolUse: Self.requiresToolUse(routedRequest),
+            requiresCurrentInfo: Self.requiresCurrentInfo(routedRequest),
+            contextTokenEstimate: Self.estimatedTokenCount(for: routedRequest),
             localRuntimeAvailable: localRuntimeAvailable
         )
         let router = ProviderRouter(
             cloudProvider: cloudProvider,
             localProvider: localProvider
         )
-        let decision = router.decision(for: request, context: context)
+        let decision = router.decision(for: routedRequest, context: context)
         if decision.route == .unavailable {
             throw AIProviderError.localInferenceUnavailable(Self.unavailableMessage(status: status, decision: decision))
         }
-        return try await router.complete(request, context: context)
+        return try await router.complete(routedRequest, context: context)
     }
 
     public func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
@@ -102,6 +106,27 @@ public struct LocalModelRoutingAIProvider: AIProvider {
 
     private static func containsAny(_ text: String, _ needles: [String]) -> Bool {
         needles.contains { text.contains($0.lowercased()) }
+    }
+
+    private static func request(
+        _ request: AICompletionRequest,
+        applying responseLanguage: ChatResponseLanguagePreference
+    ) -> AICompletionRequest {
+        AICompletionRequest(
+            systemPrompt: """
+            \(request.systemPrompt)
+
+            Response language:
+            \(responseLanguage.promptInstruction)
+            If the user explicitly asks for another language, follow the user's explicit language request.
+            """,
+            userPrompt: request.userPrompt,
+            memoryContext: request.memoryContext,
+            allowedCapabilities: request.allowedCapabilities,
+            attachmentContext: request.attachmentContext,
+            toolContext: request.toolContext,
+            privacyMode: request.privacyMode
+        )
     }
 
     private static func unavailableMessage(

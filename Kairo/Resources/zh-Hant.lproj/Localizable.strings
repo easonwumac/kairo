@@ -780,6 +780,15 @@
 "settings.route.preferLocal.detail" = "已安裝模型時，符合條件的低風險任務會優先使用本機模型。";
 "settings.route.preferCloud.detail" = "網路可用時優先使用 cloud provider。";
 "settings.route.localOnly.detail" = "不會把 prompt 路由到 cloud provider；本機不支援的任務會 fail closed。";
+"settings.responseLanguage.title" = "回覆語言";
+"settings.responseLanguage.system.title" = "系統";
+"settings.responseLanguage.english.title" = "英文";
+"settings.responseLanguage.traditionalChinese.title" = "繁體中文";
+"settings.responseLanguage.system.detail" = "Kairo 會使用目前 iOS 系統語言回覆，除非使用者明確要求其他語言。";
+"settings.responseLanguage.english.detail" = "Kairo 會使用英文回覆，除非使用者明確要求其他語言。";
+"settings.responseLanguage.traditionalChinese.detail" = "Kairo 會使用繁體中文回覆，除非使用者明確要求其他語言。";
+"settings.responseLanguage.message.saved" = "已儲存回覆語言：%@。";
+"settings.responseLanguage.message.failed" = "儲存回覆語言失敗：%@";
 "shortcut.integration.blocked.missingCatalog" = "這個 Shortcut demo 參照 %@，但該 integration 不在 App Integration Catalog 中。";
 "shortcut.integration.blocked.setupRequired" = "%@ 尚未可執行。請先完成設定，或改用可見 fallback，再執行這個 Shortcut step。";
 "shortcut.integration.blocked.nodeMismatch" = "%@ 尚未接到這個 Shortcut node。請使用支援的可見 handoff，或只保留 preview。";

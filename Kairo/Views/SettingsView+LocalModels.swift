@@ -29,6 +29,39 @@ extension SettingsView {
         }
     }
 
+    func setResponseLanguage(_ responseLanguage: ChatResponseLanguagePreference) {
+        Task {
+            guard let localModelSettingsService else {
+                await MainActor.run {
+                    localModelStatusMessageModelID = nil
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
+                }
+                return
+            }
+
+            do {
+                try await localModelSettingsService.setResponseLanguage(responseLanguage)
+                await MainActor.run {
+                    localModelStatus.responseLanguage = responseLanguage
+                    localModelStatusMessageModelID = nil
+                    localModelStatusMessage = KairoL10n.string(
+                        "settings.responseLanguage.message.saved",
+                        responseLanguage.settingsTitle
+                    )
+                }
+                await reloadLocalModelStatus()
+            } catch {
+                await MainActor.run {
+                    localModelStatusMessageModelID = nil
+                    localModelStatusMessage = KairoL10n.string(
+                        "settings.responseLanguage.message.failed",
+                        error.localizedDescription
+                    )
+                }
+            }
+        }
+    }
+
     func downloadLocalModel(_ row: LocalModelSettingsRow) {
         if let progress = localModelDownloadProgress {
             localModelStatusMessageModelID = progress.modelID

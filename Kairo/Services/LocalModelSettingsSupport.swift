@@ -3,10 +3,82 @@ import Foundation
 public struct LocalModelSettings: Codable, Equatable, Sendable {
     public var selectedModelID: String?
     public var preference: ProviderRoutePreference
+    public var responseLanguage: ChatResponseLanguagePreference
 
-    public init(selectedModelID: String? = nil, preference: ProviderRoutePreference = .automatic) {
+    public init(
+        selectedModelID: String? = nil,
+        preference: ProviderRoutePreference = .automatic,
+        responseLanguage: ChatResponseLanguagePreference = .system
+    ) {
         self.selectedModelID = selectedModelID
         self.preference = preference
+        self.responseLanguage = responseLanguage
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case selectedModelID
+        case preference
+        case responseLanguage
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        selectedModelID = try container.decodeIfPresent(String.self, forKey: .selectedModelID)
+        preference = try container.decodeIfPresent(ProviderRoutePreference.self, forKey: .preference) ?? .automatic
+        responseLanguage = try container.decodeIfPresent(
+            ChatResponseLanguagePreference.self,
+            forKey: .responseLanguage
+        ) ?? .system
+    }
+}
+
+public enum ChatResponseLanguagePreference: String, Codable, CaseIterable, Equatable, Sendable {
+    case system
+    case english
+    case traditionalChinese
+
+    public static let settingsChoices: [ChatResponseLanguagePreference] = [.system, .english, .traditionalChinese]
+
+    public var settingsTitle: String {
+        switch self {
+        case .system:
+            return KairoL10n.string("settings.responseLanguage.system.title")
+        case .english:
+            return KairoL10n.string("settings.responseLanguage.english.title")
+        case .traditionalChinese:
+            return KairoL10n.string("settings.responseLanguage.traditionalChinese.title")
+        }
+    }
+
+    public var settingsDetailText: String {
+        switch self {
+        case .system:
+            return KairoL10n.string("settings.responseLanguage.system.detail")
+        case .english:
+            return KairoL10n.string("settings.responseLanguage.english.detail")
+        case .traditionalChinese:
+            return KairoL10n.string("settings.responseLanguage.traditionalChinese.detail")
+        }
+    }
+
+    public var promptInstruction: String {
+        switch self {
+        case .system:
+            return "Reply using the current iOS system language: \(Self.systemLanguageDescription())."
+        case .english:
+            return "Reply in English."
+        case .traditionalChinese:
+            return "Reply in Traditional Chinese."
+        }
+    }
+
+    private static func systemLanguageDescription() -> String {
+        let preferredIdentifier = Locale.preferredLanguages.first
+            ?? Locale.current.identifier
+        let locale = Locale.current
+        let localizedName = locale.localizedString(forIdentifier: preferredIdentifier)
+            ?? preferredIdentifier
+        return "\(localizedName) (\(preferredIdentifier))"
     }
 }
 
@@ -61,6 +133,7 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
     public var selectedModel: LocalModelManifest?
     public var installedRecord: LocalModelInstallRecord?
     public var preference: ProviderRoutePreference
+    public var responseLanguage: ChatResponseLanguagePreference
     public var availableModels: [LocalModelManifest]
     public var installedModels: [LocalModelInstallRecord]
 
@@ -69,6 +142,7 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
         selectedModel: LocalModelManifest?,
         installedRecord: LocalModelInstallRecord?,
         preference: ProviderRoutePreference,
+        responseLanguage: ChatResponseLanguagePreference = .system,
         availableModels: [LocalModelManifest],
         installedModels: [LocalModelInstallRecord]
     ) {
@@ -76,6 +150,7 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
         self.selectedModel = selectedModel
         self.installedRecord = installedRecord
         self.preference = preference
+        self.responseLanguage = responseLanguage
         self.availableModels = availableModels
         self.installedModels = installedModels
     }
@@ -370,6 +445,7 @@ public actor LocalModelSettingsService {
             selectedModel: selectedModel,
             installedRecord: installedRecord,
             preference: settings.preference,
+            responseLanguage: settings.responseLanguage,
             availableModels: availableModels,
             installedModels: installedModels
         )
@@ -398,6 +474,12 @@ public actor LocalModelSettingsService {
     public func setPreference(_ preference: ProviderRoutePreference) async throws {
         var settings = await settingsStore.settings()
         settings.preference = preference
+        try await settingsStore.save(settings)
+    }
+
+    public func setResponseLanguage(_ responseLanguage: ChatResponseLanguagePreference) async throws {
+        var settings = await settingsStore.settings()
+        settings.responseLanguage = responseLanguage
         try await settingsStore.save(settings)
     }
 

@@ -13,6 +13,7 @@ struct LocalModelsCompactView: View {
     let localModelCatalogSourceText: String
     let localModelStatusColor: (LocalModelSettingsPrimaryAction) -> Color
     let setLocalModelPreference: (ProviderRoutePreference) -> Void
+    let setResponseLanguage: (ChatResponseLanguagePreference) -> Void
     let refreshLocalModelCatalog: () -> Void
     let downloadLocalModel: (LocalModelSettingsRow) -> Void
     let cancelLocalModelDownload: (LocalModelSettingsRow) -> Void
@@ -100,6 +101,10 @@ struct LocalModelsCompactView: View {
                 }
 
                 routePreferenceInline
+
+                Divider()
+
+                responseLanguageInline
 
                 Divider()
 
@@ -284,6 +289,35 @@ struct LocalModelsCompactView: View {
         .accessibilityIdentifier("settings.models.route-card")
     }
 
+    private var responseLanguageInline: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: "globe")
+                .font(.headline)
+                .foregroundStyle(KairoDesign.blue)
+                .frame(width: 30, height: 30)
+                .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(KairoL10n.string("settings.responseLanguage.title"))
+                    .font(compactModelMetadataFont)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+
+                Text(localModelStatus.responseLanguage.settingsDetailText)
+                    .font(compactModelMetadataFont)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            compactResponseLanguageMenu
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("settings.responseLanguage.card")
+    }
+
     private var selectedModelInline: some View {
         HStack(alignment: .center, spacing: 8) {
             Image(systemName: selectedModelSummaryIconName)
@@ -388,6 +422,35 @@ struct LocalModelsCompactView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(KairoL10n.string("settings.models.routePreference"))
         .accessibilityIdentifier("settings.models.preference")
+    }
+
+    private var compactResponseLanguageMenu: some View {
+        Menu {
+            ForEach(ChatResponseLanguagePreference.settingsChoices, id: \.self) { responseLanguage in
+                Button {
+                    setResponseLanguage(responseLanguage)
+                } label: {
+                    Text(responseLanguage.settingsTitle)
+                }
+                .accessibilityIdentifier("settings.responseLanguage.\(responseLanguage.rawValue)")
+            }
+        } label: {
+            HStack(spacing: 3) {
+                Text(localModelStatus.responseLanguage.settingsTitle)
+                    .font(compactControlValueFont)
+                    .lineLimit(1)
+
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2.weight(.semibold))
+            }
+            .foregroundStyle(.blue)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(Color.blue.opacity(0.06), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(KairoL10n.string("settings.responseLanguage.title"))
+        .accessibilityIdentifier("settings.responseLanguage")
     }
 
     @ViewBuilder

@@ -780,6 +780,15 @@
 "settings.route.preferLocal.detail" = "Uses the selected local model for eligible low-risk work when installed.";
 "settings.route.preferCloud.detail" = "Uses the cloud provider when network access is available.";
 "settings.route.localOnly.detail" = "Never routes prompts to cloud providers; unsupported local tasks fail closed.";
+"settings.responseLanguage.title" = "Response language";
+"settings.responseLanguage.system.title" = "System";
+"settings.responseLanguage.english.title" = "English";
+"settings.responseLanguage.traditionalChinese.title" = "Traditional Chinese";
+"settings.responseLanguage.system.detail" = "Kairo replies using the current iOS system language unless the user asks otherwise.";
+"settings.responseLanguage.english.detail" = "Kairo replies in English unless the user asks otherwise.";
+"settings.responseLanguage.traditionalChinese.detail" = "Kairo replies in Traditional Chinese unless the user asks otherwise.";
+"settings.responseLanguage.message.saved" = "Response language saved: %@.";
+"settings.responseLanguage.message.failed" = "Could not save response language: %@";
 "shortcut.integration.blocked.missingCatalog" = "This Shortcut demo references %@, but that integration is not in the app integration catalog.";
 "shortcut.integration.blocked.setupRequired" = "%@ is not ready for execution. Finish setup or use a visible fallback before running this Shortcut step.";
 "shortcut.integration.blocked.nodeMismatch" = "%@ is not wired to this Shortcut node. Use a supported visible handoff or keep this as a preview.";

@@ -270,6 +270,7 @@ public struct SettingsView: View {
             localModelCatalogSourceText: localModelCatalogSourceText,
             localModelStatusColor: { localModelStatusColor(for: $0) },
             setLocalModelPreference: { setLocalModelPreference($0) },
+            setResponseLanguage: { setResponseLanguage($0) },
             refreshLocalModelCatalog: refreshLocalModelCatalog,
             downloadLocalModel: { downloadLocalModel($0) },
             cancelLocalModelDownload: { cancelLocalModelDownload($0) },

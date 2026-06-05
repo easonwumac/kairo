@@ -853,16 +853,40 @@ final class LocalModelFeatureTests: XCTestCase {
         let initialSettings = await firstStore.settings()
         XCTAssertNil(initialSettings.selectedModelID)
         XCTAssertEqual(initialSettings.preference, .automatic)
+        XCTAssertEqual(initialSettings.responseLanguage, .system)
 
         try await firstStore.save(LocalModelSettings(
             selectedModelID: "qwen-small",
-            preference: .preferLocal
+            preference: .preferLocal,
+            responseLanguage: .traditionalChinese
         ))
 
         let secondStore = try await FileBackedLocalModelSettingsStore(fileURL: fileURL)
         let persisted = await secondStore.settings()
         XCTAssertEqual(persisted.selectedModelID, "qwen-small")
         XCTAssertEqual(persisted.preference, .preferLocal)
+        XCTAssertEqual(persisted.responseLanguage, .traditionalChinese)
+    }
+
+    func testFileBackedLocalModelSettingsStoreDefaultsLegacyResponseLanguageToSystem() async throws {
+        let fileURL = temporaryFileURL(named: "local-model-settings-legacy-language.json")
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("""
+        {
+          "preference" : "preferLocal",
+          "selectedModelID" : "qwen-small"
+        }
+        """.utf8).write(to: fileURL)
+
+        let store = try await FileBackedLocalModelSettingsStore(fileURL: fileURL)
+        let settings = await store.settings()
+
+        XCTAssertEqual(settings.selectedModelID, "qwen-small")
+        XCTAssertEqual(settings.preference, .preferLocal)
+        XCTAssertEqual(settings.responseLanguage, .system)
     }
 
     func testProviderRoutePreferenceBuildsSettingsCopyAndOrdering() {

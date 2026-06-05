@@ -27,7 +27,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
             let result = try await runtime.generateReply(
                 model: model,
                 installRecord: installRecord,
-                prompt: Self.prompt(from: request)
+                prompt: Self.prompt(from: request, responseLanguage: status.responseLanguage)
             )
             let trimmedResponse = result.responseText.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedResponse.isEmpty else {
@@ -60,14 +60,17 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         throw AIProviderError.unsupported
     }
 
-    private static func prompt(from request: AICompletionRequest) -> String {
+    private static func prompt(
+        from request: AICompletionRequest,
+        responseLanguage: ChatResponseLanguagePreference
+    ) -> String {
         let memoryContext = compactMemoryContext(from: request.memoryContext)
         let attachmentContext = compactAttachmentContext(from: request.attachmentContext)
         return """
         You are Kairo running a local model on iPhone.
         Answer the user directly and concisely.
         Do not claim to browse the web, call tools, or operate other apps.
-        Reply in the user's current device language: \(deviceLanguageDescription()).
+        \(responseLanguage.promptInstruction)
         If the user explicitly asks for another language, follow the user's explicit language request.
 
         Memory:
@@ -109,15 +112,6 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
             .joined(separator: " ")
         guard compacted.count > limit else { return compacted }
         return String(compacted.prefix(limit))
-    }
-
-    private static func deviceLanguageDescription() -> String {
-        let preferredIdentifier = Locale.preferredLanguages.first
-            ?? Locale.current.identifier
-        let locale = Locale.current
-        let localizedName = locale.localizedString(forIdentifier: preferredIdentifier)
-            ?? preferredIdentifier
-        return "\(localizedName) (\(preferredIdentifier))"
     }
 
     private static func userMessage(for error: LocalModelReplyCheckError) -> String {
