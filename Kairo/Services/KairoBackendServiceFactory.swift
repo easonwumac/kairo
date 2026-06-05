@@ -11,6 +11,7 @@ public protocol KairoBackendDependencies: Sendable {
     var kairoRecipeStore: any KairoRecipeStore { get }
     var permissionService: PermissionService { get }
     var auditLogger: AuditLogger { get }
+    var oauthConnectorRegistry: any OAuthConnectorRegistryProviding { get }
     var oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] { get }
     var agentSkillManagerService: AgentSkillManagerService? { get }
     var localModelSettingsService: LocalModelSettingsService? { get }
@@ -100,6 +101,7 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
         KairoSettingsBackendService(
             openAISettingsService: OpenAISettingsService(credentialStore: dependencies.credentialStore),
             oauthLoginCenter: OAuthConnectorLoginCenter(
+                registry: dependencies.oauthConnectorRegistry,
                 credentialStore: dependencies.credentialStore,
                 clientConfigurations: dependencies.oauthClientConfigurations
             )

@@ -117,6 +117,54 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertEqual(configurations["chatgpt"]?.scopes, ["openid", "profile"])
     }
 
+    func testOAuthConnectorClientConfigurationLoaderUsesInjectedRegistryProviders() {
+        let loader = OAuthConnectorClientConfigurationLoader()
+        let registry = IntegrationRegistry(integrations: [
+            oauthIntegration(key: "custom-mail", displayName: "Custom Mail", providerKey: "custom-mail")
+        ])
+
+        let configurations = loader.load(
+            environment: [
+                "KAIRO_OAUTH_CUSTOM_MAIL_CLIENT_ID": "custom-client",
+                "KAIRO_OAUTH_CUSTOM_MAIL_REDIRECT_URI": "kairo://oauth/custom-mail/callback",
+                "KAIRO_OAUTH_GOOGLE_CLIENT_ID": "google-client",
+                "KAIRO_OAUTH_GOOGLE_REDIRECT_URI": "kairo://oauth/google/callback"
+            ],
+            infoDictionary: nil,
+            registry: registry
+        )
+
+        XCTAssertEqual(configurations.map(\.key), ["custom-mail"])
+        XCTAssertEqual(configurations["custom-mail"]?.clientID, "custom-client")
+        XCTAssertNil(configurations["google"])
+    }
+
+    func testOAuthConnectorLoginCenterUsesInjectedRegistryOnly() async throws {
+        let registry = IntegrationRegistry(integrations: [
+            oauthIntegration(key: "custom-mail", displayName: "Custom Mail", providerKey: "custom-mail")
+        ])
+        let center = OAuthConnectorLoginCenter(
+            registry: registry,
+            credentialStore: InMemoryCredentialStore(),
+            clientConfigurations: [
+                "custom-mail": OAuthConnectorClientConfiguration(
+                    clientID: "custom-client",
+                    redirectURI: "kairo://oauth/custom-mail/callback"
+                ),
+                "google": OAuthConnectorClientConfiguration(
+                    clientID: "google-client",
+                    redirectURI: "kairo://oauth/google/callback"
+                )
+            ]
+        )
+
+        let options = try await center.loginOptions()
+
+        XCTAssertEqual(options.map(\.integrationKey), ["custom-mail"])
+        XCTAssertEqual(options.first?.providerKey, "custom-mail")
+        XCTAssertEqual(options.first?.readiness, .readyToAuthorize)
+    }
+
     func testChatGPTOAuthServiceBuildsPKCEAuthorizationURL() async throws {
         let service = ChatGPTOAuthService(
             configuration: ChatGPTOAuthConfiguration(
@@ -546,6 +594,26 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
             .appendingPathComponent(name)
+    }
+
+    private func oauthIntegration(key: String, displayName: String, providerKey: String) -> AppIntegration {
+        AppIntegration(
+            key: key,
+            displayName: displayName,
+            category: .communication,
+            surfaces: [.oauthAPI],
+            requiredCapabilities: [.externalConnectors],
+            oauth: OAuthConnectorMetadata(
+                providerKey: providerKey,
+                authorizationEndpoint: URL(string: "https://example.com/oauth/authorize")!,
+                tokenEndpoint: URL(string: "https://example.com/oauth/token")!,
+                defaultScopes: ["read"],
+                requiresBackendTokenExchange: true,
+                accountDataBoundary: "Test connector scopes only."
+            ),
+            sandboxNotes: "Test connector.",
+            status: .requiresBackend
+        )
     }
 }
 

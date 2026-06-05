@@ -26,6 +26,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public let kairoRecipeStore: any KairoRecipeStore
     public let permissionService: PermissionService
     public let auditLogger: AuditLogger
+    public let oauthConnectorRegistry: any OAuthConnectorRegistryProviding
     public let oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore?
     public let oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
     public let agentSkillManagerService: AgentSkillManagerService?
@@ -51,6 +52,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         kairoRecipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
         permissionService: PermissionService = StubPermissionService(),
         auditLogger: AuditLogger = InMemoryAuditLogger(),
+        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
         oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         agentSkillManagerService: AgentSkillManagerService? = nil,
@@ -75,6 +77,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         self.kairoRecipeStore = kairoRecipeStore
         self.permissionService = permissionService
         self.auditLogger = auditLogger
+        self.oauthConnectorRegistry = oauthConnectorRegistry
         self.oauthConnectorCallbackStore = oauthConnectorCallbackStore
         self.oauthClientConfigurations = oauthClientConfigurations
         self.agentSkillManagerService = agentSkillManagerService
@@ -135,8 +138,14 @@ public struct KairoEnvironment: KairoBackendDependencies {
         ).makeEnvironment()
     }
 
-    static func connectedOAuthProviderKeys(credentialStore: CredentialStore) async throws -> [String] {
-        try await KairoLiveAccessFactory.connectedOAuthProviderKeys(credentialStore: credentialStore)
+    static func connectedOAuthProviderKeys(
+        credentialStore: CredentialStore,
+        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry()
+    ) async throws -> [String] {
+        try await KairoLiveAccessFactory.connectedOAuthProviderKeys(
+            credentialStore: credentialStore,
+            registry: registry
+        )
     }
 }
 

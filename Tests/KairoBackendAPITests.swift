@@ -189,6 +189,32 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertTrue(chatGPT.canStartAuthorization)
     }
 
+    func testBackendModuleComposerUsesEnvironmentOAuthConnectorRegistry() async throws {
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
+            oauthConnectorRegistry: IntegrationRegistry(integrations: [
+                backendTestOAuthIntegration(key: "custom-mail", displayName: "Custom Mail", providerKey: "custom-mail")
+            ]),
+            oauthClientConfigurations: [
+                "custom-mail": OAuthConnectorClientConfiguration(
+                    clientID: "custom-client",
+                    redirectURI: "kairo://oauth/custom-mail/callback"
+                ),
+                "google": OAuthConnectorClientConfiguration(
+                    clientID: "google-client",
+                    redirectURI: "kairo://oauth/google/callback"
+                )
+            ]
+        )
+
+        let options = try await environment.backendAPI.settings.oauthLoginOptions()
+
+        XCTAssertEqual(options.map(\.integrationKey), ["custom-mail"])
+        XCTAssertEqual(options.first?.readiness, .readyToAuthorize)
+    }
+
     func testKairoEnvironmentBuildsSettingsFeatureDependenciesForCompositionRoot() async throws {
         let credentialStore = InMemoryCredentialStore()
         let environment = KairoEnvironment(
@@ -347,4 +373,23 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(preview.authorizationCodeLength, "sample-code".count)
     }
 
+    private func backendTestOAuthIntegration(key: String, displayName: String, providerKey: String) -> AppIntegration {
+        AppIntegration(
+            key: key,
+            displayName: displayName,
+            category: .communication,
+            surfaces: [.oauthAPI],
+            requiredCapabilities: [.externalConnectors],
+            oauth: OAuthConnectorMetadata(
+                providerKey: providerKey,
+                authorizationEndpoint: URL(string: "https://example.com/oauth/authorize")!,
+                tokenEndpoint: URL(string: "https://example.com/oauth/token")!,
+                defaultScopes: ["read"],
+                requiresBackendTokenExchange: true,
+                accountDataBoundary: "Test connector scopes only."
+            ),
+            sandboxNotes: "Test connector.",
+            status: .requiresBackend
+        )
+    }
 }

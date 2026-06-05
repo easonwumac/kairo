@@ -17,18 +17,22 @@ public struct OAuthConnectorClientConfigurationLoader: Sendable {
 
     public func load(
         environment: [String: String] = ProcessInfo.processInfo.environment,
-        infoDictionary: [String: Any]? = Bundle.main.infoDictionary
+        infoDictionary: [String: Any]? = Bundle.main.infoDictionary,
+        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry()
     ) -> [String: OAuthConnectorClientConfiguration] {
         var configurations = Self.loadFromInfoDictionary(infoDictionary)
-        configurations.merge(Self.loadFromEnvironment(environment)) { _, environmentValue in
+        configurations.merge(Self.loadFromEnvironment(environment, registry: registry)) { _, environmentValue in
             environmentValue
         }
         return configurations
     }
 
-    private static func loadFromEnvironment(_ environment: [String: String]) -> [String: OAuthConnectorClientConfiguration] {
+    private static func loadFromEnvironment(
+        _ environment: [String: String],
+        registry: any OAuthConnectorRegistryProviding
+    ) -> [String: OAuthConnectorClientConfiguration] {
         var configurations: [String: OAuthConnectorClientConfiguration] = [:]
-        for metadata in IntegrationRegistry().oauthConnectors.compactMap(\.oauth) {
+        for metadata in registry.oauthConnectors.compactMap(\.oauth) {
             let key = metadata.providerKey
                 .uppercased()
                 .replacingOccurrences(of: "-", with: "_")
@@ -159,6 +163,13 @@ public enum OAuthConnectorLoginCenterError: Error, Equatable {
     case missingClientConfiguration(String)
 }
 
+public protocol OAuthConnectorRegistryProviding: Sendable {
+    var oauthConnectors: [AppIntegration] { get }
+    func integration(for key: String) -> AppIntegration?
+}
+
+extension IntegrationRegistry: OAuthConnectorRegistryProviding {}
+
 public protocol OAuthConnectorLoginServicing: Sendable {
     func loginOptions() async throws -> [OAuthConnectorLoginOption]
     func makeAuthorizationSession(
@@ -186,14 +197,14 @@ public extension OAuthConnectorLoginServicing {
 }
 
 public actor OAuthConnectorLoginCenter: OAuthConnectorLoginServicing {
-    private let registry: IntegrationRegistry
+    private let registry: any OAuthConnectorRegistryProviding
     private let credentialStore: CredentialStore
     private let clientConfigurations: [String: OAuthConnectorClientConfiguration]
     private let callbackStore: FileBackedOAuthConnectorCallbackStore?
     private let tokenExchangeHTTPClient: any HTTPClient
 
     public init(
-        registry: IntegrationRegistry = IntegrationRegistry(),
+        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
         credentialStore: CredentialStore,
         clientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         callbackStore: FileBackedOAuthConnectorCallbackStore? = nil,

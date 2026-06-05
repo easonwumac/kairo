@@ -3,6 +3,7 @@ import Foundation
 public struct KairoLiveEnvironmentComposer: Sendable {
     public var paths: KairoPaths
     public var credentialStore: any CredentialStore
+    public var oauthConnectorRegistry: any OAuthConnectorRegistryProviding
     public var localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)?
     public var localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)?
 
@@ -10,12 +11,14 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         appName: String = KairoSharedAppStorage.appName,
         appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier,
         credentialStore: any CredentialStore = KeychainCredentialStore(),
+        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) {
         self.init(
             paths: KairoPaths(appName: appName, appGroupIdentifier: appGroupIdentifier),
             credentialStore: credentialStore,
+            oauthConnectorRegistry: oauthConnectorRegistry,
             localModelReplyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
             localModelBenchmarkEngineOverride: localModelBenchmarkEngineOverride
         )
@@ -24,11 +27,13 @@ public struct KairoLiveEnvironmentComposer: Sendable {
     public init(
         paths: KairoPaths,
         credentialStore: any CredentialStore,
+        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) {
         self.paths = paths
         self.credentialStore = credentialStore
+        self.oauthConnectorRegistry = oauthConnectorRegistry
         self.localModelReplyCheckRuntimeOverride = localModelReplyCheckRuntimeOverride
         self.localModelBenchmarkEngineOverride = localModelBenchmarkEngineOverride
     }
@@ -44,7 +49,8 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         let accessComponents = try await KairoLiveAccessFactory(
             paths: paths,
             credentialStore: credentialStore,
-            installedLocalModelIDs: localModelComponents.installedModelIDs
+            installedLocalModelIDs: localModelComponents.installedModelIDs,
+            oauthConnectorRegistry: oauthConnectorRegistry
         ).makeComponents()
         let actionExecutor = KairoLiveActionFactory(
             memoryStore: storeComponents.memoryStore,
@@ -61,6 +67,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             kairoRecipeStore: storeComponents.kairoRecipeStore,
             permissionService: SystemPermissionService(),
             auditLogger: storeComponents.auditLogger,
+            oauthConnectorRegistry: oauthConnectorRegistry,
             oauthConnectorCallbackStore: accessComponents.oauthCallbackStore,
             oauthClientConfigurations: accessComponents.oauthClientConfigurations,
             agentSkillManagerService: accessComponents.skillManagerService,

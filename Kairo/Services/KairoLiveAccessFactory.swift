@@ -24,24 +24,30 @@ public struct KairoLiveAccessFactory: Sendable {
     public var credentialStore: any CredentialStore
     public var installedLocalModelIDs: [String]
     public var oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]?
+    public var oauthConnectorRegistry: any OAuthConnectorRegistryProviding
 
     public init(
         paths: KairoPaths,
         credentialStore: any CredentialStore,
         installedLocalModelIDs: [String],
-        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]? = nil
+        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]? = nil,
+        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry()
     ) {
         self.paths = paths
         self.credentialStore = credentialStore
         self.installedLocalModelIDs = installedLocalModelIDs
         self.oauthClientConfigurations = oauthClientConfigurations
+        self.oauthConnectorRegistry = oauthConnectorRegistry
     }
 
     public func makeComponents() async throws -> KairoLiveAccessComponents {
         let skillStore = try await FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)
         let runtimeContext = AgentSkillRuntimeContext.current(
             grantedEntitlements: [],
-            connectedOAuthProviderKeys: try await Self.connectedOAuthProviderKeys(credentialStore: credentialStore),
+            connectedOAuthProviderKeys: try await Self.connectedOAuthProviderKeys(
+                credentialStore: credentialStore,
+                registry: oauthConnectorRegistry
+            ),
             installedLocalModelIDs: installedLocalModelIDs
         )
         let skillManagerService = AgentSkillManagerService(
@@ -58,13 +64,18 @@ public struct KairoLiveAccessFactory: Sendable {
             skillManagerService: skillManagerService,
             marketplaceCatalogService: .defaultStandaloneRepository,
             oauthCallbackStore: callbackStore,
-            oauthClientConfigurations: oauthClientConfigurations ?? OAuthConnectorClientConfigurationLoader().load()
+            oauthClientConfigurations: oauthClientConfigurations ?? OAuthConnectorClientConfigurationLoader().load(
+                registry: oauthConnectorRegistry
+            )
         )
     }
 
-    public static func connectedOAuthProviderKeys(credentialStore: CredentialStore) async throws -> [String] {
+    public static func connectedOAuthProviderKeys(
+        credentialStore: CredentialStore,
+        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry()
+    ) async throws -> [String] {
         var providerKeys: [String] = []
-        for integration in IntegrationRegistry().oauthConnectors {
+        for integration in registry.oauthConnectors {
             guard let providerKey = integration.oauth?.providerKey else { continue }
             guard let encoded = try await credentialStore.readSecret(
                 for: CredentialKey.oauthTokenSet(providerKey: providerKey)
