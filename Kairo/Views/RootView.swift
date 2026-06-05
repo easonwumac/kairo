@@ -32,7 +32,7 @@ public struct RootView: View {
 
                 selectedContent
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
+                    .ignoresSafeArea(.container, edges: .top)
 
                 rootHeader(topInset: safeAreaInsets.top)
                     .zIndex(5)
@@ -46,6 +46,7 @@ public struct RootView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Self.fullScreenBackground.ignoresSafeArea())
+            .ignoresSafeArea(.container, edges: .top)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Self.fullScreenBackground.ignoresSafeArea())
@@ -158,7 +159,7 @@ public struct RootView: View {
             .accessibilityIdentifier("root.page-actions")
         }
         .padding(.horizontal, 14)
-        .padding(.top, max(topInset - 12, 0))
+        .padding(.top, max(topInset - 8, 0))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("root.safe-area-header")
     }
