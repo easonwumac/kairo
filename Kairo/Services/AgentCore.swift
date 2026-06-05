@@ -6,11 +6,9 @@ public actor AgentCore {
     private let safetyPolicyEngine: SafetyPolicyEngine
     private let capabilityRegistry: CapabilityRegistry
     private let skillCatalogProvider: AgentSkillCatalogProvider
-    private let integrationRegistry: any AppIntegrationRegistryProviding
-    private let toolCatalog: any BuiltInPhoneToolCatalogProviding
-    private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     private let actionGate: any PhoneToolActionGating
     private let toolContextProvider: any AgentCapabilityPromptContextProviding
+    private let toolInvocationPlanner: any AgentToolInvocationPlanning
     private let memoryCandidateExtractor: MemoryCandidateExtractor
 
     public init(
@@ -23,6 +21,7 @@ public actor AgentCore {
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         actionGate: (any PhoneToolActionGating)? = nil,
         toolContextProvider: (any AgentCapabilityPromptContextProviding)? = nil,
+        toolInvocationPlanner: (any AgentToolInvocationPlanning)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
@@ -32,15 +31,18 @@ public actor AgentCore {
         self.safetyPolicyEngine = safetyPolicyEngine
         self.capabilityRegistry = capabilityRegistry
         self.skillCatalogProvider = skillCatalogProvider ?? .constant(skillCatalog)
-        self.integrationRegistry = integrationRegistry
-        self.toolCatalog = toolCatalog
-        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         self.toolContextProvider = toolContextProvider ?? DefaultAgentCapabilityPromptContextProvider(
             capabilityRegistry: capabilityRegistry,
             toolCatalog: toolCatalog,
             integrationRegistry: integrationRegistry,
             appIntegrationSkillCatalog: appIntegrationSkillCatalog
+        )
+        self.toolInvocationPlanner = toolInvocationPlanner ?? DefaultAgentToolInvocationPlannerProvider(
+            integrationRegistry: integrationRegistry,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+            toolCatalog: toolCatalog,
+            safetyPolicyEngine: safetyPolicyEngine
         )
         self.memoryCandidateExtractor = memoryCandidateExtractor
     }
@@ -60,17 +62,11 @@ public actor AgentCore {
             .filter { $0.status == .available || $0.status == .unknown }
             .map(\.key)
         let toolContext = toolContextProvider.buildToolContext(skillCatalog: skillCatalog)
-        let toolPlan = AgentToolInvocationPlanner(
-            skillCatalog: skillCatalog,
-            integrationRegistry: integrationRegistry,
-            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
-            toolCatalog: toolCatalog,
-            safetyPolicyEngine: safetyPolicyEngine
-        ).plan(for: AgentToolInvocationRequest(
+        let toolPlan = toolInvocationPlanner.plan(for: AgentToolInvocationRequest(
             userText: message,
             matchingText: Self.planningText(message: message, attachments: attachments),
             allowsToolUse: privacyMode != .privateChat
-        ))
+        ), skillCatalog: skillCatalog)
 
         let request = AICompletionRequest(
             systemPrompt: Self.systemPrompt,

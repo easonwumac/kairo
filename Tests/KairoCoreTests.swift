@@ -112,6 +112,33 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(toolContextProvider.receivedSkillIDs, ["injected-tool-context-skill"])
     }
 
+    func testAgentCoreUsesInjectedToolInvocationPlanner() async throws {
+        let provider = CapturingAIProvider(response: AICompletionResponse(message: "Planner response"))
+        let toolInvocationPlanner = StubAgentToolInvocationPlanner()
+        let skillCatalog = AgentSkillCatalog(skills: [
+            AgentSkill(
+                id: "injected-tool-planner-skill",
+                displayName: "Injected Tool Planner Skill",
+                summary: "Used to verify planner provider injection.",
+                kind: .custom,
+                source: .userCreated,
+                installationStatus: .installed,
+                requiredCapabilities: [.memory]
+            )
+        ])
+        let agent = AgentCore(
+            aiProvider: provider,
+            skillCatalog: skillCatalog,
+            toolInvocationPlanner: toolInvocationPlanner
+        )
+
+        _ = try await agent.respond(to: "hello")
+
+        XCTAssertEqual(toolInvocationPlanner.planCount, 1)
+        XCTAssertEqual(toolInvocationPlanner.receivedSkillIDs, ["injected-tool-planner-skill"])
+        XCTAssertEqual(toolInvocationPlanner.receivedAllowsToolUse, true)
+    }
+
     func testJSONFileMemoryStorePersistsSavedMemory() async throws {
         let fileURL = temporaryFileURL(named: "memory-store.json")
         let memory = MemoryRecord(
@@ -2060,6 +2087,22 @@ private final class StubAgentCapabilityPromptContextProvider: AgentCapabilityPro
         buildCount += 1
         receivedSkillIDs = skillCatalog.installedSkills.map(\.id)
         return ""
+    }
+}
+
+private final class StubAgentToolInvocationPlanner: AgentToolInvocationPlanning, @unchecked Sendable {
+    private(set) var planCount = 0
+    private(set) var receivedSkillIDs: [String] = []
+    private(set) var receivedAllowsToolUse: Bool?
+
+    func plan(
+        for request: AgentToolInvocationRequest,
+        skillCatalog: AgentSkillCatalog
+    ) -> AgentToolInvocationPlan {
+        planCount += 1
+        receivedSkillIDs = skillCatalog.installedSkills.map(\.id)
+        receivedAllowsToolUse = request.allowsToolUse
+        return AgentToolInvocationPlan(candidates: [])
     }
 }
 
