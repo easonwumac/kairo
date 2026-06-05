@@ -20,6 +20,63 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         XCTAssertTrue(response.proposedActions.isEmpty)
     }
 
+    func testAgentCoreFiltersProviderProposedActionsThroughPhoneToolCatalog() async throws {
+        var calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
+        calendarTool.availabilityStatus = .unsupported
+        let providerAction = AgentAction(
+            kind: .createCalendarDraft,
+            title: "Create Calendar Event",
+            rationale: "Provider suggested a calendar write.",
+            payload: .calendarEvent(CalendarEventDraft(
+                title: "Blocked provider action",
+                notes: nil,
+                startDate: Date(timeIntervalSince1970: 10),
+                endDate: Date(timeIntervalSince1970: 70)
+            )),
+            riskTier: .tier2LowRiskWrite
+        )
+        let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(
+            message: "Provider response",
+            proposedActions: [providerAction]
+        ))
+        let agent = AgentCore(
+            aiProvider: provider,
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [calendarTool])
+        )
+
+        let response = try await agent.respond(to: "General status check")
+
+        XCTAssertTrue(response.proposedActions.isEmpty)
+        XCTAssertTrue(response.toolCandidates.isEmpty)
+    }
+
+    func testAgentCoreKeepsUnsupportedSandboxExplanationOutsideExecutableCatalog() async throws {
+        let explanation = UnsupportedActionExplanation(
+            requestedAction: "Read another app",
+            reason: "iOS sandbox does not allow this.",
+            safeAlternative: "Share the content into Kairo."
+        )
+        let providerAction = AgentAction(
+            kind: .unsupportedSandboxAction,
+            title: "Unsupported",
+            rationale: "Explain the sandbox boundary.",
+            payload: .unsupported(explanation),
+            riskTier: .tier0ReadOnly
+        )
+        let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(
+            message: "Provider response",
+            proposedActions: [providerAction]
+        ))
+        let agent = AgentCore(
+            aiProvider: provider,
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [])
+        )
+
+        let response = try await agent.respond(to: "Read my other apps")
+
+        XCTAssertEqual(response.proposedActions.map(\.kind), [.unsupportedSandboxAction])
+    }
+
     func testAgentCoreAddsDeterministicNotificationPreviewAction() async throws {
         try await assertPreviewAction(
             prompt: "提醒我下班前整理 Kairo model list",

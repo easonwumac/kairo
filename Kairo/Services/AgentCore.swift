@@ -7,6 +7,7 @@ public actor AgentCore {
     private let capabilityRegistry: CapabilityRegistry
     private let skillCatalogProvider: AgentSkillCatalogProvider
     private let integrationRegistry: IntegrationRegistry
+    private let toolCatalog: any BuiltInPhoneToolCatalogProviding
     private let memoryCandidateExtractor: MemoryCandidateExtractor
 
     public init(
@@ -15,6 +16,7 @@ public actor AgentCore {
         skillCatalog: AgentSkillCatalog = .default,
         skillCatalogProvider: AgentSkillCatalogProvider? = nil,
         integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
@@ -25,6 +27,7 @@ public actor AgentCore {
         self.capabilityRegistry = capabilityRegistry
         self.skillCatalogProvider = skillCatalogProvider ?? .constant(skillCatalog)
         self.integrationRegistry = integrationRegistry
+        self.toolCatalog = toolCatalog
         self.memoryCandidateExtractor = memoryCandidateExtractor
     }
 
@@ -51,6 +54,7 @@ public actor AgentCore {
         let toolPlan = AgentToolInvocationPlanner(
             skillCatalog: skillCatalog,
             integrationRegistry: integrationRegistry,
+            toolCatalog: toolCatalog,
             safetyPolicyEngine: safetyPolicyEngine
         ).plan(for: AgentToolInvocationRequest(
             userText: message,
@@ -81,7 +85,10 @@ public actor AgentCore {
            let memoryAction = memoryCandidateExtractor.proposedSaveMemoryAction(from: message, memoryContext: memoryDedupContext) {
             proposedActions = Self.mergeActionPreviews(modelActions: proposedActions, toolActions: [memoryAction])
         }
-        let safeActions = proposedActions.filter { action in
+        let catalogFilteredActions = proposedActions.filter { action in
+            catalogAllowsActionPreview(action)
+        }
+        let safeActions = catalogFilteredActions.filter { action in
             safetyPolicyEngine.evaluate(action).allowed
         }
         let privacyFilteredActions = Self.filteredActions(
@@ -165,6 +172,16 @@ public actor AgentCore {
             return actions
         }
         return []
+    }
+
+    private func catalogAllowsActionPreview(_ action: AgentAction) -> Bool {
+        if action.kind == .unsupportedSandboxAction {
+            return true
+        }
+        guard let tool = toolCatalog.tool(for: action.kind) else {
+            return false
+        }
+        return tool.canBeSuggestedAsExecutable
     }
 
     private static func filteredToolCandidates(
