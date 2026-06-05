@@ -62,6 +62,10 @@ final class ShareToChatActionAuditTests: XCTestCase {
         XCTAssertEqual(auditEvents.first?.userConfirmed, true)
         XCTAssertEqual(auditEvents.first?.result, .completed)
         XCTAssertTrue(auditEvents.first?.memoryIDs.isEmpty ?? false)
+        let encodedAuditEvent = try JSONEncoder().encode(try XCTUnwrap(auditEvents.first))
+        let encodedAuditText = try XCTUnwrap(String(data: encodedAuditEvent, encoding: .utf8))
+        XCTAssertFalse(encodedAuditText.contains("TODO: Send prototype link"))
+        XCTAssertFalse(encodedAuditText.contains("Book beta review meeting"))
         let remainingShares = try await flow.shareQueue.pendingItems(limit: 10)
         XCTAssertTrue(remainingShares.isEmpty)
     }

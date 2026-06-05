@@ -146,6 +146,31 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         })
     }
 
+    func testScenarioBGoogleMapsUnavailableFallsBackToAppleMapsCatalogPreview() throws {
+        var googleMaps = try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .googleMapsDirectionsHandoff))
+        googleMaps.availabilityStatus = .disabled
+        let appleMaps = try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMapsDirectionsHandoff))
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: []),
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [googleMaps, appleMaps])
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "幫我用 Google Maps 導航到台北車站"))
+        let fallbackCandidate = try XCTUnwrap(plan.candidates.first { $0.skillID == AppIntegrationSkillID.appleMapsDirectionsHandoff.rawValue })
+        let action = try XCTUnwrap(fallbackCandidate.action)
+
+        XCTAssertFalse(plan.candidates.contains { $0.skillID == AppIntegrationSkillID.googleMapsDirectionsHandoff.rawValue })
+        XCTAssertEqual(fallbackCandidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(fallbackCandidate.integrationKey, "apple-maps")
+        XCTAssertTrue(fallbackCandidate.requiresConfirmation)
+        XCTAssertEqual(action.kind, .openMapDirections)
+        XCTAssertTrue(action.requiresConfirmation)
+        XCTAssertFalse(plan.candidates.contains {
+            $0.source == .integrationRegistry && ($0.integrationKey == "google-maps" || $0.integrationKey == "apple-maps")
+        })
+    }
+
     func testScenarioCWhatsAppMessageUsesCatalogVisibleHandoffPreview() throws {
         let planner = AgentToolInvocationPlanner(skillCatalog: AgentSkillCatalog(skills: []))
 
