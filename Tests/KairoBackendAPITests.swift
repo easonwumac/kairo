@@ -528,6 +528,35 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
+    func testChatBackendFactoryBuildsCandidatePlanningBundleFromEnvironmentIntegrations() throws {
+        let injectedCatalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .whatsappMessageHandoff))
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            oauthConnectorRegistry: IntegrationRegistry(integrations: [
+                backendTestOAuthIntegration(key: "custom-mail", displayName: "Custom Mail", providerKey: "custom-mail")
+            ]),
+            appIntegrationSkillCatalog: injectedCatalog
+        )
+        let candidatePlanning = KairoChatBackendServiceFactory(dependencies: environment)
+            .makeToolCandidatePlanningDependencies()
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: []),
+            dependencies: AgentToolInvocationPlannerDependencies(candidatePlanning: candidatePlanning)
+        )
+
+        let whatsappPlan = planner.plan(for: AgentToolInvocationRequest(userText: "Send with WhatsApp"))
+        let registryPlan = planner.plan(for: AgentToolInvocationRequest(userText: "Open Custom Mail"))
+
+        let whatsappCandidate = try XCTUnwrap(whatsappPlan.candidates.first { $0.integrationKey == "whatsapp" })
+        let registryCandidate = try XCTUnwrap(registryPlan.candidates.first { $0.integrationKey == "custom-mail" })
+        XCTAssertEqual(whatsappCandidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(registryCandidate.source, .integrationRegistry)
+    }
+
     func testBackendModuleComposerUsesEnvironmentOAuthClientConfigurations() async throws {
         let environment = KairoEnvironment(
             memoryStore: InMemoryMemoryStore(),

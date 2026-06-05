@@ -87,6 +87,9 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
         }
         let actionGate = BuiltInPhoneToolActionGate(toolCatalog: dependencies.toolCatalog)
         let safetyPolicyEngine = SafetyPolicyEngine()
+        let toolCandidatePlanningDependencies = makeToolCandidatePlanningDependencies(
+            safetyPolicyEngine: safetyPolicyEngine
+        )
         return AgentCoreDependencies(
             memoryContextProvider: DefaultAgentMemoryContextProvider(memoryStore: dependencies.memoryStore),
             memoryWriter: DefaultAgentMemoryWriter(memoryStore: dependencies.memoryStore),
@@ -98,10 +101,7 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
                 appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog
             ),
             toolInvocationPlanner: DefaultAgentToolInvocationPlannerProvider(
-                integrationRegistry: dependencies.oauthConnectorRegistry,
-                appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog,
-                toolCatalog: dependencies.toolCatalog,
-                safetyPolicyEngine: safetyPolicyEngine
+                candidatePlanning: toolCandidatePlanningDependencies
             ),
             toolPlanningRequestBuilder: DefaultAgentToolPlanningRequestBuilder(),
             responseActionPlanner: DefaultAgentResponseActionPlanner(
@@ -109,6 +109,17 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
                 safetyPolicyEngine: safetyPolicyEngine
             ),
             completionRequestBuilder: DefaultAgentCompletionRequestBuilder()
+        )
+    }
+
+    public func makeToolCandidatePlanningDependencies(
+        safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
+    ) -> AgentToolCandidatePlanningDependencies {
+        AgentToolCandidatePlanningDependencies(
+            integrationRegistry: dependencies.oauthConnectorRegistry,
+            appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog,
+            toolCatalog: dependencies.toolCatalog,
+            safetyPolicyEngine: safetyPolicyEngine
         )
     }
 }
