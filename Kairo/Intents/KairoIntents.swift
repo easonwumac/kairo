@@ -474,7 +474,7 @@ public struct RunKairoDailyBriefingIntent: AppIntent {
     }
 }
 
-private enum KairoRecipeIntentSupport {
+enum KairoRecipeIntentSupport {
     static func store(
         provider: any KairoRecipeRunnerProviding = LiveKairoRecipeRunnerProvider()
     ) async throws -> any KairoRecipeStore {
@@ -489,11 +489,13 @@ private enum KairoRecipeIntentSupport {
 
     static func runner(
         store: any KairoRecipeStore,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) -> KairoRecipeRunner {
         KairoRecipeRunner(
             recipeStore: store,
-            toolCatalog: toolCatalog
+            toolCatalog: toolCatalog,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
         )
     }
 

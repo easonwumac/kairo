@@ -466,6 +466,44 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertTrue(result.stepResults.contains { $0.errorMessage == "reminder.write is unsupported." })
     }
 
+    func testRecipeIntentSupportRunnerUsesInjectedAppIntegrationCatalog() async throws {
+        let recipe = KairoRecipe(
+            id: "intent-integration-catalog-gate",
+            title: "Intent Integration Catalog Gate",
+            summary: "App Intent recipe runner must not bypass injected integration catalog.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "mail",
+                    title: "Prepare Mail Handoff",
+                    kind: .enqueueActionDraft,
+                    input: .literal("Draft an email to alex@example.com"),
+                    integrationSkillID: .appleMailHandoff
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let runner = KairoRecipeIntentSupport.runner(
+            store: InMemoryKairoRecipeStore(recipes: [recipe]),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [])
+        )
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .shortcut,
+            input: nil,
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertFalse(result.success)
+        XCTAssertTrue(result.proposedActions.isEmpty)
+        XCTAssertFalse(result.stepResults.first?.success ?? true)
+    }
+
     func testKairoRecipeRunnerUsesLocalizedLocalFallbackWhenAskStepHasNoProvider() async throws {
         let recipe = KairoRecipe(
             id: "ask-local-fallback",
