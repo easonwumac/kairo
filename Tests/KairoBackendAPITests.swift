@@ -209,8 +209,9 @@ final class KairoBackendAPITests: XCTestCase {
 
     func testKairoEnvironmentBuildsAutomationsFeatureDependenciesForCompositionRoot() async throws {
         let recipeStore = InMemoryKairoRecipeStore()
+        let memoryStore = InMemoryMemoryStore()
         let environment = KairoEnvironment(
-            memoryStore: InMemoryMemoryStore(),
+            memoryStore: memoryStore,
             credentialStore: InMemoryCredentialStore(),
             aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
             kairoRecipeStore: recipeStore
@@ -241,8 +242,11 @@ final class KairoBackendAPITests: XCTestCase {
 
         let demoRecipe = try XCTUnwrap(ShortcutDemoCatalog.default.recipe(id: "save-shared-text"))
         let demoRun = try await dependencies.shortcutDemoRecipeRunner.runSample(demoRecipe)
+        let memories = try await memoryStore.list(limit: 10)
+
         XCTAssertEqual(demoRun.recipeID, demoRecipe.id)
         XCTAssertEqual(demoRun.steps.map(\.nodeKind), [.saveMemory, .extractTasks])
+        XCTAssertEqual(memories.count, 1)
     }
 
     func testKairoEnvironmentBuildsAccessFeatureDependenciesForCompositionRoot() async throws {

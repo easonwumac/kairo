@@ -25,14 +25,20 @@ public struct AutomationsView: View {
         recipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
-        shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default
+        shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default,
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
     ) {
-        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let runtimeMemoryStore = memoryStore ?? InMemoryMemoryStore()
+        let runtime = ShortcutNodeRuntime(
+            memoryStore: runtimeMemoryStore,
+            toolCatalog: toolCatalog
+        )
         self.init(
             recipeAPI: KairoRecipeBackendService(
                 recipeStore: recipeStore,
                 memoryStore: memoryStore,
-                aiProvider: aiProvider
+                aiProvider: aiProvider,
+                toolCatalog: toolCatalog
             ),
             shortcutTemplateRegistry: shortcutTemplateRegistry,
             shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(runtime: runtime)
