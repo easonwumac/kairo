@@ -5,7 +5,8 @@ import XCTest
 final class ShareToChatActionAuditTests: XCTestCase {
     @MainActor
     func testShareTextToChatReminderConfirmationRecordsAuditEvent() async throws {
-        let flow = makeShareReminderFlow(reminderScheduler: AllowingReminderScheduler(identifier: "shared-text-reminder-id"))
+        let reminderScheduler = CapturingReminderScheduler(identifier: "shared-text-reminder-id")
+        let flow = makeShareReminderFlow(reminderScheduler: reminderScheduler)
 
         await flow.viewModel.importPendingShares()
         XCTAssertEqual(flow.viewModel.composerText, KairoL10n.string("chat.share.prompt.extractReminder", "Send prototype link"))
@@ -24,9 +25,16 @@ final class ShareToChatActionAuditTests: XCTestCase {
             return XCTFail("Expected reminder payload.")
         }
         XCTAssertEqual(draft.title, "Send prototype link")
+        XCTAssertNil(flow.viewModel.pendingAction)
+        let draftsBeforeReview = await reminderScheduler.createdDraftsSnapshot()
+        XCTAssertEqual(draftsBeforeReview.count, 0)
+        let preConfirmationAuditEvents = try await flow.auditLogger.list(limit: 10)
+        XCTAssertTrue(preConfirmationAuditEvents.isEmpty)
 
         flow.viewModel.reviewImportedShareAction()
         XCTAssertEqual(flow.viewModel.pendingAction?.id, action.id)
+        let draftsBeforeConfirmation = await reminderScheduler.createdDraftsSnapshot()
+        XCTAssertEqual(draftsBeforeConfirmation.count, 0)
         await flow.viewModel.confirmPendingAction()
 
         XCTAssertNil(flow.viewModel.pendingAction)
@@ -36,12 +44,15 @@ final class ShareToChatActionAuditTests: XCTestCase {
             KairoL10n.string("chat.action.result.shareClearedSuffix")
         )
         XCTAssertEqual(flow.viewModel.actionResultMessage, successMessage)
+        let createdDrafts = await reminderScheduler.createdDraftsSnapshot()
+        XCTAssertEqual(createdDrafts.map(\.title), ["Send prototype link"])
         let auditEvents = try await flow.auditLogger.list(limit: 10)
         XCTAssertEqual(auditEvents.count, 1)
         XCTAssertEqual(auditEvents.first?.actionKind, .createReminderDraft)
         XCTAssertEqual(auditEvents.first?.capabilityKeys, [.reminders])
         XCTAssertEqual(auditEvents.first?.userConfirmed, true)
         XCTAssertEqual(auditEvents.first?.result, .completed)
+        XCTAssertTrue(auditEvents.first?.memoryIDs.isEmpty ?? false)
         let remainingShares = try await flow.shareQueue.pendingItems(limit: 10)
         XCTAssertTrue(remainingShares.isEmpty)
     }
@@ -92,6 +103,28 @@ final class ShareToChatActionAuditTests: XCTestCase {
             actionExecutor: SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), reminderScheduler: reminderScheduler, auditLogger: auditLogger)
         )
         return (viewModel, shareQueue, auditLogger)
+    }
+}
+
+private actor CapturingReminderScheduler: ReminderScheduling {
+    private let identifier: String
+    private(set) var createdDrafts: [ReminderDraft] = []
+
+    init(identifier: String) {
+        self.identifier = identifier
+    }
+
+    func requestAccess() async throws -> Bool {
+        true
+    }
+
+    func createReminder(from draft: ReminderDraft) async throws -> String {
+        createdDrafts.append(draft)
+        return identifier
+    }
+
+    func createdDraftsSnapshot() -> [ReminderDraft] {
+        createdDrafts
     }
 }
 #endif
