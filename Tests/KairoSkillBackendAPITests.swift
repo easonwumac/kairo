@@ -128,6 +128,60 @@ final class KairoSkillBackendAPITests: XCTestCase {
         XCTAssertFalse(effectiveCatalog.installedSkills.map(\.id).contains("marketplace-qwen-oauth-workflow"))
     }
 
+    func testLiveAccessFactoryBuildsSkillManagerWithOAuthAndLocalModelRuntimeContext() async throws {
+        let rootDirectory = temporaryDirectory(named: "KairoLiveAccessFactory")
+        let paths = KairoPaths(
+            appName: "KairoLiveAccessFactoryTests",
+            appGroupIdentifier: "group.kairo.tests"
+        ) { _ in rootDirectory }
+        let credentials = InMemoryCredentialStore()
+        try await credentials.saveSecret(
+            OAuthTokenSet(accessToken: "google-token", scopes: ["profile"]).encodedForStorage(),
+            for: CredentialKey.oauthTokenSet(providerKey: "google")
+        )
+        let store = try await FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)
+        var skill = AgentSkill.marketplaceTemplate(
+            id: "marketplace-qwen-oauth-workflow",
+            displayName: "Qwen OAuth Workflow",
+            summary: "Requires both a connected OAuth provider and a local model.",
+            requiredCapabilities: [.externalConnectors],
+            downloadURL: URL(string: "https://skills.kairo.app/qwen-oauth-workflow.json")!,
+            kind: .localModel
+        )
+        skill.installationStatus = .installed
+        skill.compatibilityRequirements = AgentSkillCompatibilityRequirements(
+            requiredOAuthProviderKeys: ["google"],
+            requiredLocalModelIDs: ["qwen3-5-0-8b-q4-k-m"]
+        )
+        try await store.upsert(skill)
+
+        let components = try await KairoLiveAccessFactory(
+            paths: paths,
+            credentialStore: credentials,
+            installedLocalModelIDs: ["qwen3-5-0-8b-q4-k-m"],
+            oauthClientConfigurations: [
+                "google": OAuthConnectorClientConfiguration(
+                    clientID: "google-client",
+                    redirectURI: "kairo://oauth/google/callback"
+                )
+            ]
+        ).makeComponents()
+        let callbackPreview = OAuthConnectorCallbackPreview(
+            providerKey: "google",
+            integrationKey: "google-calendar",
+            state: "state",
+            authorizationCodeLength: 12,
+            requiresBackendTokenExchange: false
+        )
+        try await components.oauthCallbackStore.save(callbackPreview)
+        let effectiveCatalog = try await components.skillManagerService.effectiveCatalog()
+        let storedPreview = await components.oauthCallbackStore.latestPreview(for: "google")
+
+        XCTAssertTrue(effectiveCatalog.installedSkills.map(\.id).contains("marketplace-qwen-oauth-workflow"))
+        XCTAssertEqual(components.oauthClientConfigurations["google"]?.clientID, "google-client")
+        XCTAssertEqual(storedPreview?.integrationKey, "google-calendar")
+    }
+
     func testSkillBackendAPIFailsClosedWhenServiceIsUnavailable() async throws {
         let api = KairoSkillBackendService(agentSkillManagerService: nil)
 
@@ -144,5 +198,11 @@ final class KairoSkillBackendAPITests: XCTestCase {
         } catch let error as KairoSkillAPIError {
             XCTAssertEqual(error, .unavailable)
         }
+    }
+
+    private func temporaryDirectory(named name: String) -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+            .appendingPathComponent(name, isDirectory: true)
     }
 }

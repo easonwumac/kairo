@@ -202,7 +202,6 @@ public struct KairoEnvironment: KairoBackendDependencies {
         let chatHistoryStore = try await JSONFileChatHistoryStore(fileURL: paths.chatHistoryStoreURL)
         let shareIngestionQueue = try await JSONFileShareIngestionQueue(fileURL: paths.shareIngestionQueueURL)
         let kairoRecipeStore = try await FileBackedKairoRecipeStore(fileURL: paths.kairoRecipeStoreURL)
-        let agentSkillStore = try await FileBackedAgentSkillStore(fileURL: paths.agentSkillStoreURL)
         let credentialStore = KeychainCredentialStore()
         let localModelComponents = try await KairoLiveLocalModelFactory(
             paths: paths,
@@ -210,21 +209,11 @@ public struct KairoEnvironment: KairoBackendDependencies {
             replyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
             benchmarkEngineOverride: localModelBenchmarkEngineOverride
         ).makeComponents()
-        let connectedOAuthProviderKeys = try await connectedOAuthProviderKeys(credentialStore: credentialStore)
-        let runtimeContext = AgentSkillRuntimeContext.current(
-            grantedEntitlements: [],
-            connectedOAuthProviderKeys: connectedOAuthProviderKeys,
+        let accessComponents = try await KairoLiveAccessFactory(
+            paths: paths,
+            credentialStore: credentialStore,
             installedLocalModelIDs: localModelComponents.installedModelIDs
-        )
-        let agentSkillManagerService = AgentSkillManagerService(
-            store: agentSkillStore,
-            builtInCatalog: .defaultWithMarketplaceSamples,
-            trustStore: .defaultRelease,
-            runtimeContext: runtimeContext
-        )
-        let agentSkillMarketplaceCatalogService = AgentSkillMarketplaceCatalogService.defaultStandaloneRepository
-        let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(fileURL: paths.oauthConnectorCallbackPreviewsURL)
-        let oauthClientConfigurations = OAuthConnectorClientConfigurationLoader().load()
+        ).makeComponents()
         #if canImport(UIKit)
         let urlOpener: any URLOpener = UIApplicationURLOpener()
         #else
@@ -256,10 +245,10 @@ public struct KairoEnvironment: KairoBackendDependencies {
             kairoRecipeStore: kairoRecipeStore,
             permissionService: SystemPermissionService(),
             auditLogger: auditLogger,
-            oauthConnectorCallbackStore: oauthCallbackStore,
-            oauthClientConfigurations: oauthClientConfigurations,
-            agentSkillManagerService: agentSkillManagerService,
-            agentSkillMarketplaceCatalogService: agentSkillMarketplaceCatalogService,
+            oauthConnectorCallbackStore: accessComponents.oauthCallbackStore,
+            oauthClientConfigurations: accessComponents.oauthClientConfigurations,
+            agentSkillManagerService: accessComponents.skillManagerService,
+            agentSkillMarketplaceCatalogService: accessComponents.marketplaceCatalogService,
             localModelCatalog: localModelComponents.catalog,
             localModelCatalogService: localModelComponents.catalogService,
             localModelSettingsService: localModelComponents.settingsService,
@@ -272,18 +261,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     }
 
     static func connectedOAuthProviderKeys(credentialStore: CredentialStore) async throws -> [String] {
-        var providerKeys: [String] = []
-        for integration in IntegrationRegistry().oauthConnectors {
-            guard let providerKey = integration.oauth?.providerKey else { continue }
-            guard let encoded = try await credentialStore.readSecret(for: CredentialKey.oauthTokenSet(providerKey: providerKey)) else {
-                continue
-            }
-            if let tokenSet = try OAuthTokenSet.decodeStoredSecret(encoded),
-               !tokenSet.accessToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                providerKeys.append(providerKey)
-            }
-        }
-        return Array(Set(providerKeys)).sorted()
+        try await KairoLiveAccessFactory.connectedOAuthProviderKeys(credentialStore: credentialStore)
     }
 }
 
