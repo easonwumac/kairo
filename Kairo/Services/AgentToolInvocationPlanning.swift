@@ -12,6 +12,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var appIntegrationActionMapper: any AppIntegrationActionMapping
     public var appIntegrationActionParser: any AgentToolInvocationActionParsing
+    public var visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var safetyPolicyEngine: SafetyPolicyEngine
 
@@ -20,6 +21,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         appIntegrationActionMapper: any AppIntegrationActionMapping = DefaultAppIntegrationActionMapper(),
         appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),
+        visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding = DefaultAgentVisibleHandoffCandidateProvider(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
     ) {
@@ -27,6 +29,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.appIntegrationActionMapper = appIntegrationActionMapper
         self.appIntegrationActionParser = appIntegrationActionParser
+        self.visibleHandoffCandidateProvider = visibleHandoffCandidateProvider
         self.toolCatalog = toolCatalog
         self.safetyPolicyEngine = safetyPolicyEngine
     }
@@ -41,6 +44,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
             appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             appIntegrationActionMapper: appIntegrationActionMapper,
             appIntegrationActionParser: appIntegrationActionParser,
+            visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
             toolCatalog: toolCatalog,
             safetyPolicyEngine: safetyPolicyEngine
         ).plan(for: request)

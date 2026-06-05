@@ -172,6 +172,38 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(action.payload, .email(expectedDraft))
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedVisibleHandoffCandidateProvider() throws {
+        let injectedAction = AgentAction(
+            kind: .openWebSearchHandoff,
+            title: "Injected Search",
+            rationale: "Injected visible handoff candidate.",
+            payload: .webSearch(WebSearchDraft(query: "injected")),
+            riskTier: .tier1Draft
+        )
+        let injectedCandidate = AgentToolInvocationCandidate(
+            id: "injected-visible-handoff",
+            title: "Injected Search",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.web],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Injected",
+            action: injectedAction
+        )
+        let planner = AgentToolInvocationPlanner(
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: [injectedCandidate])
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "search web for Kairo"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "injected-visible-handoff" })
+
+        XCTAssertEqual(candidate.action, injectedAction)
+        XCTAssertTrue(plan.proposedActions.contains(injectedAction))
+    }
+
     func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithoutExecutableAction() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry(integrations: []))
 
@@ -565,6 +597,18 @@ private struct FixedAppIntegrationActionParser: AgentToolInvocationActionParsing
     func isPhoneToken(_ value: String) -> Bool { true }
     func normalize(_ value: String) -> String {
         value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+private struct FixedVisibleHandoffCandidateProvider: AgentVisibleHandoffCandidateProviding {
+    var candidates: [AgentToolInvocationCandidate]
+
+    func candidates(
+        userText: String,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> [AgentToolInvocationCandidate] {
+        candidates
     }
 }
 

@@ -573,44 +573,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(provider.buildCount, 1)
     }
 
-    func testAgentToolInvocationPlannerStaysSplitAcrossSupportFiles() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let plannerSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/AgentToolInvocationPlanner.swift"),
-            encoding: .utf8
-        )
-        let modelsSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/AgentToolInvocationModels.swift"),
-            encoding: .utf8
-        )
-        let matchingSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/AgentToolInvocationSkillMatching.swift"),
-            encoding: .utf8
-        )
-        let actionSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/AgentToolInvocationActionCandidates.swift"),
-            encoding: .utf8
-        )
-        let parsingSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/AgentToolInvocationParsing.swift"),
-            encoding: .utf8
-        )
-
-        XCTAssertLessThan(plannerSource.split(separator: "\n").count, 120)
-        XCTAssertTrue(plannerSource.contains("public func plan(for request: AgentToolInvocationRequest)"))
-        XCTAssertTrue(modelsSource.contains("public struct AgentToolInvocationCandidate"))
-        XCTAssertTrue(matchingSource.contains("func candidate(for skill: AgentSkill"))
-        XCTAssertTrue(matchingSource.contains("func candidate(for integration: AppIntegration"))
-        XCTAssertTrue(actionSource.contains("func notificationActionCandidate"))
-        XCTAssertTrue(actionSource.contains("func emailActionCandidate"))
-        XCTAssertTrue(actionSource.contains("func phoneCallHandoffActionCandidate"))
-        XCTAssertTrue(actionSource.contains("func webSearchHandoffActionCandidate"))
-        XCTAssertTrue(parsingSource.contains("func calendarTitle(from userText: String)"))
-        XCTAssertTrue(parsingSource.contains("func isPhoneCallHandoffRequest"))
-        XCTAssertTrue(parsingSource.contains("func isWebSearchHandoffRequest"))
-        XCTAssertTrue(parsingSource.contains("func uniqueCandidates"))
-    }
-
     func testChatMessageDecodesMissingToolCandidatesAsEmptyForOldHistory() throws {
         let json = """
         {

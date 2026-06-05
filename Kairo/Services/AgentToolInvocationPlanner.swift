@@ -6,6 +6,7 @@ public struct AgentToolInvocationPlanner: Sendable {
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var appIntegrationActionMapper: any AppIntegrationActionMapping
     public var appIntegrationActionParser: any AgentToolInvocationActionParsing
+    public var visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding
     public var candidateFilter: any AgentToolCandidateFiltering
     public var safetyPolicyEngine: SafetyPolicyEngine
 
@@ -15,6 +16,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         appIntegrationActionMapper: any AppIntegrationActionMapping = DefaultAppIntegrationActionMapper(),
         appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),
+        visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding = DefaultAgentVisibleHandoffCandidateProvider(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
@@ -24,6 +26,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.appIntegrationActionMapper = appIntegrationActionMapper
         self.appIntegrationActionParser = appIntegrationActionParser
+        self.visibleHandoffCandidateProvider = visibleHandoffCandidateProvider
         self.candidateFilter = candidateFilter ?? PhoneToolCandidateFilter(
             actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         )
@@ -55,25 +58,12 @@ public struct AgentToolInvocationPlanner: Sendable {
             guard !migratedIntegrationKeys.contains(integration.key) else { return nil }
             return candidate(for: integration, normalizedText: normalizedText)
         })
-        if let emailCandidate = emailActionCandidate(userText: request.userText, normalizedText: normalizedText),
-           !candidates.containsAction(kind: emailCandidate.action?.kind) {
-            candidates.append(emailCandidate)
-        }
-        if let mapDirectionsCandidate = mapDirectionsActionCandidate(userText: request.userText, normalizedText: normalizedText),
-           !candidates.containsAction(kind: mapDirectionsCandidate.action?.kind) {
-            candidates.append(mapDirectionsCandidate)
-        }
-        if let messageCandidate = messageHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText),
-           !candidates.containsAction(kind: messageCandidate.action?.kind) {
-            candidates.append(messageCandidate)
-        }
-        if let phoneCandidate = phoneCallHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText),
-           !candidates.containsAction(kind: phoneCandidate.action?.kind) {
-            candidates.append(phoneCandidate)
-        }
-        if let webSearchCandidate = webSearchHandoffActionCandidate(userText: request.userText, normalizedText: normalizedText),
-           !candidates.containsAction(kind: webSearchCandidate.action?.kind) {
-            candidates.append(webSearchCandidate)
+        for handoffCandidate in visibleHandoffCandidateProvider.candidates(
+            userText: request.userText,
+            normalizedText: normalizedText,
+            parser: appIntegrationActionParser
+        ) where !candidates.containsAction(kind: handoffCandidate.action?.kind) {
+            candidates.append(handoffCandidate)
         }
         if let contactCandidate = contactActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(contactCandidate)
