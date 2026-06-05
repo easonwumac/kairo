@@ -484,6 +484,22 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertNil(environment.appIntegrationSkillCatalog.skill(id: .appleMailHandoff))
     }
 
+    func testKairoEnvironmentDefaultsIntegrationRegistryFromInjectedAppIntegrationSkillCatalog() throws {
+        let injectedCatalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .todoistTaskAPI))
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            appIntegrationSkillCatalog: injectedCatalog
+        )
+
+        let todoist = try XCTUnwrap(environment.oauthConnectorRegistry.integration(for: "todoist"))
+        XCTAssertEqual(todoist.oauth?.providerKey, "todoist")
+        XCTAssertEqual(environment.oauthConnectorRegistry.integrations.filter { $0.key == "todoist" }.count, 1)
+    }
+
     func testBackendCompositionSharesInjectedAppIntegrationSkillCatalogWithChat() async throws {
         let injectedCatalog = AppIntegrationSkillCatalog(skills: [
             try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .whatsappMessageHandoff))

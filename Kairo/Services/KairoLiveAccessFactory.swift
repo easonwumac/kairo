@@ -32,14 +32,16 @@ public struct KairoLiveAccessFactory: Sendable {
         credentialStore: any CredentialStore,
         installedLocalModelIDs: [String],
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]? = nil,
-        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
+        oauthConnectorRegistry: (any OAuthConnectorRegistryProviding)? = nil,
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) {
         self.paths = paths
         self.credentialStore = credentialStore
         self.installedLocalModelIDs = installedLocalModelIDs
         self.oauthClientConfigurations = oauthClientConfigurations
-        self.oauthConnectorRegistry = oauthConnectorRegistry
+        self.oauthConnectorRegistry = oauthConnectorRegistry ?? IntegrationRegistry.appIntegrationHarnessRegistry(
+            catalog: appIntegrationSkillCatalog
+        )
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
     }
 

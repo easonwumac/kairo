@@ -53,7 +53,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         kairoRecipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
         permissionService: PermissionService = StubPermissionService(),
         auditLogger: AuditLogger = InMemoryAuditLogger(),
-        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
+        oauthConnectorRegistry: (any OAuthConnectorRegistryProviding)? = nil,
         oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         agentSkillManagerService: AgentSkillManagerService? = nil,
@@ -79,7 +79,9 @@ public struct KairoEnvironment: KairoBackendDependencies {
         self.kairoRecipeStore = kairoRecipeStore
         self.permissionService = permissionService
         self.auditLogger = auditLogger
-        self.oauthConnectorRegistry = oauthConnectorRegistry
+        self.oauthConnectorRegistry = oauthConnectorRegistry ?? IntegrationRegistry.appIntegrationHarnessRegistry(
+            catalog: appIntegrationSkillCatalog
+        )
         self.oauthConnectorCallbackStore = oauthConnectorCallbackStore
         self.oauthClientConfigurations = oauthClientConfigurations
         self.agentSkillManagerService = agentSkillManagerService
