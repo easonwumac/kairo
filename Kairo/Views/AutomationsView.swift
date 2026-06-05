@@ -14,6 +14,11 @@ public struct AutomationsView: View {
     @State private var showWorkflowDetails = false
     @State private var showAdvancedWorkflowReferences = false
 
+    public init(dependencies: AutomationsFeatureDependencies) {
+        self.recipeAPI = dependencies.recipeAPI
+        self.shortcutTemplateRegistry = dependencies.shortcutTemplateRegistry
+    }
+
     public init(
         recipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
         memoryStore: (any MemoryStore)? = nil,
@@ -32,8 +37,12 @@ public struct AutomationsView: View {
         recipeAPI: any KairoRecipeAPI,
         shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default
     ) {
-        self.recipeAPI = recipeAPI
-        self.shortcutTemplateRegistry = shortcutTemplateRegistry
+        self.init(
+            dependencies: AutomationsFeatureDependencies(
+                recipeAPI: recipeAPI,
+                shortcutTemplateRegistry: shortcutTemplateRegistry
+            )
+        )
     }
 
     public var body: some View {

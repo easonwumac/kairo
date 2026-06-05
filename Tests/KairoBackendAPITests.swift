@@ -159,4 +159,37 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(saved.map(\.id), [memory.id])
     }
 
+    func testKairoEnvironmentBuildsAutomationsFeatureDependenciesForCompositionRoot() async throws {
+        let recipeStore = InMemoryKairoRecipeStore()
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
+            kairoRecipeStore: recipeStore
+        )
+        let dependencies = environment.automationsFeatureDependencies
+        let recipe = KairoRecipe(
+            id: "composition-recipe",
+            title: "Composition Recipe",
+            summary: "Recipe feature dependency wiring",
+            steps: [
+                KairoRecipeStep(
+                    id: "noop",
+                    title: "No operation",
+                    kind: .noOp,
+                    input: .literal("composition")
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier0ReadOnly,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+
+        try await dependencies.recipeAPI.save(recipe)
+        let saved = try await recipeStore.listRecipes()
+
+        XCTAssertEqual(saved.map(\.id), ["composition-recipe"])
+    }
+
 }

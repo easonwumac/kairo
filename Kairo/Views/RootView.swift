@@ -83,9 +83,7 @@ public struct RootView: View {
         case .memory:
             MemoryCenterView(dependencies: environment.memoryFeatureDependencies)
         case .shortcuts:
-            AutomationsView(
-                recipeAPI: environment.backendAPI.recipes
-            )
+            AutomationsView(dependencies: environment.automationsFeatureDependencies)
         case .access:
             PermissionHubView(
                 skillManagerService: environment.agentSkillManagerService,
