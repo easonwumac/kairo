@@ -356,7 +356,6 @@ public struct ChatView: View {
     private var composerStatusRow: some View {
         ChatProviderRouteBar(
             status: viewModel.providerRouteStatus,
-            isPrivateChatEnabled: viewModel.isPrivateChatEnabled,
             canEdit: viewModel.canEditProviderRoute,
             setPreference: { preference in
                 Task { await viewModel.setProviderRoutePreference(preference) }

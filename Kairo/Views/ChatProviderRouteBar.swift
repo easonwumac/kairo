@@ -3,7 +3,6 @@ import SwiftUI
 
 struct ChatProviderRouteBar: View {
     let status: ChatProviderRouteStatus
-    let isPrivateChatEnabled: Bool
     let canEdit: Bool
     let setPreference: (ProviderRoutePreference) -> Void
     @State private var isPalettePresented = false
@@ -19,7 +18,7 @@ struct ChatProviderRouteBar: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .contain)
-            .accessibilityLabel(KairoL10n.string("chat.mode.accessibilityStatus", modeTitle, status.title, status.detail))
+            .accessibilityLabel(KairoL10n.string("chat.provider.route.accessibilityStatus", status.title, status.detail))
             .accessibilityIdentifier("chat.provider-route")
 
             if isPalettePresented {
@@ -32,18 +31,8 @@ struct ChatProviderRouteBar: View {
         .accessibilityIdentifier("chat.provider-route")
     }
 
-    private var modeTitle: String {
-        isPrivateChatEnabled ? KairoL10n.string("chat.mode.private") : KairoL10n.string("chat.mode.standard")
-    }
-
     private var routeBarLabel: some View {
         HStack(spacing: 8) {
-            routePill(
-                label: KairoL10n.string("chat.mode.label"),
-                value: modeTitle,
-                systemImage: isPrivateChatEnabled ? "lock.fill" : "shield",
-                tint: isPrivateChatEnabled ? KairoDesign.ink : KairoDesign.muted
-            )
             routePill(
                 label: KairoL10n.string("chat.provider.route.label"),
                 value: status.title,

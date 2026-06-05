@@ -147,4 +147,30 @@ final class KairoChatBackendAPITests: XCTestCase {
         let savedThread = try XCTUnwrap(savedThreadResult)
         XCTAssertEqual(savedThread.messages.last?.memoryContextCount, 1)
     }
+
+    @MainActor
+    func testPrivateThreadStartsNewChatAndDoesNotPersistHistory() async throws {
+        let historyStore = InMemoryChatHistoryStore()
+        let viewModel = ChatViewModel(
+            historyStore: historyStore,
+            chatAPI: KairoChatBackendService(
+                agent: AgentCore(
+                    aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Private reply"))
+                )
+            )
+        )
+
+        await viewModel.send("standard message")
+        let savedStandardThread = try await historyStore.thread(id: viewModel.currentThread.id)
+        XCTAssertNotNil(savedStandardThread)
+
+        viewModel.startPrivateThread()
+        let privateThreadID = viewModel.currentThread.id
+        await viewModel.send("private message")
+
+        XCTAssertTrue(viewModel.isPrivateChatEnabled)
+        let savedPrivateThread = try await historyStore.thread(id: privateThreadID)
+        XCTAssertNil(savedPrivateThread)
+        XCTAssertNotEqual(privateThreadID, savedStandardThread?.id)
+    }
 }
