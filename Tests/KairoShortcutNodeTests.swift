@@ -134,6 +134,44 @@ final class KairoShortcutNodeTests: XCTestCase {
         }
     }
 
+    func testLiveAgentProviderUsesFileBackedMemoryAndInjectedToolCatalog() async throws {
+        let paths = KairoPaths(appName: "LiveAgentProvider-\(UUID().uuidString)")
+        let memoryStore = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
+        try await memoryStore.save(MemoryRecord(
+            title: "Project Alpha",
+            summary: "Provider memory context",
+            content: "Project Alpha launch review is tomorrow.",
+            source: .manual
+        ))
+        let proposedAction = AgentAction(
+            kind: .saveMemory,
+            title: "Save memory",
+            rationale: "Provider test action",
+            payload: .text("Filtered"),
+            riskTier: .tier2LowRiskWrite
+        )
+        let aiProvider = BackendAPICapturingAIProvider(response: AICompletionResponse(
+            message: "Provider response",
+            proposedActions: [proposedAction]
+        ))
+        let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
+        let provider = LiveKairoAgentProvider(
+            paths: paths,
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: aiProvider,
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [calendarTool])
+        )
+
+        let agent = try await provider.makeAgent()
+        let response = try await agent.respond(to: "Project Alpha")
+        let capturedRequestValue = await aiProvider.capturedRequest()
+        let capturedRequest: AICompletionRequest = try XCTUnwrap(capturedRequestValue)
+
+        XCTAssertEqual(response.message, "Provider response")
+        XCTAssertEqual(capturedRequest.memoryContext.map(\.title), ["Project Alpha"])
+        XCTAssertTrue(response.proposedActions.isEmpty)
+    }
+
     func testShortcutSafetyCriticalNodesReturnStableSchemaAndConfirmationFields() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let safetyCases: [(ShortcutNodeKind, ShortcutNodeInput, String, AgentActionKind?)] = [

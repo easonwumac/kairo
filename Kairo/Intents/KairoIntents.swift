@@ -13,7 +13,7 @@ public struct AskKairoIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let agent = AgentCore()
+        let agent = try await KairoAgentIntentSupport.agent()
         let response = try await agent.respond(to: question)
         let output = ShortcutNodeOutput(
             kind: .ask,
@@ -503,6 +503,14 @@ private enum KairoRecipeIntentSupport {
         encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(value)
         return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
+
+private enum KairoAgentIntentSupport {
+    static func agent(
+        provider: any KairoAgentProviding = LiveKairoAgentProvider()
+    ) async throws -> AgentCore {
+        try await provider.makeAgent()
     }
 }
 
