@@ -120,6 +120,33 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(chatResponse.proposedActions.map(\.kind), [.createCalendarDraft])
     }
 
+    func testKairoEnvironmentExposesDefaultAppIntegrationSkillCatalogForCompositionRoot() throws {
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response"))
+        )
+
+        XCTAssertNotNil(environment.appIntegrationSkillCatalog.skill(id: .appleMailHandoff))
+        XCTAssertNotNil(environment.appIntegrationSkillCatalog.skill(id: .googleMapsDirectionsHandoff))
+        XCTAssertFalse(environment.appIntegrationSkillCatalog.executableSkills.contains { $0.id == .gmailDraftAPI })
+    }
+
+    func testKairoEnvironmentAcceptsInjectedAppIntegrationSkillCatalog() throws {
+        let injectedCatalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMessagesHandoff))
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            appIntegrationSkillCatalog: injectedCatalog
+        )
+
+        XCTAssertEqual(environment.appIntegrationSkillCatalog.skills.map(\.id), [.appleMessagesHandoff])
+        XCTAssertNil(environment.appIntegrationSkillCatalog.skill(id: .appleMailHandoff))
+    }
+
     func testBackendModuleComposerUsesEnvironmentOAuthClientConfigurations() async throws {
         let environment = KairoEnvironment(
             memoryStore: InMemoryMemoryStore(),

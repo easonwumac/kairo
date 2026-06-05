@@ -39,6 +39,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public let localModelChatRuntimeAvailable: Bool
     public let actionExecutor: any ActionExecutor
     public let toolCatalog: any BuiltInPhoneToolCatalogProviding
+    public let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
 
     public init(
         memoryStore: MemoryStore,
@@ -62,7 +63,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
         localModelReplyCheckService: LocalModelReplyCheckService? = nil,
         localModelChatRuntimeAvailable: Bool = false,
         actionExecutor: (any ActionExecutor)? = nil,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) {
         self.memoryStore = memoryStore
         self.credentialStore = credentialStore
@@ -86,6 +88,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         self.localModelChatRuntimeAvailable = localModelChatRuntimeAvailable
         self.actionExecutor = actionExecutor ?? SandboxActionExecutor(memoryStore: memoryStore, auditLogger: auditLogger)
         self.toolCatalog = toolCatalog
+        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
     }
 
     public static func preview() -> KairoEnvironment {

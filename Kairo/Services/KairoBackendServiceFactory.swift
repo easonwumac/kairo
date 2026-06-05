@@ -15,6 +15,7 @@ public protocol KairoBackendDependencies: Sendable {
     var agentSkillManagerService: AgentSkillManagerService? { get }
     var localModelSettingsService: LocalModelSettingsService? { get }
     var toolCatalog: any BuiltInPhoneToolCatalogProviding { get }
+    var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding { get }
 }
 
 public protocol KairoBackendServiceMaking: Sendable {
