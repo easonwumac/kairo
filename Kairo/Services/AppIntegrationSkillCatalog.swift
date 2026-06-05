@@ -8,6 +8,38 @@ public protocol AppIntegrationSkillReferencing {
     var integrationSkillID: AppIntegrationSkillID? { get }
 }
 
+public enum AppIntegrationSkillResolution: Equatable, Sendable {
+    case notReferenced
+    case missing(AppIntegrationSkillID)
+    case resolved(AppIntegrationSkill)
+
+    public var skillID: AppIntegrationSkillID? {
+        switch self {
+        case .notReferenced:
+            return nil
+        case .missing(let skillID):
+            return skillID
+        case .resolved(let skill):
+            return skill.id
+        }
+    }
+
+    public var blockedExecutionFields: [String: String] {
+        switch self {
+        case .notReferenced:
+            return [:]
+        case .missing:
+            return [
+                "integrationAvailability": AppIntegrationSkillAvailabilityStatus.unsupported.rawValue,
+                "integrationSetupRequirement": AppIntegrationSkillSetupRequirement.unsupported.rawValue,
+                "integrationExecutionMode": AppIntegrationExecutionMode.previewOnly.rawValue
+            ]
+        case .resolved(let skill):
+            return skill.blockedExecutionFields
+        }
+    }
+}
+
 public extension AppIntegrationSkillCatalogProviding {
     func skill(id: AppIntegrationSkillID) -> AppIntegrationSkill? {
         skills.first { $0.id == id }
@@ -16,6 +48,20 @@ public extension AppIntegrationSkillCatalogProviding {
     func skill(for reference: any AppIntegrationSkillReferencing) -> AppIntegrationSkill? {
         guard let integrationSkillID = reference.integrationSkillID else { return nil }
         return skill(id: integrationSkillID)
+    }
+
+    func resolveSkill(id: AppIntegrationSkillID) -> AppIntegrationSkillResolution {
+        guard let skill = skill(id: id) else {
+            return .missing(id)
+        }
+        return .resolved(skill)
+    }
+
+    func resolveSkill(for reference: any AppIntegrationSkillReferencing) -> AppIntegrationSkillResolution {
+        guard let integrationSkillID = reference.integrationSkillID else {
+            return .notReferenced
+        }
+        return resolveSkill(id: integrationSkillID)
     }
 
     var executableSkills: [AppIntegrationSkill] {

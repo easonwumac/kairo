@@ -18,41 +18,40 @@ public struct CatalogBackedShortcutNodeIntegrationGate: ShortcutNodeIntegrationG
             return nil
         }
 
-        guard let skill = appIntegrationSkillCatalog.skill(id: skillID) else {
+        switch appIntegrationSkillCatalog.resolveSkill(id: skillID) {
+        case .notReferenced:
+            return nil
+        case .missing(let skillID):
             return blockedOutput(
                 kind: kind,
                 input: input,
                 skillID: skillID,
                 displayText: KairoL10n.string("shortcut.integration.blocked.missingCatalog", skillID.rawValue),
-                fields: [
-                    "integrationAvailability": AppIntegrationSkillAvailabilityStatus.unsupported.rawValue,
-                    "integrationSetupRequirement": AppIntegrationSkillSetupRequirement.unsupported.rawValue,
-                    "integrationExecutionMode": AppIntegrationExecutionMode.previewOnly.rawValue
-                ]
+                fields: AppIntegrationSkillResolution.missing(skillID).blockedExecutionFields
             )
-        }
+        case .resolved(let skill):
+            guard skill.canBeSuggestedAsExecutable else {
+                return blockedOutput(
+                    kind: kind,
+                    input: input,
+                    skillID: skill.id,
+                    displayText: KairoL10n.string("shortcut.integration.blocked.setupRequired", skill.appName),
+                    fields: skill.blockedExecutionFields
+                )
+            }
 
-        guard skill.canBeSuggestedAsExecutable else {
-            return blockedOutput(
-                kind: kind,
-                input: input,
-                skillID: skillID,
-                displayText: KairoL10n.string("shortcut.integration.blocked.setupRequired", skill.appName),
-                fields: skill.blockedExecutionFields
-            )
-        }
+            guard skill.shortcutNodeKind == kind else {
+                return blockedOutput(
+                    kind: kind,
+                    input: input,
+                    skillID: skill.id,
+                    displayText: KairoL10n.string("shortcut.integration.blocked.nodeMismatch", skill.appName),
+                    fields: skill.blockedExecutionFields
+                )
+            }
 
-        guard skill.shortcutNodeKind == kind else {
-            return blockedOutput(
-                kind: kind,
-                input: input,
-                skillID: skillID,
-                displayText: KairoL10n.string("shortcut.integration.blocked.nodeMismatch", skill.appName),
-                fields: skill.blockedExecutionFields
-            )
+            return nil
         }
-
-        return nil
     }
 
     private func blockedOutput(

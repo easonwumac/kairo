@@ -343,11 +343,10 @@ public struct KairoRecipeRunner: Sendable {
         inputText: String,
         recipe: KairoRecipe
     ) -> (result: KairoRecipeStepResult, actions: [AgentAction])? {
-        guard let integrationSkillID = step.integrationSkillID else {
+        switch appIntegrationSkillCatalog.resolveSkill(for: step) {
+        case .notReferenced:
             return nil
-        }
-
-        guard let skill = appIntegrationSkillCatalog.skill(id: integrationSkillID) else {
+        case .missing(let integrationSkillID):
             return (KairoRecipeStepResult(
                 stepID: step.id,
                 summary: KairoL10n.string("recipes.integration.missingCatalog.summary"),
@@ -355,34 +354,34 @@ public struct KairoRecipeRunner: Sendable {
                 success: false,
                 errorMessage: KairoL10n.string("recipes.integration.missingCatalog.error", integrationSkillID.rawValue)
             ), [])
-        }
+        case .resolved(let skill):
+            guard skill.canBeSuggestedAsExecutable else {
+                return (KairoRecipeStepResult(
+                    stepID: step.id,
+                    summary: KairoL10n.string("recipes.integration.setupRequired.summary"),
+                    outputText: KairoL10n.string("recipes.integration.setupRequired.output", skill.appName),
+                    success: false,
+                    errorMessage: KairoL10n.string("recipes.integration.setupRequired.error", skill.id.rawValue, skill.availabilityStatus.rawValue)
+                ), [])
+            }
 
-        guard skill.canBeSuggestedAsExecutable else {
+            guard let action = appIntegrationActionDrafter.draftAction(for: skill, inputText: inputText) else {
+                return (KairoRecipeStepResult(
+                    stepID: step.id,
+                    summary: KairoL10n.string("recipes.integration.previewUnavailable.summary"),
+                    outputText: KairoL10n.string("recipes.integration.previewUnavailable.output", skill.appName),
+                    success: false,
+                    errorMessage: KairoL10n.string("recipes.integration.previewUnavailable.error", skill.id.rawValue)
+                ), [])
+            }
+
             return (KairoRecipeStepResult(
                 stepID: step.id,
-                summary: KairoL10n.string("recipes.integration.setupRequired.summary"),
-                outputText: KairoL10n.string("recipes.integration.setupRequired.output", skill.appName),
-                success: false,
-                errorMessage: KairoL10n.string("recipes.integration.setupRequired.error", skill.id.rawValue, skill.availabilityStatus.rawValue)
-            ), [])
+                summary: KairoL10n.string("recipes.integration.prepared.summary", skill.appName),
+                outputText: inputText,
+                success: true
+            ), [action])
         }
-
-        guard let action = appIntegrationActionDrafter.draftAction(for: skill, inputText: inputText) else {
-            return (KairoRecipeStepResult(
-                stepID: step.id,
-                summary: KairoL10n.string("recipes.integration.previewUnavailable.summary"),
-                outputText: KairoL10n.string("recipes.integration.previewUnavailable.output", skill.appName),
-                success: false,
-                errorMessage: KairoL10n.string("recipes.integration.previewUnavailable.error", skill.id.rawValue)
-            ), [])
-        }
-
-        return (KairoRecipeStepResult(
-            stepID: step.id,
-            summary: KairoL10n.string("recipes.integration.prepared.summary", skill.appName),
-            outputText: inputText,
-            success: true
-        ), [action])
     }
 
     private func stepRisk(_ step: KairoRecipeStep) -> ActionRiskTier {

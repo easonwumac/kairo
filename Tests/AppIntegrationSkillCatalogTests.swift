@@ -138,6 +138,37 @@ final class AppIntegrationSkillCatalogTests: XCTestCase {
         XCTAssertEqual(skill.confirmationPolicy, .previewAndExplicitConfirmation)
     }
 
+    func testCatalogResolvesIntegrationReferencesStructurally() throws {
+        let referencedStep = KairoRecipeStep(
+            id: "mail-handoff",
+            title: "Prepare Mail Handoff",
+            kind: .enqueueActionDraft,
+            integrationSkillID: .appleMailHandoff
+        )
+        let unreferencedStep = KairoRecipeStep(
+            id: "internal-draft",
+            title: "Internal Draft",
+            kind: .enqueueActionDraft
+        )
+
+        let resolved = AppIntegrationSkillCatalog().resolveSkill(for: referencedStep)
+        let missing = AppIntegrationSkillCatalog(skills: []).resolveSkill(for: referencedStep)
+        let notReferenced = AppIntegrationSkillCatalog().resolveSkill(for: unreferencedStep)
+
+        guard case .resolved(let skill) = resolved else {
+            return XCTFail("Expected referenced recipe step to resolve through the catalog.")
+        }
+        guard case .missing(let missingSkillID) = missing else {
+            return XCTFail("Expected missing catalog skill to preserve the requested skill id.")
+        }
+
+        XCTAssertEqual(skill.id, .appleMailHandoff)
+        XCTAssertEqual(missingSkillID, .appleMailHandoff)
+        XCTAssertEqual(notReferenced, .notReferenced)
+        XCTAssertEqual(missing.skillID, .appleMailHandoff)
+        XCTAssertFalse(missing.blockedExecutionFields.isEmpty)
+    }
+
     func testURLSchemeSkillsOnlyUseVisibleOpenURLHandoff() {
         let catalog = AppIntegrationSkillCatalog()
         let urlSchemeSkills = catalog.skills.filter { $0.supportedSurfaces.contains(.urlScheme) }

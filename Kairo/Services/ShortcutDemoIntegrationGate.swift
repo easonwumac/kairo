@@ -12,35 +12,30 @@ public struct CatalogBackedShortcutDemoIntegrationGate: ShortcutDemoIntegrationG
     }
 
     public func blockedOutput(for step: ShortcutDemoStep, input: ShortcutNodeInput) -> ShortcutNodeOutput? {
-        guard let integrationSkillID = step.integrationSkillID else {
+        switch appIntegrationSkillCatalog.resolveSkill(for: step) {
+        case .notReferenced:
             return nil
-        }
-
-        guard let skill = appIntegrationSkillCatalog.skill(id: integrationSkillID) else {
+        case .missing(let integrationSkillID):
             return blockedOutput(
                 for: step,
                 input: input,
                 skillID: integrationSkillID,
                 displayText: KairoL10n.string("shortcut.integration.blocked.missingCatalog", integrationSkillID.rawValue),
-                fields: [
-                    "integrationAvailability": AppIntegrationSkillAvailabilityStatus.unsupported.rawValue,
-                    "integrationSetupRequirement": AppIntegrationSkillSetupRequirement.unsupported.rawValue,
-                    "integrationExecutionMode": AppIntegrationExecutionMode.previewOnly.rawValue
-                ]
+                fields: AppIntegrationSkillResolution.missing(integrationSkillID).blockedExecutionFields
             )
-        }
+        case .resolved(let skill):
+            guard skill.canBeSuggestedAsExecutable else {
+                return blockedOutput(
+                    for: step,
+                    input: input,
+                    skillID: skill.id,
+                    displayText: KairoL10n.string("shortcut.integration.blocked.setupRequired", skill.appName),
+                    fields: skill.blockedExecutionFields
+                )
+            }
 
-        guard skill.canBeSuggestedAsExecutable else {
-            return blockedOutput(
-                for: step,
-                input: input,
-                skillID: integrationSkillID,
-                displayText: KairoL10n.string("shortcut.integration.blocked.setupRequired", skill.appName),
-                fields: skill.blockedExecutionFields
-            )
+            return nil
         }
-
-        return nil
     }
 
     private func blockedOutput(
