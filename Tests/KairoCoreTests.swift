@@ -449,6 +449,17 @@ final class KairoCoreTests: XCTestCase {
         }
     }
 
+    func testBuiltInPhoneToolCatalogCanBeBuiltFromInjectedSeedSource() throws {
+        let injectedTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
+        let catalog = BuiltInPhoneToolCatalog(seedSource: StubBuiltInPhoneToolSeedSource(tools: [injectedTool]))
+
+        XCTAssertEqual(catalog.tools.map(\.id), [.calendarWrite])
+        XCTAssertEqual(catalog.tool(id: .calendarWrite), injectedTool)
+        XCTAssertNil(catalog.tool(id: .memorySave))
+        XCTAssertEqual(catalog.tool(for: AgentActionKind.createCalendarDraft)?.id, .calendarWrite)
+        XCTAssertNil(catalog.tool(for: AgentActionKind.saveMemory))
+    }
+
     func testBuiltInPhoneToolCatalogCentralizesExistingActionShortcutAndRecipeMappings() throws {
         let catalog = BuiltInPhoneToolCatalog()
 
@@ -2457,4 +2468,8 @@ private actor MockHomeControlService: HomeControlService {
         requests.append(request)
         return "home-control-id"
     }
+}
+
+private struct StubBuiltInPhoneToolSeedSource: BuiltInPhoneToolSeeding {
+    var tools: [BuiltInPhoneToolDefinition]
 }
