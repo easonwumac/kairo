@@ -918,15 +918,15 @@ final class KairoBackendAPITests: XCTestCase {
             credentialStore: InMemoryCredentialStore(),
             aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
             oauthClientConfigurations: [
-                "chatgpt": OAuthConnectorClientConfiguration(
-                    clientID: "chatgpt-client",
-                    redirectURI: "kairo://oauth/chatgpt/callback"
+                "openai-codex": OAuthConnectorClientConfiguration(
+                    clientID: "openai-codex-client",
+                    redirectURI: "kairo://oauth/openai-codex/callback"
                 )
             ]
         )
 
         let options = try await environment.backendAPI.settings.oauthLoginOptions()
-        let chatGPT = try XCTUnwrap(options.first { $0.providerKey == "chatgpt" })
+        let chatGPT = try XCTUnwrap(options.first { $0.providerKey == "openai-codex" })
 
         XCTAssertEqual(chatGPT.readiness, .readyToAuthorize)
         XCTAssertTrue(chatGPT.canStartAuthorization)

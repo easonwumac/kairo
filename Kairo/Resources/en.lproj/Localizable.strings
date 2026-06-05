@@ -387,6 +387,8 @@
 "chat.provider.openAI.requestFailedStatus" = "OpenAI request failed with status %lld%@.";
 "chat.provider.openAI.errorType" = " type=%@";
 "chat.provider.openAI.embeddingMissingVector" = "Embedding response did not include a vector.";
+"chat.provider.codex.emptyResponse" = "OpenAI Codex returned an empty response.";
+"chat.provider.codex.requestFailedStatus" = "OpenAI Codex request failed with status %lld%@.";
 "chat.provider.route.title" = "%@";
 "chat.provider.route.accessibilityStatus" = "%@. %@";
 "chat.provider.route.cloud" = "Cloud";
@@ -718,7 +720,7 @@
 "settings.models.section" = "Model settings";
 "settings.models.emptyCatalog" = "The local model list has not loaded yet.";
 "settings.models.answerRoute" = "Model routing";
-"settings.models.defaultModel.detail" = "Choose the main language and default model Kairo should use.";
+"settings.models.defaultModel.detail" = "Main language and default model.";
 "settings.models.default.change" = "Change";
 "settings.models.default.cloud.openai" = "OpenAI · Cloud";
 "settings.models.default.local" = "%@ · Local";
@@ -730,7 +732,7 @@
 "settings.models.entry.localConfigured" = "Local model selected";
 "settings.models.entry.localNeedsDownload" = "Local model optional";
 "settings.models.cloud.section" = "Cloud models";
-"settings.models.cloud.detail" = "Only providers you add are shown here. Add a provider to set its API key or OAuth account.";
+"settings.models.cloud.detail" = "Only added providers are shown.";
 "settings.models.cloud.empty" = "No cloud model provider is configured yet.";
 "settings.models.cloud.add" = "Add cloud model";
 "settings.models.cloud.add.title" = "Add cloud model";
@@ -763,11 +765,10 @@
 "settings.models.parameters.temperature" = "Temperature";
 "settings.models.benchmark.context" = "Context size";
 "settings.models.benchmark.contextOption" = "%lldK";
-"settings.models.benchmark.outputFixed" = "128 output";
 "settings.models.benchmark.running" = "Running speed test";
 "settings.models.benchmark.finished" = "Speed test finished";
 "settings.models.benchmark.failed" = "Speed test failed";
-"settings.models.benchmark.liveDetail" = "%lld context tokens · %lld output tokens · simulator app runtime";
+"settings.models.benchmark.liveDetail" = "%lld ctx · %lld out";
 "settings.models.catalogBuiltIn" = "Built-in model list";
 "settings.models.message.settingsServiceMissing" = "Local model settings are unavailable in this build.";
 "settings.models.message.downloaderMissing" = "Local model download is unavailable in this build.";
@@ -832,10 +833,10 @@
 "settings.models.local.empty" = "No local model has been added yet.";
 "settings.models.local.add" = "Add local model";
 "settings.models.local.add.title" = "Add local model";
-"settings.models.local.add.detail" = "Choose a model to start downloading. Download progress appears in your local model list.";
+"settings.models.local.add.detail" = "Choose a model to start downloading.";
 "settings.models.local.add.empty" = "No downloadable local models are available.";
 "settings.models.local.detail.title" = "Local model";
-"settings.models.local.detail.detail" = "Review model details, run local checks, or delete the downloaded model.";
+"settings.models.local.detail.detail" = "Parameters, speed, delete.";
 "settings.models.detail.unavailable" = "This model or provider is no longer available.";
 "settings.models.add.back" = "Back";
 "settings.models.advanced.section" = "Testing and storage";
@@ -855,6 +856,8 @@
 "localModel.llama.error.promptTooLarge" = "The prompt is too large for the local model context window.";
 "localModel.llama.error.decodeFailed" = "llama.cpp failed while decoding tokens.";
 "localModel.llama.error.emptyResponse" = "llama.cpp generated an empty response.";
+"localModel.benchmark.metric.firstToken" = "TTFT %@";
+"localModel.benchmark.metric.peakMemory" = "%@ peak";
 "settings.route.automatic.title" = "Automatic";
 "settings.route.preferLocal.title" = "Prefer Local";
 "settings.route.preferCloud.title" = "Prefer Cloud";

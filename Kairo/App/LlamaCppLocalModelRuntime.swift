@@ -2,6 +2,9 @@
 import Foundation
 import KairoCore
 import llama
+#if canImport(Darwin)
+import Darwin
+#endif
 
 enum LlamaCppRuntimeError: LocalizedError {
     case couldNotLoadModel(String)
@@ -99,10 +102,20 @@ actor LlamaCppSession {
         llama_backend_free()
     }
 
-    func generate(prompt: String, maxTokens: Int32) throws -> (text: String, generatedTokens: Int) {
+    func generate(prompt: String, maxTokens: Int32) throws -> (
+        text: String,
+        promptTokens: Int,
+        generatedTokens: Int,
+        promptTokensPerSecond: Double,
+        generationTokensPerSecond: Double,
+        firstTokenLatencyMS: Double?,
+        peakMemoryMB: Int?
+    ) {
         llama_memory_clear(llama_get_memory(context), true)
         pendingUTF8Bytes.removeAll()
         position = 0
+        let startedAt = Date()
+        var peakMemoryMB = Self.currentResidentMemoryMB()
 
         let promptTokens = tokenize(text: prompt, addBOS: true)
         guard !promptTokens.isEmpty else {
@@ -118,19 +131,28 @@ actor LlamaCppSession {
             kairo_llama_batch_add(&batch, promptTokens[tokenIndex], Int32(tokenIndex), [0], false)
         }
         batch.logits[Int(batch.n_tokens) - 1] = 1
+        let prefillStartedAt = Date()
         guard llama_decode(context, batch) == 0 else {
             throw LlamaCppRuntimeError.decodeFailed
         }
+        peakMemoryMB = Self.maxMemoryMB(peakMemoryMB, Self.currentResidentMemoryMB())
+        let prefillElapsed = max(Date().timeIntervalSince(prefillStartedAt), 0.001)
         position = batch.n_tokens
 
         var generatedText = ""
         var generatedTokens = 0
+        var firstTokenLatencyMS: Double?
+        var generationStartedAt: Date?
         while generatedTokens < Int(maxTokens) {
             let token = llama_sampler_sample(sampler, context, batch.n_tokens - 1)
             if llama_vocab_is_eog(vocab, token) {
                 break
             }
 
+            if firstTokenLatencyMS == nil {
+                firstTokenLatencyMS = Date().timeIntervalSince(startedAt) * 1000.0
+                generationStartedAt = Date()
+            }
             generatedTokens += 1
             generatedText += decodePiece(token: token)
 
@@ -139,6 +161,7 @@ actor LlamaCppSession {
             guard llama_decode(context, batch) == 0 else {
                 throw LlamaCppRuntimeError.decodeFailed
             }
+            peakMemoryMB = Self.maxMemoryMB(peakMemoryMB, Self.currentResidentMemoryMB())
             position += 1
         }
 
@@ -146,7 +169,43 @@ actor LlamaCppSession {
         guard !trimmed.isEmpty else {
             throw LlamaCppRuntimeError.emptyResponse
         }
-        return (trimmed, generatedTokens)
+        let generationElapsed = max(Date().timeIntervalSince(generationStartedAt ?? startedAt), 0.001)
+        return (
+            trimmed,
+            promptTokens.count,
+            generatedTokens,
+            Double(promptTokens.count) / prefillElapsed,
+            Double(generatedTokens) / generationElapsed,
+            firstTokenLatencyMS,
+            peakMemoryMB
+        )
+    }
+
+    private static func maxMemoryMB(_ lhs: Int?, _ rhs: Int?) -> Int? {
+        switch (lhs, rhs) {
+        case let (.some(lhs), .some(rhs)):
+            return max(lhs, rhs)
+        case let (.some(value), .none), let (.none, .some(value)):
+            return value
+        case (.none, .none):
+            return nil
+        }
+    }
+
+    private static func currentResidentMemoryMB() -> Int? {
+        #if canImport(Darwin)
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+        let result = withUnsafeMutablePointer(to: &info) { pointer in
+            pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { reboundPointer in
+                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), reboundPointer, &count)
+            }
+        }
+        guard result == KERN_SUCCESS else { return nil }
+        return Int((Double(info.resident_size) / 1_048_576.0).rounded())
+        #else
+        return nil
+        #endif
     }
 
     private func tokenize(text: String, addBOS: Bool) -> [llama_token] {
@@ -206,7 +265,6 @@ struct LlamaCppLocalModelRuntime: LocalModelReplyCheckRuntime, LocalModelBenchma
             prompt: prompt,
             maxTokens: Int32(max(1, clampedParameters.maxOutputTokens))
         )
-        let elapsed = max(Date().timeIntervalSince(startedAt), 0.001)
 
         return LocalModelReplyCheckResult(
             modelID: model.id,
@@ -216,7 +274,7 @@ struct LlamaCppLocalModelRuntime: LocalModelReplyCheckRuntime, LocalModelBenchma
             prompt: prompt,
             responseText: output.text,
             generatedTokens: output.generatedTokens,
-            generationTokensPerSecond: Double(output.generatedTokens) / elapsed,
+            generationTokensPerSecond: output.generationTokensPerSecond,
             measuredAt: Date(),
             notes: "Generated in KairoApp through embedded llama.xcframework."
         )
@@ -229,11 +287,8 @@ struct LlamaCppLocalModelRuntime: LocalModelReplyCheckRuntime, LocalModelBenchma
         generatedTokenTarget: Int,
         contextSize: Int
     ) async throws -> LocalModelBenchmarkRunResult {
-        let startedAt = Date()
         let session = try LlamaCppSession(modelPath: installRecord.fileURL.path, contextLength: UInt32(max(contextSize, 1)))
         let output = try await session.generate(prompt: prompt, maxTokens: Int32(generatedTokenTarget))
-        let elapsed = max(Date().timeIntervalSince(startedAt), 0.001)
-        let generationRate = Double(output.generatedTokens) / elapsed
 
         return LocalModelBenchmarkRunResult(
             id: "\(model.id)-ios-llama-\(Int(Date().timeIntervalSince1970))",
@@ -241,10 +296,12 @@ struct LlamaCppLocalModelRuntime: LocalModelReplyCheckRuntime, LocalModelBenchma
             modelDisplayName: model.displayName,
             runtime: .gguf,
             runtimePackage: "llama.cpp iOS",
-            promptTokens: max(1, prompt.count / 4),
+            promptTokens: output.promptTokens,
             generatedTokens: output.generatedTokens,
-            promptTokensPerSecond: 0,
-            generationTokensPerSecond: generationRate,
+            promptTokensPerSecond: output.promptTokensPerSecond,
+            generationTokensPerSecond: output.generationTokensPerSecond,
+            firstTokenLatencyMS: output.firstTokenLatencyMS,
+            peakMemoryMB: output.peakMemoryMB,
             measuredAt: Date(),
             isReferenceOnlyForIOS: false,
             notes: "Generated \(output.generatedTokens) tokens through embedded llama.xcframework."

@@ -686,7 +686,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(google.oauth?.requiresBackendTokenExchange == true)
         XCTAssertTrue(google.sandboxNotes.contains("official APIs"))
         XCTAssertTrue(registry.integrations(for: .shortcuts).contains { $0.key == "apple-shortcuts" })
-        XCTAssertTrue(registry.userVisibleHandoffs.contains { $0.key == "chatgpt" })
+        XCTAssertTrue(registry.userVisibleHandoffs.contains { $0.key == "openai-codex" })
     }
 
     func testBackgroundTaskPolicySchedulesBoundedRefreshAndRejectsDaemonClaims() throws {
@@ -1272,7 +1272,6 @@ final class KairoCoreTests: XCTestCase {
             "settings-oauth-connectors",
             "settings-local-model-benchmark",
             "settings-local-model-expanded-catalog",
-            "settings-local-model-reply-check",
             "settings-shortcut-demo-io",
             "access-homekit-demos"
         ])
@@ -1373,7 +1372,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.oauth.connectors") == true)
         XCTAssertTrue(catalog.scenario(id: "settings-api-key-status")?.requiredAccessibilityIdentifiers.contains("settings.shortcuts.demos") == true)
         let oauthScenarioIdentifiers = catalog.scenario(id: "settings-oauth-connectors")?.requiredAccessibilityIdentifiers ?? []
-        for providerKey in ["google", "microsoft", "notion", "slack", "chatgpt", "github"] {
+        for providerKey in ["google", "microsoft", "notion", "slack", "openai-codex", "github"] {
             XCTAssertTrue(oauthScenarioIdentifiers.contains("settings.oauth.\(providerKey).row"), providerKey)
             XCTAssertTrue(oauthScenarioIdentifiers.contains("settings.oauth.\(providerKey).name"), providerKey)
             XCTAssertTrue(oauthScenarioIdentifiers.contains("settings.oauth.\(providerKey).status"), providerKey)
@@ -1390,10 +1389,6 @@ final class KairoCoreTests: XCTestCase {
         let expandedModelsScenarioIdentifiers = catalog.scenario(id: "settings-local-model-expanded-catalog")?.requiredAccessibilityIdentifiers ?? []
         XCTAssertTrue(expandedModelsScenarioIdentifiers.contains("settings.models.llama3-2-1b-instruct-q4-k-m.name"))
         XCTAssertTrue(expandedModelsScenarioIdentifiers.contains("settings.models.trimmed-note"))
-        let replyCheckScenarioIdentifiers = catalog.scenario(id: "settings-local-model-reply-check")?.requiredAccessibilityIdentifiers ?? []
-        XCTAssertTrue(replyCheckScenarioIdentifiers.contains("settings.models.local"))
-        XCTAssertTrue(replyCheckScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.reply-check"))
-        XCTAssertTrue(replyCheckScenarioIdentifiers.contains("settings.models.benchmark-message"))
         let shortcutDemoScenarioIdentifiers = catalog.scenario(id: "settings-shortcut-demo-io")?.requiredAccessibilityIdentifiers ?? []
         for recipe in ShortcutDemoCatalog.default.recipes {
             XCTAssertTrue(shortcutDemoScenarioIdentifiers.contains("settings.shortcuts.demo.\(recipe.id)"), recipe.id)
@@ -1457,18 +1452,16 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("testSettingsLocalModelDownloadRequiresConfirmationPreview"))
         XCTAssertTrue(uiTestSources.contains("testSettingsExpandedModelCatalogKeepsPopularStarterRowsVisible"))
         XCTAssertTrue(uiTestSources.contains("testSettingsShowsQwenBenchmarkFlowRequiresDownload"))
-        XCTAssertTrue(uiTestSources.contains("testSettingsRunsInstalledLocalModelReplyCheck"))
+        XCTAssertTrue(uiTestSources.contains("testSettingsRunsQwen35BenchmarkThroughEmbeddedLlamaRuntime"))
         XCTAssertTrue(uiTestSources.contains(#""settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run""#))
         XCTAssertTrue(uiTestSources.contains(#""settings.models.\(modelID).download-preview""#))
         XCTAssertTrue(uiTestSources.contains(#""settings.models.\(modelID).download-confirm""#))
         XCTAssertTrue(uiTestSources.contains(#""settings.models.\(modelID).download-cancel""#))
-        XCTAssertTrue(uiTestSources.contains(#""settings.models.qwen3-5-0-8b-q4-k-m.reply-check""#))
         XCTAssertTrue(uiTestSources.contains("--ui-testing-settings-shortcut-demos-only"))
         XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(anyElement("settings.models.show-more").exists)"#))
         XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(anyElement("settings.models.remote-catalog-test-model-q4-k-m.name").exists)"#))
         XCTAssertTrue(uiTestSources.contains(#"message.label.contains("Download Qwen3.5 0.8B Q4_K_M")"#))
         XCTAssertTrue(uiTestSources.contains(#"message.label.localizedCaseInsensitiveContains("benchmark")"#))
-        XCTAssertTrue(uiTestSources.contains("Local model reply is alive."))
         XCTAssertTrue(uiTestSources.contains("--ui-testing-installed-local-model"))
         XCTAssertTrue(uiTestSources.contains("--ui-testing-expanded-local-model-catalog"))
         XCTAssertTrue(uiTestSources.contains("testSettingsShowsOAuthConnectorReadinessAndBoundaries"))
@@ -1529,7 +1522,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("sample-sensitive-code"))
         XCTAssertTrue(uiTestSources.contains(#"providerKey: "google""#))
         XCTAssertTrue(uiTestSources.contains("Gmail / Google Workspace"))
-        XCTAssertTrue(uiTestSources.contains(#"providerKey: "chatgpt""#))
+        XCTAssertTrue(uiTestSources.contains(#"providerKey: "openai-codex""#))
         XCTAssertTrue(uiTestSources.contains("Client configuration required"))
         XCTAssertTrue(uiTestSources.contains("Requires backend token exchange."))
         XCTAssertTrue(uiTestSources.contains("Only pages/databases selected during Notion authorization may be read or written."))

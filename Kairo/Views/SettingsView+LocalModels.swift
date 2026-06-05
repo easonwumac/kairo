@@ -184,6 +184,7 @@ extension SettingsView {
 
     func runLocalModelBenchmark(_ row: LocalModelSettingsRow, contextSize: Int = LocalModelBenchmarkRunInfo.defaultContextSize) {
         Task {
+            let outputTokenTarget = row.runtimeParameters.maxOutputTokens
             guard let localModelBenchmarkService else {
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
@@ -198,20 +199,15 @@ extension SettingsView {
                     localModelBenchmarkRunInfo = LocalModelBenchmarkRunInfo(
                         modelID: row.modelID,
                         contextSize: contextSize,
-                        outputTokenTarget: LocalModelBenchmarkRunInfo.fixedOutputTokenTarget,
+                        outputTokenTarget: outputTokenTarget,
                         state: .running,
                         summary: nil
                     )
-                    localModelStatusMessage = KairoL10n.string(
-                        "settings.models.message.benchmarkRunningConfigured",
-                        row.displayName,
-                        Int64(contextSize),
-                        Int64(LocalModelBenchmarkRunInfo.fixedOutputTokenTarget)
-                    )
+                    localModelStatusMessage = nil
                 }
                 let result = try await localModelBenchmarkService.runBenchmark(
                     modelID: row.modelID,
-                    generatedTokenTarget: LocalModelBenchmarkRunInfo.fixedOutputTokenTarget,
+                    generatedTokenTarget: outputTokenTarget,
                     contextSize: contextSize,
                     minimumSafetyPolicyVersion: localModelCatalog.minimumSafetyPolicyVersion
                 )
@@ -220,42 +216,45 @@ extension SettingsView {
                     localModelBenchmarkRunInfo = LocalModelBenchmarkRunInfo(
                         modelID: row.modelID,
                         contextSize: contextSize,
-                        outputTokenTarget: LocalModelBenchmarkRunInfo.fixedOutputTokenTarget,
+                        outputTokenTarget: outputTokenTarget,
                         state: .finished,
                         summary: result.summaryText
                     )
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkResult", row.displayName, result.summaryText)
+                    localModelStatusMessage = nil
                 }
             } catch let error as LocalModelBenchmarkError {
+                let summary: String
+                switch error {
+                case .modelNotInstalled:
+                    summary = KairoL10n.string("settings.models.message.benchmarkNeedsDownload", row.displayName)
+                case let .modelUnavailable(modelID):
+                    summary = KairoL10n.string("settings.models.message.benchmarkModelUnavailable", modelID)
+                case let .runtimeUnavailable(reason):
+                    summary = KairoL10n.string("settings.models.message.benchmarkRuntimeUnavailable", reason)
+                }
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
                     localModelBenchmarkRunInfo = LocalModelBenchmarkRunInfo(
                         modelID: row.modelID,
                         contextSize: contextSize,
-                        outputTokenTarget: LocalModelBenchmarkRunInfo.fixedOutputTokenTarget,
+                        outputTokenTarget: outputTokenTarget,
                         state: .failed,
-                        summary: nil
+                        summary: summary
                     )
-                    switch error {
-                    case .modelNotInstalled:
-                        localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkNeedsDownload", row.displayName)
-                    case let .modelUnavailable(modelID):
-                        localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkModelUnavailable", modelID)
-                    case let .runtimeUnavailable(reason):
-                        localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkRuntimeUnavailable", reason)
-                    }
+                    localModelStatusMessage = nil
                 }
             } catch {
+                let summary = KairoL10n.string("settings.models.message.benchmarkFailed", error.localizedDescription)
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
                     localModelBenchmarkRunInfo = LocalModelBenchmarkRunInfo(
                         modelID: row.modelID,
                         contextSize: contextSize,
-                        outputTokenTarget: LocalModelBenchmarkRunInfo.fixedOutputTokenTarget,
+                        outputTokenTarget: outputTokenTarget,
                         state: .failed,
-                        summary: nil
+                        summary: summary
                     )
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.benchmarkFailed", error.localizedDescription)
+                    localModelStatusMessage = nil
                 }
             }
         }

@@ -390,10 +390,10 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "settings.oauth.slack.status",
                 "settings.oauth.slack.detail",
                 "settings.oauth.slack.backend-exchange",
-                "settings.oauth.chatgpt.row",
-                "settings.oauth.chatgpt.name",
-                "settings.oauth.chatgpt.status",
-                "settings.oauth.chatgpt.detail",
+                "settings.oauth.openai-codex.row",
+                "settings.oauth.openai-codex.name",
+                "settings.oauth.openai-codex.status",
+                "settings.oauth.openai-codex.detail",
                 "settings.oauth.github.row",
                 "settings.oauth.github.name",
                 "settings.oauth.github.status",
@@ -448,25 +448,6 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "Remote catalog entries stay capped to a two-model starter set.",
                 "Visible models are still downloadable metadata only, not bundled weights.",
                 "The expanded catalog path is deterministic in UI tests."
-            ]
-        ),
-        UITestScenario(
-            id: "settings-local-model-reply-check",
-            title: "Settings Local Model Reply Check",
-            userGoal: "Run a local model reply check against an installed model record and verify Kairo shows a non-empty local response.",
-            requiredAccessibilityIdentifiers: [
-                "settings.models.local",
-                "settings.models.qwen3-5-0-8b-q4-k-m.row",
-                "settings.models.qwen3-5-0-8b-q4-k-m.name",
-                "settings.models.qwen3-5-0-8b-q4-k-m.status",
-                "settings.models.qwen3-5-0-8b-q4-k-m.reply-check",
-                "settings.models.benchmark-message"
-            ],
-            assertions: [
-                "Reply check execution is a visible user action.",
-                "The UI test path seeds only an install record and deterministic runtime, not model weights.",
-                "The reply check reports non-empty response text and generation token speed.",
-                "Production runtime remains explicit and fails closed until a real local inference runtime is wired."
             ]
         ),
         UITestScenario(

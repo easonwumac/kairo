@@ -70,9 +70,9 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         let oauthService = StubOAuthConnectorLoginService(
             options: [
                 OAuthConnectorLoginOption(
-                    integrationKey: "chatgpt",
-                    displayName: "ChatGPT",
-                    providerKey: "chatgpt",
+                    integrationKey: "openai-codex",
+                    displayName: "OpenAI Codex",
+                    providerKey: "openai-codex",
                     readiness: .readyToAuthorize,
                     defaultScopes: ["openid"],
                     requiresBackendTokenExchange: false,
@@ -88,7 +88,7 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         let options = try await api.oauthLoginOptions()
         let didLoadOptions = await oauthService.didLoadOptions()
 
-        XCTAssertEqual(options.map(\.providerKey), ["chatgpt"])
+        XCTAssertEqual(options.map(\.providerKey), ["openai-codex"])
         XCTAssertTrue(didLoadOptions)
     }
 
@@ -151,7 +151,7 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         XCTAssertEqual(connectedOptions.first { $0.providerKey == "google" }?.readiness, .readyToAuthorize)
     }
 
-    func testSettingsBackendAPIExchangesChatGPTOAuthCallbackWithoutPersistingAuthorizationCode() async throws {
+    func testSettingsBackendAPIExchangesOpenAICodexOAuthCallbackWithoutPersistingAuthorizationCode() async throws {
         let credentials = InMemoryCredentialStore()
         let httpClient = ChatBackendCapturingHTTPClient(body: #"{"access_token":"access-token","scope":"openid profile email"}"#)
         let api = KairoSettingsBackendService(
@@ -159,9 +159,9 @@ final class KairoSettingsBackendAPITests: XCTestCase {
             oauthLoginCenter: OAuthConnectorLoginCenter(
                 credentialStore: credentials,
                 clientConfigurations: [
-                    "chatgpt": OAuthConnectorClientConfiguration(
-                        clientID: "chatgpt-client",
-                        redirectURI: "kairo://oauth/chatgpt/callback"
+                    "openai-codex": OAuthConnectorClientConfiguration(
+                        clientID: "openai-codex-client",
+                        redirectURI: "kairo://oauth/openai-codex/callback"
                     )
                 ],
                 tokenExchangeHTTPClient: httpClient
@@ -169,18 +169,18 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         )
 
         let session = try await api.makeOAuthAuthorizationSession(
-            for: "chatgpt",
+            for: "openai-codex",
             state: "state-123",
             codeVerifier: "verifier-123"
         )
         let tokens = try await api.exchangeOAuthCallback(
-            URL(string: "kairo://oauth/chatgpt/callback?code=auth-code-abc&state=state-123")!,
+            URL(string: "kairo://oauth/openai-codex/callback?code=auth-code-abc&state=state-123")!,
             expectedState: session.state,
             codeVerifier: session.codeVerifier
         )
 
         XCTAssertEqual(tokens.accessToken, "access-token")
-        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "chatgpt"))
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "openai-codex"))
         XCTAssertNotNil(storedRaw)
         XCTAssertFalse(storedRaw?.contains("auth-code-abc") == true)
     }
@@ -233,31 +233,31 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         let center = OAuthConnectorLoginCenter(
             credentialStore: credentials,
             clientConfigurations: [
-                "chatgpt": OAuthConnectorClientConfiguration(
-                    clientID: "chatgpt-client",
-                    redirectURI: "kairo://oauth/chatgpt/callback"
+                "openai-codex": OAuthConnectorClientConfiguration(
+                    clientID: "openai-codex-client",
+                    redirectURI: "kairo://oauth/openai-codex/callback"
                 )
             ],
             tokenExchangeHTTPClient: httpClient
         )
         let coordinator = SettingsOAuthConnectorCoordinator(loginService: center)
         let options = try await coordinator.loginOptions()
-        let option = try XCTUnwrap(options.first { $0.providerKey == "chatgpt" })
+        let option = try XCTUnwrap(options.first { $0.providerKey == "openai-codex" })
 
         let outcome = try await coordinator.authorize(option)
         guard case .fallback(let session) = outcome else {
             return XCTFail("Expected manual authorization fallback when no web runner is available.")
         }
-        let hasPendingSession = await coordinator.hasPendingSession(for: "chatgpt")
+        let hasPendingSession = await coordinator.hasPendingSession(for: "openai-codex")
         XCTAssertTrue(hasPendingSession)
 
         let completion = try await coordinator.completeCallbackLogin(
-            URL(string: "kairo://oauth/chatgpt/callback?code=manual-code&state=\(session.state)")!
+            URL(string: "kairo://oauth/openai-codex/callback?code=manual-code&state=\(session.state)")!
         )
-        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "chatgpt"))
-        let hasClearedPendingSession = await coordinator.hasPendingSession(for: "chatgpt")
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "openai-codex"))
+        let hasClearedPendingSession = await coordinator.hasPendingSession(for: "openai-codex")
 
-        XCTAssertEqual(completion.providerKey, "chatgpt")
+        XCTAssertEqual(completion.providerKey, "openai-codex")
         XCTAssertEqual(completion.tokens.accessToken, "manual-token")
         XCTAssertFalse(hasClearedPendingSession)
         XCTAssertFalse(storedRaw?.contains("manual-code") == true)
@@ -270,9 +270,9 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         let center = OAuthConnectorLoginCenter(
             credentialStore: credentials,
             clientConfigurations: [
-                "chatgpt": OAuthConnectorClientConfiguration(
-                    clientID: "chatgpt-client",
-                    redirectURI: "kairo://oauth/chatgpt/callback"
+                "openai-codex": OAuthConnectorClientConfiguration(
+                    clientID: "openai-codex-client",
+                    redirectURI: "kairo://oauth/openai-codex/callback"
                 )
             ],
             tokenExchangeHTTPClient: httpClient
@@ -280,21 +280,21 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         let runner = SettingsFakeOAuthWebAuthenticationRunner { authorizationURL, callbackScheme in
             let components = try XCTUnwrap(URLComponents(url: authorizationURL, resolvingAgainstBaseURL: false))
             let state = try XCTUnwrap(components.queryItems?.first { $0.name == "state" }?.value)
-            return URL(string: "\(callbackScheme)://oauth/chatgpt/callback?code=interactive-code&state=\(state)")!
+            return URL(string: "\(callbackScheme)://oauth/openai-codex/callback?code=interactive-code&state=\(state)")!
         }
         let coordinator = SettingsOAuthConnectorCoordinator(
             loginService: center,
             webAuthenticationRunner: runner
         )
         let options = try await coordinator.loginOptions()
-        let option = try XCTUnwrap(options.first { $0.providerKey == "chatgpt" })
+        let option = try XCTUnwrap(options.first { $0.providerKey == "openai-codex" })
 
         let outcome = try await coordinator.authorize(option)
         guard case .completed = outcome else {
             return XCTFail("Expected interactive login to complete without manual callback fallback.")
         }
-        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "chatgpt"))
-        let hasPendingSession = await coordinator.hasPendingSession(for: "chatgpt")
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "openai-codex"))
+        let hasPendingSession = await coordinator.hasPendingSession(for: "openai-codex")
 
         XCTAssertEqual(runner.receivedCallbackScheme, "kairo")
         XCTAssertEqual(runner.receivedAuthorizationURL?.host, "auth.openai.com")
@@ -337,8 +337,8 @@ private actor StubOAuthConnectorLoginService: OAuthConnectorLoginServicing {
 
     func previewCallback(_ callbackURL: URL) async throws -> OAuthConnectorCallbackPreview {
         OAuthConnectorCallbackPreview(
-            providerKey: "chatgpt",
-            integrationKey: "chatgpt",
+            providerKey: "openai-codex",
+            integrationKey: "openai-codex",
             state: nil,
             authorizationCodeLength: 0,
             requiresBackendTokenExchange: false

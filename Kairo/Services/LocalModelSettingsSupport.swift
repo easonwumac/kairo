@@ -56,7 +56,7 @@ public struct LocalModelRuntimeParameters: Codable, Equatable, Sendable {
     }
 
     public static let defaultValue = LocalModelRuntimeParameters()
-    public static let contextSizeChoices = [1_024, 4_096, 8_192, 16_384]
+    public static let contextSizeChoices = [1_024, 4_096, 8_192, 16_384, 32_768, 65_536]
 
     public func clamped(to manifest: LocalModelManifest) -> LocalModelRuntimeParameters {
         LocalModelRuntimeParameters(
@@ -67,11 +67,11 @@ public struct LocalModelRuntimeParameters: Codable, Equatable, Sendable {
     }
 
     private static func clampedContextSize(_ value: Int) -> Int {
-        max(1_024, min(value, 16_384))
+        max(1_024, min(value, 65_536))
     }
 
     private static func clampedMaxOutputTokens(_ value: Int) -> Int {
-        max(16, min(value, 512))
+        max(16, min(value, 2_048))
     }
 
     private static func clampedTemperature(_ value: Double) -> Double {
@@ -433,12 +433,13 @@ public extension LocalModelManifest {
         }
 
         var parts = [
-            "\(runtimeLabel) ref \(Self.formattedRate(benchmark.generationTokensPerSecond)) gen tok/s",
-            "\(Self.formattedRate(benchmark.promptTokensPerSecond)) prompt tok/s",
+            "\(runtimeLabel) ref",
+            "PP \(Self.formattedRate(benchmark.promptTokensPerSecond)) tok/s",
+            "TK \(Self.formattedRate(benchmark.generationTokensPerSecond)) tok/s",
             benchmark.testPlatform
         ]
         if let peakMemoryMB = benchmark.peakMemoryMB {
-            parts.append("\(Self.formattedMemoryMB(peakMemoryMB)) peak")
+            parts.append(KairoL10n.string("localModel.benchmark.metric.peakMemory", Self.formattedMemoryMB(peakMemoryMB)))
         }
         if benchmark.isReferenceOnlyForIOS {
             parts.append("iPhone not verified")

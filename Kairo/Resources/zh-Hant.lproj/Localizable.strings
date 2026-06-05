@@ -387,6 +387,8 @@
 "chat.provider.openAI.requestFailedStatus" = "OpenAI 請求失敗，狀態碼 %lld%@。";
 "chat.provider.openAI.errorType" = "，類型 %@";
 "chat.provider.openAI.embeddingMissingVector" = "Embedding 回應沒有包含 vector。";
+"chat.provider.codex.emptyResponse" = "OpenAI Codex 回傳空白回應。";
+"chat.provider.codex.requestFailedStatus" = "OpenAI Codex 請求失敗，狀態碼 %lld%@。";
 "chat.provider.route.title" = "%@";
 "chat.provider.route.accessibilityStatus" = "%@。%@";
 "chat.provider.route.cloud" = "Cloud";
@@ -718,7 +720,7 @@
 "settings.models.section" = "模型設定";
 "settings.models.emptyCatalog" = "尚未載入本機模型清單。";
 "settings.models.answerRoute" = "模型路由";
-"settings.models.defaultModel.detail" = "設定 Kairo 使用的主要語言與預設模型。";
+"settings.models.defaultModel.detail" = "主要語言與預設模型。";
 "settings.models.default.change" = "更改";
 "settings.models.default.cloud.openai" = "OpenAI · 雲端";
 "settings.models.default.local" = "%@ · 本地";
@@ -730,7 +732,7 @@
 "settings.models.entry.localConfigured" = "已選本地模型";
 "settings.models.entry.localNeedsDownload" = "本地模型可選";
 "settings.models.cloud.section" = "雲端模型";
-"settings.models.cloud.detail" = "這裡只顯示你已加入的 provider。新增 provider 時會同時設定 API key 或 OAuth 帳號。";
+"settings.models.cloud.detail" = "只顯示已加入的 provider。";
 "settings.models.cloud.empty" = "尚未設定雲端模型 provider。";
 "settings.models.cloud.add" = "新增雲端模型";
 "settings.models.cloud.add.title" = "新增雲端模型";
@@ -763,11 +765,10 @@
 "settings.models.parameters.temperature" = "Temperature";
 "settings.models.benchmark.context" = "Context size";
 "settings.models.benchmark.contextOption" = "%lldK";
-"settings.models.benchmark.outputFixed" = "固定 128 output";
 "settings.models.benchmark.running" = "速度測試執行中";
 "settings.models.benchmark.finished" = "速度測試完成";
 "settings.models.benchmark.failed" = "速度測試失敗";
-"settings.models.benchmark.liveDetail" = "%lld context tokens · %lld output tokens · simulator app runtime";
+"settings.models.benchmark.liveDetail" = "%lld ctx · %lld out";
 "settings.models.catalogBuiltIn" = "內建模型清單";
 "settings.models.message.settingsServiceMissing" = "此版本無法使用本機模型設定。";
 "settings.models.message.downloaderMissing" = "此版本無法下載本機模型。";
@@ -832,10 +833,10 @@
 "settings.models.local.empty" = "尚未加入本地模型。";
 "settings.models.local.add" = "新增本地模型";
 "settings.models.local.add.title" = "新增本地模型";
-"settings.models.local.add.detail" = "選擇模型後會開始下載，下載進度會回到本地模型列表顯示。";
+"settings.models.local.add.detail" = "選擇後開始下載。";
 "settings.models.local.add.empty" = "目前沒有可下載的本地模型。";
 "settings.models.local.detail.title" = "本地模型";
-"settings.models.local.detail.detail" = "查看模型細節、執行本機檢查，或刪除已下載模型。";
+"settings.models.local.detail.detail" = "參數、速度、刪除。";
 "settings.models.detail.unavailable" = "這個模型或 provider 已不可用。";
 "settings.models.add.back" = "返回";
 "settings.models.advanced.section" = "測試與儲存";
@@ -855,6 +856,8 @@
 "localModel.llama.error.promptTooLarge" = "prompt 超過本機模型的 context window。";
 "localModel.llama.error.decodeFailed" = "llama.cpp decode tokens 時失敗。";
 "localModel.llama.error.emptyResponse" = "llama.cpp 產生了空白回覆。";
+"localModel.benchmark.metric.firstToken" = "首字 %@";
+"localModel.benchmark.metric.peakMemory" = "峰值 %@";
 "settings.route.automatic.title" = "自動";
 "settings.route.preferLocal.title" = "優先本機";
 "settings.route.preferCloud.title" = "優先雲端";

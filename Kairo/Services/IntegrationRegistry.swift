@@ -202,22 +202,22 @@ public struct IntegrationRegistry: AppIntegrationRegistryProviding, Sendable {
             status: .requiresBackend
         ),
         AppIntegration(
-            key: "chatgpt",
-            displayName: "ChatGPT",
+            key: "openai-codex",
+            displayName: "OpenAI Codex",
             category: .ai,
             surfaces: [.oauthAPI, .urlScheme, .universalLink, .shareExtension],
             requiredCapabilities: [.externalConnectors],
             oauth: OAuthConnectorMetadata(
-                providerKey: "chatgpt",
-                authorizationEndpoint: URL(string: "https://auth.openai.com/oauth/authorize")!,
+                providerKey: "openai-codex",
+                authorizationEndpoint: URL(string: "https://auth.openai.com/oauth/authorize?id_token_add_organizations=true&codex_cli_simplified_flow=true&originator=kairo")!,
                 tokenEndpoint: URL(string: "https://auth.openai.com/oauth/token")!,
-                defaultScopes: ["openid", "profile", "email"],
-                accountDataBoundary: "OAuth identity and approved API resources only; Kairo cannot read ChatGPT web cookies or conversation history without an official API."
+                defaultScopes: ["openid", "profile", "email", "offline_access"],
+                accountDataBoundary: "Codex OAuth subscription auth only; Kairo cannot read ChatGPT web cookies, browser sessions, or ChatGPT conversation history."
             ),
             urlSchemes: [
                 URLSchemeIntegration(scheme: "chatgpt", exampleURL: "chatgpt://", notes: "Open ChatGPT visibly when installed. Do not claim programmatic control of ChatGPT UI.")
             ],
-            sandboxNotes: "Kairo may hand off prompts or use official APIs. It must not access ChatGPT browser sessions, cookies, or local app storage.",
+            sandboxNotes: "Kairo may use Codex OAuth tokens for user-approved model requests. It must not access ChatGPT browser sessions, cookies, or local app storage.",
             status: .scaffolded
         ),
         AppIntegration(

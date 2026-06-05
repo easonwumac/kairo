@@ -10,6 +10,12 @@ public struct OAuthConnectorClientConfiguration: Equatable, Sendable {
         self.redirectURI = redirectURI
         self.scopes = scopes
     }
+
+    public static let openAICodexDefault = OAuthConnectorClientConfiguration(
+        clientID: "app_EMoamEEZ73f0CkXaXp7hrann",
+        redirectURI: "kairo://oauth/openai-codex/callback",
+        scopes: ["openid", "profile", "email", "offline_access"]
+    )
 }
 
 public struct OAuthConnectorClientConfigurationLoader: Sendable {
@@ -20,7 +26,13 @@ public struct OAuthConnectorClientConfigurationLoader: Sendable {
         infoDictionary: [String: Any]? = Bundle.main.infoDictionary,
         registry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry()
     ) -> [String: OAuthConnectorClientConfiguration] {
-        var configurations = Self.loadFromInfoDictionary(infoDictionary)
+        var configurations: [String: OAuthConnectorClientConfiguration] = [:]
+        if registry.oauthConnectors.contains(where: { $0.oauth?.providerKey == "openai-codex" }) {
+            configurations["openai-codex"] = .openAICodexDefault
+        }
+        configurations.merge(Self.loadFromInfoDictionary(infoDictionary)) { _, infoValue in
+            infoValue
+        }
         configurations.merge(Self.loadFromEnvironment(environment, registry: registry)) { _, environmentValue in
             environmentValue
         }

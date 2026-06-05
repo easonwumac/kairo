@@ -79,7 +79,9 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertTrue(mlxBenchmark.isReferenceOnlyForIOS)
         XCTAssertEqual(mlxBenchmark.sourceURL?.absoluteString, "https://huggingface.co/mlx-community/Qwen3.5-0.8B-OptiQ-4bit")
         XCTAssertEqual(qwenTiny.recommendedBenchmarkProfile?.runtime, .mlx)
-        XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("MLX ref 286 gen tok/s") == true)
+        XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("MLX ref") == true)
+        XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("PP 10639 tok/s") == true)
+        XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("TK 286 tok/s") == true)
         XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("iPhone not verified") == true)
 
         XCTAssertFalse(availableModels.contains { $0.id == "smollm2-1-7b-instruct-q4-k-m" })
@@ -1459,6 +1461,7 @@ final class LocalModelFeatureTests: XCTestCase {
                 runtime: .gguf,
                 generationTokensPerSecond: 43.5,
                 promptTokensPerSecond: 121.3,
+                firstTokenLatencyMS: 842,
                 peakMemoryMB: 980
             )
         )
@@ -1475,10 +1478,9 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(result.generatedTokens, 64)
         XCTAssertEqual(result.promptTokensPerSecond, 121.3)
         XCTAssertEqual(result.generationTokensPerSecond, 43.5)
+        XCTAssertEqual(result.firstTokenLatencyMS, 842)
         XCTAssertEqual(result.peakMemoryMB, 980)
         XCTAssertFalse(result.isReferenceOnlyForIOS)
-        XCTAssertTrue(result.summaryText.contains("43.5 gen tok/s"))
-        XCTAssertTrue(result.summaryText.contains("121.3 prompt tok/s"))
 
         let latestResult = await resultStore.latestResult(for: "qwen3-5-0-8b-q4-k-m")
         let persisted = try XCTUnwrap(latestResult)

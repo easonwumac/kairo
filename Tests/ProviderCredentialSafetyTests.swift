@@ -93,28 +93,28 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertEqual(connectedOption.settingsDetailText, KairoL10n.string("settings.oauth.grantedScopes", "repo"))
     }
 
-    func testOAuthConnectorClientConfigurationLoaderReadsChatGPTRuntimeConfigurationWithoutSecrets() {
+    func testOAuthConnectorClientConfigurationLoaderReadsOpenAICodexRuntimeConfigurationWithoutSecrets() {
         let loader = OAuthConnectorClientConfigurationLoader()
 
         let configurations = loader.load(
             environment: [
-                "KAIRO_OAUTH_CHATGPT_CLIENT_ID": "chatgpt-client",
-                "KAIRO_OAUTH_CHATGPT_REDIRECT_URI": "kairo://oauth/chatgpt/callback",
-                "KAIRO_OAUTH_CHATGPT_SCOPES": "openid profile"
+                "KAIRO_OAUTH_OPENAI_CODEX_CLIENT_ID": "openai-codex-client",
+                "KAIRO_OAUTH_OPENAI_CODEX_REDIRECT_URI": "kairo://oauth/openai-codex/callback",
+                "KAIRO_OAUTH_OPENAI_CODEX_SCOPES": "openid profile"
             ],
             infoDictionary: [
                 "KairoOAuthClientConfigurations": [
-                    "chatgpt": [
+                    "openai-codex": [
                         "clientID": "plist-client",
-                        "redirectURI": "kairo://oauth/chatgpt/plist-callback"
+                        "redirectURI": "kairo://oauth/openai-codex/plist-callback"
                     ]
                 ]
             ]
         )
 
-        XCTAssertEqual(configurations["chatgpt"]?.clientID, "chatgpt-client")
-        XCTAssertEqual(configurations["chatgpt"]?.redirectURI, "kairo://oauth/chatgpt/callback")
-        XCTAssertEqual(configurations["chatgpt"]?.scopes, ["openid", "profile"])
+        XCTAssertEqual(configurations["openai-codex"]?.clientID, "openai-codex-client")
+        XCTAssertEqual(configurations["openai-codex"]?.redirectURI, "kairo://oauth/openai-codex/callback")
+        XCTAssertEqual(configurations["openai-codex"]?.scopes, ["openid", "profile"])
     }
 
     func testOAuthConnectorClientConfigurationLoaderDefaultsToHarnessRegistryProviders() {
@@ -130,7 +130,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
             infoDictionary: nil
         )
 
-        XCTAssertEqual(configurations.map(\.key), ["todoist"])
+        XCTAssertEqual(configurations["openai-codex"]?.clientID, OAuthConnectorClientConfiguration.openAICodexDefault.clientID)
         XCTAssertEqual(configurations["todoist"]?.clientID, "todoist-client")
         XCTAssertNil(configurations["slack"])
     }
@@ -202,7 +202,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         let google = try XCTUnwrap(options.first { $0.providerKey == "google" })
         let todoist = try XCTUnwrap(options.first { $0.providerKey == "todoist" })
 
-        XCTAssertEqual(options.map(\.providerKey), ["google", "notion", "todoist", "microsoft", "chatgpt", "github"])
+        XCTAssertEqual(options.map(\.providerKey), ["google", "notion", "todoist", "microsoft", "openai-codex", "github"])
         XCTAssertEqual(google.integrationKey, "gmail-google-workspace")
         XCTAssertEqual(google.defaultScopes, ["https://www.googleapis.com/auth/gmail.compose"])
         XCTAssertEqual(todoist.integrationKey, "todoist")
@@ -210,7 +210,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertFalse(options.contains { $0.providerKey == "slack" })
     }
 
-    func testChatGPTOAuthServiceBuildsPKCEAuthorizationURL() async throws {
+    func testOpenAICodexOAuthServiceBuildsPKCEAuthorizationURL() async throws {
         let service = ChatGPTOAuthService(
             configuration: ChatGPTOAuthConfiguration(
                 authorizationEndpoint: URL(string: "https://auth.example.com/oauth/authorize")!,
@@ -218,7 +218,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
                 clientID: "client-id",
                 redirectURI: "kairo://oauth/callback",
                 scopes: ["openid", "profile"],
-                audience: "chatgpt"
+                audience: "openai-codex"
             ),
             credentialStore: InMemoryCredentialStore()
         )
@@ -236,7 +236,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertEqual(query["state"], "state-123")
         XCTAssertEqual(query["code_challenge_method"], "S256")
         XCTAssertNotEqual(query["code_challenge"], "verifier-123")
-        XCTAssertEqual(query["audience"], "chatgpt")
+        XCTAssertEqual(query["audience"], "openai-codex")
     }
 
     func testOAuthConnectorAuthorizationServiceBuildsPKCEAuthorizationURLFromRegistryMetadata() async throws {
@@ -292,7 +292,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         let microsoft = try XCTUnwrap(options.first { $0.providerKey == "microsoft" })
         let connectedGitHub = try XCTUnwrap(options.first { $0.providerKey == "github" })
 
-        XCTAssertEqual(options.map(\.providerKey), ["google", "microsoft", "notion", "slack", "chatgpt", "github"])
+        XCTAssertEqual(options.map(\.providerKey), ["google", "microsoft", "notion", "slack", "openai-codex", "github"])
         XCTAssertEqual(google.integrationKey, "gmail-google-workspace")
         XCTAssertEqual(google.readiness, .readyToAuthorize)
         XCTAssertEqual(microsoft.readiness, .needsClientConfiguration)
@@ -460,7 +460,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertNil(tokensAfterSignOut)
     }
 
-    func testOAuthConnectorLoginCenterExchangesChatGPTCallbackAndDoesNotPersistAuthorizationCode() async throws {
+    func testOAuthConnectorLoginCenterExchangesOpenAICodexCallbackAndDoesNotPersistAuthorizationCode() async throws {
         let credentials = InMemoryCredentialStore()
         let httpClient = ChatBackendCapturingHTTPClient(body: """
         {
@@ -474,21 +474,21 @@ final class ProviderCredentialSafetyTests: XCTestCase {
             registry: IntegrationRegistry(),
             credentialStore: credentials,
             clientConfigurations: [
-                "chatgpt": OAuthConnectorClientConfiguration(
-                    clientID: "chatgpt-client",
-                    redirectURI: "kairo://oauth/chatgpt/callback"
+                "openai-codex": OAuthConnectorClientConfiguration(
+                    clientID: "openai-codex-client",
+                    redirectURI: "kairo://oauth/openai-codex/callback"
                 )
             ],
             tokenExchangeHTTPClient: httpClient
         )
         let session = try await center.makeAuthorizationSession(
-            for: "chatgpt",
+            for: "openai-codex",
             state: "state-123",
             codeVerifier: "verifier-123"
         )
 
         let tokens = try await center.exchangeCallback(
-            URL(string: "kairo://oauth/chatgpt/callback?code=auth-code-abc&state=state-123")!,
+            URL(string: "kairo://oauth/openai-codex/callback?code=auth-code-abc&state=state-123")!,
             expectedState: session.state,
             codeVerifier: session.codeVerifier
         )
@@ -503,19 +503,19 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/x-www-form-urlencoded")
         let requestBody = String(data: try XCTUnwrap(request.httpBody), encoding: .utf8) ?? ""
         XCTAssertTrue(requestBody.contains("grant_type=authorization_code"))
-        XCTAssertTrue(requestBody.contains("client_id=chatgpt-client"))
+        XCTAssertTrue(requestBody.contains("client_id=openai-codex-client"))
         XCTAssertTrue(requestBody.contains("code=auth-code-abc"))
         XCTAssertTrue(requestBody.contains("code_verifier=verifier-123"))
 
-        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "chatgpt"))
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "openai-codex"))
         XCTAssertNotNil(storedRaw)
         XCTAssertFalse(storedRaw?.contains("auth-code-abc") == true)
         let options = try await center.loginOptions()
-        XCTAssertEqual(options.first { $0.providerKey == "chatgpt" }?.readiness, .connected)
+        XCTAssertEqual(options.first { $0.providerKey == "openai-codex" }?.readiness, .connected)
     }
 
     @MainActor
-    func testOAuthConnectorInteractiveLoginServiceCompletesChatGPTLoginFromSystemCallback() async throws {
+    func testOAuthConnectorInteractiveLoginServiceCompletesOpenAICodexLoginFromSystemCallback() async throws {
         let credentials = InMemoryCredentialStore()
         let httpClient = ChatBackendCapturingHTTPClient(body: """
         {
@@ -527,9 +527,9 @@ final class ProviderCredentialSafetyTests: XCTestCase {
             registry: IntegrationRegistry(),
             credentialStore: credentials,
             clientConfigurations: [
-                "chatgpt": OAuthConnectorClientConfiguration(
-                    clientID: "chatgpt-client",
-                    redirectURI: "kairo://oauth/chatgpt/callback"
+                "openai-codex": OAuthConnectorClientConfiguration(
+                    clientID: "openai-codex-client",
+                    redirectURI: "kairo://oauth/openai-codex/callback"
                 )
             ],
             tokenExchangeHTTPClient: httpClient
@@ -537,13 +537,13 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         let runner = FakeOAuthWebAuthenticationRunner { authorizationURL, callbackScheme in
             let components = try XCTUnwrap(URLComponents(url: authorizationURL, resolvingAgainstBaseURL: false))
             let state = try XCTUnwrap(components.queryItems?.first { $0.name == "state" }?.value)
-            return URL(string: "\(callbackScheme)://oauth/chatgpt/callback?code=auth-code-abc&state=\(state)")!
+            return URL(string: "\(callbackScheme)://oauth/openai-codex/callback?code=auth-code-abc&state=\(state)")!
         }
 
         let tokens = try await OAuthConnectorInteractiveLoginService(
             loginCenter: center,
             webAuthenticationRunner: runner
-        ).signIn(for: "chatgpt")
+        ).signIn(for: "openai-codex")
 
         XCTAssertEqual(tokens.accessToken, "access-token")
         XCTAssertEqual(runner.receivedCallbackScheme, "kairo")
@@ -551,7 +551,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         let request = try await httpClient.lastRequest()
         let requestBody = String(data: try XCTUnwrap(request.httpBody), encoding: .utf8) ?? ""
         XCTAssertTrue(requestBody.contains("code=auth-code-abc"))
-        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "chatgpt"))
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "openai-codex"))
         XCTAssertNotNil(storedRaw)
         XCTAssertFalse(storedRaw?.contains("auth-code-abc") == true)
     }
@@ -561,9 +561,9 @@ final class ProviderCredentialSafetyTests: XCTestCase {
             registry: IntegrationRegistry(),
             credentialStore: InMemoryCredentialStore(),
             clientConfigurations: [
-                "chatgpt": OAuthConnectorClientConfiguration(
-                    clientID: "chatgpt-client",
-                    redirectURI: "kairo://oauth/chatgpt/callback"
+                "openai-codex": OAuthConnectorClientConfiguration(
+                    clientID: "openai-codex-client",
+                    redirectURI: "kairo://oauth/openai-codex/callback"
                 )
             ],
             tokenExchangeHTTPClient: ChatBackendCapturingHTTPClient(body: #"{"access_token":"unused"}"#)
@@ -571,7 +571,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
 
         do {
             _ = try await center.exchangeCallback(
-                URL(string: "kairo://oauth/chatgpt/callback?code=auth-code-abc&state=state-123")!,
+                URL(string: "kairo://oauth/openai-codex/callback?code=auth-code-abc&state=state-123")!,
                 expectedState: "state-123",
                 codeVerifier: nil
             )
@@ -581,7 +581,7 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         }
     }
 
-    func testChatGPTOAuthServiceValidatesCallbackAndStoresTokens() async throws {
+    func testOpenAICodexOAuthServiceValidatesCallbackAndStoresTokens() async throws {
         let credentials = InMemoryCredentialStore()
         let service = ChatGPTOAuthService(
             configuration: ChatGPTOAuthConfiguration(

@@ -322,11 +322,11 @@ public struct SettingsView: View {
     }
 
     private var isChatGPTOAuthConnected: Bool {
-        connectorOptions.first { $0.providerKey == "chatgpt" }?.readiness == .connected
+        connectorOptions.first { $0.providerKey == "openai-codex" }?.readiness == .connected
     }
 
     private var isChatGPTOAuthAvailable: Bool {
-        connectorOptions.contains { $0.providerKey == "chatgpt" }
+        connectorOptions.contains { $0.providerKey == "openai-codex" }
     }
 
     private var modelsOnlyContent: some View {
@@ -363,7 +363,6 @@ public struct SettingsView: View {
                 cancelLocalModelDownload: { cancelLocalModelDownload($0) },
                 selectLocalModel: { selectLocalModel($0) },
                 runLocalModelBenchmark: { runLocalModelBenchmark($0, contextSize: $1) },
-                runLocalModelReplyCheck: { runLocalModelReplyCheck($0) },
                 deleteLocalModel: { deleteLocalModel($0) }
             )
         }
@@ -479,22 +478,13 @@ public struct SettingsView: View {
                     }
                 }
 
-                HStack(spacing: 10) {
-                    Button(KairoL10n.string("settings.models.runReplyCheck")) {
-                        runLocalModelReplyCheck(row)
+                if row.canDelete {
+                    Button(KairoL10n.string("settings.models.delete"), role: .destructive) {
+                        deleteLocalModel(row)
                     }
                     .font(.caption2)
-                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal, isCompact: true))
-                    .accessibilityIdentifier("settings.models.\(row.modelID).reply-check")
-
-                    if row.canDelete {
-                        Button(KairoL10n.string("settings.models.delete"), role: .destructive) {
-                            deleteLocalModel(row)
-                        }
-                        .font(.caption2)
-                        .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.red, isCompact: true))
-                        .accessibilityIdentifier("settings.models.\(row.modelID).delete")
-                    }
+                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.red, isCompact: true))
+                    .accessibilityIdentifier("settings.models.\(row.modelID).delete")
                 }
             }
 

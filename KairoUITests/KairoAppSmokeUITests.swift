@@ -253,23 +253,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(message.label.localizedCaseInsensitiveContains("benchmark"), message.label)
     }
 
-    func testSettingsRunsInstalledLocalModelReplyCheck() throws {
-        relaunchWithInstalledLocalModelForTesting(initialSection: "models")
-
-        XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
-        XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
-        openAdvancedModelDiagnosticsIfNeeded()
-        let replyCheckButton = findButton("settings.models.qwen3-5-0-8b-q4-k-m.reply-check", direction: .down, maxSwipes: 2)
-        XCTAssertTrue(replyCheckButton.exists)
-        replyCheckButton.tap()
-
-        let message = findElement("settings.models.benchmark-message", direction: .both, maxSwipes: 2)
-        XCTAssertTrue(message.exists)
-        XCTAssertTrue(findStaticText(containing: "Local model reply is alive.", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "38.5 gen tok/s", direction: .both, maxSwipes: 1).exists)
-    }
-
-    func testSettingsRunsQwen35ThroughEmbeddedLlamaRuntime() throws {
+    func testSettingsRunsQwen35BenchmarkThroughEmbeddedLlamaRuntime() throws {
         let modelPath = ProcessInfo.processInfo.environment["KAIRO_QWEN_GGUF_PATH"]
             ?? Self.defaultQwenGGUFPath()
         guard FileManager.default.fileExists(atPath: modelPath) else {
@@ -284,16 +268,16 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
         XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
         openAdvancedModelDiagnosticsIfNeeded()
-        let replyCheckButton = findButton("settings.models.qwen3-5-0-8b-q4-k-m.reply-check", direction: .down, maxSwipes: 2)
-        XCTAssertTrue(replyCheckButton.exists)
-        replyCheckButton.tap()
+        let benchmarkButton = findButton("settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run", direction: .down, maxSwipes: 2)
+        XCTAssertTrue(benchmarkButton.exists)
+        benchmarkButton.tap()
 
-        let message = findElement("settings.models.benchmark-message", direction: .both, maxSwipes: 2)
-        XCTAssertTrue(message.waitForExistence(timeout: 180))
-        let finalLabel = waitForQwenReplyCheckResult(in: message, timeout: 240)
-        XCTAssertTrue(finalLabel.contains("llama.cpp iOS"), finalLabel)
-        XCTAssertFalse(finalLabel.localizedCaseInsensitiveContains("unavailable"), finalLabel)
-        XCTAssertFalse(finalLabel.contains("Local model reply is alive."), finalLabel)
+        let finishedRunInfo = findElement(
+            "settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run-info.finished",
+            direction: .both,
+            maxSwipes: 2
+        )
+        XCTAssertTrue(finishedRunInfo.waitForExistence(timeout: 240))
     }
 
     func testChatRepliesThroughSelectedQwenLocalRuntime() throws {
@@ -334,21 +318,6 @@ final class KairoAppSmokeUITests: XCTestCase {
             .deletingLastPathComponent()
             .appendingPathComponent(".build/qwen-bench/Qwen3.5-0.8B.q4_k_m.gguf")
             .path
-    }
-
-    private func waitForQwenReplyCheckResult(in message: XCUIElement, timeout: TimeInterval) -> String {
-        let deadline = Date().addingTimeInterval(timeout)
-        var currentLabel = message.label
-        while Date() < deadline {
-            currentLabel = message.label
-            if currentLabel.contains("llama.cpp iOS")
-                || currentLabel.localizedCaseInsensitiveContains("unavailable")
-                || currentLabel.localizedCaseInsensitiveContains("failed") {
-                return currentLabel
-            }
-            RunLoop.current.run(until: Date().addingTimeInterval(1))
-        }
-        return currentLabel
     }
 
     private func waitForAssistantMessageExcludingInitialWelcome(timeout: TimeInterval) -> XCUIElement {
@@ -561,9 +530,9 @@ final class KairoAppSmokeUITests: XCTestCase {
             expectsBackendExchange: true
         )
         verifyOAuthConnector(
-            providerKey: "chatgpt",
-            displayName: "ChatGPT",
-            detailText: "Kairo cannot read ChatGPT web cookies or conversation history",
+            providerKey: "openai-codex",
+            displayName: "OpenAI Codex",
+            detailText: "Kairo cannot read OpenAI Codex web cookies or conversation history",
             expectsBackendExchange: false
         )
         verifyOAuthConnector(

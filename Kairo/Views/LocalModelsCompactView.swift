@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct LocalModelsCompactView: View {
-    @State private var activePage: ModelSettingsPage?
+    @State private var pageStack: [ModelSettingsPage] = []
 
     var topPadding: CGFloat = 16
     @Binding var apiKey: String
@@ -35,7 +35,6 @@ struct LocalModelsCompactView: View {
     let cancelLocalModelDownload: (LocalModelSettingsRow) -> Void
     let selectLocalModel: (LocalModelSettingsRow) -> Void
     let runLocalModelBenchmark: (LocalModelSettingsRow, Int) -> Void
-    let runLocalModelReplyCheck: (LocalModelSettingsRow) -> Void
     let deleteLocalModel: (LocalModelSettingsRow) -> Void
 
     var body: some View {
@@ -56,12 +55,24 @@ struct LocalModelsCompactView: View {
         .background(KairoDesign.background.ignoresSafeArea())
         .preference(key: RootChromePreferenceKey.self, value: rootChromeContext)
         .onChange(of: rootChromeBackRequestID) { _, _ in
-            guard activePage != nil else { return }
-            withAnimation(.snappy(duration: 0.2)) {
-                activePage = nil
-            }
+            popPage()
         }
         .accessibilityIdentifier("settings.models.screen")
+    }
+
+    private var activePage: ModelSettingsPage? {
+        pageStack.last
+    }
+
+    private func pushPage(_ page: ModelSettingsPage) {
+        pageStack.append(page)
+    }
+
+    private func popPage() {
+        guard !pageStack.isEmpty else { return }
+        withAnimation(.snappy(duration: 0.2)) {
+            _ = pageStack.popLast()
+        }
     }
 
     private var rootChromeContext: RootChromeContext {
@@ -120,7 +131,7 @@ struct LocalModelsCompactView: View {
                 accessibilityIdentifier: "settings.models.local.add"
             ) {
                 withAnimation(.snappy(duration: 0.2)) {
-                    activePage = .addLocal
+                    pushPage(.addLocal)
                 }
             }
 
@@ -193,7 +204,7 @@ struct LocalModelsCompactView: View {
                 accessibilityIdentifier: "settings.models.cloud.add"
             ) {
                 withAnimation(.snappy(duration: 0.2)) {
-                    activePage = .addCloud
+                    pushPage(.addCloud)
                 }
             }
             }
@@ -259,7 +270,7 @@ struct LocalModelsCompactView: View {
     private var pageBackButton: some View {
         Button {
             withAnimation(.snappy(duration: 0.2)) {
-                activePage = nil
+                popPage()
             }
         } label: {
             Label(KairoL10n.string("settings.models.add.back"), systemImage: "chevron.left")
@@ -431,8 +442,8 @@ struct LocalModelsCompactView: View {
                 setupKind: .openAIAPIKey
             ),
             CloudModelProviderRow(
-                id: "chatgpt-oauth",
-                title: "ChatGPT",
+                id: "openai-codex-oauth",
+                title: "OpenAI Codex",
                 method: KairoL10n.string("settings.models.cloud.method.oauth"),
                 status: isChatGPTOAuthConnected
                     ? KairoL10n.string("settings.models.cloud.status.configured")
@@ -464,7 +475,7 @@ struct LocalModelsCompactView: View {
             ForEach(addableCloudProviderRows) { row in
                 Button {
                     withAnimation(.snappy(duration: 0.2)) {
-                        activePage = .cloudDetail(row.id)
+                        pushPage(.cloudDetail(row.id))
                     }
                     prepareSetup(for: row)
                 } label: {
@@ -484,7 +495,7 @@ struct LocalModelsCompactView: View {
     private func cloudProviderRow(_ row: CloudModelProviderRow) -> some View {
         Button {
             withAnimation(.snappy(duration: 0.2)) {
-                activePage = .cloudDetail(row.id)
+                pushPage(.cloudDetail(row.id))
             }
         } label: {
             providerSummaryRow(row)
@@ -530,7 +541,7 @@ struct LocalModelsCompactView: View {
         case .openAIAPIKey:
             showAPIKeyEditor = true
         case .chatGPTOAuth:
-            expandedOAuthConnectorDetails.insert("chatgpt")
+            expandedOAuthConnectorDetails.insert("openai-codex")
         }
     }
 
@@ -558,7 +569,7 @@ struct LocalModelsCompactView: View {
                         ) {
                             removeCloudProvider(row)
                             withAnimation(.snappy(duration: 0.2)) {
-                                activePage = nil
+                                popPage()
                             }
                         }
                     }
@@ -586,14 +597,14 @@ struct LocalModelsCompactView: View {
                 deleteAPIKey: deleteAPIKey
             )
             .accessibilityIdentifier("settings.models.cloud.openai.setup")
-        case "chatgpt-oauth":
+        case "openai-codex-oauth":
             SettingsOAuthConnectorsSection(
-                connectorOptions: connectorOptions.filter { $0.providerKey == "chatgpt" },
+                connectorOptions: connectorOptions.filter { $0.providerKey == "openai-codex" },
                 expandedConnectorDetails: $expandedOAuthConnectorDetails,
                 authorizeConnector: authorizeConnector,
                 disconnectConnector: disconnectConnector
             )
-            .accessibilityIdentifier("settings.models.cloud.chatgpt.setup")
+            .accessibilityIdentifier("settings.models.cloud.openai-codex.setup")
         default:
             EmptyView()
         }
@@ -604,7 +615,7 @@ struct LocalModelsCompactView: View {
         case .openAIAPIKey:
             deleteAPIKey()
         case .chatGPTOAuth:
-            if let option = connectorOptions.first(where: { $0.providerKey == "chatgpt" }) {
+            if let option = connectorOptions.first(where: { $0.providerKey == "openai-codex" }) {
                 disconnectConnector(option)
             }
         }
@@ -640,7 +651,7 @@ struct LocalModelsCompactView: View {
             ForEach(addableLocalModelRows) { row in
                 Button {
                     withAnimation(.snappy(duration: 0.2)) {
-                        activePage = .localDetail(row.modelID)
+                        pushPage(.localDetail(row.modelID))
                     }
                     downloadLocalModel(row)
                 } label: {
@@ -754,7 +765,7 @@ struct LocalModelsCompactView: View {
     private func compactLocalModelRow(_ row: LocalModelSettingsRow) -> some View {
         Button {
             withAnimation(.snappy(duration: 0.2)) {
-                activePage = .localDetail(row.modelID)
+                pushPage(.localDetail(row.modelID))
             }
         } label: {
             VStack(alignment: .leading, spacing: 10) {
@@ -871,15 +882,6 @@ struct LocalModelsCompactView: View {
                 Text(KairoL10n.string("settings.models.parameters.title"))
                     .font(compactSectionHeadingFont)
                     .foregroundStyle(KairoDesign.ink)
-
-                Spacer(minLength: 8)
-
-                Text(KairoL10n.string("settings.models.benchmark.outputFixed", Int64(LocalModelBenchmarkRunInfo.fixedOutputTokenTarget)))
-                    .font(compactModelStatusFont)
-                    .foregroundStyle(KairoDesign.muted)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(KairoDesign.softSurface.opacity(0.55), in: Capsule())
             }
 
             parameterPickerRow(
@@ -912,7 +914,7 @@ struct LocalModelsCompactView: View {
                         set: { updateRuntimeParameters(for: row, maxOutputTokens: $0) }
                     )
                 ) {
-                    ForEach([64, 128, 256, 512], id: \.self) { tokens in
+                    ForEach([64, 128, 256, 512, 1_024, 2_048], id: \.self) { tokens in
                         Text(KairoL10n.string("settings.models.parameters.outputOption", Int64(tokens)))
                             .tag(tokens)
                     }
@@ -1029,7 +1031,7 @@ struct LocalModelsCompactView: View {
                 }
             }
         }
-        .accessibilityIdentifier("settings.models.\(runInfo.modelID).benchmark-run-info")
+        .accessibilityIdentifier("settings.models.\(runInfo.modelID).benchmark-run-info.\(runInfo.state.identifier)")
     }
 
     private func selectedBenchmarkContext(for row: LocalModelSettingsRow) -> Int {
@@ -1066,24 +1068,13 @@ struct LocalModelsCompactView: View {
             }
 
             if row.primaryAction == .select || row.primaryAction == .selected {
-                if row.benchmarkSummaryText != nil {
-                    compactActionButton(
-                        KairoL10n.string("settings.models.speed"),
-                        systemImage: "speedometer",
-                        accessibilityIdentifier: "settings.models.\(row.modelID).benchmark-run",
-                        tint: .blue
-                    ) {
-                        runLocalModelBenchmark(row, selectedBenchmarkContext(for: row))
-                    }
-                }
-
                 compactActionButton(
-                    KairoL10n.string("settings.models.reply"),
-                    systemImage: "text.bubble",
-                    accessibilityIdentifier: "settings.models.\(row.modelID).reply-check",
+                    KairoL10n.string("settings.models.speed"),
+                    systemImage: "speedometer",
+                    accessibilityIdentifier: "settings.models.\(row.modelID).benchmark-run",
                     tint: .blue
                 ) {
-                    runLocalModelReplyCheck(row)
+                    runLocalModelBenchmark(row, selectedBenchmarkContext(for: row))
                 }
             }
 
@@ -1097,7 +1088,7 @@ struct LocalModelsCompactView: View {
                 ) {
                     deleteLocalModel(row)
                     withAnimation(.snappy(duration: 0.2)) {
-                        activePage = nil
+                        popPage()
                     }
                 }
             }
@@ -1134,24 +1125,13 @@ struct LocalModelsCompactView: View {
             }
 
             LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 8) {
-                if row.benchmarkSummaryText != nil {
-                    compactActionButton(
-                        KairoL10n.string("settings.models.speed"),
-                        systemImage: "speedometer",
-                        accessibilityIdentifier: "settings.models.\(row.modelID).benchmark-run",
-                        tint: .blue
-                    ) {
-                        runLocalModelBenchmark(row, selectedBenchmarkContext(for: row))
-                    }
-                }
-
                 compactActionButton(
-                    KairoL10n.string("settings.models.reply"),
-                    systemImage: "text.bubble",
-                    accessibilityIdentifier: "settings.models.\(row.modelID).reply-check",
+                    KairoL10n.string("settings.models.speed"),
+                    systemImage: "speedometer",
+                    accessibilityIdentifier: "settings.models.\(row.modelID).benchmark-run",
                     tint: .blue
                 ) {
-                    runLocalModelReplyCheck(row)
+                    runLocalModelBenchmark(row, selectedBenchmarkContext(for: row))
                 }
 
                 if row.canDelete {
@@ -1467,7 +1447,6 @@ private enum ModelSettingsPage: Equatable {
 struct LocalModelBenchmarkRunInfo: Equatable {
     static let contextSizeChoices = LocalModelRuntimeParameters.contextSizeChoices
     static let defaultContextSize = 4_096
-    static let fixedOutputTokenTarget = 128
 
     var modelID: String
     var contextSize: Int
@@ -1488,6 +1467,17 @@ struct LocalModelBenchmarkRunInfo: Equatable {
                 return KairoL10n.string("settings.models.benchmark.finished")
             case .failed:
                 return KairoL10n.string("settings.models.benchmark.failed")
+            }
+        }
+
+        var identifier: String {
+            switch self {
+            case .running:
+                return "running"
+            case .finished:
+                return "finished"
+            case .failed:
+                return "failed"
             }
         }
 

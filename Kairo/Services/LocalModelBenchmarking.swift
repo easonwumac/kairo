@@ -15,6 +15,7 @@ public struct LocalModelBenchmarkRunResult: Codable, Equatable, Identifiable, Se
     public var generatedTokens: Int
     public var promptTokensPerSecond: Double
     public var generationTokensPerSecond: Double
+    public var firstTokenLatencyMS: Double?
     public var peakMemoryMB: Int?
     public var measuredAt: Date
     public var isReferenceOnlyForIOS: Bool
@@ -30,6 +31,7 @@ public struct LocalModelBenchmarkRunResult: Codable, Equatable, Identifiable, Se
         generatedTokens: Int,
         promptTokensPerSecond: Double,
         generationTokensPerSecond: Double,
+        firstTokenLatencyMS: Double? = nil,
         peakMemoryMB: Int? = nil,
         measuredAt: Date,
         isReferenceOnlyForIOS: Bool = false,
@@ -44,6 +46,7 @@ public struct LocalModelBenchmarkRunResult: Codable, Equatable, Identifiable, Se
         self.generatedTokens = generatedTokens
         self.promptTokensPerSecond = promptTokensPerSecond
         self.generationTokensPerSecond = generationTokensPerSecond
+        self.firstTokenLatencyMS = firstTokenLatencyMS
         self.peakMemoryMB = peakMemoryMB
         self.measuredAt = measuredAt
         self.isReferenceOnlyForIOS = isReferenceOnlyForIOS
@@ -52,12 +55,17 @@ public struct LocalModelBenchmarkRunResult: Codable, Equatable, Identifiable, Se
 
     public var summaryText: String {
         var parts = [
-            "\(Self.formattedRate(generationTokensPerSecond)) gen tok/s",
-            "\(Self.formattedRate(promptTokensPerSecond)) prompt tok/s",
-            runtimePackage
+            "PP \(Self.formattedRate(promptTokensPerSecond)) tok/s",
+            "TK \(Self.formattedRate(generationTokensPerSecond)) tok/s"
         ]
+        if let firstTokenLatencyMS {
+            parts.insert(
+                KairoL10n.string("localModel.benchmark.metric.firstToken", Self.formattedLatencyMS(firstTokenLatencyMS)),
+                at: 0
+            )
+        }
         if let peakMemoryMB {
-            parts.append("\(Self.formattedMemoryMB(peakMemoryMB)) peak")
+            parts.append(KairoL10n.string("localModel.benchmark.metric.peakMemory", Self.formattedMemoryMB(peakMemoryMB)))
         }
         if isReferenceOnlyForIOS {
             parts.append("reference only")
@@ -70,6 +78,13 @@ public struct LocalModelBenchmarkRunResult: Codable, Equatable, Identifiable, Se
             return "\(Int(rate))"
         }
         return String(format: "%.1f", rate)
+    }
+
+    private static func formattedLatencyMS(_ value: Double) -> String {
+        if value >= 1000 {
+            return String(format: "%.2fs", value / 1000.0)
+        }
+        return "\(Int(value.rounded()))ms"
     }
 
     private static func formattedMemoryMB(_ memoryMB: Int) -> String {
@@ -114,6 +129,7 @@ public struct DeterministicLocalModelBenchmarkEngine: LocalModelBenchmarkEngine 
     private let generationTokensPerSecond: Double
     private let promptTokensPerSecond: Double
     private let promptTokens: Int
+    private let firstTokenLatencyMS: Double?
     private let peakMemoryMB: Int?
     private let measuredAt: Date
 
@@ -123,6 +139,7 @@ public struct DeterministicLocalModelBenchmarkEngine: LocalModelBenchmarkEngine 
         generationTokensPerSecond: Double,
         promptTokensPerSecond: Double,
         promptTokens: Int = 32,
+        firstTokenLatencyMS: Double? = nil,
         peakMemoryMB: Int? = nil,
         measuredAt: Date = Date(timeIntervalSince1970: 1_780_358_400)
     ) {
@@ -131,6 +148,7 @@ public struct DeterministicLocalModelBenchmarkEngine: LocalModelBenchmarkEngine 
         self.generationTokensPerSecond = generationTokensPerSecond
         self.promptTokensPerSecond = promptTokensPerSecond
         self.promptTokens = promptTokens
+        self.firstTokenLatencyMS = firstTokenLatencyMS
         self.peakMemoryMB = peakMemoryMB
         self.measuredAt = measuredAt
     }
@@ -152,6 +170,7 @@ public struct DeterministicLocalModelBenchmarkEngine: LocalModelBenchmarkEngine 
             generatedTokens: generatedTokenTarget,
             promptTokensPerSecond: promptTokensPerSecond,
             generationTokensPerSecond: generationTokensPerSecond,
+            firstTokenLatencyMS: firstTokenLatencyMS,
             peakMemoryMB: peakMemoryMB,
             measuredAt: measuredAt,
             isReferenceOnlyForIOS: false,
