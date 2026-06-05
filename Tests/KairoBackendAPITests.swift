@@ -522,6 +522,123 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
+    func testScenarioGoogleMapsDirectionsUsesCatalogHandoffPreview() async throws {
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMapsDirectionsHandoff)),
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .googleMapsDirectionsHandoff))
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            appIntegrationSkillCatalog: catalog
+        )
+
+        let response = try await environment.backendAPI.chat.respond(
+            to: "幫我用 Google Maps 導航到台北車站",
+            attachments: [],
+            privacyMode: .standard
+        )
+
+        let candidate = try XCTUnwrap(response.toolCandidates.first { $0.skillID == AppIntegrationSkillID.googleMapsDirectionsHandoff.rawValue })
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.integrationKey, "google-maps")
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertEqual(candidate.action?.kind, .openURL)
+        if case let .url(urlString) = candidate.action?.payload {
+            let url = try XCTUnwrap(URL(string: urlString))
+            XCTAssertEqual(url.scheme, "https")
+            XCTAssertEqual(url.host, "www.google.com")
+            XCTAssertEqual(url.path, "/maps/dir")
+            XCTAssertTrue(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.contains(URLQueryItem(name: "api", value: "1")) == true)
+        } else {
+            XCTFail("Expected visible Google Maps URL handoff action.")
+        }
+        XCTAssertFalse(response.toolCandidates.contains { $0.integrationKey == "google-maps" && $0.source == .integrationRegistry })
+    }
+
+    func testScenarioGoogleMapsUnavailableFallsBackToAppleMapsCatalogPreview() async throws {
+        var googleMaps = try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .googleMapsDirectionsHandoff))
+        googleMaps.availabilityStatus = .requiresInstalledApp
+        googleMaps.setupRequirement = .installApp
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMapsDirectionsHandoff)),
+            googleMaps
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            appIntegrationSkillCatalog: catalog
+        )
+
+        let response = try await environment.backendAPI.chat.respond(
+            to: "幫我用 Google Maps 導航到台北車站",
+            attachments: [],
+            privacyMode: .standard
+        )
+
+        let googleCandidate = try XCTUnwrap(response.toolCandidates.first { $0.skillID == AppIntegrationSkillID.googleMapsDirectionsHandoff.rawValue })
+        let appleMapsCandidate = try XCTUnwrap(response.toolCandidates.first { $0.skillID == AppIntegrationSkillID.appleMapsDirectionsHandoff.rawValue })
+        XCTAssertEqual(googleCandidate.source, .appIntegrationCatalog)
+        XCTAssertNil(googleCandidate.action)
+        XCTAssertEqual(appleMapsCandidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(appleMapsCandidate.action?.kind, .openMapDirections)
+        XCTAssertTrue(appleMapsCandidate.requiresConfirmation)
+        XCTAssertFalse(response.toolCandidates.contains { $0.source == .integrationRegistry })
+    }
+
+    func testScenarioTodoistOAuthRequiredStaysSetupOnly() async throws {
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .todoistTaskAPI))
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            appIntegrationSkillCatalog: catalog
+        )
+
+        let response = try await environment.backendAPI.chat.respond(
+            to: "幫我在 Todoist 建立任務：明天檢查 Kairo",
+            attachments: [],
+            privacyMode: .standard
+        )
+
+        let candidate = try XCTUnwrap(response.toolCandidates.first { $0.skillID == AppIntegrationSkillID.todoistTaskAPI.rawValue })
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.skillKind, .oauthConnector)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertNil(candidate.action)
+        XCTAssertTrue(response.proposedActions.isEmpty)
+        XCTAssertFalse(response.toolCandidates.contains { $0.integrationKey == "todoist" && $0.source == .integrationRegistry })
+    }
+
+    func testScenarioLinePrivateDataReadUsesUnsupportedCatalogFallback() async throws {
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .lineShareHandoff))
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            appIntegrationSkillCatalog: catalog
+        )
+
+        let response = try await environment.backendAPI.chat.respond(
+            to: "幫我讀 LINE 裡 Alex 傳給我的訊息",
+            attachments: [],
+            privacyMode: .standard
+        )
+
+        let candidate = try XCTUnwrap(response.toolCandidates.first { $0.skillID == AppIntegrationSkillID.lineShareHandoff.rawValue })
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.integrationKey, "line")
+        XCTAssertNil(candidate.action)
+        XCTAssertTrue(response.proposedActions.isEmpty)
+        XCTAssertFalse(response.toolCandidates.contains { $0.integrationKey == "line" && $0.source == .integrationRegistry })
+    }
+
     func testBackendCompositionSharesInjectedIntegrationRegistryWithChatFallbackCandidates() async throws {
         let environment = KairoEnvironment(
             memoryStore: InMemoryMemoryStore(),
