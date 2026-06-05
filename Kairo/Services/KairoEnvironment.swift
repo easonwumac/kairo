@@ -86,19 +86,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     }
 
     public static func preview() -> KairoEnvironment {
-        let credentialStore = InMemoryCredentialStore()
-        return KairoEnvironment(
-            memoryStore: InMemoryMemoryStore(),
-            credentialStore: credentialStore,
-            aiProvider: MockAIProvider(),
-            chatHistoryStore: InMemoryChatHistoryStore(seed: [ChatThread(messages: [
-                ChatMessage(role: .assistant, text: KairoL10n.string("chat.welcome.preview"))
-            ])]),
-            shareIngestionQueue: InMemoryShareIngestionQueue(),
-            kairoRecipeStore: InMemoryKairoRecipeStore(),
-            permissionService: StubPermissionService(),
-            auditLogger: InMemoryAuditLogger()
-        )
+        KairoPreviewEnvironmentComposer().makeEnvironment()
     }
 
     public static func uiTesting(

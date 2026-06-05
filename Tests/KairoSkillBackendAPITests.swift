@@ -239,6 +239,26 @@ final class KairoSkillBackendAPITests: XCTestCase {
         XCTAssertEqual(auditEvents.map(\.actionKind), [.createReminderDraft])
     }
 
+    func testPreviewEnvironmentComposerBuildsInteractivePreviewEnvironment() async throws {
+        let environment = KairoPreviewEnvironmentComposer().makeEnvironment()
+        let threads = try await environment.chatHistoryStore.listThreads(limit: 10)
+        let result = try await environment.actionExecutor.execute(AgentAction(
+            kind: .saveMemory,
+            title: "Save preview memory",
+            rationale: "Exercise preview action wiring.",
+            payload: .text("Preview action executor writes memory and audit state."),
+            riskTier: .tier0ReadOnly
+        ), confirmed: false)
+        let memories = try await environment.memoryStore.search(query: "preview", limit: 10)
+        let auditEvents = try await environment.auditLogger.list(limit: 10)
+
+        XCTAssertEqual(threads.count, 1)
+        XCTAssertEqual(threads.first?.messages.first?.role, .assistant)
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(memories.count, 1)
+        XCTAssertEqual(auditEvents.map(\.actionKind), [.saveMemory])
+    }
+
     func testSkillBackendAPIFailsClosedWhenServiceIsUnavailable() async throws {
         let api = KairoSkillBackendService(agentSkillManagerService: nil)
 
