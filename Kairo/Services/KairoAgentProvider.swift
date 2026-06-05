@@ -29,6 +29,13 @@ public struct LiveKairoAgentProvider: KairoAgentProviding {
     }
 
     public func makeAgent() async throws -> AgentCore {
+        let environment = try await makeEnvironment()
+        let dependencies = KairoChatBackendServiceFactory(dependencies: environment)
+            .makeAgentCoreDependencies()
+        return AgentCore(dependencies: dependencies)
+    }
+
+    private func makeEnvironment() async throws -> KairoEnvironment {
         let memoryStore = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
         let aiProvider: any AIProvider
         if let aiProviderOverride {
@@ -40,10 +47,11 @@ public struct LiveKairoAgentProvider: KairoAgentProviding {
             ).makeComponents().aiProvider
         }
 
-        return AgentCore(
+        return KairoEnvironment(
             memoryStore: memoryStore,
+            credentialStore: credentialStore,
             aiProvider: aiProvider,
-            integrationRegistry: integrationRegistry,
+            oauthConnectorRegistry: integrationRegistry,
             toolCatalog: toolCatalog,
             appIntegrationSkillCatalog: appIntegrationSkillCatalog
         )
