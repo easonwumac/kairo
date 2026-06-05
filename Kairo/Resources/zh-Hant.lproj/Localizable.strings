@@ -13,7 +13,6 @@
 "root.menu.group.agent" = "支援";
 "root.menu.group.system" = "設定";
 "root.menu.chat.section" = "Chat";
-"root.menu.chat.new.subtitle" = "開始一段乾淨的新對話";
 "root.menu.chat.showMore" = "顯示更多對話";
 "root.menu.chat.showLess" = "收合對話";
 "root.menu.chat.history.subtitle" = "共 %lld 組已儲存對話";

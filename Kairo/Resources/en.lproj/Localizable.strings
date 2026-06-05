@@ -13,7 +13,6 @@
 "root.menu.group.agent" = "Support";
 "root.menu.group.system" = "Setup";
 "root.menu.chat.section" = "Chat";
-"root.menu.chat.new.subtitle" = "Start a clean conversation";
 "root.menu.chat.showMore" = "Show more chats";
 "root.menu.chat.showLess" = "Show fewer chats";
 "root.menu.chat.history.subtitle" = "%lld saved chats";

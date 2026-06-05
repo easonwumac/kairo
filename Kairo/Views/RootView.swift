@@ -415,7 +415,7 @@ public struct RootView: View {
                 } label: {
                     drawerRowContent(
                         title: KairoL10n.string("chat.new"),
-                        subtitle: KairoL10n.string("root.menu.chat.new.subtitle"),
+                        subtitle: nil,
                         systemImage: "square.and.pencil",
                         tint: KairoDesign.blue
                     )
@@ -486,7 +486,7 @@ public struct RootView: View {
 
     private func drawerRowContent(
         title: String,
-        subtitle: String,
+        subtitle: String?,
         systemImage: String,
         tint: Color
     ) -> some View {
@@ -502,10 +502,12 @@ public struct RootView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
                     .lineLimit(1)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
 
             Spacer(minLength: 8)

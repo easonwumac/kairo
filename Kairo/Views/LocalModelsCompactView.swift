@@ -107,40 +107,45 @@ struct LocalModelsCompactView: View {
     }
 
     private var modelStarterSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(KairoL10n.string("settings.models.starter.title"))
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-            }
-            .padding(.horizontal, 2)
-            .accessibilityIdentifier("settings.models.starter")
-
-            if configuredLocalModelRows.isEmpty {
-                Text(KairoL10n.string("settings.models.local.empty"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            ForEach(configuredLocalModelRows) { row in
-                compactLocalModelRow(row)
-            }
-
-            modelAddButton(
-                title: KairoL10n.string("settings.models.local.add"),
-                accessibilityIdentifier: "settings.models.local.add"
-            ) {
-                withAnimation(.snappy(duration: 0.2)) {
-                    pushPage(.addLocal)
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(KairoL10n.string("settings.models.starter.title"))
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
                 }
-            }
+                .accessibilityIdentifier("settings.models.starter")
 
-            if shouldShowSectionLocalModelMessage, let localModelStatusMessage {
-                Text(localModelStatusMessage)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 4)
-                    .accessibilityIdentifier("settings.models.benchmark-message")
+                if configuredLocalModelRows.isEmpty {
+                    Text(KairoL10n.string("settings.models.local.empty"))
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                ForEach(configuredLocalModelRows) { row in
+                    compactLocalModelRow(row)
+                    if row.modelID != configuredLocalModelRows.last?.modelID {
+                        Divider()
+                    }
+                }
+
+                modelAddButton(
+                    title: KairoL10n.string("settings.models.local.add"),
+                    accessibilityIdentifier: "settings.models.local.add"
+                ) {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        pushPage(.addLocal)
+                    }
+                }
+
+                if shouldShowSectionLocalModelMessage, let localModelStatusMessage {
+                    Text(localModelStatusMessage)
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 4)
+                        .accessibilityIdentifier("settings.models.benchmark-message")
+                }
             }
         }
     }
@@ -786,12 +791,7 @@ struct LocalModelsCompactView: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(KairoDesign.line, lineWidth: 1)
-        }
+        .padding(.vertical, 2)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.models.\(row.modelID).row")
     }
