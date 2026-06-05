@@ -197,6 +197,81 @@ final class KairoSettingsBackendAPITests: XCTestCase {
         XCTAssertFalse(googleOption.settingsDetailText.contains(malformedJSON))
     }
 
+    func testSettingsOAuthConnectorCoordinatorCompletesManualCallbackFallback() async throws {
+        let credentials = InMemoryCredentialStore()
+        let httpClient = ChatBackendCapturingHTTPClient(body: #"{"access_token":"manual-token","scope":"openid"}"#)
+        let center = OAuthConnectorLoginCenter(
+            credentialStore: credentials,
+            clientConfigurations: [
+                "chatgpt": OAuthConnectorClientConfiguration(
+                    clientID: "chatgpt-client",
+                    redirectURI: "kairo://oauth/chatgpt/callback"
+                )
+            ],
+            tokenExchangeHTTPClient: httpClient
+        )
+        let coordinator = SettingsOAuthConnectorCoordinator(loginService: center)
+        let options = try await coordinator.loginOptions()
+        let option = try XCTUnwrap(options.first { $0.providerKey == "chatgpt" })
+
+        let outcome = try await coordinator.authorize(option)
+        guard case .fallback(let session) = outcome else {
+            return XCTFail("Expected manual authorization fallback when no web runner is available.")
+        }
+        let hasPendingSession = await coordinator.hasPendingSession(for: "chatgpt")
+        XCTAssertTrue(hasPendingSession)
+
+        let completion = try await coordinator.completeCallbackLogin(
+            URL(string: "kairo://oauth/chatgpt/callback?code=manual-code&state=\(session.state)")!
+        )
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "chatgpt"))
+        let hasClearedPendingSession = await coordinator.hasPendingSession(for: "chatgpt")
+
+        XCTAssertEqual(completion.providerKey, "chatgpt")
+        XCTAssertEqual(completion.tokens.accessToken, "manual-token")
+        XCTAssertFalse(hasClearedPendingSession)
+        XCTAssertFalse(storedRaw?.contains("manual-code") == true)
+    }
+
+    @MainActor
+    func testSettingsOAuthConnectorCoordinatorCompletesInteractiveLogin() async throws {
+        let credentials = InMemoryCredentialStore()
+        let httpClient = ChatBackendCapturingHTTPClient(body: #"{"access_token":"interactive-token","scope":"openid profile"}"#)
+        let center = OAuthConnectorLoginCenter(
+            credentialStore: credentials,
+            clientConfigurations: [
+                "chatgpt": OAuthConnectorClientConfiguration(
+                    clientID: "chatgpt-client",
+                    redirectURI: "kairo://oauth/chatgpt/callback"
+                )
+            ],
+            tokenExchangeHTTPClient: httpClient
+        )
+        let runner = SettingsFakeOAuthWebAuthenticationRunner { authorizationURL, callbackScheme in
+            let components = try XCTUnwrap(URLComponents(url: authorizationURL, resolvingAgainstBaseURL: false))
+            let state = try XCTUnwrap(components.queryItems?.first { $0.name == "state" }?.value)
+            return URL(string: "\(callbackScheme)://oauth/chatgpt/callback?code=interactive-code&state=\(state)")!
+        }
+        let coordinator = SettingsOAuthConnectorCoordinator(
+            loginService: center,
+            webAuthenticationRunner: runner
+        )
+        let options = try await coordinator.loginOptions()
+        let option = try XCTUnwrap(options.first { $0.providerKey == "chatgpt" })
+
+        let outcome = try await coordinator.authorize(option)
+        guard case .completed = outcome else {
+            return XCTFail("Expected interactive login to complete without manual callback fallback.")
+        }
+        let storedRaw = try await credentials.readSecret(for: CredentialKey.oauthTokenSet(providerKey: "chatgpt"))
+        let hasPendingSession = await coordinator.hasPendingSession(for: "chatgpt")
+
+        XCTAssertEqual(runner.receivedCallbackScheme, "kairo")
+        XCTAssertEqual(runner.receivedAuthorizationURL?.host, "auth.openai.com")
+        XCTAssertFalse(hasPendingSession)
+        XCTAssertFalse(storedRaw?.contains("interactive-code") == true)
+    }
+
     private func temporaryFileURL(named name: String) -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -252,5 +327,22 @@ private actor StubOAuthConnectorLoginService: OAuthConnectorLoginServicing {
 
     func didLoadOptions() -> Bool {
         loadedOptions
+    }
+}
+
+@MainActor
+private final class SettingsFakeOAuthWebAuthenticationRunner: OAuthWebAuthenticationRunner {
+    private let callback: (URL, String) throws -> URL
+    private(set) var receivedAuthorizationURL: URL?
+    private(set) var receivedCallbackScheme: String?
+
+    init(callback: @escaping (URL, String) throws -> URL) {
+        self.callback = callback
+    }
+
+    func authenticate(authorizationURL: URL, callbackScheme: String) async throws -> URL {
+        receivedAuthorizationURL = authorizationURL
+        receivedCallbackScheme = callbackScheme
+        return try callback(authorizationURL, callbackScheme)
     }
 }

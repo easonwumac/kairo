@@ -28,7 +28,6 @@ public struct SettingsView: View {
     @State private var connectorStatusMessage: String?
     @State private var oauthCallbackURLText: String = ""
     @State private var oauthCallbackPreviewMessage: String?
-    @State private var pendingOAuthSessions: [String: OAuthConnectorAuthorizationSession] = [:]
     @State var localModelCatalog: LocalModelCatalog
     @State var localModelStatus: LocalModelSettingsStatus
     @State var localModelDownloadProgress: LocalModelDownloadProgressState?
@@ -44,10 +43,7 @@ public struct SettingsView: View {
     private let settingsService: OpenAISettingsService
     private let mode: SettingsViewMode
     private let credentialStore: any CredentialStore
-    private let oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
-    private let oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
-    private let oauthLoginService: any OAuthConnectorLoginServicing
-    private let oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)?
+    private let oauthCoordinator: SettingsOAuthConnectorCoordinator
     let localModelCatalogService: LocalModelCatalogService?
     let localModelSettingsService: LocalModelSettingsService?
     let localModelDownloader: (any LocalModelDownloader)?
@@ -96,15 +92,16 @@ public struct SettingsView: View {
         self.settingsService = OpenAISettingsService(credentialStore: credentialStore)
         self.mode = mode
         self.credentialStore = credentialStore
-        self.oauthClientConfigurations = oauthClientConfigurations
-        self.oauthCallbackStore = oauthCallbackStore
-        self.oauthLoginService = Self.defaultOAuthLoginService(
+        let oauthLoginService = Self.defaultOAuthLoginService(
             override: oauthLoginService,
             credentialStore: credentialStore,
             oauthClientConfigurations: oauthClientConfigurations,
             oauthCallbackStore: oauthCallbackStore
         )
-        self.oauthWebAuthenticationRunner = oauthWebAuthenticationRunner
+        self.oauthCoordinator = SettingsOAuthConnectorCoordinator(
+            loginService: oauthLoginService,
+            webAuthenticationRunner: oauthWebAuthenticationRunner
+        )
         self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
@@ -134,15 +131,16 @@ public struct SettingsView: View {
         self.settingsService = settingsService
         self.mode = mode
         self.credentialStore = credentialStore
-        self.oauthClientConfigurations = oauthClientConfigurations
-        self.oauthCallbackStore = oauthCallbackStore
-        self.oauthLoginService = Self.defaultOAuthLoginService(
+        let oauthLoginService = Self.defaultOAuthLoginService(
             override: oauthLoginService,
             credentialStore: credentialStore,
             oauthClientConfigurations: oauthClientConfigurations,
             oauthCallbackStore: oauthCallbackStore
         )
-        self.oauthWebAuthenticationRunner = oauthWebAuthenticationRunner
+        self.oauthCoordinator = SettingsOAuthConnectorCoordinator(
+            loginService: oauthLoginService,
+            webAuthenticationRunner: oauthWebAuthenticationRunner
+        )
         self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
         self.localModelDownloader = localModelDownloader
@@ -903,32 +901,23 @@ public struct SettingsView: View {
     private func authorizeConnector(_ option: OAuthConnectorLoginOption) {
         Task {
             do {
-                let center = oauthLoginService
                 await MainActor.run {
                     connectorStatusMessage = KairoL10n.string("settings.oauth.openingAuthorization", option.displayName)
                 }
 
-                guard let oauthWebAuthenticationRunner else {
-                    let session = try await center.makeAuthorizationSession(for: option.integrationKey)
+                let outcome = try await oauthCoordinator.authorize(option)
+                switch outcome {
+                case .completed:
+                    await reloadConnectorOptions()
                     await MainActor.run {
-                        pendingOAuthSessions[option.providerKey] = session
+                        oauthCallbackURLText = ""
+                        oauthCallbackPreviewMessage = nil
+                        connectorStatusMessage = KairoL10n.string("settings.oauth.loginCompleted", option.displayName)
+                    }
+                case .fallback(let session):
+                    await MainActor.run {
                         openURL(session.authorizationURL)
                     }
-                    return
-                }
-
-                _ = try await OAuthConnectorInteractiveLoginService(
-                    loginCenter: center,
-                    webAuthenticationRunner: oauthWebAuthenticationRunner
-                ).signIn(
-                    for: option.integrationKey
-                )
-                await reloadConnectorOptions()
-                await MainActor.run {
-                    pendingOAuthSessions[option.providerKey] = nil
-                    oauthCallbackURLText = ""
-                    oauthCallbackPreviewMessage = nil
-                    connectorStatusMessage = KairoL10n.string("settings.oauth.loginCompleted", option.displayName)
                 }
             } catch {
                 await MainActor.run {
@@ -941,7 +930,7 @@ public struct SettingsView: View {
     private func disconnectConnector(_ option: OAuthConnectorLoginOption) {
         Task {
             do {
-                try await oauthLoginService.disconnect(providerKey: option.providerKey)
+                try await oauthCoordinator.disconnect(providerKey: option.providerKey)
                 await reloadConnectorOptions()
                 await MainActor.run {
                     connectorStatusMessage = KairoL10n.string("settings.oauth.disconnected", option.displayName)
@@ -965,7 +954,7 @@ public struct SettingsView: View {
             }
 
             do {
-                let preview = try await oauthLoginService.previewCallback(url)
+                let preview = try await oauthCoordinator.previewCallback(url)
                 await MainActor.run {
                     oauthCallbackPreviewMessage = preview.settingsStatusText
                 }
@@ -987,25 +976,17 @@ public struct SettingsView: View {
                 }
                 return
             }
-            guard let providerKey = Self.oauthProviderKey(from: url),
-                  let session = pendingOAuthSessions[providerKey] else {
-                await MainActor.run {
-                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.noPendingSession")
-                }
-                return
-            }
 
             do {
-                _ = try await oauthLoginService.exchangeCallback(
-                    url,
-                    expectedState: session.state,
-                    codeVerifier: session.codeVerifier
-                )
+                let completion = try await oauthCoordinator.completeCallbackLogin(url)
                 await reloadConnectorOptions()
                 await MainActor.run {
-                    pendingOAuthSessions[providerKey] = nil
                     oauthCallbackURLText = ""
-                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.loginCompleted", providerKey)
+                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.loginCompleted", completion.providerKey)
+                }
+            } catch SettingsOAuthConnectorCoordinatorError.noPendingSession {
+                await MainActor.run {
+                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.noPendingSession")
                 }
             } catch {
                 await MainActor.run {
@@ -1036,7 +1017,7 @@ public struct SettingsView: View {
 
     private func reloadConnectorOptions() async {
         do {
-            let options = try await oauthLoginService.loginOptions()
+            let options = try await oauthCoordinator.loginOptions()
             await MainActor.run {
                 connectorOptions = options
             }
@@ -1070,22 +1051,6 @@ public struct SettingsView: View {
         #else
         return nil
         #endif
-    }
-
-    private static func oauthProviderKey(from callbackURL: URL) -> String? {
-        guard let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
-              components.scheme == "kairo",
-              components.host == "oauth" else {
-            return nil
-        }
-        let pathComponents = components.path
-            .split(separator: "/")
-            .map(String.init)
-        guard pathComponents.count == 2,
-              pathComponents[1] == "callback" else {
-            return nil
-        }
-        return pathComponents[0]
     }
 
     private func statusColor(for readiness: OAuthConnectorLoginReadiness) -> Color {
