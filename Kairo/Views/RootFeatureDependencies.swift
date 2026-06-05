@@ -28,11 +28,12 @@ public struct RootFeatureDependencyFactory: Sendable {
             return RootFeatureDependencies()
         }
 
-        let oauthLoginService = oauthLoginService ?? OAuthConnectorLoginCenter(
-            registry: oauthConnectorRegistry,
+        let oauthLoginService = OAuthConnectorLoginServiceFactory().makeLoginService(
+            override: oauthLoginService,
             credentialStore: credentialStore,
-            clientConfigurations: oauthClientConfigurations,
-            callbackStore: oauthConnectorCallbackStore
+            oauthConnectorRegistry: oauthConnectorRegistry,
+            oauthClientConfigurations: oauthClientConfigurations,
+            oauthCallbackStore: oauthConnectorCallbackStore
         )
         return RootFeatureDependencies(
             openURLHandler: OAuthConnectorCallbackOpenURLHandler(loginService: oauthLoginService)

@@ -1,5 +1,4 @@
-#if canImport(SwiftUI)
-public struct SettingsOAuthLoginServiceFactory: Sendable {
+public struct OAuthConnectorLoginServiceFactory: Sendable {
     public init() {}
 
     public func makeLoginService(
@@ -20,4 +19,3 @@ public struct SettingsOAuthLoginServiceFactory: Sendable {
         )
     }
 }
-#endif

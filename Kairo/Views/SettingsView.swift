@@ -142,7 +142,7 @@ public struct SettingsView: View {
         self.openAIKeyCoordinator = openAIKeyCoordinator ?? SettingsOpenAIKeyCoordinator(settingsService: settingsService)
         self.mode = mode
         self.credentialStore = credentialStore
-        let oauthLoginService = SettingsOAuthLoginServiceFactory().makeLoginService(
+        let oauthLoginService = OAuthConnectorLoginServiceFactory().makeLoginService(
             override: oauthLoginService,
             credentialStore: credentialStore,
             oauthConnectorRegistry: oauthConnectorRegistry,
