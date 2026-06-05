@@ -16,7 +16,7 @@ public struct AgentToolInvocationCandidatePipelineContext: Sendable {
     public var legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping
     public var appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping
     public var fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending
-    public var safetyPolicyEngine: SafetyPolicyEngine
+    public var safetyPolicyEngine: any ActionSafetyPolicyEvaluating
 
     public init(
         request: AgentToolInvocationRequest,
@@ -34,7 +34,7 @@ public struct AgentToolInvocationCandidatePipelineContext: Sendable {
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
         fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending,
-        safetyPolicyEngine: SafetyPolicyEngine
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating
     ) {
         self.request = request
         self.normalizedText = normalizedText

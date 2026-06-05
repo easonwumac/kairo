@@ -87,6 +87,20 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         )))
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedSafetyPolicyForInstalledSkillCandidates() throws {
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: .default,
+            safetyPolicyEngine: NonConfirmingActionSafetyPolicy()
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Turn on the desk lamp"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == "homekit-desk-lamp" })
+
+        XCTAssertEqual(candidate.source, .installedSkill)
+        XCTAssertEqual(candidate.skillKind, .homeKitControl)
+        XCTAssertFalse(candidate.requiresConfirmation)
+    }
+
     func testAgentToolInvocationPlannerSuggestsAppIntegrationCatalogCandidateWithoutPrivateAppClaims() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry())
 
@@ -1324,9 +1338,19 @@ private struct FixedInstalledSkillToolInvocationCandidateMapper: InstalledSkillT
         normalizedText: String,
         matcher: any AgentToolInvocationCandidateMatching,
         parser: any AgentToolInvocationActionParsing,
-        safetyPolicyEngine: SafetyPolicyEngine
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating
     ) -> AgentToolInvocationCandidate? {
         candidate
+    }
+}
+
+private struct NonConfirmingActionSafetyPolicy: ActionSafetyPolicyEvaluating {
+    func evaluate(_ action: AgentAction) -> SafetyPolicyDecision {
+        SafetyPolicyDecision(
+            allowed: true,
+            requiresConfirmation: false,
+            reason: "test policy"
+        )
     }
 }
 
@@ -1339,7 +1363,7 @@ private struct FixedInstalledSkillCandidateCollector: AgentInstalledSkillCandida
         parser: any AgentToolInvocationActionParsing,
         candidateMatcher: any AgentToolInvocationCandidateMatching,
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
-        safetyPolicyEngine: SafetyPolicyEngine
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating
     ) -> [AgentToolInvocationCandidate] {
         candidates
     }
@@ -1485,7 +1509,7 @@ private func makePrimaryCandidateContext(
     installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping = FixedInstalledSkillToolInvocationCandidateMapper(candidate: nil),
     legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping = FixedLegacyIntegrationToolInvocationCandidateMapper(candidate: nil),
     appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = FixedAppIntegrationToolInvocationCandidateMapper(candidate: nil),
-    safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
+    safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine()
 ) -> AgentPrimaryToolCandidateContext {
     AgentPrimaryToolCandidateContext(
         request: AgentToolInvocationRequest(userText: userText),
@@ -1528,7 +1552,7 @@ private func makePipelineContext(
         requiresConfirmation: true,
         handoffSummary: "Fallback helper"
     )),
-    safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
+    safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine()
 ) -> AgentToolInvocationCandidatePipelineContext {
     AgentToolInvocationCandidatePipelineContext(
         request: AgentToolInvocationRequest(userText: userText),

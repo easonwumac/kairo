@@ -15,7 +15,7 @@ public struct AgentToolCandidatePlanningDependencies: Sendable {
     public var fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending
     public var candidatePipeline: any AgentToolInvocationCandidatePipelining
     public var candidateFilter: any AgentToolCandidateFiltering
-    public var safetyPolicyEngine: SafetyPolicyEngine
+    public var safetyPolicyEngine: any ActionSafetyPolicyEvaluating
 
     public init(
         integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
@@ -33,7 +33,7 @@ public struct AgentToolCandidatePlanningDependencies: Sendable {
         candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
-        safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine()
     ) {
         self.integrationRegistry = integrationRegistry
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
@@ -128,7 +128,7 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
         set { candidatePlanning.candidateFilter = newValue }
     }
 
-    public var safetyPolicyEngine: SafetyPolicyEngine {
+    public var safetyPolicyEngine: any ActionSafetyPolicyEvaluating {
         get { candidatePlanning.safetyPolicyEngine }
         set { candidatePlanning.safetyPolicyEngine = newValue }
     }
@@ -153,7 +153,7 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
         candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
-        safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine()
     ) {
         self.init(candidatePlanning: AgentToolCandidatePlanningDependencies(
             integrationRegistry: integrationRegistry,

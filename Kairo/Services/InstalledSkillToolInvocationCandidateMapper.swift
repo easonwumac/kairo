@@ -6,7 +6,7 @@ public protocol InstalledSkillToolInvocationCandidateMapping: Sendable {
         normalizedText: String,
         matcher: any AgentToolInvocationCandidateMatching,
         parser: any AgentToolInvocationActionParsing,
-        safetyPolicyEngine: SafetyPolicyEngine
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating
     ) -> AgentToolInvocationCandidate?
 }
 
@@ -18,7 +18,7 @@ public struct DefaultInstalledSkillToolInvocationCandidateMapper: InstalledSkill
         normalizedText: String,
         matcher: any AgentToolInvocationCandidateMatching,
         parser: any AgentToolInvocationActionParsing,
-        safetyPolicyEngine: SafetyPolicyEngine
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating
     ) -> AgentToolInvocationCandidate? {
         switch skill.kind {
         case .homeKitControl:

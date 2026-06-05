@@ -12,7 +12,7 @@ public struct AgentPrimaryToolCandidateContext: Sendable {
     public var installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping
     public var legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping
     public var appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping
-    public var safetyPolicyEngine: SafetyPolicyEngine
+    public var safetyPolicyEngine: any ActionSafetyPolicyEvaluating
 
     public init(
         request: AgentToolInvocationRequest,
@@ -26,7 +26,7 @@ public struct AgentPrimaryToolCandidateContext: Sendable {
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
-        safetyPolicyEngine: SafetyPolicyEngine
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating
     ) {
         self.request = request
         self.normalizedText = normalizedText

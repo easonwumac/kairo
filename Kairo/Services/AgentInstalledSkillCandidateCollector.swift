@@ -7,7 +7,7 @@ public protocol AgentInstalledSkillCandidateCollecting: Sendable {
         parser: any AgentToolInvocationActionParsing,
         candidateMatcher: any AgentToolInvocationCandidateMatching,
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
-        safetyPolicyEngine: SafetyPolicyEngine
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating
     ) -> [AgentToolInvocationCandidate]
 }
 
@@ -20,7 +20,7 @@ public struct DefaultAgentInstalledSkillCandidateCollector: AgentInstalledSkillC
         parser: any AgentToolInvocationActionParsing,
         candidateMatcher: any AgentToolInvocationCandidateMatching,
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
-        safetyPolicyEngine: SafetyPolicyEngine
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating
     ) -> [AgentToolInvocationCandidate] {
         skillCatalog.installedSkills.compactMap { skill in
             installedSkillCandidateMapper.candidate(

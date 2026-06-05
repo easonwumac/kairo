@@ -33,7 +33,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending = DefaultAgentFallbackActionCandidateAppender(),
         candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine()
     ) {
         self.init(
             candidatePlanning: AgentToolCandidatePlanningDependencies(

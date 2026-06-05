@@ -29,7 +29,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
-        safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine()
     ) {
         self.init(
             skillCatalog: skillCatalog,

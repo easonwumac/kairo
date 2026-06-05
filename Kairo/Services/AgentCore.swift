@@ -39,7 +39,7 @@ public actor AgentCore {
         toolPlanningRequestBuilder: (any AgentToolPlanningRequestBuilding)? = nil,
         responseActionPlanner: (any AgentResponseActionPlanning)? = nil,
         completionRequestBuilder: (any AgentCompletionRequestBuilding)? = nil,
-        safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine(),
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         memoryCandidateExtractor: any MemoryCandidateExtracting = MemoryCandidateExtractor()
     ) {
@@ -81,7 +81,7 @@ public actor AgentCore {
         integrationRegistry: any AppIntegrationRegistryProviding,
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding,
         toolCatalog: any BuiltInPhoneToolCatalogProviding,
-        safetyPolicyEngine: SafetyPolicyEngine
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating
     ) -> AgentToolCandidatePlanningDependencies {
         AgentToolCandidatePlanningDependencies(
             integrationRegistry: integrationRegistry,

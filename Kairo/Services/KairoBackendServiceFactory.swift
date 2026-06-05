@@ -120,7 +120,7 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
     }
 
     public func makeToolCandidatePlanningDependencies(
-        safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine()
     ) -> AgentToolCandidatePlanningDependencies {
         AgentToolCandidatePlanningDependencies(
             integrationRegistry: dependencies.oauthConnectorRegistry,
