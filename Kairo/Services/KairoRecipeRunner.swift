@@ -21,16 +21,17 @@ public struct KairoRecipeRunner: Sendable {
         recipeStore: any KairoRecipeStore,
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        toolCatalog: (any BuiltInPhoneToolCatalogProviding)? = nil,
         actionGate: (any PhoneToolActionGating)? = nil,
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
-        appIntegrationActionDrafter: any AppIntegrationActionDrafting = DefaultAppIntegrationActionDrafter()
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)? = nil,
+        appIntegrationActionDrafter: (any AppIntegrationActionDrafting)? = nil
     ) {
+        let runtimeToolCatalog = toolCatalog ?? BuiltInPhoneToolCatalog()
         self.init(dependencies: KairoRecipeRunnerDependencies(
             recipeStore: recipeStore,
             memoryStore: memoryStore,
             aiProvider: aiProvider,
-            actionGate: actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog),
+            actionGate: actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: runtimeToolCatalog),
             appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             appIntegrationActionDrafter: appIntegrationActionDrafter
         ))

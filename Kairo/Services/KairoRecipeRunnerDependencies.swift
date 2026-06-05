@@ -15,20 +15,22 @@ public struct KairoRecipeRunnerDependencies: Sendable {
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
         actionGate: any PhoneToolActionGating,
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
-        appIntegrationActionDrafter: any AppIntegrationActionDrafting = DefaultAppIntegrationActionDrafter(),
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)? = nil,
+        appIntegrationActionDrafter: (any AppIntegrationActionDrafting)? = nil,
         integrationActionDrafter: (any KairoRecipeIntegrationActionDrafting)? = nil,
         inputResolver: any KairoRecipeStepInputResolving = DefaultKairoRecipeStepInputResolver()
     ) {
+        let runtimeAppIntegrationSkillCatalog = appIntegrationSkillCatalog ?? AppIntegrationSkillCatalog()
+        let runtimeAppIntegrationActionDrafter = appIntegrationActionDrafter ?? DefaultAppIntegrationActionDrafter()
         self.recipeStore = recipeStore
         self.memoryStore = memoryStore
         self.aiProvider = aiProvider
         self.actionGate = actionGate
-        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
-        self.appIntegrationActionDrafter = appIntegrationActionDrafter
+        self.appIntegrationSkillCatalog = runtimeAppIntegrationSkillCatalog
+        self.appIntegrationActionDrafter = runtimeAppIntegrationActionDrafter
         self.integrationActionDrafter = integrationActionDrafter ?? CatalogBackedKairoRecipeIntegrationActionDrafter(
-            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
-            appIntegrationActionDrafter: appIntegrationActionDrafter
+            appIntegrationSkillCatalog: runtimeAppIntegrationSkillCatalog,
+            appIntegrationActionDrafter: runtimeAppIntegrationActionDrafter
         )
         self.inputResolver = inputResolver
     }
