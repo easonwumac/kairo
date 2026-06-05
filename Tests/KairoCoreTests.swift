@@ -216,6 +216,24 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(catalog.tool(for: KairoRecipeStepKind.proposeHomeAction)?.id, .homeKitPreview)
     }
 
+    func testBuiltInPhoneToolActionDescriptorProviderPrefersInjectedToolMetadata() throws {
+        var calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
+        calendarTool.permissionRequirement = .oauth
+        calendarTool.availabilityStatus = .unsupported
+        calendarTool.riskTier = .tier3HighRiskExternal
+        let provider = BuiltInPhoneToolActionDescriptorProvider(
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [calendarTool])
+        )
+
+        let descriptor = try XCTUnwrap(provider.descriptor(for: .createCalendarDraft))
+
+        XCTAssertEqual(descriptor.kind, .createCalendarDraft)
+        XCTAssertEqual(descriptor.permissionRequirement, .oauth)
+        XCTAssertEqual(descriptor.riskTier, .tier3HighRiskExternal)
+        XCTAssertEqual(descriptor.supportStatus, .unsupportedBySandbox)
+        XCTAssertEqual(provider.descriptor(for: .answer)?.kind, .answer)
+    }
+
     func testBuiltInPhoneToolCatalogEnforcesLifecycleSafetyMetadata() throws {
         let catalog = BuiltInPhoneToolCatalog()
 

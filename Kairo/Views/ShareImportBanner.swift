@@ -122,10 +122,20 @@ struct CalendarActionReviewBanner: View {
 struct HandoffActionReviewBanner: View {
     let action: AgentAction
     let review: () -> Void
-    private let catalog = SandboxActionCatalog()
+    private let descriptorProvider: any AgentActionDescriptorProviding
+
+    init(
+        action: AgentAction,
+        descriptorProvider: any AgentActionDescriptorProviding = BuiltInPhoneToolActionDescriptorProvider(),
+        review: @escaping () -> Void
+    ) {
+        self.action = action
+        self.descriptorProvider = descriptorProvider
+        self.review = review
+    }
 
     var body: some View {
-        let displayName = catalog.descriptor(for: action.kind)?.displayName ?? action.title
+        let displayName = descriptorProvider.descriptor(for: action.kind)?.displayName ?? action.title
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                 Label(KairoL10n.string("chat.share.review.handoffReady"), systemImage: "arrow.up.forward.app")

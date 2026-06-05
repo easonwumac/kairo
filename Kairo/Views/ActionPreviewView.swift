@@ -12,11 +12,12 @@ public struct ActionPreviewView: View {
     public init(
         action: AgentAction,
         descriptor: SandboxActionDescriptor? = nil,
+        descriptorProvider: any AgentActionDescriptorProviding = BuiltInPhoneToolActionDescriptorProvider(),
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void
     ) {
         self.action = action
-        self.descriptor = descriptor ?? SandboxActionCatalog().descriptor(for: action.kind)
+        self.descriptor = descriptor ?? descriptorProvider.descriptor(for: action.kind)
         self.onConfirm = onConfirm
         self.onCancel = onCancel
     }

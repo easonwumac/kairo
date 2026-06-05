@@ -29,6 +29,10 @@ public struct SandboxActionDescriptor: Identifiable, Codable, Equatable, Sendabl
     }
 }
 
+public protocol AgentActionDescriptorProviding: Sendable {
+    func descriptor(for kind: AgentActionKind) -> SandboxActionDescriptor?
+}
+
 public enum SandboxActionSupportStatus: String, Codable, Equatable, Sendable {
     case implemented
     case scaffolded
@@ -58,7 +62,7 @@ public enum SandboxActionSupportStatus: String, Codable, Equatable, Sendable {
     }
 }
 
-public struct SandboxActionCatalog: Sendable {
+public struct SandboxActionCatalog: AgentActionDescriptorProviding {
     public var descriptors: [SandboxActionDescriptor]
 
     public init(descriptors: [SandboxActionDescriptor] = SandboxActionCatalog.defaultDescriptors) {

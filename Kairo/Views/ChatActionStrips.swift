@@ -4,12 +4,22 @@ import SwiftUI
 struct ProposedActionsStrip: View {
     let actions: [AgentAction]
     let onSelect: (AgentAction) -> Void
-    private let catalog = SandboxActionCatalog()
+    private let descriptorProvider: any AgentActionDescriptorProviding
+
+    init(
+        actions: [AgentAction],
+        descriptorProvider: any AgentActionDescriptorProviding = BuiltInPhoneToolActionDescriptorProvider(),
+        onSelect: @escaping (AgentAction) -> Void
+    ) {
+        self.actions = actions
+        self.descriptorProvider = descriptorProvider
+        self.onSelect = onSelect
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(actions) { action in
-                if let descriptor = catalog.descriptor(for: action.kind) {
+                if let descriptor = descriptorProvider.descriptor(for: action.kind) {
                     let riskSummary = actionRiskSummary(for: action)
                     Button {
                         onSelect(action)
