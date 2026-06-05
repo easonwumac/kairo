@@ -625,6 +625,12 @@
 "settings.routing.localOptional" = "Local optional";
 "settings.routing.details.title" = "Setup details";
 "settings.routing.details.subtitle" = "Cloud key, accounts, and local model status stay here.";
+"settings.appearance.section" = "Appearance";
+"settings.appearance.picker" = "App appearance";
+"settings.appearance.system" = "System";
+"settings.appearance.dark" = "Dark";
+"settings.appearance.light" = "Light";
+"settings.appearance.detail" = "Keep the same glass layout and switch only the base tone.";
 "settings.connection.section" = "Connection setup";
 "settings.connection.show" = "Show connection setup";
 "settings.connection.hide" = "Hide connection setup";

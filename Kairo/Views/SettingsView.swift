@@ -20,6 +20,7 @@ public enum SettingsViewMode: String, Sendable {
 
 public struct SettingsView: View {
     @Environment(\.openURL) private var openURL
+    @AppStorage(KairoAppearancePreference.storageKey) private var appearancePreferenceRawValue = KairoAppearancePreference.system.rawValue
 
     @State private var apiKey: String = ""
     @State private var hasAPIKey: Bool = false
@@ -194,6 +195,7 @@ public struct SettingsView: View {
                         connectedConnectorCount: connectedConnectorCount,
                         localModelInstalled: localModelStatus.localModelInstalled
                     )
+                    appearanceSettingsSection
                     connectionSetupSection
 
                     if let connectorStatusMessage {
@@ -227,6 +229,35 @@ public struct SettingsView: View {
             oauthConnectorsSection
             privacySettingsSection
         }
+    }
+
+    private var appearanceSettingsSection: some View {
+        KairoGroupedSurface {
+            VStack(alignment: .leading, spacing: 10) {
+                Label(KairoL10n.string("settings.appearance.section"), systemImage: "circle.lefthalf.filled")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+
+                Picker(KairoL10n.string("settings.appearance.picker"), selection: Binding(
+                    get: { KairoAppearancePreference(rawValue: appearancePreferenceRawValue) ?? .system },
+                    set: { appearancePreferenceRawValue = $0.rawValue }
+                )) {
+                    ForEach(KairoAppearancePreference.allCases) { preference in
+                        Text(preference.title)
+                            .tag(preference)
+                            .accessibilityIdentifier("settings.appearance.\(preference.rawValue)")
+                    }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("settings.appearance.picker")
+
+                Text(KairoL10n.string("settings.appearance.detail"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityIdentifier("settings.appearance.section")
     }
 
     private var accountSettingsSection: some View {

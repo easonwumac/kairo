@@ -5,6 +5,7 @@ public struct RootView: View {
     private let environment: KairoEnvironment
     private let rootDependencies: RootFeatureDependencies
     private let settingsMode: SettingsViewMode
+    @AppStorage(KairoAppearancePreference.storageKey) private var appearancePreferenceRawValue = KairoAppearancePreference.system.rawValue
     @State private var selectedSection: RootSection = .chat
     @State private var isMenuPresented = false
 
@@ -50,12 +51,17 @@ public struct RootView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Self.fullScreenBackground.ignoresSafeArea())
+        .preferredColorScheme(appearancePreference.colorScheme)
         .onOpenURL { url in
             guard let openURLHandler = rootDependencies.openURLHandler else { return }
             Task {
                 try? await openURLHandler.handle(url)
             }
         }
+    }
+
+    private var appearancePreference: KairoAppearancePreference {
+        KairoAppearancePreference(rawValue: appearancePreferenceRawValue) ?? .system
     }
 
     private var shellMarker: some View {
@@ -71,7 +77,7 @@ public struct RootView: View {
             KairoDesign.background
             RadialGradient(
                 colors: [
-                    KairoDesign.blue.opacity(0.26),
+                    KairoDesign.topGlow,
                     Color.clear
                 ],
                 center: .topLeading,
@@ -80,9 +86,9 @@ public struct RootView: View {
             )
             LinearGradient(
                 colors: [
-                    KairoDesign.teal.opacity(0.10),
+                    KairoDesign.secondaryGlow,
                     Color.clear,
-                    Color.black.opacity(0.18)
+                    KairoDesign.bottomShade
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing

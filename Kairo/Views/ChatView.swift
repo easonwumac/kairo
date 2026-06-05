@@ -360,7 +360,7 @@ public struct ChatView: View {
                 .accessibilityLabel(KairoL10n.string("chat.composer.send"))
                 .accessibilityIdentifier("chat.composer.send")
             }
-            .padding(.leading, 0)
+            .padding(.leading, 5)
             .padding(.trailing, 5)
             .padding(.vertical, 3)
             .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 17, style: .continuous))

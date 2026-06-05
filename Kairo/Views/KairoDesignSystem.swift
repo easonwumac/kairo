@@ -1,21 +1,173 @@
 #if canImport(SwiftUI)
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
+
+enum KairoAppearancePreference: String, CaseIterable, Identifiable {
+    case system
+    case dark
+    case light
+
+    static let storageKey = "kairo.appearance.preference"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system:
+            return KairoL10n.string("settings.appearance.system")
+        case .dark:
+            return KairoL10n.string("settings.appearance.dark")
+        case .light:
+            return KairoL10n.string("settings.appearance.light")
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system:
+            return nil
+        case .dark:
+            return .dark
+        case .light:
+            return .light
+        }
+    }
+
+    static var current: KairoAppearancePreference {
+        let storedValue = UserDefaults.standard.string(forKey: storageKey)
+        return storedValue.flatMap(KairoAppearancePreference.init(rawValue:)) ?? .system
+    }
+}
 
 enum KairoDesign {
-    static let ink = Color(.sRGB, red: 0.92, green: 0.96, blue: 1.00, opacity: 1)
-    static let muted = Color(.sRGB, red: 0.58, green: 0.66, blue: 0.76, opacity: 1)
-    static let background = Color(.sRGB, red: 0.035, green: 0.055, blue: 0.085, opacity: 1)
-    static let groupedSurface = Color(.sRGB, red: 0.075, green: 0.105, blue: 0.145, opacity: 0.92)
-    static let elevatedSurface = Color(.sRGB, red: 0.105, green: 0.145, blue: 0.195, opacity: 0.94)
-    static let softSurface = Color(.sRGB, red: 0.12, green: 0.17, blue: 0.23, opacity: 1)
-    static let line = Color.white.opacity(0.10)
-    static let teal = Color(.sRGB, red: 0.38, green: 0.87, blue: 0.73, opacity: 1)
-    static let blue = Color(.sRGB, red: 0.29, green: 0.43, blue: 0.86, opacity: 1)
-    static let amber = Color(.sRGB, red: 1.00, green: 0.72, blue: 0.42, opacity: 1)
-    static let red = Color(.sRGB, red: 0.90, green: 0.20, blue: 0.25, opacity: 1)
-    static let green = Color(.sRGB, red: 0.11, green: 0.55, blue: 0.38, opacity: 1)
-    static let violet = Color(.sRGB, red: 0.45, green: 0.35, blue: 0.82, opacity: 1)
-    static let shadow = Color.black.opacity(0.30)
+    static var ink: Color {
+        color(
+            light: (0.08, 0.12, 0.18, 1.00),
+            dark: (0.92, 0.96, 1.00, 1.00)
+        )
+    }
+
+    static var muted: Color {
+        color(
+            light: (0.42, 0.49, 0.60, 1.00),
+            dark: (0.58, 0.66, 0.76, 1.00)
+        )
+    }
+
+    static var background: Color {
+        color(
+            light: (0.92, 0.96, 1.00, 1.00),
+            dark: (0.035, 0.055, 0.085, 1.00)
+        )
+    }
+
+    static var groupedSurface: Color {
+        color(
+            light: (0.96, 0.985, 1.00, 0.92),
+            dark: (0.075, 0.105, 0.145, 0.92)
+        )
+    }
+
+    static var elevatedSurface: Color {
+        color(
+            light: (0.985, 0.995, 1.00, 0.94),
+            dark: (0.105, 0.145, 0.195, 0.94)
+        )
+    }
+
+    static var softSurface: Color {
+        color(
+            light: (0.90, 0.95, 1.00, 1.00),
+            dark: (0.12, 0.17, 0.23, 1.00)
+        )
+    }
+
+    static var line: Color {
+        color(
+            light: (0.00, 0.00, 0.00, 0.08),
+            dark: (1.00, 1.00, 1.00, 0.10)
+        )
+    }
+
+    static var teal: Color { Color(.sRGB, red: 0.38, green: 0.87, blue: 0.73, opacity: 1) }
+    static var blue: Color { Color(.sRGB, red: 0.29, green: 0.43, blue: 0.86, opacity: 1) }
+    static var amber: Color { Color(.sRGB, red: 1.00, green: 0.72, blue: 0.42, opacity: 1) }
+    static var red: Color { Color(.sRGB, red: 0.90, green: 0.20, blue: 0.25, opacity: 1) }
+    static var green: Color { Color(.sRGB, red: 0.11, green: 0.55, blue: 0.38, opacity: 1) }
+    static var violet: Color { Color(.sRGB, red: 0.45, green: 0.35, blue: 0.82, opacity: 1) }
+
+    static var shadow: Color {
+        color(
+            light: (0.00, 0.00, 0.00, 0.12),
+            dark: (0.00, 0.00, 0.00, 0.30)
+        )
+    }
+
+    static var topGlow: Color {
+        color(
+            light: (0.29, 0.43, 0.86, 0.16),
+            dark: (0.29, 0.43, 0.86, 0.26)
+        )
+    }
+
+    static var secondaryGlow: Color {
+        color(
+            light: (0.38, 0.87, 0.73, 0.12),
+            dark: (0.38, 0.87, 0.73, 0.10)
+        )
+    }
+
+    static var bottomShade: Color {
+        color(
+            light: (1.00, 1.00, 1.00, 0.20),
+            dark: (0.00, 0.00, 0.00, 0.18)
+        )
+    }
+
+    private static func color(
+        light: (red: Double, green: Double, blue: Double, opacity: Double),
+        dark: (red: Double, green: Double, blue: Double, opacity: Double)
+    ) -> Color {
+        switch KairoAppearancePreference.current {
+        case .light:
+            return fixedColor(light)
+        case .dark:
+            return fixedColor(dark)
+        case .system:
+            #if canImport(UIKit)
+            return Color(UIColor { traitCollection in
+                let palette = traitCollection.userInterfaceStyle == .light ? light : dark
+                return UIColor(
+                    red: palette.red,
+                    green: palette.green,
+                    blue: palette.blue,
+                    alpha: palette.opacity
+                )
+            })
+            #elseif canImport(AppKit)
+            return Color(NSColor(name: nil) { appearance in
+                let bestMatch = appearance.bestMatch(from: [.aqua, .darkAqua])
+                let palette = bestMatch == .aqua ? light : dark
+                return NSColor(
+                    red: palette.red,
+                    green: palette.green,
+                    blue: palette.blue,
+                    alpha: palette.opacity
+                )
+            })
+            #else
+            return fixedColor(dark)
+            #endif
+        }
+    }
+
+    private static func fixedColor(_ palette: (red: Double, green: Double, blue: Double, opacity: Double)) -> Color {
+        Color(.sRGB, red: palette.red, green: palette.green, blue: palette.blue, opacity: palette.opacity)
+    }
 }
 
 struct KairoMark: View {
