@@ -20,7 +20,7 @@ public struct SettingsFeatureDependencies {
     public init(
         settingsService: OpenAISettingsService,
         credentialStore: any CredentialStore,
-        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
@@ -55,7 +55,7 @@ public struct SettingsFeatureDependencyFactory: Sendable {
 
     public func makeDependencies(
         credentialStore: any CredentialStore,
-        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,

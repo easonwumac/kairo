@@ -671,6 +671,23 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertNil(dependencies.oauthWebAuthenticationRunner)
     }
 
+    func testSettingsFeatureDependencyFactoryDefaultsToHarnessOAuthRegistry() throws {
+        let dependencies = SettingsFeatureDependencyFactory().makeDependencies(
+            credentialStore: InMemoryCredentialStore(),
+            oauthWebAuthenticationRunner: nil
+        )
+
+        let gmail = try XCTUnwrap(dependencies.oauthConnectorRegistry.integration(for: "gmail-google-workspace"))
+        let notion = try XCTUnwrap(dependencies.oauthConnectorRegistry.integration(for: "notion"))
+        let todoist = try XCTUnwrap(dependencies.oauthConnectorRegistry.integration(for: "todoist"))
+        let github = try XCTUnwrap(dependencies.oauthConnectorRegistry.integration(for: "github"))
+
+        XCTAssertEqual(gmail.oauth?.providerKey, "google")
+        XCTAssertEqual(notion.oauth?.providerKey, "notion")
+        XCTAssertEqual(todoist.oauth?.providerKey, "todoist")
+        XCTAssertEqual(github.oauth?.providerKey, "github")
+    }
+
     @MainActor
     func testKairoEnvironmentBuildsChatFeatureDependenciesForCompositionRoot() async throws {
         let chatHistoryStore = InMemoryChatHistoryStore()
@@ -952,6 +969,26 @@ final class KairoBackendAPITests: XCTestCase {
         let preview = try XCTUnwrap(storedPreview)
 
         XCTAssertEqual(preview.providerKey, "custom-mail")
+        XCTAssertEqual(preview.authorizationCodeLength, "sample-code".count)
+    }
+
+    func testRootFeatureDependencyFactoryDefaultsToHarnessOAuthRegistryForCallbacks() async throws {
+        let callbackStore = try await FileBackedOAuthConnectorCallbackStore(
+            fileURL: temporaryBackendTestFileURL(named: "factory-default-oauth-callback-previews.json")
+        )
+        let dependencies = RootFeatureDependencyFactory().makeDependencies(
+            oauthConnectorCallbackStore: callbackStore,
+            credentialStore: InMemoryCredentialStore()
+        )
+
+        let openURLHandler = try XCTUnwrap(dependencies.openURLHandler)
+        try await openURLHandler.handle(
+            URL(string: "kairo://oauth/todoist/callback?code=sample-code&state=state-123")!
+        )
+        let storedPreview = await callbackStore.latestPreview(for: "todoist")
+        let preview = try XCTUnwrap(storedPreview)
+
+        XCTAssertEqual(preview.integrationKey, "todoist")
         XCTAssertEqual(preview.authorizationCodeLength, "sample-code".count)
     }
 
