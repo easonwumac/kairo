@@ -99,6 +99,33 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(response.message, "Factory response")
     }
 
+    func testSettingsBackendServiceFactoryBuildsSettingsAPIFromInjectedDependencies() async throws {
+        let credentialStore = InMemoryCredentialStore()
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: credentialStore,
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            oauthConnectorRegistry: IntegrationRegistry(integrations: [
+                backendTestOAuthIntegration(key: "custom-mail", displayName: "Custom Mail", providerKey: "custom-mail")
+            ]),
+            oauthClientConfigurations: [
+                "custom-mail": OAuthConnectorClientConfiguration(
+                    clientID: "custom-client",
+                    redirectURI: "kairo://oauth/custom-mail/callback"
+                )
+            ]
+        )
+        let settingsAPI = KairoSettingsBackendServiceFactory(dependencies: environment).makeSettingsAPI()
+
+        try await settingsAPI.saveOpenAIAPIKey("settings-factory-key")
+        let savedKey = try await credentialStore.readSecret(for: CredentialKey.openAIAPIKey)
+        let options = try await settingsAPI.oauthLoginOptions()
+
+        XCTAssertEqual(savedKey, "settings-factory-key")
+        XCTAssertEqual(options.map(\.integrationKey), ["custom-mail"])
+        XCTAssertEqual(options.first?.readiness, .readyToAuthorize)
+    }
+
     func testBackendCompositionSharesInjectedPhoneToolCatalogAcrossAccessAndChat() async throws {
         let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
         let toolCatalog = BuiltInPhoneToolCatalog(tools: [calendarTool])

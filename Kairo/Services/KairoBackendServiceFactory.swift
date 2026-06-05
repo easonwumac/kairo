@@ -32,11 +32,32 @@ public protocol KairoBackendServiceMaking: Sendable {
     func makeAccessAPI() -> any KairoAccessAPI
 }
 
-public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDependencies>: KairoBackendServiceMaking {
+public struct KairoSettingsBackendServiceFactory<Dependencies: KairoBackendDependencies>: Sendable {
     private let dependencies: Dependencies
 
     public init(dependencies: Dependencies) {
         self.dependencies = dependencies
+    }
+
+    public func makeSettingsAPI() -> any KairoSettingsAPI {
+        KairoSettingsBackendService(
+            openAISettingsService: OpenAISettingsService(credentialStore: dependencies.credentialStore),
+            oauthLoginCenter: OAuthConnectorLoginCenter(
+                registry: dependencies.oauthConnectorRegistry,
+                credentialStore: dependencies.credentialStore,
+                clientConfigurations: dependencies.oauthClientConfigurations
+            )
+        )
+    }
+}
+
+public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDependencies>: KairoBackendServiceMaking {
+    private let dependencies: Dependencies
+    private let settingsFactory: KairoSettingsBackendServiceFactory<Dependencies>
+
+    public init(dependencies: Dependencies) {
+        self.dependencies = dependencies
+        self.settingsFactory = KairoSettingsBackendServiceFactory(dependencies: dependencies)
     }
 
     public func makeChatAPI() -> any KairoChatAPI {
@@ -99,14 +120,7 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
     }
 
     public func makeSettingsAPI() -> any KairoSettingsAPI {
-        KairoSettingsBackendService(
-            openAISettingsService: OpenAISettingsService(credentialStore: dependencies.credentialStore),
-            oauthLoginCenter: OAuthConnectorLoginCenter(
-                registry: dependencies.oauthConnectorRegistry,
-                credentialStore: dependencies.credentialStore,
-                clientConfigurations: dependencies.oauthClientConfigurations
-            )
-        )
+        settingsFactory.makeSettingsAPI()
     }
 
     public func makeAccessAPI() -> any KairoAccessAPI {
