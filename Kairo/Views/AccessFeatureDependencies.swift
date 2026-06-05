@@ -20,9 +20,27 @@ public struct AccessFeatureDependencies {
     }
 }
 
+public struct AccessFeatureDependencyFactory: Sendable {
+    public init() {}
+
+    public func makeDependencies(
+        accessAPI: (any KairoAccessAPI)? = nil,
+        skillManagerService: AgentSkillManagerService? = nil,
+        marketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil,
+        initialSkillCatalog: AgentSkillCatalog = .defaultWithMarketplaceSamples
+    ) -> AccessFeatureDependencies {
+        AccessFeatureDependencies(
+            accessAPI: accessAPI,
+            skillManagerService: skillManagerService,
+            marketplaceCatalogService: marketplaceCatalogService,
+            initialSkillCatalog: initialSkillCatalog
+        )
+    }
+}
+
 public extension KairoEnvironment {
     var accessFeatureDependencies: AccessFeatureDependencies {
-        AccessFeatureDependencies(
+        AccessFeatureDependencyFactory().makeDependencies(
             accessAPI: backendAPI.access,
             skillManagerService: agentSkillManagerService,
             marketplaceCatalogService: agentSkillMarketplaceCatalogService

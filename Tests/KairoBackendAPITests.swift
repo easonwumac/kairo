@@ -446,6 +446,43 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertNil(dependencies.marketplaceCatalogService)
     }
 
+    func testAccessFeatureDependencyFactoryWiresAccessAndSkillBoundaries() async throws {
+        let accessAPI = KairoAccessBackendService(permissionService: StubPermissionService())
+        let skillManagerService = try await makeBackendTestAgentSkillManagerService()
+        let marketplaceCatalogService = try KairoUITestingSkillFactory.marketplaceCatalogService()
+        let initialCatalog = AgentSkillCatalog(skills: [
+            AgentSkill.marketplaceTemplate(
+                id: "factory-skill",
+                displayName: "Factory Skill",
+                summary: "Factory wiring skill.",
+                requiredCapabilities: [.appIntents],
+                downloadURL: URL(string: "https://example.com/factory-skill.json")!
+            )
+        ])
+
+        let dependencies = AccessFeatureDependencyFactory().makeDependencies(
+            accessAPI: accessAPI,
+            skillManagerService: skillManagerService,
+            marketplaceCatalogService: marketplaceCatalogService,
+            initialSkillCatalog: initialCatalog
+        )
+
+        let injectedAccessAPI = try XCTUnwrap(dependencies.accessAPI)
+        let injectedSkillManagerService = try XCTUnwrap(dependencies.skillManagerService)
+        let injectedMarketplaceCatalogService = try XCTUnwrap(dependencies.marketplaceCatalogService)
+        let tools = await injectedAccessAPI.tools()
+        let skillCatalog = try await injectedSkillManagerService.catalog()
+        let remoteCatalog = try await injectedMarketplaceCatalogService.fetchCatalog()
+
+        XCTAssertTrue(tools.contains { $0.toolID == .reminderWrite })
+        XCTAssertFalse(skillCatalog.skills.isEmpty)
+        XCTAssertEqual(dependencies.initialSkillCatalog.skills.map(\.id), ["factory-skill"])
+        XCTAssertEqual(remoteCatalog.catalog.skills.map(\.id), [
+            "marketplace-weather-briefing",
+            "marketplace-qwen-oauth-workflow"
+        ])
+    }
+
     func testKairoEnvironmentBuildsRootOpenURLHandlerForOAuthCallbacks() async throws {
         let callbackStore = try await FileBackedOAuthConnectorCallbackStore(
             fileURL: temporaryBackendTestFileURL(named: "oauth-callback-previews.json")

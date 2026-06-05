@@ -42,8 +42,7 @@ public struct PermissionHubView: View {
         initialSkillCatalog: AgentSkillCatalog = .defaultWithMarketplaceSamples
     ) {
         self.init(
-            dependencies: AccessFeatureDependencies(
-                accessAPI: nil,
+            dependencies: AccessFeatureDependencyFactory().makeDependencies(
                 skillManagerService: skillManagerService,
                 marketplaceCatalogService: marketplaceCatalogService,
                 initialSkillCatalog: initialSkillCatalog
