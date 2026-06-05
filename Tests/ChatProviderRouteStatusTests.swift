@@ -18,7 +18,7 @@ final class ChatProviderRouteStatusTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            chatAPI: makeProviderRouteChatAPI(),
             openAISettingsService: settingsService
         )
 
@@ -49,6 +49,12 @@ final class ChatProviderRouteStatusTests: XCTestCase {
         XCTAssertEqual(
             viewModel.providerRouteStatus.warning,
             KairoL10n.string("chat.provider.warning.openAIKeyMissing", "OpenAI")
+        )
+    }
+
+    private func makeProviderRouteChatAPI() -> any KairoChatAPI {
+        KairoChatBackendService(
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
         )
     }
 }
