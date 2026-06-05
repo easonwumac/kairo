@@ -107,9 +107,17 @@ final class KairoAccessBackendAPITests: XCTestCase {
 
         XCTAssertEqual(summaries[.appleMailHandoff]?.readiness, .available)
         XCTAssertEqual(summaries[.appleMailHandoff]?.executionMode, .openURL)
+        XCTAssertEqual(
+            summaries[.appleMailHandoff]?.examplePromptKey,
+            appIntegrationSkillCatalog.skill(id: .appleMailHandoff)?.examplePromptKey
+        )
         XCTAssertEqual(summaries[.appleMailHandoff]?.canBeSuggestedAsExecutable, true)
         XCTAssertEqual(summaries[.gmailDraftAPI]?.readiness, .needsOAuth)
         XCTAssertEqual(summaries[.gmailDraftAPI]?.executionMode, .apiCall)
+        XCTAssertEqual(
+            summaries[.gmailDraftAPI]?.examplePromptKey,
+            appIntegrationSkillCatalog.skill(id: .gmailDraftAPI)?.examplePromptKey
+        )
         XCTAssertEqual(summaries[.gmailDraftAPI]?.canBeSuggestedAsExecutable, false)
         XCTAssertEqual(summaries[.draftsCreateHandoff]?.readiness, .needsInstalledApp)
         XCTAssertEqual(summaries[.draftsCreateHandoff]?.canBeSuggestedAsExecutable, false)

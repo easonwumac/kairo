@@ -45,6 +45,13 @@ final class AppIntegrationSkillCatalogTests: XCTestCase {
         }
     }
 
+    func testCatalogSkillsExposeExamplePromptMetadataForIntegrationConsole() {
+        let catalog = AppIntegrationSkillCatalog()
+
+        XCTAssertEqual(Set(catalog.skills.map(\.id)), Set(AppIntegrationSkillID.allCases))
+        XCTAssertTrue(catalog.skills.allSatisfy { !$0.examplePromptKey.isEmpty })
+    }
+
     func testURLSchemeSkillsOnlyUseVisibleOpenURLHandoff() {
         let catalog = AppIntegrationSkillCatalog()
         let urlSchemeSkills = catalog.skills.filter { $0.supportedSurfaces.contains(.urlScheme) }

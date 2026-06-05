@@ -140,6 +140,7 @@ public struct KairoAccessIntegrationSummary: Identifiable, Codable, Equatable, S
     public var riskTier: ActionRiskTier
     public var confirmationPolicy: BuiltInPhoneToolConfirmationPolicy
     public var executionMode: AppIntegrationExecutionMode
+    public var examplePromptKey: String
     public var readiness: KairoAccessIntegrationReadiness
     public var capabilityStatuses: [CapabilityKey: CapabilityStatus]
     public var requiresConfirmation: Bool
@@ -163,6 +164,7 @@ public struct KairoAccessIntegrationSummary: Identifiable, Codable, Equatable, S
         self.riskTier = skill.riskTier
         self.confirmationPolicy = skill.confirmationPolicy
         self.executionMode = skill.executionMode
+        self.examplePromptKey = skill.examplePromptKey
         self.readiness = Self.readiness(for: skill, capabilityStatuses: capabilityStatuses)
         self.capabilityStatuses = capabilityStatuses
         self.requiresConfirmation = skill.requiresConfirmation

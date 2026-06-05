@@ -186,6 +186,7 @@ public struct AppIntegrationSkill: Identifiable, Codable, Equatable, Sendable {
     public var riskTier: ActionRiskTier
     public var confirmationPolicy: BuiltInPhoneToolConfirmationPolicy
     public var previewTextKey: String
+    public var examplePromptKey: String
     public var executionMode: AppIntegrationExecutionMode
     public var endpoints: [AppIntegrationSkillEndpoint]
     public var oauth: AppIntegrationOAuthRequirement?
@@ -208,6 +209,7 @@ public struct AppIntegrationSkill: Identifiable, Codable, Equatable, Sendable {
         riskTier: ActionRiskTier,
         confirmationPolicy: BuiltInPhoneToolConfirmationPolicy,
         previewTextKey: String,
+        examplePromptKey: String? = nil,
         executionMode: AppIntegrationExecutionMode,
         endpoints: [AppIntegrationSkillEndpoint],
         oauth: AppIntegrationOAuthRequirement? = nil,
@@ -229,6 +231,7 @@ public struct AppIntegrationSkill: Identifiable, Codable, Equatable, Sendable {
         self.riskTier = riskTier
         self.confirmationPolicy = confirmationPolicy
         self.previewTextKey = previewTextKey
+        self.examplePromptKey = examplePromptKey ?? "appIntegration.\(id.rawValue).examplePrompt"
         self.executionMode = executionMode
         self.endpoints = endpoints
         self.oauth = oauth
