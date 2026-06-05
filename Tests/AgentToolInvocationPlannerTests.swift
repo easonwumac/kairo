@@ -236,6 +236,32 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertTrue(plan.proposedActions.contains(injectedAction))
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedCandidateMatcher() throws {
+        let skill = AgentSkill(
+            id: "custom-injected-skill",
+            displayName: "Injected Skill",
+            summary: "Only the injected matcher should surface this skill.",
+            kind: .custom,
+            source: .userCreated,
+            installationStatus: .installed,
+            requiredCapabilities: [.chat]
+        )
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: [skill]),
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
+            writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
+            candidateMatcher: FixedAgentToolInvocationCandidateMatcher(skillMatches: true)
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "opaque request"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == "custom-injected-skill" })
+
+        XCTAssertEqual(candidate.source, .installedSkill)
+        XCTAssertEqual(candidate.skillKind, .custom)
+    }
+
     func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithoutExecutableAction() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry(integrations: []))
 
@@ -663,6 +689,36 @@ private struct FixedWriteActionCandidateProvider: AgentWriteActionCandidateProvi
         parser: any AgentToolInvocationActionParsing
     ) -> [AgentToolInvocationCandidate] {
         candidates
+    }
+}
+
+private struct FixedAgentToolInvocationCandidateMatcher: AgentToolInvocationCandidateMatching {
+    var skillMatches = false
+    var integrationMatches = false
+    var appIntegrationSkillMatches = false
+
+    func matches(
+        skill: AgentSkill,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> Bool {
+        skillMatches
+    }
+
+    func matches(
+        integration: AppIntegration,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> Bool {
+        integrationMatches
+    }
+
+    func matches(
+        appIntegrationSkill: AppIntegrationSkill,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> Bool {
+        appIntegrationSkillMatches
     }
 }
 

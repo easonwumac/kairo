@@ -14,6 +14,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
     public var appIntegrationActionParser: any AgentToolInvocationActionParsing
     public var visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding
     public var writeActionCandidateProvider: any AgentWriteActionCandidateProviding
+    public var candidateMatcher: any AgentToolInvocationCandidateMatching
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var safetyPolicyEngine: SafetyPolicyEngine
 
@@ -24,6 +25,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding = DefaultAgentVisibleHandoffCandidateProvider(),
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding = DefaultAgentWriteActionCandidateProvider(),
+        candidateMatcher: any AgentToolInvocationCandidateMatching = DefaultAgentToolInvocationCandidateMatcher(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
     ) {
@@ -33,6 +35,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         self.appIntegrationActionParser = appIntegrationActionParser
         self.visibleHandoffCandidateProvider = visibleHandoffCandidateProvider
         self.writeActionCandidateProvider = writeActionCandidateProvider
+        self.candidateMatcher = candidateMatcher
         self.toolCatalog = toolCatalog
         self.safetyPolicyEngine = safetyPolicyEngine
     }
@@ -49,6 +52,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
             appIntegrationActionParser: appIntegrationActionParser,
             visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
             writeActionCandidateProvider: writeActionCandidateProvider,
+            candidateMatcher: candidateMatcher,
             toolCatalog: toolCatalog,
             safetyPolicyEngine: safetyPolicyEngine
         ).plan(for: request)

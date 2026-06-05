@@ -1,10 +1,6 @@
 import Foundation
 
 extension AgentToolInvocationPlanner {
-    func containsAny(_ text: String, _ needles: [String]) -> Bool {
-        needles.contains { text.contains(normalize($0)) }
-    }
-
     func normalize(_ value: String) -> String {
         appIntegrationActionParser.normalize(value)
     }
