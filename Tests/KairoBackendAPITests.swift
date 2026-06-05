@@ -99,6 +99,27 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(response.message, "Factory response")
     }
 
+    func testBackendCompositionSharesInjectedPhoneToolCatalogAcrossAccessAndChat() async throws {
+        let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
+        let toolCatalog = BuiltInPhoneToolCatalog(tools: [calendarTool])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            toolCatalog: toolCatalog
+        )
+
+        let accessTools = await environment.backendAPI.access.tools()
+        let chatResponse = try await environment.backendAPI.chat.respond(
+            to: "建立行程：週五 10:00 Kairo roadmap review",
+            attachments: [],
+            privacyMode: .standard
+        )
+
+        XCTAssertEqual(accessTools.map(\.toolID), [.calendarWrite])
+        XCTAssertEqual(chatResponse.proposedActions.map(\.kind), [.createCalendarDraft])
+    }
+
     func testBackendModuleComposerUsesEnvironmentOAuthClientConfigurations() async throws {
         let environment = KairoEnvironment(
             memoryStore: InMemoryMemoryStore(),

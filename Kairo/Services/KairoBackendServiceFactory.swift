@@ -14,6 +14,7 @@ public protocol KairoBackendDependencies: Sendable {
     var oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] { get }
     var agentSkillManagerService: AgentSkillManagerService? { get }
     var localModelSettingsService: LocalModelSettingsService? { get }
+    var toolCatalog: any BuiltInPhoneToolCatalogProviding { get }
 }
 
 public protocol KairoBackendServiceMaking: Sendable {
@@ -46,7 +47,8 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
         return KairoChatBackendService(agent: AgentCore(
             memoryStore: dependencies.memoryStore,
             aiProvider: dependencies.aiProvider,
-            skillCatalogProvider: skillCatalogProvider
+            skillCatalogProvider: skillCatalogProvider,
+            toolCatalog: dependencies.toolCatalog
         ))
     }
 
@@ -58,7 +60,8 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
         KairoRecipeBackendService(
             recipeStore: dependencies.kairoRecipeStore,
             memoryStore: dependencies.memoryStore,
-            aiProvider: dependencies.aiProvider
+            aiProvider: dependencies.aiProvider,
+            toolCatalog: dependencies.toolCatalog
         )
     }
 
@@ -102,6 +105,9 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
     }
 
     public func makeAccessAPI() -> any KairoAccessAPI {
-        KairoAccessBackendService(permissionService: dependencies.permissionService)
+        KairoAccessBackendService(
+            toolCatalog: dependencies.toolCatalog,
+            permissionService: dependencies.permissionService
+        )
     }
 }

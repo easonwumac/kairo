@@ -17,13 +17,15 @@ public struct KairoRecipeBackendService: KairoRecipeAPI {
     public init(
         recipeStore: any KairoRecipeStore,
         memoryStore: (any MemoryStore)? = nil,
-        aiProvider: (any AIProvider)? = nil
+        aiProvider: (any AIProvider)? = nil,
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
     ) {
         self.recipeStore = recipeStore
         self.runner = KairoRecipeRunner(
             recipeStore: recipeStore,
             memoryStore: memoryStore,
-            aiProvider: aiProvider
+            aiProvider: aiProvider,
+            toolCatalog: toolCatalog
         )
     }
 
