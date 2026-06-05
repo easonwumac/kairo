@@ -138,4 +138,25 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(viewModel.currentThread.messages.last?.text, "Composer response")
     }
 
+    func testKairoEnvironmentBuildsMemoryFeatureDependenciesForCompositionRoot() async throws {
+        let memoryStore = InMemoryMemoryStore()
+        let environment = KairoEnvironment(
+            memoryStore: memoryStore,
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response"))
+        )
+        let dependencies = environment.memoryFeatureDependencies
+        let memory = MemoryRecord(
+            title: "Composition",
+            summary: "Memory feature dependency wiring",
+            content: "Memory feature composition",
+            source: .manual
+        )
+
+        try await dependencies.memoryAPI.save(memory)
+        let saved = try await memoryStore.list(limit: 10)
+
+        XCTAssertEqual(saved.map(\.id), [memory.id])
+    }
+
 }

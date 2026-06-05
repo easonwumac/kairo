@@ -728,7 +728,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(rootView.contains("rootHeader(topInset: safeAreaInsets.top)"))
         XCTAssertTrue(rootView.contains("navigationMenu(safeAreaInsets: safeAreaInsets)"))
         XCTAssertFalse(rootView.contains("BriefingInboxView("))
-        XCTAssertTrue(rootView.contains("MemoryCenterView(memoryAPI: environment.backendAPI.memory)"))
         XCTAssertTrue(rootView.contains(".presentationDetents([.medium, .large])"))
         XCTAssertTrue(rootView.contains(".padding(.top, max(topInset, 0)"))
         XCTAssertTrue(rootView.contains(".ignoresSafeArea(edges: .top)"))

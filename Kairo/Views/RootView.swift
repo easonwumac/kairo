@@ -81,7 +81,7 @@ public struct RootView: View {
         case .chat:
             ChatView(dependencies: environment.chatFeatureDependencies)
         case .memory:
-            MemoryCenterView(memoryAPI: environment.backendAPI.memory)
+            MemoryCenterView(dependencies: environment.memoryFeatureDependencies)
         case .shortcuts:
             AutomationsView(
                 recipeAPI: environment.backendAPI.recipes

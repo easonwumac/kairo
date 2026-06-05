@@ -17,6 +17,10 @@ public struct MemoryCenterView: View {
 
     private let memoryAPI: any KairoMemoryAPI
 
+    public init(dependencies: MemoryFeatureDependencies) {
+        self.memoryAPI = dependencies.memoryAPI
+    }
+
     public init(store: MemoryStore = InMemoryMemoryStore()) {
         self.memoryAPI = KairoMemoryBackendService(memoryStore: store)
     }
