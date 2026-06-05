@@ -36,13 +36,7 @@ public struct CatalogBackedShortcutDemoIntegrationGate: ShortcutDemoIntegrationG
                 input: input,
                 skillID: integrationSkillID,
                 displayText: KairoL10n.string("shortcut.integration.blocked.setupRequired", skill.appName),
-                fields: [
-                    "integrationAvailability": skill.availabilityStatus.rawValue,
-                    "integrationSetupRequirement": skill.setupRequirement.rawValue,
-                    "integrationExecutionMode": skill.executionMode.rawValue,
-                    "integrationFallbackReasonKey": skill.fallback.reasonKey,
-                    "integrationFallbackSafeAlternativeKey": skill.fallback.safeAlternativeKey
-                ]
+                fields: skill.blockedExecutionFields
             )
         }
 

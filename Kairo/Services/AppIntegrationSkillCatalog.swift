@@ -287,6 +287,16 @@ public struct AppIntegrationSkill: Identifiable, Codable, Equatable, Sendable {
     public var shortcutNodeKind: ShortcutNodeKind? {
         id.shortcutNodeKind
     }
+
+    public var blockedExecutionFields: [String: String] {
+        [
+            "integrationAvailability": availabilityStatus.rawValue,
+            "integrationSetupRequirement": setupRequirement.rawValue,
+            "integrationExecutionMode": executionMode.rawValue,
+            "integrationFallbackReasonKey": fallback.reasonKey,
+            "integrationFallbackSafeAlternativeKey": fallback.safeAlternativeKey
+        ]
+    }
 }
 
 public struct AppIntegrationSkillCatalog: AppIntegrationSkillCatalogProviding {

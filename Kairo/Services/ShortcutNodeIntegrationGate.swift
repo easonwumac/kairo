@@ -38,7 +38,7 @@ public struct CatalogBackedShortcutNodeIntegrationGate: ShortcutNodeIntegrationG
                 input: input,
                 skillID: skillID,
                 displayText: KairoL10n.string("shortcut.integration.blocked.setupRequired", skill.appName),
-                fields: blockedFields(for: skill)
+                fields: skill.blockedExecutionFields
             )
         }
 
@@ -48,21 +48,11 @@ public struct CatalogBackedShortcutNodeIntegrationGate: ShortcutNodeIntegrationG
                 input: input,
                 skillID: skillID,
                 displayText: KairoL10n.string("shortcut.integration.blocked.nodeMismatch", skill.appName),
-                fields: blockedFields(for: skill)
+                fields: skill.blockedExecutionFields
             )
         }
 
         return nil
-    }
-
-    private func blockedFields(for skill: AppIntegrationSkill) -> [String: String] {
-        [
-            "integrationAvailability": skill.availabilityStatus.rawValue,
-            "integrationSetupRequirement": skill.setupRequirement.rawValue,
-            "integrationExecutionMode": skill.executionMode.rawValue,
-            "integrationFallbackReasonKey": skill.fallback.reasonKey,
-            "integrationFallbackSafeAlternativeKey": skill.fallback.safeAlternativeKey
-        ]
     }
 
     private func blockedOutput(
