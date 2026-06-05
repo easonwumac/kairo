@@ -29,6 +29,48 @@ public struct ChatFeatureDependencies {
     }
 }
 
+public protocol ChatFeatureDependencyComposing: Sendable {
+    func makeDependencies(
+        historyStore: any ChatHistoryStore,
+        shareIngestionQueue: any ShareIngestionQueue,
+        agent: AgentCore,
+        shareImportAPI: (any KairoShareImportAPI)?,
+        chatAPI: (any KairoChatAPI)?,
+        actionAPI: (any KairoActionAPI)?,
+        actionExecutor: any ActionExecutor,
+        localModelSettingsService: LocalModelSettingsService?,
+        openAISettingsService: OpenAISettingsService?,
+        localModelChatRuntimeAvailable: Bool
+    ) -> ChatFeatureDependencies
+}
+
+public struct DefaultChatFeatureDependencyComposer: ChatFeatureDependencyComposing {
+    public init() {}
+
+    public func makeDependencies(
+        historyStore: any ChatHistoryStore,
+        shareIngestionQueue: any ShareIngestionQueue,
+        agent: AgentCore,
+        shareImportAPI: (any KairoShareImportAPI)?,
+        chatAPI: (any KairoChatAPI)?,
+        actionAPI: (any KairoActionAPI)?,
+        actionExecutor: any ActionExecutor,
+        localModelSettingsService: LocalModelSettingsService?,
+        openAISettingsService: OpenAISettingsService?,
+        localModelChatRuntimeAvailable: Bool
+    ) -> ChatFeatureDependencies {
+        ChatFeatureDependencies(
+            historyStore: historyStore,
+            shareImportAPI: shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue),
+            chatAPI: chatAPI ?? KairoChatBackendService(agent: agent),
+            actionAPI: actionAPI ?? KairoActionBackendService(actionExecutor: actionExecutor),
+            localModelSettingsService: localModelSettingsService,
+            openAISettingsService: openAISettingsService,
+            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
+        )
+    }
+}
+
 public extension KairoEnvironment {
     var chatFeatureDependencies: ChatFeatureDependencies {
         ChatFeatureDependencies(

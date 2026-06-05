@@ -68,16 +68,20 @@ public final class ChatViewModel: ObservableObject {
         chatAPI: (any KairoChatAPI)? = nil,
         actionAPI: (any KairoActionAPI)? = nil,
         actionExecutor: any ActionExecutor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore()),
+        dependencyComposer: any ChatFeatureDependencyComposing = DefaultChatFeatureDependencyComposer(),
         localModelSettingsService: LocalModelSettingsService? = nil,
         openAISettingsService: OpenAISettingsService? = nil,
         localModelChatRuntimeAvailable: Bool = false
     ) {
         self.init(
-            dependencies: ChatFeatureDependencies(
+            dependencies: dependencyComposer.makeDependencies(
                 historyStore: historyStore,
-                shareImportAPI: shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue),
-                chatAPI: chatAPI ?? KairoChatBackendService(agent: agent),
-                actionAPI: actionAPI ?? KairoActionBackendService(actionExecutor: actionExecutor),
+                shareIngestionQueue: shareIngestionQueue,
+                agent: agent,
+                shareImportAPI: shareImportAPI,
+                chatAPI: chatAPI,
+                actionAPI: actionAPI,
+                actionExecutor: actionExecutor,
                 localModelSettingsService: localModelSettingsService,
                 openAISettingsService: openAISettingsService,
                 localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
