@@ -14,6 +14,29 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         XCTAssertEqual(pending.first?.attachments.first?.source, .shareExtension)
     }
 
+    func testKairoUITestingStoreFactorySeedsShareQueueAndPersistsChatHistory() async throws {
+        let rootDirectory = temporaryDirectory()
+        let firstComponents = try await KairoUITestingStoreFactory(
+            rootDirectory: rootDirectory,
+            seedSharedTaskText: true
+        ).makeComponents()
+        let thread = ChatThread(messages: [
+            ChatMessage(role: .user, text: "Persist UI testing chat")
+        ])
+
+        try await firstComponents.chatHistoryStore.saveThread(thread)
+        let pendingShares = try await firstComponents.shareIngestionQueue.pendingItems(limit: 10)
+
+        let reloadedComponents = try await KairoUITestingStoreFactory(
+            rootDirectory: rootDirectory,
+            seedSharedTaskText: false
+        ).makeComponents()
+        let reloadedThreads = try await reloadedComponents.chatHistoryStore.listThreads(limit: 10)
+
+        XCTAssertEqual(pendingShares.count, 1)
+        XCTAssertTrue(reloadedThreads.contains { $0.id == thread.id })
+    }
+
     func testShareImportBackendAPIImportsPendingItemsWithoutDeletingBeforeChatSend() async throws {
         let builder = ShareAttachmentBuilder()
         let firstItem = ShareIngestionItem(

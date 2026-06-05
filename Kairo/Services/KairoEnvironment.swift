@@ -133,43 +133,22 @@ public struct KairoEnvironment: KairoBackendDependencies {
             replyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
             benchmarkEngineOverride: localModelBenchmarkEngineOverride
         ).makeComponents()
-        let credentialStore = InMemoryCredentialStore()
-        let oauthCallbackStore = try await FileBackedOAuthConnectorCallbackStore(
-            fileURL: rootDirectory
-                .appendingPathComponent("OAuth", isDirectory: true)
-                .appendingPathComponent("callback-previews.json")
-        )
-        let kairoRecipeStore = try await FileBackedKairoRecipeStore(
-            fileURL: rootDirectory
-                .appendingPathComponent("Recipes", isDirectory: true)
-                .appendingPathComponent("kairo-recipes.json")
-        )
-        let memoryStore = InMemoryMemoryStore()
-        let auditLogger = InMemoryAuditLogger()
-        let shareIngestionQueue = KairoUITestingShareImportFactory(
+        let storeComponents = try await KairoUITestingStoreFactory(
+            rootDirectory: rootDirectory,
             seedSharedTaskText: seedSharedTaskText
-        ).makeQueue()
-        let chatHistoryStore = try await JSONFileChatHistoryStore(
-            fileURL: rootDirectory
-                .appendingPathComponent("Chat", isDirectory: true)
-                .appendingPathComponent("chat-history.json")
-        )
-        if try await chatHistoryStore.listThreads(limit: 1).isEmpty {
-            try await chatHistoryStore.saveThread(ChatThread(messages: [
-                ChatMessage(role: .assistant, text: "UI testing Kairo environment loaded.")
-            ]))
-        }
+        ).makeComponents()
+        let credentialStore = InMemoryCredentialStore()
 
         return KairoEnvironment(
-            memoryStore: memoryStore,
+            memoryStore: storeComponents.memoryStore,
             credentialStore: credentialStore,
             aiProvider: localModelComponents.aiProvider,
-            chatHistoryStore: chatHistoryStore,
-            shareIngestionQueue: shareIngestionQueue,
-            kairoRecipeStore: kairoRecipeStore,
+            chatHistoryStore: storeComponents.chatHistoryStore,
+            shareIngestionQueue: storeComponents.shareIngestionQueue,
+            kairoRecipeStore: storeComponents.kairoRecipeStore,
             permissionService: StubPermissionService(),
-            auditLogger: auditLogger,
-            oauthConnectorCallbackStore: oauthCallbackStore,
+            auditLogger: storeComponents.auditLogger,
+            oauthConnectorCallbackStore: storeComponents.oauthCallbackStore,
             agentSkillManagerService: skillComponents.managerService,
             agentSkillMarketplaceCatalogService: skillComponents.marketplaceCatalogService,
             localModelCatalog: localModelComponents.catalog,
@@ -179,13 +158,13 @@ public struct KairoEnvironment: KairoBackendDependencies {
             localModelReplyCheckService: localModelComponents.replyCheckService,
             localModelChatRuntimeAvailable: localModelComponents.chatRuntimeAvailable,
             actionExecutor: SandboxActionExecutor(
-                memoryStore: memoryStore,
+                memoryStore: storeComponents.memoryStore,
                 reminderScheduler: AllowingReminderScheduler(identifier: "ui-testing-reminder-id"),
                 calendarScheduler: AllowingCalendarScheduler(identifier: "ui-testing-calendar-event-id"),
                 contactScheduler: AllowingContactScheduler(identifier: "ui-testing-contact-id"),
                 urlOpener: AllowingURLOpener(),
                 notificationScheduler: AllowingNotificationScheduler(identifier: "ui-testing-notification-id"),
-                auditLogger: auditLogger
+                auditLogger: storeComponents.auditLogger
             )
         )
     }
