@@ -606,6 +606,7 @@ struct LocalModelsCompactView: View {
             SettingsOAuthConnectorsSection(
                 connectorOptions: connectorOptions.filter { $0.providerKey == "openai-codex" },
                 expandedConnectorDetails: $expandedOAuthConnectorDetails,
+                presentation: .compact,
                 authorizeConnector: authorizeConnector,
                 disconnectConnector: disconnectConnector
             )

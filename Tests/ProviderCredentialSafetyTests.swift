@@ -62,6 +62,50 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         }
     }
 
+    func testOpenAIModelListServiceFetchesAvailableModelsWithAPIKey() async throws {
+        let credentials = InMemoryCredentialStore()
+        let modelsURL = URL(string: "https://api.openai.com/v1/models")!
+        try await credentials.saveSecret("sk-test-model-list", for: CredentialKey.openAIAPIKey)
+        let service = OpenAIModelListService(
+            credentialStore: credentials,
+            httpClient: StaticHTTPClient(routes: [
+                modelsURL: StaticHTTPResponse(body: """
+                {
+                  "object": "list",
+                  "data": [
+                    {"id": "gpt-5.2", "object": "model", "owned_by": "openai"},
+                    {"id": "gpt-5.2-codex", "object": "model", "owned_by": "openai"}
+                  ]
+                }
+                """)
+            ]),
+            modelsURL: modelsURL
+        )
+
+        let models = try await service.availableModels()
+
+        XCTAssertEqual(models, [
+            OpenAIModelSummary(id: "gpt-5.2", owner: "openai"),
+            OpenAIModelSummary(id: "gpt-5.2-codex", owner: "openai")
+        ])
+    }
+
+    func testOpenAIModelListServiceRequiresAPIKeyBeforeFetching() async throws {
+        let service = OpenAIModelListService(
+            credentialStore: InMemoryCredentialStore(),
+            httpClient: StaticHTTPClient(routes: [:])
+        )
+
+        do {
+            _ = try await service.availableModels()
+            XCTFail("Expected OpenAI model list fetch to require an API key.")
+        } catch AIProviderError.missingCredential {
+            // Expected.
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testOAuthConnectorReadinessProvidesSettingsCopyAndActionState() {
         XCTAssertEqual(OAuthConnectorLoginReadiness.connected.settingsStatusText, KairoL10n.string("settings.oauth.status.connected"))
         XCTAssertEqual(OAuthConnectorLoginReadiness.readyToAuthorize.settingsStatusText, KairoL10n.string("settings.oauth.status.readyToAuthorize"))
