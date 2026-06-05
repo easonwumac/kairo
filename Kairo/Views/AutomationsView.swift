@@ -22,12 +22,12 @@ public struct AutomationsView: View {
     }
 
     public init(
-        recipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
+        recipeStore: (any KairoRecipeStore)? = nil,
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
         shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        toolCatalog: (any BuiltInPhoneToolCatalogProviding)? = nil,
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)? = nil,
         dependencyComposer: (any AutomationsFeatureDependencyComposing)? = nil
     ) {
         let composer = dependencyComposer ?? AutomationsFeatureDependencyFactory(shortcutTemplateRegistry: shortcutTemplateRegistry)

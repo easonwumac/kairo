@@ -19,11 +19,11 @@ public struct AutomationsFeatureDependencies {
 
 public protocol AutomationsFeatureDependencyComposing: Sendable {
     func makeDependencies(
-        recipeStore: any KairoRecipeStore,
+        recipeStore: (any KairoRecipeStore)?,
         memoryStore: (any MemoryStore)?,
         aiProvider: (any AIProvider)?,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding,
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
+        toolCatalog: (any BuiltInPhoneToolCatalogProviding)?,
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)?
     ) -> AutomationsFeatureDependencies
 
     func makeDependencies(
@@ -51,29 +51,32 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
     }
 
     public func makeDependencies(
-        recipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
+        recipeStore: (any KairoRecipeStore)? = nil,
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
+        toolCatalog: (any BuiltInPhoneToolCatalogProviding)? = nil,
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)? = nil
     ) -> AutomationsFeatureDependencies {
+        let runtimeRecipeStore = recipeStore ?? InMemoryKairoRecipeStore()
         let runtimeMemoryStore = memoryStore ?? InMemoryMemoryStore()
+        let runtimeToolCatalog = toolCatalog ?? BuiltInPhoneToolCatalog()
+        let runtimeAppIntegrationSkillCatalog = appIntegrationSkillCatalog ?? AppIntegrationSkillCatalog()
         return AutomationsFeatureDependencies(
             recipeAPI: KairoRecipeBackendService(
-                recipeStore: recipeStore,
+                recipeStore: runtimeRecipeStore,
                 memoryStore: memoryStore,
                 aiProvider: aiProvider,
-                toolCatalog: toolCatalog,
-                appIntegrationSkillCatalog: appIntegrationSkillCatalog
+                toolCatalog: runtimeToolCatalog,
+                appIntegrationSkillCatalog: runtimeAppIntegrationSkillCatalog
             ),
             shortcutTemplateRegistry: shortcutTemplateRegistry,
             shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(
                 runtime: ShortcutNodeRuntime(
                     memoryStore: runtimeMemoryStore,
-                    toolCatalog: toolCatalog,
-                    appIntegrationSkillCatalog: appIntegrationSkillCatalog
+                    toolCatalog: runtimeToolCatalog,
+                    appIntegrationSkillCatalog: runtimeAppIntegrationSkillCatalog
                 ),
-                appIntegrationSkillCatalog: appIntegrationSkillCatalog
+                appIntegrationSkillCatalog: runtimeAppIntegrationSkillCatalog
             )
         )
     }

@@ -886,6 +886,17 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(memories.count, 1)
     }
 
+    #if canImport(SwiftUI)
+    func testAutomationsViewLeavesDefaultStoreAndCatalogCompositionToDependencyComposer() throws {
+        let composer = RecordingAutomationsFeatureDependencyComposer()
+        _ = AutomationsView(dependencyComposer: composer)
+
+        XCTAssertEqual(composer.receivedNilRecipeStore, true)
+        XCTAssertEqual(composer.receivedNilToolCatalog, true)
+        XCTAssertEqual(composer.receivedNilAppIntegrationSkillCatalog, true)
+    }
+    #endif
+
     func testAutomationsFeatureDependencyComposerCanInjectIntegrationCatalogBoundary() async throws {
         let composer: any AutomationsFeatureDependencyComposing = AutomationsFeatureDependencyFactory()
         let recipe = KairoRecipe(
@@ -1151,3 +1162,80 @@ private struct FixedShortcutDemoRecipeRunner: ShortcutDemoRecipeRunnerProtocol {
         )
     }
 }
+
+#if canImport(SwiftUI)
+private final class RecordingAutomationsFeatureDependencyComposer: AutomationsFeatureDependencyComposing, @unchecked Sendable {
+    private(set) var receivedNilRecipeStore: Bool?
+    private(set) var receivedNilToolCatalog: Bool?
+    private(set) var receivedNilAppIntegrationSkillCatalog: Bool?
+
+    func makeDependencies(
+        recipeStore: (any KairoRecipeStore)?,
+        memoryStore: (any MemoryStore)?,
+        aiProvider: (any AIProvider)?,
+        toolCatalog: (any BuiltInPhoneToolCatalogProviding)?,
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)?
+    ) -> AutomationsFeatureDependencies {
+        receivedNilRecipeStore = recipeStore == nil
+        receivedNilToolCatalog = toolCatalog == nil
+        receivedNilAppIntegrationSkillCatalog = appIntegrationSkillCatalog == nil
+        return AutomationsFeatureDependencies(
+            recipeAPI: EmptyRecipeAPI(),
+            shortcutDemoRecipeRunner: FixedShortcutDemoRecipeRunner()
+        )
+    }
+
+    func makeDependencies(
+        recipeAPI: any KairoRecipeAPI,
+        memoryStore: any MemoryStore,
+        toolCatalog: any BuiltInPhoneToolCatalogProviding,
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
+    ) -> AutomationsFeatureDependencies {
+        AutomationsFeatureDependencies(
+            recipeAPI: recipeAPI,
+            shortcutDemoRecipeRunner: FixedShortcutDemoRecipeRunner()
+        )
+    }
+
+    func makeDependencies(recipeAPI: any KairoRecipeAPI) -> AutomationsFeatureDependencies {
+        AutomationsFeatureDependencies(
+            recipeAPI: recipeAPI,
+            shortcutDemoRecipeRunner: FixedShortcutDemoRecipeRunner()
+        )
+    }
+
+    func makeDependencies(
+        recipeAPI: any KairoRecipeAPI,
+        shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol
+    ) -> AutomationsFeatureDependencies {
+        AutomationsFeatureDependencies(
+            recipeAPI: recipeAPI,
+            shortcutDemoRecipeRunner: shortcutDemoRecipeRunner
+        )
+    }
+}
+
+private struct EmptyRecipeAPI: KairoRecipeAPI {
+    func listRecipes() async throws -> [KairoRecipe] { [] }
+    func recipe(id: String) async throws -> KairoRecipe? { nil }
+    func save(_ recipe: KairoRecipe) async throws {}
+    func delete(id: String) async throws {}
+    func setEnabled(_ enabled: Bool, id: String) async throws {}
+    func seedSampleRecipes() async throws -> [KairoRecipe] { [] }
+    func run(_ request: KairoRecipeRunRequest) async throws -> KairoRecipeRunResult {
+        KairoRecipeRunResult(
+            recipeID: request.recipeID,
+            startedAt: Date(timeIntervalSince1970: 0),
+            finishedAt: Date(timeIntervalSince1970: 0),
+            surface: request.surface,
+            summary: "",
+            stepResults: [],
+            proposedActions: [],
+            riskTier: .tier0ReadOnly,
+            requiresConfirmation: false,
+            success: false,
+            errorMessage: nil
+        )
+    }
+}
+#endif
