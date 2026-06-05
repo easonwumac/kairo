@@ -10,7 +10,7 @@ final class ChatHandoffFailureStateTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            chatAPI: KairoChatBackendService(agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())),
             actionExecutor: SandboxActionExecutor(
                 memoryStore: InMemoryMemoryStore(),
                 urlOpener: urlOpener,

@@ -56,7 +56,7 @@ final class ChatHandoffReviewStateTests: XCTestCase {
         ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+            chatAPI: KairoChatBackendService(agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()))
         )
     }
 }

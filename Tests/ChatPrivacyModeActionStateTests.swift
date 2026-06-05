@@ -9,7 +9,7 @@ final class ChatPrivacyModeActionStateTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+            chatAPI: KairoChatBackendService(agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()))
         )
 
         await viewModel.send("建立行程：週五 10:00 Kairo roadmap review")
