@@ -139,12 +139,16 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public static func live(
         appName: String = KairoSharedAppStorage.appName,
         appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier,
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) async throws -> KairoEnvironment {
         try await KairoLiveEnvironmentComposer(
             appName: appName,
             appGroupIdentifier: appGroupIdentifier,
+            toolCatalog: toolCatalog,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             localModelReplyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
             localModelBenchmarkEngineOverride: localModelBenchmarkEngineOverride
         ).makeEnvironment()

@@ -277,6 +277,23 @@ final class KairoSkillBackendAPITests: XCTestCase {
         XCTAssertNil(environment.oauthConnectorRegistry.integration(for: "gmail-google-workspace"))
     }
 
+    func testLiveEnvironmentEntrypointForwardsInjectedCatalogs() async throws {
+        let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
+        let todoistSkill = try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .todoistTaskAPI))
+
+        let environment = try await KairoEnvironment.live(
+            appName: "KairoLiveEnvironmentEntrypointInjectedCatalogsTests",
+            appGroupIdentifier: nil,
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [calendarTool]),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [todoistSkill])
+        )
+
+        XCTAssertEqual(environment.toolCatalog.tools.map(\.id), [.calendarWrite])
+        XCTAssertEqual(environment.appIntegrationSkillCatalog.skills.map(\.id), [.todoistTaskAPI])
+        let todoist = try XCTUnwrap(environment.oauthConnectorRegistry.integration(for: "todoist"))
+        XCTAssertEqual(todoist.oauth?.providerKey, "todoist")
+    }
+
     func testUITestingEnvironmentComposerBuildsSeededFlowEnvironment() async throws {
         let rootDirectory = temporaryDirectory(named: "KairoUITestingEnvironmentComposer")
         let environment = try await KairoUITestingEnvironmentComposer(
