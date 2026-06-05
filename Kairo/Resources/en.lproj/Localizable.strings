@@ -12,6 +12,11 @@
 "root.menu.group.primary" = "Start here";
 "root.menu.group.agent" = "Support";
 "root.menu.group.system" = "Setup";
+"root.menu.chat.section" = "Chat";
+"root.menu.chat.new.subtitle" = "Start a clean conversation";
+"root.menu.chat.showMore" = "Show more chats";
+"root.menu.chat.showLess" = "Show fewer chats";
+"root.menu.chat.history.subtitle" = "%lld saved chats";
 "root.environment.loading" = "Loading Kairo";
 "root.environment.liveLoadFailed" = "Kairo could not load the live app environment. Restart the app and try again.";
 "root.environment.uiTestingLoadFailed" = "Kairo could not load the UI testing environment.";
@@ -491,6 +496,15 @@
 "chat.welcome.preview" = "I’m Kairo. I remember only what you choose to give me, and I stay within iOS sandbox and public API capabilities.";
 "chat.new" = "New";
 "chat.delete" = "Delete";
+"chat.thread.action.clear" = "Clear chat";
+"chat.thread.action.delete" = "Delete chat";
+"chat.thread.action.compact" = "Compact chat";
+"chat.thread.action.fork" = "Fork chat";
+"chat.thread.action.cleared" = "Chat cleared.";
+"chat.thread.action.deleted" = "Chat deleted.";
+"chat.thread.action.forked" = "Chat forked.";
+"chat.thread.fork.title" = "Fork: %@";
+"chat.thread.compact.prompt" = "Compact this conversation into a concise summary with decisions, open tasks, and useful context for the next reply:\n%@";
 "chat.loading" = "Kairo is thinking...";
 "chat.focus.title" = "Start in Chat";
 "chat.focus.subtitle" = "Give Kairo one thing to prepare, then review before it changes anything.";

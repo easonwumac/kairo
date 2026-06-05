@@ -9,13 +9,15 @@ import AppKit
 public struct ChatView: View {
     @StateObject private var viewModel: ChatViewModel
     private let actionDescriptorProvider: any AgentActionDescriptorProviding
+    private let chromeActionRequest: ChatChromeActionRequest?
     @State private var showMoreFocusStarts = false
     @State private var showToolPalette = false
     @FocusState private var isComposerFocused: Bool
 
-    public init(dependencies: ChatFeatureDependencies) {
+    public init(dependencies: ChatFeatureDependencies, chromeActionRequest: ChatChromeActionRequest? = nil) {
         _viewModel = StateObject(wrappedValue: ChatViewModel(dependencies: dependencies))
         self.actionDescriptorProvider = dependencies.actionDescriptorProvider
+        self.chromeActionRequest = chromeActionRequest
     }
 
     public init(environment: KairoEnvironment = .preview()) {
@@ -29,6 +31,9 @@ public struct ChatView: View {
         .task {
             await viewModel.load()
             await viewModel.importPendingShares()
+        }
+        .onChange(of: chromeActionRequest) { _, request in
+            handleChromeAction(request)
         }
         #else
         NavigationSplitView {
@@ -54,7 +59,30 @@ public struct ChatView: View {
             await viewModel.load()
             await viewModel.importPendingShares()
         }
+        .onChange(of: chromeActionRequest) { _, request in
+            handleChromeAction(request)
+        }
         #endif
+    }
+
+    private func handleChromeAction(_ request: ChatChromeActionRequest?) {
+        guard let request else { return }
+        switch request.kind {
+        case .newThread:
+            viewModel.startNewThread()
+            isComposerFocused = true
+        case .selectThread(let id):
+            Task { await viewModel.selectThread(id: id) }
+        case .clear:
+            Task { await viewModel.clearCurrentThread() }
+        case .delete:
+            Task { await viewModel.deleteCurrentThread() }
+        case .compact:
+            viewModel.prepareCompactPrompt()
+            isComposerFocused = true
+        case .fork:
+            Task { await viewModel.forkCurrentThread() }
+        }
     }
 
     private var shouldShowFocusPanel: Bool {
@@ -627,6 +655,24 @@ private func iconName(for kind: AttachmentKind) -> String {
     case .file: return "doc"
     case .unknown: return "questionmark.square"
     }
+}
+
+public struct ChatChromeActionRequest: Equatable {
+    public let id = UUID()
+    public let kind: ChatChromeActionKind
+
+    public init(kind: ChatChromeActionKind) {
+        self.kind = kind
+    }
+}
+
+public enum ChatChromeActionKind: Equatable {
+    case newThread
+    case selectThread(UUID)
+    case clear
+    case delete
+    case compact
+    case fork
 }
 
 #endif

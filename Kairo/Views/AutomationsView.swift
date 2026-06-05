@@ -64,29 +64,31 @@ public struct AutomationsView: View {
     }
 
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                if recipes.isEmpty {
-                    recipeCenterCard
-                    workflowOverviewCard
-                } else {
-                    workflowOverviewCard
-                    savedRecipesCard
-                    recipeCenterCard
-                }
-                advancedWorkflowReferenceCard
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    if recipes.isEmpty {
+                        recipeCenterCard
+                        workflowOverviewCard
+                    } else {
+                        workflowOverviewCard
+                        savedRecipesCard
+                        recipeCenterCard
+                    }
+                    advancedWorkflowReferenceCard
 
-                if let message {
-                    statusCard(message)
+                    if let message {
+                        statusCard(message)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.top, max(proxy.safeAreaInsets.top, 0) + 50)
+                .padding(.bottom, max(proxy.safeAreaInsets.bottom, 0) + 28)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.top, 18)
-            .padding(.bottom, 32)
+            .scrollIndicators(.hidden)
+            .background(KairoDesign.background.ignoresSafeArea())
         }
-        .scrollIndicators(.hidden)
-        .background(Color(.sRGB, white: 0.98, opacity: 1).ignoresSafeArea())
         .task {
             await loadRecipes()
         }

@@ -12,6 +12,11 @@
 "root.menu.group.primary" = "開始使用";
 "root.menu.group.agent" = "支援";
 "root.menu.group.system" = "設定";
+"root.menu.chat.section" = "Chat";
+"root.menu.chat.new.subtitle" = "開始一段乾淨的新對話";
+"root.menu.chat.showMore" = "顯示更多對話";
+"root.menu.chat.showLess" = "收合對話";
+"root.menu.chat.history.subtitle" = "共 %lld 組已儲存對話";
 "root.environment.loading" = "正在載入 Kairo";
 "root.environment.liveLoadFailed" = "Kairo 無法載入 live app 環境。請重新啟動 App 後再試一次。";
 "root.environment.uiTestingLoadFailed" = "Kairo 無法載入 UI testing 環境。";
@@ -491,6 +496,15 @@
 "chat.welcome.preview" = "我是 Kairo。我只會記住你選擇交給我的內容，並只操作 iOS sandbox 與公開 API 允許的能力。";
 "chat.new" = "新聊天";
 "chat.delete" = "刪除";
+"chat.thread.action.clear" = "清除對話";
+"chat.thread.action.delete" = "刪除對話";
+"chat.thread.action.compact" = "壓縮對話";
+"chat.thread.action.fork" = "Fork 對話";
+"chat.thread.action.cleared" = "已清除對話。";
+"chat.thread.action.deleted" = "已刪除對話。";
+"chat.thread.action.forked" = "已 Fork 對話。";
+"chat.thread.fork.title" = "Fork：%@";
+"chat.thread.compact.prompt" = "請把這段對話壓縮成精簡摘要，保留決策、待辦事項，以及下一次回覆需要的脈絡：\n%@";
 "chat.loading" = "Kairo 正在思考...";
 "chat.focus.title" = "從 Chat 開始";
 "chat.focus.subtitle" = "交給 Kairo 一件要準備的事，確認後才會改動。";

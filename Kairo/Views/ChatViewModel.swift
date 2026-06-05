@@ -142,6 +142,82 @@ public final class ChatViewModel: ObservableObject {
         }
     }
 
+    public func selectThread(id: UUID) async {
+        do {
+            guard let thread = try await historyStore.thread(id: id) else { return }
+            selectThread(thread)
+        } catch {
+            errorMessage = KairoL10n.string("chat.error.loadHistory", error.localizedDescription)
+        }
+    }
+
+    public func clearCurrentThread() async {
+        await deleteThread(currentThread)
+        actionResultMessage = KairoL10n.string("chat.thread.action.cleared")
+        actionResultSucceeded = true
+    }
+
+    public func deleteCurrentThread() async {
+        await deleteThread(currentThread)
+        actionResultMessage = KairoL10n.string("chat.thread.action.deleted")
+        actionResultSucceeded = true
+    }
+
+    public func forkCurrentThread() async {
+        let sourceMessages = currentThread.messages.filter { $0.id != Self.welcomeMessage.id }
+        guard !sourceMessages.isEmpty else {
+            startNewThread()
+            return
+        }
+        let now = Date()
+        var fork = ChatThread(
+            title: KairoL10n.string("chat.thread.fork.title", currentThread.title),
+            createdAt: now,
+            updatedAt: now,
+            messages: sourceMessages.map { message in
+                ChatMessage(
+                    role: message.role,
+                    text: message.text,
+                    createdAt: message.createdAt,
+                    proposedActions: message.proposedActions,
+                    toolCandidates: message.toolCandidates,
+                    attachments: message.attachments,
+                    status: message.status,
+                    memoryContextCount: message.memoryContextCount
+                )
+            }
+        )
+        if fork.messages.isEmpty {
+            fork.messages = [Self.welcomeMessage]
+        }
+        do {
+            try await historyStore.saveThread(fork)
+            threads = try await historyStore.listThreads(limit: 50)
+            currentThread = fork
+            clearShareImportState()
+            clearTransientActionState()
+            actionResultMessage = KairoL10n.string("chat.thread.action.forked")
+            actionResultSucceeded = true
+        } catch {
+            errorMessage = KairoL10n.string("chat.error.saveHistory", error.localizedDescription)
+        }
+    }
+
+    public func prepareCompactPrompt() {
+        let transcript = currentThread.messages
+            .filter { $0.id != Self.welcomeMessage.id }
+            .prefix(12)
+            .map { message in
+                "\(message.role.rawValue): \(Self.singleLinePreview(message.text).prefix(220))"
+            }
+            .joined(separator: "\n")
+        guard !transcript.isEmpty else { return }
+        composerText = KairoL10n.string("chat.thread.compact.prompt", transcript)
+        pendingAttachments = []
+        replyTarget = nil
+        clearTransientActionState()
+    }
+
     public func importPendingShares() async {
         guard !canSendImportedShareToChat else { return }
         do {

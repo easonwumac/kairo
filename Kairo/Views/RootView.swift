@@ -9,6 +9,9 @@ public struct RootView: View {
     @State private var selectedSection: RootSection = .chat
     @State private var isMenuPresented = false
     @State private var isPageActionsPresented = false
+    @State private var chatChromeActionRequest: ChatChromeActionRequest?
+    @State private var drawerChatThreads: [ChatThread] = []
+    @State private var isDrawerChatHistoryExpanded = false
 
     public init(
         environment: KairoEnvironment = .preview(),
@@ -107,7 +110,10 @@ public struct RootView: View {
     private var selectedContent: some View {
         switch selectedSection {
         case .chat:
-            ChatView(dependencies: environment.chatFeatureDependencies)
+            ChatView(
+                dependencies: environment.chatFeatureDependencies,
+                chromeActionRequest: chatChromeActionRequest
+            )
                 .ignoresSafeArea(.container, edges: .top)
         case .memory:
             MemoryCenterView(dependencies: environment.memoryFeatureDependencies)
@@ -136,6 +142,7 @@ public struct RootView: View {
                     isPageActionsPresented = false
                     isMenuPresented = true
                 }
+                Task { await loadDrawerChatThreads() }
             } label: {
                 Label(KairoL10n.string("root.menu"), systemImage: "line.3.horizontal")
                     .labelStyle(.iconOnly)
@@ -158,22 +165,26 @@ public struct RootView: View {
 
             Spacer(minLength: 8)
 
-            Button {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
-                    isMenuPresented = false
-                    isPageActionsPresented.toggle()
+            if selectedSection == .chat {
+                Button {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                        isMenuPresented = false
+                        isPageActionsPresented.toggle()
+                    }
+                } label: {
+                    Label(KairoL10n.string("root.moreActions"), systemImage: "ellipsis")
+                        .labelStyle(.iconOnly)
+                        .font(.headline.weight(.bold))
+                        .glassCircleControl()
+                        .contentShape(Circle())
                 }
-            } label: {
-                Label(KairoL10n.string("root.moreActions"), systemImage: "ellipsis")
-                    .labelStyle(.iconOnly)
-                    .font(.headline.weight(.bold))
-                    .glassCircleControl()
+                .buttonStyle(.plain)
+                .accessibilityLabel(KairoL10n.string("root.moreActions"))
+                .accessibilityIdentifier("root.page-actions")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(KairoL10n.string("root.moreActions"))
-            .accessibilityIdentifier("root.page-actions")
         }
-        .padding(.horizontal, 14)
+        .padding(.leading, 14)
+        .padding(.trailing, 20)
         .padding(.top, max(topInset - 8, 0))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("root.safe-area-header")
@@ -199,11 +210,18 @@ public struct RootView: View {
     }
 
     private func pageActionsOverlay(topInset: CGFloat) -> some View {
-        VStack(alignment: .trailing, spacing: 0) {
+        ZStack(alignment: .topTrailing) {
+            Color.black.opacity(0.001)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
+                        isPageActionsPresented = false
+                    }
+                }
+
             pageActionsPalette
                 .padding(.top, max(topInset - 8, 0) + 44)
-                .padding(.trailing, 14)
-            Spacer(minLength: 0)
+                .padding(.trailing, 20)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .allowsHitTesting(true)
@@ -213,29 +231,35 @@ public struct RootView: View {
     private var pageActionsPalette: some View {
         VStack(spacing: 7) {
             pageActionRow(
-                title: KairoL10n.string("root.pageActions.chat.tools"),
-                systemImage: "plus.message",
+                title: KairoL10n.string("chat.thread.action.clear"),
+                systemImage: "trash",
+                tint: KairoDesign.red
+            ) {
+                triggerChatChromeAction(.clear)
+            }
+
+            pageActionRow(
+                title: KairoL10n.string("chat.thread.action.delete"),
+                systemImage: "trash.slash",
+                tint: KairoDesign.red
+            ) {
+                triggerChatChromeAction(.delete)
+            }
+
+            pageActionRow(
+                title: KairoL10n.string("chat.thread.action.compact"),
+                systemImage: "rectangle.compress.vertical",
                 tint: KairoDesign.blue
             ) {
-                isPageActionsPresented = false
+                triggerChatChromeAction(.compact)
             }
 
             pageActionRow(
-                title: KairoL10n.string("root.section.access.shortTitle"),
-                systemImage: RootSection.access.systemImage,
-                tint: RootSection.access.tint
+                title: KairoL10n.string("chat.thread.action.fork"),
+                systemImage: "arrow.triangle.branch",
+                tint: KairoDesign.teal
             ) {
-                selectedSection = .access
-                isPageActionsPresented = false
-            }
-
-            pageActionRow(
-                title: KairoL10n.string("root.section.models.shortTitle"),
-                systemImage: RootSection.models.systemImage,
-                tint: RootSection.models.tint
-            ) {
-                selectedSection = .models
-                isPageActionsPresented = false
+                triggerChatChromeAction(.fork)
             }
         }
         .padding(8)
@@ -248,6 +272,12 @@ public struct RootView: View {
         .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 14, x: 0, y: 9)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("root.page-actions.palette")
+    }
+
+    private func triggerChatChromeAction(_ action: ChatChromeActionKind) {
+        selectedSection = .chat
+        chatChromeActionRequest = ChatChromeActionRequest(kind: action)
+        isPageActionsPresented = false
     }
 
     private func pageActionRow(
@@ -287,32 +317,11 @@ public struct RootView: View {
                         .accessibilityElement(children: .ignore)
                         .accessibilityIdentifier("root.menu.sheet")
 
-                    HStack(spacing: 12) {
-                        KairoMark(size: 44)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(KairoL10n.string("root.menu.title"))
-                                .font(.title3.bold())
-                            Text(KairoL10n.string("root.menu.subtitle"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button {
-                            closeDrawer()
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 38, height: 38)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(KairoL10n.string("root.menu.close"))
-                        .accessibilityIdentifier("root.drawer.close")
-                    }
+                    chatDrawerSection
 
                     navigationGroup(
                         title: KairoL10n.string("root.menu.group.primary"),
-                        sections: [.chat, .memory, .shortcuts]
+                        sections: [.memory, .shortcuts]
                     )
 
                     navigationGroup(
@@ -331,17 +340,82 @@ public struct RootView: View {
             }
         }
         .background {
-            ZStack(alignment: .leading) {
-                Self.fullScreenBackground
-                Rectangle()
-                    .fill(KairoDesign.teal.opacity(0.16))
-                    .frame(width: 10)
-                    .ignoresSafeArea()
-            }
+            Self.fullScreenBackground
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(KairoL10n.string("root.menu.accessibility"))
         .accessibilityIdentifier("root.drawer")
+        .task {
+            await loadDrawerChatThreads()
+        }
+    }
+
+    private var chatDrawerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(KairoL10n.string("root.menu.chat.section"))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            KairoGroupedSurface {
+                Button {
+                    triggerChatChromeAction(.newThread)
+                    closeDrawer()
+                } label: {
+                    drawerRowContent(
+                        title: KairoL10n.string("chat.new"),
+                        subtitle: KairoL10n.string("root.menu.chat.new.subtitle"),
+                        systemImage: "square.and.pencil",
+                        tint: KairoDesign.blue
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("root.drawer.chat.new")
+
+                let visibleThreads = isDrawerChatHistoryExpanded ? drawerChatThreads : Array(drawerChatThreads.prefix(3))
+                if !visibleThreads.isEmpty {
+                    Divider()
+                        .padding(.leading, 46)
+
+                    ForEach(visibleThreads) { thread in
+                        Button {
+                            triggerChatChromeAction(.selectThread(thread.id))
+                            closeDrawer()
+                        } label: {
+                            drawerRowContent(
+                                title: thread.title,
+                                subtitle: thread.lastMessagePreview,
+                                systemImage: "message",
+                                tint: KairoDesign.teal
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("root.drawer.chat.thread")
+
+                        if thread.id != visibleThreads.last?.id || drawerChatThreads.count > 3 {
+                            Divider()
+                                .padding(.leading, 46)
+                        }
+                    }
+                }
+
+                if drawerChatThreads.count > 3 {
+                    Button {
+                        withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
+                            isDrawerChatHistoryExpanded.toggle()
+                        }
+                    } label: {
+                        drawerRowContent(
+                            title: KairoL10n.string(isDrawerChatHistoryExpanded ? "root.menu.chat.showLess" : "root.menu.chat.showMore"),
+                            subtitle: KairoL10n.string("root.menu.chat.history.subtitle", Int64(drawerChatThreads.count)),
+                            systemImage: isDrawerChatHistoryExpanded ? "chevron.up" : "chevron.down",
+                            tint: KairoDesign.muted
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("root.drawer.chat.show-more")
+                }
+            }
+        }
     }
 
     private func navigationRow(_ section: RootSection) -> some View {
@@ -350,36 +424,54 @@ public struct RootView: View {
             isPageActionsPresented = false
             closeDrawer()
         } label: {
-            HStack(spacing: 13) {
-                Image(systemName: section.systemImage)
-                    .font(.body.weight(.semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(selectedSection == section ? section.tint : .secondary)
-                    .frame(width: 30, height: 30)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(section.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(KairoDesign.ink)
-                    Text(section.subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-
-                Spacer(minLength: 8)
-
-                if selectedSection == section {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.subheadline)
-                        .foregroundStyle(section.tint)
-                }
-            }
-            .padding(.vertical, 10)
-            .contentShape(Rectangle())
+            drawerRowContent(
+                title: section.title,
+                subtitle: section.subtitle,
+                systemImage: section.systemImage,
+                tint: section.tint
+            )
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("root.drawer.\(section.rawValue)")
+    }
+
+    private func drawerRowContent(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        tint: Color
+    ) -> some View {
+        HStack(spacing: 13) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
+    }
+
+    private func loadDrawerChatThreads() async {
+        do {
+            drawerChatThreads = try await environment.chatFeatureDependencies.historyStore.listThreads(limit: 12)
+        } catch {
+            drawerChatThreads = []
+        }
     }
 
     private func navigationGroup(title: String, sections: [RootSection]) -> some View {

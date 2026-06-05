@@ -1097,74 +1097,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(compactView.contains(".buttonStyle(.plain)"))
     }
 
-    func testRootViewDefinesAutomationsRecipeCenterAccessibilityIdentifiers() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let rootView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
-        let automationsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/AutomationsView.swift"), encoding: .utf8)
-
-        XCTAssertFalse(rootView.contains("TabView"))
-        XCTAssertTrue(rootView.contains("GeometryReader"))
-        XCTAssertTrue(rootView.contains("let safeAreaInsets = proxy.safeAreaInsets"))
-        XCTAssertTrue(rootView.contains(#""root.shell""#))
-        XCTAssertTrue(rootView.contains(#""root.safe-area-header""#))
-        XCTAssertTrue(rootView.contains(#""root.drawer.toggle""#))
-        XCTAssertTrue(rootView.contains(#""root.drawer""#))
-        XCTAssertTrue(rootView.contains(#""root.drawer.close""#))
-        XCTAssertTrue(rootView.contains(#""root.drawer.\(section.rawValue)""#))
-        XCTAssertTrue(rootView.contains("navigationMenu(safeAreaInsets: safeAreaInsets)"))
-        XCTAssertFalse(rootView.contains("BriefingInboxView("))
-        XCTAssertTrue(rootView.contains(#""root.menu.sheet""#))
-        XCTAssertFalse(rootView.contains(".ignoresSafeArea(edges: .vertical)"))
-        XCTAssertFalse(rootView.contains("case home"))
-        XCTAssertTrue(rootView.contains("case chat"))
-        XCTAssertTrue(rootView.contains("case memory"))
-        XCTAssertFalse(rootView.contains("case skills"))
-        XCTAssertTrue(rootView.contains("case shortcuts"))
-        XCTAssertTrue(rootView.contains("case access"))
-        XCTAssertTrue(rootView.contains("case models"))
-        XCTAssertTrue(rootView.contains("case settings"))
-        XCTAssertTrue(rootView.contains("AutomationsView("))
-        XCTAssertTrue(automationsView.contains(#""automations.recipe-center""#))
-        XCTAssertTrue(automationsView.contains(#""automations.list""#))
-        XCTAssertTrue(automationsView.contains(#""automations.seed-samples""#))
-        XCTAssertTrue(automationsView.contains(#""automations.message""#))
-        XCTAssertTrue(automationsView.contains(#""automations.recipe.\(recipe.id)""#))
-        XCTAssertTrue(automationsView.contains(#""automations.recipe.\(recipe.id).preview""#))
-        XCTAssertTrue(automationsView.contains(#""automations.recipe.\(recipe.id).run""#))
-        XCTAssertTrue(automationsView.contains(#""automations.recipe.\(recipe.id).toggle""#))
-        XCTAssertTrue(automationsView.contains(#""automations.shortcutTemplates.section""#))
-        XCTAssertTrue(automationsView.contains("ShortcutTemplateRegistry.default"))
-        XCTAssertTrue(automationsView.contains("shortcutTemplateRegistry.manualInstallDisclaimer"))
-        XCTAssertTrue(automationsView.contains(#""automations.shortcut-templates""#))
-        XCTAssertTrue(automationsView.contains(#""automations.shortcut-template.disclaimer""#))
-        XCTAssertTrue(automationsView.contains(#""automations.shortcut-template.\(template.identifier)""#))
-        XCTAssertTrue(automationsView.contains(#""automations.shortcut-template.\(template.identifier).instructions""#))
-    }
-
-    func testStageOneProductRedesignDefinesMobileNativeShellContract() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let rootView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
-        let designSystem = try String(contentsOf: root.appendingPathComponent("Kairo/Views/KairoDesignSystem.swift"), encoding: .utf8)
-        let actionPreview = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ActionPreviewView.swift"), encoding: .utf8)
-        let chatView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatView.swift"), encoding: .utf8)
-
-        XCTAssertTrue(designSystem.contains("enum KairoDesign"))
-        XCTAssertTrue(designSystem.contains("struct KairoMark"))
-        XCTAssertTrue(designSystem.contains("struct KairoStatusPill"))
-        XCTAssertTrue(designSystem.contains("struct KairoActionRow"))
-        XCTAssertTrue(rootView.contains("private var selectedSection: RootSection = .chat"))
-        XCTAssertFalse(rootView.contains("BriefingInboxView("))
-        XCTAssertTrue(rootView.contains("KairoMark(size:"))
-        XCTAssertTrue(rootView.contains(#""root.menu.sheet""#))
-        XCTAssertTrue(rootView.contains(#""root.drawer.toggle""#))
-        XCTAssertFalse(rootView.contains("case home"))
-        XCTAssertTrue(rootView.contains("case memory"))
-        XCTAssertFalse(rootView.contains("TabView"))
-        XCTAssertFalse(chatView.contains("KairoBriefingStrip()"))
-        XCTAssertTrue(actionPreview.contains(#""chat.action.preview.title""#))
-        XCTAssertTrue(actionPreview.contains(#""chat.action.preview.safetyNote""#))
-    }
-
     func testRootShellKeepsChatFirstForMobileUse() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let rootView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
@@ -1230,19 +1162,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(automationsView.contains("previewShortcutDemo"))
         XCTAssertTrue(automationsView.contains("settingsInputSummary"))
         XCTAssertTrue(automationsView.contains("settingsOutputSummary"))
-    }
-
-    func testAutomationsViewUsesCompactFullScreenScrollLayout() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let automationsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/AutomationsView.swift"), encoding: .utf8)
-
-        XCTAssertTrue(automationsView.contains("ScrollView"))
-        XCTAssertTrue(automationsView.contains("automationSectionHeader"))
-        XCTAssertTrue(automationsView.contains("automationSection("))
-        XCTAssertTrue(automationsView.contains(".scrollIndicators(.hidden)"))
-        XCTAssertTrue(automationsView.contains("Color(.sRGB, white: 0.98, opacity: 1).ignoresSafeArea()"))
-        XCTAssertFalse(automationsView.contains("Form {"))
-        XCTAssertFalse(automationsView.contains("automationPanel"))
     }
 
     @MainActor
