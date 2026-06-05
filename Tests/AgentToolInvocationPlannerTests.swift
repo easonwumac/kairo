@@ -94,8 +94,22 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         let candidate = try XCTUnwrap(plan.candidates.first { $0.integrationKey == "gmail-google-workspace" })
 
         XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.skillID, AppIntegrationSkillID.gmailDraftAPI.rawValue)
         XCTAssertEqual(candidate.skillKind, .oauthConnector)
         XCTAssertEqual(candidate.riskTier, .tier3HighRiskExternal)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertNil(candidate.action)
+    }
+
+    func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithoutExecutableAction() throws {
+        let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry(integrations: []))
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Open Google Maps directions to Taipei 101"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.integrationKey == "google-maps" })
+
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.skillID, AppIntegrationSkillID.googleMapsDirectionsHandoff.rawValue)
+        XCTAssertEqual(candidate.skillKind, .custom)
         XCTAssertTrue(candidate.requiresConfirmation)
         XCTAssertNil(candidate.action)
     }

@@ -95,6 +95,7 @@ extension AgentToolInvocationPlanner {
             id: "app-integration-\(skill.id.rawValue)",
             title: skill.appName,
             source: .appIntegrationCatalog,
+            skillID: skill.id.rawValue,
             integrationKey: skill.integrationKey,
             skillKind: skill.executionMode == .apiCall ? .oauthConnector : .custom,
             requiredCapabilities: skill.audit.capabilityKeys,
