@@ -6,6 +6,13 @@ public struct KairoRecipeRunner: Sendable {
     private let aiProvider: (any AIProvider)?
     private let actionGate: any PhoneToolActionGating
 
+    public init(dependencies: KairoRecipeRunnerDependencies) {
+        self.recipeStore = dependencies.recipeStore
+        self.memoryStore = dependencies.memoryStore
+        self.aiProvider = dependencies.aiProvider
+        self.actionGate = dependencies.actionGate
+    }
+
     public init(
         recipeStore: any KairoRecipeStore,
         memoryStore: (any MemoryStore)? = nil,
@@ -13,10 +20,12 @@ public struct KairoRecipeRunner: Sendable {
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         actionGate: (any PhoneToolActionGating)? = nil
     ) {
-        self.recipeStore = recipeStore
-        self.memoryStore = memoryStore
-        self.aiProvider = aiProvider
-        self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        self.init(dependencies: KairoRecipeRunnerDependencies(
+            recipeStore: recipeStore,
+            memoryStore: memoryStore,
+            aiProvider: aiProvider,
+            actionGate: actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        ))
     }
 
     public func run(_ request: KairoRecipeRunRequest) async throws -> KairoRecipeRunResult {

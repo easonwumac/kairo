@@ -125,6 +125,51 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(capturedRequest.memoryContext.map(\.id), [memory.id])
     }
 
+    func testRecipeBackendServiceFactoryBuildsRunnerDependencyBundle() async throws {
+        let recipe = KairoRecipe(
+            id: "factory-ask-recipe",
+            title: "Factory Ask Recipe",
+            summary: "Checks recipe runner dependency composition.",
+            steps: [
+                KairoRecipeStep(
+                    id: "ask",
+                    title: "Ask",
+                    kind: .askKairo,
+                    input: .literal("Use injected provider")
+                )
+            ],
+            requiredCapabilities: [],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let recipeStore = InMemoryKairoRecipeStore(recipes: [recipe])
+        let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Recipe bundle response"))
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: provider,
+            kairoRecipeStore: recipeStore
+        )
+        let dependencies = KairoRecipeBackendServiceFactory(dependencies: environment)
+            .makeRecipeRunnerDependencies()
+        let api = KairoRecipeBackendService(dependencies: dependencies)
+
+        let result = try await api.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .app,
+            input: nil,
+            dryRun: false,
+            userConfirmed: true
+        ))
+        let captured = await provider.capturedRequest()
+        let capturedRequest = try XCTUnwrap(captured)
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.stepResults.first?.outputText, "Recipe bundle response")
+        XCTAssertEqual(capturedRequest.userPrompt, "Use injected provider")
+    }
+
     func testSettingsBackendServiceFactoryBuildsSettingsAPIFromInjectedDependencies() async throws {
         let credentialStore = InMemoryCredentialStore()
         let environment = KairoEnvironment(

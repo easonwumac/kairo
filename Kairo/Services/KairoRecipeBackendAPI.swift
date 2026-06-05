@@ -14,19 +14,23 @@ public struct KairoRecipeBackendService: KairoRecipeAPI {
     private let recipeStore: any KairoRecipeStore
     private let runner: KairoRecipeRunner
 
+    public init(dependencies: KairoRecipeRunnerDependencies) {
+        self.recipeStore = dependencies.recipeStore
+        self.runner = KairoRecipeRunner(dependencies: dependencies)
+    }
+
     public init(
         recipeStore: any KairoRecipeStore,
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
     ) {
-        self.recipeStore = recipeStore
-        self.runner = KairoRecipeRunner(
+        self.init(dependencies: KairoRecipeRunnerDependencies(
             recipeStore: recipeStore,
             memoryStore: memoryStore,
             aiProvider: aiProvider,
-            toolCatalog: toolCatalog
-        )
+            actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        ))
     }
 
     public func listRecipes() async throws -> [KairoRecipe] {

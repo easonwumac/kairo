@@ -121,11 +121,15 @@ public struct KairoRecipeBackendServiceFactory<Dependencies: KairoBackendDepende
     }
 
     public func makeRecipeAPI() -> any KairoRecipeAPI {
-        KairoRecipeBackendService(
+        KairoRecipeBackendService(dependencies: makeRecipeRunnerDependencies())
+    }
+
+    public func makeRecipeRunnerDependencies() -> KairoRecipeRunnerDependencies {
+        KairoRecipeRunnerDependencies(
             recipeStore: dependencies.kairoRecipeStore,
             memoryStore: dependencies.memoryStore,
             aiProvider: dependencies.aiProvider,
-            toolCatalog: dependencies.toolCatalog
+            actionGate: BuiltInPhoneToolActionGate(toolCatalog: dependencies.toolCatalog)
         )
     }
 }
