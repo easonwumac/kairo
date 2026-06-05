@@ -195,6 +195,24 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         })
     }
 
+    func testScenarioDNotionPageRequiresOAuthSetupBeforeExecution() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: AgentSkillCatalog(skills: []))
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "幫我在 Notion 建立頁面：Kairo App Integration Harness 測試紀錄"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == AppIntegrationSkillID.notionPageAPI.rawValue })
+
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.integrationKey, "notion")
+        XCTAssertEqual(candidate.skillKind, .oauthConnector)
+        XCTAssertEqual(candidate.riskTier, .tier3HighRiskExternal)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertNil(candidate.action)
+        XCTAssertTrue(plan.proposedActions.isEmpty)
+        XCTAssertFalse(plan.candidates.contains {
+            $0.source == .integrationRegistry && $0.integrationKey == "notion"
+        })
+    }
+
     func testScenarioELinePrivateMessageReadFallsBackWithoutExecutableHandoff() throws {
         let planner = AgentToolInvocationPlanner(skillCatalog: AgentSkillCatalog(skills: []))
 
