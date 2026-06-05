@@ -39,7 +39,7 @@ final class ShareExtensionLifecycleTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: queue,
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+            chatAPI: makeShareImportChatAPI()
         )
 
         await viewModel.importPendingShares()
@@ -81,7 +81,7 @@ final class ShareExtensionLifecycleTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: queue,
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+            chatAPI: makeShareImportChatAPI()
         )
 
         await viewModel.importPendingShares()
@@ -107,7 +107,7 @@ final class ShareExtensionLifecycleTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: queue,
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+            chatAPI: makeShareImportChatAPI()
         )
 
         await viewModel.importPendingShares()
@@ -137,5 +137,11 @@ final class ShareExtensionLifecycleTests: XCTestCase {
         XCTAssertFalse(source.contains("ActionExecutor"))
         XCTAssertFalse(source.contains("SandboxActionExecutor"))
         XCTAssertFalse(source.contains("LocalModel"))
+    }
+
+    private func makeShareImportChatAPI() -> any KairoChatAPI {
+        KairoChatBackendService(
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+        )
     }
 }
