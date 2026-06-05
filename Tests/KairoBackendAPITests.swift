@@ -72,6 +72,33 @@ final class KairoBackendAPITests: XCTestCase {
         }
     }
 
+    func testProductionBackendServiceFactoryBuildsServicesFromInjectedDependencies() async throws {
+        let memoryStore = InMemoryMemoryStore()
+        let environment = KairoEnvironment(
+            memoryStore: memoryStore,
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response"))
+        )
+        let factory = ProductionKairoBackendServiceFactory(dependencies: environment)
+        let memory = MemoryRecord(
+            title: "Factory memory",
+            summary: "Created through factory-built memory API",
+            content: "Factory dependency wiring",
+            source: .manual
+        )
+
+        try await factory.makeMemoryAPI().save(memory)
+        let saved = try await memoryStore.list(limit: 10)
+        let response = try await factory.makeChatAPI().respond(
+            to: "factory",
+            attachments: [],
+            privacyMode: .standard
+        )
+
+        XCTAssertEqual(saved.map(\.id), [memory.id])
+        XCTAssertEqual(response.message, "Factory response")
+    }
+
     func testBackendModuleComposerUsesEnvironmentOAuthClientConfigurations() async throws {
         let environment = KairoEnvironment(
             memoryStore: InMemoryMemoryStore(),
