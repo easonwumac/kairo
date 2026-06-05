@@ -982,6 +982,24 @@ final class KairoBackendAPITests: XCTestCase {
         ])
     }
 
+    func testAccessFeatureDependencyFactoryCarriesInjectedCapabilityRegistry() {
+        let registry = CapabilityRegistry(capabilities: [
+            Capability(
+                key: .memory,
+                displayName: "Injected Memory",
+                description: "Injected capability registry entry.",
+                permission: .none,
+                status: .available,
+                isMVP: true
+            )
+        ])
+        let dependencies = AccessFeatureDependencyFactory().makeDependencies(
+            capabilityRegistry: registry
+        )
+
+        XCTAssertEqual(dependencies.capabilityRegistry.capabilities, registry.capabilities)
+    }
+
     func testKairoEnvironmentBuildsRootOpenURLHandlerForOAuthCallbacks() async throws {
         let callbackStore = try await FileBackedOAuthConnectorCallbackStore(
             fileURL: temporaryBackendTestFileURL(named: "oauth-callback-previews.json")

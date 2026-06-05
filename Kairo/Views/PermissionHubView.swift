@@ -23,7 +23,7 @@ public struct PermissionHubView: View {
     @State private var accessToolSummaries: [KairoAccessToolSummary] = []
     @State private var accessIntegrationSummaries: [KairoAccessIntegrationSummary] = []
 
-    private let registry = CapabilityRegistry()
+    private let registry: CapabilityRegistry
     private let homeKitDemoCatalog = HomeKitControlDemoCatalog.default
     private let accessAPI: (any KairoAccessAPI)?
     private let skillManagerService: AgentSkillManagerService?
@@ -33,19 +33,22 @@ public struct PermissionHubView: View {
         self.accessAPI = dependencies.accessAPI
         self.skillManagerService = dependencies.skillManagerService
         self.marketplaceCatalogService = dependencies.marketplaceCatalogService
+        self.registry = dependencies.capabilityRegistry
         _skillCatalog = State(initialValue: dependencies.initialSkillCatalog)
     }
 
     public init(
         skillManagerService: AgentSkillManagerService? = nil,
         marketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil,
-        initialSkillCatalog: AgentSkillCatalog = .defaultWithMarketplaceSamples
+        initialSkillCatalog: AgentSkillCatalog = .defaultWithMarketplaceSamples,
+        capabilityRegistry: CapabilityRegistry = CapabilityRegistry()
     ) {
         self.init(
             dependencies: AccessFeatureDependencyFactory().makeDependencies(
                 skillManagerService: skillManagerService,
                 marketplaceCatalogService: marketplaceCatalogService,
-                initialSkillCatalog: initialSkillCatalog
+                initialSkillCatalog: initialSkillCatalog,
+                capabilityRegistry: capabilityRegistry
             )
         )
     }

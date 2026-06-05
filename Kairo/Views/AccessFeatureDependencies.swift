@@ -6,17 +6,20 @@ public struct AccessFeatureDependencies {
     public var skillManagerService: AgentSkillManagerService?
     public var marketplaceCatalogService: AgentSkillMarketplaceCatalogService?
     public var initialSkillCatalog: AgentSkillCatalog
+    public var capabilityRegistry: CapabilityRegistry
 
     public init(
         accessAPI: (any KairoAccessAPI)? = nil,
         skillManagerService: AgentSkillManagerService? = nil,
         marketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil,
-        initialSkillCatalog: AgentSkillCatalog = .defaultWithMarketplaceSamples
+        initialSkillCatalog: AgentSkillCatalog = .defaultWithMarketplaceSamples,
+        capabilityRegistry: CapabilityRegistry = CapabilityRegistry()
     ) {
         self.accessAPI = accessAPI
         self.skillManagerService = skillManagerService
         self.marketplaceCatalogService = marketplaceCatalogService
         self.initialSkillCatalog = initialSkillCatalog
+        self.capabilityRegistry = capabilityRegistry
     }
 }
 
@@ -27,13 +30,15 @@ public struct AccessFeatureDependencyFactory: Sendable {
         accessAPI: (any KairoAccessAPI)? = nil,
         skillManagerService: AgentSkillManagerService? = nil,
         marketplaceCatalogService: AgentSkillMarketplaceCatalogService? = nil,
-        initialSkillCatalog: AgentSkillCatalog = .defaultWithMarketplaceSamples
+        initialSkillCatalog: AgentSkillCatalog = .defaultWithMarketplaceSamples,
+        capabilityRegistry: CapabilityRegistry = CapabilityRegistry()
     ) -> AccessFeatureDependencies {
         AccessFeatureDependencies(
             accessAPI: accessAPI,
             skillManagerService: skillManagerService,
             marketplaceCatalogService: marketplaceCatalogService,
-            initialSkillCatalog: initialSkillCatalog
+            initialSkillCatalog: initialSkillCatalog,
+            capabilityRegistry: capabilityRegistry
         )
     }
 }
