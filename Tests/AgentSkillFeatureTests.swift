@@ -670,6 +670,29 @@ final class AgentSkillFeatureTests: XCTestCase {
         XCTAssertEqual(merged.skill(id: "marketplace-homekit-scene-guard")?.kind, .homeKitControl)
     }
 
+    func testKairoUITestingSkillFactoryBuildsSeededManagerAndMarketplace() async throws {
+        let rootDirectory = temporaryDirectory()
+        let components = try await KairoUITestingSkillFactory(
+            rootDirectory: rootDirectory,
+            seedInstalledWeatherSkill: true
+        ).makeComponents()
+
+        let localCatalog = try await components.managerService.catalog()
+        let remoteCatalog = try await components.marketplaceCatalogService.fetchCatalog()
+        let weatherSkill = try XCTUnwrap(remoteCatalog.catalog.skill(id: "marketplace-weather-briefing"))
+        let manifest = try await components.marketplaceCatalogService.fetchManifest(for: weatherSkill)
+
+        XCTAssertEqual(localCatalog.skill(id: "marketplace-weather-briefing")?.installationStatus, .installed)
+        XCTAssertEqual(localCatalog.skill(id: "marketplace-weather-briefing")?.version, "2.0.0")
+        XCTAssertNotNil(remoteCatalog.catalog.skill(id: "marketplace-qwen-oauth-workflow"))
+        XCTAssertEqual(manifest.skill.id, "marketplace-weather-briefing")
+    }
+
+    private func temporaryDirectory() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    }
+
     private struct SkillMarketplaceIndex: Decodable {
         var marketplaceVersion: String
         var sourceRepository: String
