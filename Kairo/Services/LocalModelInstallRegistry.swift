@@ -108,7 +108,30 @@ public actor FileBackedLocalModelInstallRegistry {
         }
 
         let decoded = try decoder.decode([LocalModelInstallRecord].self, from: data)
-        records = Dictionary(uniqueKeysWithValues: decoded.map { ($0.modelID, $0) })
+        let repaired = decoded.map(repairPortableFileURLIfNeeded)
+        records = Dictionary(uniqueKeysWithValues: repaired.map { ($0.modelID, $0) })
+        if repaired != decoded {
+            try persist()
+        }
+    }
+
+    private func repairPortableFileURLIfNeeded(_ record: LocalModelInstallRecord) -> LocalModelInstallRecord {
+        guard record.status == .installed,
+              !FileManager.default.fileExists(atPath: record.fileURL.path)
+        else {
+            return record
+        }
+
+        let relocatedURL = fileURL
+            .deletingLastPathComponent()
+            .appendingPathComponent(record.fileURL.lastPathComponent)
+        guard FileManager.default.fileExists(atPath: relocatedURL.path) else {
+            return record
+        }
+
+        var repairedRecord = record
+        repairedRecord.fileURL = relocatedURL
+        return repairedRecord
     }
 
     private func persist() throws {

@@ -811,6 +811,42 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(installedRecords.map(\.modelID), [record.modelID])
     }
 
+    func testFileBackedLocalModelInstallRegistryRepairsRelocatedModelFileURLs() async throws {
+        let fileURL = temporaryFileURL(named: "local-model-registry-relocated.json")
+        let currentDirectory = fileURL.deletingLastPathComponent()
+        let currentModelURL = currentDirectory.appendingPathComponent("qwen-small.gguf")
+        let staleModelURL = currentDirectory
+            .deletingLastPathComponent()
+            .appendingPathComponent("OldContainer")
+            .appendingPathComponent("qwen-small.gguf")
+        try FileManager.default.createDirectory(at: currentDirectory, withIntermediateDirectories: true)
+        try Data("model-bytes".utf8).write(to: currentModelURL)
+
+        let staleRecord = LocalModelInstallRecord(
+            modelID: "qwen-small",
+            version: "1.0",
+            status: .installed,
+            fileURL: staleModelURL,
+            installedSizeBytes: 1024,
+            sha256: "abc123"
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        try encoder.encode([staleRecord]).write(to: fileURL)
+
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: fileURL)
+        let repairedRecord = await registry.record(for: "qwen-small")
+        let installedRecords = await registry.installedRecords()
+
+        XCTAssertEqual(repairedRecord?.fileURL, currentModelURL)
+        XCTAssertEqual(installedRecords.map(\.fileURL), [currentModelURL])
+
+        let reloadedRegistry = try await FileBackedLocalModelInstallRegistry(fileURL: fileURL)
+        let persistedRepair = await reloadedRegistry.record(for: "qwen-small")
+        XCTAssertEqual(persistedRepair?.fileURL, currentModelURL)
+    }
+
     func testFileBackedLocalModelSettingsStorePersistsSelectedModelAndPreference() async throws {
         let fileURL = temporaryFileURL(named: "local-model-settings.json")
         let firstStore = try await FileBackedLocalModelSettingsStore(fileURL: fileURL)

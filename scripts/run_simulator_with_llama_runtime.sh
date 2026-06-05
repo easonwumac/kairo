@@ -9,6 +9,7 @@ bundle_id="${KAIRO_BUNDLE_ID:-app.kairo.ios}"
 derived_data_path="${repo_root}/.build/xcode-sim-llama"
 framework_path="${repo_root}/.build/local-runtime/llama.xcframework"
 simulator_framework_path="${framework_path}/ios-arm64_x86_64-simulator/llama.framework"
+launch_args="${KAIRO_LAUNCH_ARGS:-}"
 
 if [[ ! -d "${simulator_framework_path}" ]]; then
     cat >&2 <<EOF
@@ -47,4 +48,10 @@ cp -R "${simulator_framework_path}" "${app_path}/Frameworks/llama.framework"
 xcrun simctl boot "${simulator_id}" 2>/dev/null || true
 open -a Simulator --args -CurrentDeviceUDID "${simulator_id}"
 xcrun simctl install "${simulator_id}" "${app_path}"
-xcrun simctl launch "${simulator_id}" "${bundle_id}"
+if [[ -n "${launch_args}" ]]; then
+    # shellcheck disable=SC2206
+    parsed_launch_args=(${launch_args})
+    xcrun simctl launch "${simulator_id}" "${bundle_id}" "${parsed_launch_args[@]}"
+else
+    xcrun simctl launch "${simulator_id}" "${bundle_id}"
+fi
