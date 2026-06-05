@@ -1007,7 +1007,7 @@ final class KairoCoreTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            chatAPI: makeKairoCoreChatAPI(),
             localModelSettingsService: service
         )
 
@@ -1038,7 +1038,7 @@ final class KairoCoreTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+            chatAPI: makeKairoCoreChatAPI()
         )
         let longMessage = ChatMessage(
             role: .assistant,
@@ -1054,6 +1054,12 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(userMessage.text.contains("I want to reply briefly."))
         XCTAssertLessThan(userMessage.text.count, longMessage.text.count)
         XCTAssertNil(viewModel.replyTarget)
+    }
+
+    private func makeKairoCoreChatAPI() -> any KairoChatAPI {
+        KairoChatBackendService(
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+        )
     }
 
     func testPermissionHubDefinesHomeKitDemoAccessibilityIdentifiers() throws {
