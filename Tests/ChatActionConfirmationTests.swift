@@ -115,7 +115,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            chatAPI: makeActionConfirmationChatAPI(),
             actionExecutor: ChatActionConfirmationMockExecutor()
         )
 
@@ -141,7 +141,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            chatAPI: makeActionConfirmationChatAPI(),
             actionExecutor: executor
         )
 
@@ -177,7 +177,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            chatAPI: makeActionConfirmationChatAPI(),
             actionExecutor: executor
         )
 
@@ -214,7 +214,7 @@ final class ChatActionConfirmationTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            chatAPI: makeActionConfirmationChatAPI(),
             actionExecutor: DeniedActionExecutor(message: executorMessage)
         )
         await viewModel.send(prompt)
@@ -226,6 +226,12 @@ final class ChatActionConfirmationTests: XCTestCase {
         XCTAssertEqual(viewModel.actionResultMessage, expectedResultMessage, file: file, line: line)
         XCTAssertEqual(viewModel.actionResultSucceeded, false, file: file, line: line)
         XCTAssertNil(viewModel.errorMessage, file: file, line: line)
+    }
+
+    private func makeActionConfirmationChatAPI() -> any KairoChatAPI {
+        KairoChatBackendService(
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+        )
     }
 }
 
