@@ -86,6 +86,58 @@ final class KairoAccessBackendAPITests: XCTestCase {
         XCTAssertEqual(summaries[.emailHandoff]?.canBeSuggestedAsExecutable, true)
     }
 
+    func testAccessBackendAPIResolvesAppIntegrationReadinessFromInjectedCatalog() async throws {
+        let appIntegrationSkillCatalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMailHandoff)),
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .gmailDraftAPI)),
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .draftsCreateHandoff))
+        ])
+        let permissions = RecordingPermissionService(statuses: [
+            .mail: .available,
+            .externalConnectors: .available,
+            .documents: .available
+        ])
+        let api = KairoAccessBackendService(
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+            permissionService: permissions
+        )
+
+        let integrations = await api.appIntegrations()
+        let summaries = Dictionary(uniqueKeysWithValues: integrations.map { ($0.skillID, $0) })
+
+        XCTAssertEqual(summaries[.appleMailHandoff]?.readiness, .available)
+        XCTAssertEqual(summaries[.appleMailHandoff]?.executionMode, .openURL)
+        XCTAssertEqual(summaries[.appleMailHandoff]?.canBeSuggestedAsExecutable, true)
+        XCTAssertEqual(summaries[.gmailDraftAPI]?.readiness, .needsOAuth)
+        XCTAssertEqual(summaries[.gmailDraftAPI]?.executionMode, .apiCall)
+        XCTAssertEqual(summaries[.gmailDraftAPI]?.canBeSuggestedAsExecutable, false)
+        XCTAssertEqual(summaries[.draftsCreateHandoff]?.readiness, .needsInstalledApp)
+        XCTAssertEqual(summaries[.draftsCreateHandoff]?.canBeSuggestedAsExecutable, false)
+    }
+
+    func testAccessBackendAPIBlocksAppIntegrationExecutableSuggestionsWhenPermissionUnavailable() async throws {
+        let appIntegrationSkillCatalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .googleMapsDirectionsHandoff)),
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .whatsappMessageHandoff))
+        ])
+        let permissions = RecordingPermissionService(statuses: [
+            .location: .denied,
+            .messages: .available
+        ])
+        let api = KairoAccessBackendService(
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+            permissionService: permissions
+        )
+
+        let integrations = await api.appIntegrations()
+        let summaries = Dictionary(uniqueKeysWithValues: integrations.map { ($0.skillID, $0) })
+
+        XCTAssertEqual(summaries[.googleMapsDirectionsHandoff]?.readiness, .unsupported)
+        XCTAssertEqual(summaries[.googleMapsDirectionsHandoff]?.canBeSuggestedAsExecutable, false)
+        XCTAssertEqual(summaries[.whatsappMessageHandoff]?.readiness, .available)
+        XCTAssertEqual(summaries[.whatsappMessageHandoff]?.canBeSuggestedAsExecutable, true)
+    }
+
     func testAccessPermissionStatusFallbackCopyDoesNotBypassSystemPermissions() throws {
         XCTAssertEqual(
             CapabilityStatus.denied.accessFallbackMessage,
