@@ -252,26 +252,9 @@ public struct KairoEnvironment: KairoBackendDependencies {
         )
         let memoryStore = InMemoryMemoryStore()
         let auditLogger = InMemoryAuditLogger()
-        let shareIngestionQueue: ShareIngestionQueue
-        if seedSharedTaskText {
-            let builder = ShareAttachmentBuilder()
-            let sharedItem = ShareIngestionItem(
-                attachments: [
-                    builder.text(
-                        """
-                        TODO: Send prototype link
-                        Reminder: Book beta review meeting
-                        """,
-                        displayName: "Launch Notes"
-                    )
-                ],
-                sourceApplication: "UITestShareSheet",
-                receivedAt: Date(timeIntervalSince1970: 10)
-            )
-            shareIngestionQueue = InMemoryShareIngestionQueue(seed: [sharedItem])
-        } else {
-            shareIngestionQueue = InMemoryShareIngestionQueue()
-        }
+        let shareIngestionQueue = KairoUITestingShareImportFactory(
+            seedSharedTaskText: seedSharedTaskText
+        ).makeQueue()
         let chatHistoryStore = try await JSONFileChatHistoryStore(
             fileURL: rootDirectory
                 .appendingPathComponent("Chat", isDirectory: true)

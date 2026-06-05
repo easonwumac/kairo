@@ -3,6 +3,17 @@ import Foundation
 @testable import KairoCore
 
 final class KairoShareImportBackendAPITests: XCTestCase {
+    func testKairoUITestingShareImportFactorySeedsPendingTextItemWhenRequested() async throws {
+        let queue = KairoUITestingShareImportFactory(seedSharedTaskText: true).makeQueue()
+
+        let pending = try await queue.pendingItems(limit: 10)
+
+        XCTAssertEqual(pending.count, 1)
+        XCTAssertEqual(pending.first?.status, .pending)
+        XCTAssertEqual(pending.first?.attachments.map(\.kind), [.text])
+        XCTAssertEqual(pending.first?.attachments.first?.source, .shareExtension)
+    }
+
     func testShareImportBackendAPIImportsPendingItemsWithoutDeletingBeforeChatSend() async throws {
         let builder = ShareAttachmentBuilder()
         let firstItem = ShareIngestionItem(
