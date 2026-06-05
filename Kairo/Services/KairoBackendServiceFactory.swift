@@ -42,10 +42,12 @@ public struct KairoSettingsBackendServiceFactory<Dependencies: KairoBackendDepen
     public func makeSettingsAPI() -> any KairoSettingsAPI {
         KairoSettingsBackendService(
             openAISettingsService: OpenAISettingsService(credentialStore: dependencies.credentialStore),
-            oauthLoginCenter: OAuthConnectorLoginCenter(
-                registry: dependencies.oauthConnectorRegistry,
+            oauthLoginCenter: OAuthConnectorLoginServiceFactory().makeLoginService(
+                override: nil,
                 credentialStore: dependencies.credentialStore,
-                clientConfigurations: dependencies.oauthClientConfigurations
+                oauthConnectorRegistry: dependencies.oauthConnectorRegistry,
+                oauthClientConfigurations: dependencies.oauthClientConfigurations,
+                oauthCallbackStore: nil
             )
         )
     }
@@ -186,6 +188,13 @@ public struct KairoDeletionBackendServiceFactory<Dependencies: KairoBackendDepen
             memoryStore: dependencies.memoryStore,
             credentialStore: dependencies.credentialStore,
             auditLogger: dependencies.auditLogger,
+            oauthLoginService: OAuthConnectorLoginServiceFactory().makeLoginService(
+                override: nil,
+                credentialStore: dependencies.credentialStore,
+                oauthConnectorRegistry: dependencies.oauthConnectorRegistry,
+                oauthClientConfigurations: dependencies.oauthClientConfigurations,
+                oauthCallbackStore: nil
+            ),
             localModelSettingsService: dependencies.localModelSettingsService
         )
     }

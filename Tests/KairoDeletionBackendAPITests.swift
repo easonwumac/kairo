@@ -103,6 +103,22 @@ final class KairoDeletionBackendAPITests: XCTestCase {
         XCTAssertFalse(status.installedModels.contains { $0.modelID == "qwen-small" })
     }
 
+    func testDeletionBackendAPIUsesInjectedOAuthLoginServiceForDisconnect() async throws {
+        let oauthLoginService = CapturingDeletionOAuthLoginService()
+        let deletionAPI = KairoDeletionBackendService(
+            chatHistoryStore: InMemoryChatHistoryStore(),
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            auditLogger: InMemoryAuditLogger(),
+            oauthLoginService: oauthLoginService
+        )
+
+        try await deletionAPI.disconnectOAuthProvider(providerKey: "todoist")
+
+        let disconnectedProviderKeys = await oauthLoginService.disconnectedProviderKeys()
+        XCTAssertEqual(disconnectedProviderKeys, ["todoist"])
+    }
+
     func testSettingsPrivacyCoordinatorClearsAuditLogThroughDeletionAPI() async throws {
         let auditLogger = InMemoryAuditLogger()
         let deletionAPI = KairoDeletionBackendService(
@@ -189,5 +205,41 @@ final class KairoDeletionBackendAPITests: XCTestCase {
             .appendingPathComponent("KairoDeletionBackendAPITests-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory.appendingPathComponent(name)
+    }
+}
+
+private actor CapturingDeletionOAuthLoginService: OAuthConnectorLoginServicing {
+    private var providerKeys: [String] = []
+
+    func disconnectedProviderKeys() -> [String] {
+        providerKeys
+    }
+
+    func loginOptions() async throws -> [OAuthConnectorLoginOption] {
+        []
+    }
+
+    func makeAuthorizationSession(
+        for integrationKey: String,
+        state: String,
+        codeVerifier: String
+    ) async throws -> OAuthConnectorAuthorizationSession {
+        throw OAuthConnectorLoginCenterError.missingIntegration(integrationKey)
+    }
+
+    func previewCallback(_ callbackURL: URL) async throws -> OAuthConnectorCallbackPreview {
+        throw OAuthConnectorLoginCenterError.missingIntegration(callbackURL.absoluteString)
+    }
+
+    func exchangeCallback(
+        _ callbackURL: URL,
+        expectedState: String,
+        codeVerifier: String?
+    ) async throws -> OAuthTokenSet {
+        throw OAuthConnectorLoginCenterError.missingIntegration(callbackURL.absoluteString)
+    }
+
+    func disconnect(providerKey: String) async throws {
+        providerKeys.append(providerKey)
     }
 }

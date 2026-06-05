@@ -20,6 +20,7 @@ public struct KairoDeletionBackendService: KairoDeletionAPI {
     private let memoryStore: any MemoryStore
     private let credentialStore: any CredentialStore
     private let auditLogger: any AuditLogger
+    private let oauthLoginService: any OAuthConnectorLoginServicing
     private let localModelSettingsService: LocalModelSettingsService?
 
     public init(
@@ -27,12 +28,20 @@ public struct KairoDeletionBackendService: KairoDeletionAPI {
         memoryStore: any MemoryStore,
         credentialStore: any CredentialStore,
         auditLogger: any AuditLogger,
+        oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil
     ) {
         self.chatHistoryStore = chatHistoryStore
         self.memoryStore = memoryStore
         self.credentialStore = credentialStore
         self.auditLogger = auditLogger
+        self.oauthLoginService = OAuthConnectorLoginServiceFactory().makeLoginService(
+            override: oauthLoginService,
+            credentialStore: credentialStore,
+            oauthConnectorRegistry: IntegrationRegistry.appIntegrationHarnessRegistry(),
+            oauthClientConfigurations: [:],
+            oauthCallbackStore: nil
+        )
         self.localModelSettingsService = localModelSettingsService
     }
 
@@ -57,8 +66,7 @@ public struct KairoDeletionBackendService: KairoDeletionAPI {
     }
 
     public func disconnectOAuthProvider(providerKey: String) async throws {
-        try await OAuthConnectorLoginCenter(credentialStore: credentialStore)
-            .disconnect(providerKey: providerKey)
+        try await oauthLoginService.disconnect(providerKey: providerKey)
     }
 
     public func deleteLocalModel(id: String) async throws {
