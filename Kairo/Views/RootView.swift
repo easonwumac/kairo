@@ -94,6 +94,7 @@ public struct RootView: View {
         switch selectedSection {
         case .chat:
             ChatView(dependencies: environment.chatFeatureDependencies)
+                .ignoresSafeArea(.container, edges: .top)
         case .memory:
             MemoryCenterView(dependencies: environment.memoryFeatureDependencies)
         case .shortcuts:
@@ -115,7 +116,7 @@ public struct RootView: View {
     }
 
     private func rootHeader(topInset: CGFloat) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             Button {
                 withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
                     isMenuPresented = true
@@ -123,7 +124,7 @@ public struct RootView: View {
             } label: {
                 Label(KairoL10n.string("root.menu"), systemImage: "chevron.left")
                     .labelStyle(.iconOnly)
-                    .font(.title.weight(.semibold))
+                    .font(.headline.weight(.semibold))
                     .glassCircleControl()
             }
             .buttonStyle(.plain)
@@ -131,11 +132,11 @@ public struct RootView: View {
             .accessibilityIdentifier("root.drawer.toggle")
 
             Text(selectedSection.chromeTitle)
-                .font(.title3.weight(.semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(KairoDesign.ink)
                 .lineLimit(1)
-                .padding(.horizontal, 24)
-                .frame(height: 58)
+                .padding(.horizontal, 14)
+                .frame(height: 38)
                 .glassCapsuleControl()
                 .accessibilityLabel(selectedSection.title)
                 .accessibilityIdentifier("root.current-section")
@@ -149,15 +150,15 @@ public struct RootView: View {
             } label: {
                 Label(KairoL10n.string("root.moreActions"), systemImage: "ellipsis")
                     .labelStyle(.iconOnly)
-                    .font(.title2.weight(.bold))
+                    .font(.headline.weight(.bold))
                     .glassCircleControl()
             }
             .buttonStyle(.plain)
             .accessibilityLabel(KairoL10n.string("root.moreActions"))
             .accessibilityIdentifier("root.page-actions")
         }
-        .padding(.horizontal, 16)
-        .padding(.top, max(topInset, 0) + 10)
+        .padding(.horizontal, 14)
+        .padding(.top, max(topInset - 12, 0))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("root.safe-area-header")
     }
@@ -406,7 +407,7 @@ private extension View {
     func glassCircleControl() -> some View {
         self
             .foregroundStyle(KairoDesign.ink)
-            .frame(width: 64, height: 64)
+            .frame(width: 38, height: 38)
             .background {
                 Circle()
                     .fill(.ultraThinMaterial)
@@ -419,7 +420,7 @@ private extension View {
                 Circle()
                     .stroke(kairoGlassControlStroke, lineWidth: 1)
             }
-            .shadow(color: Color.black.opacity(0.34), radius: 22, x: 0, y: 12)
+            .shadow(color: Color.black.opacity(0.28), radius: 12, x: 0, y: 7)
     }
 
     func glassCapsuleControl() -> some View {
@@ -436,7 +437,7 @@ private extension View {
                 Capsule()
                     .stroke(kairoGlassControlStroke, lineWidth: 1)
             }
-            .shadow(color: Color.black.opacity(0.34), radius: 22, x: 0, y: 12)
+            .shadow(color: Color.black.opacity(0.28), radius: 12, x: 0, y: 7)
     }
 }
 

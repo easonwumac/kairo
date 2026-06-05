@@ -10,16 +10,18 @@ struct ChatBubble: View {
 
     var body: some View {
         HStack(alignment: .bottom) {
-            if isUser { Spacer(minLength: 44) }
+            if isUser { Spacer(minLength: 76) }
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 5) {
                 Text(message.text)
-                    .font(.body)
+                    .font(.callout)
                     .foregroundStyle(isUser ? .white : KairoDesign.ink)
                     .textSelection(.enabled)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(bubbleColor, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .lineSpacing(1)
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: isUser ? 236 : 270, alignment: isUser ? .trailing : .leading)
+                    .background(bubbleColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .contextMenu {
                         Button {
                             onCopy(message.text)
@@ -68,12 +70,12 @@ struct ChatBubble: View {
                 }
                 .font(.caption2)
                 .foregroundStyle(KairoDesign.muted)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 6)
             }
 
-            if !isUser { Spacer(minLength: 44) }
+            if !isUser { Spacer(minLength: 66) }
         }
-        .padding(.horizontal)
+        .padding(.horizontal, 14)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(message.text)
         .accessibilityIdentifier(isUser ? "chat.message.user" : "chat.message.assistant")
@@ -82,7 +84,7 @@ struct ChatBubble: View {
     private var bubbleColor: Color {
         if isUser { return .accentColor }
         if message.status == .failed { return Color.orange.opacity(0.16) }
-        return KairoDesign.elevatedSurface.opacity(0.86)
+        return KairoDesign.elevatedSurface.opacity(0.72)
     }
 
     private var memoryContextLabel: String {
