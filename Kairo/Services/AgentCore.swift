@@ -10,6 +10,7 @@ public actor AgentCore {
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
     private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     private let actionGate: any PhoneToolActionGating
+    private let toolContextProvider: any AgentCapabilityPromptContextProviding
     private let memoryCandidateExtractor: MemoryCandidateExtractor
 
     public init(
@@ -21,6 +22,7 @@ public actor AgentCore {
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         actionGate: (any PhoneToolActionGating)? = nil,
+        toolContextProvider: (any AgentCapabilityPromptContextProviding)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
@@ -34,6 +36,12 @@ public actor AgentCore {
         self.toolCatalog = toolCatalog
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        self.toolContextProvider = toolContextProvider ?? DefaultAgentCapabilityPromptContextProvider(
+            capabilityRegistry: capabilityRegistry,
+            toolCatalog: toolCatalog,
+            integrationRegistry: integrationRegistry,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
+        )
         self.memoryCandidateExtractor = memoryCandidateExtractor
     }
 
@@ -51,13 +59,7 @@ public actor AgentCore {
         let allowedCapabilities = capabilityRegistry.capabilities
             .filter { $0.status == .available || $0.status == .unknown }
             .map(\.key)
-        let toolContext = CapabilityPromptContextBuilder(
-            capabilityRegistry: capabilityRegistry,
-            toolCatalog: toolCatalog,
-            integrationRegistry: integrationRegistry,
-            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
-            skillCatalog: skillCatalog
-        ).build()
+        let toolContext = toolContextProvider.buildToolContext(skillCatalog: skillCatalog)
         let toolPlan = AgentToolInvocationPlanner(
             skillCatalog: skillCatalog,
             integrationRegistry: integrationRegistry,

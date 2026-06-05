@@ -86,6 +86,32 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(response.memoryContextCount, 1)
     }
 
+    func testAgentCoreUsesInjectedToolContextProvider() async throws {
+        let provider = CapturingAIProvider(response: AICompletionResponse(message: "Context response"))
+        let toolContextProvider = StubAgentCapabilityPromptContextProvider()
+        let skillCatalog = AgentSkillCatalog(skills: [
+            AgentSkill(
+                id: "injected-tool-context-skill",
+                displayName: "Injected Tool Context Skill",
+                summary: "Used to verify tool context provider injection.",
+                kind: .custom,
+                source: .userCreated,
+                installationStatus: .installed,
+                requiredCapabilities: [.memory]
+            )
+        ])
+        let agent = AgentCore(
+            aiProvider: provider,
+            skillCatalog: skillCatalog,
+            toolContextProvider: toolContextProvider
+        )
+
+        _ = try await agent.respond(to: "hello")
+
+        XCTAssertEqual(toolContextProvider.buildCount, 1)
+        XCTAssertEqual(toolContextProvider.receivedSkillIDs, ["injected-tool-context-skill"])
+    }
+
     func testJSONFileMemoryStorePersistsSavedMemory() async throws {
         let fileURL = temporaryFileURL(named: "memory-store.json")
         let memory = MemoryRecord(
@@ -2022,6 +2048,17 @@ private final class StubAppIntegrationPromptContextProvider: AppIntegrationPromp
 
     func buildAppIntegrationSection() -> String {
         buildCount += 1
+        return ""
+    }
+}
+
+private final class StubAgentCapabilityPromptContextProvider: AgentCapabilityPromptContextProviding, @unchecked Sendable {
+    private(set) var buildCount = 0
+    private(set) var receivedSkillIDs: [String] = []
+
+    func buildToolContext(skillCatalog: AgentSkillCatalog) -> String {
+        buildCount += 1
+        receivedSkillIDs = skillCatalog.installedSkills.map(\.id)
         return ""
     }
 }
