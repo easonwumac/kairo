@@ -72,6 +72,7 @@ public extension ShortcutDemoCatalog {
                 ShortcutDemoStep(
                     shortcutActionTitle: "Prepare Message Handoff with Kairo",
                     nodeKind: .prepareMessageHandoff,
+                    integrationSkillID: .appleMessagesHandoff,
                     inputContract: ShortcutNodeContract(
                         requiredFields: ["text"],
                         optionalFields: ["sourceName", "variables.recipient", "variables.body"],
@@ -87,6 +88,7 @@ public extension ShortcutDemoCatalog {
                         sourceName: "Shared Message",
                         variables: [
                             "shortcutRecipeID": "message-reply-handoff",
+                            "integrationSkillID": AppIntegrationSkillID.appleMessagesHandoff.rawValue,
                             "recipient": "0912345678",
                             "body": "I am running late but will join in 10 minutes."
                         ]
@@ -189,6 +191,7 @@ public extension ShortcutDemoCatalog {
                 ShortcutDemoStep(
                     shortcutActionTitle: "Create Email Draft with Kairo",
                     nodeKind: .createEmailDraft,
+                    integrationSkillID: .appleMailHandoff,
                     inputContract: ShortcutNodeContract(
                         requiredFields: ["text"],
                         optionalFields: ["sourceName", "variables.recipient", "variables.subject"],
@@ -206,7 +209,10 @@ public extension ShortcutDemoCatalog {
                         Please review the latest Shortcut node rollout and confirm any blockers before Friday.
                         """,
                         sourceName: "Shared Text Shortcut",
-                        variables: ["shortcutRecipeID": "email-draft-from-shared-text"]
+                        variables: [
+                            "shortcutRecipeID": "email-draft-from-shared-text",
+                            "integrationSkillID": AppIntegrationSkillID.appleMailHandoff.rawValue
+                        ]
                     )
                 )
             ]

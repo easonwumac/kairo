@@ -16,6 +16,7 @@ public extension ShortcutDemoCatalog {
                 ShortcutDemoStep(
                     shortcutActionTitle: "Prepare Web Search Handoff with Kairo",
                     nodeKind: .prepareWebSearchHandoff,
+                    integrationSkillID: .safariWebSearchHandoff,
                     inputContract: ShortcutNodeContract(
                         requiredFields: ["text"],
                         optionalFields: ["sourceName", "variables.query"],
@@ -31,6 +32,7 @@ public extension ShortcutDemoCatalog {
                         sourceName: "Search Shortcut",
                         variables: [
                             "shortcutRecipeID": "web-search-handoff",
+                            "integrationSkillID": AppIntegrationSkillID.safariWebSearchHandoff.rawValue,
                             "query": "SwiftUI App Intents examples"
                         ]
                     )

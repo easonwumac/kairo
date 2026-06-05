@@ -1081,6 +1081,35 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(run.totalReminderDraftCount, 0)
     }
 
+    func testShortcutHandoffDemoStepsResolveThroughAppIntegrationCatalog() async throws {
+        let demoCatalog = ShortcutDemoCatalog.default
+        let integrationCatalog = AppIntegrationSkillCatalog()
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let runner = ShortcutDemoRecipeRunner(runtime: runtime)
+
+        let cases: [(recipeID: String, expectedSkillID: AppIntegrationSkillID)] = [
+            ("message-reply-handoff", .appleMessagesHandoff),
+            ("phone-call-handoff", .applePhoneHandoff),
+            ("web-search-handoff", .safariWebSearchHandoff),
+            ("email-draft-from-shared-text", .appleMailHandoff)
+        ]
+
+        for testCase in cases {
+            let recipe = try XCTUnwrap(demoCatalog.recipe(id: testCase.recipeID))
+            let step = try XCTUnwrap(recipe.steps.first)
+            let skill = try XCTUnwrap(integrationCatalog.skill(for: step))
+
+            XCTAssertEqual(step.integrationSkillID, testCase.expectedSkillID)
+            XCTAssertEqual(step.sampleInput.variables["integrationSkillID"], testCase.expectedSkillID.rawValue)
+            XCTAssertEqual(skill.id, testCase.expectedSkillID)
+            XCTAssertEqual(skill.executionMode, .openURL)
+            XCTAssertTrue(skill.requiresConfirmation)
+
+            let run = try await runner.runSample(recipe)
+            XCTAssertEqual(run.steps.first?.output.fields["integrationSkillID"], testCase.expectedSkillID.rawValue)
+        }
+    }
+
     func testShortcutDemoRecipeRunnerExecutesPhoneCallHandoffSampleWithoutCalling() async throws {
         let catalog = ShortcutDemoCatalog.default
         let recipe = try XCTUnwrap(catalog.recipe(id: "phone-call-handoff"))

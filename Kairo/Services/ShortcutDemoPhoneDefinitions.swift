@@ -16,6 +16,7 @@ public extension ShortcutDemoCatalog {
                 ShortcutDemoStep(
                     shortcutActionTitle: "Prepare Phone Call Handoff with Kairo",
                     nodeKind: .preparePhoneCallHandoff,
+                    integrationSkillID: .applePhoneHandoff,
                     inputContract: ShortcutNodeContract(
                         requiredFields: ["text"],
                         optionalFields: ["sourceName", "variables.phoneNumber", "variables.label"],
@@ -31,6 +32,7 @@ public extension ShortcutDemoCatalog {
                         sourceName: "Shared Phone Text",
                         variables: [
                             "shortcutRecipeID": "phone-call-handoff",
+                            "integrationSkillID": AppIntegrationSkillID.applePhoneHandoff.rawValue,
                             "phoneNumber": "+1 (555) 0100",
                             "label": "Alex"
                         ]

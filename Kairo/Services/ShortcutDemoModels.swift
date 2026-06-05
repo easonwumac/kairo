@@ -73,6 +73,7 @@ public struct ShortcutDemoRecipe: Codable, Equatable, Identifiable, Sendable {
 public struct ShortcutDemoStep: Codable, Equatable, Sendable {
     public var shortcutActionTitle: String
     public var nodeKind: ShortcutNodeKind
+    public var integrationSkillID: AppIntegrationSkillID?
     public var inputContract: ShortcutNodeContract
     public var outputContract: ShortcutNodeContract
     public var sampleInput: ShortcutNodeInput
@@ -80,12 +81,14 @@ public struct ShortcutDemoStep: Codable, Equatable, Sendable {
     public init(
         shortcutActionTitle: String,
         nodeKind: ShortcutNodeKind,
+        integrationSkillID: AppIntegrationSkillID? = nil,
         inputContract: ShortcutNodeContract,
         outputContract: ShortcutNodeContract,
         sampleInput: ShortcutNodeInput
     ) {
         self.shortcutActionTitle = shortcutActionTitle
         self.nodeKind = nodeKind
+        self.integrationSkillID = integrationSkillID
         self.inputContract = inputContract
         self.outputContract = outputContract
         self.sampleInput = sampleInput

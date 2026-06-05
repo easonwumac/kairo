@@ -14,6 +14,11 @@ public extension AppIntegrationSkillCatalogProviding {
         return skill(id: integrationSkillID)
     }
 
+    func skill(for shortcutDemoStep: ShortcutDemoStep) -> AppIntegrationSkill? {
+        guard let integrationSkillID = shortcutDemoStep.integrationSkillID else { return nil }
+        return skill(id: integrationSkillID)
+    }
+
     var executableSkills: [AppIntegrationSkill] {
         skills.filter(\.canBeSuggestedAsExecutable)
     }
