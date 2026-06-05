@@ -733,6 +733,8 @@
 "settings.models.cloud.add" = "新增雲端模型";
 "settings.models.cloud.add.title" = "新增雲端模型";
 "settings.models.cloud.add.detail" = "選擇 provider 後設定 API key 或 OAuth 帳號；完成設定後才會出現在雲端列表。";
+"settings.models.cloud.detail.title" = "雲端模型";
+"settings.models.cloud.detail.detail" = "編輯 provider 連線，或從 Kairo 移除。";
 "settings.models.cloud.add.empty" = "目前沒有其他可新增的雲端 provider。";
 "settings.models.cloud.reconfigure" = "重新設定";
 "settings.models.cloud.remove" = "移除";
@@ -816,6 +818,9 @@
 "settings.models.local.add.title" = "新增本地模型";
 "settings.models.local.add.detail" = "選擇模型後會開始下載，下載進度會回到本地模型列表顯示。";
 "settings.models.local.add.empty" = "目前沒有可下載的本地模型。";
+"settings.models.local.detail.title" = "本地模型";
+"settings.models.local.detail.detail" = "查看模型細節、執行本機檢查，或刪除已下載模型。";
+"settings.models.detail.unavailable" = "這個模型或 provider 已不可用。";
 "settings.models.add.back" = "返回";
 "settings.models.advanced.section" = "測試與儲存";
 "settings.models.advanced.show" = "顯示測試與儲存";

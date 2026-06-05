@@ -19,7 +19,10 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>UILaunchScreen</key>
-	<dict/>
+	<dict>
+		<key>UIImageName</key>
+		<string>LaunchScreen</string>
+	</dict>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
