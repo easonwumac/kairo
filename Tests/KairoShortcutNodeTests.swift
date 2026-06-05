@@ -350,6 +350,40 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(outputJSON.contains(#""createdBy":"agentSuggested""#))
     }
 
+    func testShortcutCreateRecipeDraftNodeUsesInjectedRecipePlanner() async throws {
+        let recipe = KairoRecipe(
+            id: "shortcut-runtime-injected-recipe",
+            title: "Shortcut Runtime Injected Recipe",
+            summary: "Shortcut node runtime planner boundary.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "ask",
+                    title: "Ask",
+                    kind: .askKairo,
+                    input: .literal("Injected")
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: false
+        )
+        let runtime = ShortcutNodeRuntime(
+            memoryStore: InMemoryMemoryStore(),
+            recipePlanner: ShortcutNodeRecipePlannerStub(recipes: [recipe])
+        )
+
+        let output = try await runtime.run(
+            .createRecipeDraft,
+            input: ShortcutNodeInput(text: "ignored by stub planner")
+        )
+
+        XCTAssertEqual(output.fields["recipeID"], recipe.id)
+        XCTAssertEqual(output.fields["recipeStepCount"], "1")
+        XCTAssertEqual(output.recipeDrafts.map(\.id), [recipe.id])
+    }
+
     func testShortcutPreviewHomeActionNodeReturnsConfirmationOnlyAction() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let kind = try XCTUnwrap(ShortcutNodeKind(rawValue: "previewHomeAction"))
@@ -1483,6 +1517,14 @@ private struct StubShortcutNodeRuntimeProvider: ShortcutNodeRuntimeProviding {
     }
 }
 #endif
+
+private struct ShortcutNodeRecipePlannerStub: KairoRecipePlanning {
+    var recipes: [KairoRecipe]
+
+    func suggestRecipes(for request: String, now: Date) -> [KairoRecipe] {
+        recipes
+    }
+}
 
 private final class StubShortcutIntegrationBlockedOutputBuilder: ShortcutIntegrationBlockedOutputBuilding, @unchecked Sendable {
     private(set) var receivedKinds: [ShortcutNodeKind] = []

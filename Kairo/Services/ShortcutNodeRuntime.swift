@@ -4,19 +4,22 @@ public actor ShortcutNodeRuntime {
     private let memoryStore: MemoryStore
     private let actionGate: any PhoneToolActionGating
     private let integrationGate: any ShortcutNodeIntegrationGating
+    private let recipePlanner: any KairoRecipePlanning
 
     public init(
         memoryStore: MemoryStore,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         actionGate: (any PhoneToolActionGating)? = nil,
-        integrationGate: (any ShortcutNodeIntegrationGating)? = nil
+        integrationGate: (any ShortcutNodeIntegrationGating)? = nil,
+        recipePlanner: any KairoRecipePlanning = KairoRecipePlanner()
     ) {
         self.memoryStore = memoryStore
         self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         self.integrationGate = integrationGate ?? CatalogBackedShortcutNodeIntegrationGate(
             appIntegrationSkillCatalog: appIntegrationSkillCatalog
         )
+        self.recipePlanner = recipePlanner
     }
 
     public static func live(
@@ -381,7 +384,7 @@ public actor ShortcutNodeRuntime {
 
     private func createRecipeDraft(_ input: ShortcutNodeInput) throws -> ShortcutNodeOutput {
         let text = try validatedText(input.text)
-        let recipes = KairoRecipePlanner().suggestRecipes(
+        let recipes = recipePlanner.suggestRecipes(
             for: text,
             now: Date(timeIntervalSince1970: 0)
         )
