@@ -51,13 +51,31 @@ public struct KairoSettingsBackendServiceFactory<Dependencies: KairoBackendDepen
     }
 }
 
+public struct KairoAccessBackendServiceFactory<Dependencies: KairoBackendDependencies>: Sendable {
+    private let dependencies: Dependencies
+
+    public init(dependencies: Dependencies) {
+        self.dependencies = dependencies
+    }
+
+    public func makeAccessAPI() -> any KairoAccessAPI {
+        KairoAccessBackendService(
+            toolCatalog: dependencies.toolCatalog,
+            appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog,
+            permissionService: dependencies.permissionService
+        )
+    }
+}
+
 public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDependencies>: KairoBackendServiceMaking {
     private let dependencies: Dependencies
     private let settingsFactory: KairoSettingsBackendServiceFactory<Dependencies>
+    private let accessFactory: KairoAccessBackendServiceFactory<Dependencies>
 
     public init(dependencies: Dependencies) {
         self.dependencies = dependencies
         self.settingsFactory = KairoSettingsBackendServiceFactory(dependencies: dependencies)
+        self.accessFactory = KairoAccessBackendServiceFactory(dependencies: dependencies)
     }
 
     public func makeChatAPI() -> any KairoChatAPI {
@@ -124,10 +142,6 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
     }
 
     public func makeAccessAPI() -> any KairoAccessAPI {
-        KairoAccessBackendService(
-            toolCatalog: dependencies.toolCatalog,
-            appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog,
-            permissionService: dependencies.permissionService
-        )
+        accessFactory.makeAccessAPI()
     }
 }

@@ -126,6 +126,32 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(options.first?.readiness, .readyToAuthorize)
     }
 
+    func testAccessBackendServiceFactoryBuildsAccessAPIFromInjectedDependencies() async throws {
+        let toolCatalog = BuiltInPhoneToolCatalog(tools: [
+            try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
+        ])
+        let appIntegrationSkillCatalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .googleMapsDirectionsHandoff))
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            permissionService: StubPermissionService(),
+            toolCatalog: toolCatalog,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
+        )
+        let accessAPI = KairoAccessBackendServiceFactory(dependencies: environment).makeAccessAPI()
+
+        let tools = await accessAPI.tools()
+        let integrations = await accessAPI.appIntegrations()
+
+        XCTAssertEqual(tools.map(\.toolID), [.calendarWrite])
+        XCTAssertEqual(tools.first?.readiness, .needsPermission)
+        XCTAssertEqual(integrations.map(\.skillID), [.googleMapsDirectionsHandoff])
+        XCTAssertEqual(integrations.first?.readiness, .available)
+    }
+
     func testBackendCompositionSharesInjectedPhoneToolCatalogAcrossAccessAndChat() async throws {
         let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
         let toolCatalog = BuiltInPhoneToolCatalog(tools: [calendarTool])
