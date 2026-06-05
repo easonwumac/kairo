@@ -18,7 +18,13 @@ public protocol AgentPrimaryToolCandidateCollecting: Sendable {
 }
 
 public struct DefaultAgentPrimaryToolCandidateCollector: AgentPrimaryToolCandidateCollecting {
-    public init() {}
+    private let installedSkillCandidateCollector: any AgentInstalledSkillCandidateCollecting
+
+    public init(
+        installedSkillCandidateCollector: any AgentInstalledSkillCandidateCollecting = DefaultAgentInstalledSkillCandidateCollector()
+    ) {
+        self.installedSkillCandidateCollector = installedSkillCandidateCollector
+    }
 
     public func candidates(
         for request: AgentToolInvocationRequest,
@@ -35,7 +41,7 @@ public struct DefaultAgentPrimaryToolCandidateCollector: AgentPrimaryToolCandida
         safetyPolicyEngine: SafetyPolicyEngine
     ) -> [AgentToolInvocationCandidate] {
         var candidates: [AgentToolInvocationCandidate] = []
-        candidates.append(contentsOf: installedSkillCandidates(
+        candidates.append(contentsOf: installedSkillCandidateCollector.candidates(
             normalizedText: normalizedText,
             skillCatalog: skillCatalog,
             parser: appIntegrationActionParser,
@@ -61,25 +67,6 @@ public struct DefaultAgentPrimaryToolCandidateCollector: AgentPrimaryToolCandida
             legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper
         ))
         return candidates
-    }
-
-    private func installedSkillCandidates(
-        normalizedText: String,
-        skillCatalog: AgentSkillCatalog,
-        parser: any AgentToolInvocationActionParsing,
-        candidateMatcher: any AgentToolInvocationCandidateMatching,
-        installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
-        safetyPolicyEngine: SafetyPolicyEngine
-    ) -> [AgentToolInvocationCandidate] {
-        skillCatalog.installedSkills.compactMap { skill in
-            installedSkillCandidateMapper.candidate(
-                for: skill,
-                normalizedText: normalizedText,
-                matcher: candidateMatcher,
-                parser: parser,
-                safetyPolicyEngine: safetyPolicyEngine
-            )
-        }
     }
 
     private func appIntegrationCandidates(
