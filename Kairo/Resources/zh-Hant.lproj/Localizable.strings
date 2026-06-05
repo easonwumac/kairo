@@ -371,6 +371,7 @@
 "chat.error.localInference.reason.routeUnavailable" = "目前選擇的 local route 還不能在 iPhone 上完成這個請求。";
 "chat.error.localInference.reason.runtimeEmpty" = "選定的本機模型 runtime 回傳空白回覆。";
 "chat.error.localInference.reason.runtimeFailed" = "選定的本機模型 runtime 產生回覆時失敗。";
+"chat.error.localInference.reason.runtimeFailedWithDetail" = "選定的本機模型 runtime 產生回覆時失敗：%@";
 "chat.error.requestFailed" = "OpenAI 回覆失敗：%@";
 "chat.error.genericReplyFailed" = "Kairo 暫時無法回覆：%@";
 "chat.provider.openAI.requestFailedStatus" = "OpenAI 請求失敗，狀態碼 %lld%@。";
@@ -765,6 +766,12 @@
 "settings.models.download.failure.checksumMismatch" = "Checksum 不相符。預期 %@，實際 %@。";
 "settings.models.download.failure.cancelled" = "使用者已取消下載。";
 "settings.models.download.failure.httpStatus" = "HTTP 狀態碼 %lld。";
+"localModel.llama.error.couldNotLoadModel" = "llama.cpp 無法載入位於 %@ 的模型。";
+"localModel.llama.error.couldNotCreateContext" = "llama.cpp 無法建立模型 context。";
+"localModel.llama.error.couldNotTokenizePrompt" = "llama.cpp 無法 tokenize prompt。";
+"localModel.llama.error.promptTooLarge" = "prompt 超過本機模型的 context window。";
+"localModel.llama.error.decodeFailed" = "llama.cpp decode tokens 時失敗。";
+"localModel.llama.error.emptyResponse" = "llama.cpp 產生了空白回覆。";
 "settings.route.automatic.title" = "自動";
 "settings.route.preferLocal.title" = "優先本機";
 "settings.route.preferCloud.title" = "優先雲端";

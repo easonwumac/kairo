@@ -3,13 +3,30 @@ import Foundation
 import KairoCore
 import llama
 
-enum LlamaCppRuntimeError: Error {
+enum LlamaCppRuntimeError: LocalizedError {
     case couldNotLoadModel(String)
     case couldNotCreateContext
     case couldNotTokenizePrompt
     case promptTooLarge
     case decodeFailed
     case emptyResponse
+
+    var errorDescription: String? {
+        switch self {
+        case let .couldNotLoadModel(path):
+            return KairoL10n.string("localModel.llama.error.couldNotLoadModel", path)
+        case .couldNotCreateContext:
+            return KairoL10n.string("localModel.llama.error.couldNotCreateContext")
+        case .couldNotTokenizePrompt:
+            return KairoL10n.string("localModel.llama.error.couldNotTokenizePrompt")
+        case .promptTooLarge:
+            return KairoL10n.string("localModel.llama.error.promptTooLarge")
+        case .decodeFailed:
+            return KairoL10n.string("localModel.llama.error.decodeFailed")
+        case .emptyResponse:
+            return KairoL10n.string("localModel.llama.error.emptyResponse")
+        }
+    }
 }
 
 private func kairo_llama_batch_clear(_ batch: inout llama_batch) {
@@ -43,7 +60,7 @@ actor LlamaCppSession {
     private var position: Int32 = 0
     private var pendingUTF8Bytes: [CChar] = []
 
-    init(modelPath: String, contextLength: UInt32 = 2_048) throws {
+    init(modelPath: String, contextLength: UInt32 = 4_096) throws {
         llama_backend_init()
         var modelParameters = llama_model_default_params()
         #if targetEnvironment(simulator)

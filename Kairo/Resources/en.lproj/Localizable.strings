@@ -371,6 +371,7 @@
 "chat.error.localInference.reason.routeUnavailable" = "The selected local route cannot complete this request on iPhone yet.";
 "chat.error.localInference.reason.runtimeEmpty" = "The selected local model runtime returned an empty reply.";
 "chat.error.localInference.reason.runtimeFailed" = "The selected local model runtime failed while generating a reply.";
+"chat.error.localInference.reason.runtimeFailedWithDetail" = "The selected local model runtime failed while generating a reply: %@";
 "chat.error.requestFailed" = "OpenAI reply failed: %@";
 "chat.error.genericReplyFailed" = "Kairo cannot reply right now: %@";
 "chat.provider.openAI.requestFailedStatus" = "OpenAI request failed with status %lld%@.";
@@ -765,6 +766,12 @@
 "settings.models.download.failure.checksumMismatch" = "Checksum mismatch. Expected %@, got %@.";
 "settings.models.download.failure.cancelled" = "Download cancelled by user.";
 "settings.models.download.failure.httpStatus" = "HTTP status %lld.";
+"localModel.llama.error.couldNotLoadModel" = "llama.cpp could not load the model at %@.";
+"localModel.llama.error.couldNotCreateContext" = "llama.cpp could not create a model context.";
+"localModel.llama.error.couldNotTokenizePrompt" = "llama.cpp could not tokenize the prompt.";
+"localModel.llama.error.promptTooLarge" = "The prompt is too large for the local model context window.";
+"localModel.llama.error.decodeFailed" = "llama.cpp failed while decoding tokens.";
+"localModel.llama.error.emptyResponse" = "llama.cpp generated an empty response.";
 "settings.route.automatic.title" = "Automatic";
 "settings.route.preferLocal.title" = "Prefer Local";
 "settings.route.preferCloud.title" = "Prefer Cloud";
