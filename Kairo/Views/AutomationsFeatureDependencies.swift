@@ -64,12 +64,7 @@ public extension KairoEnvironment {
     var automationsFeatureDependencies: AutomationsFeatureDependencies {
         AutomationsFeatureDependencies(
             recipeAPI: backendAPI.recipes,
-            shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(
-                runtime: ShortcutNodeRuntime(
-                    memoryStore: memoryStore,
-                    toolCatalog: toolCatalog
-                )
-            )
+            shortcutDemoRecipeRunner: shortcutDemoRecipeRunner
         )
     }
 }

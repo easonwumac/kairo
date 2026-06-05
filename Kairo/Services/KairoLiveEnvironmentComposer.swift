@@ -52,6 +52,10 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             installedLocalModelIDs: localModelComponents.installedModelIDs,
             oauthConnectorRegistry: oauthConnectorRegistry
         ).makeComponents()
+        let shortcutRuntime = try await LiveShortcutNodeRuntimeProvider(
+            paths: paths,
+            toolCatalog: BuiltInPhoneToolCatalog()
+        ).makeRuntime()
         let actionExecutor = KairoLiveActionFactory(
             memoryStore: storeComponents.memoryStore,
             auditLogger: storeComponents.auditLogger
@@ -79,7 +83,8 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             localModelBenchmarkService: localModelComponents.benchmarkService,
             localModelReplyCheckService: localModelComponents.replyCheckService,
             localModelChatRuntimeAvailable: localModelComponents.chatRuntimeAvailable,
-            actionExecutor: actionExecutor
+            actionExecutor: actionExecutor,
+            shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(runtime: shortcutRuntime)
         )
     }
 }

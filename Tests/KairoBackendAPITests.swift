@@ -350,6 +350,21 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(memories.count, 1)
     }
 
+    func testKairoEnvironmentUsesInjectedShortcutDemoRecipeRunnerForAutomations() async throws {
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
+            shortcutDemoRecipeRunner: FixedShortcutDemoRecipeRunner()
+        )
+
+        let demoRecipe = try XCTUnwrap(ShortcutDemoCatalog.default.recipe(id: "daily-briefing"))
+        let demoRun = try await environment.automationsFeatureDependencies.shortcutDemoRecipeRunner.runSample(demoRecipe)
+
+        XCTAssertEqual(demoRun.recipeID, "injected-runner")
+        XCTAssertTrue(demoRun.steps.isEmpty)
+    }
+
     func testKairoEnvironmentBuildsAccessFeatureDependenciesForCompositionRoot() async throws {
         let skillManagerService = try await makeBackendTestAgentSkillManagerService()
         let environment = KairoEnvironment(
@@ -419,6 +434,17 @@ final class KairoBackendAPITests: XCTestCase {
             ),
             sandboxNotes: "Test connector.",
             status: .requiresBackend
+        )
+    }
+}
+
+private struct FixedShortcutDemoRecipeRunner: ShortcutDemoRecipeRunnerProtocol {
+    func runSample(_ recipe: ShortcutDemoRecipe) async throws -> ShortcutDemoRecipeRun {
+        ShortcutDemoRecipeRun(
+            recipeID: "injected-runner",
+            recipeTitle: recipe.title,
+            displaySummary: "Injected runner.",
+            steps: []
         )
     }
 }
