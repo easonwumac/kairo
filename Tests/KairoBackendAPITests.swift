@@ -221,10 +221,13 @@ final class KairoBackendAPITests: XCTestCase {
             memoryStore: InMemoryMemoryStore(),
             credentialStore: credentialStore,
             aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
+            oauthConnectorRegistry: IntegrationRegistry(integrations: [
+                backendTestOAuthIntegration(key: "custom-mail", displayName: "Custom Mail", providerKey: "custom-mail")
+            ]),
             oauthClientConfigurations: [
-                "chatgpt": OAuthConnectorClientConfiguration(
-                    clientID: "chatgpt-client",
-                    redirectURI: "kairo://oauth/chatgpt/callback"
+                "custom-mail": OAuthConnectorClientConfiguration(
+                    clientID: "custom-client",
+                    redirectURI: "kairo://oauth/custom-mail/callback"
                 )
             ]
         )
@@ -234,7 +237,8 @@ final class KairoBackendAPITests: XCTestCase {
         try await dependencies.settingsService.saveAPIKey("openai-test-key")
         let savedKey = try await credentialStore.readSecret(for: CredentialKey.openAIAPIKey)
         XCTAssertEqual(savedKey, "openai-test-key")
-        XCTAssertEqual(dependencies.oauthClientConfigurations["chatgpt"]?.clientID, "chatgpt-client")
+        XCTAssertEqual(dependencies.oauthClientConfigurations["custom-mail"]?.clientID, "custom-client")
+        XCTAssertEqual(dependencies.oauthConnectorRegistry.oauthConnectors.map(\.key), ["custom-mail"])
         XCTAssertNotNil(dependencies.deletionAPI)
     }
 
@@ -353,23 +357,26 @@ final class KairoBackendAPITests: XCTestCase {
             memoryStore: InMemoryMemoryStore(),
             credentialStore: InMemoryCredentialStore(),
             aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
+            oauthConnectorRegistry: IntegrationRegistry(integrations: [
+                backendTestOAuthIntegration(key: "custom-mail", displayName: "Custom Mail", providerKey: "custom-mail")
+            ]),
             oauthConnectorCallbackStore: callbackStore,
             oauthClientConfigurations: [
-                "google": OAuthConnectorClientConfiguration(
-                    clientID: "google-client",
-                    redirectURI: "kairo://oauth/google/callback"
+                "custom-mail": OAuthConnectorClientConfiguration(
+                    clientID: "custom-client",
+                    redirectURI: "kairo://oauth/custom-mail/callback"
                 )
             ]
         )
 
         let openURLHandler = try XCTUnwrap(environment.rootFeatureDependencies.openURLHandler)
         try await openURLHandler.handle(
-            URL(string: "kairo://oauth/google/callback?code=sample-code&state=state-123")!
+            URL(string: "kairo://oauth/custom-mail/callback?code=sample-code&state=state-123")!
         )
-        let storedPreview = await callbackStore.latestPreview(for: "google")
+        let storedPreview = await callbackStore.latestPreview(for: "custom-mail")
         let preview = try XCTUnwrap(storedPreview)
 
-        XCTAssertEqual(preview.providerKey, "google")
+        XCTAssertEqual(preview.providerKey, "custom-mail")
         XCTAssertEqual(preview.authorizationCodeLength, "sample-code".count)
     }
 

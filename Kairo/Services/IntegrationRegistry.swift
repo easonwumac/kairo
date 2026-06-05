@@ -1,6 +1,12 @@
 import Foundation
 
-public struct IntegrationRegistry: Sendable {
+public protocol AppIntegrationRegistryProviding: Sendable {
+    var integrations: [AppIntegration] { get }
+    var oauthConnectors: [AppIntegration] { get }
+    func integration(for key: String) -> AppIntegration?
+}
+
+public struct IntegrationRegistry: AppIntegrationRegistryProviding, Sendable {
     public var integrations: [AppIntegration]
 
     public init(integrations: [AppIntegration] = IntegrationRegistry.defaultIntegrations) {

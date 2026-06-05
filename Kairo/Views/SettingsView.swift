@@ -58,6 +58,7 @@ public struct SettingsView: View {
             settingsService: dependencies.settingsService,
             mode: mode,
             credentialStore: dependencies.credentialStore,
+            oauthConnectorRegistry: dependencies.oauthConnectorRegistry,
             oauthClientConfigurations: dependencies.oauthClientConfigurations,
             oauthCallbackStore: dependencies.oauthCallbackStore,
             oauthLoginService: dependencies.oauthLoginService,
@@ -75,6 +76,7 @@ public struct SettingsView: View {
     public init(
         mode: SettingsViewMode = .all,
         credentialStore: any CredentialStore = InMemoryCredentialStore(),
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
@@ -95,6 +97,7 @@ public struct SettingsView: View {
         let oauthLoginService = Self.defaultOAuthLoginService(
             override: oauthLoginService,
             credentialStore: credentialStore,
+            oauthConnectorRegistry: oauthConnectorRegistry,
             oauthClientConfigurations: oauthClientConfigurations,
             oauthCallbackStore: oauthCallbackStore
         )
@@ -116,6 +119,7 @@ public struct SettingsView: View {
         settingsService: OpenAISettingsService,
         mode: SettingsViewMode = .all,
         credentialStore: any CredentialStore,
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
@@ -134,6 +138,7 @@ public struct SettingsView: View {
         let oauthLoginService = Self.defaultOAuthLoginService(
             override: oauthLoginService,
             credentialStore: credentialStore,
+            oauthConnectorRegistry: oauthConnectorRegistry,
             oauthClientConfigurations: oauthClientConfigurations,
             oauthCallbackStore: oauthCallbackStore
         )
@@ -594,6 +599,7 @@ public struct SettingsView: View {
     private static func defaultOAuthLoginService(
         override: (any OAuthConnectorLoginServicing)?,
         credentialStore: any CredentialStore,
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
     ) -> any OAuthConnectorLoginServicing {
@@ -601,7 +607,7 @@ public struct SettingsView: View {
             return override
         }
         return OAuthConnectorLoginCenter(
-            registry: IntegrationRegistry(),
+            registry: oauthConnectorRegistry,
             credentialStore: credentialStore,
             clientConfigurations: oauthClientConfigurations,
             callbackStore: oauthCallbackStore

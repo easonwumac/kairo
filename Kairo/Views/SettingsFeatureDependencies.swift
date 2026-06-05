@@ -4,6 +4,7 @@ import Foundation
 public struct SettingsFeatureDependencies {
     public var settingsService: OpenAISettingsService
     public var credentialStore: any CredentialStore
+    public var oauthConnectorRegistry: any AppIntegrationRegistryProviding
     public var oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]
     public var oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
     public var oauthLoginService: (any OAuthConnectorLoginServicing)?
@@ -19,6 +20,7 @@ public struct SettingsFeatureDependencies {
     public init(
         settingsService: OpenAISettingsService,
         credentialStore: any CredentialStore,
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
@@ -33,6 +35,7 @@ public struct SettingsFeatureDependencies {
     ) {
         self.settingsService = settingsService
         self.credentialStore = credentialStore
+        self.oauthConnectorRegistry = oauthConnectorRegistry
         self.oauthClientConfigurations = oauthClientConfigurations
         self.oauthCallbackStore = oauthCallbackStore
         self.oauthLoginService = oauthLoginService
@@ -52,6 +55,7 @@ public extension KairoEnvironment {
         SettingsFeatureDependencies(
             settingsService: OpenAISettingsService(credentialStore: credentialStore),
             credentialStore: credentialStore,
+            oauthConnectorRegistry: oauthConnectorRegistry,
             oauthClientConfigurations: oauthClientConfigurations,
             oauthCallbackStore: oauthConnectorCallbackStore,
             localModelCatalog: localModelCatalog,

@@ -3,7 +3,7 @@ import Foundation
 public struct CapabilityPromptContextBuilder: Sendable {
     public var capabilityRegistry: CapabilityRegistry
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
-    public var integrationRegistry: IntegrationRegistry
+    public var integrationRegistry: any AppIntegrationRegistryProviding
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var backgroundTaskPolicy: BackgroundTaskPolicy
     public var skillCatalog: AgentSkillCatalog
@@ -11,7 +11,7 @@ public struct CapabilityPromptContextBuilder: Sendable {
     public init(
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
+        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         backgroundTaskPolicy: BackgroundTaskPolicy = BackgroundTaskPolicy(),
         skillCatalog: AgentSkillCatalog = .default

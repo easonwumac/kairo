@@ -6,7 +6,7 @@ public actor AgentCore {
     private let safetyPolicyEngine: SafetyPolicyEngine
     private let capabilityRegistry: CapabilityRegistry
     private let skillCatalogProvider: AgentSkillCatalogProvider
-    private let integrationRegistry: IntegrationRegistry
+    private let integrationRegistry: any AppIntegrationRegistryProviding
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
     private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     private let actionGate: any PhoneToolActionGating
@@ -17,7 +17,7 @@ public actor AgentCore {
         aiProvider: AIProvider = MockAIProvider(),
         skillCatalog: AgentSkillCatalog = .default,
         skillCatalogProvider: AgentSkillCatalogProvider? = nil,
-        integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
+        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         actionGate: (any PhoneToolActionGating)? = nil,

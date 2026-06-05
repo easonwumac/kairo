@@ -163,12 +163,7 @@ public enum OAuthConnectorLoginCenterError: Error, Equatable {
     case missingClientConfiguration(String)
 }
 
-public protocol OAuthConnectorRegistryProviding: Sendable {
-    var oauthConnectors: [AppIntegration] { get }
-    func integration(for key: String) -> AppIntegration?
-}
-
-extension IntegrationRegistry: OAuthConnectorRegistryProviding {}
+public typealias OAuthConnectorRegistryProviding = AppIntegrationRegistryProviding
 
 public protocol OAuthConnectorLoginServicing: Sendable {
     func loginOptions() async throws -> [OAuthConnectorLoginOption]

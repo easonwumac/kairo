@@ -16,7 +16,7 @@ public extension KairoEnvironment {
         }
 
         let oauthLoginService = OAuthConnectorLoginCenter(
-            registry: IntegrationRegistry(),
+            registry: oauthConnectorRegistry,
             credentialStore: credentialStore,
             clientConfigurations: oauthClientConfigurations,
             callbackStore: oauthConnectorCallbackStore

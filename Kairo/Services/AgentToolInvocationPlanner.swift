@@ -2,14 +2,14 @@ import Foundation
 
 public struct AgentToolInvocationPlanner: Sendable {
     public var skillCatalog: AgentSkillCatalog
-    public var integrationRegistry: IntegrationRegistry
+    public var integrationRegistry: any AppIntegrationRegistryProviding
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var candidateFilter: any AgentToolCandidateFiltering
     public var safetyPolicyEngine: SafetyPolicyEngine
 
     public init(
         skillCatalog: AgentSkillCatalog = .default,
-        integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
+        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
