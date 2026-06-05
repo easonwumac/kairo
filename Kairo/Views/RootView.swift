@@ -408,48 +408,29 @@ private extension View {
     func glassCircleControl() -> some View {
         self
             .foregroundStyle(KairoDesign.ink)
-            .frame(width: 38, height: 38)
+            .frame(width: 36, height: 36)
             .background {
                 Circle()
-                    .fill(.ultraThinMaterial)
-                    .overlay {
-                        Circle()
-                            .fill(Color.black.opacity(0.34))
-                    }
+                    .fill(KairoDesign.elevatedSurface.opacity(0.72))
             }
             .overlay {
                 Circle()
-                    .stroke(kairoGlassControlStroke, lineWidth: 1)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
             }
-            .shadow(color: Color.black.opacity(0.28), radius: 12, x: 0, y: 7)
+            .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
     }
 
     func glassCapsuleControl() -> some View {
         self
             .background {
                 Capsule()
-                    .fill(.ultraThinMaterial)
-                    .overlay {
-                        Capsule()
-                            .fill(Color.black.opacity(0.34))
-                    }
+                    .fill(KairoDesign.elevatedSurface.opacity(0.72))
             }
             .overlay {
                 Capsule()
-                    .stroke(kairoGlassControlStroke, lineWidth: 1)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
             }
-            .shadow(color: Color.black.opacity(0.28), radius: 12, x: 0, y: 7)
+            .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
     }
-}
-
-private var kairoGlassControlStroke: LinearGradient {
-    LinearGradient(
-        colors: [
-            Color.white.opacity(0.34),
-            Color.white.opacity(0.06)
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
 }
 #endif

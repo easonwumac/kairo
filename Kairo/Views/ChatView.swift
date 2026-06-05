@@ -319,7 +319,7 @@ public struct ChatView: View {
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
-            HStack(alignment: .bottom, spacing: 8) {
+            HStack(alignment: .center, spacing: 7) {
                 toolMenu
 
                 TextField(KairoL10n.string("chat.composer.placeholder"), text: $viewModel.composerText, axis: .vertical)
@@ -330,8 +330,8 @@ public struct ChatView: View {
                     .tint(KairoDesign.blue)
                     .font(.callout)
                     .padding(.horizontal, 10)
-                    .padding(.vertical, 9)
-                    .frame(minHeight: 40, alignment: .center)
+                    .padding(.vertical, 6)
+                    .frame(minHeight: 34, alignment: .center)
                     .accessibilityIdentifier("chat.composer.text")
                     .onSubmit {
                         isComposerFocused = false
@@ -345,31 +345,27 @@ public struct ChatView: View {
                 } label: {
                     Image(systemName: viewModel.isLoading ? "hourglass" : "arrow.up")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 34, height: 34)
+                        .foregroundStyle(sendButtonForeground)
+                        .frame(width: 30, height: 30)
                         .background {
                             Circle()
-                                .fill(.ultraThinMaterial)
-                                .overlay {
-                                    Circle()
-                                        .fill(sendButtonBackground.opacity(sendButtonOverlayOpacity))
-                                }
+                                .fill(KairoDesign.elevatedSurface.opacity(isSendDisabled ? 0.72 : 0.88))
                         }
                         .overlay {
                             Circle()
-                                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
                         }
                 }
-                .disabled((viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading)
+                .disabled(isSendDisabled)
                 .accessibilityLabel(KairoL10n.string("chat.composer.send"))
                 .accessibilityIdentifier("chat.composer.send")
             }
             .padding(.leading, 0)
-            .padding(.trailing, 6)
-            .padding(.vertical, 4)
-            .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 19, style: .continuous))
+            .padding(.trailing, 5)
+            .padding(.vertical, 3)
+            .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 19, style: .continuous)
+                RoundedRectangle(cornerRadius: 17, style: .continuous)
                     .stroke(Color.white.opacity(0.10), lineWidth: 1)
             )
             .overlay(alignment: .topLeading) {
@@ -425,7 +421,7 @@ public struct ChatView: View {
             Image(systemName: "plus")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(KairoDesign.ink)
-                .frame(width: 34, height: 34)
+                .frame(width: 30, height: 30)
                 .background {
                     Circle()
                         .fill(KairoDesign.elevatedSurface.opacity(showToolPalette ? 0.88 : 0.72))
@@ -508,14 +504,12 @@ public struct ChatView: View {
         isComposerFocused = true
     }
 
-    private var sendButtonBackground: Color {
-        let isDisabled = (viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading
-        return isDisabled ? KairoDesign.muted : KairoDesign.blue
+    private var isSendDisabled: Bool {
+        (viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading
     }
 
-    private var sendButtonOverlayOpacity: Double {
-        let isDisabled = (viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.pendingAttachments.isEmpty) || viewModel.isLoading
-        return isDisabled ? 0.26 : 0.82
+    private var sendButtonForeground: Color {
+        isSendDisabled ? KairoDesign.muted : KairoDesign.blue
     }
 
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
