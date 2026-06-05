@@ -327,6 +327,43 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.candidates.first, injectedCandidate)
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedInstalledSkillCandidateMapper() throws {
+        let skill = AgentSkill(
+            id: "custom-mapper-input",
+            displayName: "Mapper Input",
+            summary: "The injected installed skill mapper should own candidate construction.",
+            kind: .custom,
+            source: .userCreated,
+            installationStatus: .installed,
+            requiredCapabilities: [.chat]
+        )
+        let injectedCandidate = AgentToolInvocationCandidate(
+            id: "mapped-installed-skill",
+            title: "Mapped Installed Skill",
+            source: .installedSkill,
+            skillID: skill.id,
+            skillKind: .custom,
+            requiredCapabilities: skill.requiredCapabilities,
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Mapped by injected installed skill mapper"
+        )
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: [skill]),
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
+            writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
+            candidateBuilder: DefaultAgentToolInvocationCandidateBuilder(
+                installedSkillCandidateMapper: FixedInstalledSkillToolInvocationCandidateMapper(candidate: injectedCandidate)
+            )
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "installed mapper route"))
+
+        XCTAssertEqual(plan.candidates, [injectedCandidate])
+    }
+
     func testAgentToolInvocationPlannerUsesInjectedAppIntegrationCandidateMapper() throws {
         let skill = try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMailHandoff))
         let injectedCandidate = AgentToolInvocationCandidate(
@@ -867,6 +904,20 @@ private struct FixedAppIntegrationToolInvocationCandidateMapper: AppIntegrationT
         normalizedText: String,
         parser: any AgentToolInvocationActionParsing,
         actionMapper: any AppIntegrationActionMapping
+    ) -> AgentToolInvocationCandidate? {
+        candidate
+    }
+}
+
+private struct FixedInstalledSkillToolInvocationCandidateMapper: InstalledSkillToolInvocationCandidateMapping {
+    var candidate: AgentToolInvocationCandidate?
+
+    func candidate(
+        for skill: AgentSkill,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing,
+        safetyPolicyEngine: SafetyPolicyEngine
     ) -> AgentToolInvocationCandidate? {
         candidate
     }
