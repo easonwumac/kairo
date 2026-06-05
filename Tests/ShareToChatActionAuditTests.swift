@@ -20,6 +20,15 @@ final class ShareToChatActionAuditTests: XCTestCase {
         XCTAssertNil(flow.viewModel.shareImportPreview)
         XCTAssertFalse(flow.viewModel.canSendImportedShareToChat)
         let assistantMessage = try XCTUnwrap(flow.viewModel.currentThread.messages.last)
+        let toolCandidate = try XCTUnwrap(assistantMessage.toolCandidates.first { $0.skillID == "shortcut-save-shared-text" })
+        XCTAssertEqual(toolCandidate.source, .installedSkill)
+        XCTAssertEqual(toolCandidate.skillKind, .shortcutWorkflow)
+        XCTAssertEqual(toolCandidate.shortcutRecipeID, "save-shared-text")
+        XCTAssertTrue(toolCandidate.requiresConfirmation)
+        XCTAssertFalse(
+            assistantMessage.toolCandidates.contains { $0.source == .integrationRegistry },
+            "\(assistantMessage.toolCandidates.map { "\($0.id)|\($0.source.rawValue)|\($0.integrationKey ?? "-")|\($0.skillID ?? "-")" })"
+        )
         let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createReminderDraft })
         guard case let .reminder(draft) = action.payload else {
             return XCTFail("Expected reminder payload.")

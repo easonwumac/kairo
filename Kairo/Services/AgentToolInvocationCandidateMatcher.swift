@@ -55,7 +55,8 @@ public struct DefaultAgentToolInvocationCandidateMatcher: AgentToolInvocationCan
         case "chatgpt":
             return containsAny(normalizedText, ["chatgpt", "openai"], parser: parser)
         case "github":
-            return containsAny(normalizedText, ["github", "repo", "repository", "issue", "pull request", "pr"], parser: parser)
+            return containsAny(normalizedText, ["github", "repository", "pull request"], parser: parser)
+                || containsAnyToken(normalizedText, ["repo", "issue", "pr"], parser: parser)
         default:
             return parser.normalize("\(integration.key) \(integration.displayName)").split(separator: " ").contains { token in
                 token.count >= 4 && normalizedText.contains(token)
@@ -160,5 +161,14 @@ public struct DefaultAgentToolInvocationCandidateMatcher: AgentToolInvocationCan
         parser: any AgentToolInvocationActionParsing
     ) -> Bool {
         needles.contains { text.contains(parser.normalize($0)) }
+    }
+
+    private func containsAnyToken(
+        _ text: String,
+        _ needles: [String],
+        parser: any AgentToolInvocationActionParsing
+    ) -> Bool {
+        let tokens = Set(text.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init))
+        return needles.contains { tokens.contains(parser.normalize($0)) }
     }
 }

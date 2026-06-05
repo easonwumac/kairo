@@ -865,6 +865,23 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
+    func testAgentToolInvocationPlannerDoesNotMatchGitHubFromPRSubstringInsideUnrelatedWords() throws {
+        let planner = AgentToolInvocationPlanner(
+            integrationRegistry: IntegrationRegistry(),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [])
+        )
+
+        let unrelatedPlan = planner.plan(for: AgentToolInvocationRequest(userText: "Send prototype link before the beta review meeting"))
+        let explicitPRPlan = planner.plan(for: AgentToolInvocationRequest(userText: "Open the GitHub PR review"))
+
+        XCTAssertFalse(unrelatedPlan.candidates.contains {
+            $0.source == .integrationRegistry && $0.integrationKey == "github"
+        })
+        XCTAssertNotNil(explicitPRPlan.candidates.first {
+            $0.source == .integrationRegistry && $0.integrationKey == "github"
+        })
+    }
+
     func testAgentToolInvocationPlannerKeepsMigratedOAuthIntegrationsOutOfLegacyMapper() throws {
         let mapper = RecordingLegacyIntegrationToolInvocationCandidateMapper()
         let planner = AgentToolInvocationPlanner(
