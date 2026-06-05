@@ -731,6 +731,8 @@
 "settings.models.cloud.detail" = "這裡只顯示你已加入的 provider。新增 provider 時會同時設定 API key 或 OAuth 帳號。";
 "settings.models.cloud.empty" = "尚未設定雲端模型 provider。";
 "settings.models.cloud.add" = "新增雲端模型";
+"settings.models.cloud.add.title" = "新增雲端模型";
+"settings.models.cloud.add.detail" = "選擇 provider 後設定 API key 或 OAuth 帳號；完成設定後才會出現在雲端列表。";
 "settings.models.cloud.add.empty" = "目前沒有其他可新增的雲端 provider。";
 "settings.models.cloud.reconfigure" = "重新設定";
 "settings.models.cloud.remove" = "移除";
@@ -809,6 +811,12 @@
 "settings.models.compact.noDownloadedModel" = "尚未選擇已下載的模型。";
 "settings.models.compact.trimmed" = "目前只顯示 %lld 個入門模型。更多下載項目可之後再加入。";
 "settings.models.starter.title" = "本地模型";
+"settings.models.local.empty" = "尚未加入本地模型。";
+"settings.models.local.add" = "新增本地模型";
+"settings.models.local.add.title" = "新增本地模型";
+"settings.models.local.add.detail" = "選擇模型後會開始下載，下載進度會回到本地模型列表顯示。";
+"settings.models.local.add.empty" = "目前沒有可下載的本地模型。";
+"settings.models.add.back" = "返回";
 "settings.models.advanced.section" = "測試與儲存";
 "settings.models.advanced.show" = "顯示測試與儲存";
 "settings.models.advanced.hide" = "隱藏測試與儲存";

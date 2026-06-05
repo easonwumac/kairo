@@ -2,10 +2,10 @@
 import SwiftUI
 
 struct LocalModelsCompactView: View {
-    private let starterModelIDs = LocalModelCatalog.kairoStarterModelIDs
-    @State private var pendingDownloadModelID: String?
     @State private var showAdvancedDiagnostics = false
     @State private var expandedCloudProviderID: String?
+    @State private var expandedLocalModelID: String?
+    @State private var activeAddPage: ModelAddPage?
 
     var topPadding: CGFloat = 16
     @Binding var apiKey: String
@@ -39,16 +39,12 @@ struct LocalModelsCompactView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                answerRouteCard
-
-                cloudModelsSection
-
-                modelStarterSection
-
-                catalogDiagnosticsCard
-
-                advancedDiagnosticsSection
+            Group {
+                if let activeAddPage {
+                    addPage(for: activeAddPage)
+                } else {
+                    modelSettingsHome
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
@@ -58,6 +54,20 @@ struct LocalModelsCompactView: View {
         .scrollIndicators(.visible)
         .background(KairoDesign.background.ignoresSafeArea())
         .accessibilityIdentifier("settings.models.screen")
+    }
+
+    private var modelSettingsHome: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            answerRouteCard
+
+            cloudModelsSection
+
+            modelStarterSection
+
+            catalogDiagnosticsCard
+
+            advancedDiagnosticsSection
+        }
     }
 
     private var modelStarterSection: some View {
@@ -70,32 +80,26 @@ struct LocalModelsCompactView: View {
             .padding(.horizontal, 2)
             .accessibilityIdentifier("settings.models.starter")
 
-            if visibleModelRows.isEmpty {
-                Text(KairoL10n.string("settings.models.emptyCatalog"))
+            if configuredLocalModelRows.isEmpty {
+                Text(KairoL10n.string("settings.models.local.empty"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            ForEach(visibleModelRows) { row in
+            ForEach(configuredLocalModelRows) { row in
                 compactLocalModelRow(row)
             }
 
-            if trimmedModelRowCount > 0 {
-                HStack {
-                    Text(trimmedModelSummaryText)
-                        .font(compactModelMetadataFont)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Spacer(minLength: 0)
+            modelAddButton(
+                title: KairoL10n.string("settings.models.local.add"),
+                accessibilityIdentifier: "settings.models.local.add"
+            ) {
+                withAnimation(.snappy(duration: 0.2)) {
+                    activeAddPage = .local
                 }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(trimmedModelSummaryText)
-                .accessibilityIdentifier("settings.models.trimmed-note")
             }
 
-            if localModelStatusMessageModelID == nil, let localModelStatusMessage {
+            if shouldShowSectionLocalModelMessage, let localModelStatusMessage {
                 Text(localModelStatusMessage)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -159,7 +163,14 @@ struct LocalModelsCompactView: View {
                     }
                 }
 
-                cloudProviderAddMenu
+                modelAddButton(
+                    title: KairoL10n.string("settings.models.cloud.add"),
+                    accessibilityIdentifier: "settings.models.cloud.add"
+                ) {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        activeAddPage = .cloud
+                    }
+                }
 
                 if let expandedCloudProviderID {
                     cloudProviderSetup(for: expandedCloudProviderID)
@@ -200,7 +211,7 @@ struct LocalModelsCompactView: View {
                     Divider()
 
                     VStack(alignment: .leading, spacing: 8) {
-                        ForEach(visibleModelRows) { row in
+                        ForEach(configuredLocalModelRows) { row in
                             compactModelDiagnostics(for: row)
                         }
                     }
@@ -240,6 +251,50 @@ struct LocalModelsCompactView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(localModelCatalogSourceText)
         .accessibilityIdentifier("settings.models.catalog-card")
+    }
+
+    private func addPage(for page: ModelAddPage) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Button {
+                withAnimation(.snappy(duration: 0.2)) {
+                    activeAddPage = nil
+                }
+            } label: {
+                Label(KairoL10n.string("settings.models.add.back"), systemImage: "chevron.left")
+                    .font(compactButtonLabelFont)
+                    .foregroundStyle(KairoDesign.blue)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(KairoDesign.blue.opacity(0.08), in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.models.add.back")
+
+            KairoFocusCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(page.title)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+
+                    Text(page.detail)
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    switch page {
+                    case .cloud:
+                        cloudAddList
+                    case .local:
+                        localAddList
+                    }
+                }
+            }
+            .accessibilityIdentifier(page.accessibilityIdentifier)
+        }
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
     }
 
     private func compactModelDiagnostics(for row: LocalModelSettingsRow) -> some View {
@@ -480,30 +535,32 @@ struct LocalModelsCompactView: View {
         cloudProviderRows.filter { !$0.isConfigured && $0.canConfigure }
     }
 
-    private var cloudProviderAddMenu: some View {
-        Menu {
-            if addableCloudProviderRows.isEmpty {
-                Text(KairoL10n.string("settings.models.cloud.add.empty"))
-            }
-
+    @ViewBuilder
+    private var cloudAddList: some View {
+        if addableCloudProviderRows.isEmpty {
+            Text(KairoL10n.string("settings.models.cloud.add.empty"))
+                .font(compactModelMetadataFont)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("settings.models.cloud.add.empty")
+        } else {
             ForEach(addableCloudProviderRows) { row in
                 Button {
                     expandSetup(for: row)
+                    withAnimation(.snappy(duration: 0.2)) {
+                        activeAddPage = nil
+                    }
                 } label: {
-                    Label(row.title, systemImage: row.setupKind.systemImage)
+                    addListRow(
+                        title: row.title,
+                        subtitle: row.method,
+                        status: row.status,
+                        systemImage: row.setupKind.systemImage
+                    )
                 }
+                .buttonStyle(.plain)
                 .accessibilityIdentifier("settings.models.cloud.add.\(row.id)")
             }
-        } label: {
-            Label(KairoL10n.string("settings.models.cloud.add"), systemImage: "plus")
-                .font(compactButtonLabelFont)
-                .foregroundStyle(KairoDesign.blue)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 9)
-                .background(KairoDesign.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("settings.models.cloud.add")
     }
 
     private func cloudProviderRow(_ row: CloudModelProviderRow) -> some View {
@@ -606,6 +663,53 @@ struct LocalModelsCompactView: View {
         }
     }
 
+    private var configuredLocalModelRows: [LocalModelSettingsRow] {
+        localModelStatus.settingsRows.filter { row in
+            row.installRecord != nil || localModelDownloadProgress?.modelID == row.modelID
+        }
+    }
+
+    private var shouldShowSectionLocalModelMessage: Bool {
+        guard let localModelStatusMessageModelID else {
+            return true
+        }
+        return !configuredLocalModelRows.contains { $0.modelID == localModelStatusMessageModelID }
+    }
+
+    private var addableLocalModelRows: [LocalModelSettingsRow] {
+        localModelStatus.settingsRows.filter { row in
+            row.primaryAction == .download && row.installRecord == nil && localModelDownloadProgress?.modelID != row.modelID
+        }
+    }
+
+    @ViewBuilder
+    private var localAddList: some View {
+        if addableLocalModelRows.isEmpty {
+            Text(KairoL10n.string("settings.models.local.add.empty"))
+                .font(compactModelMetadataFont)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("settings.models.local.add.empty")
+        } else {
+            ForEach(addableLocalModelRows) { row in
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        activeAddPage = nil
+                    }
+                    downloadLocalModel(row)
+                } label: {
+                    addListRow(
+                        title: row.displayName,
+                        subtitle: row.detailText,
+                        status: row.statusText,
+                        systemImage: "arrow.down.circle"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("settings.models.local.add.\(row.modelID)")
+            }
+        }
+    }
+
     private var selectedModelSummaryIconName: String {
         if localModelStatus.localModelInstalled {
             return "checkmark.seal.fill"
@@ -639,23 +743,6 @@ struct LocalModelsCompactView: View {
                 return false
             }
         }
-    }
-
-    private var visibleModelRows: [LocalModelSettingsRow] {
-        let starterIDs = Set(starterModelIDs)
-        let starterRows = localModelStatus.settingsRows.filter { starterIDs.contains($0.modelID) }
-        if starterRows.isEmpty {
-            return Array(localModelStatus.settingsRows.prefix(starterModelIDs.count))
-        }
-        return starterRows
-    }
-
-    private var trimmedModelRowCount: Int {
-        max(localModelStatus.settingsRows.count - visibleModelRows.count, 0)
-    }
-
-    private var trimmedModelSummaryText: String {
-        KairoL10n.string("settings.models.compact.trimmed", Int64(visibleModelRows.count))
     }
 
     private var compactRoutePreferenceMenu: some View {
@@ -719,31 +806,41 @@ struct LocalModelsCompactView: View {
     @ViewBuilder
     private func compactLocalModelRow(_ row: LocalModelSettingsRow) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 10) {
-                Text(row.displayName)
-                    .font(compactModelNameFont)
-                    .fontWeight(.semibold)
-                    .lineLimit(2)
-                    .accessibilityIdentifier("settings.models.\(row.modelID).name")
+            Button {
+                withAnimation(.snappy(duration: 0.2)) {
+                    expandedLocalModelID = expandedLocalModelID == row.modelID ? nil : row.modelID
+                }
+            } label: {
+                HStack(alignment: .top, spacing: 10) {
+                    Text(row.displayName)
+                        .font(compactModelNameFont)
+                        .fontWeight(.semibold)
+                        .lineLimit(2)
+                        .accessibilityIdentifier("settings.models.\(row.modelID).name")
 
-                Spacer(minLength: 6)
+                    Spacer(minLength: 6)
 
-                Text(row.statusText)
-                    .font(compactModelStatusFont)
-                    .foregroundStyle(localModelStatusColor(row.primaryAction))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(localModelStatusColor(row.primaryAction).opacity(0.11), in: Capsule())
-                    .accessibilityIdentifier("settings.models.\(row.modelID).status")
+                    Text(row.statusText)
+                        .font(compactModelStatusFont)
+                        .foregroundStyle(localModelStatusColor(row.primaryAction))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(localModelStatusColor(row.primaryAction).opacity(0.11), in: Capsule())
+                        .accessibilityIdentifier("settings.models.\(row.modelID).status")
+
+                    Image(systemName: expandedLocalModelID == row.modelID ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 4)
+                }
             }
+            .buttonStyle(.plain)
 
-            HStack(alignment: .center, spacing: 8) {
-                compactLocalModelAction(for: row)
-                Spacer(minLength: 0)
-            }
-
-            if pendingDownloadModelID == row.modelID {
-                downloadPreview(for: row)
+            if row.primaryAction == .select || row.primaryAction == .selected {
+                HStack(alignment: .center, spacing: 8) {
+                    compactLocalModelAction(for: row)
+                    Spacer(minLength: 0)
+                }
             }
 
             if localModelDownloadProgress?.modelID == row.modelID, let progress = localModelDownloadProgress {
@@ -757,6 +854,11 @@ struct LocalModelsCompactView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("settings.models.benchmark-message")
             }
+
+            if expandedLocalModelID == row.modelID {
+                compactLocalModelDetails(for: row)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -767,6 +869,77 @@ struct LocalModelsCompactView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.models.\(row.modelID).row")
+    }
+
+    private func compactLocalModelDetails(for row: LocalModelSettingsRow) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            runtimePills(for: row)
+
+            Text(row.manifestTransparencyText)
+                .font(compactModelMetadataFont)
+                .foregroundStyle(.secondary.opacity(0.85))
+                .lineLimit(2)
+                .truncationMode(.tail)
+
+            Text(row.licenseApprovalText)
+                .font(compactModelMetadataFont)
+                .foregroundStyle(.secondary.opacity(0.9))
+                .lineLimit(2)
+
+            if row.primaryAction == .retryDownload {
+                compactActionButton(
+                    row.primaryAction.title,
+                    systemImage: "arrow.down.circle",
+                    accessibilityIdentifier: "settings.models.\(row.modelID).retry",
+                    tint: .blue
+                ) {
+                    downloadLocalModel(row)
+                }
+            }
+
+            LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 8) {
+                if row.primaryAction == .select || row.primaryAction == .selected {
+                    if row.benchmarkSummaryText != nil {
+                        compactActionButton(
+                            KairoL10n.string("settings.models.speed"),
+                            systemImage: "speedometer",
+                            accessibilityIdentifier: "settings.models.\(row.modelID).benchmark-run",
+                            tint: .blue
+                        ) {
+                            runLocalModelBenchmark(row)
+                        }
+                    }
+
+                    compactActionButton(
+                        KairoL10n.string("settings.models.reply"),
+                        systemImage: "text.bubble",
+                        accessibilityIdentifier: "settings.models.\(row.modelID).reply-check",
+                        tint: .blue
+                    ) {
+                        runLocalModelReplyCheck(row)
+                    }
+                }
+
+                if row.canDelete {
+                    compactActionButton(
+                        KairoL10n.string("settings.models.delete"),
+                        systemImage: "trash",
+                        accessibilityIdentifier: "settings.models.\(row.modelID).delete",
+                        tint: .red,
+                        role: .destructive
+                    ) {
+                        deleteLocalModel(row)
+                    }
+                }
+            }
+        }
+        .padding(10)
+        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(KairoDesign.line, lineWidth: 1)
+        }
+        .accessibilityIdentifier("settings.models.\(row.modelID).details")
     }
 
     private func runtimePills(for row: LocalModelSettingsRow) -> some View {
@@ -817,7 +990,7 @@ struct LocalModelsCompactView: View {
                 accessibilityIdentifier: "settings.models.\(row.modelID).download",
                 tint: .blue
             ) {
-                pendingDownloadModelID = row.modelID
+                downloadLocalModel(row)
             }
         case .select:
             compactActionButton(
@@ -845,67 +1018,66 @@ struct LocalModelsCompactView: View {
         }
     }
 
-    private func downloadPreview(for row: LocalModelSettingsRow) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(KairoL10n.string("settings.models.download.approvalRequired"))
-                .font(compactModelStatusFont)
-                .fontWeight(.semibold)
+    private func modelAddButton(
+        title: String,
+        accessibilityIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: "plus")
+                .font(compactButtonLabelFont)
+                .foregroundStyle(KairoDesign.blue)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(KairoDesign.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
 
-            Text("\(row.displayName) · \(row.downloadApprovalText)")
-                .font(compactModelMetadataFont)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+    private func addListRow(
+        title: String,
+        subtitle: String,
+        status: String,
+        systemImage: String
+    ) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.blue)
+                .frame(width: 30, height: 30)
+                .background(KairoDesign.blue.opacity(0.10), in: Circle())
 
-            Text(row.manifestTransparencyText)
-                .font(compactModelMetadataFont)
-                .foregroundStyle(.secondary.opacity(0.9))
-                .lineLimit(2)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(compactModelNameFont)
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(2)
 
-            Text(row.licenseApprovalText)
-                .font(compactModelMetadataFont)
-                .foregroundStyle(.secondary.opacity(0.9))
-                .lineLimit(2)
-                .accessibilityIdentifier("settings.models.\(row.modelID).license-approval")
-
-            Text(row.storagePolicyText)
-                .font(compactModelMetadataFont)
-                .foregroundStyle(.secondary.opacity(0.9))
-                .lineLimit(2)
-
-            Text(row.purposeBoundaryText)
-                .font(compactModelMetadataFont)
-                .foregroundStyle(.secondary.opacity(0.9))
-                .lineLimit(2)
-
-            HStack(spacing: 8) {
-                compactActionButton(
-                    KairoL10n.string("settings.models.download.confirm"),
-                    systemImage: "checkmark.circle",
-                    accessibilityIdentifier: "settings.models.\(row.modelID).download-confirm",
-                    tint: .blue
-                ) {
-                    pendingDownloadModelID = nil
-                    downloadLocalModel(row)
-                }
-
-                compactActionButton(
-                    KairoL10n.string("settings.models.download.cancel"),
-                    systemImage: "xmark.circle",
-                    accessibilityIdentifier: "settings.models.\(row.modelID).download-cancel",
-                    tint: .secondary
-                ) {
-                    pendingDownloadModelID = nil
-                }
+                Text(subtitle)
+                    .font(compactModelMetadataFont)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
+
+            Spacer(minLength: 8)
+
+            Text(status)
+                .font(compactModelStatusFont)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.trailing)
+                .lineLimit(2)
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
         }
-        .padding(10)
-        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .padding(12)
+        .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(KairoDesign.blue.opacity(0.18), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(KairoDesign.line, lineWidth: 1)
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("settings.models.\(row.modelID).download-preview")
     }
 
     private func downloadProgressView(_ progress: LocalModelDownloadProgressState, row: LocalModelSettingsRow) -> some View {
@@ -1009,6 +1181,38 @@ private enum CloudModelProviderSetupKind: Equatable {
             return "key.fill"
         case .chatGPTOAuth:
             return "person.crop.circle.badge.checkmark"
+        }
+    }
+}
+
+private enum ModelAddPage {
+    case cloud
+    case local
+
+    var title: String {
+        switch self {
+        case .cloud:
+            return KairoL10n.string("settings.models.cloud.add.title")
+        case .local:
+            return KairoL10n.string("settings.models.local.add.title")
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .cloud:
+            return KairoL10n.string("settings.models.cloud.add.detail")
+        case .local:
+            return KairoL10n.string("settings.models.local.add.detail")
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        switch self {
+        case .cloud:
+            return "settings.models.cloud.add.page"
+        case .local:
+            return "settings.models.local.add.page"
         }
     }
 }

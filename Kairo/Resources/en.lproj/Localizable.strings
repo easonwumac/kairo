@@ -731,6 +731,8 @@
 "settings.models.cloud.detail" = "Only providers you add are shown here. Add a provider to set its API key or OAuth account.";
 "settings.models.cloud.empty" = "No cloud model provider is configured yet.";
 "settings.models.cloud.add" = "Add cloud model";
+"settings.models.cloud.add.title" = "Add cloud model";
+"settings.models.cloud.add.detail" = "Choose a provider, then connect its API key or OAuth account. It appears in your cloud list only after setup is complete.";
 "settings.models.cloud.add.empty" = "No more cloud providers are available.";
 "settings.models.cloud.reconfigure" = "Reconfigure";
 "settings.models.cloud.remove" = "Remove";
@@ -809,6 +811,12 @@
 "settings.models.compact.noDownloadedModel" = "No downloaded model selected yet.";
 "settings.models.compact.trimmed" = "Showing %lld starter models only. More downloads can be added later.";
 "settings.models.starter.title" = "Local models";
+"settings.models.local.empty" = "No local model has been added yet.";
+"settings.models.local.add" = "Add local model";
+"settings.models.local.add.title" = "Add local model";
+"settings.models.local.add.detail" = "Choose a model to start downloading. Download progress appears in your local model list.";
+"settings.models.local.add.empty" = "No downloadable local models are available.";
+"settings.models.add.back" = "Back";
 "settings.models.advanced.section" = "Testing and storage";
 "settings.models.advanced.show" = "Show testing and storage";
 "settings.models.advanced.hide" = "Hide testing and storage";
