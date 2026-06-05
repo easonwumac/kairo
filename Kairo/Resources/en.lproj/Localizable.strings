@@ -455,6 +455,7 @@
 "chat.action.rationale.email" = "User asked Kairo to prepare a visible email draft handoff without sending mail automatically.";
 "chat.action.rationale.maps" = "User asked Kairo to open a visible Apple Maps directions handoff.";
 "chat.action.rationale.googleMaps" = "User asked Kairo to open a visible Google Maps directions handoff. Kairo opens only a user-visible URL after confirmation and does not start navigation silently.";
+"chat.action.rationale.whatsapp" = "User asked Kairo to prepare a visible WhatsApp message handoff. Kairo opens only a user-visible URL after confirmation and does not send messages silently.";
 "chat.action.rationale.messages" = "User asked Kairo to prepare a visible Messages recipient handoff; Apple's SMS link does not carry message body text.";
 "chat.action.rationale.phone" = "User asked Kairo to prepare a visible Phone handoff. Kairo opens only a tel: URL after confirmation and does not place calls silently.";
 "chat.action.rationale.web" = "User asked Kairo to prepare a visible Safari web search handoff. Kairo only opens a search URL after confirmation and does not browse or scrape pages silently.";

@@ -146,6 +146,37 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         })
     }
 
+    func testScenarioCWhatsAppMessageUsesCatalogVisibleHandoffPreview() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: AgentSkillCatalog(skills: []))
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "幫我用 WhatsApp 傳訊息給 +886912345678 說我晚點到"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == AppIntegrationSkillID.whatsappMessageHandoff.rawValue })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.integrationKey, "whatsapp")
+        XCTAssertEqual(candidate.skillKind, .custom)
+        XCTAssertEqual(candidate.riskTier, .tier1Draft)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertEqual(action.kind, .openURL)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case let .url(urlString) = action.payload else {
+            return XCTFail("Expected visible WhatsApp URL payload.")
+        }
+        let components = try XCTUnwrap(URLComponents(string: urlString))
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+        XCTAssertEqual(components.scheme, "https")
+        XCTAssertEqual(components.host, "wa.me")
+        XCTAssertEqual(components.path, "/886912345678")
+        XCTAssertNotNil(query["text"])
+        XCTAssertTrue(plan.proposedActions.contains { $0.id == action.id })
+        XCTAssertFalse(plan.candidates.contains {
+            $0.source == .integrationRegistry && $0.integrationKey == "whatsapp"
+        })
+    }
+
     func testScenarioDTodoistTaskRequiresOAuthSetupBeforeExecution() throws {
         let planner = AgentToolInvocationPlanner(skillCatalog: AgentSkillCatalog(skills: []))
 

@@ -90,8 +90,18 @@ public struct DefaultAppIntegrationActionMapper: AppIntegrationActionMapping {
                 payload: .url(url.absoluteString),
                 riskTier: skill.riskTier
             )
+        case .whatsappMessageHandoff:
+            guard parser.isMessageHandoffRequest(normalizedText) else { return nil }
+            let draft = parser.messageDraft(from: userText)
+            guard let url = Self.whatsAppMessageURL(for: draft) else { return nil }
+            return AgentAction(
+                kind: .openURL,
+                title: KairoL10n.string("chat.action.displayName.openURL"),
+                rationale: KairoL10n.string("chat.action.rationale.whatsapp"),
+                payload: .url(url.absoluteString),
+                riskTier: skill.riskTier
+            )
         case .gmailDraftAPI,
-             .whatsappMessageHandoff,
              .lineShareHandoff,
              .slackOpenHandoff,
              .notionPageAPI,
@@ -114,6 +124,21 @@ public struct DefaultAppIntegrationActionMapper: AppIntegrationActionMapping {
             URLQueryItem(name: "destination", value: destination),
             URLQueryItem(name: "travelmode", value: draft.mode.googleMapsTravelMode)
         ]
+        return components.url
+    }
+
+    private static func whatsAppMessageURL(for draft: MessageDraft) -> URL? {
+        guard let rawRecipient = draft.recipients.first else { return nil }
+        let phoneNumber = rawRecipient.filter(\.isNumber)
+        guard !phoneNumber.isEmpty else { return nil }
+
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "wa.me"
+        components.path = "/\(phoneNumber)"
+        if !draft.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            components.queryItems = [URLQueryItem(name: "text", value: draft.body)]
+        }
         return components.url
     }
 }
