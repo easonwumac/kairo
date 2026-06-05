@@ -30,10 +30,15 @@ final class ShareToChatActionAuditTests: XCTestCase {
             "\(assistantMessage.toolCandidates.map { "\($0.id)|\($0.source.rawValue)|\($0.integrationKey ?? "-")|\($0.skillID ?? "-")" })"
         )
         let action = try XCTUnwrap(assistantMessage.proposedActions.first { $0.kind == .createReminderDraft })
+        let reminderTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(for: action.kind))
+        XCTAssertEqual(reminderTool.id, .reminderWrite)
+        XCTAssertEqual(reminderTool.confirmationPolicy, .previewAndExplicitConfirmation)
+        XCTAssertEqual(reminderTool.audit.capabilityKeys, [.reminders])
         guard case let .reminder(draft) = action.payload else {
             return XCTFail("Expected reminder payload.")
         }
         XCTAssertEqual(draft.title, "Send prototype link")
+        XCTAssertTrue(action.requiresConfirmation)
         XCTAssertNil(flow.viewModel.pendingAction)
         let draftsBeforeReview = await reminderScheduler.createdDraftsSnapshot()
         XCTAssertEqual(draftsBeforeReview.count, 0)
