@@ -5,16 +5,14 @@ public struct KairoRecipeRunner: Sendable {
     private let memoryStore: (any MemoryStore)?
     private let aiProvider: (any AIProvider)?
     private let actionGate: any PhoneToolActionGating
-    private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
-    private let appIntegrationActionDrafter: any AppIntegrationActionDrafting
+    private let integrationActionDrafter: any KairoRecipeIntegrationActionDrafting
 
     public init(dependencies: KairoRecipeRunnerDependencies) {
         self.recipeStore = dependencies.recipeStore
         self.memoryStore = dependencies.memoryStore
         self.aiProvider = dependencies.aiProvider
         self.actionGate = dependencies.actionGate
-        self.appIntegrationSkillCatalog = dependencies.appIntegrationSkillCatalog
-        self.appIntegrationActionDrafter = dependencies.appIntegrationActionDrafter
+        self.integrationActionDrafter = dependencies.integrationActionDrafter
     }
 
     public init(
@@ -272,12 +270,12 @@ public struct KairoRecipeRunner: Sendable {
             return (KairoRecipeStepResult(stepID: step.id, summary: "Created calendar draft.", outputText: title, success: true), [action])
 
         case .enqueueActionDraft:
-            if let integrationResult = integrationActionDraft(
+            if let integrationResult = integrationActionDrafter.draftIntegrationAction(
                 for: step,
                 inputText: inputText,
                 recipe: recipe
             ) {
-                return integrationResult
+                return (integrationResult.stepResult, integrationResult.actions)
             }
 
             let title = inputText.isEmpty ? recipe.title : String(inputText.prefix(80))
@@ -335,52 +333,6 @@ public struct KairoRecipeRunner: Sendable {
             return previousOutput
         case .shortcutInput, .sharedContent, .keyboardContext:
             return requestInput ?? previousOutput
-        }
-    }
-
-    private func integrationActionDraft(
-        for step: KairoRecipeStep,
-        inputText: String,
-        recipe: KairoRecipe
-    ) -> (result: KairoRecipeStepResult, actions: [AgentAction])? {
-        switch appIntegrationSkillCatalog.resolveSkill(for: step) {
-        case .notReferenced:
-            return nil
-        case .missing(let integrationSkillID):
-            return (KairoRecipeStepResult(
-                stepID: step.id,
-                summary: KairoL10n.string("recipes.integration.missingCatalog.summary"),
-                outputText: KairoL10n.string("recipes.integration.missingCatalog.output"),
-                success: false,
-                errorMessage: KairoL10n.string("recipes.integration.missingCatalog.error", integrationSkillID.rawValue)
-            ), [])
-        case .resolved(let skill):
-            guard skill.canBeSuggestedAsExecutable else {
-                return (KairoRecipeStepResult(
-                    stepID: step.id,
-                    summary: KairoL10n.string("recipes.integration.setupRequired.summary"),
-                    outputText: KairoL10n.string("recipes.integration.setupRequired.output", skill.appName),
-                    success: false,
-                    errorMessage: KairoL10n.string("recipes.integration.setupRequired.error", skill.id.rawValue, skill.availabilityStatus.rawValue)
-                ), [])
-            }
-
-            guard let action = appIntegrationActionDrafter.draftAction(for: skill, inputText: inputText) else {
-                return (KairoRecipeStepResult(
-                    stepID: step.id,
-                    summary: KairoL10n.string("recipes.integration.previewUnavailable.summary"),
-                    outputText: KairoL10n.string("recipes.integration.previewUnavailable.output", skill.appName),
-                    success: false,
-                    errorMessage: KairoL10n.string("recipes.integration.previewUnavailable.error", skill.id.rawValue)
-                ), [])
-            }
-
-            return (KairoRecipeStepResult(
-                stepID: step.id,
-                summary: KairoL10n.string("recipes.integration.prepared.summary", skill.appName),
-                outputText: inputText,
-                success: true
-            ), [action])
         }
     }
 

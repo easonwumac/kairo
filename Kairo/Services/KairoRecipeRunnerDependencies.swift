@@ -7,6 +7,7 @@ public struct KairoRecipeRunnerDependencies: Sendable {
     public var actionGate: any PhoneToolActionGating
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var appIntegrationActionDrafter: any AppIntegrationActionDrafting
+    public var integrationActionDrafter: any KairoRecipeIntegrationActionDrafting
 
     public init(
         recipeStore: any KairoRecipeStore,
@@ -14,7 +15,8 @@ public struct KairoRecipeRunnerDependencies: Sendable {
         aiProvider: (any AIProvider)? = nil,
         actionGate: any PhoneToolActionGating,
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
-        appIntegrationActionDrafter: any AppIntegrationActionDrafting = DefaultAppIntegrationActionDrafter()
+        appIntegrationActionDrafter: any AppIntegrationActionDrafting = DefaultAppIntegrationActionDrafter(),
+        integrationActionDrafter: (any KairoRecipeIntegrationActionDrafting)? = nil
     ) {
         self.recipeStore = recipeStore
         self.memoryStore = memoryStore
@@ -22,5 +24,9 @@ public struct KairoRecipeRunnerDependencies: Sendable {
         self.actionGate = actionGate
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.appIntegrationActionDrafter = appIntegrationActionDrafter
+        self.integrationActionDrafter = integrationActionDrafter ?? CatalogBackedKairoRecipeIntegrationActionDrafter(
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+            appIntegrationActionDrafter: appIntegrationActionDrafter
+        )
     }
 }

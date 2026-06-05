@@ -218,6 +218,49 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertTrue(result.stepResults.allSatisfy { $0.success })
     }
 
+    func testKairoRecipeRunnerUsesInjectedIntegrationActionDrafter() async throws {
+        let recipe = KairoRecipe(
+            id: "injected-integration-drafter-workflow",
+            title: "Injected Integration Drafter Workflow",
+            summary: "Verifies recipe runner dependency inversion for integration drafts.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "integration",
+                    title: "Prepare Integration",
+                    kind: .enqueueActionDraft,
+                    input: .literal("Use injected drafter"),
+                    integrationSkillID: .appleMailHandoff
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let drafter = StubRecipeIntegrationActionDrafter()
+        let runner = KairoRecipeRunner(dependencies: KairoRecipeRunnerDependencies(
+            recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]),
+            actionGate: BuiltInPhoneToolActionGate(),
+            integrationActionDrafter: drafter
+        ))
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .app,
+            input: nil,
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertTrue(result.success)
+        let proposedActionIDs = result.proposedActions.map(\.id)
+        XCTAssertEqual(proposedActionIDs, [StubRecipeIntegrationActionDrafter.actionID])
+        XCTAssertEqual(drafter.receivedStepIDs, ["integration"])
+        XCTAssertEqual(drafter.receivedRecipeIDs, [recipe.id])
+        XCTAssertEqual(drafter.receivedInputTexts, ["Use injected drafter"])
+    }
+
     func testKairoRecipeRunnerFailsClosedWhenIntegrationBindingIsMissingFromCatalog() async throws {
         let recipe = KairoRecipe(
             id: "missing-integration-workflow",
@@ -375,5 +418,42 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
             .appendingPathComponent(name)
+    }
+}
+
+private final class StubRecipeIntegrationActionDrafter: KairoRecipeIntegrationActionDrafting, @unchecked Sendable {
+    static let actionID = UUID(uuidString: "00000000-0000-0000-0000-000000000123")!
+
+    private(set) var receivedStepIDs: [String] = []
+    private(set) var receivedRecipeIDs: [String] = []
+    private(set) var receivedInputTexts: [String] = []
+
+    func draftIntegrationAction(
+        for step: KairoRecipeStep,
+        inputText: String,
+        recipe: KairoRecipe
+    ) -> KairoRecipeIntegrationActionDraftResult? {
+        receivedStepIDs.append(step.id)
+        receivedRecipeIDs.append(recipe.id)
+        receivedInputTexts.append(inputText)
+
+        return KairoRecipeIntegrationActionDraftResult(
+            stepResult: KairoRecipeStepResult(
+                stepID: step.id,
+                summary: "Injected integration draft.",
+                outputText: inputText,
+                success: true
+            ),
+            actions: [
+                AgentAction(
+                    id: Self.actionID,
+                    kind: .answer,
+                    title: "Stub integration action",
+                    rationale: "Injected by test drafter.",
+                    payload: .text(inputText),
+                    riskTier: .tier1Draft
+                )
+            ]
+        )
     }
 }
