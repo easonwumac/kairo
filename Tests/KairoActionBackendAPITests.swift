@@ -16,6 +16,23 @@ final class KairoActionBackendAPITests: XCTestCase {
         XCTAssertTrue(executedKinds.isEmpty)
     }
 
+    func testActionBackendAPIPreviewsThroughInjectedSafetyPolicy() async throws {
+        let executor = AllowingBackendActionExecutor()
+        let api = KairoActionBackendService(
+            actionExecutor: executor,
+            safetyPolicyEngine: BlockingActionSafetyPolicy()
+        )
+        let action = makeReminderAction()
+
+        let preview = await api.preview(action)
+
+        XCTAssertEqual(preview.action.id, action.id)
+        XCTAssertFalse(preview.decision.allowed)
+        XCTAssertFalse(preview.decision.requiresConfirmation)
+        let executedKinds = await executor.executedKinds()
+        XCTAssertTrue(executedKinds.isEmpty)
+    }
+
     func testActionBackendAPIConfirmsThroughInjectedExecutor() async throws {
         let executor = AllowingBackendActionExecutor()
         let api = KairoActionBackendService(actionExecutor: executor)
@@ -42,6 +59,16 @@ final class KairoActionBackendAPITests: XCTestCase {
                 dueDate: nil
             )),
             riskTier: .tier2LowRiskWrite
+        )
+    }
+}
+
+private struct BlockingActionSafetyPolicy: ActionSafetyPolicyEvaluating {
+    func evaluate(_ action: AgentAction) -> SafetyPolicyDecision {
+        SafetyPolicyDecision(
+            allowed: false,
+            requiresConfirmation: false,
+            reason: "blocked"
         )
     }
 }

@@ -12,7 +12,11 @@ public struct SafetyPolicyDecision: Equatable, Sendable {
     }
 }
 
-public struct SafetyPolicyEngine: Sendable {
+public protocol ActionSafetyPolicyEvaluating: Sendable {
+    func evaluate(_ action: AgentAction) -> SafetyPolicyDecision
+}
+
+public struct SafetyPolicyEngine: ActionSafetyPolicyEvaluating {
     public init() {}
 
     public func evaluate(_ action: AgentAction) -> SafetyPolicyDecision {

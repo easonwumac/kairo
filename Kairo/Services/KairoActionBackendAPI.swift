@@ -17,11 +17,11 @@ public protocol KairoActionAPI: Sendable {
 
 public struct KairoActionBackendService: KairoActionAPI {
     private let actionExecutor: any ActionExecutor
-    private let safetyPolicyEngine: SafetyPolicyEngine
+    private let safetyPolicyEngine: any ActionSafetyPolicyEvaluating
 
     public init(
         actionExecutor: any ActionExecutor,
-        safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine()
     ) {
         self.actionExecutor = actionExecutor
         self.safetyPolicyEngine = safetyPolicyEngine
