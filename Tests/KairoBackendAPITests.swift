@@ -217,6 +217,11 @@ final class KairoBackendAPITests: XCTestCase {
         let saved = try await recipeStore.listRecipes()
 
         XCTAssertEqual(saved.map(\.id), ["composition-recipe"])
+
+        let demoRecipe = try XCTUnwrap(ShortcutDemoCatalog.default.recipe(id: "save-shared-text"))
+        let demoRun = try await dependencies.shortcutDemoRecipeRunner.runSample(demoRecipe)
+        XCTAssertEqual(demoRun.recipeID, demoRecipe.id)
+        XCTAssertEqual(demoRun.steps.map(\.nodeKind), [.saveMemory, .extractTasks])
     }
 
     func testKairoEnvironmentBuildsAccessFeatureDependenciesForCompositionRoot() async throws {

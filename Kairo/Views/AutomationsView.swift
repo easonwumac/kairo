@@ -6,6 +6,7 @@ public struct AutomationsView: View {
 
     private let recipeAPI: any KairoRecipeAPI
     private let shortcutTemplateRegistry: ShortcutTemplateRegistry
+    private let shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol
 
     @State private var recipes: [KairoRecipe] = []
     @State private var message: String?
@@ -17,6 +18,7 @@ public struct AutomationsView: View {
     public init(dependencies: AutomationsFeatureDependencies) {
         self.recipeAPI = dependencies.recipeAPI
         self.shortcutTemplateRegistry = dependencies.shortcutTemplateRegistry
+        self.shortcutDemoRecipeRunner = dependencies.shortcutDemoRecipeRunner
     }
 
     public init(
@@ -25,22 +27,30 @@ public struct AutomationsView: View {
         aiProvider: (any AIProvider)? = nil,
         shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default
     ) {
-        self.recipeAPI = KairoRecipeBackendService(
-            recipeStore: recipeStore,
-            memoryStore: memoryStore,
-            aiProvider: aiProvider
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        self.init(
+            recipeAPI: KairoRecipeBackendService(
+                recipeStore: recipeStore,
+                memoryStore: memoryStore,
+                aiProvider: aiProvider
+            ),
+            shortcutTemplateRegistry: shortcutTemplateRegistry,
+            shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(runtime: runtime)
         )
-        self.shortcutTemplateRegistry = shortcutTemplateRegistry
     }
 
     public init(
         recipeAPI: any KairoRecipeAPI,
-        shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default
+        shortcutTemplateRegistry: ShortcutTemplateRegistry = ShortcutTemplateRegistry.default,
+        shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol = ShortcutDemoRecipeRunner(
+            runtime: ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        )
     ) {
         self.init(
             dependencies: AutomationsFeatureDependencies(
                 recipeAPI: recipeAPI,
-                shortcutTemplateRegistry: shortcutTemplateRegistry
+                shortcutTemplateRegistry: shortcutTemplateRegistry,
+                shortcutDemoRecipeRunner: shortcutDemoRecipeRunner
             )
         )
     }
@@ -494,9 +504,7 @@ public struct AutomationsView: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
-            let runner = ShortcutDemoRecipeRunner(runtime: runtime)
-            let run = try await runner.runSample(recipe)
+            let run = try await shortcutDemoRecipeRunner.runSample(recipe)
             let finalOutput = run.steps.last?.output.displayText.trimmingCharacters(in: .whitespacesAndNewlines)
             let finalOutputSummary = finalOutput?.isEmpty == false ? " \(finalOutput ?? "")" : ""
             let previewMessage = KairoL10n.string("automations.message.samplePreview", run.displaySummary, finalOutputSummary)

@@ -1,6 +1,10 @@
 import Foundation
 
-public actor ShortcutDemoRecipeRunner {
+public protocol ShortcutDemoRecipeRunnerProtocol: Sendable {
+    func runSample(_ recipe: ShortcutDemoRecipe) async throws -> ShortcutDemoRecipeRun
+}
+
+public actor ShortcutDemoRecipeRunner: ShortcutDemoRecipeRunnerProtocol {
     private let runtime: ShortcutNodeRuntime
 
     public init(runtime: ShortcutNodeRuntime) {
