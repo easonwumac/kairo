@@ -79,7 +79,7 @@ public struct RootView: View {
     private var selectedContent: some View {
         switch selectedSection {
         case .chat:
-            ChatView(environment: environment)
+            ChatView(dependencies: environment.chatFeatureDependencies)
         case .memory:
             MemoryCenterView(memoryAPI: environment.backendAPI.memory)
         case .shortcuts:

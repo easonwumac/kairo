@@ -11,8 +11,12 @@ public struct ChatView: View {
     @State private var showMoreFocusStarts = false
     @FocusState private var isComposerFocused: Bool
 
+    public init(dependencies: ChatFeatureDependencies) {
+        _viewModel = StateObject(wrappedValue: ChatViewModel(dependencies: dependencies))
+    }
+
     public init(environment: KairoEnvironment = .preview()) {
-        _viewModel = StateObject(wrappedValue: ChatViewModel(environment: environment))
+        self.init(dependencies: environment.chatFeatureDependencies)
     }
 
     @ViewBuilder

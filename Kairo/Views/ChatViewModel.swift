@@ -47,6 +47,20 @@ public final class ChatViewModel: ObservableObject {
     private var importedShareItemIDs: [UUID] = []
 
     public init(
+        dependencies: ChatFeatureDependencies
+    ) {
+        self.historyStore = dependencies.historyStore
+        self.shareImportAPI = dependencies.shareImportAPI
+        self.chatAPI = dependencies.chatAPI
+        self.actionAPI = dependencies.actionAPI
+        self.localModelSettingsService = dependencies.localModelSettingsService
+        self.openAISettingsService = dependencies.openAISettingsService
+        self.localModelChatRuntimeAvailable = dependencies.localModelChatRuntimeAvailable
+        self.currentThread = ChatThread(messages: [Self.welcomeMessage])
+        self.providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil)
+    }
+
+    public convenience init(
         historyStore: ChatHistoryStore = InMemoryChatHistoryStore(),
         shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
         agent: AgentCore = AgentCore(),
@@ -58,27 +72,21 @@ public final class ChatViewModel: ObservableObject {
         openAISettingsService: OpenAISettingsService? = nil,
         localModelChatRuntimeAvailable: Bool = false
     ) {
-        self.historyStore = historyStore
-        self.shareImportAPI = shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue)
-        self.chatAPI = chatAPI ?? KairoChatBackendService(agent: agent)
-        self.actionAPI = actionAPI ?? KairoActionBackendService(actionExecutor: actionExecutor)
-        self.localModelSettingsService = localModelSettingsService
-        self.openAISettingsService = openAISettingsService
-        self.localModelChatRuntimeAvailable = localModelChatRuntimeAvailable
-        self.currentThread = ChatThread(messages: [Self.welcomeMessage])
-        self.providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil)
+        self.init(
+            dependencies: ChatFeatureDependencies(
+                historyStore: historyStore,
+                shareImportAPI: shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue),
+                chatAPI: chatAPI ?? KairoChatBackendService(agent: agent),
+                actionAPI: actionAPI ?? KairoActionBackendService(actionExecutor: actionExecutor),
+                localModelSettingsService: localModelSettingsService,
+                openAISettingsService: openAISettingsService,
+                localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
+            )
+        )
     }
 
     public convenience init(environment: KairoEnvironment) {
-        self.init(
-            historyStore: environment.chatHistoryStore,
-            shareImportAPI: environment.backendAPI.shareImports,
-            chatAPI: environment.backendAPI.chat,
-            actionAPI: environment.backendAPI.actions,
-            localModelSettingsService: environment.localModelSettingsService,
-            openAISettingsService: OpenAISettingsService(credentialStore: environment.credentialStore),
-            localModelChatRuntimeAvailable: environment.localModelChatRuntimeAvailable
-        )
+        self.init(dependencies: environment.chatFeatureDependencies)
     }
 
     public func load() async {

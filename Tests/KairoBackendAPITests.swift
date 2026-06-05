@@ -115,4 +115,27 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertNotNil(dependencies.deletionAPI)
     }
 
+    @MainActor
+    func testKairoEnvironmentBuildsChatFeatureDependenciesForCompositionRoot() async throws {
+        let chatHistoryStore = InMemoryChatHistoryStore()
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
+            chatHistoryStore: chatHistoryStore
+        )
+        let dependencies = environment.chatFeatureDependencies
+        let thread = ChatThread(messages: [
+            ChatMessage(role: .user, text: "Saved thread")
+        ])
+
+        try await chatHistoryStore.saveThread(thread)
+        let viewModel = ChatViewModel(dependencies: dependencies)
+        await viewModel.load()
+        await viewModel.send("compose")
+
+        XCTAssertEqual(viewModel.threads.first?.id, thread.id)
+        XCTAssertEqual(viewModel.currentThread.messages.last?.text, "Composer response")
+    }
+
 }
