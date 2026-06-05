@@ -105,12 +105,18 @@ final class ChatCalendarActionAuditTests: XCTestCase {
         ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            chatAPI: makeCalendarChatAPI(),
             actionExecutor: SandboxActionExecutor(
                 memoryStore: InMemoryMemoryStore(),
                 calendarScheduler: calendarScheduler,
                 auditLogger: auditLogger
             )
+        )
+    }
+
+    private func makeCalendarChatAPI() -> any KairoChatAPI {
+        KairoChatBackendService(
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
         )
     }
 }
