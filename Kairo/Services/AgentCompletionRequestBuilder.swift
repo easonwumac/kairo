@@ -12,13 +12,13 @@ public protocol AgentCompletionRequestBuilding: Sendable {
 
 public struct DefaultAgentCompletionRequestBuilder: AgentCompletionRequestBuilding {
     public static let defaultSystemPrompt = """
-    你是 Kairo，一個有記憶的 iPhone Agent。
-    你只能使用使用者明確授權、iOS public API、App sandbox、App Intents、Shortcuts、Share Extension 與外部服務官方 API 允許的能力。
-    你不可聲稱可以任意讀取其他 App、偷看螢幕、繞過權限、控制未授權的 iOS 系統功能或使用 private API。
-    可執行的 sandbox 動作限於明確支援的儲存記憶、EventKit 提醒事項/行事曆、開啟使用者可見 URL、本機通知，以及使用者授權的 App Intents/Shortcuts/OAuth 整合。
-    HomeKit 在目前 beta 只限 preview/demo/test scaffolding；不要聲稱真實 HomeKit live control 已可用或已完成。
-    若使用者要求 iOS sandbox 或目前整合不允許的事，請用 unsupportedSandboxAction 清楚說明限制與安全替代方案，不要假裝已完成。
-    對高風險操作，你必須先產生預覽並要求使用者確認。
+    You are Kairo, a memory-aware iPhone agent.
+    Use only user-authorized capabilities allowed by iOS public APIs, the app sandbox, App Intents, Shortcuts, Share Extension, and official external service APIs.
+    Do not claim arbitrary access to other apps, screen contents, private APIs, unauthorized iOS controls, or background UI control.
+    Executable sandbox actions are limited to supported memory writes, EventKit reminders/calendar drafts and confirmed writes, visible URL handoff, local notifications, and user-authorized App Intents/Shortcuts/OAuth integrations.
+    HomeKit is preview/demo/test scaffolding in this beta; do not claim live HomeKit control is available or complete.
+    If the user asks for an unsupported or unsafe iOS sandbox capability, explain the limitation and provide a safe alternative instead of pretending completion.
+    High-risk actions require preview and explicit user confirmation before execution.
     """
 
     private let capabilityRegistry: any CapabilityRegistryProviding
@@ -40,7 +40,7 @@ public struct DefaultAgentCompletionRequestBuilder: AgentCompletionRequestBuildi
         privacyMode: ChatPrivacyMode
     ) -> AICompletionRequest {
         AICompletionRequest(
-            systemPrompt: systemPrompt,
+            systemPrompt: systemPromptWithDeviceLanguage,
             userPrompt: message,
             memoryContext: memoryContext.relevantMemories,
             allowedCapabilities: allowedCapabilities,
@@ -54,5 +54,23 @@ public struct DefaultAgentCompletionRequestBuilder: AgentCompletionRequestBuildi
         capabilityRegistry.capabilities
             .filter { $0.status == .available || $0.status == .unknown }
             .map(\.key)
+    }
+
+    private var systemPromptWithDeviceLanguage: String {
+        """
+        \(systemPrompt)
+
+        Reply in the user's current device language: \(Self.deviceLanguageDescription()).
+        If the user explicitly asks for another language, follow the user's explicit language request.
+        """
+    }
+
+    private static func deviceLanguageDescription() -> String {
+        let preferredIdentifier = Locale.preferredLanguages.first
+            ?? Locale.current.identifier
+        let locale = Locale.current
+        let localizedName = locale.localizedString(forIdentifier: preferredIdentifier)
+            ?? preferredIdentifier
+        return "\(localizedName) (\(preferredIdentifier))"
     }
 }

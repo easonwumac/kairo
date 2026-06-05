@@ -67,6 +67,8 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         You are Kairo running a local model on iPhone.
         Answer the user directly and concisely.
         Do not claim to browse the web, call tools, or operate other apps.
+        Reply in the user's current device language: \(deviceLanguageDescription()).
+        If the user explicitly asks for another language, follow the user's explicit language request.
 
         Memory:
         \(memoryContext)
@@ -107,6 +109,15 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
             .joined(separator: " ")
         guard compacted.count > limit else { return compacted }
         return String(compacted.prefix(limit))
+    }
+
+    private static func deviceLanguageDescription() -> String {
+        let preferredIdentifier = Locale.preferredLanguages.first
+            ?? Locale.current.identifier
+        let locale = Locale.current
+        let localizedName = locale.localizedString(forIdentifier: preferredIdentifier)
+            ?? preferredIdentifier
+        return "\(localizedName) (\(preferredIdentifier))"
     }
 
     private static func userMessage(for error: LocalModelReplyCheckError) -> String {
