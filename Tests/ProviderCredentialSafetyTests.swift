@@ -117,6 +117,24 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertEqual(configurations["chatgpt"]?.scopes, ["openid", "profile"])
     }
 
+    func testOAuthConnectorClientConfigurationLoaderDefaultsToHarnessRegistryProviders() {
+        let loader = OAuthConnectorClientConfigurationLoader()
+
+        let configurations = loader.load(
+            environment: [
+                "KAIRO_OAUTH_TODOIST_CLIENT_ID": "todoist-client",
+                "KAIRO_OAUTH_TODOIST_REDIRECT_URI": "kairo://oauth/todoist/callback",
+                "KAIRO_OAUTH_SLACK_CLIENT_ID": "slack-client",
+                "KAIRO_OAUTH_SLACK_REDIRECT_URI": "kairo://oauth/slack/callback"
+            ],
+            infoDictionary: nil
+        )
+
+        XCTAssertEqual(configurations.map(\.key), ["todoist"])
+        XCTAssertEqual(configurations["todoist"]?.clientID, "todoist-client")
+        XCTAssertNil(configurations["slack"])
+    }
+
     func testOAuthConnectorClientConfigurationLoaderUsesInjectedRegistryProviders() {
         let loader = OAuthConnectorClientConfigurationLoader()
         let registry = IntegrationRegistry(integrations: [
@@ -163,6 +181,33 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertEqual(options.map(\.integrationKey), ["custom-mail"])
         XCTAssertEqual(options.first?.providerKey, "custom-mail")
         XCTAssertEqual(options.first?.readiness, .readyToAuthorize)
+    }
+
+    func testOAuthConnectorLoginCenterDefaultsToHarnessRegistry() async throws {
+        let center = OAuthConnectorLoginCenter(
+            credentialStore: InMemoryCredentialStore(),
+            clientConfigurations: [
+                "google": OAuthConnectorClientConfiguration(
+                    clientID: "google-client",
+                    redirectURI: "kairo://oauth/google/callback"
+                ),
+                "todoist": OAuthConnectorClientConfiguration(
+                    clientID: "todoist-client",
+                    redirectURI: "kairo://oauth/todoist/callback"
+                )
+            ]
+        )
+
+        let options = try await center.loginOptions()
+        let google = try XCTUnwrap(options.first { $0.providerKey == "google" })
+        let todoist = try XCTUnwrap(options.first { $0.providerKey == "todoist" })
+
+        XCTAssertEqual(options.map(\.providerKey), ["google", "notion", "todoist", "microsoft", "chatgpt", "github"])
+        XCTAssertEqual(google.integrationKey, "gmail-google-workspace")
+        XCTAssertEqual(google.defaultScopes, ["https://www.googleapis.com/auth/gmail.compose"])
+        XCTAssertEqual(todoist.integrationKey, "todoist")
+        XCTAssertEqual(todoist.readiness, .readyToAuthorize)
+        XCTAssertFalse(options.contains { $0.providerKey == "slack" })
     }
 
     func testChatGPTOAuthServiceBuildsPKCEAuthorizationURL() async throws {

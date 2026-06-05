@@ -18,7 +18,7 @@ public struct OAuthConnectorClientConfigurationLoader: Sendable {
     public func load(
         environment: [String: String] = ProcessInfo.processInfo.environment,
         infoDictionary: [String: Any]? = Bundle.main.infoDictionary,
-        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry()
+        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry()
     ) -> [String: OAuthConnectorClientConfiguration] {
         var configurations = Self.loadFromInfoDictionary(infoDictionary)
         configurations.merge(Self.loadFromEnvironment(environment, registry: registry)) { _, environmentValue in
@@ -199,7 +199,7 @@ public actor OAuthConnectorLoginCenter: OAuthConnectorLoginServicing {
     private let tokenExchangeHTTPClient: any HTTPClient
 
     public init(
-        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
+        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         credentialStore: CredentialStore,
         clientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         callbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
