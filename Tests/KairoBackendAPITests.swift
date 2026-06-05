@@ -662,13 +662,16 @@ final class KairoBackendAPITests: XCTestCase {
             oauthWebAuthenticationRunner: nil
         )
 
-        try await dependencies.settingsService.saveAPIKey("openai-test-key")
+        try await dependencies.openAIKeyCoordinator.saveAPIKey("openai-test-key")
         let savedKey = try await credentialStore.readSecret(for: CredentialKey.openAIAPIKey)
+        let loginOptions = try await dependencies.oauthCoordinator.loginOptions()
 
         XCTAssertEqual(savedKey, "openai-test-key")
         XCTAssertEqual(dependencies.oauthConnectorRegistry.oauthConnectors.map(\.key), ["custom-mail"])
         XCTAssertEqual(dependencies.oauthClientConfigurations["custom-mail"]?.clientID, "custom-client")
         XCTAssertNil(dependencies.oauthWebAuthenticationRunner)
+        XCTAssertEqual(loginOptions.map(\.providerKey), ["custom-mail"])
+        XCTAssertEqual(loginOptions.map(\.readiness), [.readyToAuthorize])
     }
 
     func testSettingsFeatureDependencyFactoryDefaultsToHarnessOAuthRegistry() throws {

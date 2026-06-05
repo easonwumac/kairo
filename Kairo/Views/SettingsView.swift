@@ -63,6 +63,9 @@ public struct SettingsView: View {
             oauthCallbackStore: dependencies.oauthCallbackStore,
             oauthLoginService: dependencies.oauthLoginService,
             oauthWebAuthenticationRunner: dependencies.oauthWebAuthenticationRunner,
+            openAIKeyCoordinator: dependencies.openAIKeyCoordinator,
+            oauthCoordinator: dependencies.oauthCoordinator,
+            privacyCoordinator: dependencies.privacyCoordinator,
             localModelCatalog: dependencies.localModelCatalog,
             localModelCatalogService: dependencies.localModelCatalogService,
             localModelSettingsService: dependencies.localModelSettingsService,
@@ -81,6 +84,9 @@ public struct SettingsView: View {
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
         oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)? = Self.defaultOAuthWebAuthenticationRunner(),
+        openAIKeyCoordinator: SettingsOpenAIKeyCoordinator? = nil,
+        oauthCoordinator: SettingsOAuthConnectorCoordinator? = nil,
+        privacyCoordinator: SettingsPrivacyCoordinator? = nil,
         localModelCatalog: LocalModelCatalog = .kairoDefault,
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
@@ -97,6 +103,9 @@ public struct SettingsView: View {
                 oauthCallbackStore: oauthCallbackStore,
                 oauthLoginService: oauthLoginService,
                 oauthWebAuthenticationRunner: oauthWebAuthenticationRunner,
+                openAIKeyCoordinator: openAIKeyCoordinator,
+                oauthCoordinator: oauthCoordinator,
+                privacyCoordinator: privacyCoordinator,
                 localModelCatalog: localModelCatalog,
                 localModelCatalogService: localModelCatalogService,
                 localModelSettingsService: localModelSettingsService,
@@ -119,6 +128,9 @@ public struct SettingsView: View {
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
         oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)? = Self.defaultOAuthWebAuthenticationRunner(),
+        openAIKeyCoordinator: SettingsOpenAIKeyCoordinator? = nil,
+        oauthCoordinator: SettingsOAuthConnectorCoordinator? = nil,
+        privacyCoordinator: SettingsPrivacyCoordinator? = nil,
         localModelCatalog: LocalModelCatalog = .kairoDefault,
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
@@ -127,7 +139,7 @@ public struct SettingsView: View {
         localModelReplyCheckService: LocalModelReplyCheckService? = nil,
         deletionAPI: (any KairoDeletionAPI)? = nil
     ) {
-        self.openAIKeyCoordinator = SettingsOpenAIKeyCoordinator(settingsService: settingsService)
+        self.openAIKeyCoordinator = openAIKeyCoordinator ?? SettingsOpenAIKeyCoordinator(settingsService: settingsService)
         self.mode = mode
         self.credentialStore = credentialStore
         let oauthLoginService = Self.defaultOAuthLoginService(
@@ -137,7 +149,7 @@ public struct SettingsView: View {
             oauthClientConfigurations: oauthClientConfigurations,
             oauthCallbackStore: oauthCallbackStore
         )
-        self.oauthCoordinator = SettingsOAuthConnectorCoordinator(
+        self.oauthCoordinator = oauthCoordinator ?? SettingsOAuthConnectorCoordinator(
             loginService: oauthLoginService,
             webAuthenticationRunner: oauthWebAuthenticationRunner
         )
@@ -146,7 +158,7 @@ public struct SettingsView: View {
         self.localModelDownloader = localModelDownloader
         self.localModelBenchmarkService = localModelBenchmarkService
         self.localModelReplyCheckService = localModelReplyCheckService
-        self.privacyCoordinator = SettingsPrivacyCoordinator(deletionAPI: deletionAPI)
+        self.privacyCoordinator = privacyCoordinator ?? SettingsPrivacyCoordinator(deletionAPI: deletionAPI)
         self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }

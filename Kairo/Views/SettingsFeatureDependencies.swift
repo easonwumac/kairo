@@ -9,6 +9,9 @@ public struct SettingsFeatureDependencies {
     public var oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
     public var oauthLoginService: (any OAuthConnectorLoginServicing)?
     public var oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)?
+    public var openAIKeyCoordinator: SettingsOpenAIKeyCoordinator
+    public var oauthCoordinator: SettingsOAuthConnectorCoordinator
+    public var privacyCoordinator: SettingsPrivacyCoordinator
     public var localModelCatalog: LocalModelCatalog
     public var localModelCatalogService: LocalModelCatalogService?
     public var localModelSettingsService: LocalModelSettingsService?
@@ -25,6 +28,9 @@ public struct SettingsFeatureDependencies {
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
         oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)? = SettingsView.defaultOAuthWebAuthenticationRunner(),
+        openAIKeyCoordinator: SettingsOpenAIKeyCoordinator? = nil,
+        oauthCoordinator: SettingsOAuthConnectorCoordinator? = nil,
+        privacyCoordinator: SettingsPrivacyCoordinator? = nil,
         localModelCatalog: LocalModelCatalog = .kairoDefault,
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
@@ -40,6 +46,18 @@ public struct SettingsFeatureDependencies {
         self.oauthCallbackStore = oauthCallbackStore
         self.oauthLoginService = oauthLoginService
         self.oauthWebAuthenticationRunner = oauthWebAuthenticationRunner
+        self.openAIKeyCoordinator = openAIKeyCoordinator ?? SettingsOpenAIKeyCoordinator(settingsService: settingsService)
+        let resolvedOAuthLoginService = oauthLoginService ?? OAuthConnectorLoginCenter(
+            registry: oauthConnectorRegistry,
+            credentialStore: credentialStore,
+            clientConfigurations: oauthClientConfigurations,
+            callbackStore: oauthCallbackStore
+        )
+        self.oauthCoordinator = oauthCoordinator ?? SettingsOAuthConnectorCoordinator(
+            loginService: resolvedOAuthLoginService,
+            webAuthenticationRunner: oauthWebAuthenticationRunner
+        )
+        self.privacyCoordinator = privacyCoordinator ?? SettingsPrivacyCoordinator(deletionAPI: deletionAPI)
         self.localModelCatalog = localModelCatalog
         self.localModelCatalogService = localModelCatalogService
         self.localModelSettingsService = localModelSettingsService
@@ -60,6 +78,9 @@ public struct SettingsFeatureDependencyFactory: Sendable {
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
         oauthWebAuthenticationRunner: (any OAuthWebAuthenticationRunner)? = SettingsView.defaultOAuthWebAuthenticationRunner(),
+        openAIKeyCoordinator: SettingsOpenAIKeyCoordinator? = nil,
+        oauthCoordinator: SettingsOAuthConnectorCoordinator? = nil,
+        privacyCoordinator: SettingsPrivacyCoordinator? = nil,
         localModelCatalog: LocalModelCatalog = .kairoDefault,
         localModelCatalogService: LocalModelCatalogService? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
@@ -76,6 +97,9 @@ public struct SettingsFeatureDependencyFactory: Sendable {
             oauthCallbackStore: oauthCallbackStore,
             oauthLoginService: oauthLoginService,
             oauthWebAuthenticationRunner: oauthWebAuthenticationRunner,
+            openAIKeyCoordinator: openAIKeyCoordinator,
+            oauthCoordinator: oauthCoordinator,
+            privacyCoordinator: privacyCoordinator,
             localModelCatalog: localModelCatalog,
             localModelCatalogService: localModelCatalogService,
             localModelSettingsService: localModelSettingsService,
