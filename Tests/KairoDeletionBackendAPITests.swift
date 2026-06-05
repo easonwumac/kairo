@@ -103,6 +103,41 @@ final class KairoDeletionBackendAPITests: XCTestCase {
         XCTAssertFalse(status.installedModels.contains { $0.modelID == "qwen-small" })
     }
 
+    func testSettingsPrivacyCoordinatorClearsAuditLogThroughDeletionAPI() async throws {
+        let auditLogger = InMemoryAuditLogger()
+        let deletionAPI = KairoDeletionBackendService(
+            chatHistoryStore: InMemoryChatHistoryStore(),
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            auditLogger: auditLogger
+        )
+        let coordinator = SettingsPrivacyCoordinator(deletionAPI: deletionAPI)
+        try await auditLogger.record(AuditEvent(
+            actionKind: .saveMemory,
+            capabilityKeys: [.memory],
+            usedCloudModel: false,
+            requiredConfirmation: true,
+            userConfirmed: true,
+            result: .completed
+        ))
+
+        try await coordinator.clearAuditLog()
+        let events = try await auditLogger.list(limit: 10)
+
+        XCTAssertTrue(events.isEmpty)
+    }
+
+    func testSettingsPrivacyCoordinatorFailsClosedWhenDeletionAPIIsUnavailable() async throws {
+        let coordinator = SettingsPrivacyCoordinator(deletionAPI: nil)
+
+        do {
+            try await coordinator.clearAuditLog()
+            XCTFail("Expected unavailable privacy coordinator to fail closed.")
+        } catch let error as SettingsPrivacyCoordinatorError {
+            XCTAssertEqual(error, .unavailable)
+        }
+    }
+
     func testDeletionBackendAPIPurgesDeletedChatHistoryFromDisk() async throws {
         let threadID = UUID(uuidString: "44444444-4444-4444-4444-444444444444")!
         let fileURL = temporaryFileURL(named: "chat-history-deletion-proof.json")

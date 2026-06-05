@@ -44,12 +44,12 @@ public struct SettingsView: View {
     private let mode: SettingsViewMode
     private let credentialStore: any CredentialStore
     private let oauthCoordinator: SettingsOAuthConnectorCoordinator
+    private let privacyCoordinator: SettingsPrivacyCoordinator
     let localModelCatalogService: LocalModelCatalogService?
     let localModelSettingsService: LocalModelSettingsService?
     let localModelDownloader: (any LocalModelDownloader)?
     let localModelBenchmarkService: LocalModelBenchmarkService?
     let localModelReplyCheckService: LocalModelReplyCheckService?
-    private let deletionAPI: (any KairoDeletionAPI)?
 
     public init(
         dependencies: SettingsFeatureDependencies,
@@ -109,7 +109,7 @@ public struct SettingsView: View {
         self.localModelDownloader = localModelDownloader
         self.localModelBenchmarkService = localModelBenchmarkService
         self.localModelReplyCheckService = localModelReplyCheckService
-        self.deletionAPI = deletionAPI
+        self.privacyCoordinator = SettingsPrivacyCoordinator(deletionAPI: deletionAPI)
         self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
@@ -148,7 +148,7 @@ public struct SettingsView: View {
         self.localModelDownloader = localModelDownloader
         self.localModelBenchmarkService = localModelBenchmarkService
         self.localModelReplyCheckService = localModelReplyCheckService
-        self.deletionAPI = deletionAPI
+        self.privacyCoordinator = SettingsPrivacyCoordinator(deletionAPI: deletionAPI)
         self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
     }
@@ -881,16 +881,14 @@ public struct SettingsView: View {
     private func clearAuditLog() {
         privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogClearing")
         Task {
-            guard let deletionAPI else {
-                await MainActor.run {
-                    privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogUnavailable")
-                }
-                return
-            }
             do {
-                try await deletionAPI.clearAuditLog()
+                try await privacyCoordinator.clearAuditLog()
                 await MainActor.run {
                     privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogCleared")
+                }
+            } catch SettingsPrivacyCoordinatorError.unavailable {
+                await MainActor.run {
+                    privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogUnavailable")
                 }
             } catch {
                 await MainActor.run {
