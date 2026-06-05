@@ -8,6 +8,7 @@ public actor AgentCore {
     private let skillCatalogProvider: AgentSkillCatalogProvider
     private let integrationRegistry: IntegrationRegistry
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
+    private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     private let actionGate: any PhoneToolActionGating
     private let memoryCandidateExtractor: MemoryCandidateExtractor
 
@@ -18,6 +19,7 @@ public actor AgentCore {
         skillCatalogProvider: AgentSkillCatalogProvider? = nil,
         integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         actionGate: (any PhoneToolActionGating)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
@@ -30,6 +32,7 @@ public actor AgentCore {
         self.skillCatalogProvider = skillCatalogProvider ?? .constant(skillCatalog)
         self.integrationRegistry = integrationRegistry
         self.toolCatalog = toolCatalog
+        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         self.memoryCandidateExtractor = memoryCandidateExtractor
     }
@@ -52,11 +55,13 @@ public actor AgentCore {
             capabilityRegistry: capabilityRegistry,
             toolCatalog: toolCatalog,
             integrationRegistry: integrationRegistry,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             skillCatalog: skillCatalog
         ).build()
         let toolPlan = AgentToolInvocationPlanner(
             skillCatalog: skillCatalog,
             integrationRegistry: integrationRegistry,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             toolCatalog: toolCatalog,
             safetyPolicyEngine: safetyPolicyEngine
         ).plan(for: AgentToolInvocationRequest(

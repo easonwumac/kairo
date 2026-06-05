@@ -83,6 +83,27 @@ extension AgentToolInvocationPlanner {
         )
     }
 
+    func candidate(for skill: AppIntegrationSkill, normalizedText: String) -> AgentToolInvocationCandidate? {
+        guard matchesAppIntegration(skill, normalizedText: normalizedText) else {
+            return nil
+        }
+        guard skill.availabilityStatus != .disabled, skill.availabilityStatus != .unsupported else {
+            return nil
+        }
+
+        return AgentToolInvocationCandidate(
+            id: "app-integration-\(skill.id.rawValue)",
+            title: skill.appName,
+            source: .appIntegrationCatalog,
+            integrationKey: skill.integrationKey,
+            skillKind: skill.executionMode == .apiCall ? .oauthConnector : .custom,
+            requiredCapabilities: skill.audit.capabilityKeys,
+            riskTier: skill.riskTier,
+            requiresConfirmation: skill.requiresConfirmation,
+            handoffSummary: appIntegrationHandoffSummary(for: skill)
+        )
+    }
+
     func matchesHomeKit(skill: AgentSkill, normalizedText: String) -> Bool {
         if skill.id.contains("front-door-lock") {
             return containsAny(normalizedText, ["front door", "door lock", "lock", "unlock", "entry", "門鎖", "前門", "開鎖", "上鎖"])
@@ -164,6 +185,44 @@ extension AgentToolInvocationPlanner {
             return normalize("\(integration.key) \(integration.displayName)").split(separator: " ").contains { token in
                 token.count >= 4 && normalizedText.contains(token)
             }
+        }
+    }
+
+    func matchesAppIntegration(_ skill: AppIntegrationSkill, normalizedText: String) -> Bool {
+        switch skill.id {
+        case .appleMailHandoff, .gmailDraftAPI:
+            return containsAny(normalizedText, ["gmail", "email", "mail", "compose email", "draft email", "郵件", "信箱", "寫信", "回信"])
+        case .appleMessagesHandoff, .whatsappMessageHandoff, .lineShareHandoff:
+            return containsAny(normalizedText, ["message", "sms", "text", "whatsapp", "line", "傳訊息", "發訊息", "簡訊"])
+        case .applePhoneHandoff:
+            return containsAny(normalizedText, ["phone", "call", "dial", "tel", "打電話", "撥號", "致電"])
+        case .safariWebSearchHandoff:
+            return containsAny(normalizedText, ["web search", "search web", "google", "look up online", "搜尋網路", "查網路"])
+        case .appleMapsDirectionsHandoff, .googleMapsDirectionsHandoff:
+            return containsAny(normalizedText, ["maps", "google maps", "directions", "navigate", "route", "map directions", "導航", "路線", "帶我去"])
+        case .slackOpenHandoff:
+            return containsAny(normalizedText, ["slack"])
+        case .notionPageAPI:
+            return containsAny(normalizedText, ["notion"])
+        case .todoistTaskAPI:
+            return containsAny(normalizedText, ["todoist", "task", "todo", "待辦", "任務"])
+        case .draftsCreateHandoff:
+            return containsAny(normalizedText, ["drafts", "draft note", "text draft", "草稿", "筆記草稿"])
+        }
+    }
+
+    func appIntegrationHandoffSummary(for skill: AppIntegrationSkill) -> String {
+        switch skill.executionMode {
+        case .apiCall:
+            return KairoL10n.string("chat.tool.summary.integration", skill.appName)
+        case .openURL:
+            return KairoL10n.string("chat.tool.summary.visibleExternalApp", skill.appName)
+        case .runUserShortcut:
+            return KairoL10n.string("chat.tool.summary.shortcutBoundary")
+        case .draftOnly:
+            return KairoL10n.string("chat.tool.summary.managedSkill")
+        case .previewOnly:
+            return KairoL10n.string("chat.tool.summary.unsupportedSafeAlternative")
         }
     }
 }

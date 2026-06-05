@@ -9,17 +9,20 @@ public struct LiveKairoAgentProvider: KairoAgentProviding {
     private let credentialStore: any CredentialStore
     private let aiProviderOverride: (any AIProvider)?
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
+    private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
 
     public init(
         paths: KairoPaths = KairoSharedAppStorage.paths(),
         credentialStore: any CredentialStore = KeychainCredentialStore(),
         aiProvider: (any AIProvider)? = nil,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) {
         self.paths = paths
         self.credentialStore = credentialStore
         self.aiProviderOverride = aiProvider
         self.toolCatalog = toolCatalog
+        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
     }
 
     public func makeAgent() async throws -> AgentCore {
@@ -37,7 +40,8 @@ public struct LiveKairoAgentProvider: KairoAgentProviding {
         return AgentCore(
             memoryStore: memoryStore,
             aiProvider: aiProvider,
-            toolCatalog: toolCatalog
+            toolCatalog: toolCatalog,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
         )
     }
 }

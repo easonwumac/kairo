@@ -3,6 +3,7 @@ import Foundation
 public enum AgentToolInvocationSource: String, Codable, Equatable, Sendable {
     case installedSkill
     case integrationRegistry
+    case appIntegrationCatalog
     case actionCatalog
 }
 

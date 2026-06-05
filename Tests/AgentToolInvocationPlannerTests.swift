@@ -87,18 +87,45 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         )))
     }
 
-    func testAgentToolInvocationPlannerSuggestsOAuthConnectorWithoutPrivateAppClaims() throws {
+    func testAgentToolInvocationPlannerSuggestsAppIntegrationCatalogCandidateWithoutPrivateAppClaims() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry())
 
         let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Read Gmail and draft a reply"))
         let candidate = try XCTUnwrap(plan.candidates.first { $0.integrationKey == "gmail-google-workspace" })
 
-        XCTAssertEqual(candidate.source, .integrationRegistry)
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
         XCTAssertEqual(candidate.skillKind, .oauthConnector)
         XCTAssertEqual(candidate.riskTier, .tier3HighRiskExternal)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertEqual(candidate.handoffSummary, KairoL10n.string("chat.tool.summary.integration", "Gmail / Google Workspace"))
         XCTAssertNil(candidate.action)
+    }
+
+    func testAgentToolInvocationPlannerFallsBackToLegacyIntegrationRegistryForUnmigratedConnectors() throws {
+        let planner = AgentToolInvocationPlanner(
+            integrationRegistry: IntegrationRegistry(),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [])
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Open GitHub issue tracker"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.integrationKey == "github" })
+
+        XCTAssertEqual(candidate.source, .integrationRegistry)
+        XCTAssertEqual(candidate.skillKind, .oauthConnector)
+        XCTAssertNil(candidate.action)
+    }
+
+    func testAgentToolInvocationPlannerDoesNotSuggestDisabledOrUnsupportedAppIntegrations() throws {
+        let disabled = appIntegrationSkill(id: .slackOpenHandoff, availabilityStatus: .disabled)
+        let unsupported = appIntegrationSkill(id: .lineShareHandoff, availabilityStatus: .unsupported)
+        let planner = AgentToolInvocationPlanner(
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [disabled, unsupported])
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Send this to Slack and LINE"))
+
+        XCTAssertFalse(plan.candidates.contains { $0.integrationKey == "slack" })
+        XCTAssertFalse(plan.candidates.contains { $0.integrationKey == "line" })
     }
 
     func testAgentToolInvocationPlannerSuggestsNotificationActionWithConfirmation() throws {
@@ -395,4 +422,33 @@ private struct BlockingAgentToolCandidateFilter: AgentToolCandidateFiltering {
     func allowsCandidate(_ candidate: AgentToolInvocationCandidate) -> Bool {
         false
     }
+}
+
+private func appIntegrationSkill(
+    id: AppIntegrationSkillID,
+    availabilityStatus: AppIntegrationSkillAvailabilityStatus
+) -> AppIntegrationSkill {
+    AppIntegrationSkill(
+        id: id,
+        appName: "Example",
+        integrationKey: id == .slackOpenHandoff ? "slack" : "line",
+        category: .communication,
+        supportedSurfaces: [.universalLink],
+        schema: AppIntegrationSkillSchema(input: "Input", output: "Output"),
+        setupRequirement: availabilityStatus == .unsupported ? .unsupported : .none,
+        installedAppRequirement: .none,
+        permissionRequirement: availabilityStatus == .unsupported ? .unsupported : .userInitiated,
+        availabilityStatus: availabilityStatus,
+        riskTier: .tier1Draft,
+        confirmationPolicy: .previewAndExplicitConfirmation,
+        previewTextKey: "appIntegration.example.preview",
+        executionMode: .openURL,
+        endpoints: [AppIntegrationSkillEndpoint(universalLinkHost: "example.com")],
+        fallback: AppIntegrationFallback(
+            reasonKey: "appIntegration.example.fallback.reason",
+            safeAlternativeKey: "appIntegration.example.fallback.safeAlternative"
+        ),
+        audit: AppIntegrationAuditMetadata(capabilityKeys: [.externalConnectors]),
+        sourceReference: "test"
+    )
 }

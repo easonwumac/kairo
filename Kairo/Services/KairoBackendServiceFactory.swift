@@ -49,7 +49,8 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
             memoryStore: dependencies.memoryStore,
             aiProvider: dependencies.aiProvider,
             skillCatalogProvider: skillCatalogProvider,
-            toolCatalog: dependencies.toolCatalog
+            toolCatalog: dependencies.toolCatalog,
+            appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog
         ))
     }
 

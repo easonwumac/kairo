@@ -3,18 +3,21 @@ import Foundation
 public struct AgentToolInvocationPlanner: Sendable {
     public var skillCatalog: AgentSkillCatalog
     public var integrationRegistry: IntegrationRegistry
+    public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var candidateFilter: any AgentToolCandidateFiltering
     public var safetyPolicyEngine: SafetyPolicyEngine
 
     public init(
         skillCatalog: AgentSkillCatalog = .default,
         integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
     ) {
         self.skillCatalog = skillCatalog
         self.integrationRegistry = integrationRegistry
+        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.candidateFilter = candidateFilter ?? PhoneToolCandidateFilter(
             actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         )
@@ -38,8 +41,13 @@ public struct AgentToolInvocationPlanner: Sendable {
         candidates.append(contentsOf: skillCatalog.installedSkills.compactMap { skill in
             candidate(for: skill, normalizedText: normalizedText)
         })
+        candidates.append(contentsOf: appIntegrationSkillCatalog.skills.compactMap { skill in
+            candidate(for: skill, normalizedText: normalizedText)
+        })
+        let migratedIntegrationKeys = Set(appIntegrationSkillCatalog.skills.map(\.integrationKey))
         candidates.append(contentsOf: integrationRegistry.oauthConnectors.compactMap { integration in
-            candidate(for: integration, normalizedText: normalizedText)
+            guard !migratedIntegrationKeys.contains(integration.key) else { return nil }
+            return candidate(for: integration, normalizedText: normalizedText)
         })
         if let emailCandidate = emailActionCandidate(userText: request.userText, normalizedText: normalizedText) {
             candidates.append(emailCandidate)

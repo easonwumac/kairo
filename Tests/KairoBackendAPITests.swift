@@ -147,6 +147,28 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertNil(environment.appIntegrationSkillCatalog.skill(id: .appleMailHandoff))
     }
 
+    func testBackendCompositionSharesInjectedAppIntegrationSkillCatalogWithChat() async throws {
+        let injectedCatalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .whatsappMessageHandoff))
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            appIntegrationSkillCatalog: injectedCatalog
+        )
+
+        let response = try await environment.backendAPI.chat.respond(
+            to: "Send this update with WhatsApp",
+            attachments: [],
+            privacyMode: .standard
+        )
+
+        let candidate = try XCTUnwrap(response.toolCandidates.first { $0.integrationKey == "whatsapp" })
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertNil(candidate.action)
+    }
+
     func testBackendModuleComposerUsesEnvironmentOAuthClientConfigurations() async throws {
         let environment = KairoEnvironment(
             memoryStore: InMemoryMemoryStore(),

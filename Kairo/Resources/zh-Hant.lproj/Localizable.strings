@@ -459,6 +459,8 @@
 "chat.tool.summary.oauthSkill" = "透過官方 OAuth/API 存取使用已安裝的 OAuth connector；無法讀取 private app data。";
 "chat.tool.summary.managedSkill" = "透過 Kairo 的確認流程使用已安裝的 managed skill package。";
 "chat.tool.summary.integration" = "透過官方 OAuth/API connector metadata 使用 %@；無法讀取 private app data，帳號寫入也需要確認。";
+"chat.tool.summary.visibleExternalApp" = "確認後透過可見 URL handoff 開啟 %@；Kairo 不會控制外部 App UI。";
+"chat.tool.summary.unsupportedSafeAlternative" = "顯示安全替代方案，不執行不支援的外部 App 操作。";
 "chat.tool.summary.shortcutBoundary" = "可見 App Intents/Shortcuts handoff；Kairo 不會靜默安裝 Apple Shortcuts。";
 "chat.history.title" = "聊天紀錄";
 "chat.history.empty.title" = "還沒有聊天紀錄";

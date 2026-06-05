@@ -4,6 +4,7 @@ public struct CapabilityPromptContextBuilder: Sendable {
     public var capabilityRegistry: CapabilityRegistry
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var integrationRegistry: IntegrationRegistry
+    public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var backgroundTaskPolicy: BackgroundTaskPolicy
     public var skillCatalog: AgentSkillCatalog
 
@@ -11,12 +12,14 @@ public struct CapabilityPromptContextBuilder: Sendable {
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         backgroundTaskPolicy: BackgroundTaskPolicy = BackgroundTaskPolicy(),
         skillCatalog: AgentSkillCatalog = .default
     ) {
         self.capabilityRegistry = capabilityRegistry
         self.toolCatalog = toolCatalog
         self.integrationRegistry = integrationRegistry
+        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.backgroundTaskPolicy = backgroundTaskPolicy
         self.skillCatalog = skillCatalog
     }
@@ -48,6 +51,13 @@ public struct CapabilityPromptContextBuilder: Sendable {
             return "- \(integration.key): \(integration.displayName); surfaces=\(surfaces); status=\(integration.status.rawValue); oauthScopes=\(scopes); \(integration.sandboxNotes)"
         }
 
+        let appIntegrationLines = appIntegrationSkillCatalog.skills.map { skill in
+            let surfaces = skill.supportedSurfaces.map(\.rawValue).joined(separator: ",")
+            let capabilities = skill.audit.capabilityKeys.map(\.rawValue).joined(separator: ",")
+            let scopes = skill.oauth?.requiredScopes.joined(separator: ",") ?? "none"
+            return "- \(skill.id.rawValue): \(skill.appName); integrationKey=\(skill.integrationKey); surfaces=\(surfaces); capability=\(capabilities); permission=\(skill.permissionRequirement.rawValue); risk=\(skill.riskTier.rawValue); availability=\(skill.availabilityStatus.rawValue); setup=\(skill.setupRequirement.rawValue); execution=\(skill.executionMode.rawValue); confirmation=\(skill.confirmationPolicy.rawValue); executable=\(skill.canBeSuggestedAsExecutable); oauthScopes=\(scopes); input=\(skill.schema.input); output=\(skill.schema.output)"
+        }
+
         let backgroundLines = backgroundTaskPolicy.tasks.map { descriptor in
             "- \(descriptor.identifier): kind=\(descriptor.kind.rawValue); minInterval=\(Int(descriptor.minimumInterval))s; maxRuntime=\(Int(descriptor.maxRuntime))s; network=\(descriptor.requiresNetwork); \(descriptor.sandboxNotes)"
         }
@@ -69,6 +79,9 @@ public struct CapabilityPromptContextBuilder: Sendable {
 
         Integration registry. Use these as metadata for user-visible handoff, Shortcuts/App Intents, Share Extension, or official OAuth APIs; never claim private cross-app access:
         \(integrationLines.joined(separator: "\n"))
+
+        App integration skill catalog. Prefer these typed third-party app integration skills for Chat candidates; unavailable, disabled, setup-required, or OAuth-unconnected skills are not executable:
+        \(appIntegrationLines.joined(separator: "\n"))
 
         Background task policy. Only propose bounded BGTaskScheduler-compatible work; never promise continuous background execution or exact launch timing:
         \(backgroundLines.joined(separator: "\n"))

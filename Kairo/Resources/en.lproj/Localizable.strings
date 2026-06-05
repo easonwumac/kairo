@@ -459,6 +459,8 @@
 "chat.tool.summary.oauthSkill" = "Use the installed OAuth connector through official OAuth/API access; private app data is unavailable.";
 "chat.tool.summary.managedSkill" = "Use the installed managed skill package through Kairo's confirmation flow.";
 "chat.tool.summary.integration" = "Use %@ through official OAuth/API connector metadata; private app data is unavailable and account writes require confirmation.";
+"chat.tool.summary.visibleExternalApp" = "Open %@ through a visible URL handoff after confirmation; Kairo does not control the external app UI.";
+"chat.tool.summary.unsupportedSafeAlternative" = "Show a safe alternative instead of executing an unsupported external app operation.";
 "chat.tool.summary.shortcutBoundary" = "Visible App Intents/Shortcuts handoff; Kairo does not install Apple Shortcuts silently.";
 "chat.history.title" = "History";
 "chat.history.empty.title" = "No History Yet";
