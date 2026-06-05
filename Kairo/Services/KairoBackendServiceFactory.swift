@@ -17,6 +17,7 @@ public protocol KairoBackendDependencies: Sendable {
     var localModelSettingsService: LocalModelSettingsService? { get }
     var toolCatalog: any BuiltInPhoneToolCatalogProviding { get }
     var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding { get }
+    var capabilityRegistry: CapabilityRegistry { get }
 }
 
 public protocol KairoBackendServiceMaking: Sendable {
@@ -98,6 +99,7 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
             aiProvider: dependencies.aiProvider,
             skillCatalogProvider: skillCatalogProvider,
             toolContextProvider: DefaultAgentCapabilityPromptContextProvider(
+                capabilityRegistry: dependencies.capabilityRegistry,
                 toolCatalog: dependencies.toolCatalog,
                 integrationRegistry: dependencies.oauthConnectorRegistry,
                 appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog
@@ -110,7 +112,9 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
                 actionGate: actionGate,
                 safetyPolicyEngine: safetyPolicyEngine
             ),
-            completionRequestBuilder: DefaultAgentCompletionRequestBuilder()
+            completionRequestBuilder: DefaultAgentCompletionRequestBuilder(
+                capabilityRegistry: dependencies.capabilityRegistry
+            )
         )
     }
 

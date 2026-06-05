@@ -108,10 +108,21 @@ final class KairoBackendAPITests: XCTestCase {
         )
         let memoryStore = InMemoryMemoryStore(seed: [memory])
         let provider = BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Agent bundle response"))
+        let capabilityRegistry = CapabilityRegistry(capabilities: [
+            Capability(
+                key: .calendar,
+                displayName: "Injected Calendar",
+                description: "Injected chat capability boundary.",
+                permission: .runtimePrompt,
+                status: .available,
+                isMVP: true
+            )
+        ])
         let environment = KairoEnvironment(
             memoryStore: memoryStore,
             credentialStore: InMemoryCredentialStore(),
-            aiProvider: provider
+            aiProvider: provider,
+            capabilityRegistry: capabilityRegistry
         )
         let dependencies = KairoChatBackendServiceFactory(dependencies: environment)
             .makeAgentCoreDependencies()
@@ -123,6 +134,7 @@ final class KairoBackendAPITests: XCTestCase {
 
         XCTAssertEqual(response.message, "Agent bundle response")
         XCTAssertEqual(capturedRequest.memoryContext.map(\.id), [memory.id])
+        XCTAssertEqual(capturedRequest.allowedCapabilities, [.calendar])
     }
 
     func testRecipeBackendServiceFactoryBuildsRunnerDependencyBundle() async throws {
