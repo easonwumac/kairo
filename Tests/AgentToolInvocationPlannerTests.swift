@@ -116,6 +116,71 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         })
     }
 
+    func testScenarioBGoogleMapsNavigationUsesCatalogVisibleHandoffPreview() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: AgentSkillCatalog(skills: []))
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "幫我用 Google Maps 導航到台北車站"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == AppIntegrationSkillID.googleMapsDirectionsHandoff.rawValue })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.integrationKey, "google-maps")
+        XCTAssertEqual(candidate.skillKind, .custom)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertEqual(action.kind, .openURL)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case let .url(urlString) = action.payload else {
+            return XCTFail("Expected visible URL payload.")
+        }
+        let components = try XCTUnwrap(URLComponents(string: urlString))
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+        XCTAssertEqual(components.scheme, "https")
+        XCTAssertEqual(components.host, "www.google.com")
+        XCTAssertEqual(components.path, "/maps/dir/")
+        XCTAssertEqual(query["api"], "1")
+        XCTAssertNotNil(query["destination"])
+        XCTAssertFalse(plan.candidates.contains {
+            $0.source == .integrationRegistry && $0.integrationKey == "google-maps"
+        })
+    }
+
+    func testScenarioDTodoistTaskRequiresOAuthSetupBeforeExecution() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: AgentSkillCatalog(skills: []))
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "幫我在 Todoist 建立任務：明天檢查 Kairo"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == AppIntegrationSkillID.todoistTaskAPI.rawValue })
+
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.integrationKey, "todoist")
+        XCTAssertEqual(candidate.skillKind, .oauthConnector)
+        XCTAssertEqual(candidate.riskTier, .tier3HighRiskExternal)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertNil(candidate.action)
+        XCTAssertTrue(plan.proposedActions.isEmpty)
+        XCTAssertFalse(plan.candidates.contains {
+            $0.source == .integrationRegistry && $0.integrationKey == "todoist"
+        })
+    }
+
+    func testScenarioELinePrivateMessageReadFallsBackWithoutExecutableHandoff() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: AgentSkillCatalog(skills: []))
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "幫我讀 LINE 裡 Alex 傳給我的訊息"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == AppIntegrationSkillID.lineShareHandoff.rawValue })
+
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.integrationKey, "line")
+        XCTAssertEqual(candidate.skillKind, .custom)
+        XCTAssertEqual(candidate.handoffSummary, KairoL10n.string("chat.tool.summary.unsupportedSafeAlternative"))
+        XCTAssertNil(candidate.action)
+        XCTAssertFalse(plan.proposedActions.contains { $0.kind == .openMessageHandoff || $0.kind == .openURL })
+        XCTAssertFalse(plan.candidates.contains {
+            $0.source == .integrationRegistry && $0.integrationKey == "line"
+        })
+    }
+
     func testAgentToolInvocationPlannerBuildsCatalogCandidatesWithIntegrationSkillIDs() throws {
         let catalog = AppIntegrationSkillCatalog()
         let planner = AgentToolInvocationPlanner(
@@ -673,7 +738,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.candidates, [injectedCandidate])
     }
 
-    func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithoutExecutableAction() throws {
+    func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithVisibleURLAction() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry(integrations: []))
 
         let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Open Google Maps directions to Taipei 101"))
@@ -683,7 +748,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(candidate.skillID, AppIntegrationSkillID.googleMapsDirectionsHandoff.rawValue)
         XCTAssertEqual(candidate.skillKind, .custom)
         XCTAssertTrue(candidate.requiresConfirmation)
-        XCTAssertNil(candidate.action)
+        XCTAssertEqual(candidate.action?.kind, .openURL)
     }
 
     func testAgentToolInvocationPlannerDoesNotExecuteCatalogSetupRequiredIntegrationsEvenWithInjectedMapper() throws {
@@ -751,7 +816,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
-    func testAgentToolInvocationPlannerDoesNotSuggestDisabledOrUnsupportedAppIntegrations() throws {
+    func testAgentToolInvocationPlannerDoesNotSuggestDisabledAppIntegrationsAndFallsBackForUnsupportedOnes() throws {
         let disabled = appIntegrationSkill(id: .slackOpenHandoff, availabilityStatus: .disabled)
         let unsupported = appIntegrationSkill(id: .lineShareHandoff, availabilityStatus: .unsupported)
         let planner = AgentToolInvocationPlanner(
@@ -762,7 +827,10 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Send this to Slack and LINE"))
 
         XCTAssertFalse(plan.candidates.contains { $0.integrationKey == "slack" })
-        XCTAssertFalse(plan.candidates.contains { $0.integrationKey == "line" })
+        let line = try XCTUnwrap(plan.candidates.first { $0.integrationKey == "line" })
+        XCTAssertEqual(line.source, .appIntegrationCatalog)
+        XCTAssertEqual(line.handoffSummary, KairoL10n.string("chat.tool.summary.unsupportedSafeAlternative"))
+        XCTAssertNil(line.action)
     }
 
     func testAgentToolInvocationPlannerSuggestsNotificationActionWithConfirmation() throws {

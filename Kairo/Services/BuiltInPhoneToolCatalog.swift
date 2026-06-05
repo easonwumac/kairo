@@ -429,7 +429,7 @@ public struct BuiltInPhoneToolCatalog: BuiltInPhoneToolCatalogProviding {
             lifecycle: BuiltInPhoneToolLifecycleBinding(previewRenderer: "ActionPreviewView.maps", executor: "SandboxActionExecutor.openMapsURL"),
             audit: BuiltInPhoneToolAuditMetadata(capabilityKeys: [.location]),
             fallback: BuiltInPhoneToolFallback(unsupportedReason: "Maps handoff URL could not be opened.", safeAlternative: "Show the destination query for manual navigation."),
-            sourceBinding: BuiltInPhoneToolSourceBinding(agentActionKinds: [.openMapDirections])
+            sourceBinding: BuiltInPhoneToolSourceBinding(agentActionKinds: [.openMapDirections, .openURL])
         ),
         BuiltInPhoneToolDefinition(
             id: .recipeRun,

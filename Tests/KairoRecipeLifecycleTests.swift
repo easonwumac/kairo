@@ -340,11 +340,11 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertFalse(result.stepResults.first?.success ?? true)
     }
 
-    func testKairoRecipeRunnerDoesNotConvertThirdPartyCatalogMetadataIntoExecutableHandoff() async throws {
+    func testKairoRecipeRunnerPreparesThirdPartyVisibleHandoffPreviewFromCatalogSkill() async throws {
         let recipe = KairoRecipe(
             id: "google-maps-workflow",
             title: "Google Maps Workflow",
-            summary: "Metadata-only third-party handoff must stay non-executable.",
+            summary: "Third-party handoff must stay visible and confirmation-gated.",
             triggerHint: .manual,
             steps: [
                 KairoRecipeStep(
@@ -353,6 +353,50 @@ final class KairoRecipeLifecycleTests: XCTestCase {
                     kind: .enqueueActionDraft,
                     input: .literal("Open Google Maps directions to Taipei 101"),
                     integrationSkillID: .googleMapsDirectionsHandoff
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let runner = KairoRecipeRunner(recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]))
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .app,
+            input: nil,
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertTrue(result.success)
+        let action = try XCTUnwrap(result.proposedActions.first)
+        XCTAssertEqual(action.kind, .openURL)
+        XCTAssertTrue(action.requiresConfirmation)
+        guard case .url(let urlString) = action.payload else {
+            return XCTFail("Expected Google Maps visible URL handoff payload.")
+        }
+        let components = try XCTUnwrap(URLComponents(string: urlString))
+        XCTAssertEqual(components.scheme, "https")
+        XCTAssertEqual(components.host, "www.google.com")
+        XCTAssertEqual(components.path, "/maps/dir/")
+        XCTAssertTrue(result.stepResults.first?.success ?? false)
+    }
+
+    func testKairoRecipeRunnerDoesNotConvertOAuthSetupRequiredCatalogSkillIntoExecutableAction() async throws {
+        let recipe = KairoRecipe(
+            id: "todoist-workflow",
+            title: "Todoist Workflow",
+            summary: "OAuth setup-required tools must not become executable.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "todoist",
+                    title: "Prepare Todoist Task",
+                    kind: .enqueueActionDraft,
+                    input: .literal("Create a Todoist task to check Kairo tomorrow"),
+                    integrationSkillID: .todoistTaskAPI
                 )
             ],
             requiredCapabilities: [.appIntents],

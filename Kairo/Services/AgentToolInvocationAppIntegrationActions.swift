@@ -79,8 +79,18 @@ public struct DefaultAppIntegrationActionMapper: AppIntegrationActionMapping {
                 payload: .mapDirections(parser.mapDirectionsDraft(from: userText, normalizedText: normalizedText)),
                 riskTier: skill.riskTier
             )
-        case .googleMapsDirectionsHandoff,
-             .gmailDraftAPI,
+        case .googleMapsDirectionsHandoff:
+            guard parser.isMapDirectionsRequest(normalizedText) else { return nil }
+            let draft = parser.mapDirectionsDraft(from: userText, normalizedText: normalizedText)
+            guard let url = Self.googleMapsDirectionsURL(for: draft) else { return nil }
+            return AgentAction(
+                kind: .openURL,
+                title: KairoL10n.string("chat.action.displayName.openURL"),
+                rationale: KairoL10n.string("chat.action.rationale.googleMaps"),
+                payload: .url(url.absoluteString),
+                riskTier: skill.riskTier
+            )
+        case .gmailDraftAPI,
              .whatsappMessageHandoff,
              .lineShareHandoff,
              .slackOpenHandoff,
@@ -88,6 +98,35 @@ public struct DefaultAppIntegrationActionMapper: AppIntegrationActionMapping {
              .todoistTaskAPI,
              .draftsCreateHandoff:
             return nil
+        }
+    }
+
+    private static func googleMapsDirectionsURL(for draft: MapDirectionsDraft) -> URL? {
+        let destination = draft.destinationQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !destination.isEmpty else { return nil }
+
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "www.google.com"
+        components.path = "/maps/dir/"
+        components.queryItems = [
+            URLQueryItem(name: "api", value: "1"),
+            URLQueryItem(name: "destination", value: destination),
+            URLQueryItem(name: "travelmode", value: draft.mode.googleMapsTravelMode)
+        ]
+        return components.url
+    }
+}
+
+private extension MapDirectionsMode {
+    var googleMapsTravelMode: String {
+        switch self {
+        case .driving:
+            return "driving"
+        case .walking:
+            return "walking"
+        case .transit:
+            return "transit"
         }
     }
 }

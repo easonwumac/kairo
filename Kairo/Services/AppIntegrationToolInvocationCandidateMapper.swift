@@ -20,11 +20,15 @@ public struct DefaultAppIntegrationToolInvocationCandidateMapper: AppIntegration
         parser: any AgentToolInvocationActionParsing,
         actionMapper: any AppIntegrationActionMapping
     ) -> AgentToolInvocationCandidate? {
-        guard skill.availabilityStatus != .disabled, skill.availabilityStatus != .unsupported else {
+        guard skill.availabilityStatus != .disabled else {
             return nil
         }
 
-        let action = skill.canBeSuggestedAsExecutable
+        let isPrivateMessageRead = Self.isPrivateExternalMessageReadRequest(
+            normalizedText,
+            for: skill
+        )
+        let action = skill.canBeSuggestedAsExecutable && !isPrivateMessageRead
             ? actionMapper.visibleHandoffAction(
                 for: skill,
                 userText: userText,
@@ -43,12 +47,16 @@ public struct DefaultAppIntegrationToolInvocationCandidateMapper: AppIntegration
             requiredCapabilities: skill.audit.capabilityKeys,
             riskTier: skill.riskTier,
             requiresConfirmation: skill.requiresConfirmation,
-            handoffSummary: handoffSummary(for: skill),
+            handoffSummary: handoffSummary(for: skill, isPrivateMessageRead: isPrivateMessageRead),
             action: action
         )
     }
 
-    private func handoffSummary(for skill: AppIntegrationSkill) -> String {
+    private func handoffSummary(for skill: AppIntegrationSkill, isPrivateMessageRead: Bool) -> String {
+        if skill.availabilityStatus == .unsupported || isPrivateMessageRead {
+            return KairoL10n.string("chat.tool.summary.unsupportedSafeAlternative")
+        }
+
         switch skill.executionMode {
         case .apiCall:
             return KairoL10n.string("chat.tool.summary.integration", skill.appName)
@@ -61,5 +69,42 @@ public struct DefaultAppIntegrationToolInvocationCandidateMapper: AppIntegration
         case .previewOnly:
             return KairoL10n.string("chat.tool.summary.unsupportedSafeAlternative")
         }
+    }
+
+    private static func isPrivateExternalMessageReadRequest(
+        _ normalizedText: String,
+        for skill: AppIntegrationSkill
+    ) -> Bool {
+        switch skill.id {
+        case .appleMessagesHandoff, .whatsappMessageHandoff, .lineShareHandoff:
+            return containsAny(normalizedText, [
+                "read",
+                "show",
+                "open",
+                "check",
+                "查看",
+                "讀",
+                "讀取",
+                "看",
+                "檢查"
+            ])
+            && containsAny(normalizedText, [
+                "message",
+                "messages",
+                "chat",
+                "inbox",
+                "訊息",
+                "聊天",
+                "對話"
+            ])
+        case .appleMailHandoff, .gmailDraftAPI, .applePhoneHandoff, .safariWebSearchHandoff,
+             .appleMapsDirectionsHandoff, .googleMapsDirectionsHandoff, .slackOpenHandoff,
+             .notionPageAPI, .todoistTaskAPI, .draftsCreateHandoff:
+            return false
+        }
+    }
+
+    private static func containsAny(_ value: String, _ terms: [String]) -> Bool {
+        terms.contains { value.contains($0) }
     }
 }
