@@ -702,6 +702,7 @@ final class KairoBackendAPITests: XCTestCase {
 
         XCTAssertEqual(savedKey, "factory-default-openai-key")
         XCTAssertEqual(todoist.oauth?.providerKey, "todoist")
+        XCTAssertNil(dependencies.oauthWebAuthenticationRunner)
     }
 
     @MainActor

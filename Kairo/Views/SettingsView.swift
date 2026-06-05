@@ -62,7 +62,7 @@ public struct SettingsView: View {
             oauthClientConfigurations: dependencies.oauthClientConfigurations,
             oauthCallbackStore: dependencies.oauthCallbackStore,
             oauthLoginService: dependencies.oauthLoginService,
-            oauthWebAuthenticationRunner: dependencies.oauthWebAuthenticationRunner,
+            oauthWebAuthenticationRunner: dependencies.oauthWebAuthenticationRunner ?? Self.defaultOAuthWebAuthenticationRunner(),
             openAIKeyCoordinator: dependencies.openAIKeyCoordinator,
             oauthCoordinator: dependencies.oauthCoordinator,
             privacyCoordinator: dependencies.privacyCoordinator,
@@ -622,11 +622,7 @@ public struct SettingsView: View {
     }
 
     public static func defaultOAuthWebAuthenticationRunner() -> (any OAuthWebAuthenticationRunner)? {
-        #if canImport(AuthenticationServices)
-        return SystemOAuthWebAuthenticationRunner()
-        #else
-        return nil
-        #endif
+        SettingsOAuthWebAuthenticationRunnerFactory().makeDefaultRunner()
     }
 
 }
