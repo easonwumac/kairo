@@ -169,6 +169,28 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
+    func testBackendCompositionSharesInjectedIntegrationRegistryWithChatFallbackCandidates() async throws {
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            oauthConnectorRegistry: IntegrationRegistry(integrations: [
+                backendTestOAuthIntegration(key: "custom-mail", displayName: "Custom Mail", providerKey: "custom-mail")
+            ]),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [])
+        )
+
+        let response = try await environment.backendAPI.chat.respond(
+            to: "Open Custom Mail for this account",
+            attachments: [],
+            privacyMode: .standard
+        )
+
+        let candidate = try XCTUnwrap(response.toolCandidates.first { $0.integrationKey == "custom-mail" })
+        XCTAssertEqual(candidate.source, .integrationRegistry)
+        XCTAssertNil(candidate.action)
+    }
+
     func testBackendModuleComposerUsesEnvironmentOAuthClientConfigurations() async throws {
         let environment = KairoEnvironment(
             memoryStore: InMemoryMemoryStore(),
