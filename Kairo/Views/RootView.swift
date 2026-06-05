@@ -40,14 +40,15 @@ public struct RootView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea(edges: .top)
+
+                if isMenuPresented {
+                    drawerOverlay(safeAreaInsets: safeAreaInsets, containerWidth: proxy.size.width)
+                        .transition(.opacity)
+                        .zIndex(10)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Self.fullScreenBackground.ignoresSafeArea())
-            .sheet(isPresented: $isMenuPresented) {
-                navigationMenu(safeAreaInsets: safeAreaInsets)
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Self.fullScreenBackground.ignoresSafeArea())
@@ -98,23 +99,26 @@ public struct RootView: View {
 
     private func rootHeader(topInset: CGFloat) -> some View {
         HStack(spacing: 12) {
-            KairoMark(size: 34)
-
-            if selectedSection != .chat {
-                Button {
-                    selectedSection = .chat
-                } label: {
-                    Label(KairoL10n.string("root.backToChat"), systemImage: "house")
-                        .labelStyle(.iconOnly)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(KairoDesign.blue)
-                        .frame(width: 34, height: 34)
-                        .background(KairoDesign.blue.opacity(0.10), in: Circle())
+            Button {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                    isMenuPresented = true
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(KairoL10n.string("root.backToChat"))
-                .accessibilityIdentifier("root.back-to-chat")
+            } label: {
+                Label(KairoL10n.string("root.menu"), systemImage: "line.3.horizontal")
+                    .labelStyle(.iconOnly)
+                    .font(.title3.weight(.semibold))
+                    .frame(width: 42, height: 42)
+                    .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(KairoDesign.line, lineWidth: 1)
+                    }
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(KairoL10n.string("root.menu.open"))
+            .accessibilityIdentifier("root.drawer.toggle")
+
+            KairoMark(size: 34)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(KairoL10n.string("root.product.title"))
@@ -128,17 +132,21 @@ public struct RootView: View {
 
             Spacer(minLength: 8)
 
-            Button {
-                isMenuPresented = true
-            } label: {
-                Label(KairoL10n.string("root.menu"), systemImage: "square.grid.2x2")
-                    .labelStyle(.iconOnly)
-                    .font(.title3.weight(.semibold))
-                    .frame(width: 42, height: 42)
+            if selectedSection != .chat {
+                Button {
+                    selectedSection = .chat
+                } label: {
+                    Label(KairoL10n.string("root.backToChat"), systemImage: "house")
+                        .labelStyle(.iconOnly)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.blue)
+                        .frame(width: 38, height: 38)
+                        .background(KairoDesign.blue.opacity(0.10), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(KairoL10n.string("root.backToChat"))
+                .accessibilityIdentifier("root.back-to-chat")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(KairoL10n.string("root.menu.open"))
-            .accessibilityIdentifier("root.drawer.toggle")
         }
         .padding(.horizontal, 16)
         .padding(.top, max(topInset, 0) + 8)
@@ -190,8 +198,25 @@ public struct RootView: View {
         .accessibilityIdentifier("root.primary-tabs")
     }
 
+    private func drawerOverlay(safeAreaInsets: EdgeInsets, containerWidth: CGFloat) -> some View {
+        ZStack(alignment: .leading) {
+            navigationMenu(safeAreaInsets: safeAreaInsets)
+                .frame(width: containerWidth, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .background(KairoDesign.background)
+                .transition(.move(edge: .leading).combined(with: .opacity))
+        }
+        .ignoresSafeArea()
+    }
+
+    private func closeDrawer() {
+        withAnimation(.spring(response: 0.24, dampingFraction: 0.9)) {
+            isMenuPresented = false
+        }
+    }
+
     private func navigationMenu(safeAreaInsets: EdgeInsets) -> some View {
-        NavigationStack {
+        VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     Color.clear
@@ -210,7 +235,7 @@ public struct RootView: View {
                         }
                         Spacer()
                         Button {
-                            isMenuPresented = false
+                            closeDrawer()
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.title3)
@@ -238,12 +263,11 @@ public struct RootView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, 18)
-                .padding(.top, 8)
+                .padding(.top, max(safeAreaInsets.top, 0) + 8)
                 .padding(.bottom, max(safeAreaInsets.bottom, 0) + 24)
             }
-            .background(KairoDesign.background.ignoresSafeArea())
-            .navigationTitle(KairoL10n.string("root.navigation.title"))
         }
+        .background(KairoDesign.background)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(KairoL10n.string("root.menu.accessibility"))
         .accessibilityIdentifier("root.drawer")
@@ -252,7 +276,7 @@ public struct RootView: View {
     private func navigationRow(_ section: RootSection) -> some View {
         Button {
             selectedSection = section
-            isMenuPresented = false
+            closeDrawer()
         } label: {
             HStack(spacing: 13) {
                 Image(systemName: section.systemImage)
