@@ -6,7 +6,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
     public var oauthConnectorRegistry: any OAuthConnectorRegistryProviding
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
-    public var capabilityRegistry: CapabilityRegistry
+    public var capabilityRegistry: any CapabilityRegistryProviding
     public var localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)?
     public var localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)?
 
@@ -17,7 +17,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
-        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
+        capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) {
@@ -39,7 +39,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
-        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
+        capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) {

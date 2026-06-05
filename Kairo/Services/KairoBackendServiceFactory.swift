@@ -17,7 +17,7 @@ public protocol KairoBackendDependencies: Sendable {
     var localModelSettingsService: LocalModelSettingsService? { get }
     var toolCatalog: any BuiltInPhoneToolCatalogProviding { get }
     var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding { get }
-    var capabilityRegistry: CapabilityRegistry { get }
+    var capabilityRegistry: any CapabilityRegistryProviding { get }
 }
 
 public protocol KairoBackendServiceMaking: Sendable {

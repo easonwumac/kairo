@@ -41,7 +41,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public let actionExecutor: any ActionExecutor
     public let toolCatalog: any BuiltInPhoneToolCatalogProviding
     public let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
-    public let capabilityRegistry: CapabilityRegistry
+    public let capabilityRegistry: any CapabilityRegistryProviding
     public let shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol
 
     public init(
@@ -69,7 +69,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         actionExecutor: (any ActionExecutor)? = nil,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
-        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
+        capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
         shortcutDemoRecipeRunner: (any ShortcutDemoRecipeRunnerProtocol)? = nil
     ) {
         self.memoryStore = memoryStore
@@ -144,7 +144,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
-        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
+        capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) async throws -> KairoEnvironment {

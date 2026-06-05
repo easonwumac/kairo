@@ -1329,6 +1329,39 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(dependencies.capabilityRegistry.capabilities, registry.capabilities)
     }
 
+    func testAccessBackendUsesInjectedCapabilityRegistryProvider() async {
+        let provider = BackendFixedCapabilityRegistryProvider(capabilities: [
+            Capability(
+                key: .memory,
+                displayName: "Injected Memory",
+                description: "Injected provider capability.",
+                permission: .none,
+                status: .unknown,
+                isMVP: true
+            ),
+            Capability(
+                key: .contacts,
+                displayName: "Injected Contacts",
+                description: "Provider denied capability.",
+                permission: .runtimePrompt,
+                status: .unknown,
+                isMVP: false
+            )
+        ])
+        let service = KairoAccessBackendService(
+            capabilityRegistry: provider,
+            permissionService: BackendMappedPermissionService(statuses: [
+                .memory: .available,
+                .contacts: .denied
+            ])
+        )
+
+        let capabilities = await service.capabilities()
+
+        XCTAssertEqual(capabilities.map(\.key), [.memory, .contacts])
+        XCTAssertEqual(capabilities.map(\.status), [.available, .denied])
+    }
+
     func testKairoEnvironmentBuildsRootOpenURLHandlerForOAuthCallbacks() async throws {
         let callbackStore = try await FileBackedOAuthConnectorCallbackStore(
             fileURL: temporaryBackendTestFileURL(named: "oauth-callback-previews.json")
@@ -1475,6 +1508,22 @@ private struct FixedShortcutDemoRecipeRunner: ShortcutDemoRecipeRunnerProtocol {
             displaySummary: "Injected runner.",
             steps: []
         )
+    }
+}
+
+private struct BackendFixedCapabilityRegistryProvider: CapabilityRegistryProviding {
+    var capabilities: [Capability]
+}
+
+private struct BackendMappedPermissionService: PermissionService {
+    var statuses: [CapabilityKey: CapabilityStatus]
+
+    func status(for capability: CapabilityKey) async -> CapabilityStatus {
+        statuses[capability, default: .unknown]
+    }
+
+    func request(_ capability: CapabilityKey) async throws -> CapabilityStatus {
+        await status(for: capability)
     }
 }
 

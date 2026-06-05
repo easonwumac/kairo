@@ -11,7 +11,7 @@ public struct LiveKairoAgentProvider: KairoAgentProviding {
     private let integrationRegistry: any AppIntegrationRegistryProviding
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
     private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
-    private let capabilityRegistry: CapabilityRegistry
+    private let capabilityRegistry: any CapabilityRegistryProviding
 
     public init(
         paths: KairoPaths = KairoSharedAppStorage.paths(),
@@ -20,7 +20,7 @@ public struct LiveKairoAgentProvider: KairoAgentProviding {
         integrationRegistry: (any AppIntegrationRegistryProviding)? = nil,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
-        capabilityRegistry: CapabilityRegistry = CapabilityRegistry()
+        capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry()
     ) {
         self.paths = paths
         self.credentialStore = credentialStore

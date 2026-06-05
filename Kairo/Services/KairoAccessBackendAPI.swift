@@ -207,13 +207,13 @@ public struct KairoAccessIntegrationSummary: Identifiable, Codable, Equatable, S
 }
 
 public struct KairoAccessBackendService: KairoAccessAPI {
-    private let capabilityRegistry: CapabilityRegistry
+    private let capabilityRegistry: any CapabilityRegistryProviding
     private let permissionService: any PermissionService
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
     private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
 
     public init(
-        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
+        capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         permissionService: any PermissionService
