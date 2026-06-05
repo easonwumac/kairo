@@ -63,6 +63,7 @@ public struct KairoAccessBackendServiceFactory<Dependencies: KairoBackendDepende
 
     public func makeAccessAPI() -> any KairoAccessAPI {
         KairoAccessBackendService(
+            capabilityRegistry: dependencies.capabilityRegistry,
             toolCatalog: dependencies.toolCatalog,
             appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog,
             permissionService: dependencies.permissionService

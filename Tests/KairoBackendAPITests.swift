@@ -1260,10 +1260,13 @@ final class KairoBackendAPITests: XCTestCase {
         let dependencies = environment.accessFeatureDependencies
         let catalog = try await XCTUnwrap(dependencies.skillManagerService).catalog()
         let accessAPI = try XCTUnwrap(dependencies.accessAPI)
+        let capabilities = await accessAPI.capabilities()
         let tools = await accessAPI.tools()
         let integrations = await accessAPI.appIntegrations()
 
         XCTAssertFalse(catalog.skills.isEmpty)
+        XCTAssertEqual(capabilities.map(\.key), [.memory])
+        XCTAssertEqual(capabilities.map(\.status), [.available])
         XCTAssertTrue(tools.contains { $0.toolID == .reminderWrite })
         XCTAssertTrue(integrations.contains { $0.skillID == .googleMapsDirectionsHandoff })
         XCTAssertEqual(dependencies.capabilityRegistry.capabilities.map(\.key), [.memory])
