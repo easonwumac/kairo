@@ -208,4 +208,32 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertNil(dependencies.marketplaceCatalogService)
     }
 
+    func testKairoEnvironmentBuildsRootOpenURLHandlerForOAuthCallbacks() async throws {
+        let callbackStore = try await FileBackedOAuthConnectorCallbackStore(
+            fileURL: temporaryBackendTestFileURL(named: "oauth-callback-previews.json")
+        )
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
+            oauthConnectorCallbackStore: callbackStore,
+            oauthClientConfigurations: [
+                "google": OAuthConnectorClientConfiguration(
+                    clientID: "google-client",
+                    redirectURI: "kairo://oauth/google/callback"
+                )
+            ]
+        )
+
+        let openURLHandler = try XCTUnwrap(environment.rootFeatureDependencies.openURLHandler)
+        try await openURLHandler.handle(
+            URL(string: "kairo://oauth/google/callback?code=sample-code&state=state-123")!
+        )
+        let storedPreview = await callbackStore.latestPreview(for: "google")
+        let preview = try XCTUnwrap(storedPreview)
+
+        XCTAssertEqual(preview.providerKey, "google")
+        XCTAssertEqual(preview.authorizationCodeLength, "sample-code".count)
+    }
+
 }

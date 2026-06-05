@@ -3,6 +3,7 @@ import SwiftUI
 
 public struct RootView: View {
     private let environment: KairoEnvironment
+    private let rootDependencies: RootFeatureDependencies
     private let settingsMode: SettingsViewMode
     @State private var selectedSection: RootSection = .chat
     @State private var isMenuPresented = false
@@ -13,6 +14,7 @@ public struct RootView: View {
         settingsMode: SettingsViewMode = .all
     ) {
         self.environment = environment
+        self.rootDependencies = environment.rootFeatureDependencies
         self.settingsMode = settingsMode
         let section = initialSection.flatMap(RootSection.init(rawValue:)) ?? .chat
         _selectedSection = State(initialValue: section)
@@ -50,15 +52,9 @@ public struct RootView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Self.fullScreenBackground.ignoresSafeArea())
         .onOpenURL { url in
-            guard let oauthCallbackStore = environment.oauthConnectorCallbackStore else { return }
+            guard let openURLHandler = rootDependencies.openURLHandler else { return }
             Task {
-                _ = try? await OAuthConnectorLoginCenter(
-                    registry: IntegrationRegistry(),
-                    credentialStore: environment.credentialStore,
-                    clientConfigurations: environment.oauthClientConfigurations,
-                    callbackStore: oauthCallbackStore
-                )
-                .previewCallback(url)
+                try? await openURLHandler.handle(url)
             }
         }
     }
