@@ -2,17 +2,15 @@ import Foundation
 
 public struct AgentToolInvocationPlanner: Sendable {
     public var skillCatalog: AgentSkillCatalog
-    public var integrationRegistry: any AppIntegrationRegistryProviding
-    public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
-    public var appIntegrationActionMapper: any AppIntegrationActionMapping
-    public var appIntegrationActionParser: any AgentToolInvocationActionParsing
-    public var visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding
-    public var writeActionCandidateProvider: any AgentWriteActionCandidateProviding
-    public var candidateMatcher: any AgentToolInvocationCandidateMatching
-    public var candidateBuilder: any AgentToolInvocationCandidateBuilding
-    public var candidatePipeline: any AgentToolInvocationCandidatePipelining
-    public var candidateFilter: any AgentToolCandidateFiltering
-    public var safetyPolicyEngine: SafetyPolicyEngine
+    public var dependencies: AgentToolInvocationPlannerDependencies
+
+    public init(
+        skillCatalog: AgentSkillCatalog = .default,
+        dependencies: AgentToolInvocationPlannerDependencies
+    ) {
+        self.skillCatalog = skillCatalog
+        self.dependencies = dependencies
+    }
 
     public init(
         skillCatalog: AgentSkillCatalog = .default,
@@ -29,20 +27,23 @@ public struct AgentToolInvocationPlanner: Sendable {
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
     ) {
-        self.skillCatalog = skillCatalog
-        self.integrationRegistry = integrationRegistry
-        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
-        self.appIntegrationActionMapper = appIntegrationActionMapper
-        self.appIntegrationActionParser = appIntegrationActionParser
-        self.visibleHandoffCandidateProvider = visibleHandoffCandidateProvider
-        self.writeActionCandidateProvider = writeActionCandidateProvider
-        self.candidateMatcher = candidateMatcher
-        self.candidateBuilder = candidateBuilder
-        self.candidatePipeline = candidatePipeline
-        self.candidateFilter = candidateFilter ?? PhoneToolCandidateFilter(
-            actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        self.init(
+            skillCatalog: skillCatalog,
+            dependencies: AgentToolInvocationPlannerDependencies(
+                integrationRegistry: integrationRegistry,
+                appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+                appIntegrationActionMapper: appIntegrationActionMapper,
+                appIntegrationActionParser: appIntegrationActionParser,
+                visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
+                writeActionCandidateProvider: writeActionCandidateProvider,
+                candidateMatcher: candidateMatcher,
+                candidateBuilder: candidateBuilder,
+                candidatePipeline: candidatePipeline,
+                toolCatalog: toolCatalog,
+                candidateFilter: candidateFilter,
+                safetyPolicyEngine: safetyPolicyEngine
+            )
         )
-        self.safetyPolicyEngine = safetyPolicyEngine
     }
 
     public func plan(for request: AgentToolInvocationRequest) -> AgentToolInvocationPlan {
@@ -58,23 +59,23 @@ public struct AgentToolInvocationPlanner: Sendable {
             return AgentToolInvocationPlan(candidates: [])
         }
 
-        let candidates = candidatePipeline.candidates(
+        let candidates = dependencies.candidatePipeline.candidates(
             for: request,
             normalizedText: normalizedText,
             skillCatalog: skillCatalog,
-            integrationRegistry: integrationRegistry,
-            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
-            appIntegrationActionMapper: appIntegrationActionMapper,
-            appIntegrationActionParser: appIntegrationActionParser,
-            visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
-            writeActionCandidateProvider: writeActionCandidateProvider,
-            candidateMatcher: candidateMatcher,
-            candidateBuilder: candidateBuilder,
-            safetyPolicyEngine: safetyPolicyEngine
+            integrationRegistry: dependencies.integrationRegistry,
+            appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog,
+            appIntegrationActionMapper: dependencies.appIntegrationActionMapper,
+            appIntegrationActionParser: dependencies.appIntegrationActionParser,
+            visibleHandoffCandidateProvider: dependencies.visibleHandoffCandidateProvider,
+            writeActionCandidateProvider: dependencies.writeActionCandidateProvider,
+            candidateMatcher: dependencies.candidateMatcher,
+            candidateBuilder: dependencies.candidateBuilder,
+            safetyPolicyEngine: dependencies.safetyPolicyEngine
         )
 
         return AgentToolInvocationPlan(
-            candidates: candidates.filter(candidateFilter.allowsCandidate)
+            candidates: candidates.filter(dependencies.candidateFilter.allowsCandidate)
         )
     }
 }

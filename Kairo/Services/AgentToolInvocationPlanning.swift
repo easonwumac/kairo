@@ -8,17 +8,11 @@ public protocol AgentToolInvocationPlanning: Sendable {
 }
 
 public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlanning {
-    public var integrationRegistry: any AppIntegrationRegistryProviding
-    public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
-    public var appIntegrationActionMapper: any AppIntegrationActionMapping
-    public var appIntegrationActionParser: any AgentToolInvocationActionParsing
-    public var visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding
-    public var writeActionCandidateProvider: any AgentWriteActionCandidateProviding
-    public var candidateMatcher: any AgentToolInvocationCandidateMatching
-    public var candidateBuilder: any AgentToolInvocationCandidateBuilding
-    public var candidatePipeline: any AgentToolInvocationCandidatePipelining
-    public var toolCatalog: any BuiltInPhoneToolCatalogProviding
-    public var safetyPolicyEngine: SafetyPolicyEngine
+    public var dependencies: AgentToolInvocationPlannerDependencies
+
+    public init(dependencies: AgentToolInvocationPlannerDependencies) {
+        self.dependencies = dependencies
+    }
 
     public init(
         integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
@@ -33,17 +27,21 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
     ) {
-        self.integrationRegistry = integrationRegistry
-        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
-        self.appIntegrationActionMapper = appIntegrationActionMapper
-        self.appIntegrationActionParser = appIntegrationActionParser
-        self.visibleHandoffCandidateProvider = visibleHandoffCandidateProvider
-        self.writeActionCandidateProvider = writeActionCandidateProvider
-        self.candidateMatcher = candidateMatcher
-        self.candidateBuilder = candidateBuilder
-        self.candidatePipeline = candidatePipeline
-        self.toolCatalog = toolCatalog
-        self.safetyPolicyEngine = safetyPolicyEngine
+        self.init(
+            dependencies: AgentToolInvocationPlannerDependencies(
+                integrationRegistry: integrationRegistry,
+                appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+                appIntegrationActionMapper: appIntegrationActionMapper,
+                appIntegrationActionParser: appIntegrationActionParser,
+                visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
+                writeActionCandidateProvider: writeActionCandidateProvider,
+                candidateMatcher: candidateMatcher,
+                candidateBuilder: candidateBuilder,
+                candidatePipeline: candidatePipeline,
+                toolCatalog: toolCatalog,
+                safetyPolicyEngine: safetyPolicyEngine
+            )
+        )
     }
 
     public func plan(
@@ -52,17 +50,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
     ) -> AgentToolInvocationPlan {
         AgentToolInvocationPlanner(
             skillCatalog: skillCatalog,
-            integrationRegistry: integrationRegistry,
-            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
-            appIntegrationActionMapper: appIntegrationActionMapper,
-            appIntegrationActionParser: appIntegrationActionParser,
-            visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
-            writeActionCandidateProvider: writeActionCandidateProvider,
-            candidateMatcher: candidateMatcher,
-            candidateBuilder: candidateBuilder,
-            candidatePipeline: candidatePipeline,
-            toolCatalog: toolCatalog,
-            safetyPolicyEngine: safetyPolicyEngine
+            dependencies: dependencies
         ).plan(for: request)
     }
 }
