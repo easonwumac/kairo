@@ -152,6 +152,38 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(integrations.first?.readiness, .available)
     }
 
+    func testChatBackendServiceFactoryBuildsChatAPIFromInjectedDependencies() async throws {
+        let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
+        let toolCatalog = BuiltInPhoneToolCatalog(tools: [calendarTool])
+        let appIntegrationSkillCatalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .whatsappMessageHandoff))
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            toolCatalog: toolCatalog,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
+        )
+        let chatAPI = KairoChatBackendServiceFactory(dependencies: environment).makeChatAPI()
+
+        let calendarResponse = try await chatAPI.respond(
+            to: "建立行程：週五 10:00 Kairo roadmap review",
+            attachments: [],
+            privacyMode: .standard
+        )
+        let handoffResponse = try await chatAPI.respond(
+            to: "Send this update with WhatsApp",
+            attachments: [],
+            privacyMode: .standard
+        )
+
+        XCTAssertEqual(calendarResponse.proposedActions.map(\.kind), [.createCalendarDraft])
+        let candidate = try XCTUnwrap(handoffResponse.toolCandidates.first { $0.integrationKey == "whatsapp" })
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertNil(candidate.action)
+    }
+
     func testBackendCompositionSharesInjectedPhoneToolCatalogAcrossAccessAndChat() async throws {
         let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
         let toolCatalog = BuiltInPhoneToolCatalog(tools: [calendarTool])

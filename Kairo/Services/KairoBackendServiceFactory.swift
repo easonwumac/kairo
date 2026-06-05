@@ -67,15 +67,11 @@ public struct KairoAccessBackendServiceFactory<Dependencies: KairoBackendDepende
     }
 }
 
-public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDependencies>: KairoBackendServiceMaking {
+public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependencies>: Sendable {
     private let dependencies: Dependencies
-    private let settingsFactory: KairoSettingsBackendServiceFactory<Dependencies>
-    private let accessFactory: KairoAccessBackendServiceFactory<Dependencies>
 
     public init(dependencies: Dependencies) {
         self.dependencies = dependencies
-        self.settingsFactory = KairoSettingsBackendServiceFactory(dependencies: dependencies)
-        self.accessFactory = KairoAccessBackendServiceFactory(dependencies: dependencies)
     }
 
     public func makeChatAPI() -> any KairoChatAPI {
@@ -93,6 +89,24 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
             toolCatalog: dependencies.toolCatalog,
             appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog
         ))
+    }
+}
+
+public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDependencies>: KairoBackendServiceMaking {
+    private let dependencies: Dependencies
+    private let chatFactory: KairoChatBackendServiceFactory<Dependencies>
+    private let settingsFactory: KairoSettingsBackendServiceFactory<Dependencies>
+    private let accessFactory: KairoAccessBackendServiceFactory<Dependencies>
+
+    public init(dependencies: Dependencies) {
+        self.dependencies = dependencies
+        self.chatFactory = KairoChatBackendServiceFactory(dependencies: dependencies)
+        self.settingsFactory = KairoSettingsBackendServiceFactory(dependencies: dependencies)
+        self.accessFactory = KairoAccessBackendServiceFactory(dependencies: dependencies)
+    }
+
+    public func makeChatAPI() -> any KairoChatAPI {
+        chatFactory.makeChatAPI()
     }
 
     public func makeMemoryAPI() -> any KairoMemoryAPI {
