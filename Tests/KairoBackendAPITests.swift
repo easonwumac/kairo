@@ -639,6 +639,61 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertFalse(response.toolCandidates.contains { $0.integrationKey == "line" && $0.source == .integrationRegistry })
     }
 
+    func testScenarioWhatsAppMessageHandoffPreviewsBeforeVisibleOpenURL() async throws {
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .whatsappMessageHandoff))
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            appIntegrationSkillCatalog: catalog
+        )
+
+        let response = try await environment.backendAPI.chat.respond(
+            to: "幫我用 WhatsApp 傳訊息給 +886912345678 說我晚點到",
+            attachments: [],
+            privacyMode: .standard
+        )
+
+        let candidate = try XCTUnwrap(response.toolCandidates.first { $0.skillID == AppIntegrationSkillID.whatsappMessageHandoff.rawValue })
+        let action = try XCTUnwrap(candidate.action)
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.integrationKey, "whatsapp")
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertEqual(action.kind, .openURL)
+        XCTAssertTrue(action.requiresConfirmation)
+        XCTAssertFalse(response.toolCandidates.contains { $0.integrationKey == "whatsapp" && $0.source == .integrationRegistry })
+
+        let urlOpener = ScenarioBackendURLOpener()
+        let auditLogger = InMemoryAuditLogger()
+        let executor = SandboxActionExecutor(
+            memoryStore: InMemoryMemoryStore(),
+            urlOpener: urlOpener,
+            auditLogger: auditLogger
+        )
+
+        let previewResult = try await executor.execute(action, confirmed: false)
+        let openedBeforeConfirmation = await urlOpener.openedURLs
+        XCTAssertFalse(previewResult.completed)
+        XCTAssertTrue(openedBeforeConfirmation.isEmpty)
+
+        let confirmedResult = try await executor.execute(action, confirmed: true)
+        let openedAfterConfirmation = await urlOpener.openedURLs
+        let openedURL = try XCTUnwrap(openedAfterConfirmation.first)
+        let auditEvents = try await auditLogger.list(limit: 10)
+        let encodedAudit = String(data: try JSONEncoder().encode(auditEvents), encoding: .utf8) ?? ""
+        XCTAssertTrue(confirmedResult.completed)
+        XCTAssertTrue(confirmedResult.requiresExternalUI)
+        XCTAssertEqual(openedAfterConfirmation.count, 1)
+        XCTAssertEqual(openedURL.scheme, "https")
+        XCTAssertEqual(openedURL.host, "wa.me")
+        XCTAssertEqual(openedURL.path, "/886912345678")
+        XCTAssertEqual(auditEvents.filter { $0.result == .rejected }.count, 1)
+        XCTAssertEqual(auditEvents.filter { $0.result == .completed }.count, 1)
+        XCTAssertFalse(encodedAudit.contains("晚點到"))
+    }
+
     func testScenarioShareImportToReminderCalendarAndEmailDraftPreviewsWithoutExecution() async throws {
         let sharedText = """
         TODO: Send prototype link
