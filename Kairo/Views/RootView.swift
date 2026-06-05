@@ -32,7 +32,6 @@ public struct RootView: View {
 
                 selectedContent
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.top, max(safeAreaInsets.top, 0) + 68)
                     .clipped()
 
                 rootHeader(topInset: safeAreaInsets.top)
@@ -408,30 +407,44 @@ private extension View {
         self
             .foregroundStyle(KairoDesign.ink)
             .frame(width: 64, height: 64)
-            .background(.ultraThinMaterial, in: Circle())
+            .background {
+                Circle()
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        Circle()
+                            .fill(Color.black.opacity(0.34))
+                    }
+            }
             .overlay {
                 Circle()
                     .stroke(kairoGlassControlStroke, lineWidth: 1)
             }
-            .shadow(color: KairoDesign.shadow, radius: 18, x: 0, y: 10)
+            .shadow(color: Color.black.opacity(0.34), radius: 22, x: 0, y: 12)
     }
 
     func glassCapsuleControl() -> some View {
         self
-            .background(.ultraThinMaterial, in: Capsule())
+            .background {
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        Capsule()
+                            .fill(Color.black.opacity(0.34))
+                    }
+            }
             .overlay {
                 Capsule()
                     .stroke(kairoGlassControlStroke, lineWidth: 1)
             }
-            .shadow(color: KairoDesign.shadow, radius: 18, x: 0, y: 10)
+            .shadow(color: Color.black.opacity(0.34), radius: 22, x: 0, y: 12)
     }
 }
 
 private var kairoGlassControlStroke: LinearGradient {
     LinearGradient(
         colors: [
-            Color.white.opacity(0.46),
-            Color.white.opacity(0.08)
+            Color.white.opacity(0.34),
+            Color.white.opacity(0.06)
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
