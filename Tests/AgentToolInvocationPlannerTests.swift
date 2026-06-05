@@ -185,6 +185,18 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         })
     }
 
+    func testDeniedCapabilityDoesNotProduceExecutableToolCandidate() throws {
+        let policies = InMemoryCapabilityToolPolicyStore(policies: [.location: .deny])
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: []),
+            candidateFilter: PhoneToolCandidateFilter(policyProvider: policies)
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "幫我用 Google Maps 導航到台北車站"))
+
+        XCTAssertFalse(plan.candidates.contains { $0.requiredCapabilities.contains(.location) })
+    }
+
     func testScenarioCWhatsAppMessageUsesCatalogVisibleHandoffPreview() throws {
         let planner = AgentToolInvocationPlanner(skillCatalog: AgentSkillCatalog(skills: []))
 

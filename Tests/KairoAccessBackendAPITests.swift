@@ -39,6 +39,37 @@ final class KairoAccessBackendAPITests: XCTestCase {
         XCTAssertEqual(requestedCapabilities, [.notifications])
     }
 
+    func testAccessBackendPolicyAllowRequestsRuntimePermission() async throws {
+        let policies = InMemoryCapabilityToolPolicyStore()
+        let permissions = RecordingPermissionService(
+            statuses: [.calendar: .unknown],
+            requestResults: [.calendar: .available]
+        )
+        let api = KairoAccessBackendService(permissionService: permissions, policyStore: policies)
+
+        let status = try await api.setPolicy(.allow, for: .calendar)
+        let policy = await api.policy(for: .calendar)
+
+        XCTAssertEqual(status, .available)
+        XCTAssertEqual(policy, .allow)
+        let requestedCapabilities = await permissions.requestedCapabilities()
+        XCTAssertEqual(requestedCapabilities, [.calendar])
+    }
+
+    func testAccessBackendPolicyDenyDoesNotRequestRuntimePermission() async throws {
+        let policies = InMemoryCapabilityToolPolicyStore()
+        let permissions = RecordingPermissionService(statuses: [.calendar: .unknown])
+        let api = KairoAccessBackendService(permissionService: permissions, policyStore: policies)
+
+        let status = try await api.setPolicy(.deny, for: .calendar)
+        let policy = await api.policy(for: .calendar)
+
+        XCTAssertEqual(status, .unknown)
+        XCTAssertEqual(policy, .deny)
+        let requestedCapabilities = await permissions.requestedCapabilities()
+        XCTAssertEqual(requestedCapabilities, [])
+    }
+
     func testAccessBackendAPIResolvesBuiltInPhoneToolReadinessFromInjectedCatalog() async throws {
         let toolCatalog = BuiltInPhoneToolCatalog(tools: [
             try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .memorySave)),

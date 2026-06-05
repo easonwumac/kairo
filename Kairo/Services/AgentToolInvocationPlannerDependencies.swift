@@ -16,6 +16,8 @@ public struct AgentToolCandidatePlanningDependencies: Sendable {
     public var candidatePipeline: any AgentToolInvocationCandidatePipelining
     public var candidateFilter: any AgentToolCandidateFiltering
     public var safetyPolicyEngine: any ActionSafetyPolicyEvaluating
+    public var policyProvider: any CapabilityToolPolicyProviding
+    public var capabilityRegistry: any CapabilityRegistryProviding
 
     public init(
         integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
@@ -33,7 +35,9 @@ public struct AgentToolCandidatePlanningDependencies: Sendable {
         candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
-        safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine()
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine(),
+        policyProvider: any CapabilityToolPolicyProviding = DefaultCapabilityToolPolicyProvider(),
+        capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry()
     ) {
         self.integrationRegistry = integrationRegistry
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
@@ -49,9 +53,13 @@ public struct AgentToolCandidatePlanningDependencies: Sendable {
         self.fallbackActionCandidateAppender = fallbackActionCandidateAppender
         self.candidatePipeline = candidatePipeline
         self.candidateFilter = candidateFilter ?? PhoneToolCandidateFilter(
-            actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+            actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog),
+            policyProvider: policyProvider,
+            capabilityRegistry: capabilityRegistry
         )
         self.safetyPolicyEngine = safetyPolicyEngine
+        self.policyProvider = policyProvider
+        self.capabilityRegistry = capabilityRegistry
     }
 }
 

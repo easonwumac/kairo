@@ -8,6 +8,7 @@ public struct CapabilityPromptContextBuilder: Sendable {
     public var appIntegrationPromptSection: any AppIntegrationPromptContextProviding
     public var backgroundTaskPolicy: BackgroundTaskPolicy
     public var skillCatalog: AgentSkillCatalog
+    public var policyProvider: any CapabilityToolPolicyProviding
 
     public init(
         capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
@@ -16,7 +17,8 @@ public struct CapabilityPromptContextBuilder: Sendable {
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         appIntegrationPromptSection: (any AppIntegrationPromptContextProviding)? = nil,
         backgroundTaskPolicy: BackgroundTaskPolicy = BackgroundTaskPolicy(),
-        skillCatalog: AgentSkillCatalog = .default
+        skillCatalog: AgentSkillCatalog = .default,
+        policyProvider: any CapabilityToolPolicyProviding = DefaultCapabilityToolPolicyProvider()
     ) {
         self.capabilityRegistry = capabilityRegistry
         self.toolCatalog = toolCatalog
@@ -26,20 +28,30 @@ public struct CapabilityPromptContextBuilder: Sendable {
             ?? AppIntegrationPromptContextSection(catalog: appIntegrationSkillCatalog)
         self.backgroundTaskPolicy = backgroundTaskPolicy
         self.skillCatalog = skillCatalog
+        self.policyProvider = policyProvider
     }
 
     public func build() -> String {
-        let capabilityLines = capabilityRegistry.capabilities.map { capability in
-            "- \(capability.key.rawValue): \(capability.displayName); permission=\(capability.permission.rawValue); status=\(capability.status.rawValue); \(capability.description)"
+        let allowedCapabilities = capabilityRegistry.capabilities.filter { capability in
+            policyProvider.policy(for: capability) != .deny
+        }
+        let allowedCapabilityKeys = Set(allowedCapabilities.map(\.key))
+        let capabilityLines = allowedCapabilities.map { capability in
+            let policy = policyProvider.policy(for: capability)
+            return "- \(capability.key.rawValue): \(capability.displayName); permission=\(capability.permission.rawValue); policy=\(policy.rawValue); status=\(capability.status.rawValue); \(capability.description)"
         }
 
-        let actionLines = toolCatalog.tools.map { tool in
+        let actionLines = toolCatalog.tools.filter { tool in
+            !tool.audit.capabilityKeys.contains { !allowedCapabilityKeys.contains($0) }
+        }.map { tool in
             let actionKinds = tool.sourceBinding.agentActionKinds.map(\.rawValue).joined(separator: ",")
             let capabilities = tool.audit.capabilityKeys.map(\.rawValue).joined(separator: ",")
             return "- \(tool.id.rawValue): \(tool.displayName); actions=\(actionKinds.isEmpty ? "none" : actionKinds); capability=\(capabilities); permission=\(tool.permissionRequirement.rawValue); risk=\(tool.riskTier.rawValue); availability=\(tool.availabilityStatus.rawValue); execution=\(tool.executionKind.rawValue); confirmation=\(tool.confirmationPolicy.rawValue); executable=\(tool.canBeSuggestedAsExecutable); input=\(tool.schema.input); output=\(tool.schema.output)"
         }
 
-        let skillLines = skillCatalog.installedSkills.map { skill in
+        let skillLines = skillCatalog.installedSkills.filter { skill in
+            !skill.requiredCapabilities.contains { !allowedCapabilityKeys.contains($0) }
+        }.map { skill in
             let capabilities = skill.requiredCapabilities.map(\.rawValue).joined(separator: ",")
             let actionKind = skill.action?.kind.rawValue ?? "none"
             return "- \(skill.id): \(skill.displayName); kind=\(skill.kind.rawValue); action=\(actionKind); requiresConfirmation=\(skill.action?.requiresConfirmation == true); capabilities=\(capabilities); \(skill.summary)"
@@ -49,13 +61,23 @@ public struct CapabilityPromptContextBuilder: Sendable {
             "- unsupportedSandboxAction: Explain why the requested iOS, account, background, or cross-app operation is unavailable and provide a safe alternative. This is explanatory only and must not execute external actions."
         ]
 
-        let integrationLines = integrationRegistry.integrationsNotMigrated(to: appIntegrationSkillCatalog).map { integration in
+        let integrationLines = integrationRegistry.integrationsNotMigrated(to: appIntegrationSkillCatalog).filter { integration in
+            !integration.requiredCapabilities.contains { !allowedCapabilityKeys.contains($0) }
+        }.map { integration in
             let surfaces = integration.surfaces.map(\.rawValue).joined(separator: ",")
             let scopes = integration.oauth?.defaultScopes.joined(separator: ",") ?? "none"
             return "- \(integration.key): \(integration.displayName); surfaces=\(surfaces); status=\(integration.status.rawValue); oauthScopes=\(scopes); \(integration.sandboxNotes)"
         }
 
-        let appIntegrationSection = appIntegrationPromptSection.buildAppIntegrationSection()
+        _ = appIntegrationPromptSection.buildAppIntegrationSection()
+        let appIntegrationSection = appIntegrationSkillCatalog.skills.filter { skill in
+            !skill.audit.capabilityKeys.contains { !allowedCapabilityKeys.contains($0) }
+        }.map { skill in
+            let surfaces = skill.supportedSurfaces.map(\.rawValue).joined(separator: ",")
+            let capabilities = skill.audit.capabilityKeys.map(\.rawValue).joined(separator: ",")
+            let scopes = skill.oauth?.requiredScopes.joined(separator: ",") ?? "none"
+            return "- \(skill.id.rawValue): \(skill.appName); integrationKey=\(skill.integrationKey); surfaces=\(surfaces); capability=\(capabilities); permission=\(skill.permissionRequirement.rawValue); risk=\(skill.riskTier.rawValue); availability=\(skill.availabilityStatus.rawValue); setup=\(skill.setupRequirement.rawValue); execution=\(skill.executionMode.rawValue); confirmation=\(skill.confirmationPolicy.rawValue); executable=\(skill.canBeSuggestedAsExecutable); oauthScopes=\(scopes); input=\(skill.schema.input); output=\(skill.schema.output)"
+        }.joined(separator: "\n")
 
         let backgroundLines = backgroundTaskPolicy.tasks.map { descriptor in
             "- \(descriptor.identifier): kind=\(descriptor.kind.rawValue); minInterval=\(Int(descriptor.minimumInterval))s; maxRuntime=\(Int(descriptor.maxRuntime))s; network=\(descriptor.requiresNetwork); \(descriptor.sandboxNotes)"

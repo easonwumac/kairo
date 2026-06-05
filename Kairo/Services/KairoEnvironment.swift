@@ -43,6 +43,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public let toolCatalog: any BuiltInPhoneToolCatalogProviding
     public let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public let capabilityRegistry: any CapabilityRegistryProviding
+    public let capabilityToolPolicyStore: any CapabilityToolPolicyStoring
     public let actionSafetyPolicy: any ActionSafetyPolicyEvaluating
     public let shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol
 
@@ -73,6 +74,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
+        capabilityToolPolicyStore: any CapabilityToolPolicyStoring = InMemoryCapabilityToolPolicyStore(),
         actionSafetyPolicy: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine(),
         shortcutDemoRecipeRunner: (any ShortcutDemoRecipeRunnerProtocol)? = nil
     ) {
@@ -104,6 +106,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         self.toolCatalog = toolCatalog
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.capabilityRegistry = capabilityRegistry
+        self.capabilityToolPolicyStore = capabilityToolPolicyStore
         self.actionSafetyPolicy = actionSafetyPolicy
         self.shortcutDemoRecipeRunner = shortcutDemoRecipeRunner ?? ShortcutDemoRecipeRunner(
             runtime: ShortcutNodeRuntime(
@@ -273,6 +276,10 @@ public struct KairoPaths: Sendable {
         applicationSupportDirectory
             .appendingPathComponent("OAuth", isDirectory: true)
             .appendingPathComponent("callback-previews.json")
+    }
+
+    public var capabilityToolPolicyStoreURL: URL {
+        applicationSupportDirectory.appendingPathComponent("capability-tool-policies.json")
     }
 
     public static func defaultAppGroupContainerURL(for identifier: String) -> URL? {

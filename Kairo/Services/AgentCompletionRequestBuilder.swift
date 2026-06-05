@@ -22,13 +22,16 @@ public struct DefaultAgentCompletionRequestBuilder: AgentCompletionRequestBuildi
     """
 
     private let capabilityRegistry: any CapabilityRegistryProviding
+    private let policyProvider: any CapabilityToolPolicyProviding
     private let systemPrompt: String
 
     public init(
         capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
+        policyProvider: any CapabilityToolPolicyProviding = DefaultCapabilityToolPolicyProvider(),
         systemPrompt: String = Self.defaultSystemPrompt
     ) {
         self.capabilityRegistry = capabilityRegistry
+        self.policyProvider = policyProvider
         self.systemPrompt = systemPrompt
     }
 
@@ -53,6 +56,7 @@ public struct DefaultAgentCompletionRequestBuilder: AgentCompletionRequestBuildi
     private var allowedCapabilities: [CapabilityKey] {
         capabilityRegistry.capabilities
             .filter { $0.status == .available || $0.status == .unknown }
+            .filter { policyProvider.policy(for: $0) != .deny }
             .map(\.key)
     }
 }

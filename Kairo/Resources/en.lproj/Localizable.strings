@@ -98,6 +98,11 @@
 "access.capability.core" = "Core";
 "access.capability.details.show" = "Show tool details";
 "access.capability.details.hide" = "Hide tool details";
+"access.policy.allow" = "Allow";
+"access.policy.askEveryTime" = "Ask";
+"access.policy.deny" = "Deny";
+"access.policy.picker" = "%@ tool policy";
+"access.policy.message.updateFailed" = "Could not update tool policy: %@";
 "access.permission.none" = "Ready";
 "access.permission.userInitiated" = "User action";
 "access.permission.runtimePrompt" = "Asks first";

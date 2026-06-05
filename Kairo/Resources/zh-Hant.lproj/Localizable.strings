@@ -98,6 +98,11 @@
 "access.capability.core" = "核心";
 "access.capability.details.show" = "顯示工具細節";
 "access.capability.details.hide" = "隱藏工具細節";
+"access.policy.allow" = "允許";
+"access.policy.askEveryTime" = "每次確認";
+"access.policy.deny" = "拒絕";
+"access.policy.picker" = "%@ 工具策略";
+"access.policy.message.updateFailed" = "更新工具策略失敗：%@";
 "access.permission.none" = "可用";
 "access.permission.userInitiated" = "使用者觸發";
 "access.permission.runtimePrompt" = "會先詢問";

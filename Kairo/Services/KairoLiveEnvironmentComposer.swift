@@ -91,6 +91,9 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             memoryStore: storeComponents.memoryStore,
             auditLogger: storeComponents.auditLogger
         ).makeActionExecutor()
+        let capabilityToolPolicyStore = try FileBackedCapabilityToolPolicyStore(
+            fileURL: paths.capabilityToolPolicyStoreURL
+        )
 
         return KairoEnvironment(
             memoryStore: storeComponents.memoryStore,
@@ -119,6 +122,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             toolCatalog: toolCatalog,
             appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             capabilityRegistry: capabilityRegistry,
+            capabilityToolPolicyStore: capabilityToolPolicyStore,
             actionSafetyPolicy: actionSafetyPolicy,
             shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(
                 runtime: shortcutRuntime,

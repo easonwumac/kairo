@@ -6,6 +6,8 @@ public protocol KairoAccessAPI: Sendable {
     func appIntegrations() async -> [KairoAccessIntegrationSummary]
     func status(for capability: CapabilityKey) async -> CapabilityStatus
     func request(_ capability: CapabilityKey) async throws -> CapabilityStatus
+    func policy(for capability: CapabilityKey) async -> CapabilityToolPolicy
+    func setPolicy(_ policy: CapabilityToolPolicy, for capability: CapabilityKey) async throws -> CapabilityStatus
 }
 
 public enum KairoAccessToolReadiness: String, Codable, Sendable {
@@ -211,17 +213,20 @@ public struct KairoAccessBackendService: KairoAccessAPI {
     private let permissionService: any PermissionService
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
     private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
+    private let policyStore: any CapabilityToolPolicyStoring
 
     public init(
         capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
-        permissionService: any PermissionService
+        permissionService: any PermissionService,
+        policyStore: any CapabilityToolPolicyStoring = InMemoryCapabilityToolPolicyStore()
     ) {
         self.capabilityRegistry = capabilityRegistry
         self.toolCatalog = toolCatalog
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.permissionService = permissionService
+        self.policyStore = policyStore
     }
 
     public func capabilities() async -> [Capability] {
@@ -280,5 +285,20 @@ public struct KairoAccessBackendService: KairoAccessAPI {
 
     public func request(_ capability: CapabilityKey) async throws -> CapabilityStatus {
         try await permissionService.request(capability)
+    }
+
+    public func policy(for capability: CapabilityKey) async -> CapabilityToolPolicy {
+        let permission = capabilityRegistry.capabilities.first { $0.key == capability }?.permission ?? .userInitiated
+        return policyStore.policy(for: capability, permission: permission)
+    }
+
+    public func setPolicy(_ policy: CapabilityToolPolicy, for capability: CapabilityKey) async throws -> CapabilityStatus {
+        let permission = capabilityRegistry.capabilities.first { $0.key == capability }?.permission ?? .userInitiated
+        let normalizedPolicy = DefaultCapabilityToolPolicyProvider.normalized(policy, permission: permission)
+        try policyStore.setPolicy(normalizedPolicy, for: capability)
+        if normalizedPolicy == .allow {
+            return try await permissionService.request(capability)
+        }
+        return await permissionService.status(for: capability)
     }
 }

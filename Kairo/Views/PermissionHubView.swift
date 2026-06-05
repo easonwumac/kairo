@@ -22,6 +22,7 @@ public struct PermissionHubView: View {
     @State private var skillCatalog: AgentSkillCatalog
     @State private var accessToolSummaries: [KairoAccessToolSummary] = []
     @State private var accessIntegrationSummaries: [KairoAccessIntegrationSummary] = []
+    @State private var capabilityPolicies: [CapabilityKey: CapabilityToolPolicy] = [:]
 
     private let registry: any CapabilityRegistryProviding
     private let homeKitDemoCatalog = HomeKitControlDemoCatalog.default
@@ -365,15 +366,15 @@ public struct PermissionHubView: View {
                 .background(capabilityTint(for: capability).opacity(0.10), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
 
             VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
                     Text(capability.displayName)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(KairoDesign.ink)
                         .accessibilityIdentifier("access.capability.\(capability.key.rawValue).name")
                     Spacer(minLength: 8)
-                    Text(permissionLabel(for: capability.permission))
+                    Text(policyLabel(for: capability))
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(policyTint(for: capability))
 
                     Button {
                         toggleCapabilityDetails(capability.key)
@@ -391,6 +392,8 @@ public struct PermissionHubView: View {
                     .accessibilityValue(isExpanded ? "expanded" : "collapsed")
                     .accessibilityIdentifier("access.capability.\(capability.key.rawValue).details")
                 }
+
+                capabilityPolicyPicker(capability)
 
                 if isExpanded {
                     VStack(alignment: .leading, spacing: 6) {
@@ -433,6 +436,24 @@ public struct PermissionHubView: View {
         .accessibilityElement(children: .contain)
     }
 
+    private func capabilityPolicyPicker(_ capability: Capability) -> some View {
+        Picker(
+            KairoL10n.string("access.policy.picker", capability.displayName),
+            selection: Binding(
+                get: { selectedPolicy(for: capability) },
+                set: { newValue in
+                    setCapabilityPolicy(newValue, for: capability)
+                }
+            )
+        ) {
+            ForEach(DefaultCapabilityToolPolicyProvider.choices(for: capability.permission), id: \.self) { policy in
+                Text(policy.displayName).tag(policy)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("access.capability.\(capability.key.rawValue).policy")
+    }
+
     private func toggleCapabilityDetails(_ key: CapabilityKey) {
         withAnimation(.snappy(duration: 0.2)) {
             if expandedCapabilityDetails.contains(key) {
@@ -449,6 +470,45 @@ public struct PermissionHubView: View {
             return true
         case .available, .unknown:
             return false
+        }
+    }
+
+    private func selectedPolicy(for capability: Capability) -> CapabilityToolPolicy {
+        DefaultCapabilityToolPolicyProvider.normalized(
+            capabilityPolicies[capability.key] ?? DefaultCapabilityToolPolicyProvider.defaultPolicy(for: capability.permission),
+            permission: capability.permission
+        )
+    }
+
+    private func policyLabel(for capability: Capability) -> String {
+        selectedPolicy(for: capability).displayName
+    }
+
+    private func policyTint(for capability: Capability) -> Color {
+        switch selectedPolicy(for: capability) {
+        case .allow:
+            return KairoDesign.green
+        case .askEveryTime:
+            return KairoDesign.blue
+        case .deny:
+            return KairoDesign.red
+        }
+    }
+
+    private func setCapabilityPolicy(_ policy: CapabilityToolPolicy, for capability: Capability) {
+        let normalizedPolicy = DefaultCapabilityToolPolicyProvider.normalized(policy, permission: capability.permission)
+        capabilityPolicies[capability.key] = normalizedPolicy
+
+        Task {
+            do {
+                _ = try await accessAPI?.setPolicy(normalizedPolicy, for: capability.key)
+                await loadAccessData()
+            } catch {
+                await MainActor.run {
+                    capabilityPolicies[capability.key] = selectedPolicy(for: capability)
+                    skillManagerMessage = KairoL10n.string("access.policy.message.updateFailed", error.localizedDescription)
+                }
+            }
         }
     }
 
@@ -1208,6 +1268,7 @@ public struct PermissionHubView: View {
     @MainActor
     private func loadAccessData() async {
         await loadToolSummaries()
+        await loadCapabilityPolicies()
         await loadSkillCatalog()
     }
 
@@ -1216,6 +1277,16 @@ public struct PermissionHubView: View {
         guard let accessAPI else { return }
         accessToolSummaries = await accessAPI.tools()
         accessIntegrationSummaries = await accessAPI.appIntegrations()
+    }
+
+    @MainActor
+    private func loadCapabilityPolicies() async {
+        guard let accessAPI else { return }
+        var policies: [CapabilityKey: CapabilityToolPolicy] = [:]
+        for capability in registry.capabilities {
+            policies[capability.key] = await accessAPI.policy(for: capability.key)
+        }
+        capabilityPolicies = policies
     }
 
     @MainActor

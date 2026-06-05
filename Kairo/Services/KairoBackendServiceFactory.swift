@@ -19,6 +19,7 @@ public protocol KairoBackendDependencies: Sendable {
     var toolCatalog: any BuiltInPhoneToolCatalogProviding { get }
     var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding { get }
     var capabilityRegistry: any CapabilityRegistryProviding { get }
+    var capabilityToolPolicyStore: any CapabilityToolPolicyStoring { get }
     var actionSafetyPolicy: any ActionSafetyPolicyEvaluating { get }
 }
 
@@ -68,7 +69,8 @@ public struct KairoAccessBackendServiceFactory<Dependencies: KairoBackendDepende
             capabilityRegistry: dependencies.capabilityRegistry,
             toolCatalog: dependencies.toolCatalog,
             appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog,
-            permissionService: dependencies.permissionService
+            permissionService: dependencies.permissionService,
+            policyStore: dependencies.capabilityToolPolicyStore
         )
     }
 }
@@ -104,7 +106,8 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
                 capabilityRegistry: dependencies.capabilityRegistry,
                 toolCatalog: dependencies.toolCatalog,
                 integrationRegistry: dependencies.oauthConnectorRegistry,
-                appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog
+                appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog,
+                policyProvider: dependencies.capabilityToolPolicyStore
             ),
             toolInvocationPlanner: DefaultAgentToolInvocationPlannerProvider(
                 candidatePlanning: toolCandidatePlanningDependencies
@@ -115,7 +118,8 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
                 safetyPolicyEngine: dependencies.actionSafetyPolicy
             ),
             completionRequestBuilder: DefaultAgentCompletionRequestBuilder(
-                capabilityRegistry: dependencies.capabilityRegistry
+                capabilityRegistry: dependencies.capabilityRegistry,
+                policyProvider: dependencies.capabilityToolPolicyStore
             )
         )
     }
@@ -127,7 +131,9 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
             integrationRegistry: dependencies.oauthConnectorRegistry,
             appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog,
             toolCatalog: dependencies.toolCatalog,
-            safetyPolicyEngine: safetyPolicyEngine
+            safetyPolicyEngine: safetyPolicyEngine,
+            policyProvider: dependencies.capabilityToolPolicyStore,
+            capabilityRegistry: dependencies.capabilityRegistry
         )
     }
 }
