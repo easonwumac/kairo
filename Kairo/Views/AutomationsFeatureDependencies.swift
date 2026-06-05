@@ -28,7 +28,8 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
         recipeStore: any KairoRecipeStore = InMemoryKairoRecipeStore(),
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) -> AutomationsFeatureDependencies {
         let runtimeMemoryStore = memoryStore ?? InMemoryMemoryStore()
         return AutomationsFeatureDependencies(
@@ -36,7 +37,8 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
                 recipeStore: recipeStore,
                 memoryStore: memoryStore,
                 aiProvider: aiProvider,
-                toolCatalog: toolCatalog
+                toolCatalog: toolCatalog,
+                appIntegrationSkillCatalog: appIntegrationSkillCatalog
             ),
             shortcutTemplateRegistry: shortcutTemplateRegistry,
             shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(

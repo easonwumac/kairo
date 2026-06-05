@@ -275,6 +275,16 @@
 "intents.recipe.list.empty" = "目前沒有已啟用的 Kairo recipes。請打開 Kairo Automations 新增或啟用 recipes。";
 "intents.recipe.daily.requiresConfirmation" = "Kairo 已準備 Daily Briefing 預覽，需要回到 Kairo app 確認：%@";
 "recipes.localFallback.output" = "Kairo local fallback：%@";
+"recipes.integration.missingCatalog.summary" = "Integration skill 不在 catalog 中。";
+"recipes.integration.missingCatalog.output" = "Kairo 無法準備這個 integration，因為該 skill 尚未安裝在 catalog 中。";
+"recipes.integration.missingCatalog.error" = "%@ 不在 integration catalog 中。";
+"recipes.integration.setupRequired.summary" = "需要先設定 integration。";
+"recipes.integration.setupRequired.output" = "執行這個 integration workflow 前，請先設定 %@。";
+"recipes.integration.setupRequired.error" = "%@ 目前狀態為 %@。";
+"recipes.integration.previewUnavailable.summary" = "Integration preview 不可用。";
+"recipes.integration.previewUnavailable.output" = "%@ 需要有支援的 visible handoff 或 setup path 後才能準備。";
+"recipes.integration.previewUnavailable.error" = "%@ 無法產生支援的 preview action。";
+"recipes.integration.prepared.summary" = "已準備 %@ integration preview。";
 "chat.share.action.extractReminders" = "抽出提醒事項";
 "chat.share.action.summarize" = "摘要分享內容";
 "chat.share.action.sendToChat" = "送進 Chat";

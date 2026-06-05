@@ -129,7 +129,8 @@ public struct KairoRecipeBackendServiceFactory<Dependencies: KairoBackendDepende
             recipeStore: dependencies.kairoRecipeStore,
             memoryStore: dependencies.memoryStore,
             aiProvider: dependencies.aiProvider,
-            actionGate: BuiltInPhoneToolActionGate(toolCatalog: dependencies.toolCatalog)
+            actionGate: BuiltInPhoneToolActionGate(toolCatalog: dependencies.toolCatalog),
+            appIntegrationSkillCatalog: dependencies.appIntegrationSkillCatalog
         )
     }
 }

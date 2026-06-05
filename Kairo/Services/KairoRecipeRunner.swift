@@ -5,12 +5,16 @@ public struct KairoRecipeRunner: Sendable {
     private let memoryStore: (any MemoryStore)?
     private let aiProvider: (any AIProvider)?
     private let actionGate: any PhoneToolActionGating
+    private let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
+    private let appIntegrationActionDrafter: any AppIntegrationActionDrafting
 
     public init(dependencies: KairoRecipeRunnerDependencies) {
         self.recipeStore = dependencies.recipeStore
         self.memoryStore = dependencies.memoryStore
         self.aiProvider = dependencies.aiProvider
         self.actionGate = dependencies.actionGate
+        self.appIntegrationSkillCatalog = dependencies.appIntegrationSkillCatalog
+        self.appIntegrationActionDrafter = dependencies.appIntegrationActionDrafter
     }
 
     public init(
@@ -18,13 +22,17 @@ public struct KairoRecipeRunner: Sendable {
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        actionGate: (any PhoneToolActionGating)? = nil
+        actionGate: (any PhoneToolActionGating)? = nil,
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        appIntegrationActionDrafter: any AppIntegrationActionDrafting = DefaultAppIntegrationActionDrafter()
     ) {
         self.init(dependencies: KairoRecipeRunnerDependencies(
             recipeStore: recipeStore,
             memoryStore: memoryStore,
             aiProvider: aiProvider,
-            actionGate: actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+            actionGate: actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog),
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+            appIntegrationActionDrafter: appIntegrationActionDrafter
         ))
     }
 
@@ -264,6 +272,14 @@ public struct KairoRecipeRunner: Sendable {
             return (KairoRecipeStepResult(stepID: step.id, summary: "Created calendar draft.", outputText: title, success: true), [action])
 
         case .enqueueActionDraft:
+            if let integrationResult = integrationActionDraft(
+                for: step,
+                inputText: inputText,
+                recipe: recipe
+            ) {
+                return integrationResult
+            }
+
             let title = inputText.isEmpty ? recipe.title : String(inputText.prefix(80))
             let action = AgentAction(
                 kind: .answer,
@@ -320,6 +336,53 @@ public struct KairoRecipeRunner: Sendable {
         case .shortcutInput, .sharedContent, .keyboardContext:
             return requestInput ?? previousOutput
         }
+    }
+
+    private func integrationActionDraft(
+        for step: KairoRecipeStep,
+        inputText: String,
+        recipe: KairoRecipe
+    ) -> (result: KairoRecipeStepResult, actions: [AgentAction])? {
+        guard let integrationSkillID = step.integrationSkillID else {
+            return nil
+        }
+
+        guard let skill = appIntegrationSkillCatalog.skill(id: integrationSkillID) else {
+            return (KairoRecipeStepResult(
+                stepID: step.id,
+                summary: KairoL10n.string("recipes.integration.missingCatalog.summary"),
+                outputText: KairoL10n.string("recipes.integration.missingCatalog.output"),
+                success: false,
+                errorMessage: KairoL10n.string("recipes.integration.missingCatalog.error", integrationSkillID.rawValue)
+            ), [])
+        }
+
+        guard skill.canBeSuggestedAsExecutable else {
+            return (KairoRecipeStepResult(
+                stepID: step.id,
+                summary: KairoL10n.string("recipes.integration.setupRequired.summary"),
+                outputText: KairoL10n.string("recipes.integration.setupRequired.output", skill.appName),
+                success: false,
+                errorMessage: KairoL10n.string("recipes.integration.setupRequired.error", skill.id.rawValue, skill.availabilityStatus.rawValue)
+            ), [])
+        }
+
+        guard let action = appIntegrationActionDrafter.draftAction(for: skill, inputText: inputText) else {
+            return (KairoRecipeStepResult(
+                stepID: step.id,
+                summary: KairoL10n.string("recipes.integration.previewUnavailable.summary"),
+                outputText: KairoL10n.string("recipes.integration.previewUnavailable.output", skill.appName),
+                success: false,
+                errorMessage: KairoL10n.string("recipes.integration.previewUnavailable.error", skill.id.rawValue)
+            ), [])
+        }
+
+        return (KairoRecipeStepResult(
+            stepID: step.id,
+            summary: KairoL10n.string("recipes.integration.prepared.summary", skill.appName),
+            outputText: inputText,
+            success: true
+        ), [action])
     }
 
     private func stepRisk(_ step: KairoRecipeStep) -> ActionRiskTier {

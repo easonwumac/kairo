@@ -23,13 +23,15 @@ public struct KairoRecipeBackendService: KairoRecipeAPI {
         recipeStore: any KairoRecipeStore,
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) {
         self.init(dependencies: KairoRecipeRunnerDependencies(
             recipeStore: recipeStore,
             memoryStore: memoryStore,
             aiProvider: aiProvider,
-            actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+            actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog),
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
         ))
     }
 

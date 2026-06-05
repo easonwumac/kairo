@@ -275,6 +275,16 @@
 "intents.recipe.list.empty" = "No enabled Kairo recipes. Open Kairo Automations to add or enable recipes.";
 "intents.recipe.daily.requiresConfirmation" = "Kairo prepared a Daily Briefing preview that requires confirmation in the Kairo app: %@";
 "recipes.localFallback.output" = "Kairo local fallback: %@";
+"recipes.integration.missingCatalog.summary" = "Integration skill is not in the catalog.";
+"recipes.integration.missingCatalog.output" = "Kairo cannot prepare this integration because the skill is not installed in the catalog.";
+"recipes.integration.missingCatalog.error" = "%@ is not available in the integration catalog.";
+"recipes.integration.setupRequired.summary" = "Integration setup is required.";
+"recipes.integration.setupRequired.output" = "Set up %@ before running this integration workflow.";
+"recipes.integration.setupRequired.error" = "%@ is %@.";
+"recipes.integration.previewUnavailable.summary" = "Integration preview is unavailable.";
+"recipes.integration.previewUnavailable.output" = "%@ can only be prepared after a supported visible handoff or setup path is available.";
+"recipes.integration.previewUnavailable.error" = "%@ cannot produce a supported preview action.";
+"recipes.integration.prepared.summary" = "Prepared %@ integration preview.";
 "chat.share.action.extractReminders" = "Extract reminders";
 "chat.share.action.summarize" = "Summarize";
 "chat.share.action.sendToChat" = "Send to Chat";

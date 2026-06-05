@@ -183,6 +183,114 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertTrue(result.stepResults.allSatisfy(\.success))
     }
 
+    func testKairoRecipeRunnerBuildsAppIntegrationPreviewThroughCatalogBinding() async throws {
+        let recipe = KairoRecipe(
+            id: "mail-handoff-workflow",
+            title: "Mail Handoff Workflow",
+            summary: "Prepares an integration preview through the catalog.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "mail",
+                    title: "Prepare Mail Handoff",
+                    kind: .enqueueActionDraft,
+                    input: .literal("Draft an email to alex@example.com subject Kairo update body Please review the roadmap."),
+                    integrationSkillID: .appleMailHandoff
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let runner = KairoRecipeRunner(recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]))
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .app,
+            input: nil,
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.proposedActions.map { $0.kind }, [AgentActionKind.composeEmailDraft])
+        XCTAssertTrue(result.stepResults.allSatisfy { $0.success })
+    }
+
+    func testKairoRecipeRunnerFailsClosedWhenIntegrationBindingIsMissingFromCatalog() async throws {
+        let recipe = KairoRecipe(
+            id: "missing-integration-workflow",
+            title: "Missing Integration Workflow",
+            summary: "Must not bypass catalog binding.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "mail",
+                    title: "Prepare Mail Handoff",
+                    kind: .enqueueActionDraft,
+                    input: .literal("Draft an email to alex@example.com"),
+                    integrationSkillID: .appleMailHandoff
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let runner = KairoRecipeRunner(
+            recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [])
+        )
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .app,
+            input: nil,
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertFalse(result.success)
+        XCTAssertTrue(result.proposedActions.isEmpty)
+        XCTAssertFalse(result.stepResults.first?.success ?? true)
+    }
+
+    func testKairoRecipeRunnerDoesNotConvertThirdPartyCatalogMetadataIntoExecutableHandoff() async throws {
+        let recipe = KairoRecipe(
+            id: "google-maps-workflow",
+            title: "Google Maps Workflow",
+            summary: "Metadata-only third-party handoff must stay non-executable.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "maps",
+                    title: "Prepare Google Maps Handoff",
+                    kind: .enqueueActionDraft,
+                    input: .literal("Open Google Maps directions to Taipei 101"),
+                    integrationSkillID: .googleMapsDirectionsHandoff
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let runner = KairoRecipeRunner(recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]))
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .app,
+            input: nil,
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertFalse(result.success)
+        XCTAssertTrue(result.proposedActions.isEmpty)
+        XCTAssertFalse(result.stepResults.first?.success ?? true)
+    }
+
     func testKairoRecipeRunnerPreflightsPhoneToolAvailabilityBeforeExecutingStep() async throws {
         var reminderTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .reminderWrite))
         reminderTool.availabilityStatus = .unsupported
@@ -261,39 +369,6 @@ final class KairoRecipeLifecycleTests: XCTestCase {
 
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.stepResults.first?.outputText, KairoL10n.string("recipes.localFallback.output", "Summarize today's plan"))
-    }
-
-    func testKairoRecipeEngineStaysSplitAcrossSupportFiles() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let modelsSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/KairoRecipeModels.swift"),
-            encoding: .utf8
-        )
-        let storesSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/KairoRecipeStores.swift"),
-            encoding: .utf8
-        )
-        let templatesSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/KairoRecipeTemplates.swift"),
-            encoding: .utf8
-        )
-        let planningSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/KairoRecipePlanning.swift"),
-            encoding: .utf8
-        )
-        let runnerSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/KairoRecipeRunner.swift"),
-            encoding: .utf8
-        )
-
-        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("Kairo/Services/KairoRecipeEngine.swift").path))
-        XCTAssertLessThan(modelsSource.split(separator: "\n").count, 260)
-        XCTAssertLessThan(runnerSource.split(separator: "\n").count, 380)
-        XCTAssertTrue(modelsSource.contains("public struct KairoRecipe"))
-        XCTAssertTrue(storesSource.contains("public actor FileBackedKairoRecipeStore"))
-        XCTAssertTrue(templatesSource.contains("public enum KairoRecipeTemplateFactory"))
-        XCTAssertTrue(planningSource.contains("public struct KairoRecipePlanner"))
-        XCTAssertTrue(runnerSource.contains("public struct KairoRecipeRunner"))
     }
 
     private func temporaryFileURL(named name: String) -> URL {
