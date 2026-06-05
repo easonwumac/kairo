@@ -52,7 +52,7 @@ extension AgentToolInvocationPlanner {
         ])
     }
 
-    func isEmailDraftRequest(_ normalizedText: String) -> Bool {
+    public func isEmailDraftRequest(_ normalizedText: String) -> Bool {
         containsAny(normalizedText, [
             "draft an email",
             "draft email",
@@ -73,7 +73,7 @@ extension AgentToolInvocationPlanner {
         ])
     }
 
-    func isContactWriteRequest(_ normalizedText: String) -> Bool {
+    public func isContactWriteRequest(_ normalizedText: String) -> Bool {
         containsAny(normalizedText, [
             "create a contact",
             "create contact",
@@ -89,7 +89,7 @@ extension AgentToolInvocationPlanner {
         ])
     }
 
-    func isMapDirectionsRequest(_ normalizedText: String) -> Bool {
+    public func isMapDirectionsRequest(_ normalizedText: String) -> Bool {
         containsAny(normalizedText, [
             "navigate to",
             "directions to",
@@ -110,7 +110,7 @@ extension AgentToolInvocationPlanner {
         ])
     }
 
-    func isMessageHandoffRequest(_ normalizedText: String) -> Bool {
+    public func isMessageHandoffRequest(_ normalizedText: String) -> Bool {
         let explicitPrefixes = [
             "text ",
             "message ",
@@ -139,7 +139,7 @@ extension AgentToolInvocationPlanner {
         ])
     }
 
-    func isPhoneCallHandoffRequest(_ normalizedText: String) -> Bool {
+    public func isPhoneCallHandoffRequest(_ normalizedText: String) -> Bool {
         let explicitPrefixes = [
             "call ",
             "phone ",
@@ -164,7 +164,7 @@ extension AgentToolInvocationPlanner {
         ])
     }
 
-    func isWebSearchHandoffRequest(_ normalizedText: String) -> Bool {
+    public func isWebSearchHandoffRequest(_ normalizedText: String) -> Bool {
         let explicitPrefixes = [
             "search web ",
             "search the web ",
@@ -414,7 +414,7 @@ extension AgentToolInvocationPlanner {
         return title.isEmpty ? "Kairo reminder" : title
     }
 
-    func emailDraft(from userText: String) -> EmailDraft {
+    public func emailDraft(from userText: String) -> EmailDraft {
         var content = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefixes = [
             "Draft an email",
@@ -467,7 +467,7 @@ extension AgentToolInvocationPlanner {
         )
     }
 
-    func mapDirectionsDraft(from userText: String, normalizedText: String) -> MapDirectionsDraft {
+    public func mapDirectionsDraft(from userText: String, normalizedText: String) -> MapDirectionsDraft {
         var destination = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefixes = [
             "Navigate to",
@@ -513,7 +513,7 @@ extension AgentToolInvocationPlanner {
         )
     }
 
-    func messageDraft(from userText: String) -> MessageDraft {
+    public func messageDraft(from userText: String) -> MessageDraft {
         var content = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefixes = [
             "Text",
@@ -575,7 +575,7 @@ extension AgentToolInvocationPlanner {
         )
     }
 
-    func phoneCallDraft(from userText: String) -> PhoneCallDraft {
+    public func phoneCallDraft(from userText: String) -> PhoneCallDraft {
         var content = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefixes = [
             "Call",
@@ -624,7 +624,7 @@ extension AgentToolInvocationPlanner {
         )
     }
 
-    func webSearchDraft(from userText: String) -> WebSearchDraft {
+    public func webSearchDraft(from userText: String) -> WebSearchDraft {
         var query = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefixes = [
             "Search web for",
@@ -720,7 +720,7 @@ extension AgentToolInvocationPlanner {
         token.contains("@") && token.contains(".")
     }
 
-    func isPhoneToken(_ token: String) -> Bool {
+    public func isPhoneToken(_ token: String) -> Bool {
         let allowed = CharacterSet(charactersIn: "+-().")
             .union(.decimalDigits)
         let scalars = token.unicodeScalars
@@ -763,7 +763,7 @@ extension AgentToolInvocationPlanner {
         needles.contains { text.contains(normalize($0)) }
     }
 
-    func normalize(_ value: String) -> String {
+    public func normalize(_ value: String) -> String {
         value
             .lowercased()
             .trimmingCharacters(in: .whitespacesAndNewlines)

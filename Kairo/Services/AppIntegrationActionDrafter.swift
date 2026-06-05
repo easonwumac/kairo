@@ -5,20 +5,28 @@ public protocol AppIntegrationActionDrafting: Sendable {
 }
 
 public struct DefaultAppIntegrationActionDrafter: AppIntegrationActionDrafting {
-    private let planner: AgentToolInvocationPlanner
+    private let actionMapper: any AppIntegrationActionMapping
+    private let parser: any AgentToolInvocationActionParsing
 
-    public init() {
-        self.planner = AgentToolInvocationPlanner(
+    public init(
+        actionMapper: any AppIntegrationActionMapping = DefaultAppIntegrationActionMapper(),
+        parser: (any AgentToolInvocationActionParsing)? = nil
+    ) {
+        self.actionMapper = actionMapper
+        self.parser = parser ?? AgentToolInvocationPlanner(
             integrationRegistry: IntegrationRegistry(integrations: []),
-            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [])
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            appIntegrationActionMapper: NoOpAppIntegrationActionMapper()
         )
     }
 
     public func draftAction(for skill: AppIntegrationSkill, inputText: String) -> AgentAction? {
-        planner.visibleHandoffAction(
+        let normalizedText = parser.normalize(inputText)
+        return actionMapper.visibleHandoffAction(
             for: skill,
             userText: inputText,
-            normalizedText: planner.normalize(inputText)
+            normalizedText: normalizedText,
+            parser: parser
         )
     }
 }

@@ -90,7 +90,12 @@ extension AgentToolInvocationPlanner {
         guard skill.availabilityStatus != .disabled, skill.availabilityStatus != .unsupported else {
             return nil
         }
-        let action = visibleHandoffAction(for: skill, userText: userText, normalizedText: normalizedText)
+        let action = appIntegrationActionMapper.visibleHandoffAction(
+            for: skill,
+            userText: userText,
+            normalizedText: normalizedText,
+            parser: self
+        )
 
         return AgentToolInvocationCandidate(
             id: "app-integration-\(skill.id.rawValue)",

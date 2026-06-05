@@ -121,6 +121,32 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertFalse(plan.candidates.contains { $0.id == "action-compose-email-draft" })
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedAppIntegrationActionMapper() throws {
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMailHandoff))
+        ])
+        let injectedAction = AgentAction(
+            kind: .composeEmailDraft,
+            title: "Injected Action",
+            rationale: "Injected mapper action.",
+            payload: .email(EmailDraft(to: ["ops@example.com"], subject: "Injected", body: "Injected")),
+            riskTier: .tier1Draft
+        )
+        let planner = AgentToolInvocationPlanner(
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: catalog,
+            appIntegrationActionMapper: FixedAppIntegrationActionMapper(action: injectedAction)
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(
+            userText: "Compose email to ops@example.com"
+        ))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == AppIntegrationSkillID.appleMailHandoff.rawValue })
+
+        XCTAssertEqual(candidate.action, injectedAction)
+        XCTAssertEqual(plan.proposedActions, [injectedAction])
+    }
+
     func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithoutExecutableAction() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry(integrations: []))
 
@@ -473,6 +499,19 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
 private struct BlockingAgentToolCandidateFilter: AgentToolCandidateFiltering {
     func allowsCandidate(_ candidate: AgentToolInvocationCandidate) -> Bool {
         false
+    }
+}
+
+private struct FixedAppIntegrationActionMapper: AppIntegrationActionMapping {
+    var action: AgentAction
+
+    func visibleHandoffAction(
+        for skill: AppIntegrationSkill,
+        userText: String,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> AgentAction? {
+        action
     }
 }
 
