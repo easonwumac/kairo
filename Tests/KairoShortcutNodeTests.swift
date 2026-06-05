@@ -172,6 +172,23 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(response.proposedActions.isEmpty)
     }
 
+    func testLiveAgentProviderBuildsDefaultRegistryFromInjectedAppIntegrationCatalog() async throws {
+        let paths = KairoPaths(appName: "LiveAgentProviderCatalog-\(UUID().uuidString)")
+        let todoistSkill = try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .todoistTaskAPI))
+        let provider = LiveKairoAgentProvider(
+            paths: paths,
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Provider response")),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [todoistSkill])
+        )
+
+        let agent = try await provider.makeAgent()
+        let response = try await agent.respond(to: "Read Gmail and create a Todoist task")
+
+        XCTAssertNotNil(response.toolCandidates.first { $0.skillID == AppIntegrationSkillID.todoistTaskAPI.rawValue })
+        XCTAssertFalse(response.toolCandidates.contains { $0.integrationKey == "gmail-google-workspace" })
+    }
+
     func testShortcutSafetyCriticalNodesReturnStableSchemaAndConfirmationFields() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let safetyCases: [(ShortcutNodeKind, ShortcutNodeInput, String, AgentActionKind?)] = [

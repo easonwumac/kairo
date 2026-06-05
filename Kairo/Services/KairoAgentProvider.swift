@@ -16,16 +16,18 @@ public struct LiveKairoAgentProvider: KairoAgentProviding {
         paths: KairoPaths = KairoSharedAppStorage.paths(),
         credentialStore: any CredentialStore = KeychainCredentialStore(),
         aiProvider: (any AIProvider)? = nil,
-        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
+        integrationRegistry: (any AppIntegrationRegistryProviding)? = nil,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) {
         self.paths = paths
         self.credentialStore = credentialStore
         self.aiProviderOverride = aiProvider
-        self.integrationRegistry = integrationRegistry
         self.toolCatalog = toolCatalog
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
+        self.integrationRegistry = integrationRegistry ?? IntegrationRegistry.appIntegrationHarnessRegistry(
+            catalog: appIntegrationSkillCatalog
+        )
     }
 
     public func makeAgent() async throws -> AgentCore {

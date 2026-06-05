@@ -269,8 +269,9 @@ public extension IntegrationRegistry {
         legacyRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
         catalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) -> IntegrationRegistry {
-        IntegrationRegistry(
-            integrations: catalog.oauthConnectorIntegrations + legacyRegistry.integrationsNotMigrated(to: catalog)
+        let migratedCatalog = AppIntegrationSkillCatalog()
+        return IntegrationRegistry(
+            integrations: catalog.oauthConnectorIntegrations + legacyRegistry.integrationsNotMigrated(to: migratedCatalog)
         )
     }
 }
