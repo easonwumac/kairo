@@ -372,6 +372,26 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(saved.map(\.id), [memory.id])
     }
 
+    func testMemoryFeatureDependencyFactoryWiresMemoryAPI() async throws {
+        let memoryStore = InMemoryMemoryStore()
+        let dependencies = MemoryFeatureDependencyFactory().makeDependencies(
+            memoryAPI: KairoMemoryBackendService(memoryStore: memoryStore)
+        )
+        let memory = MemoryRecord(
+            title: "Factory memory",
+            summary: "Created through memory factory.",
+            content: "Memory dependency factory wiring",
+            source: .manual
+        )
+
+        try await dependencies.memoryAPI.save(memory)
+        let searchResults = try await dependencies.memoryAPI.search(query: "factory", limit: 10)
+        let export = try await dependencies.memoryAPI.export(limit: 10)
+
+        XCTAssertEqual(searchResults.map(\.id), [memory.id])
+        XCTAssertEqual(export.records.map(\.id), [memory.id])
+    }
+
     func testKairoEnvironmentBuildsAutomationsFeatureDependenciesForCompositionRoot() async throws {
         let recipeStore = InMemoryKairoRecipeStore()
         let memoryStore = InMemoryMemoryStore()

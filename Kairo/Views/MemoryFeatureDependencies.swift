@@ -9,6 +9,16 @@ public struct MemoryFeatureDependencies {
     }
 }
 
+public struct MemoryFeatureDependencyFactory: Sendable {
+    public init() {}
+
+    public func makeDependencies(
+        memoryAPI: (any KairoMemoryAPI)? = nil
+    ) -> MemoryFeatureDependencies {
+        MemoryFeatureDependencies(memoryAPI: memoryAPI)
+    }
+}
+
 private struct UnavailableMemoryAPI: KairoMemoryAPI {
     func list(limit: Int) async throws -> [MemoryRecord] {
         throw MemoryFeatureDependencyError.memoryAPIUnavailable
@@ -49,7 +59,7 @@ private enum MemoryFeatureDependencyError: LocalizedError {
 
 public extension KairoEnvironment {
     var memoryFeatureDependencies: MemoryFeatureDependencies {
-        MemoryFeatureDependencies(memoryAPI: backendAPI.memory)
+        MemoryFeatureDependencyFactory().makeDependencies(memoryAPI: backendAPI.memory)
     }
 }
 #endif

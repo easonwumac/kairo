@@ -22,7 +22,9 @@ public struct MemoryCenterView: View {
     }
 
     public init(memoryAPI: any KairoMemoryAPI) {
-        self.memoryAPI = memoryAPI
+        self.init(
+            dependencies: MemoryFeatureDependencyFactory().makeDependencies(memoryAPI: memoryAPI)
+        )
     }
 
     public var body: some View {
