@@ -8,6 +8,7 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
     public var visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding
     public var writeActionCandidateProvider: any AgentWriteActionCandidateProviding
     public var candidateMatcher: any AgentToolInvocationCandidateMatching
+    public var primaryCandidateCollector: any AgentPrimaryToolCandidateCollecting
     public var installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping
     public var legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping
     public var appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping
@@ -24,6 +25,7 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding = DefaultAgentVisibleHandoffCandidateProvider(),
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding = DefaultAgentWriteActionCandidateProvider(),
         candidateMatcher: any AgentToolInvocationCandidateMatching = DefaultAgentToolInvocationCandidateMatcher(),
+        primaryCandidateCollector: any AgentPrimaryToolCandidateCollecting = DefaultAgentPrimaryToolCandidateCollector(),
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping = DefaultInstalledSkillToolInvocationCandidateMapper(),
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping = DefaultLegacyIntegrationToolInvocationCandidateMapper(),
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = DefaultAppIntegrationToolInvocationCandidateMapper(),
@@ -40,6 +42,7 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
         self.visibleHandoffCandidateProvider = visibleHandoffCandidateProvider
         self.writeActionCandidateProvider = writeActionCandidateProvider
         self.candidateMatcher = candidateMatcher
+        self.primaryCandidateCollector = primaryCandidateCollector
         self.installedSkillCandidateMapper = installedSkillCandidateMapper
         self.legacyIntegrationCandidateMapper = legacyIntegrationCandidateMapper
         self.appIntegrationCandidateMapper = appIntegrationCandidateMapper

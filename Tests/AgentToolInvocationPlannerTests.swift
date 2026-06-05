@@ -455,6 +455,31 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.candidates, [injectedCandidate])
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedPrimaryCandidateCollector() throws {
+        let injectedCandidate = AgentToolInvocationCandidate(
+            id: "primary-collector-output",
+            title: "Primary Collector Output",
+            source: .installedSkill,
+            skillKind: .custom,
+            requiredCapabilities: [.chat],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Injected primary collector output"
+        )
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: []),
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
+            writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
+            primaryCandidateCollector: FixedPrimaryToolCandidateCollector(candidates: [injectedCandidate])
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "primary collector route"))
+
+        XCTAssertEqual(plan.candidates, [injectedCandidate])
+    }
+
     func testAgentToolInvocationPlannerAcceptsDependencyBundle() throws {
         let injectedCandidate = AgentToolInvocationCandidate(
             id: "dependency-bundle-candidate",
@@ -1029,10 +1054,32 @@ private struct FixedAgentToolInvocationCandidatePipeline: AgentToolInvocationCan
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding,
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding,
         candidateMatcher: any AgentToolInvocationCandidateMatching,
+        primaryCandidateCollector: any AgentPrimaryToolCandidateCollecting,
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
         fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending,
+        safetyPolicyEngine: SafetyPolicyEngine
+    ) -> [AgentToolInvocationCandidate] {
+        candidates
+    }
+}
+
+private struct FixedPrimaryToolCandidateCollector: AgentPrimaryToolCandidateCollecting {
+    var candidates: [AgentToolInvocationCandidate]
+
+    func candidates(
+        for request: AgentToolInvocationRequest,
+        normalizedText: String,
+        skillCatalog: AgentSkillCatalog,
+        integrationRegistry: any AppIntegrationRegistryProviding,
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding,
+        appIntegrationActionMapper: any AppIntegrationActionMapping,
+        appIntegrationActionParser: any AgentToolInvocationActionParsing,
+        candidateMatcher: any AgentToolInvocationCandidateMatching,
+        installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
+        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
+        appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
         safetyPolicyEngine: SafetyPolicyEngine
     ) -> [AgentToolInvocationCandidate] {
         candidates

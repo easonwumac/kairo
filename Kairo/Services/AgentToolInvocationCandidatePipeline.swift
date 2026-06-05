@@ -12,6 +12,7 @@ public protocol AgentToolInvocationCandidatePipelining: Sendable {
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding,
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding,
         candidateMatcher: any AgentToolInvocationCandidateMatching,
+        primaryCandidateCollector: any AgentPrimaryToolCandidateCollecting,
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
@@ -34,43 +35,27 @@ public struct DefaultAgentToolInvocationCandidatePipeline: AgentToolInvocationCa
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding,
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding,
         candidateMatcher: any AgentToolInvocationCandidateMatching,
+        primaryCandidateCollector: any AgentPrimaryToolCandidateCollecting,
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
         legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
         fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending,
         safetyPolicyEngine: SafetyPolicyEngine
     ) -> [AgentToolInvocationCandidate] {
-        var candidates: [AgentToolInvocationCandidate] = []
-        candidates.append(contentsOf: skillCatalog.installedSkills.compactMap { skill in
-            installedSkillCandidateMapper.candidate(
-                for: skill,
-                normalizedText: normalizedText,
-                matcher: candidateMatcher,
-                parser: appIntegrationActionParser,
-                safetyPolicyEngine: safetyPolicyEngine
-            )
-        })
-        candidates.append(contentsOf: appIntegrationSkillCatalog.skills.compactMap { skill in
-            guard candidateMatcher.matches(appIntegrationSkill: skill, normalizedText: normalizedText, parser: appIntegrationActionParser) else {
-                return nil
-            }
-            return appIntegrationCandidateMapper.candidate(
-                for: skill,
-                userText: request.userText,
-                normalizedText: normalizedText,
-                parser: appIntegrationActionParser,
-                actionMapper: appIntegrationActionMapper
-            )
-        })
-
-        candidates.append(contentsOf: integrationRegistry.oauthConnectorsNotMigrated(to: appIntegrationSkillCatalog).compactMap { integration in
-            return legacyIntegrationCandidateMapper.candidate(
-                for: integration,
-                normalizedText: normalizedText,
-                matcher: candidateMatcher,
-                parser: appIntegrationActionParser
-            )
-        })
+        var candidates = primaryCandidateCollector.candidates(
+            for: request,
+            normalizedText: normalizedText,
+            skillCatalog: skillCatalog,
+            integrationRegistry: integrationRegistry,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+            appIntegrationActionMapper: appIntegrationActionMapper,
+            appIntegrationActionParser: appIntegrationActionParser,
+            candidateMatcher: candidateMatcher,
+            installedSkillCandidateMapper: installedSkillCandidateMapper,
+            legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper,
+            appIntegrationCandidateMapper: appIntegrationCandidateMapper,
+            safetyPolicyEngine: safetyPolicyEngine
+        )
 
         fallbackActionCandidateAppender.appendFallbackCandidates(
             to: &candidates,
