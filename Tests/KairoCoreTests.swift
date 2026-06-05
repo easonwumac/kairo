@@ -314,6 +314,17 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains(AgentActionKind.unsupportedSandboxAction.rawValue))
     }
 
+    func testCapabilityPromptContextUsesInjectedAppIntegrationSectionProvider() {
+        let provider = StubAppIntegrationPromptContextProvider()
+        _ = CapabilityPromptContextBuilder(
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            appIntegrationPromptSection: provider,
+            skillCatalog: AgentSkillCatalog(skills: [])
+        ).build()
+
+        XCTAssertEqual(provider.buildCount, 1)
+    }
+
     func testAgentToolInvocationPlannerStaysSplitAcrossSupportFiles() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let plannerSource = try String(
@@ -2004,6 +2015,15 @@ private actor MockHTTPClient: HTTPClient {
 
 private enum MockHTTPClientError: Error {
     case missingRequest
+}
+
+private final class StubAppIntegrationPromptContextProvider: AppIntegrationPromptContextProviding, @unchecked Sendable {
+    private(set) var buildCount = 0
+
+    func buildAppIntegrationSection() -> String {
+        buildCount += 1
+        return ""
+    }
 }
 
 private actor CapturingAIProvider: AIProvider {
