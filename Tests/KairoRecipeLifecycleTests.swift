@@ -163,6 +163,72 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertTrue(result.summary.contains("2 draft"))
     }
 
+    func testScenarioAShareImportRunsSharedTextToReminderPreviewWithoutWritingBeforeConfirmation() async throws {
+        let sharedText = """
+        TODO:整理 Kairo App Integration Harness
+        TODO:補 Google Maps 和 Todoist tool 測試
+        private payload token should stay out of audit metadata
+        """
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [builder.text(sharedText, displayName: "Shared scenario")],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 42)
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let importAPI = KairoShareImportBackendService(shareIngestionQueue: queue)
+
+        let importResult = try await importAPI.importPendingShares(limit: 10)
+        let importedText = importResult.attachments.compactMap(\.textPreview).joined(separator: "\n")
+        let recipe = try XCTUnwrap(KairoRecipeTemplateFactory.sampleCatalog().recipe(id: "shared-text-to-tasks"))
+        let runner = KairoRecipeRunner(recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]))
+
+        let recipeResult = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .shareExtension,
+            input: importedText,
+            dryRun: false,
+            userConfirmed: true
+        ))
+        let reminderActions = recipeResult.proposedActions.filter { $0.kind == .createReminderDraft }
+
+        XCTAssertEqual(importResult.importedItemIDs, [item.id])
+        XCTAssertTrue(recipeResult.success)
+        XCTAssertTrue(recipeResult.requiresConfirmation)
+        XCTAssertEqual(reminderActions.count, 2)
+        XCTAssertTrue(reminderActions.allSatisfy(\.requiresConfirmation))
+
+        let scheduler = ScenarioReminderScheduler()
+        let auditLogger = InMemoryAuditLogger()
+        let executor = SandboxActionExecutor(
+            memoryStore: InMemoryMemoryStore(),
+            reminderScheduler: scheduler,
+            auditLogger: auditLogger
+        )
+        let previewOnlyResult = try await executor.execute(try XCTUnwrap(reminderActions.first), confirmed: false)
+        let draftsBeforeConfirmation = await scheduler.createdDrafts
+
+        XCTAssertFalse(previewOnlyResult.completed)
+        XCTAssertTrue(draftsBeforeConfirmation.isEmpty)
+
+        let confirmedResult = try await executor.execute(try XCTUnwrap(reminderActions.last), confirmed: true)
+        let draftsAfterConfirmation = await scheduler.createdDrafts
+        let auditEvents = try await auditLogger.list(limit: 10)
+
+        try await importAPI.clearImportedShares(ids: importResult.importedItemIDs, attachments: importResult.attachments)
+        let pendingAfterClear = try await queue.pendingItems(limit: 10)
+        let encodedAudit = String(data: try JSONEncoder().encode(auditEvents), encoding: .utf8) ?? ""
+
+        XCTAssertTrue(confirmedResult.completed)
+        XCTAssertEqual(draftsAfterConfirmation.count, 1)
+        XCTAssertTrue(pendingAfterClear.isEmpty)
+        XCTAssertEqual(auditEvents.map(\.actionKind), [.createReminderDraft, .createReminderDraft])
+        XCTAssertTrue(auditEvents.contains { $0.result == .rejected && !$0.userConfirmed })
+        XCTAssertTrue(auditEvents.contains { $0.result == .completed && $0.userConfirmed })
+        XCTAssertTrue(auditEvents.allSatisfy { $0.capabilityKeys == [.reminders] })
+        XCTAssertFalse(encodedAudit.contains(sharedText))
+    }
+
     func testDailyBriefingRecipeRunsAsDraftOnlyAndRequiresActionConfirmation() async throws {
         let recipe = KairoRecipeTemplateFactory.dailyBriefing()
         let runner = KairoRecipeRunner(recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]))
@@ -582,6 +648,19 @@ private struct StubKairoRecipePlanner: KairoRecipePlanning {
 
     func suggestRecipes(for request: String, now: Date) -> [KairoRecipe] {
         recipes
+    }
+}
+
+private actor ScenarioReminderScheduler: ReminderScheduling {
+    private(set) var createdDrafts: [ReminderDraft] = []
+
+    func requestAccess() async throws -> Bool {
+        true
+    }
+
+    func createReminder(from draft: ReminderDraft) async throws -> String {
+        createdDrafts.append(draft)
+        return "scenario-reminder-id"
     }
 }
 
