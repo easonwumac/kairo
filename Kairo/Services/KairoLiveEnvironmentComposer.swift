@@ -13,7 +13,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         appName: String = KairoSharedAppStorage.appName,
         appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier,
         credentialStore: any CredentialStore = KeychainCredentialStore(),
-        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
+        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
@@ -33,7 +33,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
     public init(
         paths: KairoPaths,
         credentialStore: any CredentialStore,
-        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
+        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,

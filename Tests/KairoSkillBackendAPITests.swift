@@ -245,10 +245,14 @@ final class KairoSkillBackendAPITests: XCTestCase {
             riskTier: .tier0ReadOnly
         ), confirmed: false)
         let auditEvents = try await environment.auditLogger.list(limit: 10)
+        let todoist = try XCTUnwrap(environment.oauthConnectorRegistry.integration(for: "todoist"))
+        let github = try XCTUnwrap(environment.oauthConnectorRegistry.integration(for: "github"))
 
         XCTAssertEqual(storedMemories.map(\.id), [memory.id])
         XCTAssertTrue(result.completed)
         XCTAssertEqual(auditEvents.map(\.actionKind), [.saveMemory])
+        XCTAssertEqual(todoist.oauth?.providerKey, "todoist")
+        XCTAssertEqual(github.oauth?.providerKey, "github")
     }
 
     func testLiveEnvironmentComposerUsesInjectedCatalogsAcrossEnvironment() async throws {
