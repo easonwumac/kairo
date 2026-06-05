@@ -460,6 +460,29 @@ final class SandboxActionExecutorTests: XCTestCase {
         XCTAssertEqual(auditEvents.first?.result, .completed)
     }
 
+    func testKairoUITestingActionFactoryBuildsDeterministicReminderExecutor() async throws {
+        let auditLogger = InMemoryAuditLogger()
+        let executor = KairoUITestingActionFactory(
+            memoryStore: InMemoryMemoryStore(),
+            auditLogger: auditLogger
+        ).makeActionExecutor()
+        let action = AgentAction(
+            kind: .createReminderDraft,
+            title: "Create Reminder",
+            rationale: "UI testing action executor should use deterministic schedulers.",
+            payload: .reminder(ReminderDraft(title: "Review UI testing action factory", notes: nil, dueDate: nil)),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let result = try await executor.execute(action, confirmed: true)
+        let auditEvents = try await auditLogger.list(limit: 10)
+
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(result.createdIdentifier, "ui-testing-reminder-id")
+        XCTAssertEqual(auditEvents.first?.actionKind, .createReminderDraft)
+        XCTAssertEqual(auditEvents.first?.result, .completed)
+    }
+
     func testSandboxActionExecutorCreatesCalendarEventThroughInjectedScheduler() async throws {
         let scheduler = MockCalendarScheduler(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), calendarScheduler: scheduler)
