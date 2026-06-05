@@ -18,6 +18,10 @@ public actor ShortcutNodeRuntime {
     }
 
     public func run(_ kind: ShortcutNodeKind, input: ShortcutNodeInput) async throws -> ShortcutNodeOutput {
+        if let blockedTool = actionGate.blockedTool(for: kind) {
+            return blockedOutput(kind: kind, tool: blockedTool)
+        }
+
         let output: ShortcutNodeOutput
         switch kind {
         case .saveMemory:
@@ -54,6 +58,19 @@ public actor ShortcutNodeRuntime {
             output = try await ask(input)
         }
         return filteredOutput(output)
+    }
+
+    private func blockedOutput(kind: ShortcutNodeKind, tool: BuiltInPhoneToolDefinition) -> ShortcutNodeOutput {
+        ShortcutNodeOutput(
+            kind: kind,
+            displayText: tool.fallback.unsupportedReason,
+            fields: [
+                "toolID": tool.id.rawValue,
+                "toolAvailability": tool.availabilityStatus.rawValue,
+                "toolFallback": tool.fallback.safeAlternative,
+                "success": "false"
+            ]
+        )
     }
 
     private func filteredOutput(_ output: ShortcutNodeOutput) -> ShortcutNodeOutput {

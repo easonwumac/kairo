@@ -153,7 +153,7 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertTrue(result.stepResults.allSatisfy(\.success))
     }
 
-    func testKairoRecipeRunnerFiltersPhoneActionsThroughBuiltInToolCatalog() async throws {
+    func testKairoRecipeRunnerPreflightsPhoneToolAvailabilityBeforeExecutingStep() async throws {
         var reminderTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .reminderWrite))
         reminderTool.availabilityStatus = .unsupported
         let recipe = try XCTUnwrap(KairoRecipeTemplateFactory.sampleCatalog().recipe(id: "shared-text-to-tasks"))
@@ -170,9 +170,10 @@ final class KairoRecipeLifecycleTests: XCTestCase {
             userConfirmed: true
         ))
 
-        XCTAssertTrue(result.success)
+        XCTAssertFalse(result.success)
         XCTAssertTrue(result.proposedActions.isEmpty)
-        XCTAssertTrue(result.stepResults.contains { $0.summary.contains("reminder draft") })
+        XCTAssertEqual(result.errorMessage, "reminder.write is unsupported.")
+        XCTAssertTrue(result.stepResults.contains { $0.errorMessage == "reminder.write is unsupported." })
     }
 
     func testKairoRecipeRunnerUsesLocalizedLocalFallbackWhenAskStepHasNoProvider() async throws {

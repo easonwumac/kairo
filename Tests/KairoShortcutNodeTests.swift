@@ -313,7 +313,7 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertEqual(request.value, .bool(true))
     }
 
-    func testShortcutRuntimeFiltersProposedActionsThroughBuiltInToolCatalog() async throws {
+    func testShortcutRuntimePreflightsNodeAvailabilityThroughBuiltInToolCatalog() async throws {
         var homeTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .homeKitPreview))
         homeTool.availabilityStatus = .unsupported
         let runtime = ShortcutNodeRuntime(
@@ -329,6 +329,10 @@ final class KairoShortcutNodeTests: XCTestCase {
 
         XCTAssertTrue(output.proposedActions.isEmpty)
         XCTAssertEqual(output.kind, .previewHomeAction)
+        XCTAssertEqual(output.fields["toolID"], BuiltInPhoneToolID.homeKitPreview.rawValue)
+        XCTAssertEqual(output.fields["toolAvailability"], BuiltInPhoneToolAvailabilityStatus.unsupported.rawValue)
+        XCTAssertEqual(output.fields["success"], "false")
+        XCTAssertTrue(output.displayText.contains("HomeKit"))
     }
 
     func testShortcutDraftReplyNodeReturnsDraftWithoutSending() async throws {

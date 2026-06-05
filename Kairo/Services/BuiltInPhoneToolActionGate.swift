@@ -20,4 +20,18 @@ public struct BuiltInPhoneToolActionGate: Sendable {
     public func filterExecutablePreviews(_ actions: [AgentAction]) -> [AgentAction] {
         actions.filter(allowsExecutablePreview)
     }
+
+    public func blockedTool(for shortcutNodeKind: ShortcutNodeKind) -> BuiltInPhoneToolDefinition? {
+        guard let tool = toolCatalog.tool(for: shortcutNodeKind) else {
+            return nil
+        }
+        return tool.canBeSuggestedAsExecutable ? nil : tool
+    }
+
+    public func blockedTool(for recipeStepKind: KairoRecipeStepKind) -> BuiltInPhoneToolDefinition? {
+        guard let tool = toolCatalog.tool(for: recipeStepKind) else {
+            return nil
+        }
+        return tool.canBeSuggestedAsExecutable ? nil : tool
+    }
 }

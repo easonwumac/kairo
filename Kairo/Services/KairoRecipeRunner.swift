@@ -65,6 +65,10 @@ public struct KairoRecipeRunner: Sendable {
 
         for step in recipe.steps {
             let inputText = resolveInput(step.input, requestInput: request.input, previousOutput: previousOutput)
+            if let blockedTool = actionGate.blockedTool(for: step.kind) {
+                stepResults.append(blockedStepResult(step, tool: blockedTool))
+                continue
+            }
             let execution = try await execute(
                 step,
                 inputText: inputText,
@@ -93,6 +97,19 @@ public struct KairoRecipeRunner: Sendable {
             requiresConfirmation: requiresActionConfirmation,
             success: stepResults.allSatisfy(\.success),
             errorMessage: stepResults.first(where: { !$0.success })?.errorMessage
+        )
+    }
+
+    private func blockedStepResult(
+        _ step: KairoRecipeStep,
+        tool: BuiltInPhoneToolDefinition
+    ) -> KairoRecipeStepResult {
+        KairoRecipeStepResult(
+            stepID: step.id,
+            summary: tool.fallback.unsupportedReason,
+            outputText: tool.fallback.safeAlternative,
+            success: false,
+            errorMessage: "\(tool.id.rawValue) is \(tool.availabilityStatus.rawValue)."
         )
     }
 
