@@ -366,6 +366,18 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertTrue(plan.proposedActions.isEmpty)
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedCandidateFilter() {
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: .default,
+            candidateFilter: BlockingAgentToolCandidateFilter()
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "建立行程：週五 10:00 Kairo review"))
+
+        XCTAssertTrue(plan.candidates.isEmpty)
+        XCTAssertTrue(plan.proposedActions.isEmpty)
+    }
+
     func testAgentToolInvocationPlannerFailsClosedWhenActionCandidateHasNoCatalogTool() {
         let planner = AgentToolInvocationPlanner(
             skillCatalog: .default,
@@ -376,5 +388,11 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
 
         XCTAssertFalse(plan.candidates.contains { $0.id == "action-send-notification" })
         XCTAssertTrue(plan.proposedActions.isEmpty)
+    }
+}
+
+private struct BlockingAgentToolCandidateFilter: AgentToolCandidateFiltering {
+    func allowsCandidate(_ candidate: AgentToolInvocationCandidate) -> Bool {
+        false
     }
 }

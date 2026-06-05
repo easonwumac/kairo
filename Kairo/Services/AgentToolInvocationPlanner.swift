@@ -3,18 +3,21 @@ import Foundation
 public struct AgentToolInvocationPlanner: Sendable {
     public var skillCatalog: AgentSkillCatalog
     public var integrationRegistry: IntegrationRegistry
-    public var toolCatalog: any BuiltInPhoneToolCatalogProviding
+    public var candidateFilter: any AgentToolCandidateFiltering
     public var safetyPolicyEngine: SafetyPolicyEngine
 
     public init(
         skillCatalog: AgentSkillCatalog = .default,
         integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        candidateFilter: (any AgentToolCandidateFiltering)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
     ) {
         self.skillCatalog = skillCatalog
         self.integrationRegistry = integrationRegistry
-        self.toolCatalog = toolCatalog
+        self.candidateFilter = candidateFilter ?? PhoneToolCandidateFilter(
+            actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        )
         self.safetyPolicyEngine = safetyPolicyEngine
     }
 
@@ -67,17 +70,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         }
 
         return AgentToolInvocationPlan(
-            candidates: uniqueCandidates(candidates).filter(catalogAllowsExecutableCandidate)
+            candidates: uniqueCandidates(candidates).filter(candidateFilter.allowsCandidate)
         )
-    }
-
-    private func catalogAllowsExecutableCandidate(_ candidate: AgentToolInvocationCandidate) -> Bool {
-        guard let action = candidate.action else {
-            return true
-        }
-        guard let tool = toolCatalog.tool(for: action.kind) else {
-            return false
-        }
-        return tool.canBeSuggestedAsExecutable
     }
 }
