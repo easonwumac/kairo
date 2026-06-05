@@ -176,6 +176,30 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertTrue(result.stepResults.contains { $0.errorMessage == "reminder.write is unsupported." })
     }
 
+    func testLiveRecipeRunnerProviderUsesInjectedToolCatalogForStepGate() async throws {
+        let paths = KairoPaths(appName: "LiveRecipeRunnerProvider-\(UUID().uuidString)")
+        let recipe = try XCTUnwrap(KairoRecipeTemplateFactory.sampleCatalog().recipe(id: "shared-text-to-tasks"))
+        let store = try await FileBackedKairoRecipeStore(fileURL: paths.kairoRecipeStoreURL)
+        try await store.save(recipe)
+        let provider = LiveKairoRecipeRunnerProvider(
+            paths: paths,
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [])
+        )
+
+        let runner = try await provider.makeRunner()
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .shortcut,
+            input: "TODO: Follow up with design",
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertFalse(result.success)
+        XCTAssertTrue(result.proposedActions.isEmpty)
+        XCTAssertTrue(result.stepResults.contains { $0.errorMessage == "reminder.write is unsupported." })
+    }
+
     func testKairoRecipeRunnerUsesLocalizedLocalFallbackWhenAskStepHasNoProvider() async throws {
         let recipe = KairoRecipe(
             id: "ask-local-fallback",

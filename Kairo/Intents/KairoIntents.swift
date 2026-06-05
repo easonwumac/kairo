@@ -363,8 +363,7 @@ public struct RunKairoRecipeIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let store = try await KairoRecipeIntentSupport.recipeStore()
-        let runner = KairoRecipeRunner(recipeStore: store)
+        let runner = try await KairoRecipeIntentSupport.runner()
         let result = try await runner.run(KairoRecipeRunRequest(
             recipeID: recipeID,
             surface: .shortcut,
@@ -405,7 +404,7 @@ public struct SuggestKairoRecipeIntent: AppIntent {
             )
         }
 
-        let store = try await KairoRecipeIntentSupport.recipeStore()
+        let store = try await KairoRecipeIntentSupport.store()
         try await store.save(recipe)
         let encoded = try KairoRecipeIntentSupport.encode(recipe)
         return .result(
@@ -423,7 +422,7 @@ public struct ListKairoRecipesIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let store = try await KairoRecipeIntentSupport.recipeStore()
+        let store = try await KairoRecipeIntentSupport.store()
         let recipes = try await store.listRecipes()
         let enabledRecipes = recipes.filter(\.isEnabled)
         let summary: String
@@ -448,13 +447,13 @@ public struct RunKairoDailyBriefingIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let store = try await KairoRecipeIntentSupport.recipeStore()
+        let store = try await KairoRecipeIntentSupport.store()
         let dailyID = "daily-briefing"
         if try await store.recipe(id: dailyID) == nil {
             try await store.save(KairoRecipeTemplateFactory.dailyBriefing())
         }
 
-        let runner = KairoRecipeRunner(recipeStore: store)
+        let runner = KairoRecipeIntentSupport.runner(store: store)
         let result = try await runner.run(KairoRecipeRunRequest(
             recipeID: dailyID,
             surface: .shortcut,
@@ -476,9 +475,26 @@ public struct RunKairoDailyBriefingIntent: AppIntent {
 }
 
 private enum KairoRecipeIntentSupport {
-    static func recipeStore() async throws -> FileBackedKairoRecipeStore {
-        let paths = KairoSharedAppStorage.paths()
-        return try await FileBackedKairoRecipeStore(fileURL: paths.kairoRecipeStoreURL)
+    static func store(
+        provider: any KairoRecipeRunnerProviding = LiveKairoRecipeRunnerProvider()
+    ) async throws -> any KairoRecipeStore {
+        try await provider.makeStore()
+    }
+
+    static func runner(
+        provider: any KairoRecipeRunnerProviding = LiveKairoRecipeRunnerProvider()
+    ) async throws -> KairoRecipeRunner {
+        try await provider.makeRunner()
+    }
+
+    static func runner(
+        store: any KairoRecipeStore,
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+    ) -> KairoRecipeRunner {
+        KairoRecipeRunner(
+            recipeStore: store,
+            toolCatalog: toolCatalog
+        )
     }
 
     static func encode<T: Encodable>(_ value: T) throws -> String {
