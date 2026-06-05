@@ -19,11 +19,14 @@ public protocol AgentPrimaryToolCandidateCollecting: Sendable {
 
 public struct DefaultAgentPrimaryToolCandidateCollector: AgentPrimaryToolCandidateCollecting {
     private let installedSkillCandidateCollector: any AgentInstalledSkillCandidateCollecting
+    private let appIntegrationSkillCandidateCollector: any AgentAppIntegrationSkillCandidateCollecting
 
     public init(
-        installedSkillCandidateCollector: any AgentInstalledSkillCandidateCollecting = DefaultAgentInstalledSkillCandidateCollector()
+        installedSkillCandidateCollector: any AgentInstalledSkillCandidateCollecting = DefaultAgentInstalledSkillCandidateCollector(),
+        appIntegrationSkillCandidateCollector: any AgentAppIntegrationSkillCandidateCollecting = DefaultAgentAppIntegrationSkillCandidateCollector()
     ) {
         self.installedSkillCandidateCollector = installedSkillCandidateCollector
+        self.appIntegrationSkillCandidateCollector = appIntegrationSkillCandidateCollector
     }
 
     public func candidates(
@@ -49,8 +52,8 @@ public struct DefaultAgentPrimaryToolCandidateCollector: AgentPrimaryToolCandida
             installedSkillCandidateMapper: installedSkillCandidateMapper,
             safetyPolicyEngine: safetyPolicyEngine
         ))
-        candidates.append(contentsOf: appIntegrationCandidates(
-            request: request,
+        candidates.append(contentsOf: appIntegrationSkillCandidateCollector.candidates(
+            userText: request.userText,
             normalizedText: normalizedText,
             appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             appIntegrationActionMapper: appIntegrationActionMapper,
@@ -67,29 +70,6 @@ public struct DefaultAgentPrimaryToolCandidateCollector: AgentPrimaryToolCandida
             legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper
         ))
         return candidates
-    }
-
-    private func appIntegrationCandidates(
-        request: AgentToolInvocationRequest,
-        normalizedText: String,
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding,
-        appIntegrationActionMapper: any AppIntegrationActionMapping,
-        parser: any AgentToolInvocationActionParsing,
-        candidateMatcher: any AgentToolInvocationCandidateMatching,
-        appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping
-    ) -> [AgentToolInvocationCandidate] {
-        appIntegrationSkillCatalog.skills.compactMap { skill in
-            guard candidateMatcher.matches(appIntegrationSkill: skill, normalizedText: normalizedText, parser: parser) else {
-                return nil
-            }
-            return appIntegrationCandidateMapper.candidate(
-                for: skill,
-                userText: request.userText,
-                normalizedText: normalizedText,
-                parser: parser,
-                actionMapper: appIntegrationActionMapper
-            )
-        }
     }
 
     private func legacyIntegrationCandidates(
