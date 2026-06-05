@@ -13,13 +13,14 @@ struct SettingsConnectionSetupSection<Content: View>: View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
                 setupToggle
-                detailsToggle
-
-                if showsConnectionDetails {
-                    connectionDetails
-                }
 
                 if showsConnectionSetup {
+                    detailsToggle
+
+                    if showsConnectionDetails {
+                        connectionDetails
+                    }
+
                     Divider()
                     content()
                 }

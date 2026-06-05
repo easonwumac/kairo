@@ -34,7 +34,7 @@ public struct SettingsView: View {
     @State var localModelStatusMessage: String?
     @State var localModelStatusMessageModelID: String?
     @State private var privacyStatusMessage: String?
-    @State private var showConnectionSetup = true
+    @State private var showConnectionSetup = false
     @State private var showConnectionDetails = false
     @State private var showAPIKeyEditor = false
     @State private var expandedOAuthConnectorDetails: Set<String> = []
