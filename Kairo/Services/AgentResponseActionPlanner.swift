@@ -41,12 +41,12 @@ public protocol AgentResponseActionPlanning: Sendable {
 
 public struct DefaultAgentResponseActionPlanner: AgentResponseActionPlanning {
     private let actionGate: any PhoneToolActionGating
-    private let safetyPolicyEngine: SafetyPolicyEngine
+    private let safetyPolicyEngine: any ActionSafetyPolicyEvaluating
     private let memoryCandidateExtractor: MemoryCandidateExtractor
 
     public init(
         actionGate: any PhoneToolActionGating,
-        safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
+        safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine(),
         memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
     ) {
         self.actionGate = actionGate

@@ -61,6 +61,34 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         XCTAssertTrue(response.proposedActions.isEmpty)
     }
 
+    func testResponseActionPlannerUsesInjectedSafetyPolicyForActionPreviews() throws {
+        let action = AgentAction(
+            kind: .createReminderDraft,
+            title: "Create Reminder",
+            rationale: "Provider suggested a reminder write.",
+            payload: .reminder(ReminderDraft(
+                title: "Review injected safety policy",
+                notes: nil,
+                dueDate: nil
+            )),
+            riskTier: .tier2LowRiskWrite
+        )
+        let planner = DefaultAgentResponseActionPlanner(
+            actionGate: BuiltInPhoneToolActionGate(),
+            safetyPolicyEngine: BlockingResponseActionSafetyPolicy()
+        )
+
+        let plan = planner.planActions(for: AgentResponseActionPlanningRequest(
+            userMessage: "Create a reminder",
+            modelActions: [action],
+            toolCandidates: [],
+            memoryContext: AgentMemoryContext(relevantMemories: [], deduplicationContext: [MemoryRecord]()),
+            privacyMode: .standard
+        ))
+
+        XCTAssertTrue(plan.proposedActions.isEmpty)
+    }
+
     func testAgentCoreKeepsUnsupportedSandboxExplanationOutsideExecutableCatalog() async throws {
         let explanation = UnsupportedActionExplanation(
             requestedAction: "Read another app",
@@ -213,5 +241,15 @@ private struct BlockingPhoneToolActionGate: PhoneToolActionGating {
 
     func blockedTool(for recipeStepKind: KairoRecipeStepKind) -> BuiltInPhoneToolDefinition? {
         nil
+    }
+}
+
+private struct BlockingResponseActionSafetyPolicy: ActionSafetyPolicyEvaluating {
+    func evaluate(_ action: AgentAction) -> SafetyPolicyDecision {
+        SafetyPolicyDecision(
+            allowed: false,
+            requiresConfirmation: false,
+            reason: "blocked"
+        )
     }
 }
