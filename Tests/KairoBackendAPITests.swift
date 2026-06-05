@@ -1227,11 +1227,22 @@ final class KairoBackendAPITests: XCTestCase {
 
     func testKairoEnvironmentBuildsAccessFeatureDependenciesForCompositionRoot() async throws {
         let skillManagerService = try await makeBackendTestAgentSkillManagerService()
+        let capabilityRegistry = CapabilityRegistry(capabilities: [
+            Capability(
+                key: .memory,
+                displayName: "Injected Memory",
+                description: "Injected capability registry entry.",
+                permission: .none,
+                status: .available,
+                isMVP: true
+            )
+        ])
         let environment = KairoEnvironment(
             memoryStore: InMemoryMemoryStore(),
             credentialStore: InMemoryCredentialStore(),
             aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Composer response")),
-            agentSkillManagerService: skillManagerService
+            agentSkillManagerService: skillManagerService,
+            capabilityRegistry: capabilityRegistry
         )
 
         let dependencies = environment.accessFeatureDependencies
@@ -1243,6 +1254,8 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertFalse(catalog.skills.isEmpty)
         XCTAssertTrue(tools.contains { $0.toolID == .reminderWrite })
         XCTAssertTrue(integrations.contains { $0.skillID == .googleMapsDirectionsHandoff })
+        XCTAssertEqual(dependencies.capabilityRegistry.capabilities.map(\.key), [.memory])
+        XCTAssertEqual(dependencies.capabilityRegistry.capabilities.map(\.status), [.available])
         XCTAssertNil(dependencies.marketplaceCatalogService)
     }
 

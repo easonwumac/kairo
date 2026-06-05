@@ -41,6 +41,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public let actionExecutor: any ActionExecutor
     public let toolCatalog: any BuiltInPhoneToolCatalogProviding
     public let appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
+    public let capabilityRegistry: CapabilityRegistry
     public let shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol
 
     public init(
@@ -68,6 +69,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         actionExecutor: (any ActionExecutor)? = nil,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         shortcutDemoRecipeRunner: (any ShortcutDemoRecipeRunnerProtocol)? = nil
     ) {
         self.memoryStore = memoryStore
@@ -96,6 +98,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         self.actionExecutor = actionExecutor ?? SandboxActionExecutor(memoryStore: memoryStore, auditLogger: auditLogger)
         self.toolCatalog = toolCatalog
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
+        self.capabilityRegistry = capabilityRegistry
         self.shortcutDemoRecipeRunner = shortcutDemoRecipeRunner ?? ShortcutDemoRecipeRunner(
             runtime: ShortcutNodeRuntime(
                 memoryStore: memoryStore,

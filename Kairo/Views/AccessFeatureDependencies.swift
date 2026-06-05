@@ -48,7 +48,8 @@ public extension KairoEnvironment {
         AccessFeatureDependencyFactory().makeDependencies(
             accessAPI: backendAPI.access,
             skillManagerService: agentSkillManagerService,
-            marketplaceCatalogService: agentSkillMarketplaceCatalogService
+            marketplaceCatalogService: agentSkillMarketplaceCatalogService,
+            capabilityRegistry: capabilityRegistry
         )
     }
 }
