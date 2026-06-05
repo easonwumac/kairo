@@ -223,7 +223,7 @@ public struct ChatView: View {
     }
 
     private var chatMessagesTopPadding: CGFloat {
-        viewModel.currentThread.messages.count <= 1 ? 92 : 16
+        viewModel.currentThread.messages.count <= 1 ? 116 : 16
     }
 
     private var composer: some View {
