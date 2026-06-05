@@ -89,8 +89,8 @@
 "access.status.unavailable" = "%lld unavailable";
 "access.status.details.title" = "Access status";
 "access.status.details.subtitle" = "Review rules, setup needs, and unavailable tools stay here.";
-"access.capabilities.section" = "Everyday tools";
-"access.capabilities.focusedFooter" = "The useful everyday tools, shown before advanced setup.";
+"access.capabilities.section" = "Phone actions";
+"access.capabilities.focusedFooter" = "These are phone capabilities Chat can suggest, preview, and run only after confirmation.";
 "access.capabilities.footer" = "Unavailable items stay visible so the boundary is clear; Kairo will not bypass iOS permissions.";
 "access.capabilities.more" = "%lld more tools";
 "access.capabilities.more.show" = "Show more phone tools";
@@ -121,8 +121,8 @@
 "access.skills.manager.footer" = "Only enabled tools can appear in Chat suggestions.";
 "access.skills.advanced.title" = "Custom tools";
 "access.skills.advanced.footer" = "Only needed when you add or update a tool by hand.";
-"access.skills.advanced.toggle.title" = "Tool options";
-"access.skills.advanced.toggle.subtitle" = "Manage enabled tools or add one manually.";
+"access.skills.advanced.toggle.title" = "Manage and add";
+"access.skills.advanced.toggle.subtitle" = "Review enabled items, disable tools, or add a custom tool manually.";
 "access.skills.advanced.toggle.collapsed" = "Collapsed";
 "access.skills.advanced.toggle.expanded" = "Expanded";
 "access.skills.manifestImport.title" = "Add tool from file";

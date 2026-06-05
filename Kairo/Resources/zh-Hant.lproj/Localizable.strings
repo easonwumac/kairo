@@ -89,8 +89,8 @@
 "access.status.unavailable" = "%lld 個不可用";
 "access.status.details.title" = "權限狀態";
 "access.status.details.subtitle" = "檢查規則、需設定與不可用工具都放在這裡。";
-"access.capabilities.section" = "常用工具";
-"access.capabilities.focusedFooter" = "先顯示日常最常用工具，進階設定放後面。";
+"access.capabilities.section" = "手機動作";
+"access.capabilities.focusedFooter" = "這些是 Chat 可以建議你預覽、確認後執行的手機能力。";
 "access.capabilities.footer" = "不可用項目仍會顯示，讓邊界清楚；Kairo 不會繞過 iOS 權限。";
 "access.capabilities.more" = "還有 %lld 個工具";
 "access.capabilities.more.show" = "顯示更多手機工具";
@@ -121,8 +121,8 @@
 "access.skills.manager.footer" = "只有啟用的工具會出現在 Chat 建議。";
 "access.skills.advanced.title" = "自訂工具";
 "access.skills.advanced.footer" = "只有手動加入或更新工具時才需要。";
-"access.skills.advanced.toggle.title" = "工具選項";
-"access.skills.advanced.toggle.subtitle" = "管理已啟用工具，或手動加入新工具。";
+"access.skills.advanced.toggle.title" = "管理與新增";
+"access.skills.advanced.toggle.subtitle" = "查看已啟用項目、停用工具，或手動加入自訂工具。";
 "access.skills.advanced.toggle.collapsed" = "已收合";
 "access.skills.advanced.toggle.expanded" = "已展開";
 "access.skills.manifestImport.title" = "從檔案加入工具";
