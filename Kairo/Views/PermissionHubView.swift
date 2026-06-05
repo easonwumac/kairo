@@ -55,21 +55,23 @@ public struct PermissionHubView: View {
 
     public var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    accessOverviewCard
-                    primaryToolsCard
-                    advancedSetupCard
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        accessOverviewCard
+                        primaryToolsCard
+                        advancedSetupCard
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding)
+                    .padding(.bottom, 32)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 18)
-                .padding(.bottom, 32)
-            }
-            .background(KairoDesign.background.ignoresSafeArea())
-            .scrollIndicators(.hidden)
-            .navigationTitle(KairoL10n.string("access.navigation.title"))
-            .task {
-                await loadAccessData()
+                .background(KairoDesign.background.ignoresSafeArea())
+                .scrollIndicators(.hidden)
+                .navigationTitle(KairoL10n.string("access.navigation.title"))
+                .task {
+                    await loadAccessData()
+                }
             }
         }
     }

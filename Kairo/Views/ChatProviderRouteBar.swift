@@ -5,7 +5,6 @@ struct ChatProviderRouteBar: View {
     let status: ChatProviderRouteStatus
     let isPrivateChatEnabled: Bool
     let canEdit: Bool
-    let togglePrivateChat: () -> Void
     let setPreference: (ProviderRoutePreference) -> Void
     @State private var isPalettePresented = false
 
@@ -79,19 +78,6 @@ struct ChatProviderRouteBar: View {
 
     private var routePalette: some View {
         VStack(spacing: 7) {
-            Button {
-                togglePrivateChat()
-                isPalettePresented = false
-            } label: {
-                routePaletteRow(
-                    title: isPrivateChatEnabled ? KairoL10n.string("chat.mode.privateOff") : KairoL10n.string("chat.mode.privateOn"),
-                    systemImage: isPrivateChatEnabled ? "lock.open" : "lock",
-                    isSelected: false
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("chat.private-chat.toggle")
-
             if canEdit {
                 ForEach(ProviderRoutePreference.settingsChoices, id: \.rawValue) { preference in
                     Button {

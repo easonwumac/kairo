@@ -231,6 +231,14 @@ public struct RootView: View {
     private var pageActionsPalette: some View {
         VStack(spacing: 7) {
             pageActionRow(
+                title: KairoL10n.string("chat.thread.action.privateNew"),
+                systemImage: "lock",
+                tint: KairoDesign.ink
+            ) {
+                triggerChatChromeAction(.newPrivateThread)
+            }
+
+            pageActionRow(
                 title: KairoL10n.string("chat.thread.action.clear"),
                 systemImage: "trash",
                 tint: KairoDesign.red

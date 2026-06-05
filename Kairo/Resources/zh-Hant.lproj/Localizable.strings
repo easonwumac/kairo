@@ -496,6 +496,7 @@
 "chat.new" = "新聊天";
 "chat.delete" = "刪除";
 "chat.thread.action.clear" = "清除對話";
+"chat.thread.action.privateNew" = "新私密聊天";
 "chat.thread.action.delete" = "刪除對話";
 "chat.thread.action.compact" = "壓縮對話";
 "chat.thread.action.fork" = "Fork 對話";

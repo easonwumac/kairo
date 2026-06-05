@@ -6,6 +6,7 @@ struct LocalModelsCompactView: View {
     @State private var pendingDownloadModelID: String?
     @State private var showAdvancedDiagnostics = false
 
+    var topPadding: CGFloat = 16
     let localModelStatus: LocalModelSettingsStatus
     let localModelDownloadProgress: LocalModelDownloadProgressState?
     let localModelStatusMessage: String?
@@ -33,11 +34,11 @@ struct LocalModelsCompactView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
-            .padding(.top, 16)
+            .padding(.top, topPadding)
             .padding(.bottom, 32)
         }
         .scrollIndicators(.visible)
-        .background(Color(.sRGB, white: 0.98, opacity: 1).ignoresSafeArea())
+        .background(KairoDesign.background.ignoresSafeArea())
         .accessibilityIdentifier("settings.models.screen")
     }
 
@@ -179,10 +180,10 @@ struct LocalModelsCompactView: View {
             .accessibilityLabel(KairoL10n.string("settings.models.refreshCatalog"))
         }
         .padding(12)
-        .background(Color.white.opacity(0.86), in: RoundedRectangle(cornerRadius: 8))
+        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(KairoDesign.line, lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(localModelCatalogSourceText)
@@ -253,10 +254,10 @@ struct LocalModelsCompactView: View {
             }
         }
         .padding(12)
-        .background(Color.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 8))
+        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(KairoDesign.line, lineWidth: 1)
         }
     }
 
@@ -497,10 +498,10 @@ struct LocalModelsCompactView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 8))
+        .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(KairoDesign.line, lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.models.\(row.modelID).row")
@@ -636,10 +637,10 @@ struct LocalModelsCompactView: View {
             }
         }
         .padding(10)
-        .background(Color.blue.opacity(0.055), in: RoundedRectangle(cornerRadius: 7))
+        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 7)
-                .stroke(Color.blue.opacity(0.14), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(KairoDesign.blue.opacity(0.18), lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.models.\(row.modelID).download-preview")
@@ -681,10 +682,10 @@ struct LocalModelsCompactView: View {
             }
         }
         .padding(10)
-        .background(Color.orange.opacity(0.055), in: RoundedRectangle(cornerRadius: 7))
+        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 7)
-                .stroke(Color.orange.opacity(0.14), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(KairoDesign.amber.opacity(0.18), lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(progress.displayText)

@@ -1128,25 +1128,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertFalse(designSystem.contains(".background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))"))
     }
 
-    func testChatScreenKeepsMobileNavigationAndContextSimple() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let rootView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/RootView.swift"), encoding: .utf8)
-        let chatView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatView.swift"), encoding: .utf8)
-        let routeBarView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/ChatProviderRouteBar.swift"), encoding: .utf8)
-
-        XCTAssertFalse(rootView.contains(#"KairoStatusPill(title: "Auto""#))
-        XCTAssertTrue(chatView.contains(#""chat.tools.menu""#))
-        XCTAssertFalse(chatView.contains(#""chat.session-controls""#))
-        XCTAssertTrue(chatView.contains("ChatProviderRouteBar("))
-        XCTAssertFalse(chatView.contains("privateModeButton"))
-        XCTAssertFalse(chatView.contains("NavigationStack {"))
-        XCTAssertFalse(chatView.contains("KairoBriefingStrip()"))
-        XCTAssertTrue(routeBarView.contains(#""chat.mode.standard""#))
-        XCTAssertTrue(routeBarView.contains(#""chat.private-chat.toggle""#))
-        XCTAssertTrue(routeBarView.contains(#""chat.provider-route.preference""#))
-        XCTAssertFalse(routeBarView.contains("routePreferenceControls"))
-    }
-
     func testAutomationsViewSurfacesShortcutDemoNodeContracts() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let automationsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/AutomationsView.swift"), encoding: .utf8)

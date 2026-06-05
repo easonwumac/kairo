@@ -496,6 +496,7 @@
 "chat.new" = "New";
 "chat.delete" = "Delete";
 "chat.thread.action.clear" = "Clear chat";
+"chat.thread.action.privateNew" = "New private chat";
 "chat.thread.action.delete" = "Delete chat";
 "chat.thread.action.compact" = "Compact chat";
 "chat.thread.action.fork" = "Fork chat";

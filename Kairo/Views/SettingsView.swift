@@ -187,34 +187,36 @@ public struct SettingsView: View {
 
     private var settingsFormContent: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    SettingsAnswerOverviewCard(
-                        hasAPIKey: hasAPIKey,
-                        routePreference: localModelStatus.preference,
-                        connectedConnectorCount: connectedConnectorCount,
-                        localModelInstalled: localModelStatus.localModelInstalled
-                    )
-                    appearanceSettingsSection
-                    connectionSetupSection
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        SettingsAnswerOverviewCard(
+                            hasAPIKey: hasAPIKey,
+                            routePreference: localModelStatus.preference,
+                            connectedConnectorCount: connectedConnectorCount,
+                            localModelInstalled: localModelStatus.localModelInstalled
+                        )
+                        appearanceSettingsSection
+                        connectionSetupSection
 
-                    if let connectorStatusMessage {
-                        KairoGroupedSurface {
-                            Label(connectorStatusMessage, systemImage: "info.circle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                        if let connectorStatusMessage {
+                            KairoGroupedSurface {
+                                Label(connectorStatusMessage, systemImage: "info.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .accessibilityIdentifier("settings.status.message")
                         }
-                        .accessibilityIdentifier("settings.status.message")
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding)
+                    .padding(.bottom, 32)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 24)
-                .padding(.bottom, 32)
+                .navigationTitle(mode.navigationTitle)
+                .background(KairoDesign.background.ignoresSafeArea())
+                .accessibilityIdentifier("settings.form")
             }
-            .navigationTitle(mode.navigationTitle)
-            .background(KairoDesign.background.ignoresSafeArea())
-            .accessibilityIdentifier("settings.form")
         }
     }
 
@@ -293,39 +295,44 @@ public struct SettingsView: View {
     }
 
     private var modelsOnlyContent: some View {
-        LocalModelsCompactView(
-            localModelStatus: localModelStatus,
-            localModelDownloadProgress: localModelDownloadProgress,
-            localModelStatusMessage: localModelStatusMessage,
-            localModelStatusMessageModelID: localModelStatusMessageModelID,
-            localModelCatalogSourceText: localModelCatalogSourceText,
-            localModelStatusColor: { localModelStatusColor(for: $0) },
-            setLocalModelPreference: { setLocalModelPreference($0) },
-            setResponseLanguage: { setResponseLanguage($0) },
-            refreshLocalModelCatalog: refreshLocalModelCatalog,
-            downloadLocalModel: { downloadLocalModel($0) },
-            cancelLocalModelDownload: { cancelLocalModelDownload($0) },
-            selectLocalModel: { selectLocalModel($0) },
-            runLocalModelBenchmark: { runLocalModelBenchmark($0) },
-            runLocalModelReplyCheck: { runLocalModelReplyCheck($0) },
-            deleteLocalModel: { deleteLocalModel($0) }
-        )
+        GeometryReader { proxy in
+            LocalModelsCompactView(
+                topPadding: max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding,
+                localModelStatus: localModelStatus,
+                localModelDownloadProgress: localModelDownloadProgress,
+                localModelStatusMessage: localModelStatusMessage,
+                localModelStatusMessageModelID: localModelStatusMessageModelID,
+                localModelCatalogSourceText: localModelCatalogSourceText,
+                localModelStatusColor: { localModelStatusColor(for: $0) },
+                setLocalModelPreference: { setLocalModelPreference($0) },
+                setResponseLanguage: { setResponseLanguage($0) },
+                refreshLocalModelCatalog: refreshLocalModelCatalog,
+                downloadLocalModel: { downloadLocalModel($0) },
+                cancelLocalModelDownload: { cancelLocalModelDownload($0) },
+                selectLocalModel: { selectLocalModel($0) },
+                runLocalModelBenchmark: { runLocalModelBenchmark($0) },
+                runLocalModelReplyCheck: { runLocalModelReplyCheck($0) },
+                deleteLocalModel: { deleteLocalModel($0) }
+            )
+        }
     }
 
     private var shortcutDemosOnlyContent: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    SettingsShortcutDemosSection()
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        SettingsShortcutDemosSection()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding)
+                    .padding(.bottom, 32)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 18)
-                .padding(.bottom, 32)
+                .scrollIndicators(.hidden)
+                .background(KairoDesign.background.ignoresSafeArea())
+                .navigationTitle(mode.navigationTitle)
+                .accessibilityIdentifier("settings.form")
             }
-            .scrollIndicators(.hidden)
-            .background(KairoDesign.background.ignoresSafeArea())
-            .navigationTitle(mode.navigationTitle)
-            .accessibilityIdentifier("settings.form")
         }
     }
 

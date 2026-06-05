@@ -109,6 +109,7 @@ public final class ChatViewModel: ObservableObject {
     }
 
     public func startNewThread() {
+        privacyMode = .standard
         currentThread = ChatThread(messages: [Self.welcomeMessage])
         composerText = ""
         replyTarget = nil
@@ -117,7 +118,19 @@ public final class ChatViewModel: ObservableObject {
         clearTransientActionState()
     }
 
+    public func startPrivateThread() {
+        privacyMode = .privateChat
+        currentThread = ChatThread(messages: [Self.welcomeMessage])
+        composerText = ""
+        pendingAttachments = []
+        replyTarget = nil
+        clearShareImportState()
+        errorMessage = nil
+        clearTransientActionState()
+    }
+
     public func selectThread(_ thread: ChatThread) {
+        privacyMode = .standard
         currentThread = thread
         composerText = ""
         replyTarget = nil
@@ -493,6 +506,7 @@ public final class ChatViewModel: ObservableObject {
     }
 
     private func persistCurrentThread() async {
+        guard privacyMode != .privateChat else { return }
         do {
             try await historyStore.saveThread(currentThread)
             threads = try await historyStore.listThreads(limit: 50)

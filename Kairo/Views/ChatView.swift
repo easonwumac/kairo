@@ -70,6 +70,9 @@ public struct ChatView: View {
         case .newThread:
             viewModel.startNewThread()
             isComposerFocused = true
+        case .newPrivateThread:
+            viewModel.startPrivateThread()
+            isComposerFocused = true
         case .selectThread(let id):
             Task { await viewModel.selectThread(id: id) }
         case .clear:
@@ -355,9 +358,6 @@ public struct ChatView: View {
             status: viewModel.providerRouteStatus,
             isPrivateChatEnabled: viewModel.isPrivateChatEnabled,
             canEdit: viewModel.canEditProviderRoute,
-            togglePrivateChat: {
-                viewModel.setPrivateChatEnabled(!viewModel.isPrivateChatEnabled)
-            },
             setPreference: { preference in
                 Task { await viewModel.setProviderRoutePreference(preference) }
             }
@@ -558,6 +558,7 @@ public struct ChatChromeActionRequest: Equatable {
 
 public enum ChatChromeActionKind: Equatable {
     case newThread
+    case newPrivateThread
     case selectThread(UUID)
     case clear
     case delete

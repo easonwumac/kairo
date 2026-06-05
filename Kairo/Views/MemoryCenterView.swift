@@ -29,38 +29,40 @@ public struct MemoryCenterView: View {
 
     public var body: some View {
         NavigationStack {
-            ScrollViewReader { scrollProxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        memoryAddSection
+            GeometryReader { proxy in
+                ScrollViewReader { scrollProxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            memoryAddSection
 
-                        memorySearchSection
-                            .id(Self.searchSectionScrollID)
+                            memorySearchSection
+                                .id(Self.searchSectionScrollID)
 
-                        if let errorMessage {
-                            Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
-                                .font(.caption)
-                                .foregroundStyle(KairoDesign.red)
-                                .accessibilityIdentifier("memory.error")
+                            if let errorMessage {
+                                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(KairoDesign.red)
+                                    .accessibilityIdentifier("memory.error")
+                            }
+
+                            memoryRecordsSection
+
+                            memoryLibraryHeader
                         }
-
-                        memoryRecordsSection
-
-                        memoryLibraryHeader
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 18)
+                        .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding)
+                        .padding(.bottom, 32)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 18)
-                    .padding(.bottom, 32)
-                }
-                .background(KairoDesign.background.ignoresSafeArea())
-                .scrollIndicators(.hidden)
-                .navigationTitle(KairoL10n.string("memory.navigationTitle"))
-                .task(id: searchQuery) { await reload() }
-                .refreshable { await reload() }
-                .onChange(of: memories.count) { _, _ in
-                    withAnimation(.snappy(duration: 0.25)) {
-                        scrollProxy.scrollTo(Self.searchSectionScrollID, anchor: .top)
+                    .background(KairoDesign.background.ignoresSafeArea())
+                    .scrollIndicators(.hidden)
+                    .navigationTitle(KairoL10n.string("memory.navigationTitle"))
+                    .task(id: searchQuery) { await reload() }
+                    .refreshable { await reload() }
+                    .onChange(of: memories.count) { _, _ in
+                        withAnimation(.snappy(duration: 0.25)) {
+                            scrollProxy.scrollTo(Self.searchSectionScrollID, anchor: .top)
+                        }
                     }
                 }
             }
