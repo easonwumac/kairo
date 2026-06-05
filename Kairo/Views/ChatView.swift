@@ -182,7 +182,7 @@ public struct ChatView: View {
                     }
                     .padding(.vertical, 16)
                 }
-                .background(KairoDesign.background)
+                .background(Color.clear)
                 .onChange(of: viewModel.currentThread.messages.count) { _, _ in
                     scrollToBottom(proxy)
                 }
@@ -320,6 +320,8 @@ public struct ChatView: View {
                     .lineLimit(1...5)
                     .disabled(viewModel.isLoading)
                     .focused($isComposerFocused)
+                    .foregroundStyle(KairoDesign.ink)
+                    .tint(KairoDesign.blue)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 13)
                     .frame(minHeight: 52, alignment: .center)
@@ -346,10 +348,10 @@ public struct ChatView: View {
             .padding(.leading, 2)
             .padding(.trailing, 8)
             .padding(.vertical, 6)
-            .background(Color.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .background(KairoDesign.elevatedSurface.opacity(0.88), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
             )
             .overlay(alignment: .topLeading) {
                 Color.clear
@@ -358,14 +360,14 @@ public struct ChatView: View {
                     .accessibilityLabel(KairoL10n.string("chat.composer.inputShell"))
                     .accessibilityIdentifier("chat.composer.input-shell")
             }
-            .shadow(color: .black.opacity(0.08), radius: 18, x: 0, y: 8)
+            .shadow(color: KairoDesign.shadow, radius: 18, x: 0, y: 8)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("chat.composer.input-shell")
         }
         .padding(.horizontal, 14)
         .padding(.top, 10)
         .padding(.bottom, 12)
-        .background(Color(.sRGB, white: 0.98, opacity: 0.96))
+        .background(KairoDesign.background.opacity(0.92))
         .accessibilityIdentifier("chat.composer.surface")
     }
 
@@ -412,7 +414,7 @@ public struct ChatView: View {
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(KairoDesign.ink)
                 .frame(width: 42, height: 42)
-                .background(Color.primary.opacity(0.06), in: Circle())
+                .background(Color.white.opacity(0.10), in: Circle())
         }
         .accessibilityLabel(KairoL10n.string("chat.tools.open"))
         .accessibilityIdentifier("chat.tools.menu")

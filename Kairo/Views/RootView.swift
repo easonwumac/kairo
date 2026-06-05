@@ -30,15 +30,14 @@ public struct RootView: View {
 
                 shellMarker
 
-                VStack(spacing: 0) {
-                    rootHeader(topInset: safeAreaInsets.top)
+                selectedContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, max(safeAreaInsets.top, 0) + 68)
+                    .clipped()
 
-                    selectedContent
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea(edges: .top)
+                rootHeader(topInset: safeAreaInsets.top)
+                    .zIndex(5)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
 
                 if isMenuPresented {
                     drawerOverlay(safeAreaInsets: safeAreaInsets, containerWidth: proxy.size.width)
@@ -70,16 +69,24 @@ public struct RootView: View {
     private static var fullScreenBackground: some View {
         ZStack {
             KairoDesign.background
+            RadialGradient(
+                colors: [
+                    KairoDesign.blue.opacity(0.26),
+                    Color.clear
+                ],
+                center: .topLeading,
+                startRadius: 20,
+                endRadius: 420
+            )
             LinearGradient(
                 colors: [
-                    KairoDesign.blue.opacity(0.13),
-                    KairoDesign.teal.opacity(0.08),
-                    Color.white.opacity(0.18)
+                    KairoDesign.teal.opacity(0.10),
+                    Color.clear,
+                    Color.black.opacity(0.18)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            .blendMode(.softLight)
         }
     }
 
@@ -117,52 +124,66 @@ public struct RootView: View {
             } label: {
                 Label(KairoL10n.string("root.menu"), systemImage: "line.3.horizontal")
                     .labelStyle(.iconOnly)
-                    .font(.title3.weight(.semibold))
-                    .frame(width: 42, height: 42)
-                    .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .frame(width: 54, height: 54)
+                    .background(.ultraThinMaterial, in: Circle())
                     .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(KairoDesign.line, lineWidth: 1)
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.50),
+                                        Color.white.opacity(0.08)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    }
+                    .shadow(color: KairoDesign.blue.opacity(0.22), radius: 20, x: 0, y: 10)
+                    .shadow(color: KairoDesign.shadow, radius: 16, x: 0, y: 10)
+                    .overlay(alignment: .topLeading) {
+                        Circle()
+                            .fill(Color.white.opacity(0.26))
+                            .frame(width: 10, height: 10)
+                            .offset(x: 14, y: 12)
                     }
             }
             .buttonStyle(.plain)
             .accessibilityLabel(KairoL10n.string("root.menu.open"))
             .accessibilityIdentifier("root.drawer.toggle")
 
-            KairoMark(size: 34)
+            Text(selectedSection.shortTitle)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(KairoDesign.ink)
+                .lineLimit(1)
+                .padding(.horizontal, 16)
+                .frame(height: 46)
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.42),
+                                    Color.white.opacity(0.08)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                }
+                .shadow(color: KairoDesign.shadow, radius: 14, x: 0, y: 8)
+                .accessibilityLabel(selectedSection.title)
+                .accessibilityIdentifier("root.current-section")
 
             Spacer(minLength: 8)
-
-            if selectedSection != .chat {
-                Button {
-                    selectedSection = .chat
-                } label: {
-                    Label(KairoL10n.string("root.backToChat"), systemImage: "house")
-                        .labelStyle(.iconOnly)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(KairoDesign.blue)
-                        .frame(width: 38, height: 38)
-                        .background(KairoDesign.blue.opacity(0.10), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(KairoL10n.string("root.backToChat"))
-                .accessibilityIdentifier("root.back-to-chat")
-            }
         }
         .padding(.horizontal, 16)
-        .padding(.top, max(topInset, 0) + 8)
-        .padding(.bottom, 10)
-        .background {
-            Rectangle()
-                .fill(.regularMaterial)
-                .shadow(color: KairoDesign.shadow, radius: 18, x: 0, y: 10)
-        }
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(KairoDesign.line)
-                .frame(height: 1)
-                .padding(.horizontal, 16)
-        }
+        .padding(.top, max(topInset, 0) + 10)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("root.safe-area-header")
     }
@@ -240,7 +261,7 @@ public struct RootView: View {
             ZStack(alignment: .leading) {
                 Self.fullScreenBackground
                 Rectangle()
-                    .fill(KairoDesign.ink.opacity(0.04))
+                    .fill(KairoDesign.teal.opacity(0.16))
                     .frame(width: 10)
                     .ignoresSafeArea()
             }

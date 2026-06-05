@@ -15,7 +15,7 @@ struct ChatBubble: View {
             VStack(alignment: isUser ? .trailing : .leading, spacing: 5) {
                 Text(message.text)
                     .font(.body)
-                    .foregroundStyle(isUser ? .white : .primary)
+                    .foregroundStyle(isUser ? .white : KairoDesign.ink)
                     .textSelection(.enabled)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
@@ -67,7 +67,7 @@ struct ChatBubble: View {
                     }
                 }
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(KairoDesign.muted)
                 .padding(.horizontal, 8)
             }
 
@@ -82,7 +82,7 @@ struct ChatBubble: View {
     private var bubbleColor: Color {
         if isUser { return .accentColor }
         if message.status == .failed { return Color.orange.opacity(0.16) }
-        return Color.primary.opacity(0.06)
+        return KairoDesign.elevatedSurface.opacity(0.86)
     }
 
     private var memoryContextLabel: String {
@@ -103,7 +103,7 @@ struct ChatBubble: View {
             Label(title, systemImage: systemImage)
                 .labelStyle(.iconOnly)
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(KairoDesign.muted)
                 .frame(width: 26, height: 24)
         }
         .buttonStyle(.plain)

@@ -58,13 +58,17 @@ struct ChatProviderRouteBar: View {
 
                 Image(systemName: "slider.horizontal.3")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(KairoDesign.muted)
                     .accessibilityIdentifier("chat.provider-route.preference")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 11)
             .frame(height: 34)
-            .background(Color.primary.opacity(0.045), in: Capsule())
+            .background(KairoDesign.elevatedSurface.opacity(0.72), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+            }
             .overlay(alignment: .topLeading) {
                 if status.warning != nil {
                     Color.clear
@@ -91,7 +95,7 @@ struct ChatProviderRouteBar: View {
                 .font(.caption.weight(.semibold))
             Text(label)
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(KairoDesign.muted)
             Text(value)
                 .font(.caption.weight(.semibold))
                 .lineLimit(1)
