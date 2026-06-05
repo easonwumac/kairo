@@ -2,6 +2,7 @@ import Foundation
 
 public actor AgentCore {
     private let memoryStore: MemoryStore
+    private let memoryContextProvider: any AgentMemoryContextProviding
     private let aiProvider: AIProvider
     private let safetyPolicyEngine: SafetyPolicyEngine
     private let capabilityRegistry: CapabilityRegistry
@@ -19,6 +20,7 @@ public actor AgentCore {
         integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        memoryContextProvider: (any AgentMemoryContextProviding)? = nil,
         actionGate: (any PhoneToolActionGating)? = nil,
         toolContextProvider: (any AgentCapabilityPromptContextProviding)? = nil,
         toolInvocationPlanner: (any AgentToolInvocationPlanning)? = nil,
@@ -27,6 +29,7 @@ public actor AgentCore {
         memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
     ) {
         self.memoryStore = memoryStore
+        self.memoryContextProvider = memoryContextProvider ?? DefaultAgentMemoryContextProvider(memoryStore: memoryStore)
         self.aiProvider = aiProvider
         self.safetyPolicyEngine = safetyPolicyEngine
         self.capabilityRegistry = capabilityRegistry
@@ -52,11 +55,7 @@ public actor AgentCore {
         attachments: [ChatAttachment] = [],
         privacyMode: ChatPrivacyMode = .standard
     ) async throws -> AICompletionResponse {
-        let memories = privacyMode == .privateChat ? [] : try await memoryStore.search(query: message, limit: 8)
-        let memoryDedupContext = privacyMode == .privateChat ? [] : Self.mergedMemoryContext(
-            relevantMemories: memories,
-            recentMemories: try await memoryStore.list(limit: 50)
-        )
+        let memoryContext = try await memoryContextProvider.context(for: message, privacyMode: privacyMode)
         let skillCatalog = try await skillCatalogProvider.catalog()
         let allowedCapabilities = capabilityRegistry.capabilities
             .filter { $0.status == .available || $0.status == .unknown }
@@ -71,7 +70,7 @@ public actor AgentCore {
         let request = AICompletionRequest(
             systemPrompt: Self.systemPrompt,
             userPrompt: message,
-            memoryContext: memories,
+            memoryContext: memoryContext.relevantMemories,
             allowedCapabilities: allowedCapabilities,
             attachmentContext: attachments,
             toolContext: toolContext,
@@ -88,7 +87,10 @@ public actor AgentCore {
             toolActions: toolCandidates.compactMap(\.action)
         )
         if privacyMode != .privateChat,
-           let memoryAction = memoryCandidateExtractor.proposedSaveMemoryAction(from: message, memoryContext: memoryDedupContext) {
+           let memoryAction = memoryCandidateExtractor.proposedSaveMemoryAction(
+            from: message,
+            memoryContext: memoryContext.deduplicationContext
+           ) {
             proposedActions = Self.mergeActionPreviews(modelActions: proposedActions, toolActions: [memoryAction])
         }
         let catalogFilteredActions = proposedActions.filter { action in
@@ -106,7 +108,7 @@ public actor AgentCore {
             message: response.message,
             proposedActions: privacyFilteredActions,
             toolCandidates: toolCandidates,
-            memoryContextCount: memories.count
+            memoryContextCount: memoryContext.relevantMemories.count
         )
     }
 
@@ -154,19 +156,6 @@ public actor AgentCore {
             merged.append(action)
         }
 
-        return merged
-    }
-
-    private static func mergedMemoryContext(
-        relevantMemories: [MemoryRecord],
-        recentMemories: [MemoryRecord]
-    ) -> [MemoryRecord] {
-        var merged: [MemoryRecord] = []
-        var seenIDs: Set<UUID> = []
-        for memory in relevantMemories + recentMemories where !seenIDs.contains(memory.id) {
-            merged.append(memory)
-            seenIDs.insert(memory.id)
-        }
         return merged
     }
 

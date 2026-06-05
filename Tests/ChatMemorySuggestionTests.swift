@@ -64,6 +64,44 @@ final class ChatMemorySuggestionTests: XCTestCase {
         XCTAssertFalse(response.proposedActions.contains { $0.kind == .saveMemory })
     }
 
+    func testDefaultAgentMemoryContextProviderUsesRecentMemoriesForDeduplication() async throws {
+        let relevantMemory = MemoryRecord(
+            title: "Relevant",
+            summary: "Relevant summary",
+            content: "Relevant content",
+            source: .manual
+        )
+        let recentMemory = MemoryRecord(
+            title: "Recent",
+            summary: "Recent summary",
+            content: "Recent content",
+            source: .chat
+        )
+        let memoryStore = SearchAndRecentMemoryStore(
+            searchResults: [relevantMemory],
+            recentMemories: [relevantMemory, recentMemory]
+        )
+        let provider = DefaultAgentMemoryContextProvider(memoryStore: memoryStore)
+
+        let context = try await provider.context(for: "relevant", privacyMode: .standard)
+
+        XCTAssertEqual(context.relevantMemories.map(\.id), [relevantMemory.id])
+        XCTAssertEqual(context.deduplicationContext.map(\.id), [relevantMemory.id, recentMemory.id])
+    }
+
+    func testDefaultAgentMemoryContextProviderSkipsStoreForPrivateChat() async throws {
+        let memoryStore = CountingMemoryStore()
+        let provider = DefaultAgentMemoryContextProvider(memoryStore: memoryStore)
+
+        let context = try await provider.context(for: "private", privacyMode: .privateChat)
+        let counts = await memoryStore.counts()
+
+        XCTAssertTrue(context.relevantMemories.isEmpty)
+        XCTAssertTrue(context.deduplicationContext.isEmpty)
+        XCTAssertEqual(counts.search, 0)
+        XCTAssertEqual(counts.list, 0)
+    }
+
     private func makeMemorySuggestionChatAPI(memoryStore: any MemoryStore) -> any KairoChatAPI {
         KairoChatBackendService(agent: AgentCore(memoryStore: memoryStore, aiProvider: MockAIProvider()))
     }
@@ -94,5 +132,66 @@ private actor SearchMissMemoryStore: MemoryStore {
 
     func export(limit: Int) async throws -> MemoryExport {
         MemoryExport(records: recentMemories)
+    }
+}
+
+private actor SearchAndRecentMemoryStore: MemoryStore {
+    private let searchResults: [MemoryRecord]
+    private let recentMemories: [MemoryRecord]
+
+    init(searchResults: [MemoryRecord], recentMemories: [MemoryRecord]) {
+        self.searchResults = searchResults
+        self.recentMemories = recentMemories
+    }
+
+    func save(_ memory: MemoryRecord) async throws {}
+
+    func search(query: String, limit: Int) async throws -> [MemoryRecord] {
+        searchResults
+    }
+
+    func list(limit: Int) async throws -> [MemoryRecord] {
+        recentMemories
+    }
+
+    func delete(id: UUID) async throws {}
+
+    func erase(id: UUID) async throws {}
+
+    func purgeDeleted() async throws {}
+
+    func export(limit: Int) async throws -> MemoryExport {
+        MemoryExport(records: recentMemories)
+    }
+}
+
+private actor CountingMemoryStore: MemoryStore {
+    private(set) var searchCount = 0
+    private(set) var listCount = 0
+
+    func save(_ memory: MemoryRecord) async throws {}
+
+    func search(query: String, limit: Int) async throws -> [MemoryRecord] {
+        searchCount += 1
+        return []
+    }
+
+    func list(limit: Int) async throws -> [MemoryRecord] {
+        listCount += 1
+        return []
+    }
+
+    func counts() -> (search: Int, list: Int) {
+        (searchCount, listCount)
+    }
+
+    func delete(id: UUID) async throws {}
+
+    func erase(id: UUID) async throws {}
+
+    func purgeDeleted() async throws {}
+
+    func export(limit: Int) async throws -> MemoryExport {
+        MemoryExport(records: [])
     }
 }

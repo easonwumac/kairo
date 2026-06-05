@@ -139,6 +139,33 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(toolInvocationPlanner.receivedAllowsToolUse, true)
     }
 
+    func testAgentCoreUsesInjectedMemoryContextProvider() async throws {
+        let memory = MemoryRecord(
+            title: "Injected Memory",
+            summary: "Injected summary",
+            content: "Injected content",
+            source: .manual
+        )
+        let provider = CapturingAIProvider(response: AICompletionResponse(message: "Memory context response"))
+        let memoryContextProvider = StubAgentMemoryContextProvider(context: AgentMemoryContext(
+            relevantMemories: [memory],
+            deduplicationContext: [memory]
+        ))
+        let agent = AgentCore(
+            aiProvider: provider,
+            memoryContextProvider: memoryContextProvider
+        )
+
+        let response = try await agent.respond(to: "hello")
+        let captured = await provider.capturedRequest()
+        let capturedRequest = try XCTUnwrap(captured)
+
+        XCTAssertEqual(memoryContextProvider.requestCount, 1)
+        XCTAssertEqual(memoryContextProvider.receivedPrivacyMode, .standard)
+        XCTAssertEqual(capturedRequest.memoryContext.map(\.id), [memory.id])
+        XCTAssertEqual(response.memoryContextCount, 1)
+    }
+
     func testJSONFileMemoryStorePersistsSavedMemory() async throws {
         let fileURL = temporaryFileURL(named: "memory-store.json")
         let memory = MemoryRecord(
@@ -2103,6 +2130,25 @@ private final class StubAgentToolInvocationPlanner: AgentToolInvocationPlanning,
         receivedSkillIDs = skillCatalog.installedSkills.map(\.id)
         receivedAllowsToolUse = request.allowsToolUse
         return AgentToolInvocationPlan(candidates: [])
+    }
+}
+
+private final class StubAgentMemoryContextProvider: AgentMemoryContextProviding, @unchecked Sendable {
+    private let suppliedContext: AgentMemoryContext
+    private(set) var requestCount = 0
+    private(set) var receivedPrivacyMode: ChatPrivacyMode?
+
+    init(context: AgentMemoryContext) {
+        self.suppliedContext = context
+    }
+
+    func context(
+        for message: String,
+        privacyMode: ChatPrivacyMode
+    ) async throws -> AgentMemoryContext {
+        requestCount += 1
+        receivedPrivacyMode = privacyMode
+        return suppliedContext
     }
 }
 
