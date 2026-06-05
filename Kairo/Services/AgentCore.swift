@@ -28,7 +28,7 @@ public actor AgentCore {
         aiProvider: AIProvider = MockAIProvider(),
         skillCatalog: AgentSkillCatalog = .default,
         skillCatalogProvider: AgentSkillCatalogProvider? = nil,
-        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         memoryContextProvider: (any AgentMemoryContextProviding)? = nil,

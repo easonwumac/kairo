@@ -101,6 +101,21 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertNil(candidate.action)
     }
 
+    func testDefaultAgentToolInvocationPlannerUsesCatalogSourceForMigratedOAuthIntegrations() throws {
+        let planner = AgentToolInvocationPlanner(skillCatalog: AgentSkillCatalog(skills: []))
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Create a Todoist task to review Kairo"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == AppIntegrationSkillID.todoistTaskAPI.rawValue })
+
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.integrationKey, "todoist")
+        XCTAssertEqual(candidate.skillKind, .oauthConnector)
+        XCTAssertNil(candidate.action)
+        XCTAssertFalse(plan.candidates.contains {
+            $0.source == .integrationRegistry && $0.integrationKey == "todoist"
+        })
+    }
+
     func testAgentToolInvocationPlannerBuildsCatalogCandidatesWithIntegrationSkillIDs() throws {
         let catalog = AppIntegrationSkillCatalog()
         let planner = AgentToolInvocationPlanner(

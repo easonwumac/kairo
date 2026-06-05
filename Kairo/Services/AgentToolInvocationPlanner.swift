@@ -14,7 +14,7 @@ public struct AgentToolInvocationPlanner: Sendable {
 
     public init(
         skillCatalog: AgentSkillCatalog = .default,
-        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         appIntegrationActionMapper: any AppIntegrationActionMapping = DefaultAppIntegrationActionMapper(),
         appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),

@@ -18,7 +18,7 @@ public struct AgentToolCandidatePlanningDependencies: Sendable {
     public var safetyPolicyEngine: SafetyPolicyEngine
 
     public init(
-        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         appIntegrationActionMapper: any AppIntegrationActionMapping = DefaultAppIntegrationActionMapper(),
         appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),
@@ -138,7 +138,7 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
     }
 
     public init(
-        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         appIntegrationActionMapper: any AppIntegrationActionMapping = DefaultAppIntegrationActionMapper(),
         appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),

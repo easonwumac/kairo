@@ -19,7 +19,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
     }
 
     public init(
-        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         appIntegrationActionMapper: any AppIntegrationActionMapping = DefaultAppIntegrationActionMapper(),
         appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),

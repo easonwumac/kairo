@@ -16,7 +16,7 @@ public struct LiveKairoAgentProvider: KairoAgentProviding {
         paths: KairoPaths = KairoSharedAppStorage.paths(),
         credentialStore: any CredentialStore = KeychainCredentialStore(),
         aiProvider: (any AIProvider)? = nil,
-        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) {
