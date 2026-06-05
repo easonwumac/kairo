@@ -1201,9 +1201,9 @@ private final class RecordingAutomationsFeatureDependencyComposer: AutomationsFe
 
     func makeDependencies(
         recipeAPI: any KairoRecipeAPI,
-        memoryStore: any MemoryStore,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding,
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
+        memoryStore: (any MemoryStore)?,
+        toolCatalog: (any BuiltInPhoneToolCatalogProviding)?,
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)?
     ) -> AutomationsFeatureDependencies {
         AutomationsFeatureDependencies(
             recipeAPI: recipeAPI,

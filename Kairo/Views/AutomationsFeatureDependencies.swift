@@ -28,9 +28,9 @@ public protocol AutomationsFeatureDependencyComposing: Sendable {
 
     func makeDependencies(
         recipeAPI: any KairoRecipeAPI,
-        memoryStore: any MemoryStore,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding,
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
+        memoryStore: (any MemoryStore)?,
+        toolCatalog: (any BuiltInPhoneToolCatalogProviding)?,
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)?
     ) -> AutomationsFeatureDependencies
 
     func makeDependencies(
@@ -83,20 +83,23 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
 
     public func makeDependencies(
         recipeAPI: any KairoRecipeAPI,
-        memoryStore: any MemoryStore = InMemoryMemoryStore(),
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
+        memoryStore: (any MemoryStore)? = nil,
+        toolCatalog: (any BuiltInPhoneToolCatalogProviding)? = nil,
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)? = nil
     ) -> AutomationsFeatureDependencies {
-        AutomationsFeatureDependencies(
+        let runtimeMemoryStore = memoryStore ?? InMemoryMemoryStore()
+        let runtimeToolCatalog = toolCatalog ?? BuiltInPhoneToolCatalog()
+        let runtimeAppIntegrationSkillCatalog = appIntegrationSkillCatalog ?? AppIntegrationSkillCatalog()
+        return AutomationsFeatureDependencies(
             recipeAPI: recipeAPI,
             shortcutTemplateRegistry: shortcutTemplateRegistry,
             shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(
                 runtime: ShortcutNodeRuntime(
-                    memoryStore: memoryStore,
-                    toolCatalog: toolCatalog,
-                    appIntegrationSkillCatalog: appIntegrationSkillCatalog
+                    memoryStore: runtimeMemoryStore,
+                    toolCatalog: runtimeToolCatalog,
+                    appIntegrationSkillCatalog: runtimeAppIntegrationSkillCatalog
                 ),
-                appIntegrationSkillCatalog: appIntegrationSkillCatalog
+                appIntegrationSkillCatalog: runtimeAppIntegrationSkillCatalog
             )
         )
     }
@@ -106,9 +109,9 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
     ) -> AutomationsFeatureDependencies {
         makeDependencies(
             recipeAPI: recipeAPI,
-            memoryStore: InMemoryMemoryStore(),
-            toolCatalog: BuiltInPhoneToolCatalog(),
-            appIntegrationSkillCatalog: AppIntegrationSkillCatalog()
+            memoryStore: nil,
+            toolCatalog: nil,
+            appIntegrationSkillCatalog: nil
         )
     }
 
