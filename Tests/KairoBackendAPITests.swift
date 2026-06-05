@@ -366,7 +366,8 @@ final class KairoBackendAPITests: XCTestCase {
             memoryStore: InMemoryMemoryStore(),
             credentialStore: InMemoryCredentialStore(),
             aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
-            actionExecutor: actionExecutor
+            actionExecutor: actionExecutor,
+            actionSafetyPolicy: BackendAllowingActionSafetyPolicy()
         )
         let actionAPI = KairoActionBackendServiceFactory(dependencies: environment).makeActionAPI()
         let action = AgentAction(
@@ -390,6 +391,42 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertTrue(result.completed)
         XCTAssertEqual(executedKinds, [.createReminderDraft])
         XCTAssertEqual(confirmations, [true])
+    }
+
+    func testBackendFactoriesShareInjectedActionSafetyPolicy() async throws {
+        let action = AgentAction(
+            kind: .createReminderDraft,
+            title: "Create Reminder",
+            rationale: "Provider suggested a reminder preview.",
+            payload: .reminder(ReminderDraft(
+                title: "Review backend policy injection",
+                notes: nil,
+                dueDate: nil
+            )),
+            riskTier: .tier2LowRiskWrite
+        )
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(
+                message: "Factory response",
+                proposedActions: [action]
+            )),
+            actionExecutor: AllowingBackendActionExecutor(),
+            actionSafetyPolicy: BackendBlockingActionSafetyPolicy()
+        )
+        let factory = ProductionKairoBackendServiceFactory(dependencies: environment)
+
+        let chatResponse = try await factory.makeChatAPI().respond(
+            to: "Create a reminder",
+            attachments: [],
+            privacyMode: .standard
+        )
+        let preview = await factory.makeActionAPI().preview(action)
+
+        XCTAssertTrue(chatResponse.proposedActions.isEmpty)
+        XCTAssertFalse(preview.decision.allowed)
+        XCTAssertFalse(preview.decision.requiresConfirmation)
     }
 
     func testDeletionBackendServiceFactoryBuildsDeletionAPIFromInjectedDependencies() async throws {
@@ -1524,6 +1561,26 @@ private struct BackendMappedPermissionService: PermissionService {
 
     func request(_ capability: CapabilityKey) async throws -> CapabilityStatus {
         await status(for: capability)
+    }
+}
+
+private struct BackendAllowingActionSafetyPolicy: ActionSafetyPolicyEvaluating {
+    func evaluate(_ action: AgentAction) -> SafetyPolicyDecision {
+        SafetyPolicyDecision(
+            allowed: true,
+            requiresConfirmation: true,
+            reason: "allowed"
+        )
+    }
+}
+
+private struct BackendBlockingActionSafetyPolicy: ActionSafetyPolicyEvaluating {
+    func evaluate(_ action: AgentAction) -> SafetyPolicyDecision {
+        SafetyPolicyDecision(
+            allowed: false,
+            requiresConfirmation: false,
+            reason: "blocked"
+        )
     }
 }
 

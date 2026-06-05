@@ -18,6 +18,7 @@ public protocol KairoBackendDependencies: Sendable {
     var toolCatalog: any BuiltInPhoneToolCatalogProviding { get }
     var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding { get }
     var capabilityRegistry: any CapabilityRegistryProviding { get }
+    var actionSafetyPolicy: any ActionSafetyPolicyEvaluating { get }
 }
 
 public protocol KairoBackendServiceMaking: Sendable {
@@ -90,9 +91,8 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
             skillCatalogProvider = .default
         }
         let actionGate = BuiltInPhoneToolActionGate(toolCatalog: dependencies.toolCatalog)
-        let safetyPolicyEngine = SafetyPolicyEngine()
         let toolCandidatePlanningDependencies = makeToolCandidatePlanningDependencies(
-            safetyPolicyEngine: safetyPolicyEngine
+            safetyPolicyEngine: dependencies.actionSafetyPolicy
         )
         return AgentCoreDependencies(
             memoryContextProvider: DefaultAgentMemoryContextProvider(memoryStore: dependencies.memoryStore),
@@ -111,7 +111,7 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
             toolPlanningRequestBuilder: DefaultAgentToolPlanningRequestBuilder(),
             responseActionPlanner: DefaultAgentResponseActionPlanner(
                 actionGate: actionGate,
-                safetyPolicyEngine: safetyPolicyEngine
+                safetyPolicyEngine: dependencies.actionSafetyPolicy
             ),
             completionRequestBuilder: DefaultAgentCompletionRequestBuilder(
                 capabilityRegistry: dependencies.capabilityRegistry
@@ -176,7 +176,10 @@ public struct KairoActionBackendServiceFactory<Dependencies: KairoBackendDepende
     }
 
     public func makeActionAPI() -> any KairoActionAPI {
-        KairoActionBackendService(actionExecutor: dependencies.actionExecutor)
+        KairoActionBackendService(
+            actionExecutor: dependencies.actionExecutor,
+            safetyPolicyEngine: dependencies.actionSafetyPolicy
+        )
     }
 }
 

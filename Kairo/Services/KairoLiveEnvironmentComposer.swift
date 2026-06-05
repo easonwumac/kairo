@@ -7,6 +7,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var capabilityRegistry: any CapabilityRegistryProviding
+    public var actionSafetyPolicy: any ActionSafetyPolicyEvaluating
     public var localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)?
     public var localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)?
 
@@ -18,6 +19,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
+        actionSafetyPolicy: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) {
@@ -28,6 +30,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             toolCatalog: toolCatalog,
             appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             capabilityRegistry: capabilityRegistry,
+            actionSafetyPolicy: actionSafetyPolicy,
             localModelReplyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
             localModelBenchmarkEngineOverride: localModelBenchmarkEngineOverride
         )
@@ -40,6 +43,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
+        actionSafetyPolicy: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) {
@@ -49,6 +53,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         self.toolCatalog = toolCatalog
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.capabilityRegistry = capabilityRegistry
+        self.actionSafetyPolicy = actionSafetyPolicy
         self.localModelReplyCheckRuntimeOverride = localModelReplyCheckRuntimeOverride
         self.localModelBenchmarkEngineOverride = localModelBenchmarkEngineOverride
     }
@@ -108,6 +113,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             toolCatalog: toolCatalog,
             appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             capabilityRegistry: capabilityRegistry,
+            actionSafetyPolicy: actionSafetyPolicy,
             shortcutDemoRecipeRunner: ShortcutDemoRecipeRunner(
                 runtime: shortcutRuntime,
                 appIntegrationSkillCatalog: appIntegrationSkillCatalog
