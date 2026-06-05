@@ -261,6 +261,47 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertEqual(drafter.receivedInputTexts, ["Use injected drafter"])
     }
 
+    func testKairoRecipeRunnerUsesInjectedStepInputResolver() async throws {
+        let recipe = KairoRecipe(
+            id: "injected-input-resolver-workflow",
+            title: "Injected Input Resolver Workflow",
+            summary: "Verifies recipe runner dependency inversion for step input resolution.",
+            triggerHint: .manual,
+            steps: [
+                KairoRecipeStep(
+                    id: "noop",
+                    title: "Resolved Noop",
+                    kind: .noOp,
+                    input: .literal("Original step input")
+                )
+            ],
+            requiredCapabilities: [],
+            riskTier: .tier0ReadOnly,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let resolver = StubRecipeStepInputResolver(resolvedInput: "Injected resolved input")
+        let runner = KairoRecipeRunner(dependencies: KairoRecipeRunnerDependencies(
+            recipeStore: InMemoryKairoRecipeStore(recipes: [recipe]),
+            actionGate: BuiltInPhoneToolActionGate(),
+            inputResolver: resolver
+        ))
+
+        let result = try await runner.run(KairoRecipeRunRequest(
+            recipeID: recipe.id,
+            surface: .app,
+            input: "Request input",
+            dryRun: false,
+            userConfirmed: true
+        ))
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.stepResults.first?.outputText, "Injected resolved input")
+        XCTAssertEqual(resolver.receivedInputs, [.literal("Original step input")])
+        XCTAssertEqual(resolver.receivedRequestInputs, ["Request input"])
+        XCTAssertEqual(resolver.receivedPreviousOutputs, ["Request input"])
+    }
+
     func testKairoRecipeRunnerFailsClosedWhenIntegrationBindingIsMissingFromCatalog() async throws {
         let recipe = KairoRecipe(
             id: "missing-integration-workflow",
@@ -455,5 +496,27 @@ private final class StubRecipeIntegrationActionDrafter: KairoRecipeIntegrationAc
                 )
             ]
         )
+    }
+}
+
+private final class StubRecipeStepInputResolver: KairoRecipeStepInputResolving, @unchecked Sendable {
+    private let resolvedInput: String
+    private(set) var receivedInputs: [StepInput] = []
+    private(set) var receivedRequestInputs: [String?] = []
+    private(set) var receivedPreviousOutputs: [String] = []
+
+    init(resolvedInput: String) {
+        self.resolvedInput = resolvedInput
+    }
+
+    func resolveInput(
+        _ input: StepInput,
+        requestInput: String?,
+        previousOutput: String
+    ) -> String {
+        receivedInputs.append(input)
+        receivedRequestInputs.append(requestInput)
+        receivedPreviousOutputs.append(previousOutput)
+        return resolvedInput
     }
 }

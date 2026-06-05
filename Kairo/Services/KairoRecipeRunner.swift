@@ -6,6 +6,7 @@ public struct KairoRecipeRunner: Sendable {
     private let aiProvider: (any AIProvider)?
     private let actionGate: any PhoneToolActionGating
     private let integrationActionDrafter: any KairoRecipeIntegrationActionDrafting
+    private let inputResolver: any KairoRecipeStepInputResolving
 
     public init(dependencies: KairoRecipeRunnerDependencies) {
         self.recipeStore = dependencies.recipeStore
@@ -13,6 +14,7 @@ public struct KairoRecipeRunner: Sendable {
         self.aiProvider = dependencies.aiProvider
         self.actionGate = dependencies.actionGate
         self.integrationActionDrafter = dependencies.integrationActionDrafter
+        self.inputResolver = dependencies.inputResolver
     }
 
     public init(
@@ -80,7 +82,11 @@ public struct KairoRecipeRunner: Sendable {
         var proposedActions: [AgentAction] = []
 
         for step in recipe.steps {
-            let inputText = resolveInput(step.input, requestInput: request.input, previousOutput: previousOutput)
+            let inputText = inputResolver.resolveInput(
+                step.input,
+                requestInput: request.input,
+                previousOutput: previousOutput
+            )
             if let blockedTool = actionGate.blockedTool(for: step.kind) {
                 stepResults.append(blockedStepResult(step, tool: blockedTool))
                 continue
@@ -322,17 +328,6 @@ public struct KairoRecipeRunner: Sendable {
 
         case .noOp:
             return (KairoRecipeStepResult(stepID: step.id, summary: step.title, outputText: inputText, success: true), [])
-        }
-    }
-
-    private func resolveInput(_ input: StepInput, requestInput: String?, previousOutput: String) -> String {
-        switch input {
-        case .literal(let text):
-            return text
-        case .previousStepOutput:
-            return previousOutput
-        case .shortcutInput, .sharedContent, .keyboardContext:
-            return requestInput ?? previousOutput
         }
     }
 
