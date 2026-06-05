@@ -11,12 +11,10 @@ public struct ChatFeatureDependencies {
     public var localModelChatRuntimeAvailable: Bool
 
     public init(
-        historyStore: any ChatHistoryStore = InMemoryChatHistoryStore(),
-        shareImportAPI: any KairoShareImportAPI = KairoShareImportBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
-        chatAPI: any KairoChatAPI = KairoChatBackendService(agent: AgentCore()),
-        actionAPI: any KairoActionAPI = KairoActionBackendService(
-            actionExecutor: SandboxActionExecutor(memoryStore: InMemoryMemoryStore())
-        ),
+        historyStore: any ChatHistoryStore,
+        shareImportAPI: any KairoShareImportAPI,
+        chatAPI: any KairoChatAPI,
+        actionAPI: any KairoActionAPI,
         localModelSettingsService: LocalModelSettingsService? = nil,
         openAISettingsService: OpenAISettingsService? = nil,
         localModelChatRuntimeAvailable: Bool = false
