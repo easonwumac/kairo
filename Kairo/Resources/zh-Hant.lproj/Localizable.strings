@@ -96,6 +96,11 @@
 "access.permission.entitlement" = "需要 entitlement";
 "access.permission.oauth" = "連接帳號";
 "access.permission.unsupported" = "不可用";
+"access.tool.readiness.available" = "可用";
+"access.tool.readiness.needsPermission" = "需要權限";
+"access.tool.readiness.needsSetup" = "需要設定";
+"access.tool.readiness.scaffolded" = "僅預覽";
+"access.tool.readiness.unavailable" = "不可用";
 "access.skills.manager.title" = "已安裝 skills";
 "access.skills.manager.footer" = "Skills 會擴充 Chat 的建議。只啟用你希望 Kairo 提供的能力。";
 "access.skills.advanced.title" = "進階設定";

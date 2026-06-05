@@ -96,6 +96,11 @@
 "access.permission.entitlement" = "Needs entitlement";
 "access.permission.oauth" = "Connect account";
 "access.permission.unsupported" = "Unavailable";
+"access.tool.readiness.available" = "Available";
+"access.tool.readiness.needsPermission" = "Needs permission";
+"access.tool.readiness.needsSetup" = "Needs setup";
+"access.tool.readiness.scaffolded" = "Preview only";
+"access.tool.readiness.unavailable" = "Unavailable";
 "access.skills.manager.title" = "Installed skills";
 "access.skills.manager.footer" = "Skills extend Chat suggestions. Enable only the ones you want Kairo to offer.";
 "access.skills.advanced.title" = "Advanced setup";

@@ -230,8 +230,11 @@ final class KairoBackendAPITests: XCTestCase {
 
         let dependencies = environment.accessFeatureDependencies
         let catalog = try await XCTUnwrap(dependencies.skillManagerService).catalog()
+        let accessAPI = try XCTUnwrap(dependencies.accessAPI)
+        let tools = await accessAPI.tools()
 
         XCTAssertFalse(catalog.skills.isEmpty)
+        XCTAssertTrue(tools.contains { $0.toolID == .reminderWrite })
         XCTAssertNil(dependencies.marketplaceCatalogService)
     }
 

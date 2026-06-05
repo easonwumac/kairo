@@ -13,6 +13,21 @@ public enum KairoAccessToolReadiness: String, Codable, Sendable {
     case needsSetup
     case scaffolded
     case unavailable
+
+    public var displayName: String {
+        switch self {
+        case .available:
+            return KairoL10n.string("access.tool.readiness.available")
+        case .needsPermission:
+            return KairoL10n.string("access.tool.readiness.needsPermission")
+        case .needsSetup:
+            return KairoL10n.string("access.tool.readiness.needsSetup")
+        case .scaffolded:
+            return KairoL10n.string("access.tool.readiness.scaffolded")
+        case .unavailable:
+            return KairoL10n.string("access.tool.readiness.unavailable")
+        }
+    }
 }
 
 public struct KairoAccessToolSummary: Identifiable, Codable, Equatable, Sendable {

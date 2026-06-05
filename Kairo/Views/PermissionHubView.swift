@@ -20,14 +20,16 @@ public struct PermissionHubView: View {
     @State private var expandedCapabilityDetails: Set<CapabilityKey> = []
     @State private var expandedSkillDetails: Set<String> = []
     @State private var skillCatalog: AgentSkillCatalog
+    @State private var accessToolSummaries: [KairoAccessToolSummary] = []
 
     private let registry = CapabilityRegistry()
-    private let actionCatalog = SandboxActionCatalog()
     private let homeKitDemoCatalog = HomeKitControlDemoCatalog.default
+    private let accessAPI: (any KairoAccessAPI)?
     private let skillManagerService: AgentSkillManagerService?
     private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?
 
     public init(dependencies: AccessFeatureDependencies) {
+        self.accessAPI = dependencies.accessAPI
         self.skillManagerService = dependencies.skillManagerService
         self.marketplaceCatalogService = dependencies.marketplaceCatalogService
         _skillCatalog = State(initialValue: dependencies.initialSkillCatalog)
@@ -40,6 +42,7 @@ public struct PermissionHubView: View {
     ) {
         self.init(
             dependencies: AccessFeatureDependencies(
+                accessAPI: nil,
                 skillManagerService: skillManagerService,
                 marketplaceCatalogService: marketplaceCatalogService,
                 initialSkillCatalog: initialSkillCatalog
@@ -63,7 +66,7 @@ public struct PermissionHubView: View {
             .scrollIndicators(.hidden)
             .navigationTitle(KairoL10n.string("access.navigation.title"))
             .task {
-                await loadSkillCatalog()
+                await loadAccessData()
             }
         }
     }
@@ -409,8 +412,8 @@ public struct PermissionHubView: View {
                                     .padding(.vertical, 3)
                                     .background(KairoDesign.blue.opacity(0.12), in: Capsule())
                             }
-                            ForEach(actionCatalog.descriptors(for: capability.key).prefix(2)) { descriptor in
-                                CapabilityChipView(descriptor: descriptor)
+                            ForEach(toolSummaries(for: capability.key).prefix(2)) { toolSummary in
+                                AccessToolChipView(summary: toolSummary)
                             }
                         }
                     }
@@ -490,6 +493,12 @@ public struct PermissionHubView: View {
                 return false
             }
         }.count
+    }
+
+    private func toolSummaries(for capabilityKey: CapabilityKey) -> [KairoAccessToolSummary] {
+        accessToolSummaries.filter { summary in
+            summary.capabilityStatuses.keys.contains(capabilityKey)
+        }
     }
 
     private func iconName(for key: CapabilityKey) -> String {
@@ -1166,6 +1175,18 @@ public struct PermissionHubView: View {
     }
 
     @MainActor
+    private func loadAccessData() async {
+        await loadToolSummaries()
+        await loadSkillCatalog()
+    }
+
+    @MainActor
+    private func loadToolSummaries() async {
+        guard let accessAPI else { return }
+        accessToolSummaries = await accessAPI.tools()
+    }
+
+    @MainActor
     private func loadSkillCatalog() async {
         guard let skillManagerService else { return }
 
@@ -1295,6 +1316,33 @@ public struct PermissionHubView: View {
             .accessibilityIdentifier("access.homekit.demo.\(recipe.id).confirm")
         }
         .padding(.vertical, 4)
+    }
+}
+
+private struct AccessToolChipView: View {
+    let summary: KairoAccessToolSummary
+
+    var body: some View {
+        Text(summary.readiness.displayName)
+            .font(.caption2.bold())
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .foregroundStyle(chipForeground)
+            .background(chipForeground.opacity(0.15), in: Capsule())
+            .accessibilityLabel(summary.displayName)
+            .accessibilityValue(summary.readiness.displayName)
+            .accessibilityIdentifier("access.tool.\(summary.toolID.rawValue)")
+    }
+
+    private var chipForeground: Color {
+        switch summary.readiness {
+        case .available:
+            return .green
+        case .needsPermission, .needsSetup, .scaffolded:
+            return .orange
+        case .unavailable:
+            return .red
+        }
     }
 }
 #endif
