@@ -10,12 +10,13 @@ public actor ShortcutDemoRecipeRunner: ShortcutDemoRecipeRunnerProtocol {
 
     public init(
         runtime: ShortcutNodeRuntime,
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)? = nil,
         integrationGate: (any ShortcutDemoIntegrationGating)? = nil
     ) {
+        let runtimeAppIntegrationSkillCatalog = appIntegrationSkillCatalog ?? AppIntegrationSkillCatalog()
         self.runtime = runtime
         self.integrationGate = integrationGate ?? CatalogBackedShortcutDemoIntegrationGate(
-            appIntegrationSkillCatalog: appIntegrationSkillCatalog
+            appIntegrationSkillCatalog: runtimeAppIntegrationSkillCatalog
         )
     }
 

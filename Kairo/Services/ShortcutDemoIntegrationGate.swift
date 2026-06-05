@@ -9,10 +9,10 @@ public struct CatalogBackedShortcutDemoIntegrationGate: ShortcutDemoIntegrationG
     private let outputBuilder: any ShortcutIntegrationBlockedOutputBuilding
 
     public init(
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        appIntegrationSkillCatalog: (any AppIntegrationSkillCatalogProviding)? = nil,
         outputBuilder: any ShortcutIntegrationBlockedOutputBuilding = DefaultShortcutIntegrationBlockedOutputBuilder()
     ) {
-        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
+        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog ?? AppIntegrationSkillCatalog()
         self.outputBuilder = outputBuilder
     }
 
