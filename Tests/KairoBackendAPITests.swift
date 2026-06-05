@@ -639,6 +639,80 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertFalse(response.toolCandidates.contains { $0.integrationKey == "line" && $0.source == .integrationRegistry })
     }
 
+    func testScenarioShareImportToReminderCalendarAndEmailDraftPreviewsWithoutExecution() async throws {
+        let sharedText = """
+        TODO: Send prototype link
+        Schedule a meeting Friday 10:00 Kairo roadmap review
+        Draft an email to alex@example.com subject Kairo update body Please review the roadmap.
+        sensitive launch notes should stay out of audit metadata
+        """
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [builder.text(sharedText, displayName: "Launch Notes")],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 50)
+        )
+        let shareQueue = InMemoryShareIngestionQueue(seed: [item])
+        let importAPI = KairoShareImportBackendService(shareIngestionQueue: shareQueue)
+        let imported = try await importAPI.importPendingShares(limit: 10)
+        let importedText = imported.attachments.compactMap(\.textPreview).joined(separator: "\n")
+        let chatAPI = KairoChatBackendService(
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+        )
+
+        let response = try await chatAPI.respond(
+            to: importedText,
+            attachments: imported.attachments,
+            privacyMode: .standard
+        )
+
+        let reminderAction = try XCTUnwrap(response.proposedActions.first { $0.kind == .createReminderDraft })
+        let calendarAction = try XCTUnwrap(response.proposedActions.first { $0.kind == .createCalendarDraft })
+        let emailAction = try XCTUnwrap(response.proposedActions.first { $0.kind == .composeEmailDraft })
+        let previewActions = [reminderAction, calendarAction, emailAction]
+        XCTAssertTrue(previewActions.allSatisfy(\.requiresConfirmation))
+        XCTAssertTrue(response.toolCandidates.contains { $0.source == .actionCatalog && $0.action?.kind == .createReminderDraft })
+        XCTAssertTrue(response.toolCandidates.contains { $0.source == .actionCatalog && $0.action?.kind == .createCalendarDraft })
+        let emailCandidate = try XCTUnwrap(response.toolCandidates.first { $0.action?.kind == .composeEmailDraft })
+        XCTAssertEqual(emailCandidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(emailCandidate.skillID, AppIntegrationSkillID.appleMailHandoff.rawValue)
+        XCTAssertFalse(response.toolCandidates.contains { $0.source == .integrationRegistry })
+
+        let reminderScheduler = ScenarioBackendReminderScheduler()
+        let calendarScheduler = ScenarioBackendCalendarScheduler()
+        let urlOpener = ScenarioBackendURLOpener()
+        let auditLogger = InMemoryAuditLogger()
+        let executor = SandboxActionExecutor(
+            memoryStore: InMemoryMemoryStore(),
+            reminderScheduler: reminderScheduler,
+            calendarScheduler: calendarScheduler,
+            urlOpener: urlOpener,
+            auditLogger: auditLogger
+        )
+
+        var unconfirmedResults: [ActionExecutionResult] = []
+        for action in previewActions {
+            let result = try await executor.execute(action, confirmed: false)
+            unconfirmedResults.append(result)
+        }
+        let createdReminders = await reminderScheduler.createdDrafts
+        let createdCalendarEvents = await calendarScheduler.createdDrafts
+        let openedURLs = await urlOpener.openedURLs
+        let auditEvents = try await auditLogger.list(limit: 10)
+        let encodedAudit = String(data: try JSONEncoder().encode(auditEvents), encoding: .utf8) ?? ""
+
+        XCTAssertTrue(unconfirmedResults.allSatisfy { !$0.completed })
+        XCTAssertTrue(createdReminders.isEmpty)
+        XCTAssertTrue(createdCalendarEvents.isEmpty)
+        XCTAssertTrue(openedURLs.isEmpty)
+        XCTAssertEqual(auditEvents.map(\.result), [.rejected, .rejected, .rejected])
+        XCTAssertFalse(encodedAudit.contains("sensitive launch notes"))
+
+        try await importAPI.clearImportedShares(ids: imported.importedItemIDs, attachments: imported.attachments)
+        let pendingAfterClear = try await shareQueue.pendingItems(limit: 10)
+        XCTAssertTrue(pendingAfterClear.isEmpty)
+    }
+
     func testBackendCompositionSharesInjectedIntegrationRegistryWithChatFallbackCandidates() async throws {
         let environment = KairoEnvironment(
             memoryStore: InMemoryMemoryStore(),
@@ -1291,6 +1365,41 @@ private struct FixedShortcutDemoRecipeRunner: ShortcutDemoRecipeRunnerProtocol {
             displaySummary: "Injected runner.",
             steps: []
         )
+    }
+}
+
+private actor ScenarioBackendReminderScheduler: ReminderScheduling {
+    private(set) var createdDrafts: [ReminderDraft] = []
+
+    func requestAccess() async throws -> Bool {
+        true
+    }
+
+    func createReminder(from draft: ReminderDraft) async throws -> String {
+        createdDrafts.append(draft)
+        return "scenario-reminder-id"
+    }
+}
+
+private actor ScenarioBackendCalendarScheduler: CalendarScheduling {
+    private(set) var createdDrafts: [CalendarEventDraft] = []
+
+    func requestAccess() async throws -> Bool {
+        true
+    }
+
+    func createCalendarEvent(from draft: CalendarEventDraft) async throws -> String {
+        createdDrafts.append(draft)
+        return "scenario-calendar-id"
+    }
+}
+
+private actor ScenarioBackendURLOpener: URLOpener {
+    private(set) var openedURLs: [URL] = []
+
+    func open(_ url: URL) async -> Bool {
+        openedURLs.append(url)
+        return true
     }
 }
 
