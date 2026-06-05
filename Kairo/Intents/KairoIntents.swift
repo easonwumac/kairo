@@ -37,7 +37,7 @@ public struct SaveToKairoMemoryIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(
             .saveMemory,
             input: ShortcutNodeInput(text: text, sourceName: "Save to Kairo Memory")
@@ -58,7 +58,7 @@ public struct SearchKairoMemoryIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(.searchMemory, input: ShortcutNodeInput(query: query))
         let encodedOutput = try output.encodedJSONString()
         return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
@@ -76,7 +76,7 @@ public struct SummarizeWithKairoIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(.summarize, input: ShortcutNodeInput(text: text, sourceName: "Summarize with Kairo"))
         let encodedOutput = try output.encodedJSONString()
         return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
@@ -94,7 +94,7 @@ public struct ExtractKairoTasksIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(.extractTasks, input: ShortcutNodeInput(text: text, sourceName: "Extract Kairo Tasks"))
         let encodedOutput = try output.encodedJSONString()
         return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
@@ -112,7 +112,7 @@ public struct CreateDailyBriefingIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(.dailyBriefing, input: ShortcutNodeInput(text: text, sourceName: "Create Daily Briefing"))
         let encodedOutput = try output.encodedJSONString()
         return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
@@ -130,7 +130,7 @@ public struct CreateReminderDraftsIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(.createReminderDraft, input: ShortcutNodeInput(text: text, sourceName: "Create Reminder Drafts"))
         let encodedOutput = try output.encodedJSONString()
         return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
@@ -148,7 +148,7 @@ public struct CreateCalendarDraftsIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(.createCalendarDraft, input: ShortcutNodeInput(text: text, sourceName: "Create Calendar Drafts"))
         let encodedOutput = try output.encodedJSONString()
         return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
@@ -186,7 +186,7 @@ public struct CreateContactDraftsIntent: AppIntent {
             variables["email"] = email
         }
 
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(
             .createContactDraft,
             input: ShortcutNodeInput(text: text, sourceName: "Create Contact Drafts", variables: variables)
@@ -221,7 +221,7 @@ public struct CreateEmailDraftsIntent: AppIntent {
             variables["subject"] = subject
         }
 
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(
             .createEmailDraft,
             input: ShortcutNodeInput(text: text, sourceName: "Create Email Drafts", variables: variables)
@@ -250,7 +250,7 @@ public struct PrepareMessageHandoffIntent: AppIntent {
             variables["recipient"] = recipient
         }
 
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(
             .prepareMessageHandoff,
             input: ShortcutNodeInput(text: messageBody, sourceName: "Prepare Message Handoff", variables: variables)
@@ -291,7 +291,7 @@ public struct PreparePhoneCallHandoffIntent: AppIntent {
             ? "Call \(trimmedLabel.isEmpty ? trimmedPhoneNumber : trimmedLabel)"
             : trimmedNotes
 
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(
             .preparePhoneCallHandoff,
             input: ShortcutNodeInput(text: text, sourceName: "Prepare Phone Call Handoff", variables: variables)
@@ -313,7 +313,7 @@ public struct PrepareWebSearchHandoffIntent: AppIntent {
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let output = try await runtime.run(
             .prepareWebSearchHandoff,
             input: ShortcutNodeInput(
@@ -341,7 +341,7 @@ public struct RunKairoShortcutNodeIntent: AppIntent {
     public init() {}
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
-        let runtime = try await ShortcutNodeRuntime.live()
+        let runtime = try await KairoShortcutIntentSupport.runtime()
         let service = ShortcutNodeInvocationService(runtime: runtime)
         let outputJSON = try await service.run(nodeKindRawValue: nodeKind, inputJSON: inputJSON)
         let output = try JSONDecoder().decode(ShortcutNodeOutput.self, from: Data(outputJSON.utf8))
@@ -487,6 +487,14 @@ private enum KairoRecipeIntentSupport {
         encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(value)
         return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
+
+private enum KairoShortcutIntentSupport {
+    static func runtime(
+        provider: any ShortcutNodeRuntimeProviding = LiveShortcutNodeRuntimeProvider()
+    ) async throws -> ShortcutNodeRuntime {
+        try await provider.makeRuntime()
     }
 }
 #endif

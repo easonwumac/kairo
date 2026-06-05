@@ -335,6 +335,28 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(output.displayText.contains("HomeKit"))
     }
 
+    func testLiveShortcutRuntimeProviderUsesInjectedToolCatalogForNodeGate() async throws {
+        let paths = KairoPaths(appName: "LiveShortcutRuntimeProvider-\(UUID().uuidString)")
+        let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
+        let provider = LiveShortcutNodeRuntimeProvider(
+            paths: paths,
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [calendarTool])
+        )
+        let runtime = try await provider.makeRuntime()
+
+        let output = try await runtime.run(
+            .saveMemory,
+            input: ShortcutNodeInput(text: "Do not save when memory.save is absent from catalog.")
+        )
+        let store = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
+        let memories = try await store.list(limit: 10)
+
+        XCTAssertEqual(output.kind, .saveMemory)
+        XCTAssertEqual(output.fields["toolID"], BuiltInPhoneToolID.memorySave.rawValue)
+        XCTAssertEqual(output.fields["success"], "false")
+        XCTAssertTrue(memories.isEmpty)
+    }
+
     func testShortcutDraftReplyNodeReturnsDraftWithoutSending() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let input = ShortcutNodeInput(

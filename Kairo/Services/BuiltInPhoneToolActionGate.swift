@@ -9,9 +9,14 @@ public protocol PhoneToolActionGating: Sendable {
 
 public struct BuiltInPhoneToolActionGate: PhoneToolActionGating {
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
+    private let referenceCatalog: any BuiltInPhoneToolCatalogProviding
 
-    public init(toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()) {
+    public init(
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        referenceCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+    ) {
         self.toolCatalog = toolCatalog
+        self.referenceCatalog = referenceCatalog
     }
 
     public func allowsExecutablePreview(_ action: AgentAction) -> Bool {
@@ -29,16 +34,38 @@ public struct BuiltInPhoneToolActionGate: PhoneToolActionGating {
     }
 
     public func blockedTool(for shortcutNodeKind: ShortcutNodeKind) -> BuiltInPhoneToolDefinition? {
-        guard let tool = toolCatalog.tool(for: shortcutNodeKind) else {
+        if let tool = toolCatalog.tool(for: shortcutNodeKind) {
+            return tool.canBeSuggestedAsExecutable ? nil : tool
+        }
+        guard let referenceTool = referenceCatalog.tool(for: shortcutNodeKind),
+              shouldFailClosedWhenMissing(referenceTool) else {
             return nil
         }
-        return tool.canBeSuggestedAsExecutable ? nil : tool
+        return missingCatalogTool(referenceTool)
     }
 
     public func blockedTool(for recipeStepKind: KairoRecipeStepKind) -> BuiltInPhoneToolDefinition? {
-        guard let tool = toolCatalog.tool(for: recipeStepKind) else {
+        if let tool = toolCatalog.tool(for: recipeStepKind) {
+            return tool.canBeSuggestedAsExecutable ? nil : tool
+        }
+        guard let referenceTool = referenceCatalog.tool(for: recipeStepKind),
+              shouldFailClosedWhenMissing(referenceTool) else {
             return nil
         }
-        return tool.canBeSuggestedAsExecutable ? nil : tool
+        return missingCatalogTool(referenceTool)
+    }
+
+    private func shouldFailClosedWhenMissing(_ tool: BuiltInPhoneToolDefinition) -> Bool {
+        tool.id != .recipeRun
+    }
+
+    private func missingCatalogTool(_ tool: BuiltInPhoneToolDefinition) -> BuiltInPhoneToolDefinition {
+        var blockedTool = tool
+        blockedTool.availabilityStatus = .unsupported
+        blockedTool.fallback = BuiltInPhoneToolFallback(
+            unsupportedReason: "Tool is not enabled in the active phone tool catalog.",
+            safeAlternative: tool.fallback.safeAlternative
+        )
+        return blockedTool
     }
 }

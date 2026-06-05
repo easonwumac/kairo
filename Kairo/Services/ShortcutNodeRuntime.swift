@@ -13,9 +13,14 @@ public actor ShortcutNodeRuntime {
         self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
     }
 
-    public static func live(paths: KairoPaths = KairoSharedAppStorage.paths()) async throws -> ShortcutNodeRuntime {
-        let store = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
-        return ShortcutNodeRuntime(memoryStore: store)
+    public static func live(
+        paths: KairoPaths = KairoSharedAppStorage.paths(),
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+    ) async throws -> ShortcutNodeRuntime {
+        try await LiveShortcutNodeRuntimeProvider(
+            paths: paths,
+            toolCatalog: toolCatalog
+        ).makeRuntime()
     }
 
     public func run(_ kind: ShortcutNodeKind, input: ShortcutNodeInput) async throws -> ShortcutNodeOutput {
