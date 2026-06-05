@@ -116,7 +116,7 @@ public struct LocalModelRoutingAIProvider: AIProvider {
             systemPrompt: """
             \(request.systemPrompt)
 
-            Response language:
+            Primary language:
             \(responseLanguage.promptInstruction)
             If the user explicitly asks for another language, follow the user's explicit language request.
             """,

@@ -36,8 +36,32 @@ public enum ChatResponseLanguagePreference: String, Codable, CaseIterable, Equat
     case system
     case english
     case traditionalChinese
+    case simplifiedChinese
+    case japanese
+    case korean
+    case spanish
+    case french
+    case german
+    case portuguese
+    case indonesian
+    case thai
+    case vietnamese
 
-    public static let settingsChoices: [ChatResponseLanguagePreference] = [.system, .english, .traditionalChinese]
+    public static let settingsChoices: [ChatResponseLanguagePreference] = [
+        .system,
+        .english,
+        .traditionalChinese,
+        .simplifiedChinese,
+        .japanese,
+        .korean,
+        .spanish,
+        .french,
+        .german,
+        .portuguese,
+        .indonesian,
+        .thai,
+        .vietnamese
+    ]
 
     public var settingsTitle: String {
         switch self {
@@ -47,6 +71,26 @@ public enum ChatResponseLanguagePreference: String, Codable, CaseIterable, Equat
             return KairoL10n.string("settings.responseLanguage.english.title")
         case .traditionalChinese:
             return KairoL10n.string("settings.responseLanguage.traditionalChinese.title")
+        case .simplifiedChinese:
+            return KairoL10n.string("settings.responseLanguage.simplifiedChinese.title")
+        case .japanese:
+            return KairoL10n.string("settings.responseLanguage.japanese.title")
+        case .korean:
+            return KairoL10n.string("settings.responseLanguage.korean.title")
+        case .spanish:
+            return KairoL10n.string("settings.responseLanguage.spanish.title")
+        case .french:
+            return KairoL10n.string("settings.responseLanguage.french.title")
+        case .german:
+            return KairoL10n.string("settings.responseLanguage.german.title")
+        case .portuguese:
+            return KairoL10n.string("settings.responseLanguage.portuguese.title")
+        case .indonesian:
+            return KairoL10n.string("settings.responseLanguage.indonesian.title")
+        case .thai:
+            return KairoL10n.string("settings.responseLanguage.thai.title")
+        case .vietnamese:
+            return KairoL10n.string("settings.responseLanguage.vietnamese.title")
         }
     }
 
@@ -58,6 +102,8 @@ public enum ChatResponseLanguagePreference: String, Codable, CaseIterable, Equat
             return KairoL10n.string("settings.responseLanguage.english.detail")
         case .traditionalChinese:
             return KairoL10n.string("settings.responseLanguage.traditionalChinese.detail")
+        default:
+            return KairoL10n.string("settings.responseLanguage.fixed.detail", settingsTitle)
         }
     }
 
@@ -69,6 +115,26 @@ public enum ChatResponseLanguagePreference: String, Codable, CaseIterable, Equat
             return "Reply in English."
         case .traditionalChinese:
             return "Reply in Traditional Chinese."
+        case .simplifiedChinese:
+            return "Reply in Simplified Chinese."
+        case .japanese:
+            return "Reply in Japanese."
+        case .korean:
+            return "Reply in Korean."
+        case .spanish:
+            return "Reply in Spanish."
+        case .french:
+            return "Reply in French."
+        case .german:
+            return "Reply in German."
+        case .portuguese:
+            return "Reply in Portuguese."
+        case .indonesian:
+            return "Reply in Indonesian."
+        case .thai:
+            return "Reply in Thai."
+        case .vietnamese:
+            return "Reply in Vietnamese."
         }
     }
 

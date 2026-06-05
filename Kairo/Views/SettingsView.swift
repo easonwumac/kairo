@@ -190,6 +190,18 @@ public struct SettingsView: View {
             GeometryReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
+                        NavigationLink {
+                            modelsOnlyContent
+                        } label: {
+                            SettingsModelSettingsLinkCard(
+                                localModelStatus: localModelStatus,
+                                hasAPIKey: hasAPIKey,
+                                connectedConnectorCount: connectedConnectorCount
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.models.entry")
+
                         SettingsAnswerOverviewCard(
                             hasAPIKey: hasAPIKey,
                             routePreference: localModelStatus.preference,
@@ -294,10 +306,21 @@ public struct SettingsView: View {
         connectorOptions.filter { $0.readiness == .connected }.count
     }
 
+    private var isChatGPTOAuthConnected: Bool {
+        connectorOptions.first { $0.providerKey == "chatgpt" }?.readiness == .connected
+    }
+
+    private var isChatGPTOAuthAvailable: Bool {
+        connectorOptions.contains { $0.providerKey == "chatgpt" }
+    }
+
     private var modelsOnlyContent: some View {
         GeometryReader { proxy in
             LocalModelsCompactView(
-                topPadding: max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding,
+                topPadding: max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeTopPadding + 32,
+                hasOpenAIAPIKey: hasAPIKey,
+                isChatGPTOAuthConnected: isChatGPTOAuthConnected,
+                isChatGPTOAuthAvailable: isChatGPTOAuthAvailable,
                 localModelStatus: localModelStatus,
                 localModelDownloadProgress: localModelDownloadProgress,
                 localModelStatusMessage: localModelStatusMessage,

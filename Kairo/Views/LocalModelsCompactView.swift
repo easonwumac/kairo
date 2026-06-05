@@ -7,6 +7,9 @@ struct LocalModelsCompactView: View {
     @State private var showAdvancedDiagnostics = false
 
     var topPadding: CGFloat = 16
+    let hasOpenAIAPIKey: Bool
+    let isChatGPTOAuthConnected: Bool
+    let isChatGPTOAuthAvailable: Bool
     let localModelStatus: LocalModelSettingsStatus
     let localModelDownloadProgress: LocalModelDownloadProgressState?
     let localModelStatusMessage: String?
@@ -27,6 +30,8 @@ struct LocalModelsCompactView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 answerRouteCard
+
+                cloudModelsSection
 
                 modelStarterSection
 
@@ -97,15 +102,11 @@ struct LocalModelsCompactView: View {
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(KairoDesign.ink)
 
-                    Text(KairoL10n.string("settings.models.answerRoute"))
+                    Text(KairoL10n.string("settings.models.defaultModel.detail"))
                         .font(compactModelMetadataFont)
                         .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
                 }
-
-                routePreferenceInline
-
-                Divider()
 
                 responseLanguageInline
 
@@ -116,6 +117,31 @@ struct LocalModelsCompactView: View {
             .accessibilityIdentifier("settings.models.answer-route")
         }
         .accessibilityIdentifier("settings.models.local")
+    }
+
+    private var cloudModelsSection: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(KairoL10n.string("settings.models.cloud.section"))
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+
+                    Text(KairoL10n.string("settings.models.cloud.detail"))
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                ForEach(cloudProviderRows) { row in
+                    cloudProviderRow(row)
+                    if row.id != cloudProviderRows.last?.id {
+                        Divider()
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("settings.models.cloud")
     }
 
     private var advancedDiagnosticsSection: some View {
@@ -338,11 +364,49 @@ struct LocalModelsCompactView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 8)
+
+            defaultModelMenu
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(selectedModelSummaryText)
         .accessibilityIdentifier("settings.models.selected-summary")
+    }
+
+    private var defaultModelMenu: some View {
+        Menu {
+            Button {
+                setLocalModelPreference(.preferCloud)
+            } label: {
+                Text(KairoL10n.string("settings.models.default.cloud.openai"))
+            }
+            .disabled(!hasOpenAIAPIKey)
+            .accessibilityIdentifier("settings.models.default.openai")
+
+            ForEach(selectableLocalModelRows) { row in
+                Button {
+                    selectLocalModel(row)
+                } label: {
+                    Text(KairoL10n.string("settings.models.default.local", row.displayName))
+                }
+                .accessibilityIdentifier("settings.models.default.\(row.modelID)")
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(KairoL10n.string("settings.models.default.change"))
+                    .font(compactButtonLabelFont)
+                    .lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2.weight(.semibold))
+            }
+            .foregroundStyle(KairoDesign.blue)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(KairoDesign.blue.opacity(0.08), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(KairoL10n.string("settings.models.default.change"))
+        .accessibilityIdentifier("settings.models.default.menu")
     }
 
     private var selectedModelSummaryText: String {
@@ -353,6 +417,89 @@ struct LocalModelsCompactView: View {
             return KairoL10n.string("settings.models.compact.downloadedSelectForRouting", downloadedModel.displayName)
         }
         return KairoL10n.string("settings.models.compact.noDownloadedModel")
+    }
+
+    private var cloudProviderRows: [CloudModelProviderRow] {
+        [
+            CloudModelProviderRow(
+                id: "openai-api",
+                title: "OpenAI",
+                method: KairoL10n.string("settings.models.cloud.method.apiKey"),
+                status: hasOpenAIAPIKey
+                    ? KairoL10n.string("settings.models.cloud.status.configured")
+                    : KairoL10n.string("settings.models.cloud.status.needsApiKey"),
+                isConfigured: hasOpenAIAPIKey
+            ),
+            CloudModelProviderRow(
+                id: "chatgpt-oauth",
+                title: "ChatGPT",
+                method: KairoL10n.string("settings.models.cloud.method.oauth"),
+                status: isChatGPTOAuthConnected
+                    ? KairoL10n.string("settings.models.cloud.status.configured")
+                    : isChatGPTOAuthAvailable
+                        ? KairoL10n.string("settings.models.cloud.status.oauthSetup")
+                        : KairoL10n.string("settings.models.cloud.status.metadataOnly"),
+                isConfigured: isChatGPTOAuthConnected
+            ),
+            CloudModelProviderRow(
+                id: "anthropic",
+                title: "Claude",
+                method: KairoL10n.string("settings.models.cloud.method.apiKey"),
+                status: KairoL10n.string("settings.models.cloud.status.metadataOnly"),
+                isConfigured: false
+            ),
+            CloudModelProviderRow(
+                id: "gemini",
+                title: "Gemini",
+                method: KairoL10n.string("settings.models.cloud.method.apiKeyOrOAuth"),
+                status: KairoL10n.string("settings.models.cloud.status.metadataOnly"),
+                isConfigured: false
+            ),
+            CloudModelProviderRow(
+                id: "mistral",
+                title: "Mistral",
+                method: KairoL10n.string("settings.models.cloud.method.apiKey"),
+                status: KairoL10n.string("settings.models.cloud.status.metadataOnly"),
+                isConfigured: false
+            ),
+            CloudModelProviderRow(
+                id: "perplexity",
+                title: "Perplexity",
+                method: KairoL10n.string("settings.models.cloud.method.apiKey"),
+                status: KairoL10n.string("settings.models.cloud.status.metadataOnly"),
+                isConfigured: false
+            )
+        ]
+    }
+
+    private func cloudProviderRow(_ row: CloudModelProviderRow) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: row.isConfigured ? "checkmark.seal.fill" : "cloud")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(row.isConfigured ? .green : KairoDesign.blue)
+                .frame(width: 30, height: 30)
+                .background((row.isConfigured ? Color.green : KairoDesign.blue).opacity(0.10), in: Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(row.title)
+                    .font(compactModelNameFont)
+                    .foregroundStyle(KairoDesign.ink)
+
+                Text(row.method)
+                    .font(compactModelMetadataFont)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            Text(row.status)
+                .font(compactModelStatusFont)
+                .foregroundStyle(row.isConfigured ? .green : .secondary)
+                .multilineTextAlignment(.trailing)
+                .lineLimit(2)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("settings.models.cloud.\(row.id)")
     }
 
     private var selectedModelSummaryIconName: String {
@@ -377,6 +524,17 @@ struct LocalModelsCompactView: View {
             .filter { $0.status == .installed }
             .map(\.modelID))
         return localModelStatus.availableModels.first { installedModelIDs.contains($0.id) }
+    }
+
+    private var selectableLocalModelRows: [LocalModelSettingsRow] {
+        localModelStatus.settingsRows.filter { row in
+            switch row.primaryAction {
+            case .select, .selected:
+                return true
+            case .download, .retryDownload, .unavailable:
+                return false
+            }
+        }
     }
 
     private var visibleModelRows: [LocalModelSettingsRow] {
@@ -717,5 +875,13 @@ struct LocalModelsCompactView: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier(accessibilityIdentifier)
     }
+}
+
+private struct CloudModelProviderRow: Identifiable, Equatable {
+    var id: String
+    var title: String
+    var method: String
+    var status: String
+    var isConfigured: Bool
 }
 #endif
