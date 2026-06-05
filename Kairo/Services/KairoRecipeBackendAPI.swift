@@ -23,6 +23,7 @@ public struct KairoRecipeBackendService: KairoRecipeAPI {
         recipeStore: any KairoRecipeStore,
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
+        actionGate: (any PhoneToolActionGating)? = nil,
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) {
@@ -30,7 +31,7 @@ public struct KairoRecipeBackendService: KairoRecipeAPI {
             recipeStore: recipeStore,
             memoryStore: memoryStore,
             aiProvider: aiProvider,
-            actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog),
+            actionGate: actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog),
             appIntegrationSkillCatalog: appIntegrationSkillCatalog
         ))
     }
