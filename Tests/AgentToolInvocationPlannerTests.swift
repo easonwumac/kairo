@@ -376,20 +376,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
             installedSkillCandidateCollector: FixedInstalledSkillCandidateCollector(candidates: [injectedCandidate])
         )
 
-        let candidates = collector.candidates(
-            for: AgentToolInvocationRequest(userText: "installed source route"),
-            normalizedText: "installed source route",
-            skillCatalog: AgentSkillCatalog(skills: []),
-            integrationRegistry: IntegrationRegistry(integrations: []),
-            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
-            appIntegrationActionMapper: NoOpAppIntegrationActionMapper(),
-            appIntegrationActionParser: DefaultAgentToolInvocationActionParser(),
-            candidateMatcher: FixedAgentToolInvocationCandidateMatcher(),
-            installedSkillCandidateMapper: FixedInstalledSkillToolInvocationCandidateMapper(candidate: nil),
-            legacyIntegrationCandidateMapper: FixedLegacyIntegrationToolInvocationCandidateMapper(candidate: nil),
-            appIntegrationCandidateMapper: FixedAppIntegrationToolInvocationCandidateMapper(candidate: nil),
-            safetyPolicyEngine: SafetyPolicyEngine()
-        )
+        let candidates = collector.candidates(in: makePrimaryCandidateContext(userText: "installed source route"))
 
         XCTAssertEqual(candidates, [injectedCandidate])
     }
@@ -412,20 +399,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
             appIntegrationSkillCandidateCollector: FixedAppIntegrationSkillCandidateCollector(candidates: [injectedCandidate])
         )
 
-        let candidates = collector.candidates(
-            for: AgentToolInvocationRequest(userText: "app integration source route"),
-            normalizedText: "app integration source route",
-            skillCatalog: AgentSkillCatalog(skills: []),
-            integrationRegistry: IntegrationRegistry(integrations: []),
-            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
-            appIntegrationActionMapper: NoOpAppIntegrationActionMapper(),
-            appIntegrationActionParser: DefaultAgentToolInvocationActionParser(),
-            candidateMatcher: FixedAgentToolInvocationCandidateMatcher(),
-            installedSkillCandidateMapper: FixedInstalledSkillToolInvocationCandidateMapper(candidate: nil),
-            legacyIntegrationCandidateMapper: FixedLegacyIntegrationToolInvocationCandidateMapper(candidate: nil),
-            appIntegrationCandidateMapper: FixedAppIntegrationToolInvocationCandidateMapper(candidate: nil),
-            safetyPolicyEngine: SafetyPolicyEngine()
-        )
+        let candidates = collector.candidates(in: makePrimaryCandidateContext(userText: "app integration source route"))
 
         XCTAssertEqual(candidates, [injectedCandidate])
     }
@@ -448,20 +422,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
             legacyIntegrationCandidateCollector: FixedLegacyIntegrationCandidateCollector(candidates: [injectedCandidate])
         )
 
-        let candidates = collector.candidates(
-            for: AgentToolInvocationRequest(userText: "legacy source route"),
-            normalizedText: "legacy source route",
-            skillCatalog: AgentSkillCatalog(skills: []),
-            integrationRegistry: IntegrationRegistry(integrations: []),
-            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
-            appIntegrationActionMapper: NoOpAppIntegrationActionMapper(),
-            appIntegrationActionParser: DefaultAgentToolInvocationActionParser(),
-            candidateMatcher: FixedAgentToolInvocationCandidateMatcher(),
-            installedSkillCandidateMapper: FixedInstalledSkillToolInvocationCandidateMapper(candidate: nil),
-            legacyIntegrationCandidateMapper: FixedLegacyIntegrationToolInvocationCandidateMapper(candidate: nil),
-            appIntegrationCandidateMapper: FixedAppIntegrationToolInvocationCandidateMapper(candidate: nil),
-            safetyPolicyEngine: SafetyPolicyEngine()
-        )
+        let candidates = collector.candidates(in: makePrimaryCandidateContext(userText: "legacy source route"))
 
         XCTAssertEqual(candidates, [injectedCandidate])
     }
@@ -1219,22 +1180,39 @@ private struct FixedAgentToolInvocationCandidatePipeline: AgentToolInvocationCan
 private struct FixedPrimaryToolCandidateCollector: AgentPrimaryToolCandidateCollecting {
     var candidates: [AgentToolInvocationCandidate]
 
-    func candidates(
-        for request: AgentToolInvocationRequest,
-        normalizedText: String,
-        skillCatalog: AgentSkillCatalog,
-        integrationRegistry: any AppIntegrationRegistryProviding,
-        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding,
-        appIntegrationActionMapper: any AppIntegrationActionMapping,
-        appIntegrationActionParser: any AgentToolInvocationActionParsing,
-        candidateMatcher: any AgentToolInvocationCandidateMatching,
-        installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
-        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
-        appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
-        safetyPolicyEngine: SafetyPolicyEngine
-    ) -> [AgentToolInvocationCandidate] {
+    func candidates(in context: AgentPrimaryToolCandidateContext) -> [AgentToolInvocationCandidate] {
         candidates
     }
+}
+
+private func makePrimaryCandidateContext(
+    userText: String,
+    normalizedText: String? = nil,
+    skillCatalog: AgentSkillCatalog = AgentSkillCatalog(skills: []),
+    integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(integrations: []),
+    appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(skills: []),
+    appIntegrationActionMapper: any AppIntegrationActionMapping = NoOpAppIntegrationActionMapper(),
+    appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),
+    candidateMatcher: any AgentToolInvocationCandidateMatching = FixedAgentToolInvocationCandidateMatcher(),
+    installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping = FixedInstalledSkillToolInvocationCandidateMapper(candidate: nil),
+    legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping = FixedLegacyIntegrationToolInvocationCandidateMapper(candidate: nil),
+    appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = FixedAppIntegrationToolInvocationCandidateMapper(candidate: nil),
+    safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
+) -> AgentPrimaryToolCandidateContext {
+    AgentPrimaryToolCandidateContext(
+        request: AgentToolInvocationRequest(userText: userText),
+        normalizedText: normalizedText ?? userText,
+        skillCatalog: skillCatalog,
+        integrationRegistry: integrationRegistry,
+        appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+        appIntegrationActionMapper: appIntegrationActionMapper,
+        appIntegrationActionParser: appIntegrationActionParser,
+        candidateMatcher: candidateMatcher,
+        installedSkillCandidateMapper: installedSkillCandidateMapper,
+        legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper,
+        appIntegrationCandidateMapper: appIntegrationCandidateMapper,
+        safetyPolicyEngine: safetyPolicyEngine
+    )
 }
 
 private struct FixedFallbackActionCandidateAppender: AgentFallbackActionCandidateAppending {

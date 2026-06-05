@@ -42,8 +42,8 @@ public struct DefaultAgentToolInvocationCandidatePipeline: AgentToolInvocationCa
         fallbackActionCandidateAppender: any AgentFallbackActionCandidateAppending,
         safetyPolicyEngine: SafetyPolicyEngine
     ) -> [AgentToolInvocationCandidate] {
-        var candidates = primaryCandidateCollector.candidates(
-            for: request,
+        var candidates = primaryCandidateCollector.candidates(in: AgentPrimaryToolCandidateContext(
+            request: request,
             normalizedText: normalizedText,
             skillCatalog: skillCatalog,
             integrationRegistry: integrationRegistry,
@@ -55,7 +55,7 @@ public struct DefaultAgentToolInvocationCandidatePipeline: AgentToolInvocationCa
             legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper,
             appIntegrationCandidateMapper: appIntegrationCandidateMapper,
             safetyPolicyEngine: safetyPolicyEngine
-        )
+        ))
 
         fallbackActionCandidateAppender.appendFallbackCandidates(
             to: &candidates,
