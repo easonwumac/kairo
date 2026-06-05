@@ -14,10 +14,11 @@ struct KairoApp: App {
         WindowGroup {
             Group {
                 if let launchEnvironmentError {
-                    Text(launchEnvironmentError)
-                        .accessibilityIdentifier("root.environment.error")
+                    launchEnvironmentErrorView(launchEnvironmentError)
                 } else if isLoadingLaunchEnvironment {
                     ProgressView(KairoL10n.string("root.environment.loading"))
+                        .tint(Self.launchAccentColor)
+                        .foregroundStyle(Self.launchTextColor)
                         .accessibilityIdentifier("root.environment.loading")
                 } else {
                     RootView(
@@ -29,7 +30,7 @@ struct KairoApp: App {
                 }
             }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(.sRGB, white: 0.98, opacity: 1).ignoresSafeArea())
+                .background(Self.launchBackgroundColor.ignoresSafeArea())
                 .task {
                     guard !didLoadEnvironment else { return }
                     didLoadEnvironment = true
@@ -53,7 +54,10 @@ struct KairoApp: App {
                             environmentRevision += 1
                             isLoadingLaunchEnvironment = false
                         } catch {
-                            launchEnvironmentError = KairoL10n.string("root.environment.uiTestingLoadFailed")
+                            launchEnvironmentError = Self.launchErrorMessage(
+                                "root.environment.uiTestingLoadFailed",
+                                error: error
+                            )
                             isLoadingLaunchEnvironment = false
                         }
                         return
@@ -64,11 +68,60 @@ struct KairoApp: App {
                         environmentRevision += 1
                         isLoadingLaunchEnvironment = false
                     } catch {
-                        launchEnvironmentError = KairoL10n.string("root.environment.liveLoadFailed")
+                        launchEnvironmentError = Self.launchErrorMessage(
+                            "root.environment.liveLoadFailed",
+                            error: error
+                        )
                         isLoadingLaunchEnvironment = false
                     }
                 }
         }
+    }
+
+    private func launchEnvironmentErrorView(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(message, systemImage: "exclamationmark.triangle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Self.launchTextColor)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(Self.launchCardColor, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Self.launchLineColor, lineWidth: 1)
+        }
+        .padding(.horizontal, 18)
+        .accessibilityIdentifier("root.environment.error")
+    }
+
+    private static var launchBackgroundColor: Color {
+        Color(red: 0.015, green: 0.035, blue: 0.075)
+    }
+
+    private static var launchCardColor: Color {
+        Color(red: 0.075, green: 0.105, blue: 0.145).opacity(0.92)
+    }
+
+    private static var launchLineColor: Color {
+        Color(red: 0.24, green: 0.58, blue: 0.76).opacity(0.26)
+    }
+
+    private static var launchTextColor: Color {
+        Color(red: 0.92, green: 0.96, blue: 1.0)
+    }
+
+    private static var launchAccentColor: Color {
+        Color(red: 0.32, green: 0.74, blue: 1.0)
+    }
+
+    private static func launchErrorMessage(_ key: String, error: Error) -> String {
+        #if DEBUG
+        return "\(KairoL10n.string(key))\n\(error.localizedDescription)"
+        #else
+        return KairoL10n.string(key)
+        #endif
     }
 
     private static func liveEnvironment() async throws -> KairoEnvironment {
