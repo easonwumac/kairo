@@ -68,17 +68,20 @@ public struct KairoRecipeStep: Codable, Identifiable, Equatable, Sendable {
     public var title: String
     public var kind: KairoRecipeStepKind
     public var input: StepInput
+    public var integrationSkillID: AppIntegrationSkillID?
 
     public init(
         id: String,
         title: String,
         kind: KairoRecipeStepKind,
-        input: StepInput = .previousStepOutput
+        input: StepInput = .previousStepOutput,
+        integrationSkillID: AppIntegrationSkillID? = nil
     ) {
         self.id = id
         self.title = title
         self.kind = kind
         self.input = input
+        self.integrationSkillID = integrationSkillID
     }
 }
 

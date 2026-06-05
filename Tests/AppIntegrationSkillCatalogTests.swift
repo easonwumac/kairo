@@ -52,6 +52,23 @@ final class AppIntegrationSkillCatalogTests: XCTestCase {
         XCTAssertTrue(catalog.skills.allSatisfy { !$0.examplePromptKey.isEmpty })
     }
 
+    func testRecipeStepCanBindToCatalogIntegrationSkillID() throws {
+        let catalog = AppIntegrationSkillCatalog()
+        let step = KairoRecipeStep(
+            id: "google-maps-handoff",
+            title: "Prepare Maps Handoff",
+            kind: .enqueueActionDraft,
+            input: .previousStepOutput,
+            integrationSkillID: .googleMapsDirectionsHandoff
+        )
+
+        let skill = try XCTUnwrap(catalog.skill(for: step))
+
+        XCTAssertEqual(skill.id, .googleMapsDirectionsHandoff)
+        XCTAssertEqual(skill.executionMode, .openURL)
+        XCTAssertEqual(skill.confirmationPolicy, .previewAndExplicitConfirmation)
+    }
+
     func testURLSchemeSkillsOnlyUseVisibleOpenURLHandoff() {
         let catalog = AppIntegrationSkillCatalog()
         let urlSchemeSkills = catalog.skills.filter { $0.supportedSurfaces.contains(.urlScheme) }

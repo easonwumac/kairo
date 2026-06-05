@@ -9,6 +9,11 @@ public extension AppIntegrationSkillCatalogProviding {
         skills.first { $0.id == id }
     }
 
+    func skill(for recipeStep: KairoRecipeStep) -> AppIntegrationSkill? {
+        guard let integrationSkillID = recipeStep.integrationSkillID else { return nil }
+        return skill(id: integrationSkillID)
+    }
+
     var executableSkills: [AppIntegrationSkill] {
         skills.filter(\.canBeSuggestedAsExecutable)
     }

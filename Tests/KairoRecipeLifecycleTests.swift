@@ -51,6 +51,36 @@ final class KairoRecipeLifecycleTests: XCTestCase {
         XCTAssertTrue(recipesAfterDelete.isEmpty)
     }
 
+    func testFileBackedKairoRecipeStorePersistsIntegrationSkillBindings() async throws {
+        let fileURL = temporaryFileURL(named: "kairo-recipe-integration-bindings.json")
+        let recipe = KairoRecipe(
+            id: "maps-handoff-workflow",
+            title: "Maps Handoff Workflow",
+            summary: "References an app integration catalog skill.",
+            steps: [
+                KairoRecipeStep(
+                    id: "maps",
+                    title: "Prepare Maps Handoff",
+                    kind: .enqueueActionDraft,
+                    integrationSkillID: .googleMapsDirectionsHandoff
+                )
+            ],
+            requiredCapabilities: [.appIntents],
+            riskTier: .tier1Draft,
+            cloudPolicy: .localOnly,
+            isEnabled: true
+        )
+        let firstStore = try await FileBackedKairoRecipeStore(fileURL: fileURL)
+        try await firstStore.save(recipe)
+
+        let secondStore = try await FileBackedKairoRecipeStore(fileURL: fileURL)
+        let reloadedRecipe = try await secondStore.recipe(id: recipe.id)
+        let reloaded = try XCTUnwrap(reloadedRecipe)
+
+        XCTAssertEqual(reloaded.steps.first?.integrationSkillID, .googleMapsDirectionsHandoff)
+        XCTAssertNotNil(AppIntegrationSkillCatalog().skill(for: try XCTUnwrap(reloaded.steps.first)))
+    }
+
     func testKairoRecipeRunnerRequiresConfirmationBeforeLowRiskWrites() async throws {
         let recipe = KairoRecipe(
             id: "low-risk-write",
