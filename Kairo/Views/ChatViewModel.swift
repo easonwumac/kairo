@@ -63,7 +63,6 @@ public final class ChatViewModel: ObservableObject {
     public convenience init(
         historyStore: ChatHistoryStore = InMemoryChatHistoryStore(),
         shareIngestionQueue: ShareIngestionQueue = InMemoryShareIngestionQueue(),
-        agent: AgentCore = AgentCore(),
         shareImportAPI: (any KairoShareImportAPI)? = nil,
         chatAPI: (any KairoChatAPI)? = nil,
         actionAPI: (any KairoActionAPI)? = nil,
@@ -77,7 +76,7 @@ public final class ChatViewModel: ObservableObject {
             dependencies: dependencyComposer.makeDependencies(
                 historyStore: historyStore,
                 shareIngestionQueue: shareIngestionQueue,
-                makeChatAPI: { chatAPI ?? KairoChatBackendService(agent: agent) },
+                chatAPI: chatAPI,
                 shareImportAPI: shareImportAPI,
                 actionAPI: actionAPI,
                 actionExecutor: actionExecutor,

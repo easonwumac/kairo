@@ -39,7 +39,9 @@ final class KairoChatBackendAPITests: XCTestCase {
     func testChatViewModelSurfacesMissingOpenAIKeyAsActionableSettingsError() async throws {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
-            agent: AgentCore(aiProvider: FailingChatBackendAIProvider(error: AIProviderError.missingCredential))
+            chatAPI: KairoChatBackendService(
+                agent: AgentCore(aiProvider: FailingChatBackendAIProvider(error: AIProviderError.missingCredential))
+            )
         )
 
         await viewModel.send("Hello Kairo")
@@ -56,7 +58,9 @@ final class KairoChatBackendAPITests: XCTestCase {
         let reason = KairoL10n.string("chat.error.localInference.reason.localOnlyNoModel")
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
-            agent: AgentCore(aiProvider: FailingChatBackendAIProvider(error: AIProviderError.localInferenceUnavailable(reason)))
+            chatAPI: KairoChatBackendService(
+                agent: AgentCore(aiProvider: FailingChatBackendAIProvider(error: AIProviderError.localInferenceUnavailable(reason)))
+            )
         )
 
         await viewModel.send("Draft a private reply")
@@ -125,9 +129,11 @@ final class KairoChatBackendAPITests: XCTestCase {
         let historyStore = InMemoryChatHistoryStore()
         let viewModel = ChatViewModel(
             historyStore: historyStore,
-            agent: AgentCore(
-                memoryStore: InMemoryMemoryStore(seed: [memory]),
-                aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Used memory."))
+            chatAPI: KairoChatBackendService(
+                agent: AgentCore(
+                    memoryStore: InMemoryMemoryStore(seed: [memory]),
+                    aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Used memory."))
+                )
             )
         )
 

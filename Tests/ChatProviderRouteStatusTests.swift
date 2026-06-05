@@ -63,7 +63,7 @@ private struct StubChatFeatureDependencyComposer: ChatFeatureDependencyComposing
     func makeDependencies(
         historyStore: any ChatHistoryStore,
         shareIngestionQueue: any ShareIngestionQueue,
-        makeChatAPI: @Sendable () -> any KairoChatAPI,
+        chatAPI: (any KairoChatAPI)?,
         shareImportAPI: (any KairoShareImportAPI)?,
         actionAPI: (any KairoActionAPI)?,
         actionExecutor: any ActionExecutor,

@@ -33,7 +33,7 @@ public protocol ChatFeatureDependencyComposing: Sendable {
     func makeDependencies(
         historyStore: any ChatHistoryStore,
         shareIngestionQueue: any ShareIngestionQueue,
-        makeChatAPI: @Sendable () -> any KairoChatAPI,
+        chatAPI: (any KairoChatAPI)?,
         shareImportAPI: (any KairoShareImportAPI)?,
         actionAPI: (any KairoActionAPI)?,
         actionExecutor: any ActionExecutor,
@@ -49,7 +49,7 @@ public struct DefaultChatFeatureDependencyComposer: ChatFeatureDependencyComposi
     public func makeDependencies(
         historyStore: any ChatHistoryStore,
         shareIngestionQueue: any ShareIngestionQueue,
-        makeChatAPI: @Sendable () -> any KairoChatAPI,
+        chatAPI: (any KairoChatAPI)?,
         shareImportAPI: (any KairoShareImportAPI)?,
         actionAPI: (any KairoActionAPI)?,
         actionExecutor: any ActionExecutor,
@@ -60,7 +60,7 @@ public struct DefaultChatFeatureDependencyComposer: ChatFeatureDependencyComposi
         ChatFeatureDependencies(
             historyStore: historyStore,
             shareImportAPI: shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue),
-            chatAPI: makeChatAPI(),
+            chatAPI: chatAPI ?? KairoChatBackendService(agent: AgentCore()),
             actionAPI: actionAPI ?? KairoActionBackendService(actionExecutor: actionExecutor),
             localModelSettingsService: localModelSettingsService,
             openAISettingsService: openAISettingsService,
