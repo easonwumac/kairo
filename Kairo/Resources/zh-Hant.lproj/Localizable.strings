@@ -7,6 +7,7 @@
 "root.menu.subtitle" = "先從 Chat 開始；只有需要能力設定時才進入其他頁面。";
 "root.menu.privacyNote" = "Kairo 使用公開 API、明確權限與可見 handoff；不會靜默改動任何東西。";
 "root.menu.accessibility" = "Kairo 導覽選單";
+"root.moreActions" = "頁面操作";
 "root.menu.group.primary" = "開始使用";
 "root.menu.group.agent" = "支援";
 "root.menu.group.system" = "設定";
@@ -17,6 +18,7 @@
 "root.section.chat.title" = "Kairo Chat";
 "root.section.chat.subtitle" = "告訴 Kairo 要在這支手機上完成什麼";
 "root.section.chat.shortTitle" = "Chat";
+"root.section.chat.chromeTitle" = "iOS Agent";
 "root.section.memory.title" = "記憶";
 "root.section.memory.subtitle" = "Kairo 可使用的已核准脈絡";
 "root.section.memory.shortTitle" = "記憶";

@@ -122,65 +122,40 @@ public struct RootView: View {
                     isMenuPresented = true
                 }
             } label: {
-                Label(KairoL10n.string("root.menu"), systemImage: "line.3.horizontal")
+                Label(KairoL10n.string("root.menu"), systemImage: "chevron.left")
                     .labelStyle(.iconOnly)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(KairoDesign.ink)
-                    .frame(width: 54, height: 54)
-                    .background(.ultraThinMaterial, in: Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(0.50),
-                                        Color.white.opacity(0.08)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                    }
-                    .shadow(color: KairoDesign.blue.opacity(0.22), radius: 20, x: 0, y: 10)
-                    .shadow(color: KairoDesign.shadow, radius: 16, x: 0, y: 10)
-                    .overlay(alignment: .topLeading) {
-                        Circle()
-                            .fill(Color.white.opacity(0.26))
-                            .frame(width: 10, height: 10)
-                            .offset(x: 14, y: 12)
-                    }
+                    .font(.title.weight(.semibold))
+                    .glassCircleControl()
             }
             .buttonStyle(.plain)
             .accessibilityLabel(KairoL10n.string("root.menu.open"))
             .accessibilityIdentifier("root.drawer.toggle")
 
-            Text(selectedSection.shortTitle)
-                .font(.subheadline.weight(.bold))
+            Text(selectedSection.chromeTitle)
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(KairoDesign.ink)
                 .lineLimit(1)
-                .padding(.horizontal, 16)
-                .frame(height: 46)
-                .background(.ultraThinMaterial, in: Capsule())
-                .overlay {
-                    Capsule()
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.42),
-                                    Color.white.opacity(0.08)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                }
-                .shadow(color: KairoDesign.shadow, radius: 14, x: 0, y: 8)
+                .padding(.horizontal, 24)
+                .frame(height: 58)
+                .glassCapsuleControl()
                 .accessibilityLabel(selectedSection.title)
                 .accessibilityIdentifier("root.current-section")
 
             Spacer(minLength: 8)
+
+            Button {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                    isMenuPresented = true
+                }
+            } label: {
+                Label(KairoL10n.string("root.moreActions"), systemImage: "ellipsis")
+                    .labelStyle(.iconOnly)
+                    .font(.title2.weight(.bold))
+                    .glassCircleControl()
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(KairoL10n.string("root.moreActions"))
+            .accessibilityIdentifier("root.page-actions")
         }
         .padding(.horizontal, 16)
         .padding(.top, max(topInset, 0) + 10)
@@ -388,6 +363,15 @@ private enum RootSection: String, CaseIterable, Identifiable {
         }
     }
 
+    var chromeTitle: String {
+        switch self {
+        case .chat:
+            return KairoL10n.string("root.section.chat.chromeTitle")
+        default:
+            return shortTitle
+        }
+    }
+
     var systemImage: String {
         switch self {
         case .chat:
@@ -417,5 +401,40 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return KairoDesign.muted
         }
     }
+}
+
+private extension View {
+    func glassCircleControl() -> some View {
+        self
+            .foregroundStyle(KairoDesign.ink)
+            .frame(width: 64, height: 64)
+            .background(.ultraThinMaterial, in: Circle())
+            .overlay {
+                Circle()
+                    .stroke(kairoGlassControlStroke, lineWidth: 1)
+            }
+            .shadow(color: KairoDesign.shadow, radius: 18, x: 0, y: 10)
+    }
+
+    func glassCapsuleControl() -> some View {
+        self
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(kairoGlassControlStroke, lineWidth: 1)
+            }
+            .shadow(color: KairoDesign.shadow, radius: 18, x: 0, y: 10)
+    }
+}
+
+private var kairoGlassControlStroke: LinearGradient {
+    LinearGradient(
+        colors: [
+            Color.white.opacity(0.46),
+            Color.white.opacity(0.08)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 }
 #endif
