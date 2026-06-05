@@ -2,20 +2,20 @@ import Foundation
 
 public struct CapabilityPromptContextBuilder: Sendable {
     public var capabilityRegistry: CapabilityRegistry
-    public var actionCatalog: SandboxActionCatalog
+    public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var integrationRegistry: IntegrationRegistry
     public var backgroundTaskPolicy: BackgroundTaskPolicy
     public var skillCatalog: AgentSkillCatalog
 
     public init(
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
-        actionCatalog: SandboxActionCatalog = SandboxActionCatalog(),
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
         backgroundTaskPolicy: BackgroundTaskPolicy = BackgroundTaskPolicy(),
         skillCatalog: AgentSkillCatalog = .default
     ) {
         self.capabilityRegistry = capabilityRegistry
-        self.actionCatalog = actionCatalog
+        self.toolCatalog = toolCatalog
         self.integrationRegistry = integrationRegistry
         self.backgroundTaskPolicy = backgroundTaskPolicy
         self.skillCatalog = skillCatalog
@@ -26,8 +26,10 @@ public struct CapabilityPromptContextBuilder: Sendable {
             "- \(capability.key.rawValue): \(capability.displayName); permission=\(capability.permission.rawValue); status=\(capability.status.rawValue); \(capability.description)"
         }
 
-        let actionLines = actionCatalog.descriptors.map { descriptor in
-            "- \(descriptor.kind.rawValue): \(descriptor.displayName); capability=\(descriptor.capability.rawValue); permission=\(descriptor.permissionRequirement.rawValue); risk=\(descriptor.riskTier.rawValue); support=\(descriptor.supportStatus.rawValue); \(descriptor.description)"
+        let actionLines = toolCatalog.tools.map { tool in
+            let actionKinds = tool.sourceBinding.agentActionKinds.map(\.rawValue).joined(separator: ",")
+            let capabilities = tool.audit.capabilityKeys.map(\.rawValue).joined(separator: ",")
+            return "- \(tool.id.rawValue): \(tool.displayName); actions=\(actionKinds.isEmpty ? "none" : actionKinds); capability=\(capabilities); permission=\(tool.permissionRequirement.rawValue); risk=\(tool.riskTier.rawValue); availability=\(tool.availabilityStatus.rawValue); execution=\(tool.executionKind.rawValue); confirmation=\(tool.confirmationPolicy.rawValue); executable=\(tool.canBeSuggestedAsExecutable); input=\(tool.schema.input); output=\(tool.schema.output)"
         }
 
         let skillLines = skillCatalog.installedSkills.map { skill in
@@ -36,9 +38,9 @@ public struct CapabilityPromptContextBuilder: Sendable {
             return "- \(skill.id): \(skill.displayName); kind=\(skill.kind.rawValue); action=\(actionKind); requiresConfirmation=\(skill.action?.requiresConfirmation == true); capabilities=\(capabilities); \(skill.summary)"
         }
 
-        let unsupportedLines = actionCatalog.unsupportedDescriptors.map { descriptor in
-            "- \(descriptor.kind.rawValue): \(descriptor.description)"
-        }
+        let unsupportedLines = [
+            "- unsupportedSandboxAction: Explain why the requested iOS, account, background, or cross-app operation is unavailable and provide a safe alternative. This is explanatory only and must not execute external actions."
+        ]
 
         let integrationLines = integrationRegistry.integrations.map { integration in
             let surfaces = integration.surfaces.map(\.rawValue).joined(separator: ",")
@@ -56,7 +58,7 @@ public struct CapabilityPromptContextBuilder: Sendable {
         Capabilities available through iOS public APIs, user consent, app sandbox, App Intents, Shortcuts, Share Extension, or official APIs:
         \(capabilityLines.joined(separator: "\n"))
 
-        Action catalog the model may propose. Proposed actions must use these exact action kinds and payload types:
+        Built-in phone tool catalog the model may propose. Proposed executable actions must map to these tool definitions and action kinds:
         \(actionLines.joined(separator: "\n"))
 
         Installed skills/tools the model may use. Treat these as named, managed tool packages layered on top of the action catalog:

@@ -282,6 +282,20 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("requiresConfirmation=true"))
     }
 
+    func testCapabilityPromptContextUsesInjectedBuiltInPhoneToolCatalog() throws {
+        let reminderTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .reminderWrite))
+        let context = CapabilityPromptContextBuilder(
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [reminderTool]),
+            skillCatalog: AgentSkillCatalog(skills: [])
+        ).build()
+
+        XCTAssertTrue(context.contains(BuiltInPhoneToolID.reminderWrite.rawValue))
+        XCTAssertTrue(context.contains(AgentActionKind.createReminderDraft.rawValue))
+        XCTAssertFalse(context.contains(BuiltInPhoneToolID.calendarWrite.rawValue))
+        XCTAssertFalse(context.contains(AgentActionKind.createCalendarDraft.rawValue))
+        XCTAssertTrue(context.contains(AgentActionKind.unsupportedSandboxAction.rawValue))
+    }
+
     func testAgentToolInvocationPlannerStaysSplitAcrossSupportFiles() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let plannerSource = try String(

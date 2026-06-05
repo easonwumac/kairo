@@ -47,7 +47,7 @@ public actor AgentCore {
             .map(\.key)
         let toolContext = CapabilityPromptContextBuilder(
             capabilityRegistry: capabilityRegistry,
-            actionCatalog: SandboxActionCatalog(),
+            toolCatalog: toolCatalog,
             integrationRegistry: integrationRegistry,
             skillCatalog: skillCatalog
         ).build()
