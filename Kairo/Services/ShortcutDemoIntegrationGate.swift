@@ -47,7 +47,7 @@ public struct CatalogBackedShortcutDemoIntegrationGate: ShortcutDemoIntegrationG
     ) -> ShortcutNodeOutput {
         var outputFields = input.variables
         outputFields["sourceName"] = input.sourceName ?? ""
-        outputFields["integrationSkillID"] = skillID.rawValue
+        outputFields[ShortcutNodeInput.integrationSkillIDVariableKey] = skillID.rawValue
         outputFields["success"] = "false"
         for (key, value) in fields {
             outputFields[key] = value

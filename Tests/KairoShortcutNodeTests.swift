@@ -489,6 +489,21 @@ final class KairoShortcutNodeTests: XCTestCase {
         XCTAssertTrue(output.proposedActions.isEmpty)
     }
 
+    func testShortcutNodeInputResolvesIntegrationSkillThroughCatalogReference() throws {
+        let input = ShortcutNodeInput(
+            text: "To: 0912345678\nBody: Running late.",
+            variables: [
+                ShortcutNodeInput.integrationSkillIDVariableKey: AppIntegrationSkillID.appleMessagesHandoff.rawValue
+            ]
+        )
+
+        let skill = try XCTUnwrap(AppIntegrationSkillCatalog().skill(for: input))
+
+        XCTAssertEqual(input.integrationSkillID, .appleMessagesHandoff)
+        XCTAssertEqual(skill.id, .appleMessagesHandoff)
+        XCTAssertEqual(skill.shortcutNodeKind, .prepareMessageHandoff)
+    }
+
     func testShortcutNodeRuntimeDoesNotUseAppleMessagesNodeForThirdPartyMessageIntegration() async throws {
         let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
         let input = ShortcutNodeInput(

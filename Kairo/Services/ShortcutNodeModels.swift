@@ -20,6 +20,8 @@ public enum ShortcutNodeKind: String, Codable, CaseIterable, Sendable {
 }
 
 public struct ShortcutNodeInput: Codable, Equatable, Sendable {
+    public static let integrationSkillIDVariableKey = "integrationSkillID"
+
     public var text: String
     public var query: String?
     public var sourceName: String?
@@ -45,6 +47,14 @@ public struct ShortcutNodeInput: Codable, Equatable, Sendable {
         encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(self)
         return String(data: data, encoding: .utf8) ?? "{}"
+    }
+
+    public var integrationSkillID: AppIntegrationSkillID? {
+        guard let rawSkillID = variables[Self.integrationSkillIDVariableKey]?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !rawSkillID.isEmpty else {
+            return nil
+        }
+        return AppIntegrationSkillID(rawValue: rawSkillID)
     }
 }
 

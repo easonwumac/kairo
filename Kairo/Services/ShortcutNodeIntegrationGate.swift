@@ -12,13 +12,7 @@ public struct CatalogBackedShortcutNodeIntegrationGate: ShortcutNodeIntegrationG
     }
 
     public func blockedOutput(for kind: ShortcutNodeKind, input: ShortcutNodeInput) -> ShortcutNodeOutput? {
-        guard let rawSkillID = input.variables["integrationSkillID"]?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !rawSkillID.isEmpty,
-              let skillID = AppIntegrationSkillID(rawValue: rawSkillID) else {
-            return nil
-        }
-
-        switch appIntegrationSkillCatalog.resolveSkill(id: skillID) {
+        switch appIntegrationSkillCatalog.resolveSkill(for: input) {
         case .notReferenced:
             return nil
         case .missing(let skillID):
@@ -65,7 +59,7 @@ public struct CatalogBackedShortcutNodeIntegrationGate: ShortcutNodeIntegrationG
         if let sourceName = input.sourceName {
             outputFields["sourceName"] = sourceName
         }
-        outputFields["integrationSkillID"] = skillID.rawValue
+        outputFields[ShortcutNodeInput.integrationSkillIDVariableKey] = skillID.rawValue
         outputFields["success"] = "false"
         for (key, value) in fields {
             outputFields[key] = value

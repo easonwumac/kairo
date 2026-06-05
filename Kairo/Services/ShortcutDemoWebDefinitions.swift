@@ -32,7 +32,7 @@ public extension ShortcutDemoCatalog {
                         sourceName: "Search Shortcut",
                         variables: [
                             "shortcutRecipeID": "web-search-handoff",
-                            "integrationSkillID": AppIntegrationSkillID.safariWebSearchHandoff.rawValue,
+                            ShortcutNodeInput.integrationSkillIDVariableKey: AppIntegrationSkillID.safariWebSearchHandoff.rawValue,
                             "query": "SwiftUI App Intents examples"
                         ]
                     )

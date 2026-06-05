@@ -88,7 +88,7 @@ public extension ShortcutDemoCatalog {
                         sourceName: "Shared Message",
                         variables: [
                             "shortcutRecipeID": "message-reply-handoff",
-                            "integrationSkillID": AppIntegrationSkillID.appleMessagesHandoff.rawValue,
+                            ShortcutNodeInput.integrationSkillIDVariableKey: AppIntegrationSkillID.appleMessagesHandoff.rawValue,
                             "recipient": "0912345678",
                             "body": "I am running late but will join in 10 minutes."
                         ]
@@ -211,7 +211,7 @@ public extension ShortcutDemoCatalog {
                         sourceName: "Shared Text Shortcut",
                         variables: [
                             "shortcutRecipeID": "email-draft-from-shared-text",
-                            "integrationSkillID": AppIntegrationSkillID.appleMailHandoff.rawValue
+                            ShortcutNodeInput.integrationSkillIDVariableKey: AppIntegrationSkillID.appleMailHandoff.rawValue
                         ]
                     )
                 )
