@@ -197,11 +197,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) async throws -> KairoEnvironment {
         let paths = KairoPaths(appName: appName, appGroupIdentifier: appGroupIdentifier)
-        let memoryStore = try await JSONFileMemoryStore(fileURL: paths.memoryStoreURL)
-        let auditLogger = try await FileBackedAuditLogger(fileURL: paths.auditLogURL)
-        let chatHistoryStore = try await JSONFileChatHistoryStore(fileURL: paths.chatHistoryStoreURL)
-        let shareIngestionQueue = try await JSONFileShareIngestionQueue(fileURL: paths.shareIngestionQueueURL)
-        let kairoRecipeStore = try await FileBackedKairoRecipeStore(fileURL: paths.kairoRecipeStoreURL)
+        let storeComponents = try await KairoLiveStoreFactory(paths: paths).makeComponents()
         let credentialStore = KeychainCredentialStore()
         let localModelComponents = try await KairoLiveLocalModelFactory(
             paths: paths,
@@ -222,29 +218,29 @@ public struct KairoEnvironment: KairoBackendDependencies {
         let actionExecutor: any ActionExecutor
         #if canImport(UserNotifications)
         actionExecutor = SandboxActionExecutor(
-            memoryStore: memoryStore,
+            memoryStore: storeComponents.memoryStore,
             urlOpener: urlOpener,
             notificationScheduler: UserNotificationScheduler(),
-            auditLogger: auditLogger
+            auditLogger: storeComponents.auditLogger
         )
         #else
         actionExecutor = SandboxActionExecutor(
-            memoryStore: memoryStore,
+            memoryStore: storeComponents.memoryStore,
             urlOpener: urlOpener,
-            auditLogger: auditLogger
+            auditLogger: storeComponents.auditLogger
         )
         #endif
 
         return KairoEnvironment(
-            memoryStore: memoryStore,
+            memoryStore: storeComponents.memoryStore,
             credentialStore: credentialStore,
             aiProvider: localModelComponents.aiProvider,
-            chatHistoryStore: chatHistoryStore,
-            shareIngestionQueue: shareIngestionQueue,
-            sharedFilesDirectory: paths.sharedFilesDirectory,
-            kairoRecipeStore: kairoRecipeStore,
+            chatHistoryStore: storeComponents.chatHistoryStore,
+            shareIngestionQueue: storeComponents.shareIngestionQueue,
+            sharedFilesDirectory: storeComponents.sharedFilesDirectory,
+            kairoRecipeStore: storeComponents.kairoRecipeStore,
             permissionService: SystemPermissionService(),
-            auditLogger: auditLogger,
+            auditLogger: storeComponents.auditLogger,
             oauthConnectorCallbackStore: accessComponents.oauthCallbackStore,
             oauthClientConfigurations: accessComponents.oauthClientConfigurations,
             agentSkillManagerService: accessComponents.skillManagerService,

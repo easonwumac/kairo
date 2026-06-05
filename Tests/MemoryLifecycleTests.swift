@@ -92,9 +92,44 @@ final class MemoryLifecycleTests: XCTestCase {
         XCTAssertEqual(results.map(\.id), [launch.id])
     }
 
+    func testKairoLiveStoreFactoryBuildsPersistentMemoryAndChatStores() async throws {
+        let rootDirectory = temporaryDirectory(named: "KairoLiveStoreFactory")
+        let paths = KairoPaths(
+            appName: "KairoLiveStoreFactoryTests",
+            appGroupIdentifier: "group.kairo.tests"
+        ) { _ in rootDirectory }
+        let firstComponents = try await KairoLiveStoreFactory(paths: paths).makeComponents()
+        let memory = MemoryRecord(
+            title: "Factory memory",
+            summary: "Persists through live store factory.",
+            content: "Persistent memory content",
+            source: .manual
+        )
+        let thread = ChatThread(messages: [
+            ChatMessage(role: .user, text: "Persist this chat thread")
+        ])
+
+        try await firstComponents.memoryStore.save(memory)
+        try await firstComponents.chatHistoryStore.saveThread(thread)
+
+        let reloadedComponents = try await KairoLiveStoreFactory(paths: paths).makeComponents()
+        let reloadedMemories = try await reloadedComponents.memoryStore.list(limit: 10)
+        let reloadedThreads = try await reloadedComponents.chatHistoryStore.listThreads(limit: 10)
+
+        XCTAssertEqual(reloadedMemories.map(\.id), [memory.id])
+        XCTAssertEqual(reloadedThreads.map(\.id), [thread.id])
+        XCTAssertEqual(reloadedThreads.first?.messages.first?.text, "Persist this chat thread")
+    }
+
     private func temporaryFileURL(named name: String) -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("KairoMemoryLifecycleTests-\(UUID().uuidString)", isDirectory: true)
             .appendingPathComponent(name)
+    }
+
+    private func temporaryDirectory(named name: String) -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("KairoMemoryLifecycleTests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent(name, isDirectory: true)
     }
 }
