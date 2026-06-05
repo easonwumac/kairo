@@ -195,11 +195,11 @@ public struct PermissionHubView: View {
 
                 if isAdvancedSkillSetupExpanded {
                     Divider()
-                    homeKitPreviewDisclosure
-                    Divider()
                     skillManagerContent
                     Divider()
                     developerSetupDisclosure
+                    Divider()
+                    homeKitPreviewDisclosure
                 }
             }
         }
@@ -601,6 +601,10 @@ public struct PermissionHubView: View {
                     Text(KairoL10n.string("access.skills.advanced.toggle.title"))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(KairoDesign.ink)
+                    Text(KairoL10n.string("access.skills.advanced.toggle.subtitle"))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
 
                 Spacer(minLength: 8)
@@ -628,10 +632,16 @@ public struct PermissionHubView: View {
                 .accessibilityIdentifier("access.skills.manifest-import")
 
             TextField(KairoL10n.string("access.skills.localCreate.namePlaceholder"), text: $localSkillName)
+                .textFieldStyle(.plain)
+                .padding(10)
+                .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .accessibilityIdentifier("access.skills.local-create.name")
 
             TextField(KairoL10n.string("access.skills.localCreate.summaryPlaceholder"), text: $localSkillSummary, axis: .vertical)
                 .lineLimit(2...4)
+                .textFieldStyle(.plain)
+                .padding(10)
+                .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .accessibilityIdentifier("access.skills.local-create.summary")
 
             Picker(KairoL10n.string("access.skills.localCreate.capability"), selection: $localSkillCapability) {
@@ -639,6 +649,7 @@ public struct PermissionHubView: View {
                     Text(capability.rawValue).tag(capability)
                 }
             }
+            .pickerStyle(.menu)
             .accessibilityIdentifier("access.skills.local-create.capability")
 
             Picker(KairoL10n.string("access.skills.localCreate.confirmation"), selection: $localSkillConfirmationPolicy) {
@@ -646,6 +657,7 @@ public struct PermissionHubView: View {
                     Text(policy.settingsTitle).tag(policy)
                 }
             }
+            .pickerStyle(.menu)
             .accessibilityIdentifier("access.skills.local-create.confirmation-policy")
 
             Button {
@@ -656,6 +668,7 @@ public struct PermissionHubView: View {
                 Label(KairoL10n.string("access.skills.localCreate.createDraft"), systemImage: "plus.circle")
             }
             .disabled(localSkillName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
             .accessibilityIdentifier("access.skills.local-create.button")
 
             Button {
@@ -666,11 +679,15 @@ public struct PermissionHubView: View {
                 Label(KairoL10n.string("access.skills.marketplace.refresh"), systemImage: "arrow.clockwise")
             }
             .disabled(isRefreshingMarketplace || marketplaceCatalogService == nil)
+            .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal, isCompact: true))
             .accessibilityIdentifier("access.skills.marketplace-refresh")
 
             TextEditor(text: $manifestImportText)
                 .frame(minHeight: 84)
                 .font(.caption)
+                .scrollContentBackground(.hidden)
+                .padding(8)
+                .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .accessibilityIdentifier("access.skills.manifest-import.text")
 
             Button {
@@ -681,6 +698,7 @@ public struct PermissionHubView: View {
                 Label(KairoL10n.string("access.skills.manifestImport.preview"), systemImage: "doc.text.magnifyingglass")
             }
             .disabled(manifestImportText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
             .accessibilityIdentifier("access.skills.manifest-import.button")
         }
         .padding(.vertical, 4)
