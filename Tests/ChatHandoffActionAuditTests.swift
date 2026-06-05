@@ -49,7 +49,7 @@ final class ChatHandoffActionAuditTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            chatAPI: makeHandoffAuditChatAPI(),
             actionExecutor: SandboxActionExecutor(
                 memoryStore: InMemoryMemoryStore(),
                 urlOpener: urlOpener,
@@ -92,7 +92,7 @@ final class ChatHandoffActionAuditTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
-            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider()),
+            chatAPI: makeHandoffAuditChatAPI(),
             actionExecutor: SandboxActionExecutor(
                 memoryStore: InMemoryMemoryStore(),
                 urlOpener: urlOpener,
@@ -127,6 +127,12 @@ final class ChatHandoffActionAuditTests: XCTestCase {
         XCTAssertEqual(auditEvents.first?.requiredConfirmation, true, file: file, line: line)
         XCTAssertEqual(auditEvents.first?.userConfirmed, true, file: file, line: line)
         XCTAssertEqual(auditEvents.first?.result, .completed, file: file, line: line)
+    }
+
+    private func makeHandoffAuditChatAPI() -> any KairoChatAPI {
+        KairoChatBackendService(
+            agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+        )
     }
 }
 
