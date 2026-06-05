@@ -12,7 +12,9 @@ public protocol AgentToolInvocationCandidatePipelining: Sendable {
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding,
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding,
         candidateMatcher: any AgentToolInvocationCandidateMatching,
-        candidateBuilder: any AgentToolInvocationCandidateBuilding,
+        installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
+        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
+        appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
         safetyPolicyEngine: SafetyPolicyEngine
     ) -> [AgentToolInvocationCandidate]
 }
@@ -31,12 +33,14 @@ public struct DefaultAgentToolInvocationCandidatePipeline: AgentToolInvocationCa
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding,
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding,
         candidateMatcher: any AgentToolInvocationCandidateMatching,
-        candidateBuilder: any AgentToolInvocationCandidateBuilding,
+        installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
+        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
+        appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
         safetyPolicyEngine: SafetyPolicyEngine
     ) -> [AgentToolInvocationCandidate] {
         var candidates: [AgentToolInvocationCandidate] = []
         candidates.append(contentsOf: skillCatalog.installedSkills.compactMap { skill in
-            candidateBuilder.candidate(
+            installedSkillCandidateMapper.candidate(
                 for: skill,
                 normalizedText: normalizedText,
                 matcher: candidateMatcher,
@@ -45,18 +49,20 @@ public struct DefaultAgentToolInvocationCandidatePipeline: AgentToolInvocationCa
             )
         })
         candidates.append(contentsOf: appIntegrationSkillCatalog.skills.compactMap { skill in
-            candidateBuilder.candidate(
+            guard candidateMatcher.matches(appIntegrationSkill: skill, normalizedText: normalizedText, parser: appIntegrationActionParser) else {
+                return nil
+            }
+            return appIntegrationCandidateMapper.candidate(
                 for: skill,
                 userText: request.userText,
                 normalizedText: normalizedText,
-                matcher: candidateMatcher,
                 parser: appIntegrationActionParser,
                 actionMapper: appIntegrationActionMapper
             )
         })
 
         candidates.append(contentsOf: integrationRegistry.oauthConnectorsNotMigrated(to: appIntegrationSkillCatalog).compactMap { integration in
-            return candidateBuilder.candidate(
+            return legacyIntegrationCandidateMapper.candidate(
                 for: integration,
                 normalizedText: normalizedText,
                 matcher: candidateMatcher,

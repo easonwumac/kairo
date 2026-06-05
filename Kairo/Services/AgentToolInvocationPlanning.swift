@@ -22,7 +22,9 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding = DefaultAgentVisibleHandoffCandidateProvider(),
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding = DefaultAgentWriteActionCandidateProvider(),
         candidateMatcher: any AgentToolInvocationCandidateMatching = DefaultAgentToolInvocationCandidateMatcher(),
-        candidateBuilder: any AgentToolInvocationCandidateBuilding = DefaultAgentToolInvocationCandidateBuilder(),
+        installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping = DefaultInstalledSkillToolInvocationCandidateMapper(),
+        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping = DefaultLegacyIntegrationToolInvocationCandidateMapper(),
+        appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = DefaultAppIntegrationToolInvocationCandidateMapper(),
         candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
@@ -36,7 +38,9 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
                 visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
                 writeActionCandidateProvider: writeActionCandidateProvider,
                 candidateMatcher: candidateMatcher,
-                candidateBuilder: candidateBuilder,
+                installedSkillCandidateMapper: installedSkillCandidateMapper,
+                legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper,
+                appIntegrationCandidateMapper: appIntegrationCandidateMapper,
                 candidatePipeline: candidatePipeline,
                 toolCatalog: toolCatalog,
                 safetyPolicyEngine: safetyPolicyEngine

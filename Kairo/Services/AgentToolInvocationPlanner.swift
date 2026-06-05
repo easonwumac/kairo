@@ -21,7 +21,9 @@ public struct AgentToolInvocationPlanner: Sendable {
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding = DefaultAgentVisibleHandoffCandidateProvider(),
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding = DefaultAgentWriteActionCandidateProvider(),
         candidateMatcher: any AgentToolInvocationCandidateMatching = DefaultAgentToolInvocationCandidateMatcher(),
-        candidateBuilder: any AgentToolInvocationCandidateBuilding = DefaultAgentToolInvocationCandidateBuilder(),
+        installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping = DefaultInstalledSkillToolInvocationCandidateMapper(),
+        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping = DefaultLegacyIntegrationToolInvocationCandidateMapper(),
+        appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = DefaultAppIntegrationToolInvocationCandidateMapper(),
         candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
@@ -37,7 +39,9 @@ public struct AgentToolInvocationPlanner: Sendable {
                 visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
                 writeActionCandidateProvider: writeActionCandidateProvider,
                 candidateMatcher: candidateMatcher,
-                candidateBuilder: candidateBuilder,
+                installedSkillCandidateMapper: installedSkillCandidateMapper,
+                legacyIntegrationCandidateMapper: legacyIntegrationCandidateMapper,
+                appIntegrationCandidateMapper: appIntegrationCandidateMapper,
                 candidatePipeline: candidatePipeline,
                 toolCatalog: toolCatalog,
                 candidateFilter: candidateFilter,
@@ -70,7 +74,9 @@ public struct AgentToolInvocationPlanner: Sendable {
             visibleHandoffCandidateProvider: dependencies.visibleHandoffCandidateProvider,
             writeActionCandidateProvider: dependencies.writeActionCandidateProvider,
             candidateMatcher: dependencies.candidateMatcher,
-            candidateBuilder: dependencies.candidateBuilder,
+            installedSkillCandidateMapper: dependencies.installedSkillCandidateMapper,
+            legacyIntegrationCandidateMapper: dependencies.legacyIntegrationCandidateMapper,
+            appIntegrationCandidateMapper: dependencies.appIntegrationCandidateMapper,
             safetyPolicyEngine: dependencies.safetyPolicyEngine
         )
 

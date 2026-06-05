@@ -8,7 +8,9 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
     public var visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding
     public var writeActionCandidateProvider: any AgentWriteActionCandidateProviding
     public var candidateMatcher: any AgentToolInvocationCandidateMatching
-    public var candidateBuilder: any AgentToolInvocationCandidateBuilding
+    public var installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping
+    public var legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping
+    public var appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping
     public var candidatePipeline: any AgentToolInvocationCandidatePipelining
     public var candidateFilter: any AgentToolCandidateFiltering
     public var safetyPolicyEngine: SafetyPolicyEngine
@@ -21,7 +23,9 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding = DefaultAgentVisibleHandoffCandidateProvider(),
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding = DefaultAgentWriteActionCandidateProvider(),
         candidateMatcher: any AgentToolInvocationCandidateMatching = DefaultAgentToolInvocationCandidateMatcher(),
-        candidateBuilder: any AgentToolInvocationCandidateBuilding = DefaultAgentToolInvocationCandidateBuilder(),
+        installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping = DefaultInstalledSkillToolInvocationCandidateMapper(),
+        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping = DefaultLegacyIntegrationToolInvocationCandidateMapper(),
+        appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = DefaultAppIntegrationToolInvocationCandidateMapper(),
         candidatePipeline: any AgentToolInvocationCandidatePipelining = DefaultAgentToolInvocationCandidatePipeline(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
@@ -34,7 +38,9 @@ public struct AgentToolInvocationPlannerDependencies: Sendable {
         self.visibleHandoffCandidateProvider = visibleHandoffCandidateProvider
         self.writeActionCandidateProvider = writeActionCandidateProvider
         self.candidateMatcher = candidateMatcher
-        self.candidateBuilder = candidateBuilder
+        self.installedSkillCandidateMapper = installedSkillCandidateMapper
+        self.legacyIntegrationCandidateMapper = legacyIntegrationCandidateMapper
+        self.appIntegrationCandidateMapper = appIntegrationCandidateMapper
         self.candidatePipeline = candidatePipeline
         self.candidateFilter = candidateFilter ?? PhoneToolCandidateFilter(
             actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)

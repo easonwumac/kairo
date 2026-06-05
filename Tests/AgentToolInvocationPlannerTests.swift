@@ -292,41 +292,6 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(candidate.skillKind, .custom)
     }
 
-    func testAgentToolInvocationPlannerUsesInjectedCandidateBuilder() throws {
-        let skill = AgentSkill(
-            id: "custom-builder-input",
-            displayName: "Builder Input",
-            summary: "The injected builder should own candidate construction.",
-            kind: .custom,
-            source: .userCreated,
-            installationStatus: .installed,
-            requiredCapabilities: [.chat]
-        )
-        let injectedCandidate = AgentToolInvocationCandidate(
-            id: "builder-output-candidate",
-            title: "Builder Output",
-            source: .installedSkill,
-            skillID: "custom-builder-input",
-            skillKind: .custom,
-            requiredCapabilities: [.chat],
-            riskTier: .tier1Draft,
-            requiresConfirmation: true,
-            handoffSummary: "Injected builder output"
-        )
-        let planner = AgentToolInvocationPlanner(
-            skillCatalog: AgentSkillCatalog(skills: [skill]),
-            integrationRegistry: IntegrationRegistry(integrations: []),
-            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
-            visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
-            writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
-            candidateBuilder: FixedAgentToolInvocationCandidateBuilder(candidate: injectedCandidate)
-        )
-
-        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "builder route"))
-
-        XCTAssertEqual(plan.candidates.first, injectedCandidate)
-    }
-
     func testAgentToolInvocationPlannerUsesInjectedInstalledSkillCandidateMapper() throws {
         let skill = AgentSkill(
             id: "custom-mapper-input",
@@ -354,9 +319,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
             appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
             visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
             writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
-            candidateBuilder: DefaultAgentToolInvocationCandidateBuilder(
-                installedSkillCandidateMapper: FixedInstalledSkillToolInvocationCandidateMapper(candidate: injectedCandidate)
-            )
+            installedSkillCandidateMapper: FixedInstalledSkillToolInvocationCandidateMapper(candidate: injectedCandidate)
         )
 
         let plan = planner.plan(for: AgentToolInvocationRequest(userText: "installed mapper route"))
@@ -398,9 +361,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
             appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
             visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
             writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
-            candidateBuilder: DefaultAgentToolInvocationCandidateBuilder(
-                legacyIntegrationCandidateMapper: FixedLegacyIntegrationToolInvocationCandidateMapper(candidate: injectedCandidate)
-            )
+            legacyIntegrationCandidateMapper: FixedLegacyIntegrationToolInvocationCandidateMapper(candidate: injectedCandidate)
         )
 
         let plan = planner.plan(for: AgentToolInvocationRequest(userText: "legacy mapper route"))
@@ -429,9 +390,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
             visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
             writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
             candidateMatcher: FixedAgentToolInvocationCandidateMatcher(appIntegrationSkillMatches: true),
-            candidateBuilder: DefaultAgentToolInvocationCandidateBuilder(
-                appIntegrationCandidateMapper: FixedAppIntegrationToolInvocationCandidateMapper(candidate: injectedCandidate)
-            )
+            appIntegrationCandidateMapper: FixedAppIntegrationToolInvocationCandidateMapper(candidate: injectedCandidate)
         )
 
         let plan = planner.plan(for: AgentToolInvocationRequest(userText: "mapper route"))
@@ -1022,40 +981,6 @@ private struct FixedAgentToolInvocationCandidateMatcher: AgentToolInvocationCand
     }
 }
 
-private struct FixedAgentToolInvocationCandidateBuilder: AgentToolInvocationCandidateBuilding {
-    var candidate: AgentToolInvocationCandidate
-
-    func candidate(
-        for skill: AgentSkill,
-        normalizedText: String,
-        matcher: any AgentToolInvocationCandidateMatching,
-        parser: any AgentToolInvocationActionParsing,
-        safetyPolicyEngine: SafetyPolicyEngine
-    ) -> AgentToolInvocationCandidate? {
-        candidate
-    }
-
-    func candidate(
-        for integration: AppIntegration,
-        normalizedText: String,
-        matcher: any AgentToolInvocationCandidateMatching,
-        parser: any AgentToolInvocationActionParsing
-    ) -> AgentToolInvocationCandidate? {
-        nil
-    }
-
-    func candidate(
-        for skill: AppIntegrationSkill,
-        userText: String,
-        normalizedText: String,
-        matcher: any AgentToolInvocationCandidateMatching,
-        parser: any AgentToolInvocationActionParsing,
-        actionMapper: any AppIntegrationActionMapping
-    ) -> AgentToolInvocationCandidate? {
-        nil
-    }
-}
-
 private struct FixedAgentToolInvocationCandidatePipeline: AgentToolInvocationCandidatePipelining {
     var candidates: [AgentToolInvocationCandidate]
 
@@ -1070,7 +995,9 @@ private struct FixedAgentToolInvocationCandidatePipeline: AgentToolInvocationCan
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding,
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding,
         candidateMatcher: any AgentToolInvocationCandidateMatching,
-        candidateBuilder: any AgentToolInvocationCandidateBuilding,
+        installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping,
+        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping,
+        appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping,
         safetyPolicyEngine: SafetyPolicyEngine
     ) -> [AgentToolInvocationCandidate] {
         candidates
