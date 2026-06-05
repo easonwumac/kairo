@@ -4,18 +4,17 @@ public protocol AppIntegrationSkillCatalogProviding: Sendable {
     var skills: [AppIntegrationSkill] { get }
 }
 
+public protocol AppIntegrationSkillReferencing {
+    var integrationSkillID: AppIntegrationSkillID? { get }
+}
+
 public extension AppIntegrationSkillCatalogProviding {
     func skill(id: AppIntegrationSkillID) -> AppIntegrationSkill? {
         skills.first { $0.id == id }
     }
 
-    func skill(for recipeStep: KairoRecipeStep) -> AppIntegrationSkill? {
-        guard let integrationSkillID = recipeStep.integrationSkillID else { return nil }
-        return skill(id: integrationSkillID)
-    }
-
-    func skill(for shortcutDemoStep: ShortcutDemoStep) -> AppIntegrationSkill? {
-        guard let integrationSkillID = shortcutDemoStep.integrationSkillID else { return nil }
+    func skill(for reference: any AppIntegrationSkillReferencing) -> AppIntegrationSkill? {
+        guard let integrationSkillID = reference.integrationSkillID else { return nil }
         return skill(id: integrationSkillID)
     }
 
