@@ -1,6 +1,10 @@
 import Foundation
 
-public struct CapabilityRegistry: Sendable {
+public protocol CapabilityRegistryProviding: Sendable {
+    var capabilities: [Capability] { get }
+}
+
+public struct CapabilityRegistry: CapabilityRegistryProviding {
     public var capabilities: [Capability]
 
     public init(capabilities: [Capability] = CapabilityRegistry.defaultCapabilities) {

@@ -302,6 +302,47 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(capturedRequest.privacyMode, .privateChat)
     }
 
+    func testCompletionRequestBuilderUsesInjectedCapabilityRegistryProvider() {
+        let builder = DefaultAgentCompletionRequestBuilder(
+            capabilityRegistry: FixedCapabilityRegistryProvider(capabilities: [
+                Capability(
+                    key: .calendar,
+                    displayName: "Calendar",
+                    description: "Calendar writes.",
+                    permission: .runtimePrompt,
+                    status: .available,
+                    isMVP: true
+                ),
+                Capability(
+                    key: .contacts,
+                    displayName: "Contacts",
+                    description: "Contacts writes.",
+                    permission: .runtimePrompt,
+                    status: .denied,
+                    isMVP: false
+                ),
+                Capability(
+                    key: .reminders,
+                    displayName: "Reminders",
+                    description: "Reminder writes.",
+                    permission: .runtimePrompt,
+                    status: .unknown,
+                    isMVP: true
+                )
+            ])
+        )
+
+        let request = builder.buildCompletionRequest(
+            message: "Build with injected capabilities",
+            attachments: [],
+            memoryContext: AgentMemoryContext(relevantMemories: [], deduplicationContext: []),
+            toolContext: nil,
+            privacyMode: .standard
+        )
+
+        XCTAssertEqual(request.allowedCapabilities, [.calendar, .reminders])
+    }
+
     func testAgentCoreUsesInjectedMemoryContextProvider() async throws {
         let memory = MemoryRecord(
             title: "Injected Memory",
@@ -2385,6 +2426,10 @@ private final class StubAgentCompletionRequestBuilder: AgentCompletionRequestBui
             privacyMode: privacyMode
         )
     }
+}
+
+private struct FixedCapabilityRegistryProvider: CapabilityRegistryProviding {
+    var capabilities: [Capability]
 }
 
 private final class StubAgentMemoryContextProvider: AgentMemoryContextProviding, @unchecked Sendable {

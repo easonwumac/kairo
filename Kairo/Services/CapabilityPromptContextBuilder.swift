@@ -1,7 +1,7 @@
 import Foundation
 
 public struct CapabilityPromptContextBuilder: Sendable {
-    public var capabilityRegistry: CapabilityRegistry
+    public var capabilityRegistry: any CapabilityRegistryProviding
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var integrationRegistry: any AppIntegrationRegistryProviding
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
@@ -10,7 +10,7 @@ public struct CapabilityPromptContextBuilder: Sendable {
     public var skillCatalog: AgentSkillCatalog
 
     public init(
-        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
+        capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),

@@ -21,11 +21,11 @@ public struct DefaultAgentCompletionRequestBuilder: AgentCompletionRequestBuildi
     對高風險操作，你必須先產生預覽並要求使用者確認。
     """
 
-    private let capabilityRegistry: CapabilityRegistry
+    private let capabilityRegistry: any CapabilityRegistryProviding
     private let systemPrompt: String
 
     public init(
-        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
+        capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
         systemPrompt: String = Self.defaultSystemPrompt
     ) {
         self.capabilityRegistry = capabilityRegistry

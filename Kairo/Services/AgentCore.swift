@@ -40,7 +40,7 @@ public actor AgentCore {
         responseActionPlanner: (any AgentResponseActionPlanning)? = nil,
         completionRequestBuilder: (any AgentCompletionRequestBuilding)? = nil,
         safetyPolicyEngine: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine(),
-        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
+        capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
         memoryCandidateExtractor: any MemoryCandidateExtracting = MemoryCandidateExtractor()
     ) {
         let resolvedActionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)

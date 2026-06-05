@@ -5,14 +5,14 @@ public protocol AgentCapabilityPromptContextProviding: Sendable {
 }
 
 public struct DefaultAgentCapabilityPromptContextProvider: AgentCapabilityPromptContextProviding {
-    public var capabilityRegistry: CapabilityRegistry
+    public var capabilityRegistry: any CapabilityRegistryProviding
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var integrationRegistry: any AppIntegrationRegistryProviding
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var backgroundTaskPolicy: BackgroundTaskPolicy
 
     public init(
-        capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
+        capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
