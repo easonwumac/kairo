@@ -7,6 +7,7 @@ public struct AgentToolInvocationPlanner: Sendable {
     public var appIntegrationActionMapper: any AppIntegrationActionMapping
     public var appIntegrationActionParser: any AgentToolInvocationActionParsing
     public var visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding
+    public var writeActionCandidateProvider: any AgentWriteActionCandidateProviding
     public var candidateFilter: any AgentToolCandidateFiltering
     public var safetyPolicyEngine: SafetyPolicyEngine
 
@@ -17,6 +18,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         appIntegrationActionMapper: any AppIntegrationActionMapping = DefaultAppIntegrationActionMapper(),
         appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding = DefaultAgentVisibleHandoffCandidateProvider(),
+        writeActionCandidateProvider: any AgentWriteActionCandidateProviding = DefaultAgentWriteActionCandidateProvider(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
@@ -27,6 +29,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         self.appIntegrationActionMapper = appIntegrationActionMapper
         self.appIntegrationActionParser = appIntegrationActionParser
         self.visibleHandoffCandidateProvider = visibleHandoffCandidateProvider
+        self.writeActionCandidateProvider = writeActionCandidateProvider
         self.candidateFilter = candidateFilter ?? PhoneToolCandidateFilter(
             actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         )
@@ -65,17 +68,12 @@ public struct AgentToolInvocationPlanner: Sendable {
         ) where !candidates.containsAction(kind: handoffCandidate.action?.kind) {
             candidates.append(handoffCandidate)
         }
-        if let contactCandidate = contactActionCandidate(userText: request.userText, normalizedText: normalizedText) {
-            candidates.append(contactCandidate)
-        }
-        if let calendarCandidate = calendarActionCandidate(userText: request.userText, normalizedText: normalizedText) {
-            candidates.append(calendarCandidate)
-        }
-        if let reminderCandidate = reminderActionCandidate(userText: request.userText, normalizedText: normalizedText) {
-            candidates.append(reminderCandidate)
-        }
-        if let notificationCandidate = notificationActionCandidate(userText: request.userText, normalizedText: normalizedText) {
-            candidates.append(notificationCandidate)
+        for writeCandidate in writeActionCandidateProvider.candidates(
+            userText: request.userText,
+            normalizedText: normalizedText,
+            parser: appIntegrationActionParser
+        ) where !candidates.containsAction(kind: writeCandidate.action?.kind) {
+            candidates.append(writeCandidate)
         }
 
         return AgentToolInvocationPlan(

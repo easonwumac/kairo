@@ -1,36 +1,45 @@
 import Foundation
 
-extension AgentToolInvocationPlanner {
-    func notificationActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
-        guard !isCalendarWriteRequest(normalizedText) else {
-            return nil
-        }
-        guard !isReminderWriteRequest(normalizedText) else {
-            return nil
-        }
-        guard !isContactWriteRequest(normalizedText) else {
-            return nil
-        }
-        guard !isEmailDraftRequest(normalizedText) else {
-            return nil
-        }
-        guard containsAny(normalizedText, [
-            "notify me",
-            "notification",
-            "send notification",
-            "remind me",
-            "reminder alert",
-            "通知我",
-            "通知",
-            "提醒我",
-            "提醒"
-        ]) else {
+public protocol AgentWriteActionCandidateProviding: Sendable {
+    func candidates(
+        userText: String,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> [AgentToolInvocationCandidate]
+}
+
+public struct DefaultAgentWriteActionCandidateProvider: AgentWriteActionCandidateProviding {
+    public init() {}
+
+    public func candidates(
+        userText: String,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> [AgentToolInvocationCandidate] {
+        [
+            contactCandidate(userText: userText, normalizedText: normalizedText, parser: parser),
+            calendarCandidate(userText: userText, normalizedText: normalizedText, parser: parser),
+            reminderCandidate(userText: userText, normalizedText: normalizedText, parser: parser),
+            notificationCandidate(userText: userText, normalizedText: normalizedText, parser: parser)
+        ].compactMap { $0 }
+    }
+
+    private func notificationCandidate(
+        userText: String,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> AgentToolInvocationCandidate? {
+        guard !parser.isCalendarWriteRequest(normalizedText),
+              !parser.isReminderWriteRequest(normalizedText),
+              !parser.isContactWriteRequest(normalizedText),
+              !parser.isEmailDraftRequest(normalizedText),
+              parser.isNotificationRequest(normalizedText) else {
             return nil
         }
 
         let draft = NotificationDraft(
             title: KairoL10n.string("chat.action.notification.defaultTitle"),
-            body: notificationBody(from: userText)
+            body: parser.notificationBody(from: userText)
         )
         let action = AgentAction(
             kind: .sendNotification,
@@ -53,17 +62,20 @@ extension AgentToolInvocationPlanner {
         )
     }
 
-    func contactActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
-        guard isContactWriteRequest(normalizedText) else {
+    private func contactCandidate(
+        userText: String,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> AgentToolInvocationCandidate? {
+        guard parser.isContactWriteRequest(normalizedText) else {
             return nil
         }
 
-        let draft = contactDraft(from: userText)
         let action = AgentAction(
             kind: .createContactDraft,
             title: KairoL10n.string("chat.action.displayName.createContact"),
             rationale: KairoL10n.string("chat.action.rationale.contact"),
-            payload: .contact(draft),
+            payload: .contact(parser.contactDraft(from: userText)),
             riskTier: .tier2LowRiskWrite
         )
 
@@ -80,17 +92,20 @@ extension AgentToolInvocationPlanner {
         )
     }
 
-    func calendarActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
-        guard isCalendarWriteRequest(normalizedText) else {
+    private func calendarCandidate(
+        userText: String,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> AgentToolInvocationCandidate? {
+        guard parser.isCalendarWriteRequest(normalizedText) else {
             return nil
         }
 
-        let draft = calendarDraft(from: userText)
         let action = AgentAction(
             kind: .createCalendarDraft,
             title: KairoL10n.string("chat.action.displayName.createCalendar"),
             rationale: KairoL10n.string("chat.action.rationale.calendar"),
-            payload: .calendarEvent(draft),
+            payload: .calendarEvent(parser.calendarDraft(from: userText)),
             riskTier: .tier2LowRiskWrite
         )
 
@@ -107,13 +122,17 @@ extension AgentToolInvocationPlanner {
         )
     }
 
-    func reminderActionCandidate(userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
-        guard isReminderWriteRequest(normalizedText) else {
+    private func reminderCandidate(
+        userText: String,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> AgentToolInvocationCandidate? {
+        guard parser.isReminderWriteRequest(normalizedText) else {
             return nil
         }
 
         let draft = ReminderDraft(
-            title: reminderTitle(from: userText),
+            title: parser.reminderTitle(from: userText),
             notes: KairoL10n.string("chat.action.reminder.defaultNotes"),
             dueDate: nil
         )

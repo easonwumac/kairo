@@ -204,6 +204,38 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertTrue(plan.proposedActions.contains(injectedAction))
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedWriteActionCandidateProvider() throws {
+        let injectedAction = AgentAction(
+            kind: .sendNotification,
+            title: "Injected Notification",
+            rationale: "Injected write action candidate.",
+            payload: .notification(NotificationDraft(title: "Injected", body: "Injected body")),
+            riskTier: .tier2LowRiskWrite
+        )
+        let injectedCandidate = AgentToolInvocationCandidate(
+            id: "injected-write-action",
+            title: "Injected Notification",
+            source: .actionCatalog,
+            skillKind: .custom,
+            requiredCapabilities: [.notifications],
+            riskTier: .tier2LowRiskWrite,
+            requiresConfirmation: true,
+            handoffSummary: "Injected",
+            action: injectedAction
+        )
+        let planner = AgentToolInvocationPlanner(
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: [injectedCandidate])
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "notify me to stand up"))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.id == "injected-write-action" })
+
+        XCTAssertEqual(candidate.action, injectedAction)
+        XCTAssertTrue(plan.proposedActions.contains(injectedAction))
+    }
+
     func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithoutExecutableAction() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry(integrations: []))
 
@@ -575,12 +607,34 @@ private struct FixedAppIntegrationActionMapper: AppIntegrationActionMapping {
 private struct FixedAppIntegrationActionParser: AgentToolInvocationActionParsing {
     var emailDraft: EmailDraft
 
+    func isCalendarWriteRequest(_ normalizedText: String) -> Bool { false }
+    func isReminderWriteRequest(_ normalizedText: String) -> Bool { false }
     func isEmailDraftRequest(_ normalizedText: String) -> Bool { true }
     func isMapDirectionsRequest(_ normalizedText: String) -> Bool { false }
     func isMessageHandoffRequest(_ normalizedText: String) -> Bool { false }
     func isPhoneCallHandoffRequest(_ normalizedText: String) -> Bool { false }
     func isWebSearchHandoffRequest(_ normalizedText: String) -> Bool { false }
     func isContactWriteRequest(_ normalizedText: String) -> Bool { false }
+    func isNotificationRequest(_ normalizedText: String) -> Bool { false }
+    func calendarDraft(from userText: String) -> CalendarEventDraft {
+        CalendarEventDraft(
+            title: "Parser calendar",
+            notes: nil,
+            startDate: Date(timeIntervalSince1970: 0),
+            endDate: Date(timeIntervalSince1970: 3_600)
+        )
+    }
+    func reminderTitle(from userText: String) -> String { "Parser reminder" }
+    func contactDraft(from userText: String) -> ContactDraft {
+        ContactDraft(
+            givenName: "Parser",
+            familyName: "Contact",
+            phoneNumbers: [],
+            emailAddresses: [],
+            notes: nil
+        )
+    }
+    func notificationBody(from userText: String) -> String { "Parser notification" }
     func emailDraft(from userText: String) -> EmailDraft { emailDraft }
     func mapDirectionsDraft(from userText: String, normalizedText: String) -> MapDirectionsDraft {
         MapDirectionsDraft(destinationQuery: "Parser destination", mode: .driving)
@@ -597,6 +651,18 @@ private struct FixedAppIntegrationActionParser: AgentToolInvocationActionParsing
     func isPhoneToken(_ value: String) -> Bool { true }
     func normalize(_ value: String) -> String {
         value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+private struct FixedWriteActionCandidateProvider: AgentWriteActionCandidateProviding {
+    var candidates: [AgentToolInvocationCandidate]
+
+    func candidates(
+        userText: String,
+        normalizedText: String,
+        parser: any AgentToolInvocationActionParsing
+    ) -> [AgentToolInvocationCandidate] {
+        candidates
     }
 }
 
