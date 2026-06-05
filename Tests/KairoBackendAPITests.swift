@@ -691,6 +691,19 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(github.oauth?.providerKey, "github")
     }
 
+    func testSettingsFeatureDependencyFactoryOwnsDefaultCredentialAndOAuthComposition() async throws {
+        let dependencies = SettingsFeatureDependencyFactory().makeDependencies(
+            oauthWebAuthenticationRunner: nil
+        )
+
+        try await dependencies.settingsService.saveAPIKey("factory-default-openai-key")
+        let savedKey = try await dependencies.credentialStore.readSecret(for: CredentialKey.openAIAPIKey)
+        let todoist = try XCTUnwrap(dependencies.oauthConnectorRegistry.integration(for: "todoist"))
+
+        XCTAssertEqual(savedKey, "factory-default-openai-key")
+        XCTAssertEqual(todoist.oauth?.providerKey, "todoist")
+    }
+
     @MainActor
     func testKairoEnvironmentBuildsChatFeatureDependenciesForCompositionRoot() async throws {
         let chatHistoryStore = InMemoryChatHistoryStore()

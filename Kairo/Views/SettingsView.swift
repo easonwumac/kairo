@@ -78,8 +78,8 @@ public struct SettingsView: View {
 
     public init(
         mode: SettingsViewMode = .all,
-        credentialStore: any CredentialStore = InMemoryCredentialStore(),
-        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
+        credentialStore: (any CredentialStore)? = nil,
+        oauthConnectorRegistry: (any AppIntegrationRegistryProviding)? = nil,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,

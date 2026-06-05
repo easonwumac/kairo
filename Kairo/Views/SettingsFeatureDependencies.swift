@@ -72,8 +72,8 @@ public struct SettingsFeatureDependencyFactory: Sendable {
     public init() {}
 
     public func makeDependencies(
-        credentialStore: any CredentialStore,
-        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
+        credentialStore: (any CredentialStore)? = nil,
+        oauthConnectorRegistry: (any AppIntegrationRegistryProviding)? = nil,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
@@ -89,10 +89,12 @@ public struct SettingsFeatureDependencyFactory: Sendable {
         localModelReplyCheckService: LocalModelReplyCheckService? = nil,
         deletionAPI: (any KairoDeletionAPI)? = nil
     ) -> SettingsFeatureDependencies {
-        SettingsFeatureDependencies(
-            settingsService: OpenAISettingsService(credentialStore: credentialStore),
-            credentialStore: credentialStore,
-            oauthConnectorRegistry: oauthConnectorRegistry,
+        let runtimeCredentialStore = credentialStore ?? InMemoryCredentialStore()
+        let runtimeOAuthConnectorRegistry = oauthConnectorRegistry ?? IntegrationRegistry.appIntegrationHarnessRegistry()
+        return SettingsFeatureDependencies(
+            settingsService: OpenAISettingsService(credentialStore: runtimeCredentialStore),
+            credentialStore: runtimeCredentialStore,
+            oauthConnectorRegistry: runtimeOAuthConnectorRegistry,
             oauthClientConfigurations: oauthClientConfigurations,
             oauthCallbackStore: oauthCallbackStore,
             oauthLoginService: oauthLoginService,
