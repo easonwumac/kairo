@@ -1,8 +1,8 @@
 import Foundation
 
 public actor AgentCore {
-    private let memoryStore: MemoryStore
     private let memoryContextProvider: any AgentMemoryContextProviding
+    private let memoryWriter: any AgentMemoryWriting
     private let aiProvider: AIProvider
     private let safetyPolicyEngine: SafetyPolicyEngine
     private let capabilityRegistry: CapabilityRegistry
@@ -21,6 +21,7 @@ public actor AgentCore {
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         memoryContextProvider: (any AgentMemoryContextProviding)? = nil,
+        memoryWriter: (any AgentMemoryWriting)? = nil,
         actionGate: (any PhoneToolActionGating)? = nil,
         toolContextProvider: (any AgentCapabilityPromptContextProviding)? = nil,
         toolInvocationPlanner: (any AgentToolInvocationPlanning)? = nil,
@@ -28,8 +29,8 @@ public actor AgentCore {
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
     ) {
-        self.memoryStore = memoryStore
         self.memoryContextProvider = memoryContextProvider ?? DefaultAgentMemoryContextProvider(memoryStore: memoryStore)
+        self.memoryWriter = memoryWriter ?? DefaultAgentMemoryWriter(memoryStore: memoryStore)
         self.aiProvider = aiProvider
         self.safetyPolicyEngine = safetyPolicyEngine
         self.capabilityRegistry = capabilityRegistry
@@ -113,14 +114,7 @@ public actor AgentCore {
     }
 
     public func remember(_ content: String, title: String? = nil, source: MemorySource = .manual) async throws -> MemoryRecord {
-        let memory = MemoryRecord(
-            title: title ?? String(content.prefix(40)),
-            summary: String(content.prefix(160)),
-            content: content,
-            source: source
-        )
-        try await memoryStore.save(memory)
-        return memory
+        try await memoryWriter.remember(content, title: title, source: source)
     }
 
     public static let systemPrompt = """

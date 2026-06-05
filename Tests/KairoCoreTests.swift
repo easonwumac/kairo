@@ -166,6 +166,30 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(response.memoryContextCount, 1)
     }
 
+    func testAgentCoreUsesInjectedMemoryWriter() async throws {
+        let writer = StubAgentMemoryWriter()
+        let agent = AgentCore(memoryWriter: writer)
+
+        let memory = try await agent.remember("Injected memory writer content", title: "Injected title", source: .chat)
+
+        XCTAssertEqual(writer.requestCount, 1)
+        XCTAssertEqual(writer.receivedContent, "Injected memory writer content")
+        XCTAssertEqual(writer.receivedTitle, "Injected title")
+        XCTAssertEqual(writer.receivedSource, .chat)
+        XCTAssertEqual(memory.title, "Injected title")
+    }
+
+    func testDefaultAgentMemoryWriterPersistsMemoryThroughStore() async throws {
+        let store = InMemoryMemoryStore()
+        let writer = DefaultAgentMemoryWriter(memoryStore: store)
+
+        let memory = try await writer.remember("Kairo memory writer persists through store", title: nil, source: .chat)
+        let saved = try await store.search(query: "writer persists", limit: 10)
+
+        XCTAssertEqual(saved.map(\.id), [memory.id])
+        XCTAssertEqual(saved.first?.source, .chat)
+    }
+
     func testJSONFileMemoryStorePersistsSavedMemory() async throws {
         let fileURL = temporaryFileURL(named: "memory-store.json")
         let memory = MemoryRecord(
@@ -2149,6 +2173,30 @@ private final class StubAgentMemoryContextProvider: AgentMemoryContextProviding,
         requestCount += 1
         receivedPrivacyMode = privacyMode
         return suppliedContext
+    }
+}
+
+private final class StubAgentMemoryWriter: AgentMemoryWriting, @unchecked Sendable {
+    private(set) var requestCount = 0
+    private(set) var receivedContent: String?
+    private(set) var receivedTitle: String?
+    private(set) var receivedSource: MemorySource?
+
+    func remember(
+        _ content: String,
+        title: String?,
+        source: MemorySource
+    ) async throws -> MemoryRecord {
+        requestCount += 1
+        receivedContent = content
+        receivedTitle = title
+        receivedSource = source
+        return MemoryRecord(
+            title: title ?? String(content.prefix(40)),
+            summary: content,
+            content: content,
+            source: source
+        )
     }
 }
 
