@@ -76,7 +76,7 @@ public struct SettingsView: View {
     public init(
         mode: SettingsViewMode = .all,
         credentialStore: any CredentialStore = InMemoryCredentialStore(),
-        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
@@ -114,7 +114,7 @@ public struct SettingsView: View {
         settingsService: OpenAISettingsService,
         mode: SettingsViewMode = .all,
         credentialStore: any CredentialStore,
-        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
