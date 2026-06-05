@@ -252,3 +252,14 @@ public struct IntegrationRegistry: AppIntegrationRegistryProviding, Sendable {
         )
     ]
 }
+
+public extension AppIntegrationRegistryProviding {
+    func integrationsNotMigrated(to catalog: any AppIntegrationSkillCatalogProviding) -> [AppIntegration] {
+        let migratedKeys = Set(catalog.skills.map(\.integrationKey))
+        return integrations.filter { !migratedKeys.contains($0.key) }
+    }
+
+    func oauthConnectorsNotMigrated(to catalog: any AppIntegrationSkillCatalogProviding) -> [AppIntegration] {
+        integrationsNotMigrated(to: catalog).filter { $0.oauth != nil }
+    }
+}

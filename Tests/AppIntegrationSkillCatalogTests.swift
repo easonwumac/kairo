@@ -80,6 +80,25 @@ final class AppIntegrationSkillCatalogTests: XCTestCase {
         }
     }
 
+    func testLegacyIntegrationRegistryExcludesCatalogMigratedKeys() {
+        let catalog = AppIntegrationSkillCatalog()
+        let registry = IntegrationRegistry()
+        let migratedKeys = Set(catalog.skills.map(\.integrationKey))
+        let gmailKey = catalog.skill(id: .gmailDraftAPI)?.integrationKey
+        let notionKey = catalog.skill(id: .notionPageAPI)?.integrationKey
+        let slackKey = catalog.skill(id: .slackOpenHandoff)?.integrationKey
+        let legacyIntegrations = registry.integrationsNotMigrated(to: catalog)
+        let legacyOAuthConnectors = registry.oauthConnectorsNotMigrated(to: catalog)
+
+        XCTAssertTrue(legacyIntegrations.allSatisfy { !migratedKeys.contains($0.key) })
+        XCTAssertTrue(legacyOAuthConnectors.allSatisfy { !migratedKeys.contains($0.key) })
+        XCTAssertTrue(legacyOAuthConnectors.allSatisfy { $0.oauth != nil })
+        XCTAssertFalse(legacyIntegrations.contains { $0.key == gmailKey })
+        XCTAssertFalse(legacyIntegrations.contains { $0.key == notionKey })
+        XCTAssertFalse(legacyIntegrations.contains { $0.key == slackKey })
+        XCTAssertTrue(legacyIntegrations.contains { $0.key == "github" })
+    }
+
     func testRecipeStepCanBindToCatalogIntegrationSkillID() throws {
         let catalog = AppIntegrationSkillCatalog()
         let step = KairoRecipeStep(

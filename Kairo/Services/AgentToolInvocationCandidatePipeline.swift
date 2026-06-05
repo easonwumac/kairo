@@ -55,9 +55,7 @@ public struct DefaultAgentToolInvocationCandidatePipeline: AgentToolInvocationCa
             )
         })
 
-        let migratedIntegrationKeys = Set(appIntegrationSkillCatalog.skills.map(\.integrationKey))
-        candidates.append(contentsOf: integrationRegistry.oauthConnectors.compactMap { integration in
-            guard !migratedIntegrationKeys.contains(integration.key) else { return nil }
+        candidates.append(contentsOf: integrationRegistry.oauthConnectorsNotMigrated(to: appIntegrationSkillCatalog).compactMap { integration in
             return candidateBuilder.candidate(
                 for: integration,
                 normalizedText: normalizedText,

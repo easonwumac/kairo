@@ -49,7 +49,7 @@ public struct CapabilityPromptContextBuilder: Sendable {
             "- unsupportedSandboxAction: Explain why the requested iOS, account, background, or cross-app operation is unavailable and provide a safe alternative. This is explanatory only and must not execute external actions."
         ]
 
-        let integrationLines = integrationRegistry.integrations.map { integration in
+        let integrationLines = integrationRegistry.integrationsNotMigrated(to: appIntegrationSkillCatalog).map { integration in
             let surfaces = integration.surfaces.map(\.rawValue).joined(separator: ",")
             let scopes = integration.oauth?.defaultScopes.joined(separator: ",") ?? "none"
             return "- \(integration.key): \(integration.displayName); surfaces=\(surfaces); status=\(integration.status.rawValue); oauthScopes=\(scopes); \(integration.sandboxNotes)"
