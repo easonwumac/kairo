@@ -5,6 +5,7 @@ struct ChatBubble: View {
     let message: ChatMessage
     let onCopy: (String) -> Void
     let onReply: (ChatMessage) -> Void
+    @State private var isReasoningExpanded = false
 
     private var isUser: Bool { message.role == .user }
 
@@ -37,6 +38,30 @@ struct ChatBubble: View {
                         }
                         .accessibilityIdentifier("chat.message.reply-menu.\(message.id.uuidString)")
                     }
+
+                if let reasoningText = message.reasoningText, !reasoningText.isEmpty, !isUser {
+                    DisclosureGroup(
+                        isExpanded: $isReasoningExpanded,
+                        content: {
+                            Text(reasoningText)
+                                .font(.caption)
+                                .foregroundStyle(KairoDesign.muted)
+                                .textSelection(.enabled)
+                                .frame(maxWidth: 270, alignment: .leading)
+                                .padding(.top, 4)
+                        },
+                        label: {
+                            Label(KairoL10n.string("chat.message.reasoning"), systemImage: "brain.head.profile")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(KairoDesign.muted)
+                        }
+                    )
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .frame(maxWidth: 270, alignment: .leading)
+                    .background(KairoDesign.softSurface.opacity(0.48), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .accessibilityIdentifier("chat.message.reasoning.\(message.id.uuidString)")
+                }
 
                 HStack(spacing: 6) {
                     if message.status == .failed {

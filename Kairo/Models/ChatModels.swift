@@ -63,6 +63,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
     public var attachments: [ChatAttachment]
     public var status: ChatMessageStatus
     public var memoryContextCount: Int
+    public var reasoningText: String?
 
     public init(
         id: UUID = UUID(),
@@ -73,7 +74,8 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         toolCandidates: [AgentToolInvocationCandidate] = [],
         attachments: [ChatAttachment] = [],
         status: ChatMessageStatus = .sent,
-        memoryContextCount: Int = 0
+        memoryContextCount: Int = 0,
+        reasoningText: String? = nil
     ) {
         self.id = id
         self.role = role
@@ -84,6 +86,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.attachments = attachments
         self.status = status
         self.memoryContextCount = memoryContextCount
+        self.reasoningText = reasoningText
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -96,6 +99,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         case attachments
         case status
         case memoryContextCount
+        case reasoningText
     }
 
     public init(from decoder: Decoder) throws {
@@ -109,6 +113,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.attachments = try container.decodeIfPresent([ChatAttachment].self, forKey: .attachments) ?? []
         self.status = try container.decodeIfPresent(ChatMessageStatus.self, forKey: .status) ?? .sent
         self.memoryContextCount = try container.decodeIfPresent(Int.self, forKey: .memoryContextCount) ?? 0
+        self.reasoningText = try container.decodeIfPresent(String.self, forKey: .reasoningText)
     }
 }
 

@@ -38,17 +38,20 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
     public var proposedActions: [AgentAction]
     public var toolCandidates: [AgentToolInvocationCandidate]
     public var memoryContextCount: Int
+    public var reasoningText: String?
 
     public init(
         message: String,
         proposedActions: [AgentAction] = [],
         toolCandidates: [AgentToolInvocationCandidate] = [],
-        memoryContextCount: Int = 0
+        memoryContextCount: Int = 0,
+        reasoningText: String? = nil
     ) {
         self.message = message
         self.proposedActions = proposedActions
         self.toolCandidates = toolCandidates
         self.memoryContextCount = memoryContextCount
+        self.reasoningText = reasoningText
     }
 }
 

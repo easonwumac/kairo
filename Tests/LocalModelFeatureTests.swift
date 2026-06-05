@@ -1040,6 +1040,35 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertTrue(response.proposedActions.isEmpty)
     }
 
+    func testLocalModelRuntimeSeparatesThinkReasoningFromVisibleReply() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .localOnly,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let runtime = DeterministicLocalModelReplyCheckRuntime(
+            responseText: """
+            <think>
+            Internal chain of thought.
+            </think>
+            Visible local answer.
+            """,
+            generationTokensPerSecond: 12.5
+        )
+        let provider = LocalModelRuntimeAIProvider(
+            localModelSettingsService: service,
+            runtime: runtime
+        )
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "hello"
+        ))
+
+        XCTAssertEqual(response.message, "Visible local answer.")
+        XCTAssertEqual(response.reasoningText, "Internal chain of thought.")
+        XCTAssertFalse(response.message.contains("<think>"))
+    }
+
     func testLocalModelRoutingAIProviderFailsClosedWhenSelectedRuntimeIsUnavailable() async throws {
         let service = try await makeLocalModelSettingsService(
             preference: .localOnly,

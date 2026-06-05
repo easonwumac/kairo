@@ -542,6 +542,7 @@
 "chat.message.reply" = "Reply";
 "chat.message.copyAccessibility" = "Copy message";
 "chat.message.replyAccessibility" = "Reply to message";
+"chat.message.reasoning" = "Reasoning";
 "chat.message.memoryContext.one" = "Used 1 memory item";
 "chat.message.memoryContext.many" = "Used %lld memory items";
 "chat.memory.proposal.title" = "Save Memory";

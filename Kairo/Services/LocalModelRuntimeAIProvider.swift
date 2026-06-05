@@ -29,17 +29,18 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
                 installRecord: installRecord,
                 prompt: Self.prompt(from: request, responseLanguage: status.responseLanguage)
             )
-            let trimmedResponse = result.responseText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmedResponse.isEmpty else {
+            let parsedResponse = LocalModelReasoningParser.parse(result.responseText)
+            guard !parsedResponse.message.isEmpty else {
                 throw AIProviderError.localInferenceUnavailable(
                     KairoL10n.string("chat.error.localInference.reason.runtimeEmpty")
                 )
             }
             return AICompletionResponse(
-                message: trimmedResponse,
+                message: parsedResponse.message,
                 proposedActions: [],
                 toolCandidates: [],
-                memoryContextCount: request.memoryContext.count
+                memoryContextCount: request.memoryContext.count,
+                reasoningText: parsedResponse.reasoningText
             )
         } catch let error as LocalModelReplyCheckError {
             throw AIProviderError.localInferenceUnavailable(Self.userMessage(for: error))
@@ -123,5 +124,53 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         case let .runtimeUnavailable(reason):
             return reason
         }
+    }
+}
+
+public struct LocalModelReasoningParseResult: Equatable, Sendable {
+    public let message: String
+    public let reasoningText: String?
+
+    public init(message: String, reasoningText: String?) {
+        self.message = message
+        self.reasoningText = reasoningText
+    }
+}
+
+public enum LocalModelReasoningParser {
+    public static func parse(_ responseText: String) -> LocalModelReasoningParseResult {
+        let pattern = #"<think>(.*?)</think>"#
+        guard let regex = try? NSRegularExpression(
+            pattern: pattern,
+            options: [.caseInsensitive, .dotMatchesLineSeparators]
+        ) else {
+            return LocalModelReasoningParseResult(
+                message: responseText.trimmingCharacters(in: .whitespacesAndNewlines),
+                reasoningText: nil
+            )
+        }
+
+        let range = NSRange(responseText.startIndex..<responseText.endIndex, in: responseText)
+        let matches = regex.matches(in: responseText, range: range)
+        guard !matches.isEmpty else {
+            return LocalModelReasoningParseResult(
+                message: responseText.trimmingCharacters(in: .whitespacesAndNewlines),
+                reasoningText: nil
+            )
+        }
+
+        let reasoning = matches.compactMap { match -> String? in
+            guard let swiftRange = Range(match.range(at: 1), in: responseText) else { return nil }
+            let value = String(responseText[swiftRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+            return value.isEmpty ? nil : value
+        }
+        let visibleMessage = regex
+            .stringByReplacingMatches(in: responseText, range: range, withTemplate: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return LocalModelReasoningParseResult(
+            message: visibleMessage,
+            reasoningText: reasoning.isEmpty ? nil : reasoning.joined(separator: "\n\n")
+        )
     }
 }

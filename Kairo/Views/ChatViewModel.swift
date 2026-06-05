@@ -301,7 +301,8 @@ public final class ChatViewModel: ObservableObject {
                 text: response.message,
                 proposedActions: response.proposedActions,
                 toolCandidates: response.toolCandidates,
-                memoryContextCount: response.memoryContextCount
+                memoryContextCount: response.memoryContextCount,
+                reasoningText: response.reasoningText
             )
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
             await persistCurrentThread()
