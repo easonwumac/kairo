@@ -58,7 +58,6 @@ public struct PermissionHubView: View {
             GeometryReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        accessOverviewCard
                         primaryToolsCard
                         advancedSetupCard
                     }

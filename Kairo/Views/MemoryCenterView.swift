@@ -33,10 +33,10 @@ public struct MemoryCenterView: View {
                 ScrollViewReader { scrollProxy in
                     ScrollView {
                         VStack(alignment: .leading, spacing: 18) {
-                            memoryAddSection
-
                             memorySearchSection
                                 .id(Self.searchSectionScrollID)
+
+                            memoryAddSection
 
                             if let errorMessage {
                                 Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
@@ -223,18 +223,14 @@ public struct MemoryCenterView: View {
                     }
                 } label: {
                     HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(KairoL10n.string("memory.details.title"))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(KairoDesign.ink)
-                        }
-
-                        Spacer(minLength: 8)
-
-                        Image(systemName: showLibraryDetails ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(KairoDesign.blue)
+                        Label(KairoL10n.string("memory.details.title"), systemImage: "ellipsis")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.ink)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .padding(.horizontal, 12)
+                    .frame(height: 38)
+                    .background(KairoDesign.softSurface.opacity(0.55), in: Capsule())
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
