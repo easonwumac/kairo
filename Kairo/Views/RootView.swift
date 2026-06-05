@@ -328,11 +328,6 @@ public struct RootView: View {
                         title: KairoL10n.string("root.menu.group.system"),
                         sections: [.access, .models, .settings]
                     )
-
-                    Text(KairoL10n.string("root.menu.privacyNote"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, max(safeAreaInsets.top, 0) + 8)

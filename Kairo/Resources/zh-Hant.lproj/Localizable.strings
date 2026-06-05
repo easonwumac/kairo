@@ -5,7 +5,6 @@
 "root.menu.close" = "關閉導覽選單";
 "root.menu.title" = "Kairo Chat";
 "root.menu.subtitle" = "先從 Chat 開始；只有需要能力設定時才進入其他頁面。";
-"root.menu.privacyNote" = "Kairo 使用公開 API、明確權限與可見 handoff；不會靜默改動任何東西。";
 "root.menu.accessibility" = "Kairo 導覽選單";
 "root.moreActions" = "Chat 操作";
 "root.pageActions.chat.tools" = "Chat 工具";

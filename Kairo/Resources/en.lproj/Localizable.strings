@@ -5,7 +5,6 @@
 "root.menu.close" = "Close navigation menu";
 "root.menu.title" = "Kairo Chat";
 "root.menu.subtitle" = "Start in Chat. Use setup pages only when Kairo needs a capability.";
-"root.menu.privacyNote" = "Kairo uses public APIs, explicit permission, and visible handoff. Nothing changes silently.";
 "root.menu.accessibility" = "Kairo navigation menu";
 "root.moreActions" = "Chat actions";
 "root.pageActions.chat.tools" = "Chat tools";
