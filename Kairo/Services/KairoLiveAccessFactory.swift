@@ -25,19 +25,22 @@ public struct KairoLiveAccessFactory: Sendable {
     public var installedLocalModelIDs: [String]
     public var oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]?
     public var oauthConnectorRegistry: any OAuthConnectorRegistryProviding
+    public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
 
     public init(
         paths: KairoPaths,
         credentialStore: any CredentialStore,
         installedLocalModelIDs: [String],
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration]? = nil,
-        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry()
+        oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) {
         self.paths = paths
         self.credentialStore = credentialStore
         self.installedLocalModelIDs = installedLocalModelIDs
         self.oauthClientConfigurations = oauthClientConfigurations
         self.oauthConnectorRegistry = oauthConnectorRegistry
+        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
     }
 
     public func makeComponents() async throws -> KairoLiveAccessComponents {
@@ -46,7 +49,8 @@ public struct KairoLiveAccessFactory: Sendable {
             grantedEntitlements: [],
             connectedOAuthProviderKeys: try await Self.connectedOAuthProviderKeys(
                 credentialStore: credentialStore,
-                registry: oauthConnectorRegistry
+                registry: oauthConnectorRegistry,
+                appIntegrationSkillCatalog: appIntegrationSkillCatalog
             ),
             installedLocalModelIDs: installedLocalModelIDs
         )
@@ -72,11 +76,17 @@ public struct KairoLiveAccessFactory: Sendable {
 
     public static func connectedOAuthProviderKeys(
         credentialStore: CredentialStore,
-        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry()
+        registry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) async throws -> [String] {
-        var providerKeys: [String] = []
-        for integration in registry.oauthConnectors {
-            guard let providerKey = integration.oauth?.providerKey else { continue }
+        let catalogProviderKeys = appIntegrationSkillCatalog.oauthProviderKeys
+        let legacyProviderKeys = registry
+            .oauthConnectorsNotMigrated(to: appIntegrationSkillCatalog)
+            .compactMap(\.oauth?.providerKey)
+        let providerKeys = Array(Set(catalogProviderKeys + legacyProviderKeys)).sorted()
+        var connectedProviderKeys: [String] = []
+
+        for providerKey in providerKeys {
             guard let encoded = try await credentialStore.readSecret(
                 for: CredentialKey.oauthTokenSet(providerKey: providerKey)
             ) else {
@@ -84,9 +94,9 @@ public struct KairoLiveAccessFactory: Sendable {
             }
             if let tokenSet = try OAuthTokenSet.decodeStoredSecret(encoded),
                !tokenSet.accessToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                providerKeys.append(providerKey)
+                connectedProviderKeys.append(providerKey)
             }
         }
-        return Array(Set(providerKeys)).sorted()
+        return connectedProviderKeys
     }
 }

@@ -67,6 +67,10 @@ public extension AppIntegrationSkillCatalogProviding {
     var executableSkills: [AppIntegrationSkill] {
         skills.filter(\.canBeSuggestedAsExecutable)
     }
+
+    var oauthProviderKeys: [String] {
+        Array(Set(skills.compactMap(\.oauth?.providerKey))).sorted()
+    }
 }
 
 public enum AppIntegrationSkillID: String, Codable, CaseIterable, Sendable, Identifiable {

@@ -590,6 +590,35 @@ final class ProviderCredentialSafetyTests: XCTestCase {
         XCTAssertEqual(connected, ["github"])
     }
 
+    func testConnectedOAuthProviderKeysIncludeCatalogOAuthSkillsAndLegacyUnmigratedConnectors() async throws {
+        let credentials = InMemoryCredentialStore()
+        let todoistTokens = OAuthTokenSet(accessToken: "todoist-token", scopes: ["data:read_write"])
+        let githubTokens = OAuthTokenSet(accessToken: "github-token", scopes: ["repo"])
+        let registry = IntegrationRegistry(integrations: [
+            oauthIntegration(key: "github", displayName: "GitHub", providerKey: "github")
+        ])
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .todoistTaskAPI))
+        ])
+
+        try await credentials.saveSecret(
+            todoistTokens.encodedForStorage(),
+            for: CredentialKey.oauthTokenSet(providerKey: "todoist")
+        )
+        try await credentials.saveSecret(
+            githubTokens.encodedForStorage(),
+            for: CredentialKey.oauthTokenSet(providerKey: "github")
+        )
+
+        let connected = try await KairoEnvironment.connectedOAuthProviderKeys(
+            credentialStore: credentials,
+            registry: registry,
+            appIntegrationSkillCatalog: catalog
+        )
+
+        XCTAssertEqual(connected, ["github", "todoist"])
+    }
+
     private func temporaryFileURL(named name: String) -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
