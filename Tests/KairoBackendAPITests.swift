@@ -614,6 +614,33 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertFalse(response.toolCandidates.contains { $0.integrationKey == "todoist" && $0.source == .integrationRegistry })
     }
 
+    func testScenarioNotionOAuthRequiredStaysSetupOnly() async throws {
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .notionPageAPI))
+        ])
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            appIntegrationSkillCatalog: catalog
+        )
+
+        let response = try await environment.backendAPI.chat.respond(
+            to: "幫我在 Notion 建立頁面：Kairo App Integration Harness 測試紀錄",
+            attachments: [],
+            privacyMode: .standard
+        )
+
+        let candidate = try XCTUnwrap(response.toolCandidates.first { $0.skillID == AppIntegrationSkillID.notionPageAPI.rawValue })
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertEqual(candidate.integrationKey, "notion")
+        XCTAssertEqual(candidate.skillKind, .oauthConnector)
+        XCTAssertTrue(candidate.requiresConfirmation)
+        XCTAssertNil(candidate.action)
+        XCTAssertTrue(response.proposedActions.isEmpty)
+        XCTAssertFalse(response.toolCandidates.contains { $0.integrationKey == "notion" && $0.source == .integrationRegistry })
+    }
+
     func testScenarioLinePrivateDataReadUsesUnsupportedCatalogFallback() async throws {
         let catalog = AppIntegrationSkillCatalog(skills: [
             try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .lineShareHandoff))
