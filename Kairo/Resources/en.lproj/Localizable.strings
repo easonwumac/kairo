@@ -771,3 +771,5 @@
 "settings.route.preferLocal.detail" = "Uses the selected local model for eligible low-risk work when installed.";
 "settings.route.preferCloud.detail" = "Uses the cloud provider when network access is available.";
 "settings.route.localOnly.detail" = "Never routes prompts to cloud providers; unsupported local tasks fail closed.";
+"shortcut.integration.blocked.missingCatalog" = "This Shortcut demo references %@, but that integration is not in the app integration catalog.";
+"shortcut.integration.blocked.setupRequired" = "%@ is not ready for execution. Finish setup or use a visible fallback before running this Shortcut step.";

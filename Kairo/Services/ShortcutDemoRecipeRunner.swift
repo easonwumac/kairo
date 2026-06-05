@@ -6,9 +6,17 @@ public protocol ShortcutDemoRecipeRunnerProtocol: Sendable {
 
 public actor ShortcutDemoRecipeRunner: ShortcutDemoRecipeRunnerProtocol {
     private let runtime: ShortcutNodeRuntime
+    private let integrationGate: any ShortcutDemoIntegrationGating
 
-    public init(runtime: ShortcutNodeRuntime) {
+    public init(
+        runtime: ShortcutNodeRuntime,
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
+        integrationGate: (any ShortcutDemoIntegrationGating)? = nil
+    ) {
         self.runtime = runtime
+        self.integrationGate = integrationGate ?? CatalogBackedShortcutDemoIntegrationGate(
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
+        )
     }
 
     public func runSample(_ recipe: ShortcutDemoRecipe) async throws -> ShortcutDemoRecipeRun {
@@ -20,6 +28,19 @@ public actor ShortcutDemoRecipeRunner: ShortcutDemoRecipeRunnerProtocol {
             if input.variables["kairoInputSource"] == "previousStepOutput",
                let previousOutput {
                 input.text = Self.chainedText(from: previousOutput)
+            }
+
+            if let blockedOutput = integrationGate.blockedOutput(for: step, input: input) {
+                stepRuns.append(
+                    ShortcutDemoStepRun(
+                        shortcutActionTitle: step.shortcutActionTitle,
+                        nodeKind: step.nodeKind,
+                        input: input,
+                        output: blockedOutput
+                    )
+                )
+                previousOutput = blockedOutput
+                continue
             }
 
             let output = try await runtime.run(step.nodeKind, input: input)

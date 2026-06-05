@@ -45,7 +45,8 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
                 runtime: ShortcutNodeRuntime(
                     memoryStore: runtimeMemoryStore,
                     toolCatalog: toolCatalog
-                )
+                ),
+                appIntegrationSkillCatalog: appIntegrationSkillCatalog
             )
         )
     }
@@ -53,7 +54,8 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
     public func makeDependencies(
         recipeAPI: any KairoRecipeAPI,
         memoryStore: any MemoryStore = InMemoryMemoryStore(),
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
     ) -> AutomationsFeatureDependencies {
         AutomationsFeatureDependencies(
             recipeAPI: recipeAPI,
@@ -62,7 +64,8 @@ public struct AutomationsFeatureDependencyFactory: Sendable {
                 runtime: ShortcutNodeRuntime(
                     memoryStore: memoryStore,
                     toolCatalog: toolCatalog
-                )
+                ),
+                appIntegrationSkillCatalog: appIntegrationSkillCatalog
             )
         )
     }

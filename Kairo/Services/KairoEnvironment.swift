@@ -98,7 +98,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
             runtime: ShortcutNodeRuntime(
                 memoryStore: memoryStore,
                 toolCatalog: toolCatalog
-            )
+            ),
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
         )
     }
 

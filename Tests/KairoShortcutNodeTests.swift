@@ -1110,6 +1110,57 @@ final class KairoShortcutNodeTests: XCTestCase {
         }
     }
 
+    func testShortcutDemoRecipeRunnerBlocksIntegrationStepMissingFromCatalog() async throws {
+        let recipe = try XCTUnwrap(ShortcutDemoCatalog.default.recipe(id: "message-reply-handoff"))
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let runner = ShortcutDemoRecipeRunner(
+            runtime: runtime,
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: [])
+        )
+
+        let run = try await runner.runSample(recipe)
+        let output = try XCTUnwrap(run.steps.first?.output)
+
+        XCTAssertEqual(output.fields["integrationSkillID"], AppIntegrationSkillID.appleMessagesHandoff.rawValue)
+        XCTAssertEqual(output.fields["success"], "false")
+        XCTAssertEqual(output.fields["integrationAvailability"], AppIntegrationSkillAvailabilityStatus.unsupported.rawValue)
+        XCTAssertTrue(output.proposedActions.isEmpty)
+    }
+
+    func testShortcutDemoRecipeRunnerDoesNotExecuteOAuthMetadataIntegrationBinding() async throws {
+        let recipe = ShortcutDemoRecipe(
+            id: "gmail-oauth-metadata-only",
+            title: "Gmail OAuth Metadata Only",
+            summary: "OAuth integration binding must fail closed until setup is complete.",
+            triggerSummary: "User asks for a Gmail draft.",
+            setupNotes: [],
+            steps: [
+                ShortcutDemoStep(
+                    shortcutActionTitle: "Prepare Gmail Draft",
+                    nodeKind: .createEmailDraft,
+                    integrationSkillID: .gmailDraftAPI,
+                    inputContract: ShortcutNodeContract(requiredFields: ["text"], description: "Email draft request"),
+                    outputContract: ShortcutNodeContract(requiredFields: ["integrationSkillID", "success"], description: "Blocked integration output"),
+                    sampleInput: ShortcutNodeInput(
+                        text: "to: user@example.com\nSubject: Follow up\nPlease review the notes.",
+                        variables: ["integrationSkillID": AppIntegrationSkillID.gmailDraftAPI.rawValue]
+                    )
+                )
+            ]
+        )
+        let runtime = ShortcutNodeRuntime(memoryStore: InMemoryMemoryStore())
+        let runner = ShortcutDemoRecipeRunner(runtime: runtime)
+
+        let run = try await runner.runSample(recipe)
+        let output = try XCTUnwrap(run.steps.first?.output)
+
+        XCTAssertEqual(output.fields["integrationSkillID"], AppIntegrationSkillID.gmailDraftAPI.rawValue)
+        XCTAssertEqual(output.fields["success"], "false")
+        XCTAssertEqual(output.fields["integrationAvailability"], AppIntegrationSkillAvailabilityStatus.requiresOAuth.rawValue)
+        XCTAssertEqual(output.fields["integrationExecutionMode"], AppIntegrationExecutionMode.apiCall.rawValue)
+        XCTAssertTrue(output.proposedActions.isEmpty)
+    }
+
     func testShortcutDemoRecipeRunnerExecutesPhoneCallHandoffSampleWithoutCalling() async throws {
         let catalog = ShortcutDemoCatalog.default
         let recipe = try XCTUnwrap(catalog.recipe(id: "phone-call-handoff"))
