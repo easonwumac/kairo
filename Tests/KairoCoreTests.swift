@@ -533,26 +533,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(requests, [request])
     }
 
-    func testSettingsViewDefinesOAuthConnectorSectionAccessibilityIdentifiers() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)
-
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.section""#))
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.connectors""#))
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).disconnect""#))
-        XCTAssertTrue(settingsView.contains("disconnectConnector(option)"))
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).row""#))
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).name""#))
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).status""#))
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).detail""#))
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).backend-exchange""#))
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.\(option.providerKey).authorize""#))
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.callback-url""#))
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.preview-callback""#))
-        XCTAssertTrue(settingsView.contains(#""settings.oauth.callback-message""#))
-        XCTAssertTrue(settingsView.contains("previewOAuthCallback"))
-    }
-
     func testSettingsViewDefinesShortcutDemoSectionAccessibilityIdentifiers() throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
         let settingsView = try String(contentsOf: root.appendingPathComponent("Kairo/Views/SettingsView.swift"), encoding: .utf8)

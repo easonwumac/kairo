@@ -26,8 +26,6 @@ public struct SettingsView: View {
     @State private var statusMessage: String?
     @State private var connectorOptions: [OAuthConnectorLoginOption] = []
     @State private var connectorStatusMessage: String?
-    @State private var oauthCallbackURLText: String = ""
-    @State private var oauthCallbackPreviewMessage: String?
     @State var localModelCatalog: LocalModelCatalog
     @State var localModelStatus: LocalModelSettingsStatus
     @State var localModelDownloadProgress: LocalModelDownloadProgressState?
@@ -297,31 +295,12 @@ public struct SettingsView: View {
     }
 
     private var oauthConnectorsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            settingsSectionHeader(
-                title: KairoL10n.string("settings.oauth.section")
-            )
-
-            KairoGroupedSurface {
-                VStack(alignment: .leading, spacing: 0) {
-                    if connectorOptions.isEmpty {
-                        Text(KairoL10n.string("settings.oauth.empty"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.vertical, 8)
-                    }
-
-                    ForEach(connectorOptions) { option in
-                        connectorRow(option)
-                        if option.id != connectorOptions.last?.id {
-                            Divider()
-                                .padding(.leading, 42)
-                        }
-                    }
-                }
-            }
-            .accessibilityIdentifier("settings.oauth.connectors")
-        }
+        SettingsOAuthConnectorsSection(
+            connectorOptions: connectorOptions,
+            expandedConnectorDetails: $expandedOAuthConnectorDetails,
+            authorizeConnector: authorizeConnector,
+            disconnectConnector: disconnectConnector
+        )
     }
 
     private var privacySettingsSection: some View {
@@ -329,20 +308,6 @@ public struct SettingsView: View {
             statusMessage: privacyStatusMessage,
             clearAuditLog: clearAuditLog
         )
-    }
-
-    private func settingsSectionHeader(title: String, subtitle: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.headline)
-            if let subtitle {
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(.horizontal, 2)
     }
 
     private var connectedConnectorCount: Int {
@@ -383,128 +348,6 @@ public struct SettingsView: View {
             .navigationTitle(mode.navigationTitle)
             .accessibilityIdentifier("settings.form")
         }
-    }
-
-    @ViewBuilder
-    private func connectorRow(_ option: OAuthConnectorLoginOption) -> some View {
-        let isExpanded = expandedOAuthConnectorDetails.contains(option.providerKey)
-
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(option.displayName)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .accessibilityIdentifier("settings.oauth.\(option.providerKey).name")
-
-                Spacer()
-
-                Text(option.readiness.settingsStatusText)
-                    .font(.caption)
-                    .foregroundStyle(statusColor(for: option.readiness))
-                    .accessibilityIdentifier("settings.oauth.\(option.providerKey).status")
-
-                Button {
-                    toggleOAuthConnectorDetails(option.providerKey)
-                } label: {
-                    Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(KairoDesign.blue)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(isExpanded ? KairoL10n.string("settings.oauth.details.hide") : KairoL10n.string("settings.oauth.details.show"))
-                .accessibilityIdentifier("settings.oauth.\(option.providerKey).details")
-            }
-
-            if isExpanded {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(option.accountDataBoundary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("settings.oauth.\(option.providerKey).detail")
-
-                    if option.requiresBackendTokenExchange {
-                        Text(KairoL10n.string("settings.oauth.backendExchangeRequired"))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .accessibilityIdentifier("settings.oauth.\(option.providerKey).backend-exchange")
-                    }
-
-                    if option.canStartAuthorization || option.readiness == .connected {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 8)], spacing: 8) {
-                            if option.canStartAuthorization {
-                                Button(KairoL10n.string("settings.oauth.authorize")) {
-                                    authorizeConnector(option)
-                                }
-                                .buttonStyle(.bordered)
-                                .accessibilityIdentifier("settings.oauth.\(option.providerKey).authorize")
-                            }
-
-                            if option.readiness == .connected || option.readiness == .needsReauthorization {
-                                Button(KairoL10n.string("settings.oauth.disconnect"), role: .destructive) {
-                                    disconnectConnector(option)
-                                }
-                                .buttonStyle(.bordered)
-                                .accessibilityIdentifier("settings.oauth.\(option.providerKey).disconnect")
-                            }
-                        }
-                    } else if option.readiness == .needsClientConfiguration {
-                        Text(KairoL10n.string("settings.oauth.clientNotConfigured"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("settings.oauth.\(option.providerKey).row")
-    }
-
-    private func toggleOAuthConnectorDetails(_ providerKey: String) {
-        withAnimation(.snappy(duration: 0.2)) {
-            if expandedOAuthConnectorDetails.contains(providerKey) {
-                expandedOAuthConnectorDetails.remove(providerKey)
-            } else {
-                expandedOAuthConnectorDetails.insert(providerKey)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func oauthCallbackPreviewControls() -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(KairoL10n.string("settings.oauth.callbackPreview"))
-                .font(.subheadline)
-                .fontWeight(.medium)
-
-            TextField(KairoL10n.string("settings.oauth.callbackPlaceholder"), text: $oauthCallbackURLText)
-                .autocorrectionDisabled()
-                .accessibilityIdentifier("settings.oauth.callback-url")
-
-            Button(KairoL10n.string("settings.oauth.previewCallback")) {
-                previewOAuthCallback()
-            }
-            .disabled(oauthCallbackURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .accessibilityIdentifier("settings.oauth.preview-callback")
-
-            Button(KairoL10n.string("settings.oauth.completeLogin")) {
-                completeOAuthCallbackLogin()
-            }
-            .disabled(oauthCallbackURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .accessibilityIdentifier("settings.oauth.complete-login")
-
-            if let oauthCallbackPreviewMessage {
-                Text(oauthCallbackPreviewMessage)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("settings.oauth.callback-message")
-            }
-        }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .contain)
     }
 
     @ViewBuilder
@@ -754,8 +597,6 @@ public struct SettingsView: View {
                 case .completed:
                     await reloadConnectorOptions()
                     await MainActor.run {
-                        oauthCallbackURLText = ""
-                        oauthCallbackPreviewMessage = nil
                         connectorStatusMessage = KairoL10n.string("settings.oauth.loginCompleted", option.displayName)
                     }
                 case .fallback(let session):
@@ -782,59 +623,6 @@ public struct SettingsView: View {
             } catch {
                 await MainActor.run {
                     connectorStatusMessage = KairoL10n.string("settings.oauth.disconnectFailed", error.localizedDescription)
-                }
-            }
-        }
-    }
-
-    private func previewOAuthCallback() {
-        Task {
-            let trimmed = oauthCallbackURLText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard let url = URL(string: trimmed) else {
-                await MainActor.run {
-                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.callbackInvalidURL")
-                }
-                return
-            }
-
-            do {
-                let preview = try await oauthCoordinator.previewCallback(url)
-                await MainActor.run {
-                    oauthCallbackPreviewMessage = preview.settingsStatusText
-                }
-                await reloadConnectorOptions()
-            } catch {
-                await MainActor.run {
-                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.callbackPreviewFailed", error.localizedDescription)
-                }
-            }
-        }
-    }
-
-    private func completeOAuthCallbackLogin() {
-        Task {
-            let trimmed = oauthCallbackURLText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard let url = URL(string: trimmed) else {
-                await MainActor.run {
-                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.callbackInvalidURL")
-                }
-                return
-            }
-
-            do {
-                let completion = try await oauthCoordinator.completeCallbackLogin(url)
-                await reloadConnectorOptions()
-                await MainActor.run {
-                    oauthCallbackURLText = ""
-                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.loginCompleted", completion.providerKey)
-                }
-            } catch SettingsOAuthConnectorCoordinatorError.noPendingSession {
-                await MainActor.run {
-                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.noPendingSession")
-                }
-            } catch {
-                await MainActor.run {
-                    oauthCallbackPreviewMessage = KairoL10n.string("settings.oauth.loginFailed", error.localizedDescription)
                 }
             }
         }
@@ -895,19 +683,6 @@ public struct SettingsView: View {
         #else
         return nil
         #endif
-    }
-
-    private func statusColor(for readiness: OAuthConnectorLoginReadiness) -> Color {
-        switch readiness {
-        case .connected:
-            return .green
-        case .readyToAuthorize:
-            return .blue
-        case .needsClientConfiguration:
-            return .secondary
-        case .needsReauthorization:
-            return .orange
-        }
     }
 
 }
