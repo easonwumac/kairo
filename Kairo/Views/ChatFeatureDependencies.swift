@@ -9,6 +9,7 @@ public struct ChatFeatureDependencies {
     public var localModelSettingsService: LocalModelSettingsService?
     public var openAISettingsService: OpenAISettingsService?
     public var localModelChatRuntimeAvailable: Bool
+    public var actionDescriptorProvider: any AgentActionDescriptorProviding
 
     public init(
         historyStore: any ChatHistoryStore,
@@ -17,7 +18,8 @@ public struct ChatFeatureDependencies {
         actionAPI: any KairoActionAPI,
         localModelSettingsService: LocalModelSettingsService? = nil,
         openAISettingsService: OpenAISettingsService? = nil,
-        localModelChatRuntimeAvailable: Bool = false
+        localModelChatRuntimeAvailable: Bool = false,
+        actionDescriptorProvider: any AgentActionDescriptorProviding = BuiltInPhoneToolActionDescriptorProvider()
     ) {
         self.historyStore = historyStore
         self.shareImportAPI = shareImportAPI
@@ -26,6 +28,7 @@ public struct ChatFeatureDependencies {
         self.localModelSettingsService = localModelSettingsService
         self.openAISettingsService = openAISettingsService
         self.localModelChatRuntimeAvailable = localModelChatRuntimeAvailable
+        self.actionDescriptorProvider = actionDescriptorProvider
     }
 }
 
@@ -39,7 +42,8 @@ public protocol ChatFeatureDependencyComposing: Sendable {
         actionExecutor: (any ActionExecutor)?,
         localModelSettingsService: LocalModelSettingsService?,
         openAISettingsService: OpenAISettingsService?,
-        localModelChatRuntimeAvailable: Bool
+        localModelChatRuntimeAvailable: Bool,
+        actionDescriptorProvider: any AgentActionDescriptorProviding
     ) -> ChatFeatureDependencies
 }
 
@@ -55,7 +59,8 @@ public struct DefaultChatFeatureDependencyComposer: ChatFeatureDependencyComposi
         actionExecutor: (any ActionExecutor)?,
         localModelSettingsService: LocalModelSettingsService?,
         openAISettingsService: OpenAISettingsService?,
-        localModelChatRuntimeAvailable: Bool
+        localModelChatRuntimeAvailable: Bool,
+        actionDescriptorProvider: any AgentActionDescriptorProviding
     ) -> ChatFeatureDependencies {
         ChatFeatureDependencies(
             historyStore: historyStore,
@@ -66,7 +71,8 @@ public struct DefaultChatFeatureDependencyComposer: ChatFeatureDependencyComposi
             ),
             localModelSettingsService: localModelSettingsService,
             openAISettingsService: openAISettingsService,
-            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
+            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable,
+            actionDescriptorProvider: actionDescriptorProvider
         )
     }
 }
@@ -88,7 +94,8 @@ public struct ChatFeatureDependencyFactory: Sendable {
         actionExecutor: any ActionExecutor,
         localModelSettingsService: LocalModelSettingsService?,
         openAISettingsService: OpenAISettingsService? = nil,
-        localModelChatRuntimeAvailable: Bool
+        localModelChatRuntimeAvailable: Bool,
+        actionDescriptorProvider: any AgentActionDescriptorProviding = BuiltInPhoneToolActionDescriptorProvider()
     ) -> ChatFeatureDependencies {
         composer.makeDependencies(
             historyStore: historyStore,
@@ -99,7 +106,8 @@ public struct ChatFeatureDependencyFactory: Sendable {
             actionExecutor: actionExecutor,
             localModelSettingsService: localModelSettingsService,
             openAISettingsService: openAISettingsService ?? OpenAISettingsService(credentialStore: credentialStore),
-            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
+            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable,
+            actionDescriptorProvider: actionDescriptorProvider
         )
     }
 }

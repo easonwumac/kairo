@@ -70,7 +70,8 @@ public final class ChatViewModel: ObservableObject {
         dependencyComposer: any ChatFeatureDependencyComposing = DefaultChatFeatureDependencyComposer(),
         localModelSettingsService: LocalModelSettingsService? = nil,
         openAISettingsService: OpenAISettingsService? = nil,
-        localModelChatRuntimeAvailable: Bool = false
+        localModelChatRuntimeAvailable: Bool = false,
+        actionDescriptorProvider: any AgentActionDescriptorProviding = BuiltInPhoneToolActionDescriptorProvider()
     ) {
         self.init(
             dependencies: dependencyComposer.makeDependencies(
@@ -82,7 +83,8 @@ public final class ChatViewModel: ObservableObject {
                 actionExecutor: actionExecutor,
                 localModelSettingsService: localModelSettingsService,
                 openAISettingsService: openAISettingsService,
-                localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
+                localModelChatRuntimeAvailable: localModelChatRuntimeAvailable,
+                actionDescriptorProvider: actionDescriptorProvider
             )
         )
     }

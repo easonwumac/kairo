@@ -19,6 +19,27 @@ final class ChatProviderRouteStatusTests: XCTestCase {
         XCTAssertEqual(composer.receivedNilActionExecutor, true)
     }
 
+    func testChatFeatureDependencyFactoryPreservesInjectedActionDescriptorProvider() throws {
+        let descriptorProvider = FixedActionDescriptorProvider(kind: .unsupportedSandboxAction)
+        let dependencies = ChatFeatureDependencyFactory().makeDependencies(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            credentialStore: InMemoryCredentialStore(),
+            chatAPI: StubChatAPI(),
+            shareImportAPI: EmptyShareImportAPI(),
+            actionAPI: NoopActionAPI(),
+            actionExecutor: NoopActionExecutor(),
+            localModelSettingsService: nil,
+            localModelChatRuntimeAvailable: false,
+            actionDescriptorProvider: descriptorProvider
+        )
+
+        XCTAssertEqual(
+            dependencies.actionDescriptorProvider.descriptor(for: .createReminderDraft)?.kind,
+            .unsupportedSandboxAction
+        )
+    }
+
     @MainActor
     func testChatRouteStatusReflectsOpenAIKeySaveAndDelete() async throws {
         let credentials = InMemoryCredentialStore()
@@ -77,7 +98,8 @@ private struct StubChatFeatureDependencyComposer: ChatFeatureDependencyComposing
         actionExecutor: (any ActionExecutor)?,
         localModelSettingsService: LocalModelSettingsService?,
         openAISettingsService: OpenAISettingsService?,
-        localModelChatRuntimeAvailable: Bool
+        localModelChatRuntimeAvailable: Bool,
+        actionDescriptorProvider: any AgentActionDescriptorProviding
     ) -> ChatFeatureDependencies {
         ChatFeatureDependencies(
             historyStore: historyStore,
@@ -86,7 +108,8 @@ private struct StubChatFeatureDependencyComposer: ChatFeatureDependencyComposing
             actionAPI: NoopActionAPI(),
             localModelSettingsService: localModelSettingsService,
             openAISettingsService: openAISettingsService,
-            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
+            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable,
+            actionDescriptorProvider: actionDescriptorProvider
         )
     }
 }
@@ -103,7 +126,8 @@ private final class RecordingChatFeatureDependencyComposer: ChatFeatureDependenc
         actionExecutor: (any ActionExecutor)?,
         localModelSettingsService: LocalModelSettingsService?,
         openAISettingsService: OpenAISettingsService?,
-        localModelChatRuntimeAvailable: Bool
+        localModelChatRuntimeAvailable: Bool,
+        actionDescriptorProvider: any AgentActionDescriptorProviding
     ) -> ChatFeatureDependencies {
         receivedNilActionExecutor = actionExecutor == nil
         return ChatFeatureDependencies(
@@ -113,7 +137,8 @@ private final class RecordingChatFeatureDependencyComposer: ChatFeatureDependenc
             actionAPI: NoopActionAPI(),
             localModelSettingsService: localModelSettingsService,
             openAISettingsService: openAISettingsService,
-            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
+            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable,
+            actionDescriptorProvider: actionDescriptorProvider
         )
     }
 }
@@ -143,5 +168,27 @@ private struct NoopActionAPI: KairoActionAPI {
 
     func confirm(_ action: AgentAction) async throws -> ActionExecutionResult {
         ActionExecutionResult(completed: true, message: "noop")
+    }
+}
+
+private struct NoopActionExecutor: ActionExecutor {
+    func execute(_ action: AgentAction, confirmed: Bool) async throws -> ActionExecutionResult {
+        ActionExecutionResult(completed: true, message: "noop")
+    }
+}
+
+private struct FixedActionDescriptorProvider: AgentActionDescriptorProviding {
+    var kind: AgentActionKind
+
+    func descriptor(for kind: AgentActionKind) -> SandboxActionDescriptor? {
+        SandboxActionDescriptor(
+            kind: self.kind,
+            displayName: "Injected",
+            description: "Injected descriptor.",
+            capability: .appIntents,
+            permissionRequirement: .userInitiated,
+            riskTier: .tier0ReadOnly,
+            supportStatus: .implemented
+        )
     }
 }

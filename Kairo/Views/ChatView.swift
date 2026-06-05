@@ -8,11 +8,13 @@ import AppKit
 
 public struct ChatView: View {
     @StateObject private var viewModel: ChatViewModel
+    private let actionDescriptorProvider: any AgentActionDescriptorProviding
     @State private var showMoreFocusStarts = false
     @FocusState private var isComposerFocused: Bool
 
     public init(dependencies: ChatFeatureDependencies) {
         _viewModel = StateObject(wrappedValue: ChatViewModel(dependencies: dependencies))
+        self.actionDescriptorProvider = dependencies.actionDescriptorProvider
     }
 
     public init(environment: KairoEnvironment = .preview()) {
@@ -149,7 +151,10 @@ public struct ChatView: View {
                                         .padding(.horizontal)
                                 }
                                 if !message.proposedActions.isEmpty {
-                                    ProposedActionsStrip(actions: message.proposedActions) { action in
+                                    ProposedActionsStrip(
+                                        actions: message.proposedActions,
+                                        descriptorProvider: actionDescriptorProvider
+                                    ) { action in
                                         viewModel.previewAction(action)
                                     }
                                         .padding(.horizontal)
@@ -236,7 +241,10 @@ public struct ChatView: View {
             }
 
             if let handoffReviewAction = viewModel.handoffReviewAction {
-                HandoffActionReviewBanner(action: handoffReviewAction) {
+                HandoffActionReviewBanner(
+                    action: handoffReviewAction,
+                    descriptorProvider: actionDescriptorProvider
+                ) {
                     viewModel.reviewHandoffAction()
                 }
                 .padding(.horizontal)
@@ -252,7 +260,10 @@ public struct ChatView: View {
             composer
         }
         .sheet(item: $viewModel.pendingAction) { action in
-            ActionPreviewView(action: action) {
+            ActionPreviewView(
+                action: action,
+                descriptorProvider: actionDescriptorProvider
+            ) {
                 Task { await viewModel.confirmPendingAction() }
             } onCancel: {
                 viewModel.cancelPendingAction()
