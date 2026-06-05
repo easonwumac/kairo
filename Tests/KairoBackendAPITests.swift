@@ -277,6 +277,38 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: externalFileURL.path))
     }
 
+    func testActionBackendServiceFactoryBuildsActionAPIFromInjectedDependencies() async throws {
+        let actionExecutor = AllowingBackendActionExecutor()
+        let environment = KairoEnvironment(
+            memoryStore: InMemoryMemoryStore(),
+            credentialStore: InMemoryCredentialStore(),
+            aiProvider: BackendAPICapturingAIProvider(response: AICompletionResponse(message: "Factory response")),
+            actionExecutor: actionExecutor
+        )
+        let actionAPI = KairoActionBackendServiceFactory(dependencies: environment).makeActionAPI()
+        let action = AgentAction(
+            kind: .createReminderDraft,
+            title: "Create Reminder",
+            rationale: "User confirmed a reminder preview.",
+            payload: .reminder(ReminderDraft(
+                title: "Review factory wiring",
+                notes: nil,
+                dueDate: nil
+            )),
+            riskTier: .tier2LowRiskWrite
+        )
+
+        let preview = await actionAPI.preview(action)
+        let result = try await actionAPI.confirm(action)
+        let executedKinds = await actionExecutor.executedKinds()
+        let confirmations = await actionExecutor.confirmations()
+
+        XCTAssertTrue(preview.decision.requiresConfirmation)
+        XCTAssertTrue(result.completed)
+        XCTAssertEqual(executedKinds, [.createReminderDraft])
+        XCTAssertEqual(confirmations, [true])
+    }
+
     func testBackendCompositionSharesInjectedPhoneToolCatalogAcrossAccessAndChat() async throws {
         let calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
         let toolCatalog = BuiltInPhoneToolCatalog(tools: [calendarTool])

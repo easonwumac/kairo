@@ -124,11 +124,24 @@ public struct KairoShareImportBackendServiceFactory<Dependencies: KairoBackendDe
     }
 }
 
+public struct KairoActionBackendServiceFactory<Dependencies: KairoBackendDependencies>: Sendable {
+    private let dependencies: Dependencies
+
+    public init(dependencies: Dependencies) {
+        self.dependencies = dependencies
+    }
+
+    public func makeActionAPI() -> any KairoActionAPI {
+        KairoActionBackendService(actionExecutor: dependencies.actionExecutor)
+    }
+}
+
 public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDependencies>: KairoBackendServiceMaking {
     private let dependencies: Dependencies
     private let chatFactory: KairoChatBackendServiceFactory<Dependencies>
     private let recipeFactory: KairoRecipeBackendServiceFactory<Dependencies>
     private let shareImportFactory: KairoShareImportBackendServiceFactory<Dependencies>
+    private let actionFactory: KairoActionBackendServiceFactory<Dependencies>
     private let settingsFactory: KairoSettingsBackendServiceFactory<Dependencies>
     private let accessFactory: KairoAccessBackendServiceFactory<Dependencies>
 
@@ -137,6 +150,7 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
         self.chatFactory = KairoChatBackendServiceFactory(dependencies: dependencies)
         self.recipeFactory = KairoRecipeBackendServiceFactory(dependencies: dependencies)
         self.shareImportFactory = KairoShareImportBackendServiceFactory(dependencies: dependencies)
+        self.actionFactory = KairoActionBackendServiceFactory(dependencies: dependencies)
         self.settingsFactory = KairoSettingsBackendServiceFactory(dependencies: dependencies)
         self.accessFactory = KairoAccessBackendServiceFactory(dependencies: dependencies)
     }
@@ -158,7 +172,7 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
     }
 
     public func makeActionAPI() -> any KairoActionAPI {
-        KairoActionBackendService(actionExecutor: dependencies.actionExecutor)
+        actionFactory.makeActionAPI()
     }
 
     public func makeDeletionAPI() -> any KairoDeletionAPI {
