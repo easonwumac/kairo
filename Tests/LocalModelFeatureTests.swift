@@ -199,6 +199,42 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(catalog.models.first?.benchmarkProfiles, [])
     }
 
+    func testLocalModelCatalogRefreshFallsBackToBuiltInCatalogWhenRemoteIsUnavailable() async throws {
+        let httpClient = LocalModelMockHTTPClient(statusCode: 404, body: "not found")
+        let service = LocalModelCatalogService(httpClient: httpClient)
+        let builtInCatalog = LocalModelCatalog.kairoDefault
+
+        let result = await service.refreshCatalog(with: builtInCatalog)
+
+        XCTAssertEqual(result.source, .builtInFallback)
+        XCTAssertNotNil(result.error)
+        XCTAssertEqual(result.catalog.models.map(\.id), builtInCatalog.models.map(\.id))
+        XCTAssertFalse(result.catalog.availableModels(minimumSafetyPolicyVersion: result.catalog.minimumSafetyPolicyVersion).isEmpty)
+    }
+
+    func testLocalModelCatalogRefreshUsesRemoteCatalogWhenVerificationPasses() async throws {
+        let signedCatalog = try signedRemoteModelCatalogJSON(
+            modelsJSON: [
+                remoteModelManifestJSON(
+                    id: "qwen3-5-0-8b-q4-k-m",
+                    displayName: "Qwen3.5 0.8B Q4_K_M",
+                    version: "1.2.0"
+                )
+            ]
+        )
+        let httpClient = LocalModelMockHTTPClient(statusCode: 200, body: signedCatalog.json)
+        let service = LocalModelCatalogService(
+            httpClient: httpClient,
+            trustStore: signedCatalog.trustStore
+        )
+
+        let result = await service.refreshCatalog(with: .kairoDefault)
+
+        XCTAssertEqual(result.source, .remote)
+        XCTAssertNil(result.error)
+        XCTAssertEqual(result.catalog.models.first { $0.id == "qwen3-5-0-8b-q4-k-m" }?.version, "1.2.0")
+    }
+
     func testLocalModelCatalogServiceRejectsUnsafeRemoteModelDownloads() async throws {
         let signedCatalog = try signedRemoteModelCatalogJSON(
             modelsJSON: [

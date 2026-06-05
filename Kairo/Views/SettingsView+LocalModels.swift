@@ -275,36 +275,35 @@ extension SettingsView {
                 return
             }
 
-            do {
-                await MainActor.run {
-                    localModelStatusMessageModelID = nil
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.refreshingCatalog")
-                }
-                let mergedCatalog = try await localModelCatalogService.fetchMergedCatalog(with: localModelCatalog)
-                if let localModelSettingsService {
-                    await localModelSettingsService.replaceCatalog(mergedCatalog)
-                }
-                if let localModelBenchmarkService {
-                    await localModelBenchmarkService.replaceCatalog(mergedCatalog)
-                }
-                if let localModelReplyCheckService {
-                    await localModelReplyCheckService.replaceCatalog(mergedCatalog)
-                }
-                await MainActor.run {
-                    localModelCatalog = mergedCatalog
-                    localModelStatusMessageModelID = nil
-                    let count = mergedCatalog.availableModels(
-                        minimumSafetyPolicyVersion: mergedCatalog.minimumSafetyPolicyVersion
-                    ).count
+            await MainActor.run {
+                localModelStatusMessageModelID = nil
+                localModelStatusMessage = KairoL10n.string("settings.models.message.refreshingCatalog")
+            }
+            let result = await localModelCatalogService.refreshCatalog(with: localModelCatalog)
+            let refreshedCatalog = result.catalog
+            if let localModelSettingsService {
+                await localModelSettingsService.replaceCatalog(refreshedCatalog)
+            }
+            if let localModelBenchmarkService {
+                await localModelBenchmarkService.replaceCatalog(refreshedCatalog)
+            }
+            if let localModelReplyCheckService {
+                await localModelReplyCheckService.replaceCatalog(refreshedCatalog)
+            }
+            await MainActor.run {
+                localModelCatalog = refreshedCatalog
+                localModelStatusMessageModelID = nil
+                let count = refreshedCatalog.availableModels(
+                    minimumSafetyPolicyVersion: refreshedCatalog.minimumSafetyPolicyVersion
+                ).count
+                switch result.source {
+                case .remote:
                     localModelStatusMessage = KairoL10n.string("settings.models.message.catalogRefreshed", Int64(count))
-                }
-                await reloadLocalModelStatus()
-            } catch {
-                await MainActor.run {
-                    localModelStatusMessageModelID = nil
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.catalogRefreshFailed", error.localizedDescription)
+                case .builtInFallback:
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.catalogUsingBuiltInFallback", Int64(count))
                 }
             }
+            await reloadLocalModelStatus()
         }
     }
 

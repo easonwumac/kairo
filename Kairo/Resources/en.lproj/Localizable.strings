@@ -750,6 +750,7 @@
 "settings.models.message.usingBuiltInCatalog" = "Using the built-in model list.";
 "settings.models.message.refreshingCatalog" = "Refreshing the model list.";
 "settings.models.message.catalogRefreshed" = "Model list refreshed: %lld available models.";
+"settings.models.message.catalogUsingBuiltInFallback" = "Remote model list is unavailable. Using %lld built-in models.";
 "settings.models.message.catalogRefreshFailed" = "Could not refresh the model list: %@";
 "settings.models.message.cleanedStaleDownload" = "Cleaned up an unfinished model download.";
 "settings.models.message.cleanStaleDownloadFailed" = "Could not clean up an unfinished model download: %@";

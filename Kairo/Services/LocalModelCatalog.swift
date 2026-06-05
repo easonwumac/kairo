@@ -649,6 +649,15 @@ public struct LocalModelCatalogService: Sendable {
         return builtInCatalog.mergingRemoteCatalog(remoteCatalog)
     }
 
+    public func refreshCatalog(with builtInCatalog: LocalModelCatalog = .kairoDefault) async -> LocalModelCatalogRefreshResult {
+        do {
+            let mergedCatalog = try await fetchMergedCatalog(with: builtInCatalog)
+            return LocalModelCatalogRefreshResult(catalog: mergedCatalog, source: .remote, error: nil)
+        } catch {
+            return LocalModelCatalogRefreshResult(catalog: builtInCatalog, source: .builtInFallback, error: error)
+        }
+    }
+
     private func validate(_ catalog: LocalModelCatalog) throws {
         guard !catalog.signature.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw LocalModelCatalogServiceError.missingSignature
@@ -756,6 +765,23 @@ public struct LocalModelCatalogService: Sendable {
         } catch {
             throw LocalModelCatalogServiceError.invalidSignature
         }
+    }
+}
+
+public struct LocalModelCatalogRefreshResult: Sendable {
+    public enum Source: Equatable, Sendable {
+        case remote
+        case builtInFallback
+    }
+
+    public var catalog: LocalModelCatalog
+    public var source: Source
+    public var error: (any Error)?
+
+    public init(catalog: LocalModelCatalog, source: Source, error: (any Error)?) {
+        self.catalog = catalog
+        self.source = source
+        self.error = error
     }
 }
 

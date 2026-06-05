@@ -750,6 +750,7 @@
 "settings.models.message.usingBuiltInCatalog" = "使用內建模型清單。";
 "settings.models.message.refreshingCatalog" = "正在刷新模型清單。";
 "settings.models.message.catalogRefreshed" = "已刷新模型清單：%lld 個可用模型。";
+"settings.models.message.catalogUsingBuiltInFallback" = "遠端模型清單目前不可用，已使用 %lld 個內建模型。";
 "settings.models.message.catalogRefreshFailed" = "刷新模型清單失敗：%@";
 "settings.models.message.cleanedStaleDownload" = "已清理未完成的模型下載。";
 "settings.models.message.cleanStaleDownloadFailed" = "清理未完成的模型下載失敗：%@";

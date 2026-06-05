@@ -30,6 +30,8 @@ struct LocalModelsCompactView: View {
 
                 modelStarterSection
 
+                catalogDiagnosticsCard
+
                 advancedDiagnosticsSection
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -144,8 +146,6 @@ struct LocalModelsCompactView: View {
 
                 if showAdvancedDiagnostics {
                     Divider()
-
-                    catalogDiagnosticsCard
 
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(visibleModelRows) { row in
