@@ -44,6 +44,12 @@ public actor AgentCore {
         memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
     ) {
         let resolvedActionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        let toolCandidatePlanningDependencies = Self.makeToolCandidatePlanningDependencies(
+            integrationRegistry: integrationRegistry,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+            toolCatalog: toolCatalog,
+            safetyPolicyEngine: safetyPolicyEngine
+        )
         self.init(dependencies: AgentCoreDependencies(
             memoryContextProvider: memoryContextProvider ?? DefaultAgentMemoryContextProvider(memoryStore: memoryStore),
             memoryWriter: memoryWriter ?? DefaultAgentMemoryWriter(memoryStore: memoryStore),
@@ -56,10 +62,7 @@ public actor AgentCore {
                 appIntegrationSkillCatalog: appIntegrationSkillCatalog
             ),
             toolInvocationPlanner: toolInvocationPlanner ?? DefaultAgentToolInvocationPlannerProvider(
-                integrationRegistry: integrationRegistry,
-                appIntegrationSkillCatalog: appIntegrationSkillCatalog,
-                toolCatalog: toolCatalog,
-                safetyPolicyEngine: safetyPolicyEngine
+                candidatePlanning: toolCandidatePlanningDependencies
             ),
             toolPlanningRequestBuilder: toolPlanningRequestBuilder ?? DefaultAgentToolPlanningRequestBuilder(),
             responseActionPlanner: responseActionPlanner ?? DefaultAgentResponseActionPlanner(
@@ -72,6 +75,20 @@ public actor AgentCore {
                 systemPrompt: Self.systemPrompt
             )
         ))
+    }
+
+    private static func makeToolCandidatePlanningDependencies(
+        integrationRegistry: any AppIntegrationRegistryProviding,
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding,
+        toolCatalog: any BuiltInPhoneToolCatalogProviding,
+        safetyPolicyEngine: SafetyPolicyEngine
+    ) -> AgentToolCandidatePlanningDependencies {
+        AgentToolCandidatePlanningDependencies(
+            integrationRegistry: integrationRegistry,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
+            toolCatalog: toolCatalog,
+            safetyPolicyEngine: safetyPolicyEngine
+        )
     }
 
     public func respond(

@@ -139,6 +139,25 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(toolInvocationPlanner.receivedAllowsToolUse, true)
     }
 
+    func testAgentCoreDefaultToolPlannerUsesInjectedAppIntegrationSkillCatalog() async throws {
+        let provider = CapturingAIProvider(response: AICompletionResponse(message: "Planner response"))
+        let injectedCatalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .whatsappMessageHandoff))
+        ])
+        let agent = AgentCore(
+            aiProvider: provider,
+            skillCatalog: AgentSkillCatalog(skills: []),
+            appIntegrationSkillCatalog: injectedCatalog
+        )
+
+        let response = try await agent.respond(to: "Send this update with WhatsApp")
+        let candidate = try XCTUnwrap(response.toolCandidates.first { $0.integrationKey == "whatsapp" })
+
+        XCTAssertEqual(candidate.source, .appIntegrationCatalog)
+        XCTAssertNil(candidate.action)
+        XCTAssertFalse(response.toolCandidates.contains { $0.integrationKey == "apple-mail" })
+    }
+
     func testAgentCoreUsesInjectedToolPlanningRequestBuilder() async throws {
         let provider = CapturingAIProvider(response: AICompletionResponse(message: "Tool request builder response"))
         let toolInvocationPlanner = StubAgentToolInvocationPlanner()
