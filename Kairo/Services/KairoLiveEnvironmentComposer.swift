@@ -4,6 +4,8 @@ public struct KairoLiveEnvironmentComposer: Sendable {
     public var paths: KairoPaths
     public var credentialStore: any CredentialStore
     public var oauthConnectorRegistry: any OAuthConnectorRegistryProviding
+    public var toolCatalog: any BuiltInPhoneToolCatalogProviding
+    public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)?
     public var localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)?
 
@@ -12,6 +14,8 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         appGroupIdentifier: String? = KairoSharedAppStorage.appGroupIdentifier,
         credentialStore: any CredentialStore = KeychainCredentialStore(),
         oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) {
@@ -19,6 +23,8 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             paths: KairoPaths(appName: appName, appGroupIdentifier: appGroupIdentifier),
             credentialStore: credentialStore,
             oauthConnectorRegistry: oauthConnectorRegistry,
+            toolCatalog: toolCatalog,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             localModelReplyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
             localModelBenchmarkEngineOverride: localModelBenchmarkEngineOverride
         )
@@ -28,12 +34,16 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         paths: KairoPaths,
         credentialStore: any CredentialStore,
         oauthConnectorRegistry: any OAuthConnectorRegistryProviding = IntegrationRegistry(),
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
     ) {
         self.paths = paths
         self.credentialStore = credentialStore
         self.oauthConnectorRegistry = oauthConnectorRegistry
+        self.toolCatalog = toolCatalog
+        self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.localModelReplyCheckRuntimeOverride = localModelReplyCheckRuntimeOverride
         self.localModelBenchmarkEngineOverride = localModelBenchmarkEngineOverride
     }
@@ -46,8 +56,6 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             replyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
             benchmarkEngineOverride: localModelBenchmarkEngineOverride
         ).makeComponents()
-        let toolCatalog = BuiltInPhoneToolCatalog()
-        let appIntegrationSkillCatalog = AppIntegrationSkillCatalog()
         let integrationRegistry = IntegrationRegistry.appIntegrationHarnessRegistry(
             legacyRegistry: oauthConnectorRegistry,
             catalog: appIntegrationSkillCatalog
