@@ -47,11 +47,12 @@ public struct SettingsFeatureDependencies {
         self.oauthLoginService = oauthLoginService
         self.oauthWebAuthenticationRunner = oauthWebAuthenticationRunner
         self.openAIKeyCoordinator = openAIKeyCoordinator ?? SettingsOpenAIKeyCoordinator(settingsService: settingsService)
-        let resolvedOAuthLoginService = oauthLoginService ?? OAuthConnectorLoginCenter(
-            registry: oauthConnectorRegistry,
+        let resolvedOAuthLoginService = SettingsOAuthLoginServiceFactory().makeLoginService(
+            override: oauthLoginService,
             credentialStore: credentialStore,
-            clientConfigurations: oauthClientConfigurations,
-            callbackStore: oauthCallbackStore
+            oauthConnectorRegistry: oauthConnectorRegistry,
+            oauthClientConfigurations: oauthClientConfigurations,
+            oauthCallbackStore: oauthCallbackStore
         )
         self.oauthCoordinator = oauthCoordinator ?? SettingsOAuthConnectorCoordinator(
             loginService: resolvedOAuthLoginService,

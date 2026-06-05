@@ -142,7 +142,7 @@ public struct SettingsView: View {
         self.openAIKeyCoordinator = openAIKeyCoordinator ?? SettingsOpenAIKeyCoordinator(settingsService: settingsService)
         self.mode = mode
         self.credentialStore = credentialStore
-        let oauthLoginService = Self.defaultOAuthLoginService(
+        let oauthLoginService = SettingsOAuthLoginServiceFactory().makeLoginService(
             override: oauthLoginService,
             credentialStore: credentialStore,
             oauthConnectorRegistry: oauthConnectorRegistry,
@@ -601,24 +601,6 @@ public struct SettingsView: View {
                 connectorStatusMessage = KairoL10n.string("settings.oauth.loadFailed", error.localizedDescription)
             }
         }
-    }
-
-    private static func defaultOAuthLoginService(
-        override: (any OAuthConnectorLoginServicing)?,
-        credentialStore: any CredentialStore,
-        oauthConnectorRegistry: any AppIntegrationRegistryProviding,
-        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration],
-        oauthCallbackStore: FileBackedOAuthConnectorCallbackStore?
-    ) -> any OAuthConnectorLoginServicing {
-        if let override {
-            return override
-        }
-        return OAuthConnectorLoginCenter(
-            registry: oauthConnectorRegistry,
-            credentialStore: credentialStore,
-            clientConfigurations: oauthClientConfigurations,
-            callbackStore: oauthCallbackStore
-        )
     }
 
     public static func defaultOAuthWebAuthenticationRunner() -> (any OAuthWebAuthenticationRunner)? {
