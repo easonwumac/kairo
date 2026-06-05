@@ -36,7 +36,7 @@ public protocol ChatFeatureDependencyComposing: Sendable {
         chatAPI: (any KairoChatAPI)?,
         shareImportAPI: (any KairoShareImportAPI)?,
         actionAPI: (any KairoActionAPI)?,
-        actionExecutor: any ActionExecutor,
+        actionExecutor: (any ActionExecutor)?,
         localModelSettingsService: LocalModelSettingsService?,
         openAISettingsService: OpenAISettingsService?,
         localModelChatRuntimeAvailable: Bool
@@ -52,7 +52,7 @@ public struct DefaultChatFeatureDependencyComposer: ChatFeatureDependencyComposi
         chatAPI: (any KairoChatAPI)?,
         shareImportAPI: (any KairoShareImportAPI)?,
         actionAPI: (any KairoActionAPI)?,
-        actionExecutor: any ActionExecutor,
+        actionExecutor: (any ActionExecutor)?,
         localModelSettingsService: LocalModelSettingsService?,
         openAISettingsService: OpenAISettingsService?,
         localModelChatRuntimeAvailable: Bool
@@ -61,7 +61,9 @@ public struct DefaultChatFeatureDependencyComposer: ChatFeatureDependencyComposi
             historyStore: historyStore,
             shareImportAPI: shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue),
             chatAPI: chatAPI ?? UnavailableChatAPI(),
-            actionAPI: actionAPI ?? KairoActionBackendService(actionExecutor: actionExecutor),
+            actionAPI: actionAPI ?? KairoActionBackendService(
+                actionExecutor: actionExecutor ?? SandboxActionExecutor(memoryStore: InMemoryMemoryStore())
+            ),
             localModelSettingsService: localModelSettingsService,
             openAISettingsService: openAISettingsService,
             localModelChatRuntimeAvailable: localModelChatRuntimeAvailable

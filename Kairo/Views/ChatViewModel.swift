@@ -66,7 +66,7 @@ public final class ChatViewModel: ObservableObject {
         shareImportAPI: (any KairoShareImportAPI)? = nil,
         chatAPI: (any KairoChatAPI)? = nil,
         actionAPI: (any KairoActionAPI)? = nil,
-        actionExecutor: any ActionExecutor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore()),
+        actionExecutor: (any ActionExecutor)? = nil,
         dependencyComposer: any ChatFeatureDependencyComposing = DefaultChatFeatureDependencyComposer(),
         localModelSettingsService: LocalModelSettingsService? = nil,
         openAISettingsService: OpenAISettingsService? = nil,

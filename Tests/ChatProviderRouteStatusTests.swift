@@ -12,6 +12,14 @@ final class ChatProviderRouteStatusTests: XCTestCase {
     }
 
     @MainActor
+    func testChatViewModelConvenienceInitializerLeavesActionExecutorCompositionToDependencyComposer() async throws {
+        let composer = RecordingChatFeatureDependencyComposer()
+        _ = ChatViewModel(dependencyComposer: composer)
+
+        XCTAssertEqual(composer.receivedNilActionExecutor, true)
+    }
+
+    @MainActor
     func testChatRouteStatusReflectsOpenAIKeySaveAndDelete() async throws {
         let credentials = InMemoryCredentialStore()
         let settingsService = OpenAISettingsService(credentialStore: credentials)
@@ -66,12 +74,39 @@ private struct StubChatFeatureDependencyComposer: ChatFeatureDependencyComposing
         chatAPI: (any KairoChatAPI)?,
         shareImportAPI: (any KairoShareImportAPI)?,
         actionAPI: (any KairoActionAPI)?,
-        actionExecutor: any ActionExecutor,
+        actionExecutor: (any ActionExecutor)?,
         localModelSettingsService: LocalModelSettingsService?,
         openAISettingsService: OpenAISettingsService?,
         localModelChatRuntimeAvailable: Bool
     ) -> ChatFeatureDependencies {
         ChatFeatureDependencies(
+            historyStore: historyStore,
+            shareImportAPI: EmptyShareImportAPI(),
+            chatAPI: StubChatAPI(),
+            actionAPI: NoopActionAPI(),
+            localModelSettingsService: localModelSettingsService,
+            openAISettingsService: openAISettingsService,
+            localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
+        )
+    }
+}
+
+private final class RecordingChatFeatureDependencyComposer: ChatFeatureDependencyComposing, @unchecked Sendable {
+    private(set) var receivedNilActionExecutor: Bool?
+
+    func makeDependencies(
+        historyStore: any ChatHistoryStore,
+        shareIngestionQueue: any ShareIngestionQueue,
+        chatAPI: (any KairoChatAPI)?,
+        shareImportAPI: (any KairoShareImportAPI)?,
+        actionAPI: (any KairoActionAPI)?,
+        actionExecutor: (any ActionExecutor)?,
+        localModelSettingsService: LocalModelSettingsService?,
+        openAISettingsService: OpenAISettingsService?,
+        localModelChatRuntimeAvailable: Bool
+    ) -> ChatFeatureDependencies {
+        receivedNilActionExecutor = actionExecutor == nil
+        return ChatFeatureDependencies(
             historyStore: historyStore,
             shareImportAPI: EmptyShareImportAPI(),
             chatAPI: StubChatAPI(),
