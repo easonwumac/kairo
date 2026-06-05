@@ -9,6 +9,7 @@ public struct AgentToolInvocationPlanner: Sendable {
     public var visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding
     public var writeActionCandidateProvider: any AgentWriteActionCandidateProviding
     public var candidateMatcher: any AgentToolInvocationCandidateMatching
+    public var candidateBuilder: any AgentToolInvocationCandidateBuilding
     public var candidateFilter: any AgentToolCandidateFiltering
     public var safetyPolicyEngine: SafetyPolicyEngine
 
@@ -21,6 +22,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding = DefaultAgentVisibleHandoffCandidateProvider(),
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding = DefaultAgentWriteActionCandidateProvider(),
         candidateMatcher: any AgentToolInvocationCandidateMatching = DefaultAgentToolInvocationCandidateMatcher(),
+        candidateBuilder: any AgentToolInvocationCandidateBuilding = DefaultAgentToolInvocationCandidateBuilder(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
@@ -33,6 +35,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         self.visibleHandoffCandidateProvider = visibleHandoffCandidateProvider
         self.writeActionCandidateProvider = writeActionCandidateProvider
         self.candidateMatcher = candidateMatcher
+        self.candidateBuilder = candidateBuilder
         self.candidateFilter = candidateFilter ?? PhoneToolCandidateFilter(
             actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         )
@@ -54,15 +57,33 @@ public struct AgentToolInvocationPlanner: Sendable {
 
         var candidates: [AgentToolInvocationCandidate] = []
         candidates.append(contentsOf: skillCatalog.installedSkills.compactMap { skill in
-            candidate(for: skill, normalizedText: normalizedText)
+            candidateBuilder.candidate(
+                for: skill,
+                normalizedText: normalizedText,
+                matcher: candidateMatcher,
+                parser: appIntegrationActionParser,
+                safetyPolicyEngine: safetyPolicyEngine
+            )
         })
         candidates.append(contentsOf: appIntegrationSkillCatalog.skills.compactMap { skill in
-            candidate(for: skill, userText: request.userText, normalizedText: normalizedText)
+            candidateBuilder.candidate(
+                for: skill,
+                userText: request.userText,
+                normalizedText: normalizedText,
+                matcher: candidateMatcher,
+                parser: appIntegrationActionParser,
+                actionMapper: appIntegrationActionMapper
+            )
         })
         let migratedIntegrationKeys = Set(appIntegrationSkillCatalog.skills.map(\.integrationKey))
         candidates.append(contentsOf: integrationRegistry.oauthConnectors.compactMap { integration in
             guard !migratedIntegrationKeys.contains(integration.key) else { return nil }
-            return candidate(for: integration, normalizedText: normalizedText)
+            return candidateBuilder.candidate(
+                for: integration,
+                normalizedText: normalizedText,
+                matcher: candidateMatcher,
+                parser: appIntegrationActionParser
+            )
         })
         for handoffCandidate in visibleHandoffCandidateProvider.candidates(
             userText: request.userText,

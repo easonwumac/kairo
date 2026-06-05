@@ -1,14 +1,42 @@
 import Foundation
 
-extension AgentToolInvocationPlanner {
-    func candidate(for skill: AgentSkill, normalizedText: String) -> AgentToolInvocationCandidate? {
+public protocol AgentToolInvocationCandidateBuilding: Sendable {
+    func candidate(
+        for skill: AgentSkill,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing,
+        safetyPolicyEngine: SafetyPolicyEngine
+    ) -> AgentToolInvocationCandidate?
+    func candidate(
+        for integration: AppIntegration,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing
+    ) -> AgentToolInvocationCandidate?
+    func candidate(
+        for skill: AppIntegrationSkill,
+        userText: String,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing,
+        actionMapper: any AppIntegrationActionMapping
+    ) -> AgentToolInvocationCandidate?
+}
+
+public struct DefaultAgentToolInvocationCandidateBuilder: AgentToolInvocationCandidateBuilding {
+    public init() {}
+
+    public func candidate(
+        for skill: AgentSkill,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing,
+        safetyPolicyEngine: SafetyPolicyEngine
+    ) -> AgentToolInvocationCandidate? {
         switch skill.kind {
         case .homeKitControl:
-            guard candidateMatcher.matches(
-                skill: skill,
-                normalizedText: normalizedText,
-                parser: appIntegrationActionParser
-            ) else { return nil }
+            guard matcher.matches(skill: skill, normalizedText: normalizedText, parser: parser) else { return nil }
             let riskTier = skill.action?.riskTier ?? .tier3HighRiskExternal
             let requiresConfirmation = skill.action.map { safetyPolicyEngine.evaluate($0).requiresConfirmation } ?? riskTier.requiresConfirmation
             return AgentToolInvocationCandidate(
@@ -24,11 +52,7 @@ extension AgentToolInvocationPlanner {
                 action: skill.action
             )
         case .shortcutWorkflow:
-            guard candidateMatcher.matches(
-                skill: skill,
-                normalizedText: normalizedText,
-                parser: appIntegrationActionParser
-            ) else { return nil }
+            guard matcher.matches(skill: skill, normalizedText: normalizedText, parser: parser) else { return nil }
             return AgentToolInvocationCandidate(
                 id: "skill-\(skill.id)",
                 title: skill.displayName,
@@ -42,11 +66,7 @@ extension AgentToolInvocationPlanner {
                 handoffSummary: shortcutHandoffSummary(for: skill)
             )
         case .oauthConnector:
-            guard candidateMatcher.matches(
-                skill: skill,
-                normalizedText: normalizedText,
-                parser: appIntegrationActionParser
-            ) else { return nil }
+            guard matcher.matches(skill: skill, normalizedText: normalizedText, parser: parser) else { return nil }
             return AgentToolInvocationCandidate(
                 id: "skill-\(skill.id)",
                 title: skill.displayName,
@@ -59,11 +79,7 @@ extension AgentToolInvocationPlanner {
                 handoffSummary: KairoL10n.string("chat.tool.summary.oauthSkill")
             )
         case .custom:
-            guard candidateMatcher.matches(
-                skill: skill,
-                normalizedText: normalizedText,
-                parser: appIntegrationActionParser
-            ) else { return nil }
+            guard matcher.matches(skill: skill, normalizedText: normalizedText, parser: parser) else { return nil }
             return AgentToolInvocationCandidate(
                 id: "skill-\(skill.id)",
                 title: skill.displayName,
@@ -81,12 +97,13 @@ extension AgentToolInvocationPlanner {
         }
     }
 
-    func candidate(for integration: AppIntegration, normalizedText: String) -> AgentToolInvocationCandidate? {
-        guard candidateMatcher.matches(
-            integration: integration,
-            normalizedText: normalizedText,
-            parser: appIntegrationActionParser
-        ) else {
+    public func candidate(
+        for integration: AppIntegration,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing
+    ) -> AgentToolInvocationCandidate? {
+        guard matcher.matches(integration: integration, normalizedText: normalizedText, parser: parser) else {
             return nil
         }
 
@@ -103,22 +120,25 @@ extension AgentToolInvocationPlanner {
         )
     }
 
-    func candidate(for skill: AppIntegrationSkill, userText: String, normalizedText: String) -> AgentToolInvocationCandidate? {
-        guard candidateMatcher.matches(
-            appIntegrationSkill: skill,
-            normalizedText: normalizedText,
-            parser: appIntegrationActionParser
-        ) else {
+    public func candidate(
+        for skill: AppIntegrationSkill,
+        userText: String,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing,
+        actionMapper: any AppIntegrationActionMapping
+    ) -> AgentToolInvocationCandidate? {
+        guard matcher.matches(appIntegrationSkill: skill, normalizedText: normalizedText, parser: parser) else {
             return nil
         }
         guard skill.availabilityStatus != .disabled, skill.availabilityStatus != .unsupported else {
             return nil
         }
-        let action = appIntegrationActionMapper.visibleHandoffAction(
+        let action = actionMapper.visibleHandoffAction(
             for: skill,
             userText: userText,
             normalizedText: normalizedText,
-            parser: appIntegrationActionParser
+            parser: parser
         )
 
         return AgentToolInvocationCandidate(
@@ -136,7 +156,7 @@ extension AgentToolInvocationPlanner {
         )
     }
 
-    func shortcutHandoffSummary(for skill: AgentSkill) -> String {
+    private func shortcutHandoffSummary(for skill: AgentSkill) -> String {
         let boundary = KairoL10n.string("chat.tool.summary.shortcutBoundary")
         guard
             let recipeID = skill.shortcutRecipeID,
@@ -147,7 +167,7 @@ extension AgentToolInvocationPlanner {
         return "\(boundary) \(recipe.settingsStepSummary). \(recipe.settingsInputSummary). \(recipe.settingsOutputSummary)."
     }
 
-    func appIntegrationHandoffSummary(for skill: AppIntegrationSkill) -> String {
+    private func appIntegrationHandoffSummary(for skill: AppIntegrationSkill) -> String {
         switch skill.executionMode {
         case .apiCall:
             return KairoL10n.string("chat.tool.summary.integration", skill.appName)
@@ -161,5 +181,4 @@ extension AgentToolInvocationPlanner {
             return KairoL10n.string("chat.tool.summary.unsupportedSafeAlternative")
         }
     }
-
 }

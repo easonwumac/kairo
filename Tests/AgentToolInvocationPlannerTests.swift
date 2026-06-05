@@ -262,6 +262,41 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(candidate.skillKind, .custom)
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedCandidateBuilder() throws {
+        let skill = AgentSkill(
+            id: "custom-builder-input",
+            displayName: "Builder Input",
+            summary: "The injected builder should own candidate construction.",
+            kind: .custom,
+            source: .userCreated,
+            installationStatus: .installed,
+            requiredCapabilities: [.chat]
+        )
+        let injectedCandidate = AgentToolInvocationCandidate(
+            id: "builder-output-candidate",
+            title: "Builder Output",
+            source: .installedSkill,
+            skillID: "custom-builder-input",
+            skillKind: .custom,
+            requiredCapabilities: [.chat],
+            riskTier: .tier1Draft,
+            requiresConfirmation: true,
+            handoffSummary: "Injected builder output"
+        )
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: [skill]),
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
+            writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
+            candidateBuilder: FixedAgentToolInvocationCandidateBuilder(candidate: injectedCandidate)
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "builder route"))
+
+        XCTAssertEqual(plan.candidates.first, injectedCandidate)
+    }
+
     func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithoutExecutableAction() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry(integrations: []))
 
@@ -719,6 +754,40 @@ private struct FixedAgentToolInvocationCandidateMatcher: AgentToolInvocationCand
         parser: any AgentToolInvocationActionParsing
     ) -> Bool {
         appIntegrationSkillMatches
+    }
+}
+
+private struct FixedAgentToolInvocationCandidateBuilder: AgentToolInvocationCandidateBuilding {
+    var candidate: AgentToolInvocationCandidate
+
+    func candidate(
+        for skill: AgentSkill,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing,
+        safetyPolicyEngine: SafetyPolicyEngine
+    ) -> AgentToolInvocationCandidate? {
+        candidate
+    }
+
+    func candidate(
+        for integration: AppIntegration,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing
+    ) -> AgentToolInvocationCandidate? {
+        nil
+    }
+
+    func candidate(
+        for skill: AppIntegrationSkill,
+        userText: String,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing,
+        actionMapper: any AppIntegrationActionMapping
+    ) -> AgentToolInvocationCandidate? {
+        nil
     }
 }
 

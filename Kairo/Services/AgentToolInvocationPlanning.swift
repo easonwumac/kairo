@@ -15,6 +15,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
     public var visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding
     public var writeActionCandidateProvider: any AgentWriteActionCandidateProviding
     public var candidateMatcher: any AgentToolInvocationCandidateMatching
+    public var candidateBuilder: any AgentToolInvocationCandidateBuilding
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var safetyPolicyEngine: SafetyPolicyEngine
 
@@ -26,6 +27,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         visibleHandoffCandidateProvider: any AgentVisibleHandoffCandidateProviding = DefaultAgentVisibleHandoffCandidateProvider(),
         writeActionCandidateProvider: any AgentWriteActionCandidateProviding = DefaultAgentWriteActionCandidateProvider(),
         candidateMatcher: any AgentToolInvocationCandidateMatching = DefaultAgentToolInvocationCandidateMatcher(),
+        candidateBuilder: any AgentToolInvocationCandidateBuilding = DefaultAgentToolInvocationCandidateBuilder(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
     ) {
@@ -36,6 +38,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         self.visibleHandoffCandidateProvider = visibleHandoffCandidateProvider
         self.writeActionCandidateProvider = writeActionCandidateProvider
         self.candidateMatcher = candidateMatcher
+        self.candidateBuilder = candidateBuilder
         self.toolCatalog = toolCatalog
         self.safetyPolicyEngine = safetyPolicyEngine
     }
@@ -53,6 +56,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
             visibleHandoffCandidateProvider: visibleHandoffCandidateProvider,
             writeActionCandidateProvider: writeActionCandidateProvider,
             candidateMatcher: candidateMatcher,
+            candidateBuilder: candidateBuilder,
             toolCatalog: toolCatalog,
             safetyPolicyEngine: safetyPolicyEngine
         ).plan(for: request)
