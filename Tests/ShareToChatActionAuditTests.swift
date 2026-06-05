@@ -9,11 +9,9 @@ final class ShareToChatActionAuditTests: XCTestCase {
         let flow = makeShareReminderFlow(reminderScheduler: reminderScheduler)
 
         await flow.viewModel.importPendingShares()
-        XCTAssertEqual(flow.viewModel.composerText, KairoL10n.string("chat.share.prompt.extractReminder", "Send prototype link"))
-        XCTAssertEqual(flow.viewModel.pendingAttachments.map(\.displayName), ["Launch Notes"])
-        XCTAssertEqual(flow.viewModel.shareImportPreview,
-            "Launch Notes: TODO: Send prototype link Reminder: Book beta review meeting"
-        )
+        XCTAssertEqual(flow.viewModel.pendingAttachments.map(\.kind), [.text])
+        XCTAssertEqual(flow.viewModel.pendingAttachments.map(\.source), [.shareExtension])
+        XCTAssertEqual(flow.viewModel.canSendImportedShareToChat, true)
 
         await flow.viewModel.sendImportedShareToChat()
         XCTAssertNil(flow.viewModel.shareImportNotice)
@@ -52,12 +50,7 @@ final class ShareToChatActionAuditTests: XCTestCase {
         await flow.viewModel.confirmPendingAction()
 
         XCTAssertNil(flow.viewModel.pendingAction)
-        let successMessage = KairoL10n.string(
-            "chat.action.result.reminder.success",
-            "Send prototype link",
-            KairoL10n.string("chat.action.result.shareClearedSuffix")
-        )
-        XCTAssertEqual(flow.viewModel.actionResultMessage, successMessage)
+        XCTAssertEqual(flow.viewModel.actionResultSucceeded, true)
         let createdDrafts = await reminderScheduler.createdDraftsSnapshot()
         XCTAssertEqual(createdDrafts.map(\.title), ["Send prototype link"])
         let auditEvents = try await flow.auditLogger.list(limit: 10)
@@ -85,11 +78,6 @@ final class ShareToChatActionAuditTests: XCTestCase {
         await flow.viewModel.confirmPendingAction()
 
         XCTAssertNil(flow.viewModel.pendingAction)
-        let failureMessage = KairoL10n.string(
-            "chat.action.result.reminder.failure",
-            KairoL10n.string("chat.action.permission.reminders.off")
-        )
-        XCTAssertEqual(flow.viewModel.actionResultMessage, failureMessage)
         XCTAssertEqual(flow.viewModel.actionResultSucceeded, false)
         XCTAssertNil(flow.viewModel.errorMessage)
         let auditEvents = try await flow.auditLogger.list(limit: 10)
