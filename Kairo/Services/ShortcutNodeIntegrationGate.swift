@@ -42,7 +42,7 @@ public struct CatalogBackedShortcutNodeIntegrationGate: ShortcutNodeIntegrationG
             )
         }
 
-        guard Self.nodeKind(for: skill.id) == kind else {
+        guard skill.shortcutNodeKind == kind else {
             return blockedOutput(
                 kind: kind,
                 input: input,
@@ -87,28 +87,5 @@ public struct CatalogBackedShortcutNodeIntegrationGate: ShortcutNodeIntegrationG
             displayText: displayText,
             fields: outputFields
         )
-    }
-
-    private static func nodeKind(for skillID: AppIntegrationSkillID) -> ShortcutNodeKind? {
-        switch skillID {
-        case .appleMailHandoff:
-            return .createEmailDraft
-        case .appleMessagesHandoff:
-            return .prepareMessageHandoff
-        case .applePhoneHandoff:
-            return .preparePhoneCallHandoff
-        case .safariWebSearchHandoff:
-            return .prepareWebSearchHandoff
-        case .appleMapsDirectionsHandoff,
-             .googleMapsDirectionsHandoff,
-             .gmailDraftAPI,
-             .whatsappMessageHandoff,
-             .lineShareHandoff,
-             .slackOpenHandoff,
-             .notionPageAPI,
-             .todoistTaskAPI,
-             .draftsCreateHandoff:
-            return nil
-        }
     }
 }

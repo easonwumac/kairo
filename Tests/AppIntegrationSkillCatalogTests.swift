@@ -99,6 +99,28 @@ final class AppIntegrationSkillCatalogTests: XCTestCase {
         XCTAssertTrue(legacyIntegrations.contains { $0.key == "github" })
     }
 
+    func testCatalogSkillsExposeShortcutNodeBindingsForExecutableFirstPartyHandoffs() throws {
+        let catalog = AppIntegrationSkillCatalog()
+        let expectedBindings: [AppIntegrationSkillID: ShortcutNodeKind] = [
+            .appleMailHandoff: .createEmailDraft,
+            .appleMessagesHandoff: .prepareMessageHandoff,
+            .applePhoneHandoff: .preparePhoneCallHandoff,
+            .safariWebSearchHandoff: .prepareWebSearchHandoff
+        ]
+
+        for (skillID, nodeKind) in expectedBindings {
+            let skill = try XCTUnwrap(catalog.skill(id: skillID))
+
+            XCTAssertEqual(skill.shortcutNodeKind, nodeKind)
+            XCTAssertTrue(skill.canBeSuggestedAsExecutable)
+        }
+
+        let setupOnlySkillIDs = Set(AppIntegrationSkillID.allCases).subtracting(expectedBindings.keys)
+        for skillID in setupOnlySkillIDs {
+            XCTAssertNil(catalog.skill(id: skillID)?.shortcutNodeKind)
+        }
+    }
+
     func testRecipeStepCanBindToCatalogIntegrationSkillID() throws {
         let catalog = AppIntegrationSkillCatalog()
         let step = KairoRecipeStep(

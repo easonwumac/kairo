@@ -41,6 +41,31 @@ public enum AppIntegrationSkillID: String, Codable, CaseIterable, Sendable, Iden
     public var id: String { rawValue }
 }
 
+public extension AppIntegrationSkillID {
+    var shortcutNodeKind: ShortcutNodeKind? {
+        switch self {
+        case .appleMailHandoff:
+            return .createEmailDraft
+        case .appleMessagesHandoff:
+            return .prepareMessageHandoff
+        case .applePhoneHandoff:
+            return .preparePhoneCallHandoff
+        case .safariWebSearchHandoff:
+            return .prepareWebSearchHandoff
+        case .appleMapsDirectionsHandoff,
+             .googleMapsDirectionsHandoff,
+             .gmailDraftAPI,
+             .whatsappMessageHandoff,
+             .lineShareHandoff,
+             .slackOpenHandoff,
+             .notionPageAPI,
+             .todoistTaskAPI,
+             .draftsCreateHandoff:
+            return nil
+        }
+    }
+}
+
 public enum AppIntegrationSkillCategory: String, Codable, CaseIterable, Sendable {
     case communication
     case productivity
@@ -257,6 +282,10 @@ public struct AppIntegrationSkill: Identifiable, Codable, Equatable, Sendable {
         availabilityStatus.allowsExecutableSuggestion
             && confirmationPolicy != .manualSetupOnly
             && executionMode != .previewOnly
+    }
+
+    public var shortcutNodeKind: ShortcutNodeKind? {
+        id.shortcutNodeKind
     }
 }
 
