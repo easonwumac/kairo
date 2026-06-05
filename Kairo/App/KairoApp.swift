@@ -80,9 +80,20 @@ struct KairoApp: App {
             localModelBenchmarkEngineOverride: runtime
         )
         #else
+        #if DEBUG && targetEnvironment(simulator)
+        return try await KairoEnvironment.live(
+            appGroupIdentifier: KairoSharedAppStorage.appGroupIdentifier,
+            localModelReplyCheckRuntimeOverride: DeterministicLocalModelReplyCheckRuntime(
+                runtimePackage: "simulator-dev-local-runtime",
+                responseText: KairoL10n.string("chat.provider.localSimulator.response"),
+                generationTokensPerSecond: 38.5
+            )
+        )
+        #else
         return try await KairoEnvironment.live(
             appGroupIdentifier: KairoSharedAppStorage.appGroupIdentifier
         )
+        #endif
         #endif
     }
 

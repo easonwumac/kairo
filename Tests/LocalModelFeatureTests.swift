@@ -950,7 +950,15 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(selectedStatus.selectedOptionID, "local.qwen-small")
         XCTAssertEqual(selectedStatus.options.map(\.id), ["cloud.openai", "local.qwen-small"])
         XCTAssertEqual(selectedStatus.options.first { $0.id == "local.qwen-small" }?.isEnabled, false)
-        XCTAssertNil(selectedStatus.warning)
+        XCTAssertNotNil(selectedStatus.warning)
+
+        let selectedRuntimeReadyStatus = ChatProviderRouteStatusBuilder.build(
+            from: await service.status(),
+            localRuntimeAvailable: true
+        )
+        XCTAssertEqual(selectedRuntimeReadyStatus.selectedOptionID, "local.qwen-small")
+        XCTAssertEqual(selectedRuntimeReadyStatus.options.first { $0.id == "local.qwen-small" }?.isEnabled, true)
+        XCTAssertNil(selectedRuntimeReadyStatus.warning)
 
         let installedManifest = makeLocalModelManifest(id: "qwen-small")
         let installedRecord = LocalModelInstallRecord(

@@ -1141,7 +1141,7 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertEqual(viewModel.providerRouteStatus.selectedOptionID, "local.qwen-small")
         XCTAssertEqual(viewModel.providerRouteStatus.options.map(\.id), ["cloud.openai", "local.qwen-small"])
-        XCTAssertNil(viewModel.providerRouteStatus.warning)
+        XCTAssertNotNil(viewModel.providerRouteStatus.warning)
 
         await viewModel.setProviderRoutePreference(.preferCloud)
 

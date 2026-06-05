@@ -109,13 +109,13 @@ public enum ChatProviderRouteStatusBuilder {
         }
 
         let warning: String?
-        if status.preference == .localOnly && status.localModelInstalled && !localRuntimeAvailable {
+        if selectedOption.modelID != nil && !localRuntimeAvailable {
             warning = KairoL10n.string("chat.provider.warning.localInferenceUnavailable")
         } else if status.preference == .localOnly && !status.localModelInstalled {
             warning = KairoL10n.string("chat.provider.warning.localOnlyNoModel")
         } else if status.preference == .preferLocal && !status.localModelInstalled {
             warning = KairoL10n.string("chat.provider.warning.preferLocalNoModel")
-        } else if status.preference != .localOnly {
+        } else if selectedOption.modelID == nil {
             warning = cloudWarning
         } else {
             warning = nil

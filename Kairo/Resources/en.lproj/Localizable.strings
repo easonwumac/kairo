@@ -556,6 +556,7 @@
 "chat.provider.source.cloud" = "Cloud";
 "chat.provider.source.local" = "Local";
 "chat.provider.localModelUnavailable.title" = "Local model";
+"chat.provider.localSimulator.response" = "Local simulator reply is active. This is a development-only local route check; production iPhone inference still requires the packaged runtime.";
 "chat.error.loadHistory" = "Could not load chat history: %@";
 "chat.error.deleteHistory" = "Could not delete chat history: %@";
 "chat.error.importShare" = "Could not import shared content: %@";
