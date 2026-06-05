@@ -80,6 +80,218 @@ final class AppIntegrationSkillCatalogTests: XCTestCase {
         }
     }
 
+    func testDefaultCatalogCoversRequiredAppIntegrationHarnessSeeds() throws {
+        let catalog = AppIntegrationSkillCatalog()
+        let expectedSeeds: [CatalogSeedExpectation] = [
+            CatalogSeedExpectation(
+                id: .appleMailHandoff,
+                integrationKey: "apple-mail",
+                appName: "Mail",
+                surfaces: [.urlScheme],
+                setupRequirement: .none,
+                availabilityStatus: .available,
+                executionMode: .openURL,
+                riskTier: .tier1Draft,
+                confirmationPolicy: .previewAndExplicitConfirmation,
+                permissionRequirement: .userInitiated,
+                capabilityKeys: [.mail],
+                requiresOAuth: false
+            ),
+            CatalogSeedExpectation(
+                id: .appleMessagesHandoff,
+                integrationKey: "apple-messages",
+                appName: "Messages",
+                surfaces: [.urlScheme],
+                setupRequirement: .none,
+                availabilityStatus: .available,
+                executionMode: .openURL,
+                riskTier: .tier1Draft,
+                confirmationPolicy: .previewAndExplicitConfirmation,
+                permissionRequirement: .userInitiated,
+                capabilityKeys: [.messages],
+                requiresOAuth: false
+            ),
+            CatalogSeedExpectation(
+                id: .applePhoneHandoff,
+                integrationKey: "apple-phone",
+                appName: "Phone",
+                surfaces: [.urlScheme],
+                setupRequirement: .none,
+                availabilityStatus: .available,
+                executionMode: .openURL,
+                riskTier: .tier1Draft,
+                confirmationPolicy: .previewAndExplicitConfirmation,
+                permissionRequirement: .userInitiated,
+                capabilityKeys: [.phone],
+                requiresOAuth: false
+            ),
+            CatalogSeedExpectation(
+                id: .safariWebSearchHandoff,
+                integrationKey: "safari-web-search",
+                appName: "Safari",
+                surfaces: [.universalLink],
+                setupRequirement: .none,
+                availabilityStatus: .available,
+                executionMode: .openURL,
+                riskTier: .tier1Draft,
+                confirmationPolicy: .previewAndExplicitConfirmation,
+                permissionRequirement: .userInitiated,
+                capabilityKeys: [.web],
+                requiresOAuth: false
+            ),
+            CatalogSeedExpectation(
+                id: .appleMapsDirectionsHandoff,
+                integrationKey: "apple-maps",
+                appName: "Apple Maps",
+                surfaces: [.universalLink],
+                setupRequirement: .none,
+                availabilityStatus: .available,
+                executionMode: .openURL,
+                riskTier: .tier1Draft,
+                confirmationPolicy: .previewAndExplicitConfirmation,
+                permissionRequirement: .userInitiated,
+                capabilityKeys: [.location],
+                requiresOAuth: false
+            ),
+            CatalogSeedExpectation(
+                id: .googleMapsDirectionsHandoff,
+                integrationKey: "google-maps",
+                appName: "Google Maps",
+                surfaces: [.universalLink, .urlScheme],
+                setupRequirement: .none,
+                availabilityStatus: .available,
+                executionMode: .openURL,
+                riskTier: .tier1Draft,
+                confirmationPolicy: .previewAndExplicitConfirmation,
+                permissionRequirement: .userInitiated,
+                capabilityKeys: [.location],
+                requiresOAuth: false
+            ),
+            CatalogSeedExpectation(
+                id: .gmailDraftAPI,
+                integrationKey: "gmail-google-workspace",
+                appName: "Gmail",
+                surfaces: [.oauthAPI, .webAPI],
+                setupRequirement: .connectOAuth,
+                availabilityStatus: .requiresOAuth,
+                executionMode: .apiCall,
+                riskTier: .tier3HighRiskExternal,
+                confirmationPolicy: .manualSetupOnly,
+                permissionRequirement: .oauth,
+                capabilityKeys: [.mail, .externalConnectors],
+                requiresOAuth: true
+            ),
+            CatalogSeedExpectation(
+                id: .whatsappMessageHandoff,
+                integrationKey: "whatsapp",
+                appName: "WhatsApp",
+                surfaces: [.universalLink],
+                setupRequirement: .none,
+                availabilityStatus: .available,
+                executionMode: .openURL,
+                riskTier: .tier1Draft,
+                confirmationPolicy: .previewAndExplicitConfirmation,
+                permissionRequirement: .userInitiated,
+                capabilityKeys: [.messages],
+                requiresOAuth: false
+            ),
+            CatalogSeedExpectation(
+                id: .lineShareHandoff,
+                integrationKey: "line",
+                appName: "LINE",
+                surfaces: [.universalLink],
+                setupRequirement: .none,
+                availabilityStatus: .available,
+                executionMode: .openURL,
+                riskTier: .tier1Draft,
+                confirmationPolicy: .previewAndExplicitConfirmation,
+                permissionRequirement: .userInitiated,
+                capabilityKeys: [.messages],
+                requiresOAuth: false
+            ),
+            CatalogSeedExpectation(
+                id: .slackOpenHandoff,
+                integrationKey: "slack",
+                appName: "Slack",
+                surfaces: [.universalLink, .urlScheme],
+                setupRequirement: .none,
+                availabilityStatus: .available,
+                executionMode: .openURL,
+                riskTier: .tier1Draft,
+                confirmationPolicy: .previewAndExplicitConfirmation,
+                permissionRequirement: .userInitiated,
+                capabilityKeys: [.externalConnectors],
+                requiresOAuth: false
+            ),
+            CatalogSeedExpectation(
+                id: .notionPageAPI,
+                integrationKey: "notion",
+                appName: "Notion",
+                surfaces: [.oauthAPI, .webAPI],
+                setupRequirement: .connectOAuth,
+                availabilityStatus: .requiresOAuth,
+                executionMode: .apiCall,
+                riskTier: .tier3HighRiskExternal,
+                confirmationPolicy: .manualSetupOnly,
+                permissionRequirement: .oauth,
+                capabilityKeys: [.externalConnectors],
+                requiresOAuth: true
+            ),
+            CatalogSeedExpectation(
+                id: .todoistTaskAPI,
+                integrationKey: "todoist",
+                appName: "Todoist",
+                surfaces: [.oauthAPI, .webAPI],
+                setupRequirement: .connectOAuth,
+                availabilityStatus: .requiresOAuth,
+                executionMode: .apiCall,
+                riskTier: .tier3HighRiskExternal,
+                confirmationPolicy: .manualSetupOnly,
+                permissionRequirement: .oauth,
+                capabilityKeys: [.externalConnectors],
+                requiresOAuth: true
+            ),
+            CatalogSeedExpectation(
+                id: .draftsCreateHandoff,
+                integrationKey: "drafts",
+                appName: "Drafts",
+                surfaces: [.urlScheme],
+                setupRequirement: .installApp,
+                availabilityStatus: .requiresInstalledApp,
+                executionMode: .openURL,
+                riskTier: .tier1Draft,
+                confirmationPolicy: .previewAndExplicitConfirmation,
+                permissionRequirement: .userInitiated,
+                capabilityKeys: [.documents],
+                requiresOAuth: false
+            )
+        ]
+
+        XCTAssertEqual(expectedSeeds.map(\.id), AppIntegrationSkillID.allCases)
+
+        for expected in expectedSeeds {
+            let skill = try XCTUnwrap(catalog.skill(id: expected.id))
+            XCTAssertEqual(skill.integrationKey, expected.integrationKey)
+            XCTAssertEqual(skill.appName, expected.appName)
+            XCTAssertEqual(skill.supportedSurfaces, expected.surfaces)
+            XCTAssertEqual(skill.setupRequirement, expected.setupRequirement)
+            XCTAssertEqual(skill.availabilityStatus, expected.availabilityStatus)
+            XCTAssertEqual(skill.executionMode, expected.executionMode)
+            XCTAssertEqual(skill.riskTier, expected.riskTier)
+            XCTAssertEqual(skill.confirmationPolicy, expected.confirmationPolicy)
+            XCTAssertEqual(skill.permissionRequirement, expected.permissionRequirement)
+            XCTAssertEqual(skill.audit.capabilityKeys, expected.capabilityKeys)
+            XCTAssertEqual(skill.oauth != nil, expected.requiresOAuth)
+            XCTAssertEqual(skill.audit.payloadPolicy, "redactedPayloadOnly")
+            XCTAssertEqual(skill.audit.externalSideEffectPolicy, "visibleUserInitiatedOnly")
+            XCTAssertFalse(skill.fallback.reasonKey.isEmpty)
+            XCTAssertFalse(skill.fallback.safeAlternativeKey.isEmpty)
+            XCTAssertFalse(skill.previewTextKey.isEmpty)
+            XCTAssertFalse(skill.examplePromptKey.isEmpty)
+            XCTAssertFalse(skill.sourceReference.isEmpty)
+        }
+    }
+
     func testLegacyIntegrationRegistryExcludesCatalogMigratedKeys() {
         let catalog = AppIntegrationSkillCatalog()
         let registry = IntegrationRegistry()
@@ -282,4 +494,19 @@ final class AppIntegrationSkillCatalogTests: XCTestCase {
             sourceReference: "test"
         )
     }
+}
+
+private struct CatalogSeedExpectation {
+    var id: AppIntegrationSkillID
+    var integrationKey: String
+    var appName: String
+    var surfaces: [AppIntegrationSkillSurface]
+    var setupRequirement: AppIntegrationSkillSetupRequirement
+    var availabilityStatus: AppIntegrationSkillAvailabilityStatus
+    var executionMode: AppIntegrationExecutionMode
+    var riskTier: ActionRiskTier
+    var confirmationPolicy: BuiltInPhoneToolConfirmationPolicy
+    var permissionRequirement: PermissionRequirement
+    var capabilityKeys: [CapabilityKey]
+    var requiresOAuth: Bool
 }
