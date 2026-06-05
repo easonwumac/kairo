@@ -364,6 +364,50 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.candidates, [injectedCandidate])
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedLegacyIntegrationCandidateMapper() throws {
+        let integration = AppIntegration(
+            key: "legacy-mapper-input",
+            displayName: "Legacy Mapper Input",
+            category: .developer,
+            surfaces: [.oauthAPI],
+            requiredCapabilities: [.externalConnectors],
+            oauth: OAuthConnectorMetadata(
+                providerKey: "legacy-mapper",
+                authorizationEndpoint: URL(string: "https://example.com/oauth/authorize")!,
+                tokenEndpoint: URL(string: "https://example.com/oauth/token"),
+                defaultScopes: ["read"],
+                accountDataBoundary: "Test fixture only."
+            ),
+            sandboxNotes: "Legacy registry fixture.",
+            status: .available
+        )
+        let injectedCandidate: AgentToolInvocationCandidate = AgentToolInvocationCandidate(
+            id: "mapped-legacy-integration",
+            title: "Mapped Legacy Integration",
+            source: .integrationRegistry,
+            integrationKey: integration.key,
+            skillKind: .oauthConnector,
+            requiredCapabilities: integration.requiredCapabilities,
+            riskTier: .tier3HighRiskExternal,
+            requiresConfirmation: true,
+            handoffSummary: "Mapped by injected legacy integration mapper"
+        )
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: AgentSkillCatalog(skills: []),
+            integrationRegistry: IntegrationRegistry(integrations: [integration]),
+            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
+            visibleHandoffCandidateProvider: FixedVisibleHandoffCandidateProvider(candidates: []),
+            writeActionCandidateProvider: FixedWriteActionCandidateProvider(candidates: []),
+            candidateBuilder: DefaultAgentToolInvocationCandidateBuilder(
+                legacyIntegrationCandidateMapper: FixedLegacyIntegrationToolInvocationCandidateMapper(candidate: injectedCandidate)
+            )
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "legacy mapper route"))
+
+        XCTAssertEqual(plan.candidates, [injectedCandidate])
+    }
+
     func testAgentToolInvocationPlannerUsesInjectedAppIntegrationCandidateMapper() throws {
         let skill = try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMailHandoff))
         let injectedCandidate = AgentToolInvocationCandidate(
@@ -918,6 +962,19 @@ private struct FixedInstalledSkillToolInvocationCandidateMapper: InstalledSkillT
         matcher: any AgentToolInvocationCandidateMatching,
         parser: any AgentToolInvocationActionParsing,
         safetyPolicyEngine: SafetyPolicyEngine
+    ) -> AgentToolInvocationCandidate? {
+        candidate
+    }
+}
+
+private struct FixedLegacyIntegrationToolInvocationCandidateMapper: LegacyIntegrationToolInvocationCandidateMapping {
+    var candidate: AgentToolInvocationCandidate?
+
+    func candidate(
+        for integration: AppIntegration,
+        normalizedText: String,
+        matcher: any AgentToolInvocationCandidateMatching,
+        parser: any AgentToolInvocationActionParsing
     ) -> AgentToolInvocationCandidate? {
         candidate
     }

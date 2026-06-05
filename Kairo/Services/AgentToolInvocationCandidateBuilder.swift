@@ -26,13 +26,16 @@ public protocol AgentToolInvocationCandidateBuilding: Sendable {
 
 public struct DefaultAgentToolInvocationCandidateBuilder: AgentToolInvocationCandidateBuilding {
     private let installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping
+    private let legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping
     private let appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping
 
     public init(
         installedSkillCandidateMapper: any InstalledSkillToolInvocationCandidateMapping = DefaultInstalledSkillToolInvocationCandidateMapper(),
+        legacyIntegrationCandidateMapper: any LegacyIntegrationToolInvocationCandidateMapping = DefaultLegacyIntegrationToolInvocationCandidateMapper(),
         appIntegrationCandidateMapper: any AppIntegrationToolInvocationCandidateMapping = DefaultAppIntegrationToolInvocationCandidateMapper()
     ) {
         self.installedSkillCandidateMapper = installedSkillCandidateMapper
+        self.legacyIntegrationCandidateMapper = legacyIntegrationCandidateMapper
         self.appIntegrationCandidateMapper = appIntegrationCandidateMapper
     }
 
@@ -58,20 +61,11 @@ public struct DefaultAgentToolInvocationCandidateBuilder: AgentToolInvocationCan
         matcher: any AgentToolInvocationCandidateMatching,
         parser: any AgentToolInvocationActionParsing
     ) -> AgentToolInvocationCandidate? {
-        guard matcher.matches(integration: integration, normalizedText: normalizedText, parser: parser) else {
-            return nil
-        }
-
-        return AgentToolInvocationCandidate(
-            id: "integration-\(integration.key)",
-            title: integration.displayName,
-            source: .integrationRegistry,
-            integrationKey: integration.key,
-            skillKind: .oauthConnector,
-            requiredCapabilities: integration.requiredCapabilities,
-            riskTier: .tier3HighRiskExternal,
-            requiresConfirmation: true,
-            handoffSummary: KairoL10n.string("chat.tool.summary.integration", integration.displayName)
+        legacyIntegrationCandidateMapper.candidate(
+            for: integration,
+            normalizedText: normalizedText,
+            matcher: matcher,
+            parser: parser
         )
     }
 
