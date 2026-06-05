@@ -551,6 +551,20 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(context.contains("do not claim live HomeKit control"))
     }
 
+    func testCapabilityPromptContextDefaultsToHarnessIntegrationRegistry() {
+        let context = CapabilityPromptContextBuilder(skillCatalog: AgentSkillCatalog(skills: [])).build()
+        let registrySection = contextSection(named: "Integration registry.", in: context)
+        let catalogSection = contextSection(named: "App integration skill catalog.", in: context)
+
+        XCTAssertFalse(registrySection.contains("gmail-google-workspace"))
+        XCTAssertFalse(registrySection.contains("todoist"))
+        XCTAssertFalse(registrySection.contains("notion"))
+        XCTAssertTrue(registrySection.contains("github"))
+        XCTAssertTrue(catalogSection.contains(AppIntegrationSkillID.gmailDraftAPI.rawValue))
+        XCTAssertTrue(catalogSection.contains(AppIntegrationSkillID.todoistTaskAPI.rawValue))
+        XCTAssertTrue(catalogSection.contains(AppIntegrationSkillID.notionPageAPI.rawValue))
+    }
+
     func testCapabilityPromptContextIncludesInstalledSkillsAsToolOptions() {
         let context = CapabilityPromptContextBuilder(skillCatalog: .default).build()
 
@@ -2244,6 +2258,17 @@ private actor MockHTTPClient: HTTPClient {
 
 private enum MockHTTPClientError: Error {
     case missingRequest
+}
+
+private func contextSection(named heading: String, in context: String) -> String {
+    guard let headingRange = context.range(of: heading) else {
+        return ""
+    }
+    let sectionStart = headingRange.upperBound
+    guard let nextSectionRange = context[sectionStart...].range(of: "\n\n") else {
+        return String(context[sectionStart...])
+    }
+    return String(context[sectionStart..<nextSectionRange.lowerBound])
 }
 
 private final class StubAppIntegrationPromptContextProvider: AppIntegrationPromptContextProviding, @unchecked Sendable {

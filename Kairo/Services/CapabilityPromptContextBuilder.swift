@@ -12,7 +12,7 @@ public struct CapabilityPromptContextBuilder: Sendable {
     public init(
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         appIntegrationPromptSection: (any AppIntegrationPromptContextProviding)? = nil,
         backgroundTaskPolicy: BackgroundTaskPolicy = BackgroundTaskPolicy(),

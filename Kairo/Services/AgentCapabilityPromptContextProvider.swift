@@ -14,7 +14,7 @@ public struct DefaultAgentCapabilityPromptContextProvider: AgentCapabilityPrompt
     public init(
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
-        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         backgroundTaskPolicy: BackgroundTaskPolicy = BackgroundTaskPolicy()
     ) {
