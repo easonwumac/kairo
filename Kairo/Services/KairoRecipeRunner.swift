@@ -4,18 +4,19 @@ public struct KairoRecipeRunner: Sendable {
     private let recipeStore: any KairoRecipeStore
     private let memoryStore: (any MemoryStore)?
     private let aiProvider: (any AIProvider)?
-    private let actionGate: BuiltInPhoneToolActionGate
+    private let actionGate: any PhoneToolActionGating
 
     public init(
         recipeStore: any KairoRecipeStore,
         memoryStore: (any MemoryStore)? = nil,
         aiProvider: (any AIProvider)? = nil,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        actionGate: (any PhoneToolActionGating)? = nil
     ) {
         self.recipeStore = recipeStore
         self.memoryStore = memoryStore
         self.aiProvider = aiProvider
-        self.actionGate = BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
     }
 
     public func run(_ request: KairoRecipeRunRequest) async throws -> KairoRecipeRunResult {

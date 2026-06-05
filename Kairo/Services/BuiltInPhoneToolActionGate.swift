@@ -1,6 +1,13 @@
 import Foundation
 
-public struct BuiltInPhoneToolActionGate: Sendable {
+public protocol PhoneToolActionGating: Sendable {
+    func allowsExecutablePreview(_ action: AgentAction) -> Bool
+    func filterExecutablePreviews(_ actions: [AgentAction]) -> [AgentAction]
+    func blockedTool(for shortcutNodeKind: ShortcutNodeKind) -> BuiltInPhoneToolDefinition?
+    func blockedTool(for recipeStepKind: KairoRecipeStepKind) -> BuiltInPhoneToolDefinition?
+}
+
+public struct BuiltInPhoneToolActionGate: PhoneToolActionGating {
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
 
     public init(toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()) {

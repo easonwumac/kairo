@@ -50,6 +50,17 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         XCTAssertTrue(response.toolCandidates.isEmpty)
     }
 
+    func testAgentCoreUsesInjectedPhoneToolActionGateForActionPreviews() async throws {
+        let agent = AgentCore(
+            aiProvider: MockAIProvider(),
+            actionGate: BlockingPhoneToolActionGate()
+        )
+
+        let response = try await agent.respond(to: "Create a calendar event for launch review")
+
+        XCTAssertTrue(response.proposedActions.isEmpty)
+    }
+
     func testAgentCoreKeepsUnsupportedSandboxExplanationOutsideExecutableCatalog() async throws {
         let explanation = UnsupportedActionExplanation(
             requestedAction: "Read another app",
@@ -196,5 +207,23 @@ final class AgentCoreActionPreviewTests: XCTestCase {
             skillCatalog: .default,
             integrationRegistry: IntegrationRegistry()
         )
+    }
+}
+
+private struct BlockingPhoneToolActionGate: PhoneToolActionGating {
+    func allowsExecutablePreview(_ action: AgentAction) -> Bool {
+        false
+    }
+
+    func filterExecutablePreviews(_ actions: [AgentAction]) -> [AgentAction] {
+        []
+    }
+
+    func blockedTool(for shortcutNodeKind: ShortcutNodeKind) -> BuiltInPhoneToolDefinition? {
+        nil
+    }
+
+    func blockedTool(for recipeStepKind: KairoRecipeStepKind) -> BuiltInPhoneToolDefinition? {
+        nil
     }
 }

@@ -8,7 +8,7 @@ public actor AgentCore {
     private let skillCatalogProvider: AgentSkillCatalogProvider
     private let integrationRegistry: IntegrationRegistry
     private let toolCatalog: any BuiltInPhoneToolCatalogProviding
-    private let actionGate: BuiltInPhoneToolActionGate
+    private let actionGate: any PhoneToolActionGating
     private let memoryCandidateExtractor: MemoryCandidateExtractor
 
     public init(
@@ -18,6 +18,7 @@ public actor AgentCore {
         skillCatalogProvider: AgentSkillCatalogProvider? = nil,
         integrationRegistry: IntegrationRegistry = IntegrationRegistry(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        actionGate: (any PhoneToolActionGating)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine(),
         capabilityRegistry: CapabilityRegistry = CapabilityRegistry(),
         memoryCandidateExtractor: MemoryCandidateExtractor = MemoryCandidateExtractor()
@@ -29,7 +30,7 @@ public actor AgentCore {
         self.skillCatalogProvider = skillCatalogProvider ?? .constant(skillCatalog)
         self.integrationRegistry = integrationRegistry
         self.toolCatalog = toolCatalog
-        self.actionGate = BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         self.memoryCandidateExtractor = memoryCandidateExtractor
     }
 

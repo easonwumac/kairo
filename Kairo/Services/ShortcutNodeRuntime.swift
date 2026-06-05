@@ -2,14 +2,15 @@ import Foundation
 
 public actor ShortcutNodeRuntime {
     private let memoryStore: MemoryStore
-    private let actionGate: BuiltInPhoneToolActionGate
+    private let actionGate: any PhoneToolActionGating
 
     public init(
         memoryStore: MemoryStore,
-        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog()
+        toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
+        actionGate: (any PhoneToolActionGating)? = nil
     ) {
         self.memoryStore = memoryStore
-        self.actionGate = BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
+        self.actionGate = actionGate ?? BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
     }
 
     public static func live(paths: KairoPaths = KairoSharedAppStorage.paths()) async throws -> ShortcutNodeRuntime {
