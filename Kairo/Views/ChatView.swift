@@ -237,28 +237,34 @@ public struct ChatView: View {
             if let replyTarget = viewModel.replyTarget {
                 HStack(spacing: 8) {
                     Image(systemName: "arrowshape.turn.up.left.fill")
-                        .foregroundStyle(.secondary)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(KairoDesign.teal)
+                        .frame(width: 24, height: 24)
+                        .background(KairoDesign.softSurface.opacity(0.62), in: Circle())
                     Text(ChatViewModel.replyReferenceText(for: replyTarget))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(KairoDesign.ink)
                         .lineLimit(2)
                     Spacer()
                     Button {
                         viewModel.cancelReplyTarget()
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
+                        Image(systemName: "xmark")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(KairoDesign.muted)
+                            .frame(width: 24, height: 24)
+                            .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(KairoL10n.string("chat.reply.cancel"))
                     .accessibilityIdentifier("chat.reply-preview.cancel")
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(KairoDesign.elevatedSurface.opacity(0.84), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(KairoDesign.line, lineWidth: 1)
                 )
                 .overlay(alignment: .topLeading) {
                     Color.clear

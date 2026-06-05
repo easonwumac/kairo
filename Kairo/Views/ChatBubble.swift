@@ -104,6 +104,15 @@ struct ChatBubble: View {
                     ) {
                         onReply(message)
                     }
+
+                    messageActionButton(
+                        title: KairoL10n.string("chat.message.remember"),
+                        accessibilityLabel: KairoL10n.string("chat.message.rememberAccessibility"),
+                        systemImage: "brain.head.profile",
+                        identifier: "chat.message.remember.\(message.id.uuidString)"
+                    ) {
+                        onRemember(message)
+                    }
                 }
                 .font(.caption2)
                 .foregroundStyle(KairoDesign.muted)

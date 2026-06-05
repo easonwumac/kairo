@@ -544,6 +544,7 @@
 "chat.message.remember.privateUnavailable" = "私密聊天不會儲存到記憶。";
 "chat.message.copyAccessibility" = "複製訊息";
 "chat.message.replyAccessibility" = "回覆訊息";
+"chat.message.rememberAccessibility" = "將訊息加入記憶";
 "chat.message.reasoning" = "思考過程";
 "chat.message.memoryContext.one" = "使用了 1 筆 Memory";
 "chat.message.memoryContext.many" = "使用了 %lld 筆 Memory";
