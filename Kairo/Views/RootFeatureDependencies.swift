@@ -15,7 +15,7 @@ public struct RootFeatureDependencyFactory: Sendable {
     public func makeDependencies(
         oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore?,
         credentialStore: any CredentialStore,
-        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry.appIntegrationHarnessRegistry(),
+        oauthConnectorRegistry: (any AppIntegrationRegistryProviding)? = nil,
         oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
         openURLHandler: (any KairoOpenURLHandling)? = nil
@@ -28,10 +28,11 @@ public struct RootFeatureDependencyFactory: Sendable {
             return RootFeatureDependencies()
         }
 
+        let runtimeOAuthConnectorRegistry = oauthConnectorRegistry ?? IntegrationRegistry.appIntegrationHarnessRegistry()
         let oauthLoginService = OAuthConnectorLoginServiceFactory().makeLoginService(
             override: oauthLoginService,
             credentialStore: credentialStore,
-            oauthConnectorRegistry: oauthConnectorRegistry,
+            oauthConnectorRegistry: runtimeOAuthConnectorRegistry,
             oauthClientConfigurations: oauthClientConfigurations,
             oauthCallbackStore: oauthConnectorCallbackStore
         )
