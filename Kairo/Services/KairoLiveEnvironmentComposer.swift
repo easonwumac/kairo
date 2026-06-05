@@ -46,14 +46,19 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             replyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
             benchmarkEngineOverride: localModelBenchmarkEngineOverride
         ).makeComponents()
+        let toolCatalog = BuiltInPhoneToolCatalog()
+        let appIntegrationSkillCatalog = AppIntegrationSkillCatalog()
+        let integrationRegistry = IntegrationRegistry.appIntegrationHarnessRegistry(
+            legacyRegistry: oauthConnectorRegistry,
+            catalog: appIntegrationSkillCatalog
+        )
         let accessComponents = try await KairoLiveAccessFactory(
             paths: paths,
             credentialStore: credentialStore,
             installedLocalModelIDs: localModelComponents.installedModelIDs,
-            oauthConnectorRegistry: oauthConnectorRegistry
+            oauthConnectorRegistry: integrationRegistry,
+            appIntegrationSkillCatalog: appIntegrationSkillCatalog
         ).makeComponents()
-        let toolCatalog = BuiltInPhoneToolCatalog()
-        let appIntegrationSkillCatalog = AppIntegrationSkillCatalog()
         let shortcutRuntime = try await LiveShortcutNodeRuntimeProvider(
             paths: paths,
             toolCatalog: toolCatalog,
@@ -74,7 +79,7 @@ public struct KairoLiveEnvironmentComposer: Sendable {
             kairoRecipeStore: storeComponents.kairoRecipeStore,
             permissionService: SystemPermissionService(),
             auditLogger: storeComponents.auditLogger,
-            oauthConnectorRegistry: oauthConnectorRegistry,
+            oauthConnectorRegistry: integrationRegistry,
             oauthConnectorCallbackStore: accessComponents.oauthCallbackStore,
             oauthClientConfigurations: accessComponents.oauthClientConfigurations,
             agentSkillManagerService: accessComponents.skillManagerService,

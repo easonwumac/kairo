@@ -311,6 +311,41 @@ final class AppIntegrationSkillCatalogTests: XCTestCase {
         XCTAssertTrue(legacyIntegrations.contains { $0.key == "github" })
     }
 
+    func testHarnessRegistryUsesCatalogOAuthConnectorsAndUnmigratedLegacyOnly() throws {
+        let catalog = AppIntegrationSkillCatalog()
+        let registry = IntegrationRegistry.appIntegrationHarnessRegistry(catalog: catalog)
+        let oauthConnectors = Dictionary(uniqueKeysWithValues: registry.oauthConnectors.map { ($0.key, $0) })
+
+        XCTAssertEqual(oauthConnectors["gmail-google-workspace"]?.oauth?.providerKey, "google")
+        XCTAssertEqual(oauthConnectors["notion"]?.oauth?.providerKey, "notion")
+        XCTAssertEqual(oauthConnectors["todoist"]?.oauth?.providerKey, "todoist")
+        XCTAssertEqual(oauthConnectors["github"]?.oauth?.providerKey, "github")
+        XCTAssertNil(oauthConnectors["slack"])
+
+        let todoist = try XCTUnwrap(oauthConnectors["todoist"])
+        XCTAssertEqual(todoist.surfaces, [.oauthAPI])
+        XCTAssertEqual(todoist.requiredCapabilities, [.externalConnectors])
+        XCTAssertEqual(todoist.status, .requiresBackend)
+    }
+
+    func testCatalogOAuthConnectorIntegrationsPreserveProviderKeysAndScopes() throws {
+        let catalog = AppIntegrationSkillCatalog()
+        let connectors = Dictionary(uniqueKeysWithValues: catalog.oauthConnectorIntegrations.map { ($0.key, $0) })
+        let expectedSkills: [AppIntegrationSkillID] = [.gmailDraftAPI, .notionPageAPI, .todoistTaskAPI]
+
+        XCTAssertEqual(Set(connectors.keys), Set(expectedSkills.compactMap { catalog.skill(id: $0)?.integrationKey }))
+
+        for skillID in expectedSkills {
+            let skill = try XCTUnwrap(catalog.skill(id: skillID))
+            let connector = try XCTUnwrap(connectors[skill.integrationKey])
+
+            XCTAssertEqual(connector.oauth?.providerKey, skill.oauth?.providerKey)
+            XCTAssertEqual(connector.oauth?.defaultScopes, skill.oauth?.requiredScopes)
+            XCTAssertEqual(connector.oauth?.authorizationEndpoint, skill.oauth?.authorizationEndpoint)
+            XCTAssertEqual(connector.oauth?.tokenEndpoint, skill.oauth?.tokenEndpoint)
+        }
+    }
+
     func testCatalogSkillsExposeShortcutNodeBindingsForExecutableFirstPartyHandoffs() throws {
         let catalog = AppIntegrationSkillCatalog()
         let expectedBindings: [AppIntegrationSkillID: ShortcutNodeKind] = [

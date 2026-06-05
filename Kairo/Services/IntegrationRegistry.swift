@@ -263,3 +263,79 @@ public extension AppIntegrationRegistryProviding {
         integrationsNotMigrated(to: catalog).filter { $0.oauth != nil }
     }
 }
+
+public extension IntegrationRegistry {
+    static func appIntegrationHarnessRegistry(
+        legacyRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        catalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog()
+    ) -> IntegrationRegistry {
+        IntegrationRegistry(
+            integrations: catalog.oauthConnectorIntegrations + legacyRegistry.integrationsNotMigrated(to: catalog)
+        )
+    }
+}
+
+public extension AppIntegrationSkillCatalogProviding {
+    var oauthConnectorIntegrations: [AppIntegration] {
+        skills.compactMap(\.oauthConnectorIntegration)
+    }
+}
+
+private extension AppIntegrationSkill {
+    var oauthConnectorIntegration: AppIntegration? {
+        guard let oauth else { return nil }
+        return AppIntegration(
+            key: integrationKey,
+            displayName: appName,
+            category: legacyCategory,
+            surfaces: legacySurfaces,
+            requiredCapabilities: audit.capabilityKeys,
+            oauth: OAuthConnectorMetadata(
+                providerKey: oauth.providerKey,
+                authorizationEndpoint: oauth.authorizationEndpoint,
+                tokenEndpoint: oauth.tokenEndpoint,
+                defaultScopes: oauth.requiredScopes,
+                requiresBackendTokenExchange: true,
+                accountDataBoundary: "appIntegration.\(id.rawValue).oauth.boundary"
+            ),
+            sandboxNotes: "appIntegration.\(id.rawValue).oauth.sandboxNotes",
+            status: .requiresBackend
+        )
+    }
+
+    var legacyCategory: IntegrationCategory {
+        switch category {
+        case .communication:
+            return .communication
+        case .productivity:
+            return .productivity
+        case .browserSearchKnowledge:
+            return .knowledge
+        case .mapsLocation:
+            return .productivity
+        case .filesMedia:
+            return .storage
+        }
+    }
+
+    var legacySurfaces: [IntegrationSurface] {
+        supportedSurfaces.compactMap { surface in
+            switch surface {
+            case .appShortcut:
+                return .appIntents
+            case .userShortcut:
+                return .shortcuts
+            case .urlScheme:
+                return .urlScheme
+            case .universalLink:
+                return .universalLink
+            case .shareExtensionInput:
+                return .shareExtension
+            case .oauthAPI:
+                return .oauthAPI
+            case .webAPI:
+                return nil
+            }
+        }
+    }
+}
