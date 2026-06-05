@@ -1040,6 +1040,52 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertTrue(response.proposedActions.isEmpty)
     }
 
+    func testLocalModelRuntimeAIProviderPassesStoredRuntimeParameters() async throws {
+        let settingsURL = temporaryFileURL(named: "local-model-settings.json")
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let catalog = LocalModelCatalog(
+            signingKeyID: "test-key",
+            signature: "test-signature",
+            minimumSafetyPolicyVersion: "2026.1",
+            models: [
+                makeLocalModelManifest(
+                    id: "qwen-large-context",
+                    safetyPolicyVersion: "2026.1",
+                    contextWindow: 16_384
+                )
+            ]
+        )
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let store = try await FileBackedLocalModelSettingsStore(fileURL: settingsURL)
+        let service = LocalModelSettingsService(catalog: catalog, installRegistry: registry, settingsStore: store)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen-large-context",
+            version: "1.0",
+            status: .installed,
+            fileURL: registryURL.deletingLastPathComponent().appendingPathComponent("qwen-large-context.gguf"),
+            installedSizeBytes: 1024,
+            sha256: "abc123"
+        ))
+        let parameters = LocalModelRuntimeParameters(
+            contextSize: 8_192,
+            maxOutputTokens: 256,
+            temperature: 0.6
+        )
+        try await service.selectModel(id: "qwen-large-context")
+        try await service.setRuntimeParameters(parameters, for: "qwen-large-context")
+        let runtime = RecordingLocalModelReplyRuntime()
+        let provider = LocalModelRuntimeAIProvider(localModelSettingsService: service, runtime: runtime)
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Use the stored local parameters."
+        ))
+
+        XCTAssertEqual(response.message, "runtime parameters applied")
+        let capturedParameters = await runtime.lastParameters()
+        XCTAssertEqual(capturedParameters, parameters)
+    }
+
     func testLocalModelRuntimeSeparatesThinkReasoningFromVisibleReply() async throws {
         let service = try await makeLocalModelSettingsService(
             preference: .localOnly,
@@ -1234,6 +1280,56 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(context.taskClass, .summarization)
         XCTAssertTrue(context.localModelInstalled)
         XCTAssertEqual(context.localContextWindow, 2048)
+    }
+
+    func testLocalModelSettingsServicePersistsRuntimeParametersPerModel() async throws {
+        let settingsURL = temporaryFileURL(named: "local-model-settings.json")
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen-large-context.gguf")
+        let catalog = LocalModelCatalog(
+            signingKeyID: "test-key",
+            signature: "test-signature",
+            minimumSafetyPolicyVersion: "2026.1",
+            models: [
+                makeLocalModelManifest(
+                    id: "qwen-large-context",
+                    safetyPolicyVersion: "2026.2",
+                    contextWindow: 16_384
+                ),
+                makeLocalModelManifest(id: "qwen-default", safetyPolicyVersion: "2026.2")
+            ]
+        )
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen-large-context",
+            version: "1.0",
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: 1024,
+            sha256: "abc123"
+        ))
+        let store = try await FileBackedLocalModelSettingsStore(fileURL: settingsURL)
+        let service = LocalModelSettingsService(catalog: catalog, installRegistry: registry, settingsStore: store)
+
+        try await service.selectModel(id: "qwen-large-context", minimumSafetyPolicyVersion: "2026.1")
+        try await service.setRuntimeParameters(
+            LocalModelRuntimeParameters(contextSize: 16_384, maxOutputTokens: 256, temperature: 0.7),
+            for: "qwen-large-context",
+            minimumSafetyPolicyVersion: "2026.1"
+        )
+
+        let status = await service.status(minimumSafetyPolicyVersion: "2026.1")
+        XCTAssertEqual(status.runtimeParametersByModelID["qwen-large-context"]?.contextSize, 16_384)
+        XCTAssertEqual(status.runtimeParametersByModelID["qwen-large-context"]?.maxOutputTokens, 256)
+        XCTAssertEqual(status.runtimeParametersByModelID["qwen-large-context"]?.temperature, 0.7)
+        XCTAssertNil(status.runtimeParametersByModelID["qwen-default"])
+
+        let context = await service.routingContext(
+            taskClass: .summarization,
+            networkAvailable: false,
+            minimumSafetyPolicyVersion: "2026.1"
+        )
+        XCTAssertEqual(context.localContextWindow, 16_384)
     }
 
     func testLocalModelSettingsServiceDeletesInstalledModelFileRecordAndSelection() async throws {
@@ -1675,7 +1771,8 @@ final class LocalModelFeatureTests: XCTestCase {
                 installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
                 sha256: LocalModelManifest.qwen35Tiny.sha256
             ),
-            prompt: "Ping Kairo."
+            prompt: "Ping Kairo.",
+            parameters: .defaultValue
         )
 
         XCTAssertEqual(result.runtime, .mlx)
@@ -2160,7 +2257,8 @@ final class LocalModelFeatureTests: XCTestCase {
         version: String = "1.0",
         safetyPolicyVersion: String = "2026.1",
         deprecated: Bool = false,
-        sha256: String = "abc123"
+        sha256: String = "abc123",
+        contextWindow: Int = 2048
     ) -> LocalModelManifest {
         LocalModelManifest(
             id: id,
@@ -2171,7 +2269,7 @@ final class LocalModelFeatureTests: XCTestCase {
             quantization: "Q4",
             fileSizeBytes: 512,
             installedSizeBytes: 1024,
-            contextWindow: 2048,
+            contextWindow: contextWindow,
             tokenizerID: "qwen-test-tokenizer",
             licenseName: "Apache-2.0",
             licenseURL: URL(string: "https://example.com/license")!,
@@ -2333,6 +2431,36 @@ private actor RecordingAIProvider: AIProvider {
 
     func completionCalls() -> Int {
         completionCallCount
+    }
+}
+
+private actor RecordingLocalModelReplyRuntime: LocalModelReplyCheckRuntime {
+    private var capturedParameters: LocalModelRuntimeParameters?
+
+    func generateReply(
+        model: LocalModelManifest,
+        installRecord: LocalModelInstallRecord,
+        prompt: String,
+        parameters: LocalModelRuntimeParameters
+    ) async throws -> LocalModelReplyCheckResult {
+        _ = installRecord
+        capturedParameters = parameters
+        return LocalModelReplyCheckResult(
+            modelID: model.id,
+            modelDisplayName: model.displayName,
+            runtime: .gguf,
+            runtimePackage: "recording-runtime",
+            prompt: prompt,
+            responseText: "runtime parameters applied",
+            generatedTokens: parameters.maxOutputTokens,
+            generationTokensPerSecond: 1,
+            measuredAt: Date(timeIntervalSince1970: 1_780_358_400),
+            notes: "Recording local model runtime for parameter propagation tests."
+        )
+    }
+
+    func lastParameters() -> LocalModelRuntimeParameters? {
+        capturedParameters
     }
 }
 

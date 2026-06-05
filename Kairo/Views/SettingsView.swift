@@ -33,6 +33,7 @@ public struct SettingsView: View {
     @State var localModelDownloadTask: Task<Void, Never>?
     @State var localModelStatusMessage: String?
     @State var localModelStatusMessageModelID: String?
+    @State var localModelBenchmarkRunInfo: LocalModelBenchmarkRunInfo?
     @State private var privacyStatusMessage: String?
     @State private var showConnectionSetup = false
     @State private var showConnectionDetails = false
@@ -44,6 +45,8 @@ public struct SettingsView: View {
     private let credentialStore: any CredentialStore
     private let oauthCoordinator: SettingsOAuthConnectorCoordinator
     private let privacyCoordinator: SettingsPrivacyCoordinator
+    @Binding private var rootChromeBackRequestID: Int
+    private let usesRootChromeNavigation: Bool
     let localModelCatalogService: LocalModelCatalogService?
     let localModelSettingsService: LocalModelSettingsService?
     let localModelDownloader: (any LocalModelDownloader)?
@@ -53,7 +56,9 @@ public struct SettingsView: View {
     public init(
         dependencies: SettingsFeatureDependencies,
         mode: SettingsViewMode = .all,
-        deletionAPI: (any KairoDeletionAPI)? = nil
+        deletionAPI: (any KairoDeletionAPI)? = nil,
+        rootChromeBackRequestID: Binding<Int> = .constant(0),
+        usesRootChromeNavigation: Bool = false
     ) {
         self.init(
             settingsService: dependencies.settingsService,
@@ -74,7 +79,9 @@ public struct SettingsView: View {
             localModelDownloader: dependencies.localModelDownloader,
             localModelBenchmarkService: dependencies.localModelBenchmarkService,
             localModelReplyCheckService: dependencies.localModelReplyCheckService,
-            deletionAPI: deletionAPI ?? dependencies.deletionAPI
+            deletionAPI: deletionAPI ?? dependencies.deletionAPI,
+            rootChromeBackRequestID: rootChromeBackRequestID,
+            usesRootChromeNavigation: usesRootChromeNavigation
         )
     }
 
@@ -96,7 +103,9 @@ public struct SettingsView: View {
         localModelDownloader: (any LocalModelDownloader)? = nil,
         localModelBenchmarkService: LocalModelBenchmarkService? = nil,
         localModelReplyCheckService: LocalModelReplyCheckService? = nil,
-        deletionAPI: (any KairoDeletionAPI)? = nil
+        deletionAPI: (any KairoDeletionAPI)? = nil,
+        rootChromeBackRequestID: Binding<Int> = .constant(0),
+        usesRootChromeNavigation: Bool = false
     ) {
         self.init(
             dependencies: SettingsFeatureDependencyFactory().makeDependencies(
@@ -119,7 +128,9 @@ public struct SettingsView: View {
                 deletionAPI: deletionAPI
             ),
             mode: mode,
-            deletionAPI: deletionAPI
+            deletionAPI: deletionAPI,
+            rootChromeBackRequestID: rootChromeBackRequestID,
+            usesRootChromeNavigation: usesRootChromeNavigation
         )
     }
 
@@ -142,7 +153,9 @@ public struct SettingsView: View {
         localModelDownloader: (any LocalModelDownloader)? = nil,
         localModelBenchmarkService: LocalModelBenchmarkService? = nil,
         localModelReplyCheckService: LocalModelReplyCheckService? = nil,
-        deletionAPI: (any KairoDeletionAPI)? = nil
+        deletionAPI: (any KairoDeletionAPI)? = nil,
+        rootChromeBackRequestID: Binding<Int> = .constant(0),
+        usesRootChromeNavigation: Bool = false
     ) {
         self.openAIKeyCoordinator = openAIKeyCoordinator ?? SettingsOpenAIKeyCoordinator(settingsService: settingsService)
         self.mode = mode
@@ -166,6 +179,8 @@ public struct SettingsView: View {
         self.privacyCoordinator = privacyCoordinator ?? SettingsPrivacyCoordinator(deletionAPI: deletionAPI)
         self._localModelCatalog = State(initialValue: localModelCatalog)
         self._localModelStatus = State(initialValue: Self.catalogOnlyLocalModelStatus(catalog: localModelCatalog))
+        self._rootChromeBackRequestID = rootChromeBackRequestID
+        self.usesRootChromeNavigation = usesRootChromeNavigation
     }
 
     public var body: some View {
@@ -331,6 +346,9 @@ public struct SettingsView: View {
                 localModelStatusMessage: localModelStatusMessage,
                 localModelStatusMessageModelID: localModelStatusMessageModelID,
                 localModelCatalogSourceText: localModelCatalogSourceText,
+                localModelBenchmarkRunInfo: localModelBenchmarkRunInfo,
+                rootChromeBackRequestID: $rootChromeBackRequestID,
+                usesRootChromeNavigation: usesRootChromeNavigation,
                 localModelStatusColor: { localModelStatusColor(for: $0) },
                 saveAPIKey: saveAPIKey,
                 dryRunAPIKey: dryRunAPIKey,
@@ -339,11 +357,12 @@ public struct SettingsView: View {
                 disconnectConnector: disconnectConnector,
                 setLocalModelPreference: { setLocalModelPreference($0) },
                 setResponseLanguage: { setResponseLanguage($0) },
+                setLocalModelRuntimeParameters: { setLocalModelRuntimeParameters($0, for: $1) },
                 refreshLocalModelCatalog: refreshLocalModelCatalog,
                 downloadLocalModel: { downloadLocalModel($0) },
                 cancelLocalModelDownload: { cancelLocalModelDownload($0) },
                 selectLocalModel: { selectLocalModel($0) },
-                runLocalModelBenchmark: { runLocalModelBenchmark($0) },
+                runLocalModelBenchmark: { runLocalModelBenchmark($0, contextSize: $1) },
                 runLocalModelReplyCheck: { runLocalModelReplyCheck($0) },
                 deleteLocalModel: { deleteLocalModel($0) }
             )
@@ -452,7 +471,7 @@ public struct SettingsView: View {
 
                     if row.benchmarkSummaryText != nil {
                         Button(KairoL10n.string("settings.models.runBenchmark")) {
-                            runLocalModelBenchmark(row)
+                            runLocalModelBenchmark(row, contextSize: LocalModelBenchmarkRunInfo.defaultContextSize)
                         }
                         .font(.caption2)
                         .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal, isCompact: true))

@@ -60,7 +60,7 @@ actor LlamaCppSession {
     private var position: Int32 = 0
     private var pendingUTF8Bytes: [CChar] = []
 
-    init(modelPath: String, contextLength: UInt32 = 4_096) throws {
+    init(modelPath: String, contextLength: UInt32 = 4_096, temperature: Double = 0.2) throws {
         llama_backend_init()
         var modelParameters = llama_model_default_params()
         #if targetEnvironment(simulator)
@@ -87,7 +87,7 @@ actor LlamaCppSession {
 
         let samplerParameters = llama_sampler_chain_default_params()
         sampler = llama_sampler_chain_init(samplerParameters)
-        llama_sampler_chain_add(sampler, llama_sampler_init_temp(0.2))
+        llama_sampler_chain_add(sampler, llama_sampler_init_temp(Float(temperature)))
         llama_sampler_chain_add(sampler, llama_sampler_init_dist(42))
     }
 
@@ -189,20 +189,23 @@ actor LlamaCppSession {
 }
 
 struct LlamaCppLocalModelRuntime: LocalModelReplyCheckRuntime, LocalModelBenchmarkEngine {
-    private let generatedTokenLimit: Int32
-
-    init(generatedTokenLimit: Int32 = 64) {
-        self.generatedTokenLimit = generatedTokenLimit
-    }
-
     func generateReply(
         model: LocalModelManifest,
         installRecord: LocalModelInstallRecord,
-        prompt: String
+        prompt: String,
+        parameters: LocalModelRuntimeParameters
     ) async throws -> LocalModelReplyCheckResult {
         let startedAt = Date()
-        let session = try LlamaCppSession(modelPath: installRecord.fileURL.path)
-        let output = try await session.generate(prompt: prompt, maxTokens: generatedTokenLimit)
+        let clampedParameters = parameters.clamped(to: model)
+        let session = try LlamaCppSession(
+            modelPath: installRecord.fileURL.path,
+            contextLength: UInt32(max(clampedParameters.contextSize, 1)),
+            temperature: clampedParameters.temperature
+        )
+        let output = try await session.generate(
+            prompt: prompt,
+            maxTokens: Int32(max(1, clampedParameters.maxOutputTokens))
+        )
         let elapsed = max(Date().timeIntervalSince(startedAt), 0.001)
 
         return LocalModelReplyCheckResult(
@@ -223,10 +226,11 @@ struct LlamaCppLocalModelRuntime: LocalModelReplyCheckRuntime, LocalModelBenchma
         model: LocalModelManifest,
         installRecord: LocalModelInstallRecord,
         prompt: String,
-        generatedTokenTarget: Int
+        generatedTokenTarget: Int,
+        contextSize: Int
     ) async throws -> LocalModelBenchmarkRunResult {
         let startedAt = Date()
-        let session = try LlamaCppSession(modelPath: installRecord.fileURL.path)
+        let session = try LlamaCppSession(modelPath: installRecord.fileURL.path, contextLength: UInt32(max(contextSize, 1)))
         let output = try await session.generate(prompt: prompt, maxTokens: Int32(generatedTokenTarget))
         let elapsed = max(Date().timeIntervalSince(startedAt), 0.001)
         let generationRate = Double(output.generatedTokens) / elapsed

@@ -58,7 +58,8 @@ public protocol LocalModelReplyCheckRuntime: Sendable {
     func generateReply(
         model: LocalModelManifest,
         installRecord: LocalModelInstallRecord,
-        prompt: String
+        prompt: String,
+        parameters: LocalModelRuntimeParameters
     ) async throws -> LocalModelReplyCheckResult
 }
 
@@ -72,8 +73,10 @@ public struct UnavailableLocalModelReplyCheckRuntime: LocalModelReplyCheckRuntim
     public func generateReply(
         model: LocalModelManifest,
         installRecord: LocalModelInstallRecord,
-        prompt: String
+        prompt: String,
+        parameters: LocalModelRuntimeParameters
     ) async throws -> LocalModelReplyCheckResult {
+        _ = parameters
         throw LocalModelReplyCheckError.runtimeUnavailable(reason)
     }
 }
@@ -105,9 +108,11 @@ public struct DeterministicLocalModelReplyCheckRuntime: LocalModelReplyCheckRunt
     public func generateReply(
         model: LocalModelManifest,
         installRecord: LocalModelInstallRecord,
-        prompt: String
+        prompt: String,
+        parameters: LocalModelRuntimeParameters
     ) async throws -> LocalModelReplyCheckResult {
-        LocalModelReplyCheckResult(
+        _ = parameters
+        return LocalModelReplyCheckResult(
             modelID: model.id,
             modelDisplayName: model.displayName,
             runtime: runtime,
@@ -143,6 +148,7 @@ public actor LocalModelReplyCheckService {
     public func runReplyCheck(
         modelID: String,
         prompt: String = "Reply with one short sentence confirming Kairo local model response.",
+        parameters: LocalModelRuntimeParameters = .defaultValue,
         minimumSafetyPolicyVersion: String = "2026.1"
     ) async throws -> LocalModelReplyCheckResult {
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: minimumSafetyPolicyVersion)
@@ -158,7 +164,8 @@ public actor LocalModelReplyCheckService {
         let result = try await runtime.generateReply(
             model: model,
             installRecord: installRecord,
-            prompt: prompt
+            prompt: prompt,
+            parameters: parameters.clamped(to: model)
         )
         if result.responseText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             throw LocalModelReplyCheckError.runtimeUnavailable("Runtime returned an empty response.")

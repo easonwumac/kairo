@@ -24,10 +24,12 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         }
 
         do {
+            let parameters = status.runtimeParametersByModelID[model.id] ?? .defaultValue
             let result = try await runtime.generateReply(
                 model: model,
                 installRecord: installRecord,
-                prompt: Self.prompt(from: request, responseLanguage: status.responseLanguage)
+                prompt: Self.prompt(from: request, responseLanguage: status.responseLanguage),
+                parameters: parameters.clamped(to: model)
             )
             let parsedResponse = LocalModelReasoningParser.parse(result.responseText)
             guard !parsedResponse.message.isEmpty else {

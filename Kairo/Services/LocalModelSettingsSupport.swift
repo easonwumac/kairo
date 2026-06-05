@@ -4,21 +4,25 @@ public struct LocalModelSettings: Codable, Equatable, Sendable {
     public var selectedModelID: String?
     public var preference: ProviderRoutePreference
     public var responseLanguage: ChatResponseLanguagePreference
+    public var runtimeParametersByModelID: [String: LocalModelRuntimeParameters]
 
     public init(
         selectedModelID: String? = nil,
         preference: ProviderRoutePreference = .automatic,
-        responseLanguage: ChatResponseLanguagePreference = .system
+        responseLanguage: ChatResponseLanguagePreference = .system,
+        runtimeParametersByModelID: [String: LocalModelRuntimeParameters] = [:]
     ) {
         self.selectedModelID = selectedModelID
         self.preference = preference
         self.responseLanguage = responseLanguage
+        self.runtimeParametersByModelID = runtimeParametersByModelID
     }
 
     private enum CodingKeys: String, CodingKey {
         case selectedModelID
         case preference
         case responseLanguage
+        case runtimeParametersByModelID
     }
 
     public init(from decoder: Decoder) throws {
@@ -29,6 +33,49 @@ public struct LocalModelSettings: Codable, Equatable, Sendable {
             ChatResponseLanguagePreference.self,
             forKey: .responseLanguage
         ) ?? .system
+        runtimeParametersByModelID = try container.decodeIfPresent(
+            [String: LocalModelRuntimeParameters].self,
+            forKey: .runtimeParametersByModelID
+        ) ?? [:]
+    }
+}
+
+public struct LocalModelRuntimeParameters: Codable, Equatable, Sendable {
+    public var contextSize: Int
+    public var maxOutputTokens: Int
+    public var temperature: Double
+
+    public init(
+        contextSize: Int = 4096,
+        maxOutputTokens: Int = 128,
+        temperature: Double = 0.2
+    ) {
+        self.contextSize = Self.clampedContextSize(contextSize)
+        self.maxOutputTokens = Self.clampedMaxOutputTokens(maxOutputTokens)
+        self.temperature = Self.clampedTemperature(temperature)
+    }
+
+    public static let defaultValue = LocalModelRuntimeParameters()
+    public static let contextSizeChoices = [1_024, 4_096, 8_192, 16_384]
+
+    public func clamped(to manifest: LocalModelManifest) -> LocalModelRuntimeParameters {
+        LocalModelRuntimeParameters(
+            contextSize: min(contextSize, manifest.contextWindow),
+            maxOutputTokens: maxOutputTokens,
+            temperature: temperature
+        )
+    }
+
+    private static func clampedContextSize(_ value: Int) -> Int {
+        max(1_024, min(value, 16_384))
+    }
+
+    private static func clampedMaxOutputTokens(_ value: Int) -> Int {
+        max(16, min(value, 512))
+    }
+
+    private static func clampedTemperature(_ value: Double) -> Double {
+        max(0, min(value, 1.5))
     }
 }
 
@@ -200,6 +247,7 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
     public var installedRecord: LocalModelInstallRecord?
     public var preference: ProviderRoutePreference
     public var responseLanguage: ChatResponseLanguagePreference
+    public var runtimeParametersByModelID: [String: LocalModelRuntimeParameters]
     public var availableModels: [LocalModelManifest]
     public var installedModels: [LocalModelInstallRecord]
 
@@ -209,6 +257,7 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
         installedRecord: LocalModelInstallRecord?,
         preference: ProviderRoutePreference,
         responseLanguage: ChatResponseLanguagePreference = .system,
+        runtimeParametersByModelID: [String: LocalModelRuntimeParameters] = [:],
         availableModels: [LocalModelManifest],
         installedModels: [LocalModelInstallRecord]
     ) {
@@ -217,6 +266,7 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
         self.installedRecord = installedRecord
         self.preference = preference
         self.responseLanguage = responseLanguage
+        self.runtimeParametersByModelID = runtimeParametersByModelID
         self.availableModels = availableModels
         self.installedModels = installedModels
     }
@@ -232,7 +282,13 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
             .map { index, model in
                 let record = installedByID[model.id]
                 let isSelected = selectedModelID == model.id && record?.status == .installed
-                return (index, LocalModelSettingsRow(model: model, installRecord: record, isSelected: isSelected))
+                let runtimeParameters = (runtimeParametersByModelID[model.id] ?? .defaultValue).clamped(to: model)
+                return (index, LocalModelSettingsRow(
+                    model: model,
+                    installRecord: record,
+                    isSelected: isSelected,
+                    runtimeParameters: runtimeParameters
+                ))
             }
             .sorted { lhs, rhs in
                 if lhs.1.primaryAction == rhs.1.primaryAction {
@@ -301,15 +357,22 @@ public struct LocalModelSettingsRow: Identifiable, Equatable, Sendable {
     public var primaryAction: LocalModelSettingsPrimaryAction
     public var manifest: LocalModelManifest
     public var installRecord: LocalModelInstallRecord?
+    public var runtimeParameters: LocalModelRuntimeParameters
     public var canDelete: Bool { installRecord != nil }
 
-    public init(model: LocalModelManifest, installRecord: LocalModelInstallRecord?, isSelected: Bool) {
+    public init(
+        model: LocalModelManifest,
+        installRecord: LocalModelInstallRecord?,
+        isSelected: Bool,
+        runtimeParameters: LocalModelRuntimeParameters = .defaultValue
+    ) {
         self.modelID = model.id
         self.displayName = model.displayName
         self.detailText = model.settingsDetailText
         self.benchmarkSummaryText = model.benchmarkSummaryText
         self.manifest = model
         self.installRecord = installRecord
+        self.runtimeParameters = runtimeParameters.clamped(to: model)
 
         if isSelected {
             self.statusText = KairoL10n.string("settings.models.status.selected")
@@ -512,6 +575,7 @@ public actor LocalModelSettingsService {
             installedRecord: installedRecord,
             preference: settings.preference,
             responseLanguage: settings.responseLanguage,
+            runtimeParametersByModelID: settings.runtimeParametersByModelID,
             availableModels: availableModels,
             installedModels: installedModels
         )
@@ -549,6 +613,20 @@ public actor LocalModelSettingsService {
         try await settingsStore.save(settings)
     }
 
+    public func setRuntimeParameters(
+        _ runtimeParameters: LocalModelRuntimeParameters,
+        for modelID: String,
+        minimumSafetyPolicyVersion: String = "2026.1"
+    ) async throws {
+        let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: minimumSafetyPolicyVersion)
+        guard let model = availableModels.first(where: { $0.id == modelID }) else {
+            throw LocalModelSelectionError.modelUnavailable(modelID)
+        }
+        var settings = await settingsStore.settings()
+        settings.runtimeParametersByModelID[modelID] = runtimeParameters.clamped(to: model)
+        try await settingsStore.save(settings)
+    }
+
     @discardableResult
     public func cleanupStaleDownloadingRecords() async throws -> [String] {
         try await installRegistry.cleanupStaleDownloadingRecords()
@@ -565,8 +643,9 @@ public actor LocalModelSettingsService {
         var settings = await settingsStore.settings()
         if settings.selectedModelID == id {
             settings.selectedModelID = nil
-            try await settingsStore.save(settings)
         }
+        settings.runtimeParametersByModelID[id] = nil
+        try await settingsStore.save(settings)
     }
 
     public func routingContext(
@@ -592,7 +671,9 @@ public actor LocalModelSettingsService {
             contextTokenEstimate: contextTokenEstimate,
             localModelInstalled: modelStatus.localModelInstalled,
             localRuntimeAvailable: localRuntimeAvailable,
-            localContextWindow: modelStatus.selectedModel?.contextWindow ?? 2048
+            localContextWindow: modelStatus.selectedModelID.flatMap {
+                modelStatus.runtimeParametersByModelID[$0]?.contextSize
+            } ?? modelStatus.selectedModel?.contextWindow ?? 2048
         )
     }
 }

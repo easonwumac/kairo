@@ -18,6 +18,9 @@ struct LocalModelsCompactView: View {
     let localModelStatusMessage: String?
     let localModelStatusMessageModelID: String?
     let localModelCatalogSourceText: String
+    let localModelBenchmarkRunInfo: LocalModelBenchmarkRunInfo?
+    @Binding var rootChromeBackRequestID: Int
+    let usesRootChromeNavigation: Bool
     let localModelStatusColor: (LocalModelSettingsPrimaryAction) -> Color
     let saveAPIKey: () -> Void
     let dryRunAPIKey: () -> Void
@@ -26,11 +29,12 @@ struct LocalModelsCompactView: View {
     let disconnectConnector: (OAuthConnectorLoginOption) -> Void
     let setLocalModelPreference: (ProviderRoutePreference) -> Void
     let setResponseLanguage: (ChatResponseLanguagePreference) -> Void
+    let setLocalModelRuntimeParameters: (LocalModelRuntimeParameters, LocalModelSettingsRow) -> Void
     let refreshLocalModelCatalog: () -> Void
     let downloadLocalModel: (LocalModelSettingsRow) -> Void
     let cancelLocalModelDownload: (LocalModelSettingsRow) -> Void
     let selectLocalModel: (LocalModelSettingsRow) -> Void
-    let runLocalModelBenchmark: (LocalModelSettingsRow) -> Void
+    let runLocalModelBenchmark: (LocalModelSettingsRow, Int) -> Void
     let runLocalModelReplyCheck: (LocalModelSettingsRow) -> Void
     let deleteLocalModel: (LocalModelSettingsRow) -> Void
 
@@ -50,7 +54,35 @@ struct LocalModelsCompactView: View {
         }
         .scrollIndicators(.visible)
         .background(KairoDesign.background.ignoresSafeArea())
+        .preference(key: RootChromePreferenceKey.self, value: rootChromeContext)
+        .onChange(of: rootChromeBackRequestID) { _, _ in
+            guard activePage != nil else { return }
+            withAnimation(.snappy(duration: 0.2)) {
+                activePage = nil
+            }
+        }
         .accessibilityIdentifier("settings.models.screen")
+    }
+
+    private var rootChromeContext: RootChromeContext {
+        guard usesRootChromeNavigation, let activePage else {
+            return .standard
+        }
+        return RootChromeContext(
+            leadingAction: .back,
+            title: chromeTitle(for: activePage)
+        )
+    }
+
+    private func chromeTitle(for page: ModelSettingsPage) -> String {
+        switch page {
+        case .addCloud, .addLocal:
+            return page.title
+        case let .cloudDetail(providerID):
+            return cloudProviderRows.first { $0.id == providerID }?.title ?? page.title
+        case let .localDetail(modelID):
+            return localModelStatus.settingsRows.first { $0.modelID == modelID }?.displayName ?? page.title
+        }
     }
 
     private var modelSettingsHome: some View {
@@ -191,7 +223,9 @@ struct LocalModelsCompactView: View {
 
     private func addPage(for page: ModelSettingsPage) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            pageBackButton
+            if !usesRootChromeNavigation {
+                pageBackButton
+            }
 
             KairoFocusCard {
                 VStack(alignment: .leading, spacing: 12) {
@@ -241,7 +275,9 @@ struct LocalModelsCompactView: View {
 
     private var unavailablePage: some View {
         VStack(alignment: .leading, spacing: 14) {
-            pageBackButton
+            if !usesRootChromeNavigation {
+                pageBackButton
+            }
             KairoFocusCard {
                 Text(KairoL10n.string("settings.models.detail.unavailable"))
                     .font(compactModelMetadataFont)
@@ -500,7 +536,9 @@ struct LocalModelsCompactView: View {
 
     private func cloudDetailPage(for row: CloudModelProviderRow) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            pageBackButton
+            if !usesRootChromeNavigation {
+                pageBackButton
+            }
 
             KairoFocusCard {
                 VStack(alignment: .leading, spacing: 12) {
@@ -747,7 +785,7 @@ struct LocalModelsCompactView: View {
         .accessibilityIdentifier("settings.models.\(row.modelID).row")
     }
 
-    private func localModelSummaryRow(_ row: LocalModelSettingsRow) -> some View {
+    private func localModelSummaryRow(_ row: LocalModelSettingsRow, showsSelectedStatus: Bool = true) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text(row.displayName)
                 .font(compactModelNameFont)
@@ -758,13 +796,15 @@ struct LocalModelsCompactView: View {
 
             Spacer(minLength: 6)
 
-            Text(row.statusText)
-                .font(compactModelStatusFont)
-                .foregroundStyle(localModelStatusColor(row.primaryAction))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(localModelStatusColor(row.primaryAction).opacity(0.11), in: Capsule())
-                .accessibilityIdentifier("settings.models.\(row.modelID).status")
+            if showsSelectedStatus || row.primaryAction != .selected {
+                Text(row.statusText)
+                    .font(compactModelStatusFont)
+                    .foregroundStyle(localModelStatusColor(row.primaryAction))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(localModelStatusColor(row.primaryAction).opacity(0.11), in: Capsule())
+                    .accessibilityIdentifier("settings.models.\(row.modelID).status")
+            }
 
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
@@ -775,11 +815,13 @@ struct LocalModelsCompactView: View {
 
     private func localDetailPage(for row: LocalModelSettingsRow) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            pageBackButton
+            if !usesRootChromeNavigation {
+                pageBackButton
+            }
 
             KairoFocusCard {
                 VStack(alignment: .leading, spacing: 12) {
-                    localModelSummaryRow(row)
+                    localModelSummaryRow(row, showsSelectedStatus: false)
 
                     if localModelDownloadProgress?.modelID == row.modelID, let progress = localModelDownloadProgress {
                         downloadProgressView(progress, row: row)
@@ -808,6 +850,10 @@ struct LocalModelsCompactView: View {
                         .foregroundStyle(.secondary.opacity(0.9))
                         .lineLimit(2)
 
+                    if row.primaryAction == .select || row.primaryAction == .selected {
+                        localModelParameterControls(for: row)
+                    }
+
                     localModelDetailActions(for: row)
                 }
             }
@@ -817,6 +863,181 @@ struct LocalModelsCompactView: View {
             insertion: .move(edge: .trailing).combined(with: .opacity),
             removal: .move(edge: .leading).combined(with: .opacity)
         ))
+    }
+
+    private func localModelParameterControls(for row: LocalModelSettingsRow) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(KairoL10n.string("settings.models.parameters.title"))
+                    .font(compactSectionHeadingFont)
+                    .foregroundStyle(KairoDesign.ink)
+
+                Spacer(minLength: 8)
+
+                Text(KairoL10n.string("settings.models.benchmark.outputFixed", Int64(LocalModelBenchmarkRunInfo.fixedOutputTokenTarget)))
+                    .font(compactModelStatusFont)
+                    .foregroundStyle(KairoDesign.muted)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(KairoDesign.softSurface.opacity(0.55), in: Capsule())
+            }
+
+            parameterPickerRow(
+                title: KairoL10n.string("settings.models.benchmark.context"),
+                accessibilityIdentifier: "settings.models.\(row.modelID).context-size"
+            ) {
+                Picker(
+                    KairoL10n.string("settings.models.benchmark.context"),
+                    selection: Binding(
+                        get: { row.runtimeParameters.contextSize },
+                        set: { updateRuntimeParameters(for: row, contextSize: $0) }
+                    )
+                ) {
+                    ForEach(availableBenchmarkContextSizes(for: row), id: \.self) { size in
+                        Text(KairoL10n.string("settings.models.benchmark.contextOption", Int64(size / 1024)))
+                            .tag(size)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            parameterPickerRow(
+                title: KairoL10n.string("settings.models.parameters.output"),
+                accessibilityIdentifier: "settings.models.\(row.modelID).max-output"
+            ) {
+                Picker(
+                    KairoL10n.string("settings.models.parameters.output"),
+                    selection: Binding(
+                        get: { row.runtimeParameters.maxOutputTokens },
+                        set: { updateRuntimeParameters(for: row, maxOutputTokens: $0) }
+                    )
+                ) {
+                    ForEach([64, 128, 256, 512], id: \.self) { tokens in
+                        Text(KairoL10n.string("settings.models.parameters.outputOption", Int64(tokens)))
+                            .tag(tokens)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            parameterSliderRow(
+                title: KairoL10n.string("settings.models.parameters.temperature"),
+                valueText: String(format: "%.1f", row.runtimeParameters.temperature),
+                accessibilityIdentifier: "settings.models.\(row.modelID).temperature"
+            ) {
+                Slider(
+                    value: Binding(
+                        get: { row.runtimeParameters.temperature },
+                        set: { updateRuntimeParameters(for: row, temperature: $0) }
+                    ),
+                    in: 0...1.5,
+                    step: 0.1
+                )
+            }
+
+            if let runInfo = localModelBenchmarkRunInfo, runInfo.modelID == row.modelID {
+                localModelBenchmarkRunInfoView(runInfo)
+            }
+        }
+        .padding(10)
+        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(KairoDesign.line, lineWidth: 1)
+        }
+        .accessibilityIdentifier("settings.models.\(row.modelID).parameters")
+    }
+
+    private func parameterPickerRow<Content: View>(
+        title: String,
+        accessibilityIdentifier: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(compactModelMetadataFont.weight(.semibold))
+                .foregroundStyle(KairoDesign.muted)
+            content()
+        }
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+
+    private func parameterSliderRow<Content: View>(
+        title: String,
+        valueText: String,
+        accessibilityIdentifier: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(title)
+                    .font(compactModelMetadataFont.weight(.semibold))
+                    .foregroundStyle(KairoDesign.muted)
+                Spacer()
+                Text(valueText)
+                    .font(compactModelStatusFont)
+                    .foregroundStyle(KairoDesign.ink)
+                    .monospacedDigit()
+            }
+            content()
+        }
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+
+    private func updateRuntimeParameters(
+        for row: LocalModelSettingsRow,
+        contextSize: Int? = nil,
+        maxOutputTokens: Int? = nil,
+        temperature: Double? = nil
+    ) {
+        let updated = LocalModelRuntimeParameters(
+            contextSize: contextSize ?? row.runtimeParameters.contextSize,
+            maxOutputTokens: maxOutputTokens ?? row.runtimeParameters.maxOutputTokens,
+            temperature: temperature ?? row.runtimeParameters.temperature
+        ).clamped(to: row.manifest)
+        setLocalModelRuntimeParameters(updated, row)
+    }
+
+    private func localModelBenchmarkRunInfoView(_ runInfo: LocalModelBenchmarkRunInfo) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            if runInfo.state == .running {
+                ProgressView()
+                    .controlSize(.small)
+                    .accessibilityHidden(true)
+            } else {
+                Image(systemName: runInfo.state.systemImage)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(runInfo.state.tint)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(runInfo.state.title)
+                    .font(compactModelMetadataFont.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                Text(KairoL10n.string(
+                    "settings.models.benchmark.liveDetail",
+                    Int64(runInfo.contextSize),
+                    Int64(runInfo.outputTokenTarget)
+                ))
+                    .font(compactModelMetadataFont)
+                    .foregroundStyle(KairoDesign.muted)
+                if let summary = runInfo.summary {
+                    Text(summary)
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(KairoDesign.muted)
+                        .lineLimit(2)
+                }
+            }
+        }
+        .accessibilityIdentifier("settings.models.\(runInfo.modelID).benchmark-run-info")
+    }
+
+    private func selectedBenchmarkContext(for row: LocalModelSettingsRow) -> Int {
+        row.runtimeParameters.contextSize
+    }
+
+    private func availableBenchmarkContextSizes(for row: LocalModelSettingsRow) -> [Int] {
+        LocalModelBenchmarkRunInfo.contextSizeChoices.filter { $0 <= row.manifest.contextWindow }
     }
 
     @ViewBuilder
@@ -842,13 +1063,6 @@ struct LocalModelsCompactView: View {
                 ) {
                     selectLocalModel(row)
                 }
-            } else if row.primaryAction == .selected {
-                Label(row.primaryAction.title, systemImage: "checkmark.circle.fill")
-                    .font(compactButtonLabelFont)
-                    .foregroundStyle(.green)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .accessibilityIdentifier("settings.models.\(row.modelID).select")
             }
 
             if row.primaryAction == .select || row.primaryAction == .selected {
@@ -859,7 +1073,7 @@ struct LocalModelsCompactView: View {
                         accessibilityIdentifier: "settings.models.\(row.modelID).benchmark-run",
                         tint: .blue
                     ) {
-                        runLocalModelBenchmark(row)
+                        runLocalModelBenchmark(row, selectedBenchmarkContext(for: row))
                     }
                 }
 
@@ -927,7 +1141,7 @@ struct LocalModelsCompactView: View {
                         accessibilityIdentifier: "settings.models.\(row.modelID).benchmark-run",
                         tint: .blue
                     ) {
-                        runLocalModelBenchmark(row)
+                        runLocalModelBenchmark(row, selectedBenchmarkContext(for: row))
                     }
                 }
 
@@ -1246,6 +1460,57 @@ private enum ModelSettingsPage: Equatable {
             return "settings.models.cloud.detail.page"
         case .localDetail:
             return "settings.models.local.detail.page"
+        }
+    }
+}
+
+struct LocalModelBenchmarkRunInfo: Equatable {
+    static let contextSizeChoices = LocalModelRuntimeParameters.contextSizeChoices
+    static let defaultContextSize = 4_096
+    static let fixedOutputTokenTarget = 128
+
+    var modelID: String
+    var contextSize: Int
+    var outputTokenTarget: Int
+    var state: State
+    var summary: String?
+
+    enum State: Equatable {
+        case running
+        case finished
+        case failed
+
+        var title: String {
+            switch self {
+            case .running:
+                return KairoL10n.string("settings.models.benchmark.running")
+            case .finished:
+                return KairoL10n.string("settings.models.benchmark.finished")
+            case .failed:
+                return KairoL10n.string("settings.models.benchmark.failed")
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .running:
+                return "speedometer"
+            case .finished:
+                return "checkmark.circle.fill"
+            case .failed:
+                return "exclamationmark.triangle.fill"
+            }
+        }
+
+        var tint: Color {
+            switch self {
+            case .running:
+                return KairoDesign.blue
+            case .finished:
+                return KairoDesign.green
+            case .failed:
+                return KairoDesign.red
+            }
         }
     }
 }

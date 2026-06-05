@@ -161,8 +161,10 @@ public struct LocalModelExternalCommandRuntime: LocalModelReplyCheckRuntime, Loc
     public func generateReply(
         model: LocalModelManifest,
         installRecord: LocalModelInstallRecord,
-        prompt: String
+        prompt: String,
+        parameters: LocalModelRuntimeParameters
     ) async throws -> LocalModelReplyCheckResult {
+        _ = parameters
         do {
             let output = try await run(model: model, installRecord: installRecord, prompt: prompt)
             return LocalModelReplyCheckResult(
@@ -186,7 +188,8 @@ public struct LocalModelExternalCommandRuntime: LocalModelReplyCheckRuntime, Loc
         model: LocalModelManifest,
         installRecord: LocalModelInstallRecord,
         prompt: String,
-        generatedTokenTarget: Int
+        generatedTokenTarget: Int,
+        contextSize: Int
     ) async throws -> LocalModelBenchmarkRunResult {
         do {
             let output = try await run(

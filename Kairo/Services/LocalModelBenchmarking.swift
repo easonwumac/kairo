@@ -85,7 +85,8 @@ public protocol LocalModelBenchmarkEngine: Sendable {
         model: LocalModelManifest,
         installRecord: LocalModelInstallRecord,
         prompt: String,
-        generatedTokenTarget: Int
+        generatedTokenTarget: Int,
+        contextSize: Int
     ) async throws -> LocalModelBenchmarkRunResult
 }
 
@@ -100,7 +101,8 @@ public struct UnavailableLocalModelBenchmarkEngine: LocalModelBenchmarkEngine {
         model: LocalModelManifest,
         installRecord: LocalModelInstallRecord,
         prompt: String,
-        generatedTokenTarget: Int
+        generatedTokenTarget: Int,
+        contextSize: Int
     ) async throws -> LocalModelBenchmarkRunResult {
         throw LocalModelBenchmarkError.runtimeUnavailable(reason)
     }
@@ -137,7 +139,8 @@ public struct DeterministicLocalModelBenchmarkEngine: LocalModelBenchmarkEngine 
         model: LocalModelManifest,
         installRecord: LocalModelInstallRecord,
         prompt: String,
-        generatedTokenTarget: Int
+        generatedTokenTarget: Int,
+        contextSize: Int
     ) async throws -> LocalModelBenchmarkRunResult {
         LocalModelBenchmarkRunResult(
             id: "\(model.id)-benchmark-\(Int(measuredAt.timeIntervalSince1970))",
@@ -265,6 +268,7 @@ public actor LocalModelBenchmarkService {
         modelID: String,
         prompt: String = "Benchmark Kairo local drafting.",
         generatedTokenTarget: Int = 128,
+        contextSize: Int = 4096,
         minimumSafetyPolicyVersion: String = "2026.1"
     ) async throws -> LocalModelBenchmarkRunResult {
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: minimumSafetyPolicyVersion)
@@ -281,7 +285,8 @@ public actor LocalModelBenchmarkService {
             model: model,
             installRecord: installRecord,
             prompt: prompt,
-            generatedTokenTarget: generatedTokenTarget
+            generatedTokenTarget: generatedTokenTarget,
+            contextSize: contextSize
         )
         try await resultStore.upsert(result)
         return result
