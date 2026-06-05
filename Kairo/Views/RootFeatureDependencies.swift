@@ -9,13 +9,26 @@ public struct RootFeatureDependencies {
     }
 }
 
-public extension KairoEnvironment {
-    var rootFeatureDependencies: RootFeatureDependencies {
+public struct RootFeatureDependencyFactory: Sendable {
+    public init() {}
+
+    public func makeDependencies(
+        oauthConnectorCallbackStore: FileBackedOAuthConnectorCallbackStore?,
+        credentialStore: any CredentialStore,
+        oauthConnectorRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
+        oauthClientConfigurations: [String: OAuthConnectorClientConfiguration] = [:],
+        oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
+        openURLHandler: (any KairoOpenURLHandling)? = nil
+    ) -> RootFeatureDependencies {
+        if let openURLHandler {
+            return RootFeatureDependencies(openURLHandler: openURLHandler)
+        }
+
         guard let oauthConnectorCallbackStore else {
             return RootFeatureDependencies()
         }
 
-        let oauthLoginService = OAuthConnectorLoginCenter(
+        let oauthLoginService = oauthLoginService ?? OAuthConnectorLoginCenter(
             registry: oauthConnectorRegistry,
             credentialStore: credentialStore,
             clientConfigurations: oauthClientConfigurations,
@@ -23,6 +36,17 @@ public extension KairoEnvironment {
         )
         return RootFeatureDependencies(
             openURLHandler: OAuthConnectorCallbackOpenURLHandler(loginService: oauthLoginService)
+        )
+    }
+}
+
+public extension KairoEnvironment {
+    var rootFeatureDependencies: RootFeatureDependencies {
+        RootFeatureDependencyFactory().makeDependencies(
+            oauthConnectorCallbackStore: oauthConnectorCallbackStore,
+            credentialStore: credentialStore,
+            oauthConnectorRegistry: oauthConnectorRegistry,
+            oauthClientConfigurations: oauthClientConfigurations
         )
     }
 }

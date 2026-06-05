@@ -477,6 +477,25 @@ final class KairoBackendAPITests: XCTestCase {
         XCTAssertEqual(preview.authorizationCodeLength, "sample-code".count)
     }
 
+    func testRootFeatureDependencyFactoryUsesInjectedOAuthLoginServiceForCallbacks() async throws {
+        let callbackStore = try await FileBackedOAuthConnectorCallbackStore(
+            fileURL: temporaryBackendTestFileURL(named: "factory-oauth-callback-previews.json")
+        )
+        let loginService = CapturingOAuthLoginService()
+        let dependencies = RootFeatureDependencyFactory().makeDependencies(
+            oauthConnectorCallbackStore: callbackStore,
+            credentialStore: InMemoryCredentialStore(),
+            oauthLoginService: loginService
+        )
+
+        let callbackURL = URL(string: "kairo://oauth/custom-mail/callback?code=sample-code&state=state-123")!
+        let openURLHandler = try XCTUnwrap(dependencies.openURLHandler)
+        try await openURLHandler.handle(callbackURL)
+
+        let handledURLs = await loginService.handledCallbackURLs()
+        XCTAssertEqual(handledURLs, [callbackURL])
+    }
+
     private func backendTestOAuthIntegration(key: String, displayName: String, providerKey: String) -> AppIntegration {
         AppIntegration(
             key: key,
@@ -496,6 +515,48 @@ final class KairoBackendAPITests: XCTestCase {
             status: .requiresBackend
         )
     }
+}
+
+private actor CapturingOAuthLoginService: OAuthConnectorLoginServicing {
+    private var callbackURLs: [URL] = []
+
+    func handledCallbackURLs() -> [URL] {
+        callbackURLs
+    }
+
+    func loginOptions() async throws -> [OAuthConnectorLoginOption] {
+        []
+    }
+
+    func makeAuthorizationSession(
+        for integrationKey: String,
+        state: String,
+        codeVerifier: String
+    ) async throws -> OAuthConnectorAuthorizationSession {
+        throw OAuthConnectorLoginCenterError.missingIntegration(integrationKey)
+    }
+
+    func previewCallback(_ callbackURL: URL) async throws -> OAuthConnectorCallbackPreview {
+        callbackURLs.append(callbackURL)
+        return OAuthConnectorCallbackPreview(
+            providerKey: "captured",
+            integrationKey: "captured",
+            state: nil,
+            authorizationCodeLength: 0,
+            receivedAt: Date(timeIntervalSince1970: 0),
+            requiresBackendTokenExchange: true
+        )
+    }
+
+    func exchangeCallback(
+        _ callbackURL: URL,
+        expectedState: String,
+        codeVerifier: String?
+    ) async throws -> OAuthTokenSet {
+        throw OAuthConnectorLoginCenterError.missingIntegration(callbackURL.absoluteString)
+    }
+
+    func disconnect(providerKey: String) async throws {}
 }
 
 private struct FixedShortcutDemoRecipeRunner: ShortcutDemoRecipeRunnerProtocol {
