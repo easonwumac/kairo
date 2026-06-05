@@ -10,14 +10,10 @@ public struct DefaultAppIntegrationActionDrafter: AppIntegrationActionDrafting {
 
     public init(
         actionMapper: any AppIntegrationActionMapping = DefaultAppIntegrationActionMapper(),
-        parser: (any AgentToolInvocationActionParsing)? = nil
+        parser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser()
     ) {
         self.actionMapper = actionMapper
-        self.parser = parser ?? AgentToolInvocationPlanner(
-            integrationRegistry: IntegrationRegistry(integrations: []),
-            appIntegrationSkillCatalog: AppIntegrationSkillCatalog(skills: []),
-            appIntegrationActionMapper: NoOpAppIntegrationActionMapper()
-        )
+        self.parser = parser
     }
 
     public func draftAction(for skill: AppIntegrationSkill, inputText: String) -> AgentAction? {

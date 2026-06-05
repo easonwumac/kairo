@@ -11,6 +11,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
     public var integrationRegistry: any AppIntegrationRegistryProviding
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var appIntegrationActionMapper: any AppIntegrationActionMapping
+    public var appIntegrationActionParser: any AgentToolInvocationActionParsing
     public var toolCatalog: any BuiltInPhoneToolCatalogProviding
     public var safetyPolicyEngine: SafetyPolicyEngine
 
@@ -18,12 +19,14 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
         integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         appIntegrationActionMapper: any AppIntegrationActionMapping = DefaultAppIntegrationActionMapper(),
+        appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
     ) {
         self.integrationRegistry = integrationRegistry
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.appIntegrationActionMapper = appIntegrationActionMapper
+        self.appIntegrationActionParser = appIntegrationActionParser
         self.toolCatalog = toolCatalog
         self.safetyPolicyEngine = safetyPolicyEngine
     }
@@ -37,6 +40,7 @@ public struct DefaultAgentToolInvocationPlannerProvider: AgentToolInvocationPlan
             integrationRegistry: integrationRegistry,
             appIntegrationSkillCatalog: appIntegrationSkillCatalog,
             appIntegrationActionMapper: appIntegrationActionMapper,
+            appIntegrationActionParser: appIntegrationActionParser,
             toolCatalog: toolCatalog,
             safetyPolicyEngine: safetyPolicyEngine
         ).plan(for: request)

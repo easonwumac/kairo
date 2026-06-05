@@ -5,6 +5,7 @@ public struct AgentToolInvocationPlanner: Sendable {
     public var integrationRegistry: any AppIntegrationRegistryProviding
     public var appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding
     public var appIntegrationActionMapper: any AppIntegrationActionMapping
+    public var appIntegrationActionParser: any AgentToolInvocationActionParsing
     public var candidateFilter: any AgentToolCandidateFiltering
     public var safetyPolicyEngine: SafetyPolicyEngine
 
@@ -13,6 +14,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         integrationRegistry: any AppIntegrationRegistryProviding = IntegrationRegistry(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         appIntegrationActionMapper: any AppIntegrationActionMapping = DefaultAppIntegrationActionMapper(),
+        appIntegrationActionParser: any AgentToolInvocationActionParsing = DefaultAgentToolInvocationActionParser(),
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         candidateFilter: (any AgentToolCandidateFiltering)? = nil,
         safetyPolicyEngine: SafetyPolicyEngine = SafetyPolicyEngine()
@@ -21,6 +23,7 @@ public struct AgentToolInvocationPlanner: Sendable {
         self.integrationRegistry = integrationRegistry
         self.appIntegrationSkillCatalog = appIntegrationSkillCatalog
         self.appIntegrationActionMapper = appIntegrationActionMapper
+        self.appIntegrationActionParser = appIntegrationActionParser
         self.candidateFilter = candidateFilter ?? PhoneToolCandidateFilter(
             actionGate: BuiltInPhoneToolActionGate(toolCatalog: toolCatalog)
         )

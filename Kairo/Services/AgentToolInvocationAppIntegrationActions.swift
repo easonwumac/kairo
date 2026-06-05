@@ -1,21 +1,5 @@
 import Foundation
 
-public protocol AgentToolInvocationActionParsing: Sendable {
-    func isEmailDraftRequest(_ normalizedText: String) -> Bool
-    func isMapDirectionsRequest(_ normalizedText: String) -> Bool
-    func isMessageHandoffRequest(_ normalizedText: String) -> Bool
-    func isPhoneCallHandoffRequest(_ normalizedText: String) -> Bool
-    func isWebSearchHandoffRequest(_ normalizedText: String) -> Bool
-    func isContactWriteRequest(_ normalizedText: String) -> Bool
-    func emailDraft(from userText: String) -> EmailDraft
-    func mapDirectionsDraft(from userText: String, normalizedText: String) -> MapDirectionsDraft
-    func messageDraft(from userText: String) -> MessageDraft
-    func phoneCallDraft(from userText: String) -> PhoneCallDraft
-    func webSearchDraft(from userText: String) -> WebSearchDraft
-    func isPhoneToken(_ value: String) -> Bool
-    func normalize(_ value: String) -> String
-}
-
 public protocol AppIntegrationActionMapping: Sendable {
     func visibleHandoffAction(
         for skill: AppIntegrationSkill,
@@ -120,5 +104,3 @@ public struct NoOpAppIntegrationActionMapper: AppIntegrationActionMapping {
         nil
     }
 }
-
-extension AgentToolInvocationPlanner: AgentToolInvocationActionParsing {}

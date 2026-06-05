@@ -94,7 +94,7 @@ extension AgentToolInvocationPlanner {
             for: skill,
             userText: userText,
             normalizedText: normalizedText,
-            parser: self
+            parser: appIntegrationActionParser
         )
 
         return AgentToolInvocationCandidate(

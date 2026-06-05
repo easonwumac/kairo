@@ -147,6 +147,31 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.proposedActions, [injectedAction])
     }
 
+    func testAgentToolInvocationPlannerUsesInjectedAppIntegrationActionParser() throws {
+        let catalog = AppIntegrationSkillCatalog(skills: [
+            try XCTUnwrap(AppIntegrationSkillCatalog().skill(id: .appleMailHandoff))
+        ])
+        let expectedDraft = EmailDraft(
+            to: ["parser@example.com"],
+            subject: "Parser Injected",
+            body: "Built by parser injection."
+        )
+        let planner = AgentToolInvocationPlanner(
+            integrationRegistry: IntegrationRegistry(integrations: []),
+            appIntegrationSkillCatalog: catalog,
+            appIntegrationActionParser: FixedAppIntegrationActionParser(emailDraft: expectedDraft)
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(
+            userText: "Compose email to ignored@example.com"
+        ))
+        let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == AppIntegrationSkillID.appleMailHandoff.rawValue })
+        let action = try XCTUnwrap(candidate.action)
+
+        XCTAssertEqual(action.kind, .composeEmailDraft)
+        XCTAssertEqual(action.payload, .email(expectedDraft))
+    }
+
     func testAgentToolInvocationPlannerMapsURLHandoffCatalogSkillIDWithoutExecutableAction() throws {
         let planner = AgentToolInvocationPlanner(integrationRegistry: IntegrationRegistry(integrations: []))
 
@@ -512,6 +537,34 @@ private struct FixedAppIntegrationActionMapper: AppIntegrationActionMapping {
         parser: any AgentToolInvocationActionParsing
     ) -> AgentAction? {
         action
+    }
+}
+
+private struct FixedAppIntegrationActionParser: AgentToolInvocationActionParsing {
+    var emailDraft: EmailDraft
+
+    func isEmailDraftRequest(_ normalizedText: String) -> Bool { true }
+    func isMapDirectionsRequest(_ normalizedText: String) -> Bool { false }
+    func isMessageHandoffRequest(_ normalizedText: String) -> Bool { false }
+    func isPhoneCallHandoffRequest(_ normalizedText: String) -> Bool { false }
+    func isWebSearchHandoffRequest(_ normalizedText: String) -> Bool { false }
+    func isContactWriteRequest(_ normalizedText: String) -> Bool { false }
+    func emailDraft(from userText: String) -> EmailDraft { emailDraft }
+    func mapDirectionsDraft(from userText: String, normalizedText: String) -> MapDirectionsDraft {
+        MapDirectionsDraft(destinationQuery: "Parser destination", mode: .driving)
+    }
+    func messageDraft(from userText: String) -> MessageDraft {
+        MessageDraft(recipients: [], body: "Parser message")
+    }
+    func phoneCallDraft(from userText: String) -> PhoneCallDraft {
+        PhoneCallDraft(phoneNumber: "5550100", label: nil, notes: nil)
+    }
+    func webSearchDraft(from userText: String) -> WebSearchDraft {
+        WebSearchDraft(query: "Parser query")
+    }
+    func isPhoneToken(_ value: String) -> Bool { true }
+    func normalize(_ value: String) -> String {
+        value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
