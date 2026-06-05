@@ -351,4 +351,30 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
         XCTAssertFalse(plan.candidates.contains { $0.skillID == "homekit-desk-lamp" })
         XCTAssertTrue(plan.proposedActions.isEmpty)
     }
+
+    func testAgentToolInvocationPlannerBlocksActionCandidatesWhenCatalogToolIsUnavailable() throws {
+        var calendarTool = try XCTUnwrap(BuiltInPhoneToolCatalog().tool(id: .calendarWrite))
+        calendarTool.availabilityStatus = .unsupported
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: .default,
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [calendarTool])
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "建立行程：週五 10:00 Kairo review"))
+
+        XCTAssertFalse(plan.candidates.contains { $0.id == "action-create-calendar-event" })
+        XCTAssertTrue(plan.proposedActions.isEmpty)
+    }
+
+    func testAgentToolInvocationPlannerFailsClosedWhenActionCandidateHasNoCatalogTool() {
+        let planner = AgentToolInvocationPlanner(
+            skillCatalog: .default,
+            toolCatalog: BuiltInPhoneToolCatalog(tools: [])
+        )
+
+        let plan = planner.plan(for: AgentToolInvocationRequest(userText: "通知我五分鐘後喝水"))
+
+        XCTAssertFalse(plan.candidates.contains { $0.id == "action-send-notification" })
+        XCTAssertTrue(plan.proposedActions.isEmpty)
+    }
 }

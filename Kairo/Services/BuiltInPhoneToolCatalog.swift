@@ -4,6 +4,20 @@ public protocol BuiltInPhoneToolCatalogProviding: Sendable {
     var tools: [BuiltInPhoneToolDefinition] { get }
 }
 
+public extension BuiltInPhoneToolCatalogProviding {
+    func tool(for actionKind: AgentActionKind) -> BuiltInPhoneToolDefinition? {
+        tools.first { $0.sourceBinding.agentActionKinds.contains(actionKind) }
+    }
+
+    func tool(for shortcutNodeKind: ShortcutNodeKind) -> BuiltInPhoneToolDefinition? {
+        tools.first { $0.sourceBinding.shortcutNodeKinds.contains(shortcutNodeKind) }
+    }
+
+    func tool(for recipeStepKind: KairoRecipeStepKind) -> BuiltInPhoneToolDefinition? {
+        tools.first { $0.sourceBinding.recipeStepKinds.contains(recipeStepKind) }
+    }
+}
+
 public enum BuiltInPhoneToolID: String, Codable, CaseIterable, Sendable, Identifiable {
     case memorySave = "memory.save"
     case memorySearch = "memory.search"
@@ -202,18 +216,6 @@ public struct BuiltInPhoneToolCatalog: BuiltInPhoneToolCatalogProviding {
 
     public func tool(id: BuiltInPhoneToolID) -> BuiltInPhoneToolDefinition? {
         tools.first { $0.id == id }
-    }
-
-    public func tool(for actionKind: AgentActionKind) -> BuiltInPhoneToolDefinition? {
-        tools.first { $0.sourceBinding.agentActionKinds.contains(actionKind) }
-    }
-
-    public func tool(for shortcutNodeKind: ShortcutNodeKind) -> BuiltInPhoneToolDefinition? {
-        tools.first { $0.sourceBinding.shortcutNodeKinds.contains(shortcutNodeKind) }
-    }
-
-    public func tool(for recipeStepKind: KairoRecipeStepKind) -> BuiltInPhoneToolDefinition? {
-        tools.first { $0.sourceBinding.recipeStepKinds.contains(recipeStepKind) }
     }
 
     public var executableSuggestionTools: [BuiltInPhoneToolDefinition] {
