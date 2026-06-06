@@ -54,6 +54,23 @@ struct LocalModelsCompactView: View {
         }
         .scrollIndicators(.visible)
         .background(KairoDesign.background.ignoresSafeArea())
+        .overlay(alignment: .top) {
+            if let defaultModelNotice {
+                defaultModelNoticeView(defaultModelNotice)
+                    .padding(.horizontal, 16)
+                    .padding(.top, topPadding)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .zIndex(10)
+            }
+        }
+        .task(id: defaultModelNotice) {
+            guard let notice = defaultModelNotice else { return }
+            try? await Task.sleep(for: .seconds(2.2))
+            guard !Task.isCancelled, defaultModelNotice == notice else { return }
+            withAnimation(.easeOut(duration: 0.35)) {
+                defaultModelNotice = nil
+            }
+        }
         .preference(key: RootChromePreferenceKey.self, value: rootChromeContext)
         .onChange(of: rootChromeBackRequestID) { _, _ in
             popPage()
@@ -101,11 +118,6 @@ struct LocalModelsCompactView: View {
 
     private var modelSettingsHome: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if let defaultModelNotice {
-                defaultModelNoticeView(defaultModelNotice)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
             answerRouteCard
 
             cloudModelsSection
@@ -464,12 +476,17 @@ struct LocalModelsCompactView: View {
     private func defaultModelNoticeView(_ message: String) -> some View {
         Label(message, systemImage: "info.circle.fill")
             .font(compactModelMetadataFont.weight(.semibold))
-            .foregroundStyle(KairoDesign.blue)
+            .foregroundStyle(KairoDesign.ink)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(KairoDesign.blue.opacity(0.10), in: Capsule())
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(KairoDesign.blue.opacity(0.22), lineWidth: 1)
+            }
+            .shadow(color: KairoDesign.shadow.opacity(0.18), radius: 18, x: 0, y: 8)
             .accessibilityIdentifier("settings.models.default.empty-notice")
     }
 
