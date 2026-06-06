@@ -1743,6 +1743,58 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertTrue(snapshot.modelSummaries.isEmpty)
     }
 
+    func testLocalModelPerformanceSnapshotFiltersOverviewByModel() {
+        let snapshot = LocalModelPerformanceSnapshot(
+            totalRunCount: 3,
+            averagePromptTokensPerSecond: 100,
+            averageGenerationTokensPerSecond: 20,
+            averageFirstTokenLatencyMS: 800,
+            peakMemoryMB: 1024,
+            kvCacheHitRate: 0.25,
+            prefillTokenCount: 300,
+            cachedTokenCount: 75,
+            cacheUsedBytes: 256,
+            cacheCapacityBytes: LocalModelCacheSettings.defaultCapacityBytes,
+            isCacheEnabled: true,
+            modelSummaries: [
+                LocalModelPerformanceModelSummary(
+                    modelID: "qwen",
+                    modelDisplayName: "Qwen",
+                    runCount: 2,
+                    averagePromptTokensPerSecond: 90,
+                    averageGenerationTokensPerSecond: 18,
+                    averageFirstTokenLatencyMS: 700,
+                    peakMemoryMB: 900,
+                    kvCacheHitRate: 0.2,
+                    prefillTokenCount: 200,
+                    cachedTokenCount: 40
+                ),
+                LocalModelPerformanceModelSummary(
+                    modelID: "gemma",
+                    modelDisplayName: "Gemma",
+                    runCount: 1,
+                    averagePromptTokensPerSecond: 120,
+                    averageGenerationTokensPerSecond: 24,
+                    averageFirstTokenLatencyMS: 900,
+                    peakMemoryMB: 1100,
+                    kvCacheHitRate: 0.3,
+                    prefillTokenCount: 100,
+                    cachedTokenCount: 35
+                )
+            ]
+        )
+
+        let filtered = snapshot.filtered(to: "gemma")
+
+        XCTAssertEqual(filtered.totalRunCount, 1)
+        XCTAssertEqual(filtered.averagePromptTokensPerSecond, 120)
+        XCTAssertEqual(filtered.averageGenerationTokensPerSecond, 24)
+        XCTAssertEqual(filtered.prefillTokenCount, 100)
+        XCTAssertEqual(filtered.cachedTokenCount, 35)
+        XCTAssertEqual(filtered.modelSummaries.map(\.modelID), ["gemma"])
+        XCTAssertEqual(filtered.cacheCapacityBytes, LocalModelCacheSettings.defaultCapacityBytes)
+    }
+
     func testLocalModelBenchmarkServiceSurfacesRuntimeUnavailableReason() async throws {
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
         let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")

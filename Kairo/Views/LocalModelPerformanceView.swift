@@ -5,12 +5,18 @@ struct LocalModelPerformanceView: View {
     let benchmarkService: LocalModelBenchmarkService?
     let settingsService: LocalModelSettingsService?
     @State private var snapshot = LocalModelPerformanceSnapshot(totalRunCount: 0)
+    @State private var selectedModelID: String?
     @State private var statusMessage: String?
+
+    private var displayedSnapshot: LocalModelPerformanceSnapshot {
+        snapshot.filtered(to: selectedModelID)
+    }
 
     var body: some View {
         GeometryReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
+                    modelScopePicker
                     overviewCard
 
                     if let statusMessage {
@@ -22,9 +28,7 @@ struct LocalModelPerformanceView: View {
 
                     if benchmarkService == nil {
                         emptyState(KairoL10n.string("performance.local.unavailable"))
-                    } else if snapshot.totalRunCount == 0 {
-                        emptyState(KairoL10n.string("performance.local.empty"))
-                    } else {
+                    } else if displayedSnapshot.totalRunCount > 0 {
                         modelBreakdown
                     }
                 }
@@ -44,25 +48,25 @@ struct LocalModelPerformanceView: View {
     private var overviewCard: some View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text(KairoL10n.string("performance.local.overview"))
+                Text(overviewTitle)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    metricTile(KairoL10n.string("performance.local.prefillTokens"), "\(snapshot.prefillTokenCount)")
-                    metricTile(KairoL10n.string("performance.local.cachedTokens"), "\(snapshot.cachedTokenCount)")
-                    metricTile(KairoL10n.string("performance.local.cacheEfficiency"), formattedPercent(snapshot.kvCacheHitRate))
-                    metricTile(KairoL10n.string("performance.local.pp"), formattedRate(snapshot.averagePromptTokensPerSecond))
-                    metricTile(KairoL10n.string("performance.local.tk"), formattedRate(snapshot.averageGenerationTokensPerSecond))
-                    metricTile(KairoL10n.string("performance.local.cacheStorage"), formattedStorage(snapshot.cacheUsedBytes, capacity: snapshot.cacheCapacityBytes))
-                    metricTile(KairoL10n.string("performance.local.firstToken"), formattedLatency(snapshot.averageFirstTokenLatencyMS))
-                    metricTile(KairoL10n.string("performance.local.peakMemory"), formattedMemory(snapshot.peakMemoryMB))
+                    metricTile(KairoL10n.string("performance.local.prefillTokens"), "\(displayedSnapshot.prefillTokenCount)")
+                    metricTile(KairoL10n.string("performance.local.cachedTokens"), "\(displayedSnapshot.cachedTokenCount)")
+                    metricTile(KairoL10n.string("performance.local.cacheEfficiency"), formattedPercent(displayedSnapshot.kvCacheHitRate))
+                    metricTile(KairoL10n.string("performance.local.pp"), formattedRate(displayedSnapshot.averagePromptTokensPerSecond))
+                    metricTile(KairoL10n.string("performance.local.tk"), formattedRate(displayedSnapshot.averageGenerationTokensPerSecond))
+                    metricTile(KairoL10n.string("performance.local.cacheStorage"), formattedStorage(displayedSnapshot.cacheUsedBytes, capacity: displayedSnapshot.cacheCapacityBytes))
+                    metricTile(KairoL10n.string("performance.local.firstToken"), formattedLatency(displayedSnapshot.averageFirstTokenLatencyMS))
+                    metricTile(KairoL10n.string("performance.local.peakMemory"), formattedMemory(displayedSnapshot.peakMemoryMB))
                 }
 
                 HStack(spacing: 8) {
                     compactMetric(
                         KairoL10n.string("performance.local.cacheState"),
-                        snapshot.isCacheEnabled
+                        displayedSnapshot.isCacheEnabled
                             ? KairoL10n.string("performance.local.cacheEnabled")
                             : KairoL10n.string("performance.local.cacheDisabled")
                     )
@@ -74,12 +78,46 @@ struct LocalModelPerformanceView: View {
                             .font(.caption.weight(.semibold))
                     }
                     .buttonStyle(.bordered)
-                    .disabled(snapshot.cacheUsedBytes == 0)
+                    .disabled(displayedSnapshot.cacheUsedBytes == 0)
                     .accessibilityIdentifier("performance.local.clearCache")
                 }
             }
         }
         .accessibilityIdentifier("performance.local.overview")
+    }
+
+    @ViewBuilder
+    private var modelScopePicker: some View {
+        if !snapshot.modelSummaries.isEmpty {
+            Picker(KairoL10n.string("performance.local.scope"), selection: Binding(
+                get: { selectedModelID ?? "all" },
+                set: { selectedModelID = $0 == "all" ? nil : $0 }
+            )) {
+                Text(KairoL10n.string("performance.local.allModels"))
+                    .tag("all")
+                ForEach(snapshot.modelSummaries) { summary in
+                    Text(summary.modelDisplayName)
+                        .tag(summary.modelID)
+                }
+            }
+            .pickerStyle(.menu)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(KairoDesign.line, lineWidth: 1)
+            }
+            .accessibilityIdentifier("performance.local.scope")
+        }
+    }
+
+    private var overviewTitle: String {
+        guard let selectedModelID,
+              let summary = snapshot.modelSummaries.first(where: { $0.modelID == selectedModelID }) else {
+            return KairoL10n.string("performance.local.overview")
+        }
+        return summary.modelDisplayName
     }
 
     private var modelBreakdown: some View {
@@ -89,7 +127,7 @@ struct LocalModelPerformanceView: View {
                 .foregroundStyle(.secondary)
 
             KairoGroupedSurface {
-                ForEach(snapshot.modelSummaries) { summary in
+                ForEach(displayedSnapshot.modelSummaries) { summary in
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(alignment: .firstTextBaseline) {
                             Text(summary.modelDisplayName)
@@ -117,7 +155,7 @@ struct LocalModelPerformanceView: View {
                     .padding(.vertical, 10)
                     .accessibilityIdentifier("performance.local.model.\(summary.modelID)")
 
-                    if summary.id != snapshot.modelSummaries.last?.id {
+                    if summary.id != displayedSnapshot.modelSummaries.last?.id {
                         Divider()
                     }
                 }

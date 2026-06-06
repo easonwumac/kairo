@@ -174,6 +174,33 @@ public struct LocalModelPerformanceSnapshot: Equatable, Sendable {
         self.isCacheEnabled = isCacheEnabled
         self.modelSummaries = modelSummaries
     }
+
+    public func filtered(to modelID: String?) -> LocalModelPerformanceSnapshot {
+        guard let modelID else { return self }
+        guard let summary = modelSummaries.first(where: { $0.modelID == modelID }) else {
+            return LocalModelPerformanceSnapshot(
+                totalRunCount: 0,
+                cacheUsedBytes: cacheUsedBytes,
+                cacheCapacityBytes: cacheCapacityBytes,
+                isCacheEnabled: isCacheEnabled
+            )
+        }
+
+        return LocalModelPerformanceSnapshot(
+            totalRunCount: summary.runCount,
+            averagePromptTokensPerSecond: summary.averagePromptTokensPerSecond,
+            averageGenerationTokensPerSecond: summary.averageGenerationTokensPerSecond,
+            averageFirstTokenLatencyMS: summary.averageFirstTokenLatencyMS,
+            peakMemoryMB: summary.peakMemoryMB,
+            kvCacheHitRate: summary.kvCacheHitRate,
+            prefillTokenCount: summary.prefillTokenCount,
+            cachedTokenCount: summary.cachedTokenCount,
+            cacheUsedBytes: cacheUsedBytes,
+            cacheCapacityBytes: cacheCapacityBytes,
+            isCacheEnabled: isCacheEnabled,
+            modelSummaries: [summary]
+        )
+    }
 }
 
 public protocol LocalModelBenchmarkEngine: Sendable {

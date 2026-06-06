@@ -1006,7 +1006,6 @@
 "localModel.benchmark.metric.firstToken" = "TTFT %@";
 "localModel.benchmark.metric.peakMemory" = "%@ peak";
 "performance.local.unavailable" = "Local performance metrics are unavailable.";
-"performance.local.empty" = "Run a local speed test to collect metrics.";
 "performance.local.overview" = "Local inference";
 "performance.local.runs" = "Runs";
 "performance.local.kvHitRate" = "KV hit";
@@ -1025,6 +1024,8 @@
 "performance.local.cacheDisabled" = "Disabled";
 "performance.local.clearCache" = "Clear cache";
 "performance.local.cacheCleared" = "Cache cleared.";
+"performance.local.scope" = "Performance scope";
+"performance.local.allModels" = "All models";
 "settings.models.cache.enabled" = "Local inference cache";
 "settings.models.cache.capacity" = "Limit %@";
 "settings.models.cache.toggleFailed" = "Could not update local cache setting: %@";
