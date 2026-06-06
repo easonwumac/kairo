@@ -148,7 +148,11 @@ public struct RootView: View {
         case .shortcuts:
             AutomationsView(dependencies: environment.automationsFeatureDependencies)
         case .access:
-            PermissionHubView(dependencies: environment.accessFeatureDependencies)
+            PermissionHubView(
+                dependencies: environment.accessFeatureDependencies,
+                rootChromeBackRequestID: $chromeBackRequestID,
+                usesRootChromeNavigation: true
+            )
         case .models:
             SettingsView(
                 dependencies: environment.settingsFeatureDependencies,

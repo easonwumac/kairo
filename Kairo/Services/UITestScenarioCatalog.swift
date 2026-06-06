@@ -490,7 +490,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "access.skills.manifest-preview.compatibility",
                 "access.skills.manifest-preview.confirm",
                 "access.skill.homekit-front-door-lock",
-                "access.skill.homekit-front-door-lock.manage",
+                "access.skill.homekit-front-door-lock.homekit-boundary",
                 "access.homekit.demos",
                 "access.homekit.demo.evening-scene",
                 "access.homekit.demo.evening-scene.confirm",

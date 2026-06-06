@@ -123,6 +123,7 @@
 "access.integration.readiness.disabled" = "Disabled";
 "access.skills.manager.title" = "Your tools";
 "access.skills.manager.footer" = "Only enabled tools can appear in Chat suggestions.";
+"access.capabilities.entry.subtitle" = "Choose which phone actions Chat may suggest and run after confirmation.";
 "access.skills.advanced.title" = "Custom tools";
 "access.skills.advanced.footer" = "Only needed when you add or update a tool by hand.";
 "access.skills.advanced.toggle.title" = "Manage tools";
@@ -150,6 +151,7 @@
 "access.skills.action.enable" = "Enable";
 "access.skills.action.remove" = "Remove";
 "access.skills.action.details" = "More";
+"access.skills.homekit.previewOnly" = "Preview only. Kairo does not read HomeKit data or control HomeKit devices in this beta.";
 "access.skills.manifestPreview.noChangelog" = "No update notes.";
 "access.skills.manifestPreview.confirmInstall" = "Add tool";
 "access.skills.manifestPreview.versionUpdate" = "Current %@ -> New %@";

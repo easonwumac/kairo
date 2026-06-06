@@ -123,6 +123,7 @@
 "access.integration.readiness.disabled" = "已停用";
 "access.skills.manager.title" = "你的工具";
 "access.skills.manager.footer" = "只有啟用的工具會出現在 Chat 建議。";
+"access.capabilities.entry.subtitle" = "設定 Chat 可以建議哪些手機動作，以及確認後能否執行。";
 "access.skills.advanced.title" = "自訂工具";
 "access.skills.advanced.footer" = "只有手動加入或更新工具時才需要。";
 "access.skills.advanced.toggle.title" = "管理工具";
@@ -150,6 +151,7 @@
 "access.skills.action.enable" = "啟用";
 "access.skills.action.remove" = "移除";
 "access.skills.action.details" = "更多";
+"access.skills.homekit.previewOnly" = "僅預覽。此 beta 不會讀取 HomeKit 資料，也不會控制 HomeKit 裝置。";
 "access.skills.manifestPreview.noChangelog" = "沒有更新說明。";
 "access.skills.manifestPreview.confirmInstall" = "加入工具";
 "access.skills.manifestPreview.versionUpdate" = "目前 %@ -> 新版 %@";

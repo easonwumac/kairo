@@ -2,6 +2,7 @@
 import SwiftUI
 
 public struct PermissionHubView: View {
+    @State private var pageStack: [PermissionHubPage] = []
     @State private var homeKitPreviewMessage: String?
     @State private var skillManagerMessage: String?
     @State private var manifestImportText = ""
@@ -17,7 +18,6 @@ public struct PermissionHubView: View {
     @State private var isHomeKitPreviewExpanded = false
     @State private var isAccessStatusExpanded = false
     @State private var showMorePrimaryTools = false
-    @State private var showMoreManagedSkills = false
     @State private var expandedCapabilityDetails: Set<CapabilityKey> = []
     @State private var expandedSkillDetails: Set<String> = []
     @State private var skillCatalog: AgentSkillCatalog
@@ -30,12 +30,20 @@ public struct PermissionHubView: View {
     private let accessAPI: (any KairoAccessAPI)?
     private let skillManagerService: AgentSkillManagerService?
     private let marketplaceCatalogService: AgentSkillMarketplaceCatalogService?
+    @Binding private var rootChromeBackRequestID: Int
+    private let usesRootChromeNavigation: Bool
 
-    public init(dependencies: AccessFeatureDependencies) {
+    public init(
+        dependencies: AccessFeatureDependencies,
+        rootChromeBackRequestID: Binding<Int> = .constant(0),
+        usesRootChromeNavigation: Bool = false
+    ) {
         self.accessAPI = dependencies.accessAPI
         self.skillManagerService = dependencies.skillManagerService
         self.marketplaceCatalogService = dependencies.marketplaceCatalogService
         self.registry = dependencies.capabilityRegistry
+        self._rootChromeBackRequestID = rootChromeBackRequestID
+        self.usesRootChromeNavigation = usesRootChromeNavigation
         _skillCatalog = State(initialValue: dependencies.initialSkillCatalog)
     }
 
@@ -51,29 +59,96 @@ public struct PermissionHubView: View {
                 marketplaceCatalogService: marketplaceCatalogService,
                 initialSkillCatalog: initialSkillCatalog,
                 capabilityRegistry: capabilityRegistry
-            )
+            ),
+            rootChromeBackRequestID: .constant(0),
+            usesRootChromeNavigation: false
         )
     }
 
     public var body: some View {
-        NavigationStack {
-            GeometryReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        primaryToolsCard
-                        advancedSetupCard
+        GeometryReader { proxy in
+            ScrollView {
+                Group {
+                    if let activePage {
+                        pageView(for: activePage)
+                    } else {
+                        hubHome
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeNavigationStackContentTopPadding)
-                    .padding(.bottom, 32)
                 }
-                .background(KairoDesign.background.ignoresSafeArea())
-                .scrollIndicators(.hidden)
-                .kairoHiddenNavigationChrome()
-                .task {
-                    await loadAccessData()
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
+                .padding(.bottom, 32)
             }
+            .background(KairoDesign.background.ignoresSafeArea())
+            .scrollIndicators(.hidden)
+            .kairoHiddenNavigationChrome()
+            .task {
+                await loadAccessData()
+            }
+            .preference(key: RootChromePreferenceKey.self, value: rootChromeContext)
+            .onChange(of: rootChromeBackRequestID) { _, _ in
+                popPage()
+            }
+        }
+    }
+
+    private var activePage: PermissionHubPage? {
+        pageStack.last
+    }
+
+    private var rootChromeContext: RootChromeContext {
+        guard usesRootChromeNavigation, let activePage else {
+            return .standard
+        }
+        return RootChromeContext(
+            leadingAction: .back,
+            title: activePage.title
+        )
+    }
+
+    private var hubHome: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            permissionHubEntryCard(
+                title: KairoL10n.string("access.capabilities.section"),
+                subtitle: KairoL10n.string("access.capabilities.entry.subtitle"),
+                systemImage: "iphone.gen3",
+                tint: KairoDesign.blue
+            ) {
+                pushPage(.phoneActions)
+            }
+
+            permissionHubEntryCard(
+                title: KairoL10n.string("access.skills.advanced.toggle.title"),
+                subtitle: KairoL10n.string("access.skills.advanced.toggle.subtitle"),
+                systemImage: "slider.horizontal.3",
+                tint: KairoDesign.teal
+            ) {
+                pushPage(.managedTools)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func pageView(for page: PermissionHubPage) -> some View {
+        switch page {
+        case .phoneActions:
+            primaryToolsPage
+        case .managedTools:
+            managedToolsPage
+        }
+    }
+
+    private func pushPage(_ page: PermissionHubPage) {
+        withAnimation(.snappy(duration: 0.2)) {
+            pageStack.append(page)
+        }
+    }
+
+    private func popPage() {
+        guard !pageStack.isEmpty else { return }
+        withAnimation(.snappy(duration: 0.2)) {
+            _ = pageStack.popLast()
         }
     }
 
@@ -131,7 +206,7 @@ public struct PermissionHubView: View {
         .accessibilityIdentifier("access.overview.card")
     }
 
-    private var primaryToolsCard: some View {
+    private var primaryToolsPage: some View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
                 accessSectionTitle(
@@ -139,68 +214,30 @@ public struct PermissionHubView: View {
                 )
                 .accessibilityIdentifier("access.capabilities.section")
 
-                ForEach(visiblePrimaryCapabilities) { capability in
-                    capabilityRow(capability)
-                    if capability.key != visiblePrimaryCapabilities.last?.key {
+                ForEach(primaryCapabilities) { capability in
+                    capabilityRow(capability, forceExpanded: true)
+                    if capability.key != primaryCapabilities.last?.key {
                         Divider()
-                    }
-                }
-
-                if !secondaryPrimaryCapabilities.isEmpty {
-                    if !visiblePrimaryCapabilities.isEmpty {
-                        Divider()
-                    }
-
-                    Button {
-                        withAnimation(.snappy(duration: 0.2)) {
-                            showMorePrimaryTools.toggle()
-                        }
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "ellipsis.circle.fill")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(KairoDesign.ink)
-                            Text(KairoL10n.string("access.capabilities.more", Int64(secondaryPrimaryCapabilities.count)))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(KairoDesign.ink)
-
-                            Spacer(minLength: 8)
-
-                            Image(systemName: showMorePrimaryTools ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(KairoDesign.blue)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(showMorePrimaryTools ? KairoL10n.string("access.capabilities.more.hide") : KairoL10n.string("access.capabilities.more.show"))
-                    .accessibilityValue(showMorePrimaryTools ? "expanded" : "collapsed")
-                    .accessibilityIdentifier("access.capabilities.more.toggle")
-
-                    if showMorePrimaryTools {
-                        VStack(alignment: .leading, spacing: 12) {
-                            ForEach(secondaryPrimaryCapabilities) { capability in
-                                Divider()
-                                capabilityRow(capability)
-                            }
-                        }
                     }
                 }
             }
         }
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
     }
 
-    private var advancedSetupCard: some View {
+    private var managedToolsPage: some View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
-                advancedSkillSetupToggle()
-
-                if isAdvancedSkillSetupExpanded {
-                    Divider()
-                    skillManagerContent
-                }
+                skillManagerContent
             }
         }
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
     }
 
     private var developerSetupDisclosure: some View {
@@ -280,31 +317,9 @@ public struct PermissionHubView: View {
                     .accessibilityIdentifier("access.skills.message")
             }
 
-            ForEach(visibleManagedSkills) { skill in
+            ForEach(filteredSkills) { skill in
                 Divider()
                 skillManagerRow(skill)
-            }
-
-            if shouldShowManagedSkillMoreToggle {
-                Divider()
-                Button {
-                    withAnimation(.snappy(duration: 0.2)) {
-                        showMoreManagedSkills.toggle()
-                    }
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: showMoreManagedSkills ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(KairoDesign.blue)
-                        Text(KairoL10n.string("access.skills.more", Int64(hiddenManagedSkillCount)))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(KairoDesign.ink)
-                        Spacer(minLength: 8)
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("access.skills.more.toggle")
             }
         }
     }
@@ -345,6 +360,43 @@ public struct PermissionHubView: View {
         }
     }
 
+    private func permissionHubEntryCard(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        tint: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            KairoFocusCard {
+                HStack(alignment: .center, spacing: 12) {
+                    Image(systemName: systemImage)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(tint)
+                        .frame(width: 34, height: 34)
+                        .background(tint.opacity(0.12), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(title)
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.ink)
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
     private func disclosureHeader(title: String, subtitle: String? = nil, isExpanded: Bool) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
@@ -369,8 +421,9 @@ public struct PermissionHubView: View {
     }
 
     @ViewBuilder
-    private func capabilityRow(_ capability: Capability) -> some View {
+    private func capabilityRow(_ capability: Capability, forceExpanded: Bool = false) -> some View {
         let isExpanded = expandedCapabilityDetails.contains(capability.key)
+        let showsDetails = forceExpanded || isExpanded
 
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: iconName(for: capability.key))
@@ -391,26 +444,28 @@ public struct PermissionHubView: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(policyTint(for: capability))
 
-                    Button {
-                        toggleCapabilityDetails(capability.key)
-                    } label: {
-                        Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(KairoDesign.blue)
+                    if !forceExpanded {
+                        Button {
+                            toggleCapabilityDetails(capability.key)
+                        } label: {
+                            Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.blue)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(
+                            isExpanded
+                            ? KairoL10n.string("access.capability.details.hide")
+                            : KairoL10n.string("access.capability.details.show")
+                        )
+                        .accessibilityValue(isExpanded ? "expanded" : "collapsed")
+                        .accessibilityIdentifier("access.capability.\(capability.key.rawValue).details")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(
-                        isExpanded
-                        ? KairoL10n.string("access.capability.details.hide")
-                        : KairoL10n.string("access.capability.details.show")
-                    )
-                    .accessibilityValue(isExpanded ? "expanded" : "collapsed")
-                    .accessibilityIdentifier("access.capability.\(capability.key.rawValue).details")
                 }
 
                 capabilityPolicyPicker(capability)
 
-                if isExpanded {
+                if showsDetails {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(capability.description)
                             .font(.caption)
@@ -959,91 +1014,56 @@ public struct PermissionHubView: View {
 
                 if skill.installationStatus == .installed {
                     skillActionButton(
-                        title: KairoL10n.string("access.skills.action.manage"),
-                        systemImage: "slider.horizontal.3",
-                        accessibilityIdentifier: "access.skill.\(skill.id).manage"
+                        title: KairoL10n.string("access.skills.action.disable"),
+                        systemImage: "pause.circle",
+                        accessibilityIdentifier: "access.skill.\(skill.id).disable"
                     ) {
-                        skillManagerMessage = KairoL10n.string("access.skills.message.managementSummary", skill.displayName, skill.managementSummary)
+                        Task {
+                            await disableSkill(skill)
+                        }
                     }
                 }
 
-                Button {
-                    withAnimation(.snappy(duration: 0.2)) {
-                        toggleSkillDetails(skill.id)
-                    }
-                } label: {
-                    Label(
-                        KairoL10n.string("access.skills.action.details"),
-                        systemImage: isSkillDetailsExpanded(skill.id) ? "chevron.up.circle" : "chevron.down.circle"
-                    )
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
-                }
-                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
-                .accessibilityIdentifier("access.skill.\(skill.id).details")
-            }
-
-            if isSkillDetailsExpanded(skill.id) {
-                VStack(alignment: .leading, spacing: 10) {
-                    if skill.installationStatus != .installed {
-                        skillActionButton(
-                            title: KairoL10n.string("access.skills.action.manage"),
-                            systemImage: "slider.horizontal.3",
-                            accessibilityIdentifier: "access.skill.\(skill.id).manage"
-                        ) {
-                            skillManagerMessage = KairoL10n.string("access.skills.message.managementSummary", skill.displayName, skill.managementSummary)
-                        }
-                    }
-
-                    Label {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(skill.summary)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-
-                            Text(skill.managementSummary)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("access.skill.\(skill.id).summary")
-                        }
-                    } icon: {
-                        Image(systemName: "checklist.checked")
-                            .foregroundStyle(KairoDesign.teal)
-                    }
-                    .padding(10)
-                    .background(KairoDesign.softSurface.opacity(0.45), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 8)], spacing: 8) {
-                        if skill.installationStatus == .installed {
-                            skillActionButton(
-                                title: KairoL10n.string("access.skills.action.disable"),
-                                systemImage: "pause.circle",
-                                accessibilityIdentifier: "access.skill.\(skill.id).disable"
-                            ) {
-                                Task {
-                                    await disableSkill(skill)
-                                }
-                            }
-                        }
-
-                        skillActionButton(
-                            title: KairoL10n.string("access.skills.action.remove"),
-                            systemImage: "trash",
-                            role: .destructive,
-                            tint: KairoDesign.red,
-                            accessibilityIdentifier: "access.skill.\(skill.id).remove"
-                        ) {
-                            Task {
-                                await removeSkill(skill)
-                            }
-                        }
+                skillActionButton(
+                    title: KairoL10n.string("access.skills.action.remove"),
+                    systemImage: "trash",
+                    role: .destructive,
+                    tint: KairoDesign.red,
+                    accessibilityIdentifier: "access.skill.\(skill.id).remove"
+                ) {
+                    Task {
+                        await removeSkill(skill)
                     }
                 }
             }
+
+            Label {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(skill.summary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(skill.managementSummary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("access.skill.\(skill.id).summary")
+
+                    if skill.kind == .homeKitControl {
+                        Text(KairoL10n.string("access.skills.homekit.previewOnly"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(KairoDesign.amber)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("access.skill.\(skill.id).homekit-boundary")
+                    }
+                }
+            } icon: {
+                Image(systemName: skill.kind == .homeKitControl ? "house.badge.exclamationmark" : "checklist.checked")
+                    .foregroundStyle(skill.kind == .homeKitControl ? KairoDesign.amber : KairoDesign.teal)
+            }
+            .padding(10)
+            .background(KairoDesign.softSurface.opacity(0.45), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .padding(.vertical, 8)
         .accessibilityElement(children: .contain)
@@ -1147,21 +1167,6 @@ public struct PermissionHubView: View {
             return skillCatalog.skills
         }
         return skillCatalog.skills.filter { skillMatchesSearch($0, query: query) }
-    }
-
-    private var visibleManagedSkills: [AgentSkill] {
-        guard normalizedSkillSearchText.isEmpty, !showMoreManagedSkills else {
-            return filteredSkills
-        }
-        return Array(filteredSkills.prefix(5))
-    }
-
-    private var shouldShowManagedSkillMoreToggle: Bool {
-        normalizedSkillSearchText.isEmpty && hiddenManagedSkillCount > 0
-    }
-
-    private var hiddenManagedSkillCount: Int {
-        max(filteredSkills.count - visibleManagedSkills.count, 0)
     }
 
     private var normalizedSkillSearchText: String {
@@ -1475,6 +1480,20 @@ private struct AccessToolChipView: View {
             return .orange
         case .unavailable:
             return .red
+        }
+    }
+}
+
+private enum PermissionHubPage: Equatable {
+    case phoneActions
+    case managedTools
+
+    var title: String {
+        switch self {
+        case .phoneActions:
+            return KairoL10n.string("access.capabilities.section")
+        case .managedTools:
+            return KairoL10n.string("access.skills.advanced.toggle.title")
         }
     }
 }
