@@ -28,12 +28,29 @@ xcodebuild \
     -destination "id=${simulator_id}" \
     -derivedDataPath "${derived_data_path}" \
     "FRAMEWORK_SEARCH_PATHS=\$(SRCROOT)/.build/local-runtime/llama.xcframework/ios-arm64_x86_64-simulator \$(inherited)" \
+    "OTHER_SWIFT_FLAGS=\$(inherited) -F \$(SRCROOT)/.build/local-runtime/llama.xcframework/ios-arm64_x86_64-simulator" \
     "OTHER_LDFLAGS=\$(inherited) -framework llama" \
     build
 
 app_path="${derived_data_path}/Build/Products/Debug-iphonesimulator/${scheme}.app"
 if [[ ! -d "${app_path}" ]]; then
     echo "Expected built app was not found at ${app_path}" >&2
+    exit 1
+fi
+
+app_binary="${app_path}/${scheme}.debug.dylib"
+if [[ ! -f "${app_binary}" ]]; then
+    app_binary="${app_path}/${scheme}"
+fi
+if ! /usr/bin/otool -L "${app_binary}" | grep -q "llama.framework/llama"; then
+    cat >&2 <<EOF
+Built app did not link llama.framework, so local inference would be unavailable.
+
+Checked binary:
+  ${app_binary}
+
+Do not install this build for local-model simulator testing.
+EOF
     exit 1
 fi
 

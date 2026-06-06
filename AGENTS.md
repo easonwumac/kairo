@@ -13,6 +13,12 @@
 - Do not add source-health or snapshot-style tests that read Swift/docs/localization files just to prove naming, file placement, line count, or exact wording.
 - If a behavior matters, test the behavior through state, data model, permission, confirmation, risk-tier, persistence, API, UI smoke flow, or accessibility identifiers instead of matching prose.
 
+## Local model simulator workflow
+
+- When testing local model inference on Simulator, do not use a plain XcodeBuildMCP `build_run_sim` or a plain `xcodebuild` app install. Use `scripts/run_simulator_with_llama_runtime.sh`, or pass equivalent `FRAMEWORK_SEARCH_PATHS`, `OTHER_SWIFT_FLAGS -F ...`, and `OTHER_LDFLAGS -framework llama` settings.
+- Before claiming a simulator build includes local inference, verify the built app binary links `llama.framework/llama` with `otool -L`. A copied `Frameworks/llama.framework` inside the app bundle is not enough proof because Swift may still compile with `#if canImport(llama)` disabled.
+- If local inference fails with "installed app build did not load the local inference runtime", reinstall with the llama runtime script instead of changing model settings or falling back to mock responses.
+
 ## Product/UI defaults
 
 - Current product direction: Kairo is a personal information asset manager and Action Inbox. The main loop is Capture assets -> Understand content -> Prepare InfoPages/reminders/actions with preview and confirmation.
