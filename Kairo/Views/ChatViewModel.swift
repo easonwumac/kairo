@@ -20,6 +20,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var actionResultSucceeded: Bool?
     @Published public private(set) var replyTarget: ChatMessage?
     @Published public private(set) var providerRouteStatus: ChatProviderRouteStatus
+    @Published public private(set) var latestInferenceMetrics: AIInferenceMetrics?
     @Published public private(set) var privacyMode: ChatPrivacyMode = .standard
     public var canEditProviderRoute: Bool { localModelSettingsService != nil }
     public var isPrivateChatEnabled: Bool { privacyMode == .privateChat }
@@ -35,6 +36,9 @@ public final class ChatViewModel: ObservableObject {
             ? KairoL10n.string("chat.share.action.summarize")
             : KairoL10n.string("chat.share.action.sendToChat")
     }
+    public var inferenceStatusText: String {
+        Self.inferenceStatusText(isLoading: isLoading, metrics: latestInferenceMetrics)
+    }
 
     private let historyStore: ChatHistoryStore
     private let shareImportAPI: any KairoShareImportAPI
@@ -45,6 +49,7 @@ public final class ChatViewModel: ObservableObject {
     private let localModelChatRuntimeAvailable: Bool
     private var pendingActionSource: PendingActionSource?
     private var importedShareItemIDs: [UUID] = []
+    private var inferenceProgressTask: Task<Void, Never>?
 
     public init(
         dependencies: ChatFeatureDependencies
@@ -58,6 +63,10 @@ public final class ChatViewModel: ObservableObject {
         self.localModelChatRuntimeAvailable = dependencies.localModelChatRuntimeAvailable
         self.currentThread = ChatThread(messages: [Self.welcomeMessage])
         self.providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil)
+    }
+
+    deinit {
+        inferenceProgressTask?.cancel()
     }
 
     public convenience init(
@@ -94,6 +103,7 @@ public final class ChatViewModel: ObservableObject {
     }
 
     public func load() async {
+        startInferenceProgressListenerIfNeeded()
         do {
             threads = try await historyStore.listThreads(limit: 50)
             if let first = threads.first {
@@ -293,6 +303,7 @@ public final class ChatViewModel: ObservableObject {
         await persistCurrentThread()
 
         isLoading = true
+        latestInferenceMetrics = nil
         errorMessage = nil
         do {
             let response = try await chatAPI.respond(
@@ -311,6 +322,7 @@ public final class ChatViewModel: ObservableObject {
                 reasoningText: response.reasoningText
             )
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
+            latestInferenceMetrics = response.inferenceMetrics
             await persistCurrentThread()
             calendarReviewAction = firstCalendarActionFromLatestAssistantMessage()
             handoffReviewAction = firstHandoffActionFromLatestAssistantMessage()
@@ -463,6 +475,21 @@ public final class ChatViewModel: ObservableObject {
         handoffReviewAction = nil
         actionResultMessage = nil
         actionResultSucceeded = nil
+    }
+
+    private func startInferenceProgressListenerIfNeeded() {
+        guard inferenceProgressTask == nil else { return }
+        inferenceProgressTask = Task { [weak self] in
+            let stream = await AIInferenceProgressCenter.shared.stream()
+            for await snapshot in stream {
+                self?.applyInferenceProgress(snapshot)
+            }
+        }
+    }
+
+    private func applyInferenceProgress(_ snapshot: AIInferenceProgressSnapshot) {
+        guard snapshot.conversationID == currentThread.id.uuidString, isLoading else { return }
+        latestInferenceMetrics = snapshot.metrics
     }
 
     private func clearShareImportState() {
@@ -661,6 +688,29 @@ public final class ChatViewModel: ObservableObject {
             }
         }
         return KairoL10n.string("chat.error.genericReplyFailed", error.localizedDescription)
+    }
+
+    private static func inferenceStatusText(isLoading: Bool, metrics: AIInferenceMetrics?) -> String {
+        let prefix = isLoading
+            ? KairoL10n.string("chat.loading")
+            : KairoL10n.string("chat.inference.latest")
+        guard let metrics else {
+            return KairoL10n.string("chat.inference.status", prefix, "--", "--")
+        }
+        return KairoL10n.string(
+            "chat.inference.status",
+            prefix,
+            formattedRate(metrics.promptTokensPerSecond),
+            formattedRate(metrics.generationTokensPerSecond)
+        )
+    }
+
+    private static func formattedRate(_ value: Double?) -> String {
+        guard let value, value.isFinite, value > 0 else { return "--" }
+        if value >= 10 {
+            return String(format: "%.0f", value)
+        }
+        return String(format: "%.1f", value)
     }
 
     public static let welcomeMessage = ChatMessage(

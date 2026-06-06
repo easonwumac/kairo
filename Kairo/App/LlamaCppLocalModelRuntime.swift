@@ -101,7 +101,13 @@ actor LlamaCppSession {
         llama_backend_free()
     }
 
-    func generate(prompt: String, maxTokens: Int32, resetContext: Bool, addBOS: Bool) throws -> (
+    func generate(
+        prompt: String,
+        maxTokens: Int32,
+        resetContext: Bool,
+        addBOS: Bool,
+        progress: ((AIInferenceMetrics) -> Void)? = nil
+    ) throws -> (
         text: String,
         promptTokens: Int,
         generatedTokens: Int,
@@ -138,12 +144,20 @@ actor LlamaCppSession {
         }
         peakMemoryMB = Self.maxMemoryMB(peakMemoryMB, Self.currentResidentMemoryMB())
         let prefillElapsed = max(Date().timeIntervalSince(prefillStartedAt), 0.001)
+        let promptTokensPerSecond = Double(promptTokens.count) / prefillElapsed
+        progress?(AIInferenceMetrics(
+            promptTokens: promptTokens.count,
+            generatedTokens: 0,
+            promptTokensPerSecond: promptTokensPerSecond,
+            generationTokensPerSecond: nil
+        ))
         position += batch.n_tokens
 
         var generatedText = ""
         var generatedTokens = 0
         var firstTokenLatencyMS: Double?
         var generationStartedAt: Date?
+        var lastProgressTokenCount = 0
         while generatedTokens < Int(maxTokens) {
             let token = llama_sampler_sample(sampler, context, batch.n_tokens - 1)
             if llama_vocab_is_eog(vocab, token) {
@@ -156,6 +170,17 @@ actor LlamaCppSession {
             }
             generatedTokens += 1
             generatedText += decodePiece(token: token)
+            if let generationStartedAt,
+               generatedTokens - lastProgressTokenCount >= 4 {
+                let generationElapsed = max(Date().timeIntervalSince(generationStartedAt), 0.001)
+                progress?(AIInferenceMetrics(
+                    promptTokens: promptTokens.count,
+                    generatedTokens: generatedTokens,
+                    promptTokensPerSecond: promptTokensPerSecond,
+                    generationTokensPerSecond: Double(generatedTokens) / generationElapsed
+                ))
+                lastProgressTokenCount = generatedTokens
+            }
             if generatedText.contains("<|im_end|>") {
                 break
             }
@@ -176,11 +201,17 @@ actor LlamaCppSession {
             throw LlamaCppRuntimeError.emptyResponse
         }
         let generationElapsed = max(Date().timeIntervalSince(generationStartedAt ?? startedAt), 0.001)
+        progress?(AIInferenceMetrics(
+            promptTokens: promptTokens.count,
+            generatedTokens: generatedTokens,
+            promptTokensPerSecond: promptTokensPerSecond,
+            generationTokensPerSecond: Double(generatedTokens) / generationElapsed
+        ))
         return (
             trimmed,
             promptTokens.count,
             generatedTokens,
-            Double(promptTokens.count) / prefillElapsed,
+            promptTokensPerSecond,
             Double(generatedTokens) / generationElapsed,
             firstTokenLatencyMS,
             peakMemoryMB
@@ -283,7 +314,9 @@ struct LlamaCppLocalModelRuntime: LocalModelReplyCheckRuntime, LocalModelBenchma
             runtimePackage: "llama.cpp iOS",
             prompt: preparedPrompt.text,
             responseText: output.text,
+            promptTokens: output.promptTokens,
             generatedTokens: output.generatedTokens,
+            promptTokensPerSecond: output.promptTokensPerSecond,
             generationTokensPerSecond: output.generationTokensPerSecond,
             measuredAt: Date(),
             notes: "Generated in KairoApp through embedded llama.xcframework."
@@ -394,7 +427,15 @@ extension LlamaCppLocalModelRuntime: LocalModelConversationalReplyRuntime {
             prompt: preparedPrompt.text,
             maxTokens: Int32(max(1, clampedParameters.maxOutputTokens)),
             resetContext: pooledSession.isNew,
-            addBOS: pooledSession.isNew && preparedPrompt.addBOS
+            addBOS: pooledSession.isNew && preparedPrompt.addBOS,
+            progress: { metrics in
+                Task {
+                    await AIInferenceProgressCenter.shared.publish(AIInferenceProgressSnapshot(
+                        conversationID: conversationKey.conversationID,
+                        metrics: metrics
+                    ))
+                }
+            }
         )
 
         return LocalModelReplyCheckResult(
@@ -404,7 +445,9 @@ extension LlamaCppLocalModelRuntime: LocalModelConversationalReplyRuntime {
             runtimePackage: "llama.cpp iOS",
             prompt: preparedPrompt.text,
             responseText: output.text,
+            promptTokens: output.promptTokens,
             generatedTokens: output.generatedTokens,
+            promptTokensPerSecond: output.promptTokensPerSecond,
             generationTokensPerSecond: output.generationTokensPerSecond,
             measuredAt: Date(),
             notes: pooledSession.isNew

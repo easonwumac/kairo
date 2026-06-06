@@ -139,7 +139,7 @@ public struct ChatView: View {
                             HStack {
                                 ProgressView()
                                     .controlSize(.small)
-                                Text(KairoL10n.string("chat.loading"))
+                                Text(viewModel.inferenceStatusText)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Spacer()

@@ -609,6 +609,8 @@
 "chat.thread.fork.title" = "Fork：%@";
 "chat.thread.compact.prompt" = "請把這段對話壓縮成精簡摘要，保留決策、待辦事項，以及下一次回覆需要的脈絡：\n%@";
 "chat.loading" = "Kairo 正在思考...";
+"chat.inference.latest" = "上次推論";
+"chat.inference.status" = "%@ · PP %@ / TK %@";
 "chat.reply.cancel" = "取消回覆";
 "chat.reply.preview" = "回覆預覽";
 "chat.replyingTo" = "正在回覆 %@";

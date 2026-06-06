@@ -131,7 +131,9 @@ public actor AgentCore {
             message: response.message,
             proposedActions: actionPlan.proposedActions,
             toolCandidates: actionPlan.toolCandidates,
-            memoryContextCount: memoryContext.relevantMemories.count
+            memoryContextCount: memoryContext.relevantMemories.count,
+            reasoningText: response.reasoningText,
+            inferenceMetrics: response.inferenceMetrics
         )
     }
 

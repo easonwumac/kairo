@@ -60,19 +60,41 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
     public var toolCandidates: [AgentToolInvocationCandidate]
     public var memoryContextCount: Int
     public var reasoningText: String?
+    public var inferenceMetrics: AIInferenceMetrics?
 
     public init(
         message: String,
         proposedActions: [AgentAction] = [],
         toolCandidates: [AgentToolInvocationCandidate] = [],
         memoryContextCount: Int = 0,
-        reasoningText: String? = nil
+        reasoningText: String? = nil,
+        inferenceMetrics: AIInferenceMetrics? = nil
     ) {
         self.message = message
         self.proposedActions = proposedActions
         self.toolCandidates = toolCandidates
         self.memoryContextCount = memoryContextCount
         self.reasoningText = reasoningText
+        self.inferenceMetrics = inferenceMetrics
+    }
+}
+
+public struct AIInferenceMetrics: Codable, Equatable, Sendable {
+    public var promptTokens: Int?
+    public var generatedTokens: Int?
+    public var promptTokensPerSecond: Double?
+    public var generationTokensPerSecond: Double?
+
+    public init(
+        promptTokens: Int? = nil,
+        generatedTokens: Int? = nil,
+        promptTokensPerSecond: Double? = nil,
+        generationTokensPerSecond: Double? = nil
+    ) {
+        self.promptTokens = promptTokens
+        self.generatedTokens = generatedTokens
+        self.promptTokensPerSecond = promptTokensPerSecond
+        self.generationTokensPerSecond = generationTokensPerSecond
     }
 }
 

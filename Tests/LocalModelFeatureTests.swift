@@ -1136,6 +1136,9 @@ final class LocalModelFeatureTests: XCTestCase {
         let runtime = DeterministicLocalModelReplyCheckRuntime(
             runtimePackage: "deterministic-chat-runtime",
             responseText: "Runtime-backed local answer.",
+            promptTokens: 128,
+            generatedTokens: 32,
+            promptTokensPerSecond: 410.5,
             generationTokensPerSecond: 12.5
         )
         let provider = LocalModelRoutingAIProvider(
@@ -1155,6 +1158,10 @@ final class LocalModelFeatureTests: XCTestCase {
 
         XCTAssertEqual(response.message, "Runtime-backed local answer.")
         XCTAssertTrue(response.proposedActions.isEmpty)
+        XCTAssertEqual(response.inferenceMetrics?.promptTokens, 128)
+        XCTAssertEqual(response.inferenceMetrics?.generatedTokens, 32)
+        XCTAssertEqual(response.inferenceMetrics?.promptTokensPerSecond, 410.5)
+        XCTAssertEqual(response.inferenceMetrics?.generationTokensPerSecond, 12.5)
     }
 
     func testLocalModelRuntimeAIProviderPassesStoredRuntimeParameters() async throws {

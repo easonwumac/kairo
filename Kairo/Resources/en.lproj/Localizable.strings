@@ -609,6 +609,8 @@
 "chat.thread.fork.title" = "Fork: %@";
 "chat.thread.compact.prompt" = "Compact this conversation into a concise summary with decisions, open tasks, and useful context for the next reply:\n%@";
 "chat.loading" = "Kairo is thinking...";
+"chat.inference.latest" = "Last inference";
+"chat.inference.status" = "%@ · PP %@ / TK %@";
 "chat.reply.cancel" = "Cancel reply";
 "chat.reply.preview" = "Reply preview";
 "chat.replyingTo" = "Replying to %@";

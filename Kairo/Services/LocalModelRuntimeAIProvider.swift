@@ -63,7 +63,13 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
                 proposedActions: [],
                 toolCandidates: [],
                 memoryContextCount: request.memoryContext.count,
-                reasoningText: parsedResponse.reasoningText
+                reasoningText: parsedResponse.reasoningText,
+                inferenceMetrics: AIInferenceMetrics(
+                    promptTokens: result.promptTokens,
+                    generatedTokens: result.generatedTokens,
+                    promptTokensPerSecond: result.promptTokensPerSecond,
+                    generationTokensPerSecond: result.generationTokensPerSecond
+                )
             )
         } catch let error as LocalModelReplyCheckError {
             throw AIProviderError.localInferenceUnavailable(Self.userMessage(for: error))
@@ -90,6 +96,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
     ) -> String {
         let memoryContext = compactMemoryContext(from: request.memoryContext)
         let attachmentContext = compactAttachmentContext(from: request.attachmentContext)
+        let attachmentGuidance = compactAttachmentGuidance(from: request.attachmentContext)
         let libraryClassificationContext = LibraryAssetClassificationPromptBuilder.context(for: request.attachmentContext)
         let conversationHistory = compactConversationHistory(from: request.conversationHistory)
         return """
@@ -111,6 +118,9 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         Attachments:
         \(attachmentContext)
 
+        Attachment handling:
+        \(attachmentGuidance)
+
         \(libraryClassificationContext)
 
         Conversation:
@@ -128,6 +138,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         responseLanguage: ChatResponseLanguagePreference
     ) -> String {
         let attachmentContext = compactAttachmentContext(from: request.attachmentContext)
+        let attachmentGuidance = compactAttachmentGuidance(from: request.attachmentContext)
         return """
 
         Language rule:
@@ -139,6 +150,9 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
 
         Attachments:
         \(attachmentContext)
+
+        Attachment handling:
+        \(attachmentGuidance)
 
         Assistant:
         """
@@ -173,6 +187,19 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
             return "- \(line)"
         }
         return lines.isEmpty ? "None" : lines.joined(separator: "\n")
+    }
+
+    private static func compactAttachmentGuidance(from attachments: [ChatAttachment]) -> String {
+        guard attachments.contains(where: { $0.kind == .image }) else {
+            return "No image attachment in this turn."
+        }
+        return """
+        There is an image attachment. This runtime receives OCR text and Apple Vision labels as text references, not raw image pixels.
+        If OCR is empty but labels exist, still describe what the labels suggest and state uncertainty.
+        Decide whether the item should be saved to Library. If useful, ask the user whether to save it.
+        If category confidence is low, offer 2-4 likely categories and ask the user to choose.
+        Do not say the image has no useful content just because OCR is empty.
+        """
     }
 
     private static func truncated(_ value: String, limit: Int) -> String {

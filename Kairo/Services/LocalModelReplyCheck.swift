@@ -13,7 +13,9 @@ public struct LocalModelReplyCheckResult: Codable, Equatable, Sendable {
     public var runtimePackage: String
     public var prompt: String
     public var responseText: String
+    public var promptTokens: Int?
     public var generatedTokens: Int
+    public var promptTokensPerSecond: Double?
     public var generationTokensPerSecond: Double
     public var measuredAt: Date
     public var notes: String
@@ -25,7 +27,9 @@ public struct LocalModelReplyCheckResult: Codable, Equatable, Sendable {
         runtimePackage: String,
         prompt: String,
         responseText: String,
+        promptTokens: Int? = nil,
         generatedTokens: Int,
+        promptTokensPerSecond: Double? = nil,
         generationTokensPerSecond: Double,
         measuredAt: Date,
         notes: String
@@ -36,7 +40,9 @@ public struct LocalModelReplyCheckResult: Codable, Equatable, Sendable {
         self.runtimePackage = runtimePackage
         self.prompt = prompt
         self.responseText = responseText
+        self.promptTokens = promptTokens
         self.generatedTokens = generatedTokens
+        self.promptTokensPerSecond = promptTokensPerSecond
         self.generationTokensPerSecond = generationTokensPerSecond
         self.measuredAt = measuredAt
         self.notes = notes
@@ -121,7 +127,9 @@ public struct DeterministicLocalModelReplyCheckRuntime: LocalModelReplyCheckRunt
     private let runtime: LocalModelRuntime
     private let runtimePackage: String
     private let responseText: String
+    private let promptTokens: Int?
     private let generatedTokens: Int
+    private let promptTokensPerSecond: Double?
     private let generationTokensPerSecond: Double
     private let measuredAt: Date
 
@@ -129,14 +137,18 @@ public struct DeterministicLocalModelReplyCheckRuntime: LocalModelReplyCheckRunt
         runtime: LocalModelRuntime = .gguf,
         runtimePackage: String = "deterministic-test-runtime",
         responseText: String,
+        promptTokens: Int? = nil,
         generatedTokens: Int = 24,
+        promptTokensPerSecond: Double? = nil,
         generationTokensPerSecond: Double,
         measuredAt: Date = Date(timeIntervalSince1970: 1_780_358_400)
     ) {
         self.runtime = runtime
         self.runtimePackage = runtimePackage
         self.responseText = responseText
+        self.promptTokens = promptTokens
         self.generatedTokens = generatedTokens
+        self.promptTokensPerSecond = promptTokensPerSecond
         self.generationTokensPerSecond = generationTokensPerSecond
         self.measuredAt = measuredAt
     }
@@ -155,7 +167,9 @@ public struct DeterministicLocalModelReplyCheckRuntime: LocalModelReplyCheckRunt
             runtimePackage: runtimePackage,
             prompt: prompt,
             responseText: responseText,
+            promptTokens: promptTokens,
             generatedTokens: generatedTokens,
+            promptTokensPerSecond: promptTokensPerSecond,
             generationTokensPerSecond: generationTokensPerSecond,
             measuredAt: measuredAt,
             notes: "Deterministic reply check runtime for tests and UI smoke validation."
