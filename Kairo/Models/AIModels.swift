@@ -62,6 +62,7 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
     public var reasoningText: String?
     public var inferenceMetrics: AIInferenceMetrics?
     public var libraryClassification: LibraryClassificationResponse?
+    public var rawModelResponse: String?
 
     public init(
         message: String,
@@ -70,7 +71,8 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
         memoryContextCount: Int = 0,
         reasoningText: String? = nil,
         inferenceMetrics: AIInferenceMetrics? = nil,
-        libraryClassification: LibraryClassificationResponse? = nil
+        libraryClassification: LibraryClassificationResponse? = nil,
+        rawModelResponse: String? = nil
     ) {
         self.message = message
         self.proposedActions = proposedActions
@@ -79,6 +81,7 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
         self.reasoningText = reasoningText
         self.inferenceMetrics = inferenceMetrics
         self.libraryClassification = libraryClassification
+        self.rawModelResponse = rawModelResponse
     }
 }
 
@@ -87,6 +90,8 @@ public struct LibraryClassificationResponse: Codable, Equatable, Sendable {
     public var ocrSummary: String?
     public var keywords: [String]
     public var candidateCategories: [InfoPageDraftCategoryCandidate]
+    public var selectedSubcategoryIDs: [String]
+    public var suggestedSubcategoryName: String?
     public var needsCategoryChoice: Bool
     public var nextStep: String?
 
@@ -95,6 +100,8 @@ public struct LibraryClassificationResponse: Codable, Equatable, Sendable {
         ocrSummary: String? = nil,
         keywords: [String] = [],
         candidateCategories: [InfoPageDraftCategoryCandidate] = [],
+        selectedSubcategoryIDs: [String] = [],
+        suggestedSubcategoryName: String? = nil,
         needsCategoryChoice: Bool = false,
         nextStep: String? = nil
     ) {
@@ -102,6 +109,8 @@ public struct LibraryClassificationResponse: Codable, Equatable, Sendable {
         self.ocrSummary = ocrSummary
         self.keywords = keywords
         self.candidateCategories = candidateCategories
+        self.selectedSubcategoryIDs = selectedSubcategoryIDs
+        self.suggestedSubcategoryName = suggestedSubcategoryName
         self.needsCategoryChoice = needsCategoryChoice
         self.nextStep = nextStep
     }

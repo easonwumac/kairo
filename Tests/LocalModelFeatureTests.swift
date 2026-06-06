@@ -1363,7 +1363,7 @@ final class LocalModelFeatureTests: XCTestCase {
         )
         let runtime = DeterministicLocalModelReplyCheckRuntime(
             responseText: """
-            {"response":"我判斷這張圖片比較像旅遊素材，會先準備存入 Library。","assetDescription":"海邊風景照。","keywords":["海邊","風景","旅行"],"candidateCategories":[{"templateID":"travel","category":"travel","confidence":0.82,"reason":"風景照片可能屬於旅行資料。"}],"needsCategoryChoice":false,"nextStep":"prepareTemplate"}
+            {"response":"我判斷這張圖片比較像旅遊素材，會先準備存入 Library。","assetDescription":"海邊風景照。","keywords":["海邊","風景","旅行"],"candidateCategories":[{"templateID":"travel","category":"travel","confidence":0.82,"reason":"風景照片可能屬於旅行資料。"}],"selectedSubcategoryIDs":["travel.scenery"],"suggestedSubcategoryName":"海邊風景","needsCategoryChoice":false,"nextStep":"prepareTemplate"}
             """,
             generationTokensPerSecond: 12.5
         )
@@ -1388,8 +1388,11 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(response.libraryClassification?.assetDescription, "海邊風景照。")
         XCTAssertEqual(response.libraryClassification?.keywords, ["海邊", "風景", "旅行"])
         XCTAssertEqual(response.libraryClassification?.candidateCategories.map(\.category), [.travel])
+        XCTAssertEqual(response.libraryClassification?.selectedSubcategoryIDs, ["travel.scenery"])
+        XCTAssertEqual(response.libraryClassification?.suggestedSubcategoryName, "海邊風景")
         XCTAssertEqual(response.libraryClassification?.needsCategoryChoice, false)
         XCTAssertEqual(response.libraryClassification?.nextStep, "prepareTemplate")
+        XCTAssertEqual(response.rawModelResponse?.contains(#""response":"我判斷這張圖片比較像旅遊素材"#), true)
     }
 
     func testLocalModelRuntimeAIProviderRetriesUntilStructuredJSONIsValid() async throws {

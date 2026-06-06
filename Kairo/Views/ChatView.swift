@@ -533,16 +533,17 @@ public struct ChatView: View {
                 }
                 return
             }
+            let normalizedData = Self.normalizedImageDataForAIAnalysis(from: data)
             let fileURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent("kairo-photo-\(UUID().uuidString).jpg")
-            try data.write(to: fileURL, options: .atomic)
-            let visionReference = await AttachmentVisionAnalyzer.reference(from: data)
+            try normalizedData.write(to: fileURL, options: .atomic)
+            let visionReference = await AttachmentVisionAnalyzer.reference(from: normalizedData)
             let attachment = ChatAttachment(
                 kind: .image,
                 displayName: fileURL.lastPathComponent,
                 uniformTypeIdentifier: "public.jpeg",
                 fileURL: fileURL,
-                byteCount: Int64(data.count),
+                byteCount: Int64(normalizedData.count),
                 textPreview: visionReference.promptPreview.map {
                     KairoL10n.string("chat.capture.photoVisionTextPreview", $0)
                 } ?? KairoL10n.string("chat.capture.photoTextPreview"),
@@ -562,6 +563,28 @@ public struct ChatView: View {
         }
         #else
         _ = item
+        #endif
+    }
+
+    private static func normalizedImageDataForAIAnalysis(from data: Data) -> Data {
+        #if canImport(UIKit)
+        guard let image = UIImage(data: data) else { return data }
+        let maxDimension: CGFloat = 1_600
+        let largestSide = max(image.size.width, image.size.height)
+        let targetSize: CGSize
+        if largestSide > maxDimension {
+            let scale = maxDimension / largestSide
+            targetSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        } else {
+            targetSize = image.size
+        }
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let renderedImage = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        return renderedImage.jpegData(compressionQuality: 0.82) ?? data
+        #else
+        return data
         #endif
     }
 

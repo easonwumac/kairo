@@ -1,4 +1,5 @@
 "root.accessibility.shell" = "Kairo 根畫面";
+"common.done" = "完成";
 "root.backToChat" = "Chat 首頁";
 "root.back" = "返回";
 "root.menu" = "頁面";
@@ -648,6 +649,7 @@
 "chat.tools.summarizeSharedContent.prompt" = "把我分享的內容整理成重點和待辦。";
 "chat.message.copy" = "複製";
 "chat.message.reply" = "回覆";
+"chat.message.rawJSON" = "原始 JSON";
 "chat.message.copyAccessibility" = "複製訊息";
 "chat.message.replyAccessibility" = "回覆訊息";
 "chat.message.reasoning" = "思考過程";

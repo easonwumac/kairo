@@ -1,4 +1,5 @@
 "root.accessibility.shell" = "Kairo root shell";
+"common.done" = "Done";
 "root.backToChat" = "Chat Home";
 "root.back" = "Back";
 "root.menu" = "Sections";
@@ -648,6 +649,7 @@
 "chat.tools.summarizeSharedContent.prompt" = "Summarize my shared content into key points and tasks.";
 "chat.message.copy" = "Copy";
 "chat.message.reply" = "Reply";
+"chat.message.rawJSON" = "Raw JSON";
 "chat.message.copyAccessibility" = "Copy message";
 "chat.message.replyAccessibility" = "Reply to message";
 "chat.message.reasoning" = "Reasoning";

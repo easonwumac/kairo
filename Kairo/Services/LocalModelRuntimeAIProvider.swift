@@ -59,7 +59,8 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
                     generationTokensPerSecond: result.result.generationTokensPerSecond,
                     promptSecondsRemaining: 0
                 ),
-                libraryClassification: result.libraryClassification
+                libraryClassification: result.libraryClassification,
+                rawModelResponse: result.rawModelResponse
             )
         } catch let error as LocalModelReplyCheckError {
             throw AIProviderError.localInferenceUnavailable(Self.userMessage(for: error))
@@ -85,7 +86,8 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         result: LocalModelReplyCheckResult,
         parsedResponse: LocalModelReasoningParseResult,
         visibleMessage: String,
-        libraryClassification: LibraryClassificationResponse?
+        libraryClassification: LibraryClassificationResponse?,
+        rawModelResponse: String?
     ) {
         var lastResult: LocalModelReplyCheckResult?
         var lastParsed = LocalModelReasoningParseResult(message: "", reasoningText: nil)
@@ -108,7 +110,8 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
                         result,
                         parsed,
                         visibleMessage,
-                        structured.libraryClassification
+                        structured.libraryClassification,
+                        structured.rawJSON
                     )
                 }
             }
@@ -122,6 +125,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
             lastResult,
             lastParsed,
             "",
+            nil,
             nil
         )
     }
@@ -195,7 +199,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         Return one JSON object only. No Markdown. No prose before or after JSON.
 
         Required JSON:
-        {"response":"chat-visible answer in the output language","assetDescription":"short visual/document description or empty string","ocrSummary":"OCR/user text summary or empty string","keywords":["searchable","terms"],"candidateCategories":[{"folderName":"optional enabled category or folder name","templateID":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","category":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","confidence":0.0,"reason":"why it fits"}],"needsCategoryChoice":false,"nextStep":"classifyOnly|prepareTemplate|askUserToChoose|unsupported"}
+        {"response":"chat-visible answer in the output language","assetDescription":"short visual/document description or empty string","ocrSummary":"OCR/user text summary or empty string","keywords":["searchable","terms"],"candidateCategories":[{"folderName":"optional enabled category or folder name","templateID":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","category":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","confidence":0.0,"reason":"why it fits"}],"selectedSubcategoryIDs":["optional existing subcategory ids"],"suggestedSubcategoryName":"optional new subcategory name","needsCategoryChoice":false,"nextStep":"classifyOnly|prepareTemplate|askUserToChoose|unsupported"}
 
         Image classification rules:
         - First classify against enabled categories before preparing a Library page.
@@ -203,6 +207,8 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         - If 2 or more categories are plausible, set needsCategoryChoice=true and include 2-4 candidateCategories.
         - If no category fits, set candidateCategories=[] and nextStep="unsupported"; response should say it does not match current Library categories.
         - Landscape/scenery photos still need assetDescription, keywords, and plausible categories such as travel or generalNote when appropriate.
+        - Do not say the image cannot be read when OCR is empty. If labels are weak, still provide a cautious description and low-confidence candidateCategories.
+        - After choosing a category, pick existing selectedSubcategoryIDs when useful; otherwise suggest one concise suggestedSubcategoryName.
 
         Memory:
         \(memoryContext)
@@ -398,14 +404,19 @@ private struct LocalModelStructuredChatResponse: Decodable, Equatable, Sendable 
     var ocrSummary: String?
     var keywords: [String]?
     var candidateCategories: [InfoPageDraftCategoryCandidate]?
+    var selectedSubcategoryIDs: [String]?
+    var suggestedSubcategoryName: String?
     var needsCategoryChoice: Bool?
     var nextStep: String?
+    var rawJSON: String?
 
     var libraryClassification: LibraryClassificationResponse? {
         let hasLibrarySignal = assetDescription?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
             || ocrSummary?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
             || !(keywords ?? []).isEmpty
             || !(candidateCategories ?? []).isEmpty
+            || !(selectedSubcategoryIDs ?? []).isEmpty
+            || suggestedSubcategoryName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
             || nextStep != nil
         guard hasLibrarySignal else { return nil }
         let candidates = candidateCategories ?? []
@@ -414,6 +425,8 @@ private struct LocalModelStructuredChatResponse: Decodable, Equatable, Sendable 
             ocrSummary: ocrSummary,
             keywords: keywords ?? [],
             candidateCategories: candidates,
+            selectedSubcategoryIDs: selectedSubcategoryIDs ?? [],
+            suggestedSubcategoryName: suggestedSubcategoryName,
             needsCategoryChoice: needsCategoryChoice ?? (candidates.count > 1),
             nextStep: nextStep
         )
@@ -424,12 +437,13 @@ private struct LocalModelStructuredChatResponse: Decodable, Equatable, Sendable 
               let data = json.data(using: .utf8)
         else { return nil }
         let decoder = JSONDecoder()
-        guard let decoded = try? decoder.decode(LocalModelStructuredChatResponse.self, from: data) else {
+        guard var decoded = try? decoder.decode(LocalModelStructuredChatResponse.self, from: data) else {
             return nil
         }
         guard !decoded.response.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return nil
         }
+        decoded.rawJSON = json
         return decoded
     }
 

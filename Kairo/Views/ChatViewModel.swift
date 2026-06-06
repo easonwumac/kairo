@@ -319,7 +319,8 @@ public final class ChatViewModel: ObservableObject {
                 proposedActions: response.proposedActions,
                 toolCandidates: response.toolCandidates,
                 memoryContextCount: response.memoryContextCount,
-                reasoningText: response.reasoningText
+                reasoningText: response.reasoningText,
+                rawModelResponse: response.rawModelResponse
             )
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
             latestInferenceMetrics = response.inferenceMetrics
