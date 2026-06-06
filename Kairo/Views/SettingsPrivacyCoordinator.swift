@@ -12,11 +12,11 @@ public actor SettingsPrivacyCoordinator {
         self.deletionAPI = deletionAPI
     }
 
-    public func clearAuditLog() async throws {
+    public func deleteAllChatThreads() async throws {
         guard let deletionAPI else {
             throw SettingsPrivacyCoordinatorError.unavailable
         }
-        try await deletionAPI.clearAuditLog()
+        try await deletionAPI.deleteAllChatThreads()
     }
 }
 #endif

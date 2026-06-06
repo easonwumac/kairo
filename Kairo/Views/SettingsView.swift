@@ -203,18 +203,6 @@ public struct SettingsView: View {
             GeometryReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        NavigationLink {
-                            modelsOnlyContent
-                        } label: {
-                            SettingsModelSettingsLinkCard(
-                                localModelStatus: localModelStatus,
-                                hasAPIKey: hasAPIKey,
-                                connectedConnectorCount: connectedConnectorCount
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("settings.models.entry")
-
                         appearanceSettingsSection
                         privacySettingsSection
 
@@ -271,7 +259,7 @@ public struct SettingsView: View {
     private var privacySettingsSection: some View {
         SettingsPrivacySection(
             statusMessage: privacyStatusMessage,
-            clearAuditLog: clearAuditLog
+            deleteAllChatHistory: deleteAllChatHistory
         )
     }
 
@@ -546,21 +534,21 @@ public struct SettingsView: View {
         }
     }
 
-    private func clearAuditLog() {
-        privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogClearing")
+    private func deleteAllChatHistory() {
+        privacyStatusMessage = KairoL10n.string("settings.privacy.chatHistoryDeleting")
         Task {
             do {
-                try await privacyCoordinator.clearAuditLog()
+                try await privacyCoordinator.deleteAllChatThreads()
                 await MainActor.run {
-                    privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogCleared")
+                    privacyStatusMessage = KairoL10n.string("settings.privacy.chatHistoryDeleted")
                 }
             } catch SettingsPrivacyCoordinatorError.unavailable {
                 await MainActor.run {
-                    privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogUnavailable")
+                    privacyStatusMessage = KairoL10n.string("settings.privacy.chatHistoryUnavailable")
                 }
             } catch {
                 await MainActor.run {
-                    privacyStatusMessage = KairoL10n.string("settings.privacy.auditLogClearFailed", error.localizedDescription)
+                    privacyStatusMessage = KairoL10n.string("settings.privacy.chatHistoryDeleteFailed", error.localizedDescription)
                 }
             }
         }

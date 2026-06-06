@@ -17,6 +17,7 @@ public struct PermissionHubView: View {
     @State private var isHomeKitPreviewExpanded = false
     @State private var isAccessStatusExpanded = false
     @State private var showMorePrimaryTools = false
+    @State private var showMoreManagedSkills = false
     @State private var expandedCapabilityDetails: Set<CapabilityKey> = []
     @State private var expandedSkillDetails: Set<String> = []
     @State private var skillCatalog: AgentSkillCatalog
@@ -197,10 +198,6 @@ public struct PermissionHubView: View {
                 if isAdvancedSkillSetupExpanded {
                     Divider()
                     skillManagerContent
-                    Divider()
-                    developerSetupDisclosure
-                    Divider()
-                    homeKitPreviewDisclosure
                 }
             }
         }
@@ -272,10 +269,6 @@ public struct PermissionHubView: View {
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
                     .accessibilityIdentifier("access.skills.manager")
-                Text(KairoL10n.string("access.skills.manager.footer"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
 
             skillSearchControls()
@@ -287,9 +280,31 @@ public struct PermissionHubView: View {
                     .accessibilityIdentifier("access.skills.message")
             }
 
-            ForEach(filteredSkills) { skill in
+            ForEach(visibleManagedSkills) { skill in
                 Divider()
                 skillManagerRow(skill)
+            }
+
+            if shouldShowManagedSkillMoreToggle {
+                Divider()
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        showMoreManagedSkills.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: showMoreManagedSkills ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                        Text(KairoL10n.string("access.skills.more", Int64(hiddenManagedSkillCount)))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.ink)
+                        Spacer(minLength: 8)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("access.skills.more.toggle")
             }
         }
     }
@@ -1132,6 +1147,21 @@ public struct PermissionHubView: View {
             return skillCatalog.skills
         }
         return skillCatalog.skills.filter { skillMatchesSearch($0, query: query) }
+    }
+
+    private var visibleManagedSkills: [AgentSkill] {
+        guard normalizedSkillSearchText.isEmpty, !showMoreManagedSkills else {
+            return filteredSkills
+        }
+        return Array(filteredSkills.prefix(5))
+    }
+
+    private var shouldShowManagedSkillMoreToggle: Bool {
+        normalizedSkillSearchText.isEmpty && hiddenManagedSkillCount > 0
+    }
+
+    private var hiddenManagedSkillCount: Int {
+        max(filteredSkills.count - visibleManagedSkills.count, 0)
     }
 
     private var normalizedSkillSearchText: String {

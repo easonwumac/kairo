@@ -3,32 +3,30 @@ import SwiftUI
 
 struct SettingsPrivacySection: View {
     let statusMessage: String?
-    let clearAuditLog: () -> Void
-
-    private var displayedStatusMessage: String {
-        statusMessage ?? KairoL10n.string("settings.privacy.statusReady")
-    }
+    let deleteAllChatHistory: () -> Void
 
     var body: some View {
         KairoGroupedSurface {
             VStack(alignment: .leading, spacing: 12) {
                 headerRow
 
-                Text(displayedStatusMessage)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("settings.privacy.status")
+                if let statusMessage {
+                    Text(statusMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("settings.privacy.status")
+                }
 
                 Button(role: .destructive) {
-                    clearAuditLog()
+                    deleteAllChatHistory()
                 } label: {
-                    Label(KairoL10n.string("settings.privacy.clearAuditLog"), systemImage: "trash.fill")
+                    Label(KairoL10n.string("settings.privacy.deleteAllChatHistory"), systemImage: "trash.fill")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 }
                 .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.red, isCompact: true))
-                .accessibilityIdentifier("settings.privacy.clear-audit-log")
+                .accessibilityIdentifier("settings.privacy.delete-all-chat-history")
             }
         }
     }
@@ -44,9 +42,6 @@ struct SettingsPrivacySection: View {
                 Text(KairoL10n.string("settings.privacy.section"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
-                Text(KairoL10n.string("settings.privacy.summary"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 8)

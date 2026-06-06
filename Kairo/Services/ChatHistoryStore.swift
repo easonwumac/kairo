@@ -6,6 +6,7 @@ public protocol ChatHistoryStore: Sendable {
     func saveThread(_ thread: ChatThread) async throws
     func append(_ message: ChatMessage, to threadID: UUID) async throws -> ChatThread
     func deleteThread(id: UUID) async throws
+    func deleteAllThreads() async throws
     func purgeDeletedThreads() async throws
 }
 
@@ -46,6 +47,16 @@ public actor InMemoryChatHistoryStore: ChatHistoryStore {
         thread.deletedAt = Date()
         thread.updatedAt = Date()
         threads[id] = thread
+    }
+
+    public func deleteAllThreads() async throws {
+        let now = Date()
+        threads = threads.mapValues { thread in
+            var deleted = thread
+            deleted.deletedAt = now
+            deleted.updatedAt = now
+            return deleted
+        }
     }
 
     public func purgeDeletedThreads() async throws {
@@ -105,6 +116,17 @@ public actor JSONFileChatHistoryStore: ChatHistoryStore {
         thread.deletedAt = Date()
         thread.updatedAt = Date()
         threads[id] = thread
+        try persist()
+    }
+
+    public func deleteAllThreads() async throws {
+        let now = Date()
+        threads = threads.mapValues { thread in
+            var deleted = thread
+            deleted.deletedAt = now
+            deleted.updatedAt = now
+            return deleted
+        }
         try persist()
     }
 

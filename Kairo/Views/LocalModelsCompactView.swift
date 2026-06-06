@@ -59,7 +59,7 @@ struct LocalModelsCompactView: View {
                 defaultModelNoticeView(defaultModelNotice)
                     .padding(.horizontal, 16)
                     .padding(.top, topPadding)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(.opacity)
                     .zIndex(10)
             }
         }

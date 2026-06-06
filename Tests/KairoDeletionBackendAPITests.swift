@@ -119,35 +119,30 @@ final class KairoDeletionBackendAPITests: XCTestCase {
         XCTAssertEqual(disconnectedProviderKeys, ["todoist"])
     }
 
-    func testSettingsPrivacyCoordinatorClearsAuditLogThroughDeletionAPI() async throws {
-        let auditLogger = InMemoryAuditLogger()
+    func testSettingsPrivacyCoordinatorDeletesAllChatHistoryThroughDeletionAPI() async throws {
+        let chatStore = InMemoryChatHistoryStore(seed: [
+            ChatThread(messages: [ChatMessage(role: .user, text: "First private chat")]),
+            ChatThread(messages: [ChatMessage(role: .user, text: "Second private chat")])
+        ])
         let deletionAPI = KairoDeletionBackendService(
-            chatHistoryStore: InMemoryChatHistoryStore(),
+            chatHistoryStore: chatStore,
             memoryStore: InMemoryMemoryStore(),
             credentialStore: InMemoryCredentialStore(),
-            auditLogger: auditLogger
+            auditLogger: InMemoryAuditLogger()
         )
         let coordinator = SettingsPrivacyCoordinator(deletionAPI: deletionAPI)
-        try await auditLogger.record(AuditEvent(
-            actionKind: .saveMemory,
-            capabilityKeys: [.memory],
-            usedCloudModel: false,
-            requiredConfirmation: true,
-            userConfirmed: true,
-            result: .completed
-        ))
 
-        try await coordinator.clearAuditLog()
-        let events = try await auditLogger.list(limit: 10)
+        try await coordinator.deleteAllChatThreads()
+        let threads = try await chatStore.listThreads(limit: 10)
 
-        XCTAssertTrue(events.isEmpty)
+        XCTAssertTrue(threads.isEmpty)
     }
 
     func testSettingsPrivacyCoordinatorFailsClosedWhenDeletionAPIIsUnavailable() async throws {
         let coordinator = SettingsPrivacyCoordinator(deletionAPI: nil)
 
         do {
-            try await coordinator.clearAuditLog()
+            try await coordinator.deleteAllChatThreads()
             XCTFail("Expected unavailable privacy coordinator to fail closed.")
         } catch let error as SettingsPrivacyCoordinatorError {
             XCTAssertEqual(error, .unavailable)

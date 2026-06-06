@@ -2,6 +2,7 @@ import Foundation
 
 public protocol KairoDeletionAPI: Sendable {
     func deleteChatThread(id: UUID) async throws
+    func deleteAllChatThreads() async throws
     func purgeDeletedChatThreads() async throws
     func deleteMemory(id: UUID) async throws
     func purgeDeletedMemories() async throws
@@ -47,6 +48,11 @@ public struct KairoDeletionBackendService: KairoDeletionAPI {
 
     public func deleteChatThread(id: UUID) async throws {
         try await chatHistoryStore.deleteThread(id: id)
+    }
+
+    public func deleteAllChatThreads() async throws {
+        try await chatHistoryStore.deleteAllThreads()
+        try await chatHistoryStore.purgeDeletedThreads()
     }
 
     public func purgeDeletedChatThreads() async throws {
