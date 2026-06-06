@@ -65,6 +65,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
                 memoryContextCount: request.memoryContext.count,
                 reasoningText: parsedResponse.reasoningText,
                 inferenceMetrics: AIInferenceMetrics(
+                    stage: .complete,
                     promptTokens: result.promptTokens,
                     promptTokensProcessed: result.promptTokens,
                     generatedTokens: result.generatedTokens,

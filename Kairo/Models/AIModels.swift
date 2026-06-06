@@ -80,6 +80,15 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
 }
 
 public struct AIInferenceMetrics: Codable, Equatable, Sendable {
+    public enum Stage: String, Codable, Equatable, Sendable {
+        case preparingInput
+        case loadingModel
+        case prefill
+        case generation
+        case complete
+    }
+
+    public var stage: Stage?
     public var promptTokens: Int?
     public var promptTokensProcessed: Int?
     public var generatedTokens: Int?
@@ -88,6 +97,7 @@ public struct AIInferenceMetrics: Codable, Equatable, Sendable {
     public var promptSecondsRemaining: Double?
 
     public init(
+        stage: Stage? = nil,
         promptTokens: Int? = nil,
         promptTokensProcessed: Int? = nil,
         generatedTokens: Int? = nil,
@@ -95,6 +105,7 @@ public struct AIInferenceMetrics: Codable, Equatable, Sendable {
         generationTokensPerSecond: Double? = nil,
         promptSecondsRemaining: Double? = nil
     ) {
+        self.stage = stage
         self.promptTokens = promptTokens
         self.promptTokensProcessed = promptTokensProcessed
         self.generatedTokens = generatedTokens

@@ -612,6 +612,11 @@
 "chat.inference.latest" = "Last inference";
 "chat.inference.status" = "%@ · PP %@ / TK %@";
 "chat.inference.statusWithPromptProgress" = "%@ · PP %@ · %@/%@ · %@ left / TK %@";
+"chat.inference.waitingStatus" = "Preparing";
+"chat.inference.preparingInputStatus" = "Preparing input";
+"chat.inference.loadingModelStatus" = "Loading model";
+"chat.inference.prefillStatus" = "PP %@%% · %@/s";
+"chat.inference.generationStatus" = "TK %@/s";
 "chat.inference.eta" = "~%@s";
 "chat.reply.cancel" = "Cancel reply";
 "chat.reply.preview" = "Reply preview";

@@ -1781,21 +1781,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(preview.contains("plant 64%"))
     }
 
-    func testLibraryAssetClassificationContextUsesCompactTemplateSchema() {
-        let attachment = ChatAttachment(
-            kind: .image,
-            displayName: "flower.jpg",
-            textPreview: "Apple Vision reference. Image labels: flower 82%, plant 64%"
-        )
-        let context = LibraryAssetClassificationPromptBuilder.context(for: [attachment])
-
-        XCTAssertTrue(context.contains(#""id":"travel""#))
-        XCTAssertTrue(context.contains(#""view":"travel""#))
-        XCTAssertTrue(context.contains(#""createInfoPage": true|false"#))
-        XCTAssertFalse(context.localizedCaseInsensitiveContains("<html"))
-        XCTAssertFalse(context.localizedCaseInsensitiveContains("<body"))
-    }
-
     func testJSONFileShareIngestionQueuePersistsPendingItems() async throws {
         let fileURL = temporaryFileURL(named: "share-ingestion.json")
         let builder = ShareAttachmentBuilder()

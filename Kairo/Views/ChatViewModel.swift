@@ -303,7 +303,7 @@ public final class ChatViewModel: ObservableObject {
         await persistCurrentThread()
 
         isLoading = true
-        latestInferenceMetrics = nil
+        latestInferenceMetrics = AIInferenceMetrics(stage: .preparingInput)
         errorMessage = nil
         do {
             let response = try await chatAPI.respond(
@@ -695,12 +695,48 @@ public final class ChatViewModel: ObservableObject {
             ? KairoL10n.string("chat.loading")
             : KairoL10n.string("chat.inference.latest")
         guard let metrics else {
-            return KairoL10n.string("chat.inference.status", prefix, "--", "--")
+            return isLoading
+                ? KairoL10n.string("chat.inference.waitingStatus")
+                : KairoL10n.string("chat.inference.status", prefix, "--", "--")
+        }
+        if isLoading {
+            switch metrics.stage {
+            case .preparingInput:
+                return KairoL10n.string("chat.inference.preparingInputStatus")
+            case .loadingModel:
+                return KairoL10n.string("chat.inference.loadingModelStatus")
+            case .prefill:
+                break
+            case .generation, .complete:
+                if let generatedTokens = metrics.generatedTokens, generatedTokens > 0 {
+                    return KairoL10n.string(
+                        "chat.inference.generationStatus",
+                        formattedRate(metrics.generationTokensPerSecond)
+                    )
+                }
+            case .none:
+                break
+            }
+        }
+        if isLoading,
+           let generatedTokens = metrics.generatedTokens,
+           generatedTokens > 0 {
+            return KairoL10n.string(
+                "chat.inference.generationStatus",
+                formattedRate(metrics.generationTokensPerSecond)
+            )
         }
         if let processed = metrics.promptTokensProcessed,
            let total = metrics.promptTokens,
            total > 0,
            processed < total {
+            if isLoading {
+                return KairoL10n.string(
+                    "chat.inference.prefillStatus",
+                    formattedPercent(processed: processed, total: total),
+                    formattedRate(metrics.promptTokensPerSecond)
+                )
+            }
             return KairoL10n.string(
                 "chat.inference.statusWithPromptProgress",
                 prefix,
@@ -732,6 +768,12 @@ public final class ChatViewModel: ObservableObject {
             return String(format: "%.1fk", Double(value) / 1_000.0)
         }
         return "\(value)"
+    }
+
+    private static func formattedPercent(processed: Int, total: Int) -> String {
+        guard total > 0 else { return "--" }
+        let percent = min(100, max(0, Int((Double(processed) / Double(total) * 100).rounded())))
+        return "\(percent)"
     }
 
     private static func formattedETA(_ value: Double?) -> String {

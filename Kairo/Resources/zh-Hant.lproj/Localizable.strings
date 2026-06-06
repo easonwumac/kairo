@@ -612,6 +612,11 @@
 "chat.inference.latest" = "上次推論";
 "chat.inference.status" = "%@ · PP %@ / TK %@";
 "chat.inference.statusWithPromptProgress" = "%@ · PP %@ · %@/%@ · 剩 %@ / TK %@";
+"chat.inference.waitingStatus" = "準備中";
+"chat.inference.preparingInputStatus" = "整理輸入";
+"chat.inference.loadingModelStatus" = "載入模型";
+"chat.inference.prefillStatus" = "PP %@%% · %@/s";
+"chat.inference.generationStatus" = "TK %@/s";
 "chat.inference.eta" = "約 %@s";
 "chat.reply.cancel" = "取消回覆";
 "chat.reply.preview" = "回覆預覽";

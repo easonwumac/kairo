@@ -52,6 +52,11 @@ private func kairo_llama_batch_add(
 }
 
 actor LlamaCppSession {
+    #if targetEnvironment(simulator)
+    private static let prefillChunkTokenCapacity = 64
+    #else
+    private static let prefillChunkTokenCapacity = 128
+    #endif
     private static let batchTokenCapacity = 512
     private let model: OpaquePointer
     private let context: OpaquePointer
@@ -64,9 +69,6 @@ actor LlamaCppSession {
     init(modelPath: String, contextLength: UInt32 = 4_096, temperature: Double = 0.2) throws {
         llama_backend_init()
         var modelParameters = llama_model_default_params()
-        #if targetEnvironment(simulator)
-        modelParameters.n_gpu_layers = 0
-        #endif
         guard let loadedModel = llama_model_load_from_file(modelPath, modelParameters) else {
             throw LlamaCppRuntimeError.couldNotLoadModel(modelPath)
         }
@@ -84,7 +86,7 @@ actor LlamaCppSession {
         }
         context = loadedContext
         vocab = llama_model_get_vocab(model)
-        batch = llama_batch_init(512, 0, 0)
+        batch = llama_batch_init(Int32(Self.batchTokenCapacity), 0, 0)
         batch.n_seq_id = nil
         batch.seq_id = nil
 
@@ -138,7 +140,7 @@ actor LlamaCppSession {
         var consumedPromptTokens = 0
         var lastPrefillProgressAt = Date.distantPast
         while consumedPromptTokens < promptTokens.count {
-            let chunkEnd = min(consumedPromptTokens + Self.batchTokenCapacity, promptTokens.count)
+            let chunkEnd = min(consumedPromptTokens + Self.prefillChunkTokenCapacity, promptTokens.count)
             kairo_llama_batch_clear(&batch)
             for tokenIndex in consumedPromptTokens..<chunkEnd {
                 let isLastPromptToken = tokenIndex == promptTokens.count - 1
@@ -165,6 +167,7 @@ actor LlamaCppSession {
                     ? Double(remainingTokens) / promptTokensPerSecond
                     : nil
                 progress?(AIInferenceMetrics(
+                    stage: .prefill,
                     promptTokens: promptTokens.count,
                     promptTokensProcessed: consumedPromptTokens,
                     generatedTokens: 0,
@@ -198,6 +201,7 @@ actor LlamaCppSession {
                generatedTokens - lastProgressTokenCount >= 4 {
                 let generationElapsed = max(Date().timeIntervalSince(generationStartedAt), 0.001)
                 progress?(AIInferenceMetrics(
+                    stage: .generation,
                     promptTokens: promptTokens.count,
                     promptTokensProcessed: promptTokens.count,
                     generatedTokens: generatedTokens,
@@ -228,6 +232,7 @@ actor LlamaCppSession {
         }
         let generationElapsed = max(Date().timeIntervalSince(generationStartedAt ?? startedAt), 0.001)
         progress?(AIInferenceMetrics(
+            stage: .complete,
             promptTokens: promptTokens.count,
             promptTokensProcessed: promptTokens.count,
             generatedTokens: generatedTokens,
@@ -443,6 +448,10 @@ extension LlamaCppLocalModelRuntime: LocalModelConversationalReplyRuntime {
         parameters: LocalModelRuntimeParameters
     ) async throws -> LocalModelReplyCheckResult {
         let clampedParameters = parameters.clamped(to: model)
+        await AIInferenceProgressCenter.shared.publish(AIInferenceProgressSnapshot(
+            conversationID: conversationKey.conversationID,
+            metrics: AIInferenceMetrics(stage: .loadingModel)
+        ))
         let pooledSession = try await Self.sessionPool.session(
             for: conversationKey,
             modelPath: installRecord.fileURL.path,
