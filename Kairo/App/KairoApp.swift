@@ -226,22 +226,20 @@ struct KairoApp: App {
 
     private static func uiTestingLocalModelReplyRuntime(arguments: [String]) -> (any LocalModelReplyCheckRuntime)? {
         #if canImport(llama)
-        guard arguments.contains("--ui-testing-live-local-model-runtime") else {
-            return nil
-        }
+        _ = arguments
         return LlamaCppLocalModelRuntime()
         #else
+        _ = arguments
         return nil
         #endif
     }
 
     private static func uiTestingLocalModelBenchmarkEngine(arguments: [String]) -> (any LocalModelBenchmarkEngine)? {
         #if canImport(llama)
-        guard arguments.contains("--ui-testing-live-local-model-runtime") else {
-            return nil
-        }
+        _ = arguments
         return LlamaCppLocalModelRuntime()
         #else
+        _ = arguments
         return nil
         #endif
     }
