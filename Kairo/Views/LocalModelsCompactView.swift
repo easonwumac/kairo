@@ -124,13 +124,6 @@ struct LocalModelsCompactView: View {
                 }
                 .accessibilityIdentifier("settings.models.starter")
 
-                if configuredLocalModelRows.isEmpty {
-                    Text(KairoL10n.string("settings.models.local.empty"))
-                        .font(compactModelMetadataFont)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
                 ForEach(configuredLocalModelRows) { row in
                     compactLocalModelRow(row)
                     if row.modelID != configuredLocalModelRows.last?.modelID {
@@ -190,19 +183,6 @@ struct LocalModelsCompactView: View {
                     Text(KairoL10n.string("settings.models.cloud.section"))
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(KairoDesign.ink)
-
-                    Text(KairoL10n.string("settings.models.cloud.detail"))
-                        .font(compactModelMetadataFont)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                if configuredCloudProviderRows.isEmpty {
-                    Text(KairoL10n.string("settings.models.cloud.empty"))
-                        .font(compactModelMetadataFont)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("settings.models.cloud.empty")
                 }
 
                 ForEach(configuredCloudProviderRows) { row in
