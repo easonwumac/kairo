@@ -5,7 +5,6 @@ struct ChatBubble: View {
     let message: ChatMessage
     let onCopy: (String) -> Void
     let onReply: (ChatMessage) -> Void
-    let onRemember: (ChatMessage) -> Void
     @State private var isReasoningExpanded = false
 
     private var isUser: Bool { message.role == .user }
@@ -42,13 +41,6 @@ struct ChatBubble: View {
                             Label(KairoL10n.string("chat.message.reply"), systemImage: "arrowshape.turn.up.left")
                         }
                         .accessibilityIdentifier("chat.message.reply-menu.\(message.id.uuidString)")
-
-                        Button {
-                            onRemember(message)
-                        } label: {
-                            Label(KairoL10n.string("chat.message.remember"), systemImage: "brain.head.profile")
-                        }
-                        .accessibilityIdentifier("chat.message.remember-menu.\(message.id.uuidString)")
                     }
 
                 if let reasoningText = message.reasoningText, !reasoningText.isEmpty, !isUser {
@@ -103,15 +95,6 @@ struct ChatBubble: View {
                         identifier: "chat.message.reply.\(message.id.uuidString)"
                     ) {
                         onReply(message)
-                    }
-
-                    messageActionButton(
-                        title: KairoL10n.string("chat.message.remember"),
-                        accessibilityLabel: KairoL10n.string("chat.message.rememberAccessibility"),
-                        systemImage: "brain.head.profile",
-                        identifier: "chat.message.remember.\(message.id.uuidString)"
-                    ) {
-                        onRemember(message)
                     }
                 }
                 .font(.caption2)

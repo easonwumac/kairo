@@ -610,11 +610,8 @@
 "chat.tools.summarizeSharedContent.prompt" = "Summarize my shared content into key points and tasks.";
 "chat.message.copy" = "Copy";
 "chat.message.reply" = "Reply";
-"chat.message.remember" = "Add to Memory";
-"chat.message.remember.privateUnavailable" = "Private chats are not saved to Memory.";
 "chat.message.copyAccessibility" = "Copy message";
 "chat.message.replyAccessibility" = "Reply to message";
-"chat.message.rememberAccessibility" = "Add message to Memory";
 "chat.message.reasoning" = "Reasoning";
 "chat.message.memoryContext.one" = "Used 1 memory item";
 "chat.message.memoryContext.many" = "Used %lld memory items";
@@ -717,6 +714,7 @@
 "settings.appearance.system" = "System";
 "settings.appearance.dark" = "Dark";
 "settings.appearance.light" = "Light";
+"settings.appearance.warm" = "Warm";
 "settings.appearance.detail" = "Keep the same glass layout and switch only the base tone.";
 "settings.connection.section" = "Accounts and privacy";
 "settings.connection.show" = "Show accounts and privacy";

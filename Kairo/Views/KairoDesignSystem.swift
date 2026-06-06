@@ -10,6 +10,7 @@ enum KairoAppearancePreference: String, CaseIterable, Identifiable {
     case system
     case dark
     case light
+    case warm
 
     static let storageKey = "kairo.appearance.preference"
 
@@ -23,6 +24,8 @@ enum KairoAppearancePreference: String, CaseIterable, Identifiable {
             return KairoL10n.string("settings.appearance.dark")
         case .light:
             return KairoL10n.string("settings.appearance.light")
+        case .warm:
+            return KairoL10n.string("settings.appearance.warm")
         }
     }
 
@@ -33,6 +36,8 @@ enum KairoAppearancePreference: String, CaseIterable, Identifiable {
         case .dark:
             return .dark
         case .light:
+            return .light
+        case .warm:
             return .light
         }
     }
@@ -51,49 +56,56 @@ enum KairoDesign {
     static var ink: Color {
         color(
             light: (0.08, 0.12, 0.18, 1.00),
-            dark: (0.92, 0.96, 1.00, 1.00)
+            dark: (0.92, 0.96, 1.00, 1.00),
+            warm: (0.16, 0.13, 0.10, 1.00)
         )
     }
 
     static var muted: Color {
         color(
             light: (0.42, 0.49, 0.60, 1.00),
-            dark: (0.58, 0.66, 0.76, 1.00)
+            dark: (0.58, 0.66, 0.76, 1.00),
+            warm: (0.50, 0.45, 0.37, 1.00)
         )
     }
 
     static var background: Color {
         color(
             light: (0.92, 0.96, 1.00, 1.00),
-            dark: (0.035, 0.055, 0.085, 1.00)
+            dark: (0.035, 0.055, 0.085, 1.00),
+            warm: (0.925, 0.905, 0.855, 1.00)
         )
     }
 
     static var groupedSurface: Color {
         color(
             light: (0.96, 0.985, 1.00, 0.92),
-            dark: (0.075, 0.105, 0.145, 0.92)
+            dark: (0.075, 0.105, 0.145, 0.92),
+            warm: (0.965, 0.945, 0.895, 0.90)
         )
     }
 
     static var elevatedSurface: Color {
         color(
             light: (0.985, 0.995, 1.00, 0.94),
-            dark: (0.105, 0.145, 0.195, 0.94)
+            dark: (0.105, 0.145, 0.195, 0.94),
+            warm: (0.985, 0.965, 0.915, 0.92)
         )
     }
 
     static var softSurface: Color {
         color(
             light: (0.90, 0.95, 1.00, 1.00),
-            dark: (0.12, 0.17, 0.23, 1.00)
+            dark: (0.12, 0.17, 0.23, 1.00),
+            warm: (0.88, 0.855, 0.79, 1.00)
         )
     }
 
     static var line: Color {
         color(
             light: (0.00, 0.00, 0.00, 0.08),
-            dark: (1.00, 1.00, 1.00, 0.10)
+            dark: (1.00, 1.00, 1.00, 0.10),
+            warm: (0.22, 0.16, 0.08, 0.10)
         )
     }
 
@@ -107,40 +119,47 @@ enum KairoDesign {
     static var shadow: Color {
         color(
             light: (0.00, 0.00, 0.00, 0.12),
-            dark: (0.00, 0.00, 0.00, 0.30)
+            dark: (0.00, 0.00, 0.00, 0.30),
+            warm: (0.22, 0.16, 0.08, 0.14)
         )
     }
 
     static var topGlow: Color {
         color(
             light: (0.29, 0.43, 0.86, 0.16),
-            dark: (0.29, 0.43, 0.86, 0.26)
+            dark: (0.29, 0.43, 0.86, 0.26),
+            warm: (1.00, 0.74, 0.38, 0.20)
         )
     }
 
     static var secondaryGlow: Color {
         color(
             light: (0.38, 0.87, 0.73, 0.12),
-            dark: (0.38, 0.87, 0.73, 0.10)
+            dark: (0.38, 0.87, 0.73, 0.10),
+            warm: (0.90, 0.58, 0.26, 0.10)
         )
     }
 
     static var bottomShade: Color {
         color(
             light: (1.00, 1.00, 1.00, 0.20),
-            dark: (0.00, 0.00, 0.00, 0.18)
+            dark: (0.00, 0.00, 0.00, 0.18),
+            warm: (0.78, 0.70, 0.58, 0.18)
         )
     }
 
     private static func color(
         light: (red: Double, green: Double, blue: Double, opacity: Double),
-        dark: (red: Double, green: Double, blue: Double, opacity: Double)
+        dark: (red: Double, green: Double, blue: Double, opacity: Double),
+        warm: (red: Double, green: Double, blue: Double, opacity: Double)? = nil
     ) -> Color {
         switch KairoAppearancePreference.current {
         case .light:
             return fixedColor(light)
         case .dark:
             return fixedColor(dark)
+        case .warm:
+            return fixedColor(warm ?? light)
         case .system:
             #if canImport(UIKit)
             return Color(UIColor { traitCollection in

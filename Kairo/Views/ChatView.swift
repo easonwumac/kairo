@@ -97,10 +97,7 @@ public struct ChatView: View {
                                 ChatBubble(
                                     message: message,
                                     onCopy: copyToPasteboard,
-                                    onReply: { viewModel.replyToMessage($0) },
-                                    onRemember: { message in
-                                        Task { await viewModel.rememberMessage(message) }
-                                    }
+                                    onReply: { viewModel.replyToMessage($0) }
                                 )
                                 if !message.attachments.isEmpty {
                                     AttachmentStrip(attachments: message.attachments)
