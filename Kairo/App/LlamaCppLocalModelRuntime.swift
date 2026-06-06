@@ -69,6 +69,9 @@ actor LlamaCppSession {
     init(modelPath: String, contextLength: UInt32 = 4_096, temperature: Double = 0.2) throws {
         llama_backend_init()
         var modelParameters = llama_model_default_params()
+        #if targetEnvironment(simulator)
+        modelParameters.n_gpu_layers = 0
+        #endif
         guard let loadedModel = llama_model_load_from_file(modelPath, modelParameters) else {
             throw LlamaCppRuntimeError.couldNotLoadModel(modelPath)
         }
@@ -187,6 +190,10 @@ actor LlamaCppSession {
         var lastProgressTokenCount = 0
         while generatedTokens < Int(maxTokens) {
             let token = llama_sampler_sample(sampler, context, batch.n_tokens - 1)
+            let vocabTokenCount = llama_vocab_n_tokens(vocab)
+            guard token >= 0, token < vocabTokenCount else {
+                throw LlamaCppRuntimeError.decodeFailed
+            }
             if llama_vocab_is_eog(vocab, token) {
                 break
             }
