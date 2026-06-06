@@ -41,6 +41,7 @@
 "knowledgeAssets.import.result.many" = "已匯入 %lld 筆資產。";
 "knowledgeAssets.search.placeholder" = "搜尋資產";
 "knowledgeAssets.search.clear" = "清除";
+"knowledgeAssets.filter.open" = "設定篩選";
 "knowledgeAssets.filter.kind.all" = "所有類型";
 "knowledgeAssets.filter.date.all" = "所有時間";
 "knowledgeAssets.filter.date.today" = "今天";
@@ -64,6 +65,11 @@
 "knowledgeAssets.detail.actions" = "草稿動作";
 "knowledgeAssets.detail.extractedText" = "抽取文字";
 "knowledgeAssets.detail.storage" = "儲存";
+"knowledgeAssets.detail.mode.html" = "預覽";
+"knowledgeAssets.detail.mode.data" = "資料";
+"knowledgeAssets.detail.action.viewData" = "檢視資料";
+"knowledgeAssets.html.folders" = "資料夾";
+"knowledgeAssets.html.tags" = "標籤";
 "knowledgeAssets.delete" = "刪除資產";
 "knowledgeAssets.delete.result" = "資產已刪除。";
 "knowledgeAssets.kind.screenshot" = "截圖";

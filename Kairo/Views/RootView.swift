@@ -388,7 +388,7 @@ public struct RootView: View {
 
                     navigationGroup(
                         title: KairoL10n.string("root.menu.group.primary"),
-                        sections: [.assets, .memory]
+                        sections: [.assets]
                     )
 
                     navigationGroup(

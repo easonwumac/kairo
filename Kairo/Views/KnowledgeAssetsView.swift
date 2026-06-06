@@ -1,5 +1,6 @@
 #if canImport(SwiftUI)
 import SwiftUI
+import WebKit
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -11,6 +12,7 @@ public struct KnowledgeAssetsView: View {
     @State private var assets: [KnowledgeAsset] = []
     @State private var folders: [KnowledgeAssetFolder] = []
     @State private var selectedAsset: KnowledgeAsset?
+    @State private var assetDetailMode: KnowledgeAssetDetailMode = .html
     @State private var selectedKind: KnowledgeAssetKind?
     @State private var selectedFolderName: String?
     @State private var selectedDateFilter: KnowledgeAssetDateFilter = .all
@@ -18,8 +20,8 @@ public struct KnowledgeAssetsView: View {
     @State private var errorMessage: String?
     @State private var statusMessage: String?
     @State private var exportText = "{}"
-    @State private var iCloudBackupAllowed = false
     @State private var isImporting = false
+    @State private var isFilterPresented = false
 
     @Binding private var rootChromeBackRequestID: Int
     private let usesRootChromeNavigation: Bool
@@ -69,7 +71,11 @@ public struct KnowledgeAssetsView: View {
             .refreshable { await reload() }
             .preference(key: RootChromePreferenceKey.self, value: rootChromeContext)
             .onChange(of: rootChromeBackRequestID) { _, _ in
-                selectedAsset = nil
+                if selectedAsset != nil, assetDetailMode == .data {
+                    assetDetailMode = .html
+                } else {
+                    selectedAsset = nil
+                }
             }
         }
     }
@@ -86,8 +92,8 @@ public struct KnowledgeAssetsView: View {
 
     private var assetLibrary: some View {
         VStack(alignment: .leading, spacing: 14) {
-            importControls
             searchCard
+            importControls
 
             if let statusMessage {
                 statusCard(statusMessage, systemImage: "checkmark.circle.fill", tint: KairoDesign.green)
@@ -143,17 +149,6 @@ public struct KnowledgeAssetsView: View {
                     Spacer(minLength: 0)
                 }
 
-                Toggle(isOn: $iCloudBackupAllowed) {
-                    Label(
-                        KairoL10n.string("knowledgeAssets.backup.toggle"),
-                        systemImage: iCloudBackupAllowed ? "icloud.fill" : "icloud.slash.fill"
-                    )
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(iCloudBackupAllowed ? KairoDesign.blue : KairoDesign.green)
-                }
-                .tint(KairoDesign.blue)
-                .accessibilityIdentifier("knowledgeAssets.backup.toggle")
-
                 Button {
                     importPendingShares()
                 } label: {
@@ -171,41 +166,56 @@ public struct KnowledgeAssetsView: View {
     }
 
     private var searchCard: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 22, height: 22)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 22, height: 22)
 
-                    TextField(KairoL10n.string("knowledgeAssets.search.placeholder"), text: $searchQuery)
-                        .accessibilityIdentifier("knowledgeAssets.search.text")
+                TextField(KairoL10n.string("knowledgeAssets.search.placeholder"), text: $searchQuery)
+                    .textFieldStyle(.plain)
+                    .font(.subheadline.weight(.medium))
+                    .accessibilityIdentifier("knowledgeAssets.search.text")
 
-                    if !trimmedSearchQuery.isEmpty {
-                        Button(KairoL10n.string("knowledgeAssets.search.clear")) { searchQuery = "" }
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(KairoDesign.blue)
-                            .accessibilityIdentifier("knowledgeAssets.search.clear")
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        isFilterPresented.toggle()
                     }
+                } label: {
+                    Image(systemName: activeFilterCount > 0 ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(activeFilterCount > 0 ? KairoDesign.blue : KairoDesign.ink)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(KairoL10n.string("knowledgeAssets.filter.open"))
+                .accessibilityIdentifier("knowledgeAssets.filter.open")
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(KairoDesign.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 19, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 19, style: .continuous)
+                    .stroke(KairoDesign.line, lineWidth: 1)
+            }
 
-                HStack(spacing: 8) {
-                    KairoStatusPill(
-                        title: searchSummary,
-                        systemImage: "archivebox.fill",
-                        tint: KairoDesign.teal
-                    )
+            HStack(spacing: 8) {
+                KairoStatusPill(
+                    title: searchSummary,
+                    systemImage: "archivebox.fill",
+                    tint: KairoDesign.teal
+                )
 
-                    ShareLink(item: exportText) {
-                        Label(KairoL10n.string("knowledgeAssets.export"), systemImage: "square.and.arrow.up")
-                            .font(.caption.weight(.semibold))
-                    }
-                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
-                    .disabled(assets.isEmpty)
-                    .accessibilityIdentifier("knowledgeAssets.export")
+                ShareLink(item: exportText) {
+                    Label(KairoL10n.string("knowledgeAssets.export"), systemImage: "square.and.arrow.up")
+                        .font(.caption.weight(.semibold))
                 }
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
+                .disabled(assets.isEmpty)
+                .accessibilityIdentifier("knowledgeAssets.export")
+            }
 
+            if isFilterPresented {
                 filterControls
             }
         }
@@ -351,6 +361,54 @@ public struct KnowledgeAssetsView: View {
 
     private func assetDetail(_ asset: KnowledgeAsset) -> some View {
         VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Picker("", selection: $assetDetailMode) {
+                    Text(KairoL10n.string("knowledgeAssets.detail.mode.html")).tag(KnowledgeAssetDetailMode.html)
+                    Text(KairoL10n.string("knowledgeAssets.detail.mode.data")).tag(KnowledgeAssetDetailMode.data)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("knowledgeAssets.detail.mode")
+
+                Menu {
+                    Button {
+                        assetDetailMode = .data
+                    } label: {
+                        Label(KairoL10n.string("knowledgeAssets.detail.action.viewData"), systemImage: "folder")
+                    }
+
+                    Button(role: .destructive) {
+                        delete(asset)
+                    } label: {
+                        Label(KairoL10n.string("knowledgeAssets.delete"), systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.headline.weight(.bold))
+                        .assetGlassCircleControl()
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("knowledgeAssets.detail.actions")
+            }
+
+            if assetDetailMode == .html {
+                assetHTMLPreview(asset)
+            } else {
+                assetDataView(asset)
+            }
+        }
+        .accessibilityIdentifier("knowledgeAssets.detail")
+    }
+
+    private func assetHTMLPreview(_ asset: KnowledgeAsset) -> some View {
+        KairoFocusCard {
+            KnowledgeAssetHTMLPreview(html: htmlDocument(for: asset))
+                .frame(minHeight: 520)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+
+    private func assetDataView(_ asset: KnowledgeAsset) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
             KairoFocusCard {
                 VStack(alignment: .leading, spacing: 12) {
                     KnowledgeAssetThumbnail(asset: asset, size: 148)
@@ -421,6 +479,8 @@ public struct KnowledgeAssetsView: View {
 
             detailSection(title: KairoL10n.string("knowledgeAssets.detail.storage"), systemImage: "externaldrive.fill") {
                 VStack(alignment: .leading, spacing: 10) {
+                    dataTree(asset)
+
                     KairoStatusPill(
                         title: asset.iCloudBackupAllowed ? KairoL10n.string("knowledgeAssets.backup.allowed") : KairoL10n.string("knowledgeAssets.backup.localOnly"),
                         systemImage: asset.iCloudBackupAllowed ? "icloud.fill" : "lock.shield.fill",
@@ -438,7 +498,6 @@ public struct KnowledgeAssetsView: View {
                 }
             }
         }
-        .accessibilityIdentifier("knowledgeAssets.detail")
     }
 
     private func detailSection<Content: View>(
@@ -491,6 +550,14 @@ public struct KnowledgeAssetsView: View {
             Int64(assets.count),
             trimmedSearchQuery
         )
+    }
+
+    private var activeFilterCount: Int {
+        var count = 0
+        if selectedKind != nil { count += 1 }
+        if selectedFolderName != nil { count += 1 }
+        if selectedDateFilter != .all { count += 1 }
+        return count
     }
 
     private var reloadToken: String {
@@ -585,7 +652,7 @@ public struct KnowledgeAssetsView: View {
 
         Task {
             do {
-                let result = try await assetAPI.importPendingShares(limit: 20, iCloudBackupAllowed: iCloudBackupAllowed)
+                let result = try await assetAPI.importPendingShares(limit: 20, iCloudBackupAllowed: false)
                 await reload()
                 await MainActor.run {
                     isImporting = false
@@ -652,6 +719,88 @@ public struct KnowledgeAssetsView: View {
         case .file:
             return "doc.fill"
         }
+    }
+
+    private func dataTree(_ asset: KnowledgeAsset) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            treeRow(icon: "folder.fill", text: "node-\(asset.id.uuidString.prefix(8))")
+            treeRow(icon: "doc.text.fill", text: "json/assets.json", indent: 18)
+            treeRow(icon: "doc.richtext.fill", text: "html/index.html", indent: 18)
+            treeRow(icon: "folder.fill", text: "resources/", indent: 18)
+            ForEach(asset.attachments) { attachment in
+                treeRow(icon: "paperclip", text: attachment.displayName, indent: 34)
+            }
+        }
+        .accessibilityIdentifier("knowledgeAssets.detail.dataTree")
+    }
+
+    private func treeRow(icon: String, text: String, indent: CGFloat = 0) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(KairoDesign.teal)
+                .frame(width: 18)
+            Text(text)
+                .font(.caption.monospaced())
+                .foregroundStyle(KairoDesign.ink)
+                .lineLimit(1)
+        }
+        .padding(.leading, indent)
+    }
+
+    private func htmlDocument(for asset: KnowledgeAsset) -> String {
+        let title = Self.escapeHTML(asset.title)
+        let summary = Self.escapeHTML(asset.summary.isEmpty ? KairoL10n.string("knowledgeAssets.summary.empty") : asset.summary)
+        let extractedText = Self.escapeHTML(asset.extractedText)
+        let tags = asset.tags.map { "<span>\(Self.escapeHTML($0))</span>" }.joined()
+        let folders = asset.collections.map { "<span>\(Self.escapeHTML($0))</span>" }.joined()
+        let checklist = asset.checklistItems.map { item in
+            "<li>\(Self.escapeHTML(item.title))</li>"
+        }.joined()
+
+        return """
+        <!doctype html>
+        <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+            body { margin: 0; padding: 22px; background: #07121d; color: #eef7ff; }
+            .card { border: 1px solid rgba(255,255,255,.14); border-radius: 24px; padding: 20px; background: linear-gradient(145deg, rgba(255,255,255,.14), rgba(255,255,255,.05)); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+            h1 { font-size: 28px; line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.04em; }
+            p { color: rgba(238,247,255,.76); line-height: 1.5; }
+            h2 { margin-top: 24px; font-size: 13px; text-transform: uppercase; letter-spacing: .12em; color: rgba(238,247,255,.56); }
+            .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+            .chips span { padding: 7px 10px; border-radius: 999px; background: rgba(94, 234, 212, .13); color: #b7fff2; font-size: 12px; }
+            li { margin: 8px 0; color: rgba(238,247,255,.82); }
+            pre { white-space: pre-wrap; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: rgba(238,247,255,.72); }
+          </style>
+        </head>
+        <body>
+          <section class="card">
+            <h1>\(title)</h1>
+            <p>\(summary)</p>
+            <h2>\(KairoL10n.string("knowledgeAssets.html.folders"))</h2>
+            <div class="chips">\(folders.isEmpty ? "<span>-</span>" : folders)</div>
+            <h2>\(KairoL10n.string("knowledgeAssets.html.tags"))</h2>
+            <div class="chips">\(tags.isEmpty ? "<span>-</span>" : tags)</div>
+            <h2>\(KairoL10n.string("knowledgeAssets.detail.checklist"))</h2>
+            <ul>\(checklist.isEmpty ? "<li>-</li>" : checklist)</ul>
+            <h2>\(KairoL10n.string("knowledgeAssets.detail.extractedText"))</h2>
+            <pre>\(extractedText)</pre>
+          </section>
+        </body>
+        </html>
+        """
+    }
+
+    private static func escapeHTML(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#39;")
     }
 
     private static func exportText(for export: KnowledgeAssetExport) throws -> String {
@@ -724,10 +873,63 @@ private struct KnowledgeAssetThumbnail: View {
     }
 }
 
+#if canImport(UIKit)
+private struct KnowledgeAssetHTMLPreview: UIViewRepresentable {
+    var html: String
+
+    func makeUIView(context: Context) -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = false
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.isOpaque = false
+        webView.backgroundColor = .clear
+        webView.scrollView.backgroundColor = .clear
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        webView.loadHTMLString(html, baseURL: nil)
+    }
+}
+#elseif canImport(AppKit)
+private struct KnowledgeAssetHTMLPreview: NSViewRepresentable {
+    var html: String
+
+    func makeNSView(context: Context) -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = false
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.setValue(false, forKey: "drawsBackground")
+        return webView
+    }
+
+    func updateNSView(_ webView: WKWebView, context: Context) {
+        webView.loadHTMLString(html, baseURL: nil)
+    }
+}
+#else
+private struct KnowledgeAssetHTMLPreview: View {
+    var html: String
+
+    var body: some View {
+        ScrollView {
+            Text(html)
+                .font(.caption.monospaced())
+                .textSelection(.enabled)
+        }
+    }
+}
+#endif
+
 private struct KnowledgeAssetGroup: Identifiable {
     var id: String
     var title: String
     var assets: [KnowledgeAsset]
+}
+
+private enum KnowledgeAssetDetailMode: String, CaseIterable {
+    case html
+    case data
 }
 
 private struct KnowledgeAssetGroupKey: Hashable {
@@ -796,5 +998,22 @@ private extension DateFormatter {
         formatter.dateFormat = "yyyy MMM"
         return formatter
     }()
+}
+
+private extension View {
+    func assetGlassCircleControl() -> some View {
+        self
+            .foregroundStyle(KairoDesign.ink)
+            .frame(width: 36, height: 36)
+            .background {
+                Circle()
+                    .fill(KairoDesign.elevatedSurface.opacity(0.72))
+            }
+            .overlay {
+                Circle()
+                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+            }
+            .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
+    }
 }
 #endif

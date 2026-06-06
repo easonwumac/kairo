@@ -41,6 +41,7 @@
 "knowledgeAssets.import.result.many" = "Imported %lld assets.";
 "knowledgeAssets.search.placeholder" = "Search assets";
 "knowledgeAssets.search.clear" = "Clear";
+"knowledgeAssets.filter.open" = "Filter";
 "knowledgeAssets.filter.kind.all" = "All types";
 "knowledgeAssets.filter.date.all" = "All time";
 "knowledgeAssets.filter.date.today" = "Today";
@@ -64,6 +65,11 @@
 "knowledgeAssets.detail.actions" = "Draft actions";
 "knowledgeAssets.detail.extractedText" = "Extracted text";
 "knowledgeAssets.detail.storage" = "Storage";
+"knowledgeAssets.detail.mode.html" = "Preview";
+"knowledgeAssets.detail.mode.data" = "Data";
+"knowledgeAssets.detail.action.viewData" = "View data";
+"knowledgeAssets.html.folders" = "Folders";
+"knowledgeAssets.html.tags" = "Tags";
 "knowledgeAssets.delete" = "Delete asset";
 "knowledgeAssets.delete.result" = "Asset deleted.";
 "knowledgeAssets.kind.screenshot" = "Screenshot";
