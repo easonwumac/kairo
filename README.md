@@ -17,6 +17,7 @@ Capture -> Understand -> Prepare Actions
 ### Capture
 
 - Import text, URLs, screenshots/images, PDFs, file metadata, and manual notes.
+- Shared content lands in Chat review first, then Kairo decides whether to save, merge, or ask.
 - Keep original asset references when available.
 - Store source, created date, extracted text, tags, sensitivity, and linked InfoPages.
 - Organize assets by type, date, search text, and user-created folders.
@@ -42,7 +43,7 @@ Capture -> Understand -> Prepare Actions
 
 | Surface | Purpose |
 |---|---|
-| Library | Asset Inbox, asset list, search, detail, delete, export. |
+| Library | Searchable asset database, filters, folders, detail, and delete. |
 | InfoPages | Organized pages such as travel, order, project, warranty, medical, finance, and documents. |
 | Chat | Ask about saved assets, clarify imported content, and request drafts/actions. |
 | Model Settings | Configure cloud/local models used for understanding assets. |
@@ -55,7 +56,7 @@ Recipes, Skill Manager, phone-tool catalogs, and integration harness screens are
 
 ### Flow A: Screenshot or shared item to asset
 
-The user shares a screenshot, URL, text, PDF, or file metadata into Kairo. Kairo stores it in Library, preserves the original reference when possible, and makes it searchable.
+The user shares a screenshot, URL, text, PDF, or file metadata into Kairo. The content appears in Chat first. Kairo analyzes it, searches similar Library items, then proposes one of three outcomes: create a new asset, merge into an existing asset or InfoPage, or skip saving. If auto-create is enabled in Settings, Kairo may save low-risk matches without asking; otherwise it asks before creating or merging.
 
 ### Flow B: Assets to InfoPage
 
@@ -82,7 +83,7 @@ Kairo suggests reminders or drafts from an InfoPage. The user previews the actio
 - Share Extension queue for text, URL, image, PDF, and file metadata.
 - File-backed `KnowledgeAsset` store and backend API.
 - Asset import from pending shares.
-- Asset list/search/detail/delete/export.
+- Asset list/search/detail/delete.
 - Library query API for fuzzy text, asset type, date range, and folder filters.
 - File-backed `KnowledgeAssetFolder` metadata.
 - iCloud backup policy toggle for imported assets.

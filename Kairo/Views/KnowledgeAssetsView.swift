@@ -19,8 +19,6 @@ public struct KnowledgeAssetsView: View {
     @State private var newFolderName = ""
     @State private var errorMessage: String?
     @State private var statusMessage: String?
-    @State private var exportText = "{}"
-    @State private var isImporting = false
     @State private var isFilterPresented = false
 
     @Binding private var rootChromeBackRequestID: Int
@@ -93,7 +91,6 @@ public struct KnowledgeAssetsView: View {
     private var assetLibrary: some View {
         VStack(alignment: .leading, spacing: 14) {
             searchCard
-            importControls
 
             if let statusMessage {
                 statusCard(statusMessage, systemImage: "checkmark.circle.fill", tint: KairoDesign.green)
@@ -124,45 +121,6 @@ public struct KnowledgeAssetsView: View {
             }
         }
         .accessibilityIdentifier("knowledgeAssets.library")
-    }
-
-    private var importControls: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
-                    Image(systemName: "tray.and.arrow.down.fill")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(KairoDesign.teal)
-                        .frame(width: 34, height: 34)
-                        .background(KairoDesign.teal.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(KairoL10n.string("knowledgeAssets.capture.title"))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(KairoDesign.ink)
-                        Text(KairoL10n.string("knowledgeAssets.capture.subtitle"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-
-                Button {
-                    importPendingShares()
-                } label: {
-                    Label(
-                        isImporting ? KairoL10n.string("knowledgeAssets.import.running") : KairoL10n.string("knowledgeAssets.import.pending"),
-                        systemImage: "square.and.arrow.down"
-                    )
-                    .frame(maxWidth: .infinity, alignment: .center)
-                }
-                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal, isProminent: true))
-                .disabled(isImporting)
-                .accessibilityIdentifier("knowledgeAssets.import.pending")
-            }
-        }
     }
 
     private var searchCard: some View {
@@ -197,22 +155,6 @@ public struct KnowledgeAssetsView: View {
             .overlay {
                 RoundedRectangle(cornerRadius: 19, style: .continuous)
                     .stroke(KairoDesign.line, lineWidth: 1)
-            }
-
-            HStack(spacing: 8) {
-                KairoStatusPill(
-                    title: searchSummary,
-                    systemImage: "archivebox.fill",
-                    tint: KairoDesign.teal
-                )
-
-                ShareLink(item: exportText) {
-                    Label(KairoL10n.string("knowledgeAssets.export"), systemImage: "square.and.arrow.up")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
-                .disabled(assets.isEmpty)
-                .accessibilityIdentifier("knowledgeAssets.export")
             }
 
             if isFilterPresented {
@@ -538,20 +480,6 @@ public struct KnowledgeAssetsView: View {
         searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private var searchSummary: String {
-        if trimmedSearchQuery.isEmpty {
-            return KairoL10n.string(
-                assets.count == 1 ? "knowledgeAssets.count.one" : "knowledgeAssets.count.many",
-                Int64(assets.count)
-            )
-        }
-        return KairoL10n.string(
-            assets.count == 1 ? "knowledgeAssets.search.count.one" : "knowledgeAssets.search.count.many",
-            Int64(assets.count),
-            trimmedSearchQuery
-        )
-    }
-
     private var activeFilterCount: Int {
         var count = 0
         if selectedKind != nil { count += 1 }
@@ -589,14 +517,14 @@ public struct KnowledgeAssetsView: View {
     private var groupedAssets: [KnowledgeAssetGroup] {
         let calendar = Calendar.current
         let grouped = Dictionary(grouping: assets) { asset in
-            KnowledgeAssetGroupKey(date: asset.createdAt, calendar: calendar)
+            KnowledgeAssetGroupKey(date: asset.updatedAt, calendar: calendar)
         }
         return grouped
             .map { key, assets in
                 KnowledgeAssetGroup(
                     id: key.id,
                     title: key.title,
-                    assets: assets.sorted { $0.createdAt > $1.createdAt }
+                    assets: assets.sorted { $0.updatedAt > $1.updatedAt }
                 )
             }
             .sorted { $0.id > $1.id }
@@ -606,12 +534,9 @@ public struct KnowledgeAssetsView: View {
         do {
             let loaded = try await assetAPI.query(query, limit: 200)
             let folders = try await assetAPI.listFolders()
-            let export = try await assetAPI.export(limit: 500)
-            let exportText = try Self.exportText(for: export)
             await MainActor.run {
                 assets = loaded
                 self.folders = folders
-                self.exportText = exportText
                 errorMessage = nil
                 if let selectedAssetID = selectedAsset?.id {
                     selectedAsset = loaded.first { $0.id == selectedAssetID } ?? selectedAsset
@@ -639,31 +564,6 @@ public struct KnowledgeAssetsView: View {
                 }
             } catch {
                 await MainActor.run {
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-
-    private func importPendingShares() {
-        isImporting = true
-        statusMessage = nil
-        errorMessage = nil
-
-        Task {
-            do {
-                let result = try await assetAPI.importPendingShares(limit: 20, iCloudBackupAllowed: false)
-                await reload()
-                await MainActor.run {
-                    isImporting = false
-                    statusMessage = KairoL10n.string(
-                        result.assets.count == 1 ? "knowledgeAssets.import.result.one" : "knowledgeAssets.import.result.many",
-                        Int64(result.assets.count)
-                    )
-                }
-            } catch {
-                await MainActor.run {
-                    isImporting = false
                     errorMessage = error.localizedDescription
                 }
             }
@@ -803,13 +703,6 @@ public struct KnowledgeAssetsView: View {
             .replacingOccurrences(of: "'", with: "&#39;")
     }
 
-    private static func exportText(for export: KnowledgeAssetExport) throws -> String {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(export)
-        return String(data: data, encoding: .utf8) ?? "{}"
-    }
 }
 
 private struct KnowledgeAssetThumbnail: View {

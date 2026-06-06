@@ -39,6 +39,21 @@ Models should produce structured JSON, not arbitrary UI.
 - `html/index.html` is a rendered template snapshot for fast preview/export.
 - `resources/` stores original images, PDFs, or file copies only when Kairo owns the resource.
 
+## Ingestion Decision Flow
+
+Library should not expose raw import/export buttons as the main workflow. Capture starts from Share Extension, Chat input, or App Intent input.
+
+Expected flow:
+
+1. Shared content appears in Chat review.
+2. Kairo extracts lightweight metadata and any available text.
+3. Kairo queries the Library index for similar assets, folders, and InfoPages.
+4. The model receives only the new item plus the retrieved candidates.
+5. The model chooses create, merge, ask user, or skip.
+6. Kairo saves only after user confirmation unless Settings allows low-risk auto-create.
+
+This keeps Library as the searchable database while Chat handles the ambiguous decision of where new information belongs.
+
 ## SQLite Index
 
 SQLite is the likely index layer once Library grows beyond small JSON lists.

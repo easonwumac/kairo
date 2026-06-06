@@ -5,12 +5,15 @@ Only start work that helps users capture information, understand it, or turn it 
 
 ## MVP Flow A: Capture Assets
 
-Goal: users can send phone content into Kairo and see what was saved.
+Goal: users can send phone content into Kairo, review it in Chat, and let Kairo decide how it should enter Library.
 
 Remaining gaps:
 
-- Share Extension imports text, URLs, screenshots/images, PDF/file metadata into Asset Inbox.
-- Main app has a clear Library entry for Asset Inbox and all saved assets.
+- Share Extension sends text, URLs, screenshots/images, PDF/file metadata into Chat review, not directly into the Library UI.
+- Chat shows the shared item, runs asset retrieval, and asks whether to create, merge, or skip unless auto-create is enabled.
+- Retrieval should provide similar assets, folders, and InfoPages before the model decides where the new data belongs.
+- Settings should expose whether low-risk assets can be auto-created or always require confirmation.
+- Main app has a clear Library entry for saved assets, filters, folders, and detail.
 - Asset detail preserves original file reference, extracted text, source, date, tags, sensitivity, and linked InfoPages.
 - Library supports fuzzy search, type filters, date filters, time grouping, and user-created folders.
 - iCloud backup opt-in is clear and per-store behavior is testable.
@@ -20,8 +23,9 @@ Remaining gaps:
 Required evidence:
 
 - Asset Codable/store tests.
-- Share queue -> Asset Inbox import tests.
-- UI smoke for Library import/list/search/delete/export.
+- Share queue -> Chat review -> asset proposal tests.
+- Retrieval candidate tests for similar assets/folders/InfoPages.
+- UI smoke for Library list/search/filter/detail/delete.
 - Store/API tests for folder metadata and filtered queries.
 
 ## MVP Flow B: Organize Assets Into InfoPages

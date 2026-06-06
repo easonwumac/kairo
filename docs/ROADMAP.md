@@ -20,7 +20,7 @@ The priority is not adding more phone-agent tools. The priority is making captur
 | Area | Status | Notes |
 |---|---|---|
 | Library navigation | Implemented | Library is a first-class drawer entry. |
-| KnowledgeAsset model/store/API | Implemented | File-backed asset persistence, search, delete, export, and import from pending shares. |
+| KnowledgeAsset model/store/API | Implemented | File-backed asset persistence, search, delete, export API, and import from pending shares. Library UI should not expose raw import/export as the primary flow. |
 | Share Extension queue | Implemented | Queues text, URL, image, PDF, and file metadata; extension remains queue-only. |
 | iCloud backup policy | Implemented | Asset store exposes backup inclusion policy. |
 | Library filters | Implemented | Text, type, date range, folder filters, and time grouping exist in the Library path. |
@@ -33,7 +33,7 @@ The priority is not adding more phone-agent tools. The priority is making captur
 | Asset -> InfoPage selection | Planned | Needs app UI. |
 | InfoPage -> Reminder confirmation | Scaffolded | `ReminderLink` model exists; EventKit write-back UI still needs wiring. |
 | Screenshot OCR / vision extraction | Planned | Do not claim image understanding until real extraction exists. |
-| Chat with assets / InfoPages | Planned | Chat should search saved assets and InfoPages. |
+| Chat with assets / InfoPages | Planned | Chat should receive shared content, retrieve similar saved assets/InfoPages, and propose create/merge/skip. |
 | Model evaluation for asset understanding | Scaffolded | Evaluation catalog exists; real local vision/OCR path is not complete. |
 | Recipes / sample flows | Deprioritized | Keep only if directly useful for asset-to-action flow. |
 | Skill Manager / managed tools | Deprioritized | Hide from primary UI unless needed for asset workflows. |
@@ -43,10 +43,10 @@ The priority is not adding more phone-agent tools. The priority is making captur
 
 ## Phase 1: Asset Capture MVP
 
-1. Make Library the obvious home for captured assets.
-2. Verify Share Extension -> Asset Inbox for text, URL, screenshot/image, PDF/file metadata.
+1. Make Library the obvious home for saved assets, not raw import decisions.
+2. Verify Share Extension -> Chat review -> asset proposal for text, URL, screenshot/image, PDF/file metadata.
 3. Preserve original asset references and extracted text.
-4. Add focused UI smoke for import/list/search/delete/export.
+4. Add focused UI smoke for list/search/filter/detail/delete.
 5. Keep iCloud backup opt-in explicit.
 
 ## Phase 2: InfoPage MVP

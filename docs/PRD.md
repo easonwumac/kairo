@@ -50,8 +50,10 @@ Kairo 整理後的資料頁。
 ### Flow A：匯入資產
 
 - Share Extension / 主 App 可匯入 text、URL、截圖/image、PDF/file metadata。
-- 匯入後進入 Asset Inbox。
-- 使用者可在 Library 看到完整資產列表、搜尋、刪除、匯出。
+- 匯入後先進入 Chat review，由 Kairo 分析內容並檢索相似 assets / folders / InfoPages。
+- Kairo 依檢索結果建議建立新 asset、合併到既有資料頁、或不儲存。
+- 除非 Settings 啟用低風險自動建立，否則建立或合併前要詢問使用者。
+- 使用者可在 Library 看到完整資產列表、搜尋、篩選、刪除。
 - 不做高風險 action。
 - 不假裝圖片 OCR 已完成。
 
@@ -80,8 +82,8 @@ Kairo 整理後的資料頁。
 ## 必做
 
 - Asset model/store/backend API。
-- Asset Inbox / Library。
-- Share Extension import 到 Asset Inbox。
+- Library search / filter / detail。
+- Share Extension import 到 Chat review，並產生 create / merge / skip asset proposal。
 - InfoPage model/store/generator。
 - Travel InfoPage UI。
 - InfoPage -> Reminder preview + confirm。
