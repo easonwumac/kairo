@@ -9,7 +9,7 @@
 "root.menu.accessibility" = "Kairo 導覽選單";
 "root.moreActions" = "Chat 操作";
 "root.pageActions.chat.tools" = "Chat 工具";
-"root.menu.group.primary" = "開始使用";
+"root.menu.group.primary" = "資產";
 "root.menu.group.agent" = "支援";
 "root.menu.group.system" = "設定";
 "root.menu.chat.section" = "Chat";
@@ -24,9 +24,9 @@
 "root.section.chat.subtitle" = "告訴 Kairo 要在這支手機上完成什麼";
 "root.section.chat.shortTitle" = "Chat";
 "root.section.chat.chromeTitle" = "iOS Agent";
-"root.section.assets.title" = "資料庫";
-"root.section.assets.subtitle" = "截圖、檔案與已抽取脈絡";
-"root.section.assets.shortTitle" = "資料庫";
+"root.section.assets.title" = "Library";
+"root.section.assets.subtitle" = "截圖、檔案、連結與資訊頁";
+"root.section.assets.shortTitle" = "Library";
 "root.section.memory.title" = "記憶";
 "root.section.memory.subtitle" = "Kairo 可使用的已核准脈絡";
 "root.section.memory.shortTitle" = "記憶";

@@ -9,7 +9,7 @@
 "root.menu.accessibility" = "Kairo navigation menu";
 "root.moreActions" = "Chat actions";
 "root.pageActions.chat.tools" = "Chat tools";
-"root.menu.group.primary" = "Start here";
+"root.menu.group.primary" = "Library";
 "root.menu.group.agent" = "Support";
 "root.menu.group.system" = "Setup";
 "root.menu.chat.section" = "Chat";
@@ -24,9 +24,9 @@
 "root.section.chat.subtitle" = "Tell Kairo what to do on this phone";
 "root.section.chat.shortTitle" = "Chat";
 "root.section.chat.chromeTitle" = "iOS Agent";
-"root.section.assets.title" = "Assets";
-"root.section.assets.subtitle" = "Screenshots, files, and extracted context";
-"root.section.assets.shortTitle" = "Assets";
+"root.section.assets.title" = "Library";
+"root.section.assets.subtitle" = "Screenshots, files, links, and info pages";
+"root.section.assets.shortTitle" = "Library";
 "root.section.memory.title" = "Memory";
 "root.section.memory.subtitle" = "Approved context Kairo can use";
 "root.section.memory.shortTitle" = "Memory";
