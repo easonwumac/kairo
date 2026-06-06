@@ -279,8 +279,7 @@ public struct SettingsView: View {
 
                 Spacer(minLength: 8)
 
-                Toggle("", isOn: $assetLibraryICloudBackupAllowed)
-                    .labelsHidden()
+                glassToggle(isOn: $assetLibraryICloudBackupAllowed)
             }
         }
         .accessibilityIdentifier("settings.backup.icloud")
@@ -302,6 +301,44 @@ public struct SettingsView: View {
             .foregroundStyle(tint)
             .frame(width: 30, height: 30)
             .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func glassToggle(isOn: Binding<Bool>) -> some View {
+        Button {
+            withAnimation(.snappy(duration: 0.22)) {
+                isOn.wrappedValue.toggle()
+            }
+        } label: {
+            ZStack(alignment: isOn.wrappedValue ? .trailing : .leading) {
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: isOn.wrappedValue
+                                ? [KairoDesign.blue.opacity(0.84), KairoDesign.teal.opacity(0.58)]
+                                : [KairoDesign.elevatedSurface.opacity(0.68), KairoDesign.softSurface.opacity(0.52)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay {
+                        Capsule()
+                            .stroke(KairoDesign.line.opacity(isOn.wrappedValue ? 0.45 : 0.85), lineWidth: 1)
+                    }
+                    .shadow(color: KairoDesign.shadow.opacity(isOn.wrappedValue ? 0.22 : 0.10), radius: 10, y: 6)
+
+                Circle()
+                    .fill(KairoDesign.ink.opacity(isOn.wrappedValue ? 0.92 : 0.72))
+                    .frame(width: 18, height: 18)
+                    .overlay {
+                        Circle()
+                            .stroke(.white.opacity(0.18), lineWidth: 1)
+                    }
+                    .padding(4)
+            }
+            .frame(width: 48, height: 26)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isOn.wrappedValue ? [.isButton, .isSelected] : .isButton)
     }
 
     private var connectedConnectorCount: Int {
