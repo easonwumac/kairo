@@ -550,7 +550,7 @@ public struct ChatView: View {
             )
             await MainActor.run {
                 viewModel.addAttachment(attachment)
-                captureStatusMessage = KairoL10n.string("chat.capture.photoAttached")
+                captureStatusMessage = nil
                 showToolPalette = false
                 selectedPhotoItem = nil
             }
