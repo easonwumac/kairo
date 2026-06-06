@@ -31,6 +31,7 @@ public struct SettingsView: View {
     @State var localModelCatalog: LocalModelCatalog
     @State var localModelStatus: LocalModelSettingsStatus
     @State var localModelDownloadProgress: LocalModelDownloadProgressState?
+    @State var localModelDownloadQueue: [LocalModelSettingsRow] = []
     @State var localModelDownloadTask: Task<Void, Never>?
     @State var localModelStatusMessage: String?
     @State var localModelStatusMessageModelID: String?
@@ -405,6 +406,7 @@ public struct SettingsView: View {
                 connectorOptions: connectorOptions,
                 localModelStatus: localModelStatus,
                 localModelDownloadProgress: localModelDownloadProgress,
+                localModelDownloadQueue: localModelDownloadQueue,
                 localModelStatusMessage: localModelStatusMessage,
                 localModelStatusMessageModelID: localModelStatusMessageModelID,
                 localModelCatalogSourceText: localModelCatalogSourceText,

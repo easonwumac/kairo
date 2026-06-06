@@ -964,6 +964,7 @@
 "settings.models.status.downloading" = "Downloading";
 "settings.models.status.failed" = "Download failed";
 "settings.models.status.downloadable" = "Downloadable";
+"settings.models.status.queued" = "Queued";
 "settings.models.progress.preparing" = "Preparing download";
 "settings.models.progress.downloading" = "Downloading";
 "settings.models.progress.verifying" = "Verifying";
@@ -1039,6 +1040,8 @@
 "settings.route.preferCloud.detail" = "Uses the cloud provider when network access is available.";
 "settings.route.localOnly.detail" = "Never routes prompts to cloud providers; unsupported local tasks fail closed.";
 "settings.responseLanguage.title" = "Primary language";
+"settings.responseLanguage.page.title" = "Primary language";
+"settings.responseLanguage.system.subtitle" = "Follow iOS";
 "settings.responseLanguage.system.title" = "System";
 "settings.responseLanguage.english.title" = "English";
 "settings.responseLanguage.traditionalChinese.title" = "Traditional Chinese";

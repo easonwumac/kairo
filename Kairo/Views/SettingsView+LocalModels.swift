@@ -114,12 +114,6 @@ extension SettingsView {
 
 
     func downloadLocalModel(_ row: LocalModelSettingsRow) {
-        if let progress = localModelDownloadProgress {
-            localModelStatusMessageModelID = progress.modelID
-            localModelStatusMessage = KairoL10n.string("settings.models.message.downloadInProgress")
-            return
-        }
-
         guard localModelSettingsService != nil else {
             localModelStatusMessageModelID = row.modelID
             localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
@@ -132,6 +126,22 @@ extension SettingsView {
             return
         }
 
+        guard localModelDownloadProgress?.modelID != row.modelID,
+              !localModelDownloadQueue.contains(where: { $0.modelID == row.modelID }) else {
+            return
+        }
+
+        guard localModelDownloadTask == nil else {
+            localModelDownloadQueue.append(row)
+            localModelStatusMessageModelID = row.modelID
+            localModelStatusMessage = nil
+            return
+        }
+
+        startLocalModelDownload(row, downloader: localModelDownloader)
+    }
+
+    private func startLocalModelDownload(_ row: LocalModelSettingsRow, downloader localModelDownloader: any LocalModelDownloader) {
         let task = Task {
             do {
                 await MainActor.run {
@@ -149,12 +159,15 @@ extension SettingsView {
                 }
                 await MainActor.run { finishLocalModelDownload(row, message: KairoL10n.string("settings.models.message.downloaded", row.displayName)) }
                 await reloadLocalModelStatus()
+                await MainActor.run { startNextQueuedLocalModelDownloadIfNeeded() }
             } catch LocalModelDownloadError.cancelled {
                 await MainActor.run { finishLocalModelDownload(row, message: KairoL10n.string("settings.models.message.downloadCancelled", row.displayName)) }
                 await reloadLocalModelStatus()
+                await MainActor.run { startNextQueuedLocalModelDownloadIfNeeded() }
             } catch {
                 await MainActor.run { finishLocalModelDownload(row, message: KairoL10n.string("settings.models.message.downloadFailed", error.localizedDescription)) }
                 await reloadLocalModelStatus()
+                await MainActor.run { startNextQueuedLocalModelDownloadIfNeeded() }
             }
         }
         localModelDownloadTask = task
@@ -171,6 +184,16 @@ extension SettingsView {
         localModelDownloadProgress = nil
         localModelDownloadTask = nil
         localModelStatusMessage = message
+    }
+
+    private func startNextQueuedLocalModelDownloadIfNeeded() {
+        guard localModelDownloadTask == nil,
+              let localModelDownloader,
+              !localModelDownloadQueue.isEmpty else {
+            return
+        }
+        let next = localModelDownloadQueue.removeFirst()
+        startLocalModelDownload(next, downloader: localModelDownloader)
     }
 
     func selectLocalModel(_ row: LocalModelSettingsRow) {
@@ -203,12 +226,6 @@ extension SettingsView {
     }
 
     func addCustomHuggingFaceLocalModel(_ input: String) {
-        if let progress = localModelDownloadProgress {
-            localModelStatusMessageModelID = progress.modelID
-            localModelStatusMessage = KairoL10n.string("settings.models.message.downloadInProgress")
-            return
-        }
-
         guard let localModelCatalogService else {
             localModelStatusMessageModelID = nil
             localModelStatusMessage = KairoL10n.string("settings.models.message.catalogResolverMissing")
@@ -219,7 +236,7 @@ extension SettingsView {
             localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
             return
         }
-        guard let localModelDownloader else {
+        guard localModelDownloader != nil else {
             localModelStatusMessageModelID = nil
             localModelStatusMessage = KairoL10n.string("settings.models.message.downloaderMissing")
             return
@@ -246,25 +263,18 @@ extension SettingsView {
                     localModelCatalog = updatedCatalog
                     localModelStatusMessageModelID = manifest.id
                     localModelStatusMessage = KairoL10n.string("settings.models.message.customResolved", manifest.displayName)
-                    localModelDownloadProgress = LocalModelDownloadProgressState(modelID: manifest.id, fractionCompleted: 0.05)
-                }
-                _ = try await localModelDownloader.download(manifest) { fractionCompleted in
-                    Task { @MainActor in
-                        localModelDownloadProgress = LocalModelDownloadProgressState(
-                            modelID: manifest.id,
-                            fractionCompleted: fractionCompleted
-                        )
-                    }
-                }
-                await MainActor.run {
-                    localModelDownloadProgress = nil
-                    localModelStatusMessageModelID = manifest.id
-                    localModelStatusMessage = KairoL10n.string("settings.models.message.downloaded", manifest.displayName)
                 }
                 await reloadLocalModelStatus()
+                let row = LocalModelSettingsRow(
+                    model: manifest,
+                    installRecord: nil,
+                    isSelected: false
+                )
+                await MainActor.run {
+                    downloadLocalModel(row)
+                }
             } catch {
                 await MainActor.run {
-                    localModelDownloadProgress = nil
                     localModelStatusMessageModelID = nil
                     localModelStatusMessage = KairoL10n.string("settings.models.message.customFailed", error.localizedDescription)
                 }

@@ -1051,8 +1051,9 @@ final class LocalModelFeatureTests: XCTestCase {
         let selectedStatus = ChatProviderRouteStatusBuilder.build(from: await service.status())
 
         XCTAssertEqual(selectedStatus.title, "Qwen Small Test")
-        XCTAssertNil(selectedStatus.selectedOptionID)
-        XCTAssertTrue(selectedStatus.options.isEmpty)
+        XCTAssertEqual(selectedStatus.selectedOptionID, "local.qwen-small")
+        XCTAssertEqual(selectedStatus.options.first { $0.id == "local.qwen-small" }?.isEnabled, true)
+        XCTAssertNotNil(selectedStatus.warning)
 
         let selectedRuntimeReadyStatus = ChatProviderRouteStatusBuilder.build(
             from: await service.status(),
@@ -1081,8 +1082,9 @@ final class LocalModelFeatureTests: XCTestCase {
         ))
 
         XCTAssertEqual(localOnlyInstalledStatus.title, "Qwen Small Test")
-        XCTAssertNil(localOnlyInstalledStatus.selectedOptionID)
-        XCTAssertTrue(localOnlyInstalledStatus.options.isEmpty)
+        XCTAssertEqual(localOnlyInstalledStatus.selectedOptionID, "local.qwen-small")
+        XCTAssertEqual(localOnlyInstalledStatus.options.first { $0.id == "local.qwen-small" }?.isEnabled, true)
+        XCTAssertNotNil(localOnlyInstalledStatus.warning)
 
         let localOnlyRuntimeReadyStatus = ChatProviderRouteStatusBuilder.build(
             from: LocalModelSettingsStatus(
@@ -1110,6 +1112,20 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertNil(warningStatus.selectedOptionID)
         XCTAssertTrue(warningStatus.options.isEmpty)
         XCTAssertNotNil(warningStatus.warning)
+    }
+
+    func testChatProviderRouteStatusBuilderShowsSelectedLocalModelForAutomaticRoute() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .automatic,
+            installedAndSelectedModelID: "qwen-small"
+        )
+
+        let status = ChatProviderRouteStatusBuilder.build(from: await service.status())
+
+        XCTAssertEqual(status.title, "Qwen Small Test")
+        XCTAssertEqual(status.selectedOptionID, "local.qwen-small")
+        XCTAssertEqual(status.options.map(\.id), ["local.qwen-small"])
+        XCTAssertEqual(status.options.first?.modelID, "qwen-small")
     }
 
     func testLocalModelRoutingAIProviderUsesSelectedLocalModelForEligiblePreferLocalWork() async throws {

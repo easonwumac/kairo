@@ -84,9 +84,9 @@ public enum ChatProviderRouteStatusBuilder {
         let options = allOptions
             .filter(\.isEnabled)
             .prefix(6)
-        let selectedOptionID = selectedOptionID(for: status, fallback: cloudOption.id)
+        let selectedOptionID = selectedOptionID(for: status, cloudOption: cloudOption)
         let preferredOption = allOptions.first { $0.id == selectedOptionID }
-        let selectedOption = if let preferredOption, preferredOption.isEnabled || preferredOption.modelID != nil {
+        let selectedOption = if let preferredOption, preferredOption.isEnabled {
             preferredOption
         } else {
             options.first ?? preferredOption ?? cloudOption
@@ -179,20 +179,29 @@ public enum ChatProviderRouteStatusBuilder {
                 systemImage: localRuntimeAvailable ? "cpu.fill" : "exclamationmark.triangle.fill",
                 preference: .localOnly,
                 modelID: model.id,
-                isEnabled: localRuntimeAvailable
+                isEnabled: true
             )
         }
     }
 
-    private static func selectedOptionID(for status: LocalModelSettingsStatus, fallback: String) -> String {
+    private static func selectedOptionID(
+        for status: LocalModelSettingsStatus,
+        cloudOption: ChatProviderRouteOption
+    ) -> String {
         switch status.preference {
-        case .localOnly, .preferLocal:
+        case .localOnly, .preferLocal, .automatic:
+            if let selectedModelID = status.selectedModelID {
+                return "local.\(selectedModelID)"
+            }
+            return cloudOption.isEnabled ? cloudOption.id : "local.none"
+        case .preferCloud:
+            if cloudOption.isEnabled {
+                return cloudOption.id
+            }
             if let selectedModelID = status.selectedModelID {
                 return "local.\(selectedModelID)"
             }
             return "local.none"
-        case .automatic, .preferCloud:
-            return fallback
         }
     }
 

@@ -17,6 +17,7 @@ struct LocalModelsCompactView: View {
     let connectorOptions: [OAuthConnectorLoginOption]
     let localModelStatus: LocalModelSettingsStatus
     let localModelDownloadProgress: LocalModelDownloadProgressState?
+    let localModelDownloadQueue: [LocalModelSettingsRow]
     let localModelStatusMessage: String?
     let localModelStatusMessageModelID: String?
     let localModelCatalogSourceText: String
@@ -109,7 +110,7 @@ struct LocalModelsCompactView: View {
         switch page {
         case .addCloud, .addLocal:
             return page.title
-        case .defaultModel:
+        case .defaultModel, .responseLanguage:
             return page.title
         case let .cloudDetail(providerID):
             return cloudProviderRows.first { $0.id == providerID }?.title ?? page.title
@@ -221,6 +222,8 @@ struct LocalModelsCompactView: View {
             addPage(for: page)
         case .defaultModel:
             defaultModelSelectionPage
+        case .responseLanguage:
+            responseLanguageSelectionPage
         case .cloudDetail(let providerID):
             if let row = cloudProviderRows.first(where: { $0.id == providerID }) {
                 cloudDetailPage(for: row)
@@ -258,7 +261,7 @@ struct LocalModelsCompactView: View {
                         cloudAddList
                     case .addLocal:
                         localAddList
-                    case .cloudDetail, .localDetail, .defaultModel:
+                    case .cloudDetail, .localDetail, .defaultModel, .responseLanguage:
                         EmptyView()
                     }
                 }
@@ -346,7 +349,7 @@ struct LocalModelsCompactView: View {
 
             Spacer(minLength: 8)
 
-            compactResponseLanguageMenu
+            responseLanguageSelectorButton
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.responseLanguage.card")
@@ -560,6 +563,50 @@ struct LocalModelsCompactView: View {
         }
     }
 
+    private var responseLanguageSelectionPage: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if !usesRootChromeNavigation {
+                pageBackButton
+            }
+
+            KairoFocusCard {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(KairoL10n.string("settings.responseLanguage.page.title"))
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+
+                    ForEach(ChatResponseLanguagePreference.settingsChoices, id: \.self) { responseLanguage in
+                        Button {
+                            setResponseLanguage(responseLanguage)
+                            withAnimation(.snappy(duration: 0.2)) {
+                                popPage()
+                            }
+                        } label: {
+                            defaultModelRowContent(
+                                title: responseLanguage.settingsTitle,
+                                subtitle: responseLanguage.settingsSubtitle,
+                                systemImage: "globe",
+                                tint: KairoDesign.blue,
+                                isSelected: localModelStatus.responseLanguage == responseLanguage
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.responseLanguage.\(responseLanguage.rawValue)")
+
+                        if responseLanguage != ChatResponseLanguagePreference.settingsChoices.last {
+                            Divider()
+                        }
+                    }
+                }
+            }
+            .accessibilityIdentifier("settings.responseLanguage.page")
+        }
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
+    }
+
     private var selectedModelSummaryText: String {
         if localModelStatus.localModelInstalled, let selectedModel = localModelStatus.selectedModel {
             return KairoL10n.string("settings.models.compact.activeForLocalTasks", selectedModel.displayName)
@@ -623,7 +670,6 @@ struct LocalModelsCompactView: View {
                     addListRow(
                         title: row.title,
                         subtitle: row.method,
-                        status: row.status,
                         systemImage: row.setupKind.systemImage
                     )
                 }
@@ -765,8 +811,14 @@ struct LocalModelsCompactView: View {
 
     private var configuredLocalModelRows: [LocalModelSettingsRow] {
         localModelStatus.settingsRows.filter { row in
-            row.installRecord != nil || localModelDownloadProgress?.modelID == row.modelID
+            row.installRecord != nil
+                || localModelDownloadProgress?.modelID == row.modelID
+                || queuedLocalModelIDs.contains(row.modelID)
         }
+    }
+
+    private var queuedLocalModelIDs: Set<String> {
+        Set(localModelDownloadQueue.map(\.modelID))
     }
 
     private var shouldShowSectionLocalModelMessage: Bool {
@@ -778,7 +830,10 @@ struct LocalModelsCompactView: View {
 
     private var addableLocalModelRows: [LocalModelSettingsRow] {
         localModelStatus.settingsRows.filter { row in
-            row.primaryAction == .download && row.installRecord == nil && localModelDownloadProgress?.modelID != row.modelID
+            row.primaryAction == .download
+                && row.installRecord == nil
+                && localModelDownloadProgress?.modelID != row.modelID
+                && !queuedLocalModelIDs.contains(row.modelID)
         }
     }
 
@@ -802,7 +857,6 @@ struct LocalModelsCompactView: View {
                     addListRow(
                         title: row.displayName,
                         subtitle: row.detailText,
-                        status: row.statusText,
                         systemImage: "arrow.down.circle"
                     )
                 }
@@ -913,29 +967,15 @@ struct LocalModelsCompactView: View {
         .accessibilityIdentifier("settings.models.preference")
     }
 
-    private var compactResponseLanguageMenu: some View {
-        Menu {
-            ForEach(ChatResponseLanguagePreference.settingsChoices, id: \.self) { responseLanguage in
-                Button {
-                    setResponseLanguage(responseLanguage)
-                } label: {
-                    Text(responseLanguage.settingsTitle)
-                }
-                .accessibilityIdentifier("settings.responseLanguage.\(responseLanguage.rawValue)")
+    private var responseLanguageSelectorButton: some View {
+        Button {
+            withAnimation(.snappy(duration: 0.2)) {
+                pushPage(.responseLanguage)
             }
         } label: {
-            HStack(spacing: 3) {
+            pillNavigationLabel(
                 Text(localModelStatus.responseLanguage.settingsTitle)
-                    .font(compactControlValueFont)
-                    .lineLimit(1)
-
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2.weight(.semibold))
-            }
-            .foregroundStyle(.blue)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(Color.blue.opacity(0.06), in: Capsule())
+            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel(KairoL10n.string("settings.responseLanguage.title"))
@@ -983,7 +1023,17 @@ struct LocalModelsCompactView: View {
 
             Spacer(minLength: 6)
 
-            if showsSelectedStatus || row.primaryAction != .selected {
+            if localModelDownloadProgress?.modelID == row.modelID {
+                EmptyView()
+            } else if queuedLocalModelIDs.contains(row.modelID) {
+                Text(KairoL10n.string("settings.models.status.queued"))
+                    .font(compactModelStatusFont)
+                    .foregroundStyle(KairoDesign.blue)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(KairoDesign.blue.opacity(0.11), in: Capsule())
+                    .accessibilityIdentifier("settings.models.\(row.modelID).status")
+            } else if row.primaryAction != .download && (showsSelectedStatus || row.primaryAction != .selected) {
                 Text(row.statusText)
                     .font(compactModelStatusFont)
                     .foregroundStyle(localModelStatusColor(row.primaryAction))
@@ -993,10 +1043,12 @@ struct LocalModelsCompactView: View {
                     .accessibilityIdentifier("settings.models.\(row.modelID).status")
             }
 
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.top, 4)
+            if showsSelectedStatus {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+            }
         }
     }
 
@@ -1220,7 +1272,9 @@ struct LocalModelsCompactView: View {
 
     @ViewBuilder
     private func localModelDetailActions(for row: LocalModelSettingsRow) -> some View {
-        if row.primaryAction == .download || row.primaryAction == .retryDownload {
+        if (row.primaryAction == .download || row.primaryAction == .retryDownload)
+            && localModelDownloadProgress?.modelID != row.modelID
+            && !queuedLocalModelIDs.contains(row.modelID) {
             compactActionButton(
                 row.primaryAction.title,
                 systemImage: "arrow.down.circle",
@@ -1232,17 +1286,6 @@ struct LocalModelsCompactView: View {
         }
 
         LazyVGrid(columns: compactButtonGridColumns, alignment: .leading, spacing: 8) {
-            if row.primaryAction == .select {
-                compactActionButton(
-                    row.primaryAction.title,
-                    systemImage: "checkmark.circle",
-                    accessibilityIdentifier: "settings.models.\(row.modelID).select",
-                    tint: .blue
-                ) {
-                    selectLocalModel(row)
-                }
-            }
-
             if row.primaryAction == .select || row.primaryAction == .selected {
                 compactActionButton(
                     KairoL10n.string("settings.models.speed"),
@@ -1427,7 +1470,6 @@ struct LocalModelsCompactView: View {
     private func addListRow(
         title: String,
         subtitle: String,
-        status: String,
         systemImage: String
     ) -> some View {
         HStack(alignment: .center, spacing: 10) {
@@ -1450,12 +1492,6 @@ struct LocalModelsCompactView: View {
             }
 
             Spacer(minLength: 8)
-
-            Text(status)
-                .font(compactModelStatusFont)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.trailing)
-                .lineLimit(2)
 
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
@@ -1485,22 +1521,14 @@ struct LocalModelsCompactView: View {
             }
 
             if progress.allowsCancellation {
-                HStack(spacing: 6) {
-                    Text(KairoL10n.string("settings.models.download.keepOpen"))
-                        .font(compactModelMetadataFont)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .accessibilityIdentifier("settings.models.\(progress.modelID).download-cancel-note")
-
-                    compactActionButton(
-                        KairoL10n.string("settings.models.download.cancelActive"),
-                        systemImage: "xmark.circle",
-                        accessibilityIdentifier: "settings.models.\(progress.modelID).download-active-cancel",
-                        tint: .secondary,
-                        role: .cancel
-                    ) {
-                        cancelLocalModelDownload(row)
-                    }
+                compactActionButton(
+                    KairoL10n.string("settings.models.download.cancelActive"),
+                    systemImage: "xmark.circle",
+                    accessibilityIdentifier: "settings.models.\(progress.modelID).download-active-cancel",
+                    tint: .secondary,
+                    role: .cancel
+                ) {
+                    cancelLocalModelDownload(row)
                 }
             }
         }
@@ -1540,6 +1568,20 @@ struct LocalModelsCompactView: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier(accessibilityIdentifier)
     }
+
+    private func pillNavigationLabel(_ title: Text) -> some View {
+        HStack(spacing: 4) {
+            title
+                .font(compactButtonLabelFont)
+                .lineLimit(1)
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.semibold))
+        }
+        .foregroundStyle(KairoDesign.blue)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(KairoDesign.blue.opacity(0.08), in: Capsule())
+    }
 }
 
 private struct CloudModelProviderRow: Identifiable, Equatable {
@@ -1578,6 +1620,7 @@ private enum ModelSettingsPage: Equatable {
     case addCloud
     case addLocal
     case defaultModel
+    case responseLanguage
     case cloudDetail(String)
     case localDetail(String)
 
@@ -1589,6 +1632,8 @@ private enum ModelSettingsPage: Equatable {
             return KairoL10n.string("settings.models.local.add.title")
         case .defaultModel:
             return KairoL10n.string("settings.models.default.page.title")
+        case .responseLanguage:
+            return KairoL10n.string("settings.responseLanguage.page.title")
         case .cloudDetail:
             return KairoL10n.string("settings.models.cloud.detail.title")
         case .localDetail:
@@ -1604,6 +1649,8 @@ private enum ModelSettingsPage: Equatable {
             return KairoL10n.string("settings.models.local.add.detail")
         case .defaultModel:
             return KairoL10n.string("settings.models.default.page.detail")
+        case .responseLanguage:
+            return KairoL10n.string("settings.responseLanguage.page.title")
         case .cloudDetail:
             return KairoL10n.string("settings.models.cloud.detail.detail")
         case .localDetail:
@@ -1619,6 +1666,8 @@ private enum ModelSettingsPage: Equatable {
             return "settings.models.local.add.page"
         case .defaultModel:
             return "settings.models.default.page"
+        case .responseLanguage:
+            return "settings.responseLanguage.page"
         case .cloudDetail:
             return "settings.models.cloud.detail.page"
         case .localDetail:

@@ -179,6 +179,15 @@ public enum ChatResponseLanguagePreference: String, Codable, CaseIterable, Equat
         }
     }
 
+    public var settingsSubtitle: String {
+        switch self {
+        case .system:
+            return KairoL10n.string("settings.responseLanguage.system.subtitle")
+        default:
+            return settingsTitle
+        }
+    }
+
     public var promptInstruction: String {
         switch self {
         case .system:

@@ -964,6 +964,7 @@
 "settings.models.status.downloading" = "下載中";
 "settings.models.status.failed" = "下載失敗";
 "settings.models.status.downloadable" = "可下載";
+"settings.models.status.queued" = "排隊中";
 "settings.models.progress.preparing" = "準備下載";
 "settings.models.progress.downloading" = "下載中";
 "settings.models.progress.verifying" = "驗證中";
@@ -1039,6 +1040,8 @@
 "settings.route.preferCloud.detail" = "網路可用時優先使用 cloud provider。";
 "settings.route.localOnly.detail" = "不會把 prompt 路由到 cloud provider；本機不支援的任務會 fail closed。";
 "settings.responseLanguage.title" = "主要語言";
+"settings.responseLanguage.page.title" = "主要語言";
+"settings.responseLanguage.system.subtitle" = "跟隨 iOS";
 "settings.responseLanguage.system.title" = "系統";
 "settings.responseLanguage.english.title" = "英文";
 "settings.responseLanguage.traditionalChinese.title" = "繁體中文";
