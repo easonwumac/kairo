@@ -383,6 +383,7 @@ public struct SettingsView: View {
                 setResponseLanguage: { setResponseLanguage($0) },
                 setLocalModelRuntimeParameters: { setLocalModelRuntimeParameters($0, for: $1) },
                 refreshLocalModelCatalog: refreshLocalModelCatalog,
+                addCustomHuggingFaceLocalModel: { addCustomHuggingFaceLocalModel($0) },
                 downloadLocalModel: { downloadLocalModel($0) },
                 cancelLocalModelDownload: { cancelLocalModelDownload($0) },
                 selectLocalModel: { selectLocalModel($0) },

@@ -401,7 +401,7 @@ public extension LocalModelManifest {
         [
             parameterCount,
             quantization,
-            "\(Self.formattedBytes(fileSizeBytes))",
+            "\(Self.formattedBytes(totalDownloadSizeBytes))",
             "\(contextWindow / 1000)K ctx"
         ].joined(separator: " · ")
     }

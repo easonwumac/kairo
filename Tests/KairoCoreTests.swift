@@ -851,7 +851,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(availableModels.allSatisfy { $0.runtime == .gguf })
         XCTAssertTrue(availableModels.allSatisfy { $0.downloadURL.scheme == "https" })
         XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
-        XCTAssertEqual(availableModels.count, 2)
+        XCTAssertEqual(availableModels.count, 3)
 
         let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
         let mlxBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .mlx })
@@ -1153,7 +1153,8 @@ final class KairoCoreTests: XCTestCase {
             minimumSafetyPolicyVersion: expandedEnvironment.localModelCatalog.minimumSafetyPolicyVersion
         ).map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
-            "llama3-2-1b-instruct-q4-k-m",
+            "qwen3-5-2b-q4-k-m",
+            "qwen2-5-vl-3b-instruct-q4-k-m",
             "remote-catalog-test-model-q4-k-m"
         ])
     }
@@ -1342,7 +1343,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.download-cancel"))
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.benchmark-message"))
         let expandedModelsScenarioIdentifiers = catalog.scenario(id: "settings-local-model-expanded-catalog")?.requiredAccessibilityIdentifiers ?? []
-        XCTAssertTrue(expandedModelsScenarioIdentifiers.contains("settings.models.llama3-2-1b-instruct-q4-k-m.name"))
+        XCTAssertTrue(expandedModelsScenarioIdentifiers.contains("settings.models.qwen2-5-vl-3b-instruct-q4-k-m.name"))
         XCTAssertTrue(expandedModelsScenarioIdentifiers.contains("settings.models.trimmed-note"))
         let shortcutDemoScenarioIdentifiers = catalog.scenario(id: "settings-shortcut-demo-io")?.requiredAccessibilityIdentifiers ?? []
         for recipe in ShortcutDemoCatalog.default.recipes {
@@ -1536,7 +1537,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("settings.models.local"))
         for displayName in [
             "Qwen3.5 0.8B Q4_K_M",
-            "Llama 3.2 1B Instruct Q4_K_M"
+            "Qwen3.5 2B Q4_K_M",
+            "Qwen2.5-VL 3B Instruct Q4_K_M"
         ] {
             XCTAssertTrue(uiTestSources.contains(displayName), displayName)
         }

@@ -938,6 +938,10 @@
 "settings.models.message.deleted" = "%@ deleted.";
 "settings.models.message.deleteFailed" = "Could not delete model: %@";
 "settings.models.message.usingBuiltInCatalog" = "Using the built-in model list.";
+"settings.models.message.catalogResolverMissing" = "Hugging Face model parsing is unavailable in this build.";
+"settings.models.message.customResolving" = "Checking Hugging Face model metadata.";
+"settings.models.message.customResolved" = "%@ metadata parsed. Starting download.";
+"settings.models.message.customFailed" = "Could not add Hugging Face model: %@";
 "settings.models.message.refreshingCatalog" = "Refreshing the model list.";
 "settings.models.message.catalogRefreshed" = "Model list refreshed: %lld available models.";
 "settings.models.message.catalogUsingBuiltInFallback" = "Remote model list is unavailable. Using %lld built-in models.";
@@ -970,6 +974,8 @@
 "settings.models.local.add.title" = "Add local model";
 "settings.models.local.add.detail" = "Choose a model to start downloading.";
 "settings.models.local.add.empty" = "No downloadable local models are available.";
+"settings.models.local.custom.placeholder" = "Hugging Face repo, e.g. Qwen/Qwen3.5-2B-GGUF";
+"settings.models.local.custom.add" = "Parse and download";
 "settings.models.local.detail.title" = "Local model";
 "settings.models.local.detail.detail" = "Parameters, speed, delete.";
 "settings.models.detail.unavailable" = "This model or provider is no longer available.";

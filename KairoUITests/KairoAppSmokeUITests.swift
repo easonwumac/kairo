@@ -10,7 +10,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     var app: XCUIApplication!
     let localModelExpectations = [
         ("qwen3-5-0-8b-q4-k-m", "Qwen3.5 0.8B Q4_K_M"),
-        ("llama3-2-1b-instruct-q4-k-m", "Llama 3.2 1B Instruct Q4_K_M")
+        ("qwen3-5-2b-q4-k-m", "Qwen3.5 2B Q4_K_M"),
+        ("qwen2-5-vl-3b-instruct-q4-k-m", "Qwen2.5-VL 3B Instruct Q4_K_M")
     ]
 
     override func setUpWithError() throws {
@@ -34,7 +35,8 @@ final class KairoAppSmokeUITests: XCTestCase {
     func testSettingsLocalModelCatalogListsDownloadableModels() throws {
         relaunchForUITesting(initialSection: "models")
         openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: false, selectFromDrawer: false)
-        XCTAssertTrue(anyElement("settings.models.llama3-2-1b-instruct-q4-k-m.name").exists)
+        XCTAssertTrue(findButton("settings.models.local.add.qwen3-5-2b-q4-k-m", direction: .down, maxSwipes: 4).exists)
+        XCTAssertTrue(findButton("settings.models.local.add.qwen2-5-vl-3b-instruct-q4-k-m", direction: .down, maxSwipes: 4).exists)
         XCTAssertFalse(anyElement("settings.models.show-more").exists)
     }
 
@@ -198,7 +200,7 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(anyElement("settings.models.screen").waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("settings.models.qwen3-5-0-8b-q4-k-m.name").exists)
-        XCTAssertTrue(anyElement("settings.models.llama3-2-1b-instruct-q4-k-m.name").exists)
+        XCTAssertTrue(anyElement("settings.models.qwen3-5-2b-q4-k-m.name").exists)
         XCTAssertTrue(findElement("settings.models.trimmed-note", direction: .down, maxSwipes: 2).waitForExistence(timeout: 3))
         XCTAssertFalse(anyElement("settings.models.remote-catalog-test-model-q4-k-m.name").exists)
         XCTAssertFalse(anyElement("settings.models.show-more").exists)

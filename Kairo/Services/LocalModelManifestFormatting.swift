@@ -37,7 +37,7 @@ public extension LocalModelManifest {
             runtime.settingsDisplayName,
             licenseName,
             "iOS \(minOSVersion)/\(minDeviceClass)+/\(formattedRAMRequirement)",
-            "SHA \(sha256.prefix(7))",
+            companionArtifacts.isEmpty ? "SHA \(sha256.prefix(7))" : "SHA \(sha256.prefix(7)) + \(companionArtifacts.count) companion",
             "policy \(safetyPolicyVersion)"
         ].joined(separator: " · ")
     }
@@ -76,7 +76,7 @@ public extension LocalModelManifest {
 
     private var formattedDownloadSize: String {
         let units = ["B", "KB", "MB", "GB"]
-        var value = Double(fileSizeBytes)
+        var value = Double(totalDownloadSizeBytes)
         var unitIndex = 0
         while value >= 1024, unitIndex < units.count - 1 {
             value /= 1024
@@ -104,6 +104,14 @@ public extension LocalModelManifest {
             profile.runtime == .mlx && profile.isReferenceOnlyForIOS && !profile.supportsInAppDownload
         }
         return hasReferenceOnlyMLX ? "MLX ref only" : "Device test pending"
+    }
+}
+
+public extension LocalModelManifest {
+    var totalDownloadSizeBytes: Int64 {
+        companionArtifacts.reduce(fileSizeBytes) { partialResult, artifact in
+            partialResult + artifact.fileSizeBytes
+        }
     }
 }
 

@@ -938,6 +938,10 @@
 "settings.models.message.deleted" = "%@ 已刪除。";
 "settings.models.message.deleteFailed" = "刪除模型失敗：%@";
 "settings.models.message.usingBuiltInCatalog" = "使用內建模型清單。";
+"settings.models.message.catalogResolverMissing" = "此版本無法解析 Hugging Face 模型。";
+"settings.models.message.customResolving" = "正在檢查 Hugging Face 模型資訊。";
+"settings.models.message.customResolved" = "%@ 資訊已解析，開始下載。";
+"settings.models.message.customFailed" = "新增 Hugging Face 模型失敗：%@";
 "settings.models.message.refreshingCatalog" = "正在刷新模型清單。";
 "settings.models.message.catalogRefreshed" = "已刷新模型清單：%lld 個可用模型。";
 "settings.models.message.catalogUsingBuiltInFallback" = "遠端模型清單目前不可用，已使用 %lld 個內建模型。";
@@ -970,6 +974,8 @@
 "settings.models.local.add.title" = "新增本地模型";
 "settings.models.local.add.detail" = "選擇後開始下載。";
 "settings.models.local.add.empty" = "目前沒有可下載的本地模型。";
+"settings.models.local.custom.placeholder" = "Hugging Face repo，例如 Qwen/Qwen3.5-2B-GGUF";
+"settings.models.local.custom.add" = "解析並下載";
 "settings.models.local.detail.title" = "本地模型";
 "settings.models.local.detail.detail" = "參數、速度、刪除。";
 "settings.models.detail.unavailable" = "這個模型或 provider 已不可用。";

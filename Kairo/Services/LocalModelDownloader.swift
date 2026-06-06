@@ -54,27 +54,34 @@ public actor VerifiedLocalModelDownloader: LocalModelDownloader {
             }
 
             progress?(0.9)
-            let actualChecksum = Self.sha256Hex(data)
-            guard actualChecksum == manifest.sha256.lowercased() else {
-                throw LocalModelDownloadError.checksumMismatch(expected: manifest.sha256, actual: actualChecksum)
-            }
+            let actualChecksum = try installDownloadedArtifact(
+                data,
+                expectedSHA256: manifest.sha256,
+                destinationURL: destinationURL
+            )
 
-            if FileManager.default.fileExists(atPath: temporaryURL.path) {
-                try FileManager.default.removeItem(at: temporaryURL)
+            var installedSizeBytes = Int64(data.count)
+            for artifact in manifest.companionArtifacts {
+                let artifactRequest = URLRequest(url: artifact.downloadURL)
+                let (artifactData, artifactResponse) = try await httpClient.data(for: artifactRequest)
+                guard (200..<300).contains(artifactResponse.statusCode) else {
+                    let bodyPreview = String(data: artifactData.prefix(300), encoding: .utf8) ?? ""
+                    throw HTTPClientError.unacceptableStatusCode(artifactResponse.statusCode, bodyPreview)
+                }
+                _ = try installDownloadedArtifact(
+                    artifactData,
+                    expectedSHA256: artifact.sha256,
+                    destinationURL: installedCompanionURL(for: manifest, artifact: artifact)
+                )
+                installedSizeBytes += Int64(artifactData.count)
             }
-            try data.write(to: temporaryURL, options: [.atomic])
-            if FileManager.default.fileExists(atPath: destinationURL.path) {
-                try FileManager.default.removeItem(at: destinationURL)
-            }
-            try FileManager.default.moveItem(at: temporaryURL, to: destinationURL)
-            try LocalModelStoragePolicy.applyBackupExclusion(to: destinationURL)
 
             let record = LocalModelInstallRecord(
                 modelID: manifest.id,
                 version: manifest.version,
                 status: .installed,
                 fileURL: destinationURL,
-                installedSizeBytes: Int64(data.count),
+                installedSizeBytes: installedSizeBytes,
                 sha256: actualChecksum,
                 lastVerifiedAt: Date()
             )
@@ -88,6 +95,7 @@ public actor VerifiedLocalModelDownloader: LocalModelDownloader {
             if FileManager.default.fileExists(atPath: destinationURL.path) {
                 try? FileManager.default.removeItem(at: destinationURL)
             }
+            removeInstalledCompanions(for: manifest)
             try await installRegistry.delete(modelID: manifest.id)
             throw LocalModelDownloadError.cancelled
         } catch {
@@ -97,6 +105,7 @@ public actor VerifiedLocalModelDownloader: LocalModelDownloader {
             if FileManager.default.fileExists(atPath: destinationURL.path) {
                 try? FileManager.default.removeItem(at: destinationURL)
             }
+            removeInstalledCompanions(for: manifest)
             try await installRegistry.upsert(LocalModelInstallRecord(
                 modelID: manifest.id,
                 version: manifest.version,
@@ -117,12 +126,69 @@ public actor VerifiedLocalModelDownloader: LocalModelDownloader {
         guard !manifest.sha256.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw LocalModelDownloadError.unsupportedManifest("Local model manifest is missing sha256.")
         }
+        for artifact in manifest.companionArtifacts {
+            guard ["https", "file"].contains(artifact.downloadURL.scheme?.lowercased()) else {
+                throw LocalModelDownloadError.unsupportedManifest("Local model companion downloads require HTTPS or file URLs.")
+            }
+            guard !artifact.sha256.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw LocalModelDownloadError.unsupportedManifest("Local model companion manifest is missing sha256.")
+            }
+        }
     }
 
     private func installedModelURL(for manifest: LocalModelManifest) -> URL {
         let fileExtension = manifest.downloadURL.pathExtension.isEmpty ? "model" : manifest.downloadURL.pathExtension
         let fileName = "\(Self.sanitizedFileComponent(manifest.id))-\(Self.sanitizedFileComponent(manifest.version)).\(fileExtension)"
         return modelsDirectory.appendingPathComponent(fileName)
+    }
+
+    private func installedCompanionURL(
+        for manifest: LocalModelManifest,
+        artifact: LocalModelCompanionArtifact
+    ) -> URL {
+        let fileExtension = artifact.downloadURL.pathExtension.isEmpty ? "model" : artifact.downloadURL.pathExtension
+        let fileName = [
+            Self.sanitizedFileComponent(manifest.id),
+            Self.sanitizedFileComponent(manifest.version),
+            Self.sanitizedFileComponent(artifact.id)
+        ].joined(separator: "-") + ".\(fileExtension)"
+        return modelsDirectory.appendingPathComponent(fileName)
+    }
+
+    private func installDownloadedArtifact(
+        _ data: Data,
+        expectedSHA256: String,
+        destinationURL: URL
+    ) throws -> String {
+        let actualChecksum = Self.sha256Hex(data)
+        guard actualChecksum == expectedSHA256.lowercased() else {
+            throw LocalModelDownloadError.checksumMismatch(expected: expectedSHA256, actual: actualChecksum)
+        }
+
+        let temporaryURL = destinationURL.appendingPathExtension("download")
+        if FileManager.default.fileExists(atPath: temporaryURL.path) {
+            try FileManager.default.removeItem(at: temporaryURL)
+        }
+        try data.write(to: temporaryURL, options: [.atomic])
+        if FileManager.default.fileExists(atPath: destinationURL.path) {
+            try FileManager.default.removeItem(at: destinationURL)
+        }
+        try FileManager.default.moveItem(at: temporaryURL, to: destinationURL)
+        try LocalModelStoragePolicy.applyBackupExclusion(to: destinationURL)
+        return actualChecksum
+    }
+
+    private func removeInstalledCompanions(for manifest: LocalModelManifest) {
+        for artifact in manifest.companionArtifacts {
+            let companionURL = installedCompanionURL(for: manifest, artifact: artifact)
+            if FileManager.default.fileExists(atPath: companionURL.path) {
+                try? FileManager.default.removeItem(at: companionURL)
+            }
+            let partialURL = companionURL.appendingPathExtension("download")
+            if FileManager.default.fileExists(atPath: partialURL.path) {
+                try? FileManager.default.removeItem(at: partialURL)
+            }
+        }
     }
 
     private func failedChecksum(for error: Error, fallback: String) -> String {

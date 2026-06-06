@@ -72,6 +72,26 @@ public enum InfoPageModelEvaluationCatalog {
             notes: "Lowest fallback for OCR text cleanup and simple extraction. Not acceptable as the primary screenshot understanding model."
         ),
         InfoPageModelEvaluationCandidate(
+            id: "qwen3-5-2b-q4-k-m",
+            displayName: "Qwen3.5 2B Q4_K_M",
+            recommendedRole: .fallbackTextExtraction,
+            expectedTemplateCoverage: [.generalNote, .project, .order, .travel],
+            minimumAcceptedScore: 0.72,
+            requiresVisionInput: false,
+            downloadableModelID: LocalModelManifest.qwen35TwoB.id,
+            notes: "Required text fallback for Apple Vision OCR output and Library asset extraction when a direct vision model is unavailable."
+        ),
+        InfoPageModelEvaluationCandidate(
+            id: "qwen2-5-vl-3b-instruct-q4-k-m",
+            displayName: "Qwen2.5-VL 3B Instruct Q4_K_M",
+            recommendedRole: .minimumVisionExtraction,
+            expectedTemplateCoverage: [.travel, .order, .warranty, .event, .generalNote],
+            minimumAcceptedScore: 0.76,
+            requiresVisionInput: true,
+            downloadableModelID: LocalModelManifest.qwen25VLThreeBInstruct.id,
+            notes: "First downloadable vision-language candidate because its GGUF model and mmproj companion are both represented in the local catalog."
+        ),
+        InfoPageModelEvaluationCandidate(
             id: "gemma-4-e2b-it",
             displayName: "Gemma 4 E2B IT",
             recommendedRole: .minimumVisionExtraction,
@@ -79,7 +99,7 @@ public enum InfoPageModelEvaluationCatalog {
             minimumAcceptedScore: 0.78,
             requiresVisionInput: true,
             downloadableModelID: nil,
-            notes: "Minimum candidate for on-device image-to-structured-info extraction once a signed iOS-compatible artifact is available."
+            notes: "Preferred product direction for on-device image-to-structured-info extraction once a signed iOS-compatible artifact and projector/runtime path are verified."
         ),
         InfoPageModelEvaluationCandidate(
             id: "gemma-4-e4b-it",
@@ -89,7 +109,7 @@ public enum InfoPageModelEvaluationCatalog {
             minimumAcceptedScore: 0.84,
             requiresVisionInput: true,
             downloadableModelID: nil,
-            notes: "Preferred local candidate for multi-asset InfoPage generation, especially travel, project, and high-ambiguity screenshots."
+            notes: "Preferred local target for multi-asset InfoPage generation, especially travel, project, and high-ambiguity screenshots; not marked downloadable until the artifact path is verified."
         )
     ]
 

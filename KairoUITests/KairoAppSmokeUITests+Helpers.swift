@@ -197,23 +197,13 @@ extension KairoAppSmokeUITests {
         let localModelsToVerify = verifyAllLocalModels
             ? localModelExpectations
             : Array(localModelExpectations.prefix(2))
-        XCTAssertTrue(app.staticTexts["settings.models.\(localModelsToVerify[0].0).status"].label.contains("Downloadable"))
-        XCTAssertTrue(app.buttons["settings.models.\(localModelsToVerify[0].0).download"].exists)
+        let addLocal = findButton("settings.models.local.add", direction: .down, maxSwipes: 2)
+        XCTAssertTrue(addLocal.waitForExistence(timeout: 5))
+        tapElement(addLocal)
+        XCTAssertTrue(anyElement("settings.models.local.custom.input").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("settings.models.local.custom.add").exists)
         for localModel in localModelsToVerify {
-            verifyDownloadableLocalModelSummary(
-                id: localModel.0,
-                displayName: localModel.1,
-                downloadIdentifier: "settings.models.\(localModel.0).download"
-            )
-        }
-
-        openAdvancedModelDiagnosticsIfNeeded()
-        let catalogSource = anyElement("settings.models.catalog-source")
-        XCTAssertTrue(catalogSource.exists)
-        XCTAssertTrue(catalogSource.label.contains("github.com/easonwumac/kairo-models"))
-        XCTAssertTrue(app.buttons["settings.models.refresh-catalog"].exists)
-        if localModelsToVerify.contains(where: { $0.0 == "qwen3-5-0-8b-q4-k-m" }) {
-            verifyQwenLocalModelDiagnostics()
+            XCTAssertTrue(findButton("settings.models.local.add.\(localModel.0)", direction: .down, maxSwipes: 4).exists, localModel.1)
         }
     }
 

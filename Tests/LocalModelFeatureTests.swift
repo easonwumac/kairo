@@ -38,26 +38,37 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
         XCTAssertTrue(localModelCatalogSource.contains("static let kairoStarterModelIDs"))
         XCTAssertTrue(localModelCatalogSource.contains("kairoStarterModels"))
-        XCTAssertEqual(availableModels.count, 2)
+        XCTAssertEqual(availableModels.count, 3)
         XCTAssertEqual(availableModels.map(\.id), [
             "qwen3-5-0-8b-q4-k-m",
-            "llama3-2-1b-instruct-q4-k-m"
+            "qwen3-5-2b-q4-k-m",
+            "qwen2-5-vl-3b-instruct-q4-k-m"
         ])
         XCTAssertEqual(availableModels.map(\.displayName), [
             "Qwen3.5 0.8B Q4_K_M",
-            "Llama 3.2 1B Instruct Q4_K_M"
+            "Qwen3.5 2B Q4_K_M",
+            "Qwen2.5-VL 3B Instruct Q4_K_M"
         ])
 
         for model in availableModels {
             XCTAssertEqual(model.downloadURL.scheme, "https", model.id)
             XCTAssertEqual(model.downloadURL.host(), "huggingface.co", model.id)
             XCTAssertEqual(model.sha256.count, 64, model.id)
-            XCTAssertLessThanOrEqual(model.minRAMGB, 6, model.id)
+            XCTAssertLessThanOrEqual(model.minRAMGB, 8, model.id)
             XCTAssertEqual(model.runtime, .gguf, model.id)
             XCTAssertTrue(model.capabilities.contains(.offlineChat), model.id)
             XCTAssertTrue(model.disallowedCapabilities.contains(.webCurrentInfo), model.id)
             XCTAssertTrue(model.disallowedCapabilities.contains(.toolUse), model.id)
         }
+
+        let qwenTwoB = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-2b-q4-k-m" })
+        XCTAssertEqual(qwenTwoB.sha256, "a511452ec932613d6b26b4fa24488fd431eb61eac69321460447d475edc221e2")
+        XCTAssertFalse(qwenTwoB.capabilities.contains(.imageUnderstanding))
+
+        let qwenVision = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-vl-3b-instruct-q4-k-m" })
+        XCTAssertTrue(qwenVision.capabilities.contains(.imageUnderstanding))
+        XCTAssertEqual(qwenVision.companionArtifacts.map(\.id), ["mmproj-q8-0"])
+        XCTAssertEqual(qwenVision.totalDownloadSizeBytes, 2_774_658_784)
 
         let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
         let ggufBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .gguf })
@@ -199,6 +210,81 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(catalog.models.first?.runtime, .gguf)
         XCTAssertEqual(catalog.models.first?.version, "1.1.0")
         XCTAssertEqual(catalog.models.first?.benchmarkProfiles, [])
+    }
+
+    func testHuggingFaceResolverBuildsApacheGGUFManifestWithoutDownloadingWeights() async throws {
+        let repoID = "Qwen/Qwen3.5-2B-GGUF"
+        let infoURL = URL(string: "https://huggingface.co/api/models/\(repoID)")!
+        let treeURL = URL(string: "https://huggingface.co/api/models/\(repoID)/tree/main?recursive=1&expand=true")!
+        let service = LocalModelCatalogService(httpClient: StaticHTTPClient(routes: [
+            infoURL: StaticHTTPResponse(body: #"{"cardData":{"license":"apache-2.0"}}"#),
+            treeURL: StaticHTTPResponse(body: """
+            [
+              {
+                "path": "Qwen3.5-2B.q8_0.gguf",
+                "size": 2012012480,
+                "lfs": {"oid": "44bead7f88cb7f904799449fecae257f299f68e948a27858402062ecd9f7be88", "size": 2012012480}
+              },
+              {
+                "path": "Qwen3.5-2B.q4_k_m.gguf",
+                "size": 1270808512,
+                "lfs": {"oid": "a511452ec932613d6b26b4fa24488fd431eb61eac69321460447d475edc221e2", "size": 1270808512}
+              }
+            ]
+            """)
+        ]))
+
+        let manifest = try await service.resolveHuggingFaceModel(from: repoID)
+
+        XCTAssertEqual(manifest.id, "qwen-qwen3.5-2b-gguf-qwen3.5-2b.q4_k_m")
+        XCTAssertEqual(manifest.downloadURL.absoluteString, "https://huggingface.co/Qwen/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B.q4_k_m.gguf")
+        XCTAssertEqual(manifest.sha256, "a511452ec932613d6b26b4fa24488fd431eb61eac69321460447d475edc221e2")
+        XCTAssertEqual(manifest.licenseName, "Apache-2.0")
+        XCTAssertFalse(manifest.capabilities.contains(.imageUnderstanding))
+    }
+
+    func testHuggingFaceResolverIncludesVisionProjectorCompanionWhenAvailable() async throws {
+        let repoID = "ggml-org/Qwen2.5-VL-3B-Instruct-GGUF"
+        let infoURL = URL(string: "https://huggingface.co/api/models/\(repoID)")!
+        let treeURL = URL(string: "https://huggingface.co/api/models/\(repoID)/tree/main?recursive=1&expand=true")!
+        let service = LocalModelCatalogService(httpClient: StaticHTTPClient(routes: [
+            infoURL: StaticHTTPResponse(body: #"{"cardData":{"license":"apache-2.0"}}"#),
+            treeURL: StaticHTTPResponse(body: """
+            [
+              {
+                "path": "Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+                "lfs": {"oid": "d02fe9b69ad8cadbbd228e387667af66612c44bed29ffc8eb1e7caf9ac486c12", "size": 1929901056}
+              },
+              {
+                "path": "mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf",
+                "lfs": {"oid": "980c9b2f78c04e6cff93d277ada09e768394f112d75db3b4e9dea8a69f9fb904", "size": 844757728}
+              }
+            ]
+            """)
+        ]))
+
+        let manifest = try await service.resolveHuggingFaceModel(from: "https://huggingface.co/\(repoID)")
+
+        XCTAssertTrue(manifest.capabilities.contains(.imageUnderstanding))
+        XCTAssertEqual(manifest.companionArtifacts.map(\.role), ["multimodalProjector"])
+        XCTAssertEqual(manifest.totalDownloadSizeBytes, 2_774_658_784)
+    }
+
+    func testHuggingFaceResolverRejectsNonApacheLicense() async throws {
+        let repoID = "google/gemma-custom"
+        let infoURL = URL(string: "https://huggingface.co/api/models/\(repoID)")!
+        let treeURL = URL(string: "https://huggingface.co/api/models/\(repoID)/tree/main?recursive=1&expand=true")!
+        let service = LocalModelCatalogService(httpClient: StaticHTTPClient(routes: [
+            infoURL: StaticHTTPResponse(body: #"{"cardData":{"license":"gemma"}}"#),
+            treeURL: StaticHTTPResponse(body: "[]")
+        ]))
+
+        do {
+            _ = try await service.resolveHuggingFaceModel(from: repoID)
+            XCTFail("Expected custom license to be rejected.")
+        } catch let error as LocalModelCatalogServiceError {
+            XCTAssertEqual(error, .unsupportedHuggingFaceLicense("gemma"))
+        }
     }
 
     func testLocalModelCatalogRefreshFallsBackToBuiltInCatalogWhenRemoteIsUnavailable() async throws {
@@ -1927,6 +2013,45 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertNotNil(record?.lastVerifiedAt)
     }
 
+    func testVerifiedLocalModelDownloaderInstallsCompanionArtifactsForVisionModels() async throws {
+        let registryURL = temporaryFileURL(named: "install-registry.json")
+        let modelsDirectory = registryURL.deletingLastPathComponent().appendingPathComponent("Models", isDirectory: true)
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let companionURL = URL(string: "https://example.com/qwen-mmproj.gguf")!
+        let manifest = makeLocalModelManifest(
+            id: "qwen-vl",
+            version: "1.0",
+            sha256: "357e5d6fafa34d27360fec24b4326d3534905e33c6acdee60198fb078b7b79e5",
+            companionArtifacts: [
+                LocalModelCompanionArtifact(
+                    id: "mmproj",
+                    role: "multimodalProjector",
+                    displayName: "Qwen projector",
+                    fileSizeBytes: 15,
+                    downloadURL: companionURL,
+                    sha256: "b95a25c1f308da898c582dc7728f9c1157ab1f5b34c36109a5203f0ac71a2f85"
+                )
+            ]
+        )
+        let downloader = VerifiedLocalModelDownloader(
+            httpClient: StaticHTTPClient(routes: [
+                manifest.downloadURL: StaticHTTPResponse(body: "model-bytes"),
+                companionURL: StaticHTTPResponse(body: "projector-bytes")
+            ]),
+            installRegistry: registry,
+            modelsDirectory: modelsDirectory
+        )
+
+        let installedURL = try await downloader.download(manifest, progress: nil)
+        let companionFile = modelsDirectory.appendingPathComponent("qwen-vl-1.0-mmproj.gguf")
+
+        XCTAssertEqual(try String(contentsOf: installedURL, encoding: .utf8), "model-bytes")
+        XCTAssertEqual(try String(contentsOf: companionFile, encoding: .utf8), "projector-bytes")
+        let record = await registry.record(for: manifest.id)
+        XCTAssertEqual(record?.status, .installed)
+        XCTAssertEqual(record?.installedSizeBytes, 26)
+    }
+
     func testLocalModelDownloadProgressStateMapsPhasesAndCancellationSupport() {
         let preparing = LocalModelDownloadProgressState(modelID: "qwen-small", fractionCompleted: 0.05)
         let downloading = LocalModelDownloadProgressState(modelID: "qwen-small", fractionCompleted: 0.5)
@@ -2260,7 +2385,8 @@ final class LocalModelFeatureTests: XCTestCase {
         safetyPolicyVersion: String = "2026.1",
         deprecated: Bool = false,
         sha256: String = "abc123",
-        contextWindow: Int = 2048
+        contextWindow: Int = 2048,
+        companionArtifacts: [LocalModelCompanionArtifact] = []
     ) -> LocalModelManifest {
         LocalModelManifest(
             id: id,
@@ -2283,6 +2409,7 @@ final class LocalModelFeatureTests: XCTestCase {
             disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
             downloadURL: URL(string: "https://example.com/model.gguf")!,
             sha256: sha256,
+            companionArtifacts: companionArtifacts,
             safetyPolicyVersion: safetyPolicyVersion,
             deprecated: deprecated
         )

@@ -23,8 +23,9 @@ Current beta supports catalog, explicit user-triggered download, select, delete,
 
 初期只保留少數熱門、可下載的小模型，避免 app UI 和 core catalog 一開始就變成長清單。後續可在獨立 `kairo-models` catalog 研究：
 
-- Qwen 3 / Qwen 3.5 0.6B～0.8B 等級模型。
-- Llama 3.2 1B 等小型 instruct 模型。
+- Qwen 3 / Qwen 3.5 0.6B～2B 等級模型。
+- Qwen2.5-VL 3B 等小型 vision-language 模型。
+- Llama 3.2 1B 等自訂授權模型只能作為手動匯入或未來 license approval flow，不預設進 starter。
 - Phi / Gemma / SmolLM 等小模型作為未來遠端 catalog 候選，不預設進 starter。
 - Apple Foundation Models（若部署目標與 API 條件允許）。
 - Core ML 轉換後的小型 LLM 或 classifier。
@@ -71,7 +72,7 @@ protocol AIProvider {
 
 ## MVP 策略
 
-第一階段不把模型權重塞進 app 或 repo。Kairo core 只保留 Qwen3.5 0.8B 和 Llama 3.2 1B 這組 compact starter catalog，並具備 install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring、模型 catalog/status UI、foreground progress/cancel UI、license-approval preview、stale interrupted-download cleanup、benchmark metadata、local reply-check runtime abstraction，以及 macOS/dev 外部 CLI reply/benchmark adapter；`docs/TRUST_STORE_RUNBOOK.md` 已補上 signed catalog rotation/revocation release gate，下一步仍是 production signed catalog publication、實機 iPhone runtime proof of concept。
+第一階段不把模型權重塞進 app 或 repo。Kairo core 只保留 Qwen 系列 compact starter catalog，並具備 install registry、selected-model settings、provider routing、verified downloader、live Settings downloader wiring、模型 catalog/status UI、foreground progress/cancel UI、license-approval preview、stale interrupted-download cleanup、benchmark metadata、local reply-check runtime abstraction，以及 macOS/dev 外部 CLI reply/benchmark adapter；`docs/TRUST_STORE_RUNBOOK.md` 已補上 signed catalog rotation/revocation release gate，下一步仍是 production signed catalog publication、實機 iPhone runtime proof of concept。
 
 ## Download pipeline
 
@@ -87,14 +88,27 @@ protocol AIProvider {
 
 The downloader is intentionally UI-agnostic. Settings now exposes model rows with download/select/delete affordances, route preference control, visible catalog source text, a Refresh Catalog action, explicit download approval copy for size, license, license approval, storage, backup policy, allowed offline purposes, visible download progress phases, an explicit foreground cancel control while checksum verification runs, and cleanup for stale interrupted download state after reload. The trust-store rotation/revocation release gate is documented in `docs/TRUST_STORE_RUNBOOK.md`, and standalone catalog publication requirements are in `docs/CATALOG_RELEASE_CHECKLIST.md`; a production build still needs a published signed catalog with real release public-key material.
 
-The default development catalog starts with 2 popular public GGUF downloads through Hugging Face. It is intentionally compact for the first Models UI pass; the standalone `kairo-models` catalog can add more entries later without bundling weights into the app:
+The default development catalog starts with compact public GGUF downloads through Hugging Face. It stays small enough for the first Models UI pass while adding the minimum assets needed for Library screenshot work:
 
 - `Qwen3.5 0.8B Q4_K_M`: `AaryanK/Qwen3.5-0.8B-GGUF`, file `Qwen3.5-0.8B.q4_k_m.gguf`, about 527.5 MB.
-- `Llama 3.2 1B Instruct Q4_K_M`: `bartowski/Llama-3.2-1B-Instruct-GGUF`, file `Llama-3.2-1B-Instruct-Q4_K_M.gguf`, about 807.7 MB.
+- `Qwen3.5 2B Q4_K_M`: `AaryanK/Qwen3.5-2B-GGUF`, file `Qwen3.5-2B.q4_k_m.gguf`, about 1.27 GB.
+- `Qwen2.5-VL 3B Instruct Q4_K_M`: `ggml-org/Qwen2.5-VL-3B-Instruct-GGUF`, file `Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf`, plus `mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf`, about 2.77 GB total.
 
-SHA-256 and file size are stored in each manifest and verified after download. Models with noncommercial, custom, or gated license terms must keep license text visible; Settings now shows a license-approval preview before download confirmation, and the standalone `kairo-models` catalog should keep license metadata reviewed before broad rollout.
+SHA-256 and file size are stored in each manifest and verified after download. The built-in downloadable list is Qwen-only for now because those entries are Apache-2.0 and have clear Hugging Face LFS metadata. Models with noncommercial, custom, gated, or unclear license terms should not be added to the built-in download catalog.
+
+Settings can parse a user-supplied Hugging Face repo id or repo URL. That path only creates a downloadable manifest when the repo card reports `Apache-2.0`, exposes at least one GGUF file with Hugging Face LFS SHA-256 metadata, and passes the same HTTPS/size/checksum validation as the signed catalog. Llama, Gemma, or other custom-license repos must stay manual/import-only until Kairo has explicit license approval UI and notices for that family.
 
 Kairo must keep this as an explicit user-triggered download. Do not commit model weights, tokenizer blobs, downloaded `.gguf` files, or cached model artifacts into this repository.
+
+### Image understanding boundary
+
+Library screenshot intake should still run Apple Vision first for OCR and lightweight device-native extraction. Text-only models such as Qwen3.5 0.8B/2B consume that Apple Vision output and should not be labeled as direct image-understanding models. Vision-language entries must include every required artifact, including multimodal projector files such as `mmproj`, before Kairo marks them as downloadable.
+
+Gemma 4 E2B/E4B remains the preferred product direction for local image-to-InfoPage quality, but it is not marked as downloadable in this repo until the license, signed artifact path, projector/runtime requirements, and iOS simulator/device proof are verified. Qwen2.5-VL 3B is the first catalog entry that can represent a complete downloadable GGUF + projector package; Chat image inference still needs runtime wiring that passes the projector and image tokens.
+
+### Planned PP/KV cache
+
+Prompt-processing cache is planned for the local runtime because repeating the same Library/system prefix makes PP expensive. The target policy is a 1 GB app-local KV cache budget, excluded from iCloud backup, keyed by model id, model version, runtime parameters, and prompt-prefix hash. Eviction should be least-recently-used by access time, and any mismatch in model, context size, sampler/runtime parameters, or prefix hash must invalidate the cache instead of reusing stale KV.
 
 ## Benchmark notes
 

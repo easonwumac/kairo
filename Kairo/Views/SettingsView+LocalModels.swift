@@ -182,6 +182,77 @@ extension SettingsView {
         }
     }
 
+    func addCustomHuggingFaceLocalModel(_ input: String) {
+        if let progress = localModelDownloadProgress {
+            localModelStatusMessageModelID = progress.modelID
+            localModelStatusMessage = KairoL10n.string("settings.models.message.downloadInProgress")
+            return
+        }
+
+        guard let localModelCatalogService else {
+            localModelStatusMessageModelID = nil
+            localModelStatusMessage = KairoL10n.string("settings.models.message.catalogResolverMissing")
+            return
+        }
+        guard localModelSettingsService != nil else {
+            localModelStatusMessageModelID = nil
+            localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
+            return
+        }
+        guard let localModelDownloader else {
+            localModelStatusMessageModelID = nil
+            localModelStatusMessage = KairoL10n.string("settings.models.message.downloaderMissing")
+            return
+        }
+
+        Task {
+            do {
+                await MainActor.run {
+                    localModelStatusMessageModelID = nil
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.customResolving")
+                }
+                let manifest = try await localModelCatalogService.resolveHuggingFaceModel(from: input)
+                let updatedCatalog = localModelCatalog.upserting(manifest)
+                if let localModelSettingsService {
+                    await localModelSettingsService.replaceCatalog(updatedCatalog)
+                }
+                if let localModelBenchmarkService {
+                    await localModelBenchmarkService.replaceCatalog(updatedCatalog)
+                }
+                if let localModelReplyCheckService {
+                    await localModelReplyCheckService.replaceCatalog(updatedCatalog)
+                }
+                await MainActor.run {
+                    localModelCatalog = updatedCatalog
+                    localModelStatusMessageModelID = manifest.id
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.customResolved", manifest.displayName)
+                    localModelDownloadProgress = LocalModelDownloadProgressState(modelID: manifest.id, fractionCompleted: 0.05)
+                }
+                _ = try await localModelDownloader.download(manifest) { fractionCompleted in
+                    Task { @MainActor in
+                        localModelDownloadProgress = LocalModelDownloadProgressState(
+                            modelID: manifest.id,
+                            fractionCompleted: fractionCompleted
+                        )
+                    }
+                }
+                await MainActor.run {
+                    localModelDownloadProgress = nil
+                    localModelStatusMessageModelID = manifest.id
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.downloaded", manifest.displayName)
+                }
+                await reloadLocalModelStatus()
+            } catch {
+                await MainActor.run {
+                    localModelDownloadProgress = nil
+                    localModelStatusMessageModelID = nil
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.customFailed", error.localizedDescription)
+                }
+                await reloadLocalModelStatus()
+            }
+        }
+    }
+
     func runLocalModelBenchmark(_ row: LocalModelSettingsRow, contextSize: Int = LocalModelBenchmarkRunInfo.defaultContextSize) {
         Task {
             let outputTokenTarget = row.runtimeParameters.maxOutputTokens

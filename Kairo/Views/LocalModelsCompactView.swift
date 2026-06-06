@@ -4,6 +4,7 @@ import SwiftUI
 struct LocalModelsCompactView: View {
     @State private var pageStack: [ModelSettingsPage] = []
     @State private var defaultModelNotice: String?
+    @State private var customHuggingFaceModelInput = ""
 
     var topPadding: CGFloat = 16
     @Binding var apiKey: String
@@ -32,6 +33,7 @@ struct LocalModelsCompactView: View {
     let setResponseLanguage: (ChatResponseLanguagePreference) -> Void
     let setLocalModelRuntimeParameters: (LocalModelRuntimeParameters, LocalModelSettingsRow) -> Void
     let refreshLocalModelCatalog: () -> Void
+    let addCustomHuggingFaceLocalModel: (String) -> Void
     let downloadLocalModel: (LocalModelSettingsRow) -> Void
     let cancelLocalModelDownload: (LocalModelSettingsRow) -> Void
     let selectLocalModel: (LocalModelSettingsRow) -> Void
@@ -782,6 +784,8 @@ struct LocalModelsCompactView: View {
 
     @ViewBuilder
     private var localAddList: some View {
+        customHuggingFaceModelForm
+
         if addableLocalModelRows.isEmpty {
             Text(KairoL10n.string("settings.models.local.add.empty"))
                 .font(compactModelMetadataFont)
@@ -806,6 +810,43 @@ struct LocalModelsCompactView: View {
                 .accessibilityIdentifier("settings.models.local.add.\(row.modelID)")
             }
         }
+    }
+
+    private var customHuggingFaceModelForm: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            TextField(
+                KairoL10n.string("settings.models.local.custom.placeholder"),
+                text: $customHuggingFaceModelInput
+            )
+            .autocorrectionDisabled()
+            .font(compactModelMetadataFont)
+            .foregroundStyle(KairoDesign.ink)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(KairoDesign.blue.opacity(0.16), lineWidth: 1)
+            }
+            .accessibilityIdentifier("settings.models.local.custom.input")
+
+            Button {
+                let input = customHuggingFaceModelInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !input.isEmpty else { return }
+                addCustomHuggingFaceLocalModel(input)
+            } label: {
+                Label(KairoL10n.string("settings.models.local.custom.add"), systemImage: "link.badge.plus")
+                    .font(compactButtonLabelFont)
+                    .foregroundStyle(KairoDesign.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 9)
+                    .background(KairoDesign.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(customHuggingFaceModelInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityIdentifier("settings.models.local.custom.add")
+        }
+        .padding(.bottom, 4)
     }
 
     private var selectedModelSummaryIconName: String {

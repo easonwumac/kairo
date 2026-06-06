@@ -440,7 +440,8 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             requiredAccessibilityIdentifiers: [
                 "settings.models.local",
                 "settings.models.qwen3-5-0-8b-q4-k-m.name",
-                "settings.models.llama3-2-1b-instruct-q4-k-m.name",
+                "settings.models.qwen3-5-2b-q4-k-m.name",
+                "settings.models.qwen2-5-vl-3b-instruct-q4-k-m.name",
                 "settings.models.trimmed-note"
             ],
             assertions: [

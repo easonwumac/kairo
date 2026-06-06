@@ -105,5 +105,15 @@ final class InfoPageFeatureTests: XCTestCase {
         XCTAssertEqual(fallback.recommendedRole, .fallbackTextExtraction)
         XCTAssertFalse(fallback.requiresVisionInput)
         XCTAssertEqual(fallback.downloadableModelID, LocalModelManifest.qwen35Tiny.id)
+
+        let qwenVision = try XCTUnwrap(InfoPageModelEvaluationCatalog.candidates.first { $0.id == LocalModelManifest.qwen25VLThreeBInstruct.id })
+        XCTAssertEqual(qwenVision.recommendedRole, .minimumVisionExtraction)
+        XCTAssertTrue(qwenVision.requiresVisionInput)
+        XCTAssertEqual(qwenVision.downloadableModelID, LocalModelManifest.qwen25VLThreeBInstruct.id)
+
+        let qwenTwoB = try XCTUnwrap(InfoPageModelEvaluationCatalog.candidates.first { $0.id == LocalModelManifest.qwen35TwoB.id })
+        XCTAssertEqual(qwenTwoB.recommendedRole, .fallbackTextExtraction)
+        XCTAssertFalse(qwenTwoB.requiresVisionInput)
+        XCTAssertEqual(qwenTwoB.downloadableModelID, LocalModelManifest.qwen35TwoB.id)
     }
 }

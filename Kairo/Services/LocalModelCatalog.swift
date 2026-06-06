@@ -8,6 +8,7 @@ public enum LocalModelCapability: String, Codable, Equatable, Sendable, CaseIter
     case offlineChat
     case rewriting
     case extraction
+    case imageUnderstanding
     case toolUse
     case webCurrentInfo
     case codeExecution
@@ -77,6 +78,31 @@ public struct LocalModelBenchmarkProfile: Codable, Equatable, Identifiable, Send
     }
 }
 
+public struct LocalModelCompanionArtifact: Codable, Equatable, Identifiable, Sendable {
+    public var id: String
+    public var role: String
+    public var displayName: String
+    public var fileSizeBytes: Int64
+    public var downloadURL: URL
+    public var sha256: String
+
+    public init(
+        id: String,
+        role: String,
+        displayName: String,
+        fileSizeBytes: Int64,
+        downloadURL: URL,
+        sha256: String
+    ) {
+        self.id = id
+        self.role = role
+        self.displayName = displayName
+        self.fileSizeBytes = fileSizeBytes
+        self.downloadURL = downloadURL
+        self.sha256 = sha256
+    }
+}
+
 public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var displayName: String
@@ -99,6 +125,7 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
     public var disallowedCapabilities: [LocalModelCapability]
     public var downloadURL: URL
     public var sha256: String
+    public var companionArtifacts: [LocalModelCompanionArtifact]
     public var signature: String?
     public var benchmarkProfiles: [LocalModelBenchmarkProfile]
     public var createdAt: Date
@@ -129,6 +156,7 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
         disallowedCapabilities: [LocalModelCapability] = [],
         downloadURL: URL,
         sha256: String,
+        companionArtifacts: [LocalModelCompanionArtifact] = [],
         signature: String? = nil,
         benchmarkProfiles: [LocalModelBenchmarkProfile] = [],
         createdAt: Date = Date(),
@@ -158,6 +186,7 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
         self.disallowedCapabilities = disallowedCapabilities
         self.downloadURL = downloadURL
         self.sha256 = sha256
+        self.companionArtifacts = companionArtifacts
         self.signature = signature
         self.benchmarkProfiles = benchmarkProfiles
         self.createdAt = createdAt
@@ -189,6 +218,7 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
         case disallowedCapabilities
         case downloadURL
         case sha256
+        case companionArtifacts
         case signature
         case benchmarkProfiles
         case createdAt
@@ -221,6 +251,7 @@ public struct LocalModelManifest: Codable, Equatable, Identifiable, Sendable {
         self.disallowedCapabilities = try container.decodeIfPresent([LocalModelCapability].self, forKey: .disallowedCapabilities) ?? []
         self.downloadURL = try container.decode(URL.self, forKey: .downloadURL)
         self.sha256 = try container.decode(String.self, forKey: .sha256)
+        self.companionArtifacts = try container.decodeIfPresent([LocalModelCompanionArtifact].self, forKey: .companionArtifacts) ?? []
         self.signature = try container.decodeIfPresent(String.self, forKey: .signature)
         self.benchmarkProfiles = try container.decodeIfPresent([LocalModelBenchmarkProfile].self, forKey: .benchmarkProfiles) ?? []
         self.createdAt = try container.decode(Date.self, forKey: .createdAt)
@@ -292,6 +323,16 @@ public struct LocalModelCatalog: Codable, Equatable, Sendable {
             ),
             models: orderedIDs.compactMap { modelsByID[$0] }
         )
+    }
+
+    public func upserting(_ model: LocalModelManifest) -> LocalModelCatalog {
+        var updated = self
+        if let index = updated.models.firstIndex(where: { $0.id == model.id }) {
+            updated.models[index] = model
+        } else {
+            updated.models.append(model)
+        }
+        return updated
     }
 
     private static func stricterSafetyPolicy(_ lhs: String, _ rhs: String) -> String {
@@ -384,12 +425,14 @@ public enum LocalModelCatalogSignatureStatus: String, Codable, Equatable, Sendab
 public extension LocalModelCatalog {
     static let kairoStarterModelIDs = [
         "qwen3-5-0-8b-q4-k-m",
-        "llama3-2-1b-instruct-q4-k-m"
+        "qwen3-5-2b-q4-k-m",
+        "qwen2-5-vl-3b-instruct-q4-k-m"
     ]
 
     static let kairoStarterModels: [LocalModelManifest] = [
         .qwen35Tiny,
-        .llama32OneBInstruct
+        .qwen35TwoB,
+        .qwen25VLThreeBInstruct
     ]
 
     static let kairoDefault = LocalModelCatalog(
@@ -544,6 +587,9 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
     case duplicateModelID(String)
     case unsafeDownloadURL(modelID: String, url: String)
     case invalidChecksum(modelID: String, sha256: String)
+    case unsupportedHuggingFaceInput(String)
+    case unsupportedHuggingFaceLicense(String)
+    case noDownloadableGGUF(repoID: String)
 
     public var errorDescription: String? {
         switch self {
@@ -581,6 +627,12 @@ public enum LocalModelCatalogServiceError: Error, Equatable, LocalizedError {
             return "Model catalog has an unsafe download URL for \(modelID): \(url)."
         case .invalidChecksum(let modelID, let sha256):
             return "Model catalog has an invalid checksum for \(modelID): \(sha256)."
+        case .unsupportedHuggingFaceInput(let input):
+            return "Unsupported Hugging Face model input: \(input)."
+        case .unsupportedHuggingFaceLicense(let license):
+            return "Only Apache-2.0 Hugging Face models can be downloaded by Kairo. Found: \(license)."
+        case .noDownloadableGGUF(let repoID):
+            return "No downloadable GGUF file was found for \(repoID)."
         }
     }
 }
@@ -658,6 +710,81 @@ public struct LocalModelCatalogService: Sendable {
         }
     }
 
+    public func resolveHuggingFaceModel(from input: String) async throws -> LocalModelManifest {
+        let repoID = try Self.normalizedHuggingFaceRepoID(from: input)
+        let modelInfoURL = URL(string: "https://huggingface.co/api/models/\(repoID)")!
+        let treeURL = URL(string: "https://huggingface.co/api/models/\(repoID)/tree/main?recursive=1&expand=true")!
+
+        let (infoData, infoResponse) = try await httpClient.data(for: URLRequest(url: modelInfoURL))
+        guard (200..<300).contains(infoResponse.statusCode) else {
+            let bodyPreview = String(data: infoData.prefix(300), encoding: .utf8) ?? ""
+            throw HTTPClientError.unacceptableStatusCode(infoResponse.statusCode, bodyPreview)
+        }
+        let modelInfo = try JSONDecoder().decode(HuggingFaceModelInfo.self, from: infoData)
+        guard modelInfo.license.lowercased() == "apache-2.0" else {
+            throw LocalModelCatalogServiceError.unsupportedHuggingFaceLicense(modelInfo.license)
+        }
+
+        let (treeData, treeResponse) = try await httpClient.data(for: URLRequest(url: treeURL))
+        guard (200..<300).contains(treeResponse.statusCode) else {
+            let bodyPreview = String(data: treeData.prefix(300), encoding: .utf8) ?? ""
+            throw HTTPClientError.unacceptableStatusCode(treeResponse.statusCode, bodyPreview)
+        }
+        let tree = try JSONDecoder().decode([HuggingFaceTreeItem].self, from: treeData)
+        guard let primary = Self.preferredGGUFFile(in: tree) else {
+            throw LocalModelCatalogServiceError.noDownloadableGGUF(repoID: repoID)
+        }
+
+        let companions = Self.companionArtifacts(in: tree, repoID: repoID, selectedPath: primary.path)
+        let family = repoID.split(separator: "/").last.map(String.init) ?? repoID
+        let isVisionModel = repoID.lowercased().contains("vl") || !companions.isEmpty
+        let manifest = LocalModelManifest(
+            id: Self.customModelID(repoID: repoID, filePath: primary.path),
+            displayName: Self.displayName(repoID: repoID, filePath: primary.path),
+            family: family,
+            version: "custom",
+            parameterCount: Self.parameterCount(from: repoID),
+            quantization: Self.quantization(from: primary.path),
+            runtime: .gguf,
+            fileSizeBytes: primary.fileSizeBytes,
+            installedSizeBytes: primary.fileSizeBytes + companions.reduce(Int64(0)) { $0 + $1.fileSizeBytes },
+            contextWindow: 32_768,
+            tokenizerID: Self.sanitizedCatalogID("\(repoID)-tokenizer"),
+            licenseName: "Apache-2.0",
+            licenseURL: URL(string: "https://www.apache.org/licenses/LICENSE-2.0")!,
+            minOSVersion: "17.0",
+            minDeviceClass: isVisionModel ? "A17" : "A15",
+            minRAMGB: isVisionModel ? 8 : 6,
+            supportedLocales: ["en", "zh-Hant"],
+            capabilities: isVisionModel
+                ? [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat, .rewriting, .extraction, .imageUnderstanding]
+                : [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat, .rewriting, .extraction],
+            disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
+            downloadURL: Self.resolveURL(repoID: repoID, path: primary.path),
+            sha256: primary.sha256,
+            companionArtifacts: companions,
+            createdAt: currentDate(),
+            updatedAt: currentDate(),
+            safetyPolicyVersion: "2026.1"
+        )
+        try validateModelArtifacts(manifest)
+        return manifest
+    }
+
+    public static func normalizedHuggingFaceRepoID(from input: String) throws -> String {
+        var value = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.hasPrefix("https://huggingface.co/") {
+            value.removeFirst("https://huggingface.co/".count)
+        }
+        value = value.split(separator: "?").first.map(String.init) ?? value
+        let pieces = value.split(separator: "/").prefix(2).map(String.init)
+        guard pieces.count == 2,
+              pieces.allSatisfy({ !$0.isEmpty && $0.range(of: #"^[A-Za-z0-9][A-Za-z0-9._-]*$"#, options: .regularExpression) != nil }) else {
+            throw LocalModelCatalogServiceError.unsupportedHuggingFaceInput(input)
+        }
+        return pieces.joined(separator: "/")
+    }
+
     private func validate(_ catalog: LocalModelCatalog) throws {
         guard !catalog.signature.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw LocalModelCatalogServiceError.missingSignature
@@ -680,36 +807,7 @@ public struct LocalModelCatalogService: Sendable {
         try validateSignature(for: catalog, trustedKey: trustedKey)
         try validateUniqueModelIDs(catalog.models)
 
-        for model in catalog.models {
-            guard model.downloadURL.scheme?.lowercased() == "https" else {
-                throw LocalModelCatalogServiceError.unsafeDownloadURL(
-                    modelID: model.id,
-                    url: model.downloadURL.absoluteString
-                )
-            }
-            guard !model.capabilities.isEmpty else {
-                throw LocalModelCatalogServiceError.missingCapabilities(modelID: model.id)
-            }
-            guard model.fileSizeBytes > 0, model.installedSizeBytes >= model.fileSizeBytes else {
-                throw LocalModelCatalogServiceError.invalidSizeMetadata(
-                    modelID: model.id,
-                    fileSizeBytes: model.fileSizeBytes,
-                    installedSizeBytes: model.installedSizeBytes
-                )
-            }
-            guard model.runtime == .gguf else {
-                throw LocalModelCatalogServiceError.unsupportedRuntime(
-                    modelID: model.id,
-                    runtime: model.runtime
-                )
-            }
-            guard Self.isValidSHA256Hex(model.sha256) else {
-                throw LocalModelCatalogServiceError.invalidChecksum(
-                    modelID: model.id,
-                    sha256: model.sha256
-                )
-            }
-        }
+        try catalog.models.forEach(validateModelArtifacts)
     }
 
     private static func isValidSHA256Hex(_ value: String) -> Bool {
@@ -728,6 +826,143 @@ public struct LocalModelCatalogService: Sendable {
                 throw LocalModelCatalogServiceError.duplicateModelID(model.id)
             }
         }
+    }
+
+    private func validateModelArtifacts(_ model: LocalModelManifest) throws {
+        guard model.downloadURL.scheme?.lowercased() == "https" else {
+            throw LocalModelCatalogServiceError.unsafeDownloadURL(
+                modelID: model.id,
+                url: model.downloadURL.absoluteString
+            )
+        }
+        guard !model.capabilities.isEmpty else {
+            throw LocalModelCatalogServiceError.missingCapabilities(modelID: model.id)
+        }
+        guard model.fileSizeBytes > 0, model.installedSizeBytes >= model.fileSizeBytes else {
+            throw LocalModelCatalogServiceError.invalidSizeMetadata(
+                modelID: model.id,
+                fileSizeBytes: model.fileSizeBytes,
+                installedSizeBytes: model.installedSizeBytes
+            )
+        }
+        guard model.runtime == .gguf else {
+            throw LocalModelCatalogServiceError.unsupportedRuntime(
+                modelID: model.id,
+                runtime: model.runtime
+            )
+        }
+        guard Self.isValidSHA256Hex(model.sha256) else {
+            throw LocalModelCatalogServiceError.invalidChecksum(
+                modelID: model.id,
+                sha256: model.sha256
+            )
+        }
+        for artifact in model.companionArtifacts {
+            guard artifact.downloadURL.scheme?.lowercased() == "https" else {
+                throw LocalModelCatalogServiceError.unsafeDownloadURL(
+                    modelID: model.id,
+                    url: artifact.downloadURL.absoluteString
+                )
+            }
+            guard artifact.fileSizeBytes > 0 else {
+                throw LocalModelCatalogServiceError.invalidSizeMetadata(
+                    modelID: "\(model.id):\(artifact.id)",
+                    fileSizeBytes: artifact.fileSizeBytes,
+                    installedSizeBytes: artifact.fileSizeBytes
+                )
+            }
+            guard Self.isValidSHA256Hex(artifact.sha256) else {
+                throw LocalModelCatalogServiceError.invalidChecksum(
+                    modelID: "\(model.id):\(artifact.id)",
+                    sha256: artifact.sha256
+                )
+            }
+        }
+    }
+
+    private static func preferredGGUFFile(in tree: [HuggingFaceTreeItem]) -> HuggingFaceTreeItem? {
+        let ggufFiles = tree
+            .filter { $0.path.lowercased().hasSuffix(".gguf") && !$0.path.lowercased().contains("mmproj") }
+            .filter { $0.lfs != nil }
+        return ggufFiles.sorted { lhs, rhs in
+            scoreGGUFPath(lhs.path) > scoreGGUFPath(rhs.path)
+        }.first
+    }
+
+    private static func companionArtifacts(
+        in tree: [HuggingFaceTreeItem],
+        repoID: String,
+        selectedPath: String
+    ) -> [LocalModelCompanionArtifact] {
+        let selectedBase = selectedPath.lowercased()
+            .replacingOccurrences(of: ".gguf", with: "")
+            .replacingOccurrences(of: "-q4_k_m", with: "")
+            .replacingOccurrences(of: "-q8_0", with: "")
+        return tree
+            .filter { $0.path.lowercased().hasSuffix(".gguf") && $0.path.lowercased().contains("mmproj") }
+            .filter { item in
+                guard item.lfs != nil else { return false }
+                let lowerPath = item.path.lowercased()
+                return lowerPath.contains("q8_0") || lowerPath.contains(selectedBase)
+            }
+            .prefix(1)
+            .map { item in
+                LocalModelCompanionArtifact(
+                    id: sanitizedCatalogID(item.path.replacingOccurrences(of: ".gguf", with: "")),
+                    role: "multimodalProjector",
+                    displayName: item.path.split(separator: "/").last.map(String.init) ?? item.path,
+                    fileSizeBytes: item.fileSizeBytes,
+                    downloadURL: resolveURL(repoID: repoID, path: item.path),
+                    sha256: item.sha256
+                )
+            }
+    }
+
+    private static func scoreGGUFPath(_ path: String) -> Int {
+        let lower = path.lowercased()
+        if lower.contains("q4_k_m") { return 100 }
+        if lower.contains("q4_k_s") { return 90 }
+        if lower.contains("q5_k_m") { return 80 }
+        if lower.contains("q8_0") { return 70 }
+        if lower.contains("f16") { return 10 }
+        return 50
+    }
+
+    private static func customModelID(repoID: String, filePath: String) -> String {
+        sanitizedCatalogID("\(repoID)-\(filePath.replacingOccurrences(of: ".gguf", with: ""))")
+    }
+
+    private static func displayName(repoID: String, filePath: String) -> String {
+        let repoName = repoID.split(separator: "/").last.map(String.init) ?? repoID
+        let fileName = filePath.split(separator: "/").last.map(String.init) ?? filePath
+        return "\(repoName) · \(fileName.replacingOccurrences(of: ".gguf", with: ""))"
+    }
+
+    private static func parameterCount(from repoID: String) -> String {
+        guard let range = repoID.range(of: #"(?i)(\d+(?:\.\d+)?\s*[BEM])"#, options: .regularExpression) else {
+            return "Custom"
+        }
+        return repoID[range].replacingOccurrences(of: " ", with: "")
+    }
+
+    private static func quantization(from path: String) -> String {
+        let upper = path.uppercased()
+        for token in ["Q2_K", "Q3_K_L", "Q4_K_M", "Q4_K_S", "Q5_K_M", "Q5_K_S", "Q6_K", "Q8_0", "F16"] where upper.contains(token) {
+            return token
+        }
+        return "GGUF"
+    }
+
+    private static func resolveURL(repoID: String, path: String) -> URL {
+        URL(string: "https://huggingface.co/\(repoID)/resolve/main/\(path)")!
+    }
+
+    private static func sanitizedCatalogID(_ value: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_."))
+        let scalars = value.unicodeScalars.map { scalar in
+            allowed.contains(scalar) ? Character(scalar).lowercased() : "-"
+        }
+        return String(scalars.joined()).trimmingCharacters(in: CharacterSet(charactersIn: "-."))
     }
 
     private func validateTrustWindow(for trustedKey: LocalModelTrustedSigningKey) throws {
@@ -765,6 +1000,37 @@ public struct LocalModelCatalogService: Sendable {
         } catch {
             throw LocalModelCatalogServiceError.invalidSignature
         }
+    }
+}
+
+private struct HuggingFaceModelInfo: Decodable {
+    struct CardData: Decodable {
+        var license: String?
+    }
+
+    var cardData: CardData?
+
+    var license: String {
+        cardData?.license ?? "unknown"
+    }
+}
+
+private struct HuggingFaceTreeItem: Decodable {
+    struct LFS: Decodable {
+        var oid: String
+        var size: Int64
+    }
+
+    var path: String
+    var size: Int64?
+    var lfs: LFS?
+
+    var fileSizeBytes: Int64 {
+        lfs?.size ?? size ?? 0
+    }
+
+    var sha256: String {
+        lfs?.oid ?? ""
     }
 }
 
@@ -851,6 +1117,57 @@ public extension LocalModelManifest {
         minRAMGB: 4,
         downloadURL: "https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf",
         sha256: "6f85a640a97cf2bf5b8e764087b1e83da0fdb51d7c9fab7d0fece9385611df83"
+    )
+
+    static let qwen35TwoB = ggufManifest(
+        id: "qwen3-5-2b-q4-k-m",
+        displayName: "Qwen3.5 2B Q4_K_M",
+        family: "Qwen3.5",
+        parameterCount: "2B",
+        fileSizeBytes: 1_270_808_512,
+        installedSizeBytes: 1_900 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen3.5-tokenizer",
+        minRAMGB: 6,
+        downloadURL: "https://huggingface.co/AaryanK/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B.q4_k_m.gguf",
+        sha256: "a511452ec932613d6b26b4fa24488fd431eb61eac69321460447d475edc221e2"
+    )
+
+    static let qwen25VLThreeBInstruct = LocalModelManifest(
+        id: "qwen2-5-vl-3b-instruct-q4-k-m",
+        displayName: "Qwen2.5-VL 3B Instruct Q4_K_M",
+        family: "Qwen2.5-VL",
+        version: "1.0",
+        parameterCount: "3B",
+        quantization: "Q4_K_M + mmproj Q8_0",
+        runtime: .gguf,
+        fileSizeBytes: 1_929_901_056,
+        installedSizeBytes: 3_200 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen2.5-vl-tokenizer",
+        licenseName: "Apache-2.0",
+        licenseURL: URL(string: "https://www.apache.org/licenses/LICENSE-2.0")!,
+        minOSVersion: "17.0",
+        minDeviceClass: "A17",
+        minRAMGB: 8,
+        supportedLocales: ["en", "zh-Hant"],
+        capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat, .rewriting, .extraction, .imageUnderstanding],
+        disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
+        downloadURL: URL(string: "https://huggingface.co/ggml-org/Qwen2.5-VL-3B-Instruct-GGUF/resolve/main/Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf")!,
+        sha256: "d02fe9b69ad8cadbbd228e387667af66612c44bed29ffc8eb1e7caf9ac486c12",
+        companionArtifacts: [
+            LocalModelCompanionArtifact(
+                id: "mmproj-q8-0",
+                role: "multimodalProjector",
+                displayName: "Qwen2.5-VL 3B mmproj Q8_0",
+                fileSizeBytes: 844_757_728,
+                downloadURL: URL(string: "https://huggingface.co/ggml-org/Qwen2.5-VL-3B-Instruct-GGUF/resolve/main/mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf")!,
+                sha256: "980c9b2f78c04e6cff93d277ada09e768394f112d75db3b4e9dea8a69f9fb904"
+            )
+        ],
+        createdAt: Date(timeIntervalSince1970: 1_767_225_600),
+        updatedAt: Date(timeIntervalSince1970: 1_767_225_600),
+        safetyPolicyVersion: "2026.1"
     )
 
     static let kairoDraftTiny = qwen35Tiny
