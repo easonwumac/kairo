@@ -78,11 +78,15 @@ public struct KairoLiveLocalModelFactory: Sendable {
         let benchmarkStore = try await FileBackedLocalModelBenchmarkStore(
             fileURL: paths.localModelBenchmarkResultsURL
         )
+        let inferenceCacheStore = try await FileBackedLocalModelInferenceCacheStore(
+            directoryURL: paths.localModelInferenceCacheDirectory
+        )
         let runtimeBundle = makeRuntimeBundle()
         let benchmarkService = LocalModelBenchmarkService(
             catalog: catalog,
             installRegistry: installRegistry,
             resultStore: benchmarkStore,
+            inferenceCacheStore: inferenceCacheStore,
             engine: benchmarkEngineOverride ?? runtimeBundle.benchmarkEngine
         )
         let replyCheckService = LocalModelReplyCheckService(

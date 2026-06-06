@@ -72,7 +72,9 @@ struct LocalModelPerformanceView: View {
                     )
                     Spacer(minLength: 8)
                     Button {
-                        clearCache()
+                        Task {
+                            await clearCache()
+                        }
                     } label: {
                         Label(KairoL10n.string("performance.local.clearCache"), systemImage: "trash")
                             .font(.caption.weight(.semibold))
@@ -174,22 +176,15 @@ struct LocalModelPerformanceView: View {
             )
     }
 
-    private func clearCache() {
-        snapshot = LocalModelPerformanceSnapshot(
-            totalRunCount: snapshot.totalRunCount,
-            averagePromptTokensPerSecond: snapshot.averagePromptTokensPerSecond,
-            averageGenerationTokensPerSecond: snapshot.averageGenerationTokensPerSecond,
-            averageFirstTokenLatencyMS: snapshot.averageFirstTokenLatencyMS,
-            peakMemoryMB: snapshot.peakMemoryMB,
-            kvCacheHitRate: snapshot.kvCacheHitRate,
-            prefillTokenCount: snapshot.prefillTokenCount,
-            cachedTokenCount: snapshot.cachedTokenCount,
-            cacheUsedBytes: 0,
-            cacheCapacityBytes: snapshot.cacheCapacityBytes,
-            isCacheEnabled: snapshot.isCacheEnabled,
-            modelSummaries: snapshot.modelSummaries
-        )
-        statusMessage = KairoL10n.string("performance.local.cacheCleared")
+    @MainActor
+    private func clearCache() async {
+        do {
+            try await benchmarkService?.clearInferenceCache()
+            await reloadSnapshot()
+            statusMessage = KairoL10n.string("performance.local.cacheCleared")
+        } catch {
+            statusMessage = KairoL10n.string("performance.local.cacheClearFailed", error.localizedDescription)
+        }
     }
 
     private func metricTile(_ title: String, _ value: String) -> some View {

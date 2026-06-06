@@ -96,10 +96,14 @@ public struct KairoUITestingLocalModelFactory: Sendable {
         let benchmarkStore = try await FileBackedLocalModelBenchmarkStore(
             fileURL: localModelsDirectory.appendingPathComponent("benchmarks.json")
         )
+        let inferenceCacheStore = try await FileBackedLocalModelInferenceCacheStore(
+            directoryURL: localModelsDirectory.appendingPathComponent("InferenceCache", isDirectory: true)
+        )
         let benchmarkService = LocalModelBenchmarkService(
             catalog: catalog,
             installRegistry: installRegistry,
             resultStore: benchmarkStore,
+            inferenceCacheStore: inferenceCacheStore,
             engine: benchmarkEngineOverride ?? UnavailableLocalModelBenchmarkEngine()
         )
         let usesLocalModelRoute = seedInstalledLocalModel

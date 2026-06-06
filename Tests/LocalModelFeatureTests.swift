@@ -1743,6 +1743,54 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertTrue(snapshot.modelSummaries.isEmpty)
     }
 
+    func testLocalModelInferenceCacheStorePrunesOldestFilesToCapacity() async throws {
+        let cacheDirectory = temporaryDirectory(named: "local-model-inference-cache")
+        let store = try await FileBackedLocalModelInferenceCacheStore(directoryURL: cacheDirectory)
+        let oldFile = cacheDirectory.appendingPathComponent("old-prefix.kvcache")
+        let newFile = cacheDirectory.appendingPathComponent("new-prefix.kvcache")
+        try writeCacheFixture(at: oldFile, byteCount: 12, modifiedAt: Date(timeIntervalSince1970: 100))
+        try writeCacheFixture(at: newFile, byteCount: 10, modifiedAt: Date(timeIntervalSince1970: 200))
+
+        let usedBytes = try await store.usedBytes(capacityBytes: 16)
+
+        XCTAssertEqual(usedBytes, 10)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: oldFile.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: newFile.path))
+    }
+
+    func testLocalModelBenchmarkServiceReportsAndClearsInferenceCacheUsage() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
+        let cacheDirectory = temporaryDirectory(named: "local-model-inference-cache")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let resultStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
+        let cacheStore = try await FileBackedLocalModelInferenceCacheStore(directoryURL: cacheDirectory)
+        let service = LocalModelBenchmarkService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            resultStore: resultStore,
+            inferenceCacheStore: cacheStore
+        )
+        try writeCacheFixture(
+            at: cacheDirectory.appendingPathComponent("qwen-prefix.kvcache"),
+            byteCount: 24,
+            modifiedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        let beforeClear = await service.performanceSnapshot(
+            cacheSettings: LocalModelCacheSettings(isEnabled: true, capacityBytes: 64)
+        )
+        XCTAssertEqual(beforeClear.cacheUsedBytes, 24)
+        XCTAssertEqual(beforeClear.cacheCapacityBytes, 64)
+
+        try await service.clearInferenceCache()
+
+        let afterClear = await service.performanceSnapshot(
+            cacheSettings: LocalModelCacheSettings(isEnabled: true, capacityBytes: 64)
+        )
+        XCTAssertEqual(afterClear.cacheUsedBytes, 0)
+    }
+
     func testLocalModelPerformanceSnapshotFiltersOverviewByModel() {
         let snapshot = LocalModelPerformanceSnapshot(
             totalRunCount: 3,
@@ -2576,6 +2624,18 @@ final class LocalModelFeatureTests: XCTestCase {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
             .appendingPathComponent(name, isDirectory: true)
+    }
+
+    private func writeCacheFixture(at url: URL, byteCount: Int, modifiedAt: Date) throws {
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data(repeating: 1, count: byteCount).write(to: url)
+        try FileManager.default.setAttributes(
+            [.modificationDate: modifiedAt],
+            ofItemAtPath: url.path
+        )
     }
 
     private func makeLocalModelSettingsService(

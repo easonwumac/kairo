@@ -382,21 +382,112 @@ public actor FileBackedLocalModelBenchmarkStore {
     }
 }
 
+public actor FileBackedLocalModelInferenceCacheStore {
+    private struct CacheFile {
+        var url: URL
+        var size: Int64
+        var modifiedAt: Date
+    }
+
+    private let directoryURL: URL
+    private let fileManager: FileManager
+
+    public init(directoryURL: URL, fileManager: FileManager = .default) async throws {
+        self.directoryURL = directoryURL
+        self.fileManager = fileManager
+        try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+    }
+
+    @discardableResult
+    public func enforceCapacity(_ capacityBytes: Int64) throws -> Int64 {
+        if capacityBytes <= 0 {
+            try clear()
+            return 0
+        }
+
+        var files = try cacheFiles()
+        var totalBytes = files.reduce(Int64(0)) { $0 + $1.size }
+        guard totalBytes > capacityBytes else { return totalBytes }
+
+        files.sort {
+            if $0.modifiedAt == $1.modifiedAt {
+                return $0.url.path < $1.url.path
+            }
+            return $0.modifiedAt < $1.modifiedAt
+        }
+
+        for file in files where totalBytes > capacityBytes {
+            try fileManager.removeItem(at: file.url)
+            totalBytes -= file.size
+        }
+
+        return max(totalBytes, 0)
+    }
+
+    public func usedBytes(capacityBytes: Int64 = LocalModelCacheSettings.defaultCapacityBytes) throws -> Int64 {
+        try enforceCapacity(capacityBytes)
+    }
+
+    public func clear() throws {
+        if fileManager.fileExists(atPath: directoryURL.path) {
+            let children = try fileManager.contentsOfDirectory(
+                at: directoryURL,
+                includingPropertiesForKeys: nil
+            )
+            for child in children {
+                try fileManager.removeItem(at: child)
+            }
+        }
+        try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+    }
+
+    private func cacheFiles() throws -> [CacheFile] {
+        guard fileManager.fileExists(atPath: directoryURL.path) else {
+            try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+            return []
+        }
+
+        let keys: Set<URLResourceKey> = [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey]
+        guard let enumerator = fileManager.enumerator(
+            at: directoryURL,
+            includingPropertiesForKeys: Array(keys),
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        var files: [CacheFile] = []
+        for case let url as URL in enumerator {
+            let values = try url.resourceValues(forKeys: keys)
+            guard values.isRegularFile == true else { continue }
+            files.append(CacheFile(
+                url: url,
+                size: Int64(values.fileSize ?? 0),
+                modifiedAt: values.contentModificationDate ?? .distantPast
+            ))
+        }
+        return files
+    }
+}
+
 public actor LocalModelBenchmarkService {
     private var catalog: LocalModelCatalog
     private let installRegistry: FileBackedLocalModelInstallRegistry
     private let resultStore: FileBackedLocalModelBenchmarkStore
+    private let inferenceCacheStore: FileBackedLocalModelInferenceCacheStore?
     private let engine: any LocalModelBenchmarkEngine
 
     public init(
         catalog: LocalModelCatalog,
         installRegistry: FileBackedLocalModelInstallRegistry,
         resultStore: FileBackedLocalModelBenchmarkStore,
+        inferenceCacheStore: FileBackedLocalModelInferenceCacheStore? = nil,
         engine: any LocalModelBenchmarkEngine = UnavailableLocalModelBenchmarkEngine()
     ) {
         self.catalog = catalog
         self.installRegistry = installRegistry
         self.resultStore = resultStore
+        self.inferenceCacheStore = inferenceCacheStore
         self.engine = engine
     }
 
@@ -416,11 +507,19 @@ public actor LocalModelBenchmarkService {
         cacheSettings: LocalModelCacheSettings = .defaultValue,
         cacheUsedBytes: Int64 = 0
     ) async -> LocalModelPerformanceSnapshot {
+        let effectiveCacheUsedBytes: Int64
+        if let inferenceCacheStore {
+            effectiveCacheUsedBytes = (try? await inferenceCacheStore.usedBytes(
+                capacityBytes: cacheSettings.capacityBytes
+            )) ?? 0
+        } else {
+            effectiveCacheUsedBytes = cacheUsedBytes
+        }
         let results = await resultStore.allResults()
         guard !results.isEmpty else {
             return LocalModelPerformanceSnapshot(
                 totalRunCount: 0,
-                cacheUsedBytes: cacheUsedBytes,
+                cacheUsedBytes: effectiveCacheUsedBytes,
                 cacheCapacityBytes: cacheSettings.capacityBytes,
                 isCacheEnabled: cacheSettings.isEnabled
             )
@@ -459,11 +558,15 @@ public actor LocalModelBenchmarkService {
             kvCacheHitRate: 0,
             prefillTokenCount: results.reduce(0) { $0 + $1.promptTokens },
             cachedTokenCount: 0,
-            cacheUsedBytes: cacheUsedBytes,
+            cacheUsedBytes: effectiveCacheUsedBytes,
             cacheCapacityBytes: cacheSettings.capacityBytes,
             isCacheEnabled: cacheSettings.isEnabled,
             modelSummaries: summaries
         )
+    }
+
+    public func clearInferenceCache() async throws {
+        try await inferenceCacheStore?.clear()
     }
 
     public func runBenchmark(

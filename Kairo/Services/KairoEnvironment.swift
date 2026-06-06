@@ -271,6 +271,10 @@ public struct KairoPaths: Sendable {
         localModelsDirectory.appendingPathComponent("benchmarks.json")
     }
 
+    public var localModelInferenceCacheDirectory: URL {
+        localModelsDirectory.appendingPathComponent("InferenceCache", isDirectory: true)
+    }
+
     public var kairoRecipesDirectory: URL {
         applicationSupportDirectory.appendingPathComponent("Recipes", isDirectory: true)
     }

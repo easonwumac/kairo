@@ -1024,6 +1024,7 @@
 "performance.local.cacheDisabled" = "Disabled";
 "performance.local.clearCache" = "Clear cache";
 "performance.local.cacheCleared" = "Cache cleared.";
+"performance.local.cacheClearFailed" = "Could not clear cache: %@";
 "performance.local.scope" = "Performance scope";
 "performance.local.allModels" = "All models";
 "settings.models.cache.enabled" = "Local inference cache";
