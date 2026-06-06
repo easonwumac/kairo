@@ -122,7 +122,7 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         XCTAssertFalse(rawText.contains(item.id.uuidString))
         XCTAssertFalse(rawText.contains("Private shared text should not remain"))
     }
-    func testShareImportBackendAPICleansCopiedSharedFilesAfterClearWithoutDeletingExternalFiles() async throws {
+    func testShareImportBackendAPIPreservesCopiedSharedFilesAfterClearForChatAndLibraryReferences() async throws {
         let rootDirectory = temporaryDirectory()
         let sharedFilesDirectory = rootDirectory.appendingPathComponent("SharedFiles", isDirectory: true)
         try FileManager.default.createDirectory(at: sharedFilesDirectory, withIntermediateDirectories: true)
@@ -151,7 +151,7 @@ final class KairoShareImportBackendAPITests: XCTestCase {
 
         try await api.clearImportedShares(ids: imported.importedItemIDs, attachments: imported.attachments)
 
-        XCTAssertFalse(FileManager.default.fileExists(atPath: copiedFileURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: copiedFileURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: externalFileURL.path))
     }
     private func temporaryFileURL(named name: String) -> URL {

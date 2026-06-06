@@ -361,7 +361,7 @@ final class KairoBackendAPITests: XCTestCase {
         let remaining = try await queue.pendingItems(limit: 10)
 
         XCTAssertTrue(remaining.isEmpty)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: copiedFileURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: copiedFileURL.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: externalFileURL.path))
     }
 

@@ -27,11 +27,10 @@ public protocol KairoShareImportAPI: Sendable {
 
 public struct KairoShareImportBackendService: KairoShareImportAPI {
     private let shareIngestionQueue: any ShareIngestionQueue
-    private let sharedFilesDirectory: URL?
 
     public init(shareIngestionQueue: any ShareIngestionQueue, sharedFilesDirectory: URL? = nil) {
         self.shareIngestionQueue = shareIngestionQueue
-        self.sharedFilesDirectory = sharedFilesDirectory
+        _ = sharedFilesDirectory
     }
 
     public func importPendingShares(limit: Int = 10) async throws -> KairoShareImportResult {
@@ -49,24 +48,10 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
     }
 
     public func clearImportedShares(ids: [UUID], attachments: [ChatAttachment]) async throws {
+        _ = attachments
         for id in ids {
             try await shareIngestionQueue.markImported(id: id)
             try await shareIngestionQueue.delete(id: id)
-        }
-        cleanupCopiedSharedFiles(from: attachments)
-    }
-
-    private func cleanupCopiedSharedFiles(from attachments: [ChatAttachment]) {
-        guard let sharedFilesDirectory else { return }
-        let boundary = sharedFilesDirectory.standardizedFileURL.path
-        for attachment in attachments {
-            guard attachment.source == .shareExtension,
-                  let fileURL = attachment.fileURL,
-                  fileURL.isFileURL
-            else { continue }
-            let filePath = fileURL.standardizedFileURL.path
-            guard filePath.hasPrefix(boundary + "/") else { continue }
-            try? FileManager.default.removeItem(at: fileURL)
         }
     }
 

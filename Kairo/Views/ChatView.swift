@@ -448,26 +448,6 @@ public struct ChatView: View {
     private var toolPalette: some View {
         VStack(spacing: 7) {
             capturePalette
-            capabilityPromptButton(
-                title: KairoL10n.string("chat.tools.phoneTools"),
-                systemImage: "iphone.gen3",
-                prompt: KairoL10n.string("chat.tools.phoneTools.prompt")
-            )
-            capabilityPromptButton(
-                title: KairoL10n.string("chat.tools.reminderCalendar"),
-                systemImage: "calendar.badge.plus",
-                prompt: KairoL10n.string("chat.tools.reminderCalendar.prompt")
-            )
-            capabilityPromptButton(
-                title: KairoL10n.string("chat.tools.messageEmailDraft"),
-                systemImage: "envelope",
-                prompt: KairoL10n.string("chat.tools.messageEmailDraft.prompt")
-            )
-            capabilityPromptButton(
-                title: KairoL10n.string("chat.tools.summarizeSharedContent"),
-                systemImage: "doc.text.magnifyingglass",
-                prompt: KairoL10n.string("chat.tools.summarizeSharedContent.prompt")
-            )
         }
         .padding(8)
         .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -529,40 +509,6 @@ public struct ChatView: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 9)
             .background(KairoDesign.softSurface.opacity(0.58), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-    }
-
-    private func capabilityPromptButton(
-        title: String,
-        systemImage: String,
-        prompt: String
-    ) -> some View {
-        Button {
-            applyPrompt(prompt)
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: systemImage)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                    .frame(width: 30, height: 30)
-                    .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
-
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func applyPrompt(_ prompt: String) {
-        showToolPalette = false
-        viewModel.composerText = prompt
-        isComposerFocused = true
     }
 
     private func handleCameraCaptureRequest() {
