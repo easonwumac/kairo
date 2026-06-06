@@ -14,6 +14,10 @@
 
 ## Product/UI defaults
 
+- Current product direction: Kairo is a personal information asset manager and Action Inbox. The main loop is Capture assets -> Understand content -> Prepare InfoPages/reminders/actions with preview and confirmation.
+- Primary user surfaces should be Library, Asset Inbox, Asset List, InfoPage List, InfoPage Detail, Chat as an understanding/search entry, Model Settings, Permissions, and Settings.
+- Deprioritize Recipes, Skill Manager, phone-tool catalogs, marketplace, HomeKit demos, and integration harness surfaces unless they directly support asset capture, asset understanding, InfoPage generation, or confirmed reminder/action previews.
+- Do not expand local model/backend/benchmark platform work unless it directly enables asset understanding on simulator/device.
 - Do not surface scaffolded, preview-only, planned, beta-only, or unimplemented capabilities in the primary user UI. If a capability cannot actually work for users, hide it from the main flow instead of explaining why it cannot work.
 - Do not use defensive or legalistic product copy in the app UI, such as repeated "Kairo does not..." text, "beta" caveats, implementation boundaries, or App Review-style disclaimers. Keep those boundaries in internal docs, review notes, or prompts when needed.
 - Avoid developer/internal terms in user-facing UI: `handoff`, `tool candidate`, `schema`, `node`, `recipe id`, `scaffold`, `runtime proof`, `source of truth`, and similar implementation language.

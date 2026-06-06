@@ -1,78 +1,81 @@
 # Next Steps
 
-Kairo is now scoped to the MVP Utility Gate. Only work that directly improves one of these user flows should be started.
+Kairo is now scoped as a personal information asset manager and Action Inbox.
+Only start work that helps users capture information, understand it, or turn it into confirmed drafts/actions.
 
-## App Integration Harness Scenario Evidence
+## MVP Flow A: Capture Assets
 
-Verified in focused package tests on 2026-06-05:
-
-- Google Maps navigation request selects `googleMapsDirectionsHandoff` from `AppIntegrationSkillCatalog`, produces a confirmation-gated visible HTTPS handoff, and avoids legacy `IntegrationRegistry` duplicates.
-- Google Maps unavailable state falls back to an Apple Maps catalog candidate without making the unavailable Google Maps skill executable.
-- Todoist task request selects `todoistTaskAPI` from `AppIntegrationSkillCatalog`; without OAuth it remains setup-required with no executable action.
-- LINE private message read request selects the LINE catalog skill as unsupported and returns a safe fallback with no executable handoff.
-- Shared text import can produce reminder, calendar, and email draft previews while keeping writes and external app opens blocked before confirmation.
-
-Evidence commands:
-
-- `swift test --filter KairoBackendAPITests/testScenarioGoogleMapsDirectionsUsesCatalogHandoffPreview`
-- `swift test --filter KairoBackendAPITests/testScenarioTodoistOAuthRequiredStaysSetupOnly`
-- `swift test --filter KairoBackendAPITests/testScenarioLinePrivateDataReadUsesUnsupportedCatalogFallback`
-- `swift test --filter KairoBackendAPITests/testScenarioShareImportToReminderCalendarAndEmailDraftPreviewsWithoutExecution`
-
-## Flow A: Share -> Kairo -> Tasks / Summary
+Goal: users can send phone content into Kairo and see what was saved.
 
 Remaining gaps:
 
-- Verify on simulator and then a real device that shared text, URL, PDF, and file metadata appear as pending shared content in the main app.
-- Confirm the user can send pending shared content into Chat without the Share Extension running inference or actions.
-- Confirm Chat can summarize shared content, extract tasks, and produce reminder, calendar, and email drafts.
-- Confirm every write or handoff from shared content uses preview plus explicit confirmation.
-- Confirm imported share queue items are cleared after the user sends them into Chat.
+- Share Extension imports text, URLs, screenshots/images, PDF/file metadata into Asset Inbox.
+- Main app has a clear Library entry for Asset Inbox and all saved assets.
+- Asset detail preserves original file reference, extracted text, source, date, tags, sensitivity, and linked InfoPages.
+- iCloud backup opt-in is clear and per-store behavior is testable.
+- Image/PDF OCR or vision extraction must be labeled unavailable until a real model/runtime path exists.
 
 Required evidence:
 
-- Focused smoke coverage for text/URL/file metadata import into Chat.
-- Focused smoke coverage for shared text -> extracted task -> reminder preview -> confirm.
-- Real-device checklist entry when a reachable device is available.
+- Asset Codable/store tests.
+- Share queue -> Asset Inbox import tests.
+- UI smoke for Library import/list/search/delete/export.
 
-## Flow B: Chat + Memory -> Action Preview
+## MVP Flow B: Organize Assets Into InfoPages
+
+Goal: users can select assets and let Kairo build an understandable information page.
 
 Remaining gaps:
 
-- Verify Chat uses saved memory context in normal chats and omits it in private chats.
-- Verify Chat can propose previewable actions for Reminder, Calendar, Notification, Contact, Email, Message, Phone, Web, and Maps.
-- Confirm every action can be cancelled before execution.
-- Confirm every supported write or handoff requires explicit confirmation before execution.
-- Confirm unsupported cross-app requests produce a clear safe alternative instead of pretending to control another app.
-- Confirm switching threads, deleting threads, creating a new chat, or toggling private chat clears transient action preview state.
+- InfoPage List UI.
+- InfoPage Detail UI.
+- Select one or more assets and create or update an InfoPage.
+- Travel InfoPage template first: flights, hotel/pickup/booking, timeline, reminders, original assets.
+- General templates remain deterministic data renderers; models should fill structured data, not generate arbitrary UI.
 
 Required evidence:
 
-- Focused package or UI smoke coverage for Chat using memory context.
-- Focused package or UI smoke coverage for action preview -> cancel and preview -> confirm.
-- Real-device checklist entry for preview and confirmation when a reachable device is available.
+- InfoPage store/search/export tests.
+- Asset -> InfoPage generation tests.
+- Travel InfoPage template tests.
+- UI smoke for create/view InfoPage from imported asset.
 
-## Flow C: Daily Briefing / Recipe
+## MVP Flow C: InfoPage To Reminder / Action Preview
+
+Goal: users can turn organized information into reminders or drafts without silent execution.
 
 Remaining gaps:
 
-- Verify the user can run a Daily Briefing-style Kairo Recipe from the existing Recipe surface.
-- Confirm recipes only produce summaries, drafts, and suggested actions.
-- Confirm high-risk recipe steps do not execute automatically.
-- Confirm Shortcuts only invoke Kairo App Intents and do not silently create or modify Apple Shortcuts.
+- Generate Reminder drafts from InfoPage timeline/facts.
+- Preview reminder before EventKit write.
+- Confirm creates the Reminder and writes a Kairo deep link, preferably `kairo://info-page/{id}`.
+- InfoPage displays linked reminders and current status.
+- Email/message/maps/phone/web remain visible drafts or handoffs only.
 
 Required evidence:
 
-- Focused smoke coverage for Daily Briefing / Recipe preview and run.
-- Focused package coverage that recipe output remains draft/suggested-action only.
-- Real-device checklist entry for recipe run and App Intent invocation when a reachable device is available.
+- Reminder deep link generation tests.
+- Confirmation-required tests before EventKit writes.
+- UI smoke for InfoPage -> reminder preview -> confirm.
 
-## Stop Conditions
+## Model Evaluation
 
-Do not start work in these categories unless it directly fixes a blocker in Flow A, Flow B, or Flow C:
+The local model goal is asset understanding, not benchmark UI.
 
-- Local model backend/API expansion.
-- Benchmark UI/API/runtime work.
-- New Shortcut nodes.
-- New Keyboard, Widget, CarPlay, HomeKit entitlement path, OAuth provider, app icon, brand assets, or release-hygiene scripts.
-- General copy polish, platformization, source-health work, or large refactors.
+- Minimum candidate: small text LLM can summarize/extract from user text and OCR text, but cannot be treated as screenshot understanding.
+- Preferred candidates for screenshot/PDF understanding should support vision or pair with OCR plus a stronger text model.
+- Qwen 0.8B-style models are acceptable only as fallback text extractors.
+- Gemma-class 2B/4B vision-capable or OCR-assisted models should be evaluated for screenshot description and structured InfoPage JSON.
+- Do not commit model weights, GGUF, tokenizer, cache, or generated credentials.
+
+## Deprioritized
+
+Do not prioritize unless it directly supports the three MVP flows:
+
+- Recipes / sample flows.
+- Skill marketplace and managed tools.
+- App Integration Harness expansion.
+- More Shortcut nodes.
+- Keyboard, Widget, CarPlay, HomeKit live control.
+- Local model platform/benchmark/backend expansion.
+- Generic refactors, source-health checks, or copy polish.

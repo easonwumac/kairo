@@ -1,12 +1,14 @@
 # App Store Readiness
 
-Kairo 的上架策略是：成為一個強大的 iOS Agent，但只使用 App Store 允許的公開 API、使用者授權、App sandbox、App Intents、Shortcuts、Share Extension、通知、BackgroundTasks、官方 OAuth/API 整合與使用者觸發的本機模型 catalog/download 管理。
+> Current product scope: Kairo is being refocused as a personal information asset manager and Action Inbox. Asset capture, Library, InfoPages, and confirmed reminders/actions are the primary release path. Older Chat-first agent, Skill Manager, Recipes, and integration-harness notes below are historical/supporting readiness context and should not drive new primary UI work unless they directly support the asset workflow.
+
+Kairo 的上架策略是：成為一個使用者主動匯入資料、整理個人資訊資產、並在確認後建立提醒或草稿的 iOS App。所有能力只使用 App Store 允許的公開 API、使用者授權、App sandbox、App Intents、Shortcuts、Share Extension、通知、官方 OAuth/API 整合與使用者觸發的本機模型 catalog/download 管理。
 
 ## Feature state for beta review
 
 | Area | Status | Review note |
 |---|---|---|
-| Chat-first app shell | Implemented | Chat is the primary surface; support screens sit behind More. |
+| Library / asset app shell | Implemented | Library is the primary asset surface; Chat and setup screens are supporting surfaces. |
 | Memory | Implemented | Save/search/delete/export exists behind a backend API facade; deleted JSON records can be purged from disk. |
 | Share Extension ingestion | Implemented | Text/URL/image/PDF/file metadata imports into Chat through a backend API facade; extension is queue-only and action-free. |
 | App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; Kairo-owned internal recipes have backend API lifecycle/run coverage; next work is device/App Intent QA. |

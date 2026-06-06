@@ -107,25 +107,7 @@ public struct PermissionHubView: View {
     }
 
     private var hubHome: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            permissionHubEntryCard(
-                title: KairoL10n.string("access.capabilities.section"),
-                subtitle: KairoL10n.string("access.capabilities.entry.subtitle"),
-                systemImage: "iphone.gen3",
-                tint: KairoDesign.blue
-            ) {
-                pushPage(.phoneActions)
-            }
-
-            permissionHubEntryCard(
-                title: KairoL10n.string("access.skills.advanced.toggle.title"),
-                subtitle: KairoL10n.string("access.skills.advanced.toggle.subtitle"),
-                systemImage: "slider.horizontal.3",
-                tint: KairoDesign.teal
-            ) {
-                pushPage(.managedTools)
-            }
-        }
+        primaryToolsPage
     }
 
     @ViewBuilder
@@ -549,10 +531,15 @@ public struct PermissionHubView: View {
         let priority: [CapabilityKey] = [
             .shareExtension,
             .memory,
+            .photos,
+            .documents,
             .reminders,
             .calendar,
+            .notifications,
+            .contacts,
             .mail,
             .messages,
+            .phone,
             .web,
             .location
         ]

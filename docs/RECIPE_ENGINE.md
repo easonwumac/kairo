@@ -1,5 +1,7 @@
 # Kairo Recipe Engine
 
+> Current status: Recipes are deprioritized for the asset-management MVP. Keep existing recipe code for compatibility and tests, but do not add new recipe surfaces or sample flows unless they directly turn Library/InfoPage content into confirmed drafts or actions.
+
 Kairo Recipes are Kairo-owned internal workflows. They are stored and run by Kairo, and they are separate from Apple Shortcuts.
 
 ## Current Scope

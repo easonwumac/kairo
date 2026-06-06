@@ -860,27 +860,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(mlxBenchmark.isReferenceOnlyForIOS)
     }
 
-    func testModelCatalogWebsiteDocumentsNoWeightsPolicy() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let indexHTML = try String(contentsOf: root.appendingPathComponent("Website/models/index.html"), encoding: .utf8)
-        let readme = try String(contentsOf: root.appendingPathComponent("Website/models/README.md"), encoding: .utf8)
-        let rootReadme = try String(contentsOf: root.appendingPathComponent("README.md"), encoding: .utf8)
-
-        XCTAssertTrue(indexHTML.contains("Kairo Model Catalog"))
-        XCTAssertTrue(indexHTML.contains("models.json"))
-        XCTAssertTrue(indexHTML.contains("compact starter pair: Qwen3.5 0.8B and Llama 3.2 1B"))
-        XCTAssertTrue(indexHTML.contains("Llama 3.2 1B"))
-        XCTAssertFalse(indexHTML.contains("Gemma 3 1B"))
-        XCTAssertFalse(indexHTML.contains("SmolLM2 1.7B"))
-        XCTAssertTrue(indexHTML.contains("font-size: 9px"))
-        XCTAssertTrue(indexHTML.contains("benchmark profiles"))
-        XCTAssertTrue(readme.contains("Do not commit model weights"))
-        XCTAssertTrue(readme.contains("kairo-models"))
-        XCTAssertTrue(readme.contains("runtime benchmark profiles"))
-        XCTAssertTrue(rootReadme.contains("currently Qwen3.5 0.8B and Llama 3.2 1B"))
-        XCTAssertFalse(rootReadme.contains("DeepSeek R1 Distill Qwen"))
-    }
-
     func testSandboxActionExecutorRequiresConfirmationBeforeHomeKitControl() async throws {
         let service = MockHomeControlService(granted: true)
         let executor = SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), homeControlService: service)

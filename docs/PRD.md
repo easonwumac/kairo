@@ -2,89 +2,106 @@
 
 ## 產品願景
 
-Kairo 是一個有記憶的手機級 Agent。它不是越獄工具，也不是系統後門；它是一個善用 iOS 公開能力的個人 Agent：使用者授權什麼，它就使用什麼；使用者分享什麼，它就記住什麼；高風險操作一律先預覽再確認。
+Kairo 是手機上的個人資訊資產管理系統。
+
+使用者把截圖、連結、文件、文字、票券、訂單、行程、聊天片段或筆記丟進 Kairo。Kairo 幫使用者保存原始資料、抽取重點、建立資料頁、補上待辦與提醒，並讓之後可以用 Chat 找回資料。
+
+Kairo 的價值不是控制手機，而是把使用者散落在手機上的資訊變成可搜尋、可理解、可追蹤、可行動的個人知識庫。
 
 ## 目標使用者
 
-- 每天處理大量資訊的創業者、PM、工程師、顧問、學生。
-- 希望手機可以記住上下文、整理資訊、產生待辦和行事曆的人。
-- 重視隱私，不希望 AI 默默上傳所有個人資料的人。
+- 常截圖保存資訊，但之後找不到的人。
+- 旅行、專案、訂單、保固、醫療、財務、證件等資料散落在多個 App 的人。
+- 希望 AI 幫忙整理資訊，但不希望資料被默默執行外部動作的人。
+- 希望本地模型成為長期方向，但也接受雲端或 OCR 作為輔助的人。
 
-## 核心場景
+## 核心物件
 
-### 1. 分享任何內容給 Kairo
+### Asset
 
-使用者在 Safari、Mail、Files、Photos、Notion、Slack 等 App 中按分享，選擇 Kairo：
+使用者匯入的原始資料。
 
-- Save to Memory
-- Summarize
-- Extract Tasks
-- Ask About This
-- Create Reminder Draft
-- Create Calendar Draft
+- 類型：text、url、image、pdf、file、manual note。
+- 欄位：source、createdAt、file reference、extracted text、tags、sensitivity、linkedInfoPageIDs。
+- 原始 asset reference 不可丟失。
 
-### 2. 查詢記憶
+### InfoPage
 
-使用者問：
+Kairo 整理後的資料頁。
 
-> 上次 Aaron 說的預算是多少？
+- 類型：travel、order、warranty、medical、project、finance、identity document、home device、subscription、general note。
+- 欄位：title、category、summary、timeline、facts、assets、reminders、actionDrafts。
+- 第一個專屬 UI 先做 Travel。
 
-Kairo 從記憶中搜尋相關資料，回答並附來源。
+### Space / Collection
 
-### 3. 建立行動
+多個 Asset 和 InfoPage 的集合，例如「香港旅行」、「Kairo 專案」、「家中設備」、「個人證件」。
 
-使用者說：
+### ReminderLink
 
-> 把這篇文章的行動項目排到下週。
+從 InfoPage 建立或建議的提醒事項。
 
-Kairo 產生 reminders/calendar drafts，列出預覽，使用者確認後才寫入。
+- 優先用 `kairo://info-page/{id}` 回到 Kairo。
+- 若 Reminder URL 欄位不可用，寫入 notes fallback。
+- 寫入前必須 preview + explicit confirmation。
 
-### 4. 每日 briefing
+## MVP Flows
 
-Kairo 整合使用者授權的 calendar、reminders、近期記憶與分享內容，產生每日摘要。
+### Flow A：匯入資產
 
-### 5. 權限中心
+- Share Extension / 主 App 可匯入 text、URL、截圖/image、PDF/file metadata。
+- 匯入後進入 Asset Inbox。
+- 使用者可在 Library 看到完整資產列表、搜尋、刪除、匯出。
+- 不做高風險 action。
+- 不假裝圖片 OCR 已完成。
 
-使用者可以看到每個 iOS 能力目前是否授權、Kairo 能拿來做什麼、如何撤銷。
+### Flow B：資產整理成 InfoPage
 
-## MVP 功能
+- 使用者可選多個 assets，建立或加入 InfoPage。
+- Kairo 產生 title、category、summary、facts、timeline、suggested reminders、linked assets。
+- Travel InfoPage MVP 要能呈現 flights、hotel/pickup/booking、timeline、reminders、original assets。
+- UI 用固定 template，模型只填 structured data。
 
-### 必做
+### Flow C：InfoPage 到 Reminder / Action
 
-- Chat screen
-- Memory Center
-- Local encrypted memory store
-- Search memory
-- Manual add/edit/delete memory
-- Share Extension ingestion
-- EventKit reminder/calendar draft
-- App Intents for common actions
-- Notifications
-- Permission Hub
-- Audit Log
-- OpenAI provider abstraction
+- Kairo 從 InfoPage 建議 Reminder drafts。
+- 寫入 Reminders 前必須 preview + explicit confirmation。
+- Reminder 能連回 InfoPage。
+- Email、Message、Phone、Maps、Web 只能產生 draft 或 visible handoff。
 
-### 第二階段
+## 模型方向
 
-- Widget
-- Local embeddings
-- OAuth connector：Gmail / Google Calendar 或 Microsoft 365
-- Cloud sync opt-in
-- Better document OCR and PDF parsing
-- Shortcuts gallery
+- 本地 LLM 是長期重點，但 MVP 應先讓資料流可用。
+- 0.8B 級 text model 只能當 fallback text extractor。
+- 截圖理解需要 OCR、vision-capable model，或 OCR + 2B/4B 級 text model。
+- Gemma-class 2B/4B 或相近模型應列入 screenshot description、structured JSON、InfoPage generation 評估。
+- 不新增 benchmark UI/API；只保留能證明 asset understanding 可用的測試。
 
-### 不做
+## 必做
 
-- 背景監控螢幕
-- 任意控制其他 App UI
-- 私有 API
-- ChatGPT 網頁 session cookie 模擬登入
-- 無確認發送訊息/Email/刪除資料
+- Asset model/store/backend API。
+- Asset Inbox / Library。
+- Share Extension import 到 Asset Inbox。
+- InfoPage model/store/generator。
+- Travel InfoPage UI。
+- InfoPage -> Reminder preview + confirm。
+- Chat 搜尋或引用 assets / InfoPages。
+- iCloud backup opt-in。
+
+## 暫停或退場
+
+- Recipes / sample flows。
+- Skill marketplace / managed tools。
+- App Integration Harness 擴張。
+- 新 Shortcut node。
+- Keyboard / Widget / CarPlay。
+- HomeKit live control。
+- local model backend / benchmark 平台化。
+- 大型 generic refactor。
 
 ## 成功指標
 
-- 使用者每週新增 ≥ 20 筆記憶。
-- 70% 的記憶查詢可找到正確來源。
-- 分享到 Kairo 的流程少於 3 步。
-- 高風險 action 0 次未確認執行。
-- 使用者能清楚理解 Kairo 能做與不能做什麼。
+- 使用者每週匯入至少 20 筆 assets。
+- 使用者能在 10 秒內找到曾經匯入的截圖或資料。
+- Travel InfoPage 能從多筆旅行資料整理出 timeline 和 missing checklist。
+- 任何提醒、行程或外部動作 0 次未確認執行。

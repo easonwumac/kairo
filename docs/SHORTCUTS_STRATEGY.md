@@ -1,5 +1,7 @@
 # Shortcuts Strategy
 
+> Current status: Shortcuts are supporting input/output bridges for the asset-management MVP. Do not add new Shortcut nodes or promote Shortcut galleries before Library, InfoPages, and confirmed reminder/action previews are usable.
+
 Shortcuts / App Intents 可能是 Kairo 的關鍵功能。因為一般 iOS App 不能任意控制其他 App，但 Shortcuts 是 Apple 官方允許使用者把多個 App 行為組合起來的自動化表面。
 
 ## 核心定位

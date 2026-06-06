@@ -393,7 +393,7 @@ public struct RootView: View {
 
                     navigationGroup(
                         title: KairoL10n.string("root.menu.group.system"),
-                        sections: [.models, .settings]
+                        sections: [.models, .access, .settings]
                     )
                 }
                 .padding(.horizontal, 18)

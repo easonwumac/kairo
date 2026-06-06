@@ -1,5 +1,7 @@
 # Skill Management
 
+> Current status: Skill Management is deprioritized for the asset-management MVP. Keep this subsystem as supporting safety/backend infrastructure only. Do not promote marketplace, managed tools, custom skills, or HomeKit demos in the primary UI unless they directly support Library, InfoPages, or confirmed action previews.
+
 Kairo 的核心方向是把可操作能力包成可管理的 skills，並讓 model 在 prompt context 中看到已安裝、可用、需要確認的 tools。Skill 不是繞過 iOS 權限的方式，而是把 App Intents、Shortcuts、HomeKit、OAuth connector、本機模型與其他 public API 能力封裝成有 metadata、風險等級、確認規則與安裝狀態的工具包。
 
 ## Current foundation

@@ -1,5 +1,7 @@
 # Architecture
 
+> Current product scope: the architecture should serve Library, Asset Inbox, InfoPages, model-assisted asset understanding, and confirmed action previews. Agent/tool/skill layers are supporting infrastructure only; do not expand them unless they directly support asset capture, asset organization, or InfoPage-to-action flows.
+
 ## High-Level Components
 
 ```text

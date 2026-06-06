@@ -1,100 +1,84 @@
 # Roadmap
 
-Kairo has moved beyond the initial scaffold stage. The roadmap now prioritizes a stable beta flow over adding more surfaces or more Shortcut nodes.
+Kairo's roadmap is now centered on personal information asset management.
+
+The priority is not adding more phone-agent tools. The priority is making captured information easy to save, understand, find, and turn into confirmed reminders or drafts.
 
 ## Status labels
 
 | Status | Meaning |
 |---|---|
 | Implemented | Usable in the app/core path and covered by tests for the stated scope. |
-| Scaffolded | Code, UI, models, or protocols exist, but beta hardening remains. |
+| Scaffolded | Code, UI, models, or protocols exist, but the user flow is not complete. |
 | Test-only / Mock | Deterministic test/demo path only; not a real runtime capability. |
 | Planned | Accepted direction, not implemented yet. |
-| Not allowed | Outside App Store-safe public API boundaries for this app. |
+| Deprioritized | Existing code may remain, but it should not be a primary user path. |
+| Not allowed | Outside App Store-safe public API boundaries. |
 
 ## Current state
 
 | Area | Status | Notes |
 |---|---|---|
-| App project, app target, share extension target, UI test target | Implemented | Project and targets exist in `project.yml` / `Kairo.xcodeproj`. |
-| Chat-first shell | Implemented | Chat is the primary surface; More manages support screens. |
-| Memory | Implemented | Save/search/delete/export stores exist; deleted JSON records can be purged from disk. |
-| Share Extension ingestion queue | Implemented | Text/URL/image/PDF/file metadata imports into Chat; extension stays queue-only and capped. |
-| App Intents / Shortcut nodes | Implemented | Existing beta nodes have `schemaVersion=1` safety contracts; next work is device/App Intent QA. |
-| Kairo Recipes | Implemented | Internal workflows with preview/run/enable/disable and App Intent bridge. |
-| Skill Manager | Scaffolded | File-backed lifecycle and Access UI exist; Chat uses the live effective catalog for installed, disabled, and compatibility-blocked skill state. |
-| URL handoff previews | Implemented | Email, Messages, Phone, Web Search, and Maps use visible handoff + confirmation. |
-| EventKit / Notifications / Contacts actions | Implemented | Chat preview + confirmation exists for current action scope. |
-| HomeKit | Scaffolded | Typed action model, demo UI, and tests exist; real entitlement/live home path is planned. |
-| OAuth connectors | Scaffolded | Auth/callback/status scaffolds exist; real provider APIs are planned. |
-| Local model catalog/download/select/delete | Scaffolded | User-triggered catalog/download/settings path exists with package-tested progress/cancel/delete/checksum/trust-store behavior, but production signed catalog publication and real-device iOS runtime proof remain release blockers. |
-| macOS/dev local model runtime adapter | Test-only / Mock | External command validation path only. |
-| iOS production local model inference | Planned | Requires real runtime, device proof, memory/thermal gating, and App Store packaging. |
-| Keyboard Extension | Planned | Deferred. |
-| Widget | Planned | Deferred. |
-| Cross-app UI clicking, background screen watching, private app data reads | Not allowed | Not part of Kairo's App Store-safe scope. |
+| Library navigation | Implemented | Library is a first-class drawer entry. |
+| KnowledgeAsset model/store/API | Implemented | File-backed asset persistence, search, delete, export, and import from pending shares. |
+| Share Extension queue | Implemented | Queues text, URL, image, PDF, and file metadata; extension remains queue-only. |
+| iCloud backup policy | Implemented | Asset store exposes backup inclusion policy. |
+| InfoPage model/store | Implemented | Codable models, file-backed store, search/delete/export. |
+| InfoPage generation | Implemented | Deterministic generator for travel/order/project/general from text/extracted text. |
+| Travel InfoPage UI | Scaffolded | Data model and tests exist; dedicated UI is next. |
+| Asset -> InfoPage selection | Planned | Needs app UI. |
+| InfoPage -> Reminder confirmation | Scaffolded | `ReminderLink` model exists; EventKit write-back UI still needs wiring. |
+| Screenshot OCR / vision extraction | Planned | Do not claim image understanding until real extraction exists. |
+| Chat with assets / InfoPages | Planned | Chat should search saved assets and InfoPages. |
+| Model evaluation for asset understanding | Scaffolded | Evaluation catalog exists; real local vision/OCR path is not complete. |
+| Recipes / sample flows | Deprioritized | Keep only if directly useful for asset-to-action flow. |
+| Skill Manager / managed tools | Deprioritized | Hide from primary UI unless needed for asset workflows. |
+| App Integration Harness expansion | Deprioritized | Existing safety code can support handoff previews, but catalog expansion is not the product. |
+| Keyboard / Widget / CarPlay / HomeKit live control | Deprioritized | Do not start until asset-management MVP is useful. |
+| Cross-app private data reads / hidden control | Not allowed | Not part of Kairo. |
 
-## Phase 1: Beta stabilization
+## Phase 1: Asset Capture MVP
 
-Do first:
+1. Make Library the obvious home for captured assets.
+2. Verify Share Extension -> Asset Inbox for text, URL, screenshot/image, PDF/file metadata.
+3. Preserve original asset references and extracted text.
+4. Add focused UI smoke for import/list/search/delete/export.
+5. Keep iCloud backup opt-in explicit.
 
-1. **Documentation state alignment**
-   - Keep README, NEXT_STEPS, capability matrix, App Store readiness, local model docs, and Shortcut strategy aligned with implementation state.
-   - Every user-facing claim must map to Implemented, Scaffolded, Test-only / Mock, Planned, or Not allowed.
+## Phase 2: InfoPage MVP
 
-2. **Chat uses live Skill Manager state**
-   - Chat and `AgentCore` plan from the effective installed skill catalog, not only `AgentSkillCatalog.default`.
-   - Disabled skills disappear from Chat tool candidates.
-   - Installed marketplace skills appear in the effective catalog.
-   - Compatibility-blocked skills stay preview-only and never become executable tools.
+1. Build InfoPage List.
+2. Build InfoPage Detail.
+3. Let users select assets and create/update an InfoPage.
+4. Ship Travel template first.
+5. Render fixed templates from structured data; do not ask models to invent UI.
 
-3. **Shortcut node hardening**
-   - Do not add more nodes first.
-   - Lock down current safety boundaries: Contacts draft/write, Email draft, Message handoff, Phone handoff, Web Search handoff, Calendar/Reminder drafts, and Home preview.
-   - Keep App Intent JSON output stable for downstream Shortcuts parsing.
+## Phase 3: Confirmed Actions
 
-4. **Local model beta path**
-   - Keep downloads user-triggered.
-   - Show model size, license, purpose, delete state, storage/backup policy, progress/cancel, and runtime availability honestly.
-   - Keep skill and model release keys `publicationStatus=pendingPublication` until standalone catalogs and public trust metadata are published.
-   - Keep macOS/dev reply checks separate from iOS production inference.
+1. Generate Reminder drafts from InfoPage facts/timeline.
+2. Preview Reminder before EventKit write.
+3. Confirm writes Reminder and links back to `kairo://info-page/{id}`.
+4. Show linked reminder state on InfoPage.
+5. Keep email/message/maps/phone/web as visible drafts or handoffs only.
 
-5. **Audit and memory lifecycle**
-   - File-backed metadata-only audit logging is in the beta path.
-   - Memory Center can export/delete active records; JSON store can purge deleted records.
+## Phase 4: Asset Understanding Models
 
-6. **Share Extension beta import**
-   - Main app imports text, URL, image, PDF, and file metadata shared into Kairo.
-   - Extension does not run model inference or high-risk actions; it only queues up to 8 attachments per request.
+1. Define minimum JSON schema for asset extraction.
+2. Evaluate text-only fallback models on OCR/user text.
+3. Evaluate OCR + 2B/4B text model flows.
+4. Evaluate vision-capable models for screenshot description.
+5. Only expose models as usable when simulator/device evidence exists.
 
-## Phase 2: Production readiness
-
-- Privacy labels and App Store review notes.
-- Real-device smoke checks for Chat, Memory, Access, Settings, Share Extension, App Intents Ask/Save/Search, chat history restart persistence, permission-denied fallbacks, and confirmed notification/reminder/calendar/email/message/phone/web/maps actions.
-- Keychain/token deletion and provider disconnect flows.
-- Background task expiration handling and user-visible scheduling boundaries.
-- Data export/delete flows.
-- Production signed skill and model catalog publication from standalone repositories, with public trust metadata published outside this app repo.
-
-## Phase 3: Integrations after beta safety
-
-Add only after beta stabilization:
-
-- One real OAuth provider API path, such as Google Calendar/Gmail or Microsoft 365.
-- Real HomeKit entitlement path with explicit permission copy and fallback UI.
-- Published production skill catalog key material after `pendingPublication` keys are promoted with matching standalone catalog publication.
-- Published production model catalog with device gating, rollout metadata, and real-device iPhone runtime proof.
-
-## Deferred work
-
-Do not prioritize until the beta flow above is stable:
+## Deferred
 
 - More Shortcut nodes.
-- Keyboard Extension.
-- Widget.
-- CarPlay / car mode.
-- Multiple OAuth connectors.
-- Additional app surfaces.
+- Recipes as primary product.
+- Skill marketplace.
+- Generic phone-tool catalog expansion.
+- Backend facade/factory/platform work.
+- Local model benchmark UI/API.
+- Keyboard, Widget, CarPlay.
+- App icon/branding.
 
 ## Always out of scope
 
@@ -104,3 +88,4 @@ Do not prioritize until the beta flow above is stable:
 - Background screen watching.
 - Reading Messages, Apple Mail, Notes, Safari history/cookies, or ChatGPT web sessions.
 - Silent Apple Shortcuts creation or editing.
+- Silent send/call/delete/write actions.
