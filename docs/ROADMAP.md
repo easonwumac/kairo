@@ -23,6 +23,10 @@ The priority is not adding more phone-agent tools. The priority is making captur
 | KnowledgeAsset model/store/API | Implemented | File-backed asset persistence, search, delete, export, and import from pending shares. |
 | Share Extension queue | Implemented | Queues text, URL, image, PDF, and file metadata; extension remains queue-only. |
 | iCloud backup policy | Implemented | Asset store exposes backup inclusion policy. |
+| Library filters | Implemented | Text, type, date range, folder filters, and time grouping exist in the Library path. |
+| Asset folders | Implemented | File-backed folder metadata exists; future model routing should use folder lists when deciding where to save assets. |
+| Node directory layout | Planned | `html/`, `json/`, and `resources/` node storage is specified in `docs/ASSET_LIBRARY_STORAGE.md`. |
+| SQLite index | Planned | Recommended when the JSON index is no longer enough for fuzzy/date/type/folder retrieval. |
 | InfoPage model/store | Implemented | Codable models, file-backed store, search/delete/export. |
 | InfoPage generation | Implemented | Deterministic generator for travel/order/project/general from text/extracted text. |
 | Travel InfoPage UI | Scaffolded | Data model and tests exist; dedicated UI is next. |

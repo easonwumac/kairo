@@ -26,6 +26,12 @@ Capture -> Understand -> Prepare Actions
 | Asset list/search/detail | Implemented | Library can display and search saved assets. |
 | Asset delete/export | Implemented | User-managed delete/export path exists. |
 | iCloud backup policy | Implemented | User can choose backup inclusion for imported assets. |
+| Fuzzy text search | Implemented | Query matcher scores title, summary, extracted text, tags, folders, checklist, and attachment names. |
+| Date/type/folder filters | Implemented | `KnowledgeAssetQuery` supports kind, folder, and created date windows. |
+| Time grouping | Implemented | Library UI groups assets by month. |
+| User-created folders | Implemented | File-backed `KnowledgeAssetFolder` metadata exists. |
+| Node folder layout | Planned | Each node should eventually contain `html/`, `json/`, and `resources/`; see `docs/ASSET_LIBRARY_STORAGE.md`. |
+| SQLite index | Planned | Likely index layer for larger libraries; JSON/node files remain exportable source data. |
 | Manual note capture | Planned | Should create assets, not separate memory-only records. |
 | Photos picker / document picker | Planned | Useful for asset capture; add only if it feeds Library. |
 | OCR / screenshot text extraction | Planned | Do not claim until real OCR/runtime exists. |

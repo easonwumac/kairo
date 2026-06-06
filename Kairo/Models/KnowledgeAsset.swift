@@ -104,7 +104,7 @@ public struct KnowledgeAsset: Identifiable, Codable, Equatable, Sendable {
     }
 }
 
-public enum KnowledgeAssetKind: String, Codable, CaseIterable, Sendable {
+public enum KnowledgeAssetKind: String, Codable, CaseIterable, Hashable, Sendable {
     case screenshot
     case image
     case text
@@ -152,4 +152,48 @@ public enum KnowledgeAssetChecklistSource: String, Codable, CaseIterable, Sendab
     case extracted
     case suggested
     case userCreated
+}
+
+public struct KnowledgeAssetFolder: Identifiable, Codable, Equatable, Sendable {
+    public var id: UUID
+    public var name: String
+    public var createdAt: Date
+    public var updatedAt: Date
+    public var deletedAt: Date?
+
+    public init(
+        id: UUID = UUID(),
+        name: String,
+        createdAt: Date = Date(),
+        updatedAt: Date = Date(),
+        deletedAt: Date? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.deletedAt = deletedAt
+    }
+}
+
+public struct KnowledgeAssetQuery: Equatable, Sendable {
+    public var text: String
+    public var kinds: Set<KnowledgeAssetKind>
+    public var folderName: String?
+    public var createdAfter: Date?
+    public var createdBefore: Date?
+
+    public init(
+        text: String = "",
+        kinds: Set<KnowledgeAssetKind> = [],
+        folderName: String? = nil,
+        createdAfter: Date? = nil,
+        createdBefore: Date? = nil
+    ) {
+        self.text = text
+        self.kinds = kinds
+        self.folderName = folderName
+        self.createdAfter = createdAfter
+        self.createdBefore = createdBefore
+    }
 }

@@ -12,7 +12,9 @@ Remaining gaps:
 - Share Extension imports text, URLs, screenshots/images, PDF/file metadata into Asset Inbox.
 - Main app has a clear Library entry for Asset Inbox and all saved assets.
 - Asset detail preserves original file reference, extracted text, source, date, tags, sensitivity, and linked InfoPages.
+- Library supports fuzzy search, type filters, date filters, time grouping, and user-created folders.
 - iCloud backup opt-in is clear and per-store behavior is testable.
+- Storage nodes should move toward `html/`, `json/`, and `resources/` directories with a SQLite index when the JSON index becomes insufficient.
 - Image/PDF OCR or vision extraction must be labeled unavailable until a real model/runtime path exists.
 
 Required evidence:
@@ -20,6 +22,7 @@ Required evidence:
 - Asset Codable/store tests.
 - Share queue -> Asset Inbox import tests.
 - UI smoke for Library import/list/search/delete/export.
+- Store/API tests for folder metadata and filtered queries.
 
 ## MVP Flow B: Organize Assets Into InfoPages
 

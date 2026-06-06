@@ -41,6 +41,15 @@
 "knowledgeAssets.import.result.many" = "Imported %lld assets.";
 "knowledgeAssets.search.placeholder" = "Search assets";
 "knowledgeAssets.search.clear" = "Clear";
+"knowledgeAssets.filter.kind.all" = "All types";
+"knowledgeAssets.filter.date.all" = "All time";
+"knowledgeAssets.filter.date.today" = "Today";
+"knowledgeAssets.filter.date.last7Days" = "Last 7 days";
+"knowledgeAssets.filter.date.last30Days" = "Last 30 days";
+"knowledgeAssets.filter.date.thisYear" = "This year";
+"knowledgeAssets.filter.folder.all" = "All folders";
+"knowledgeAssets.folder.new.placeholder" = "New folder";
+"knowledgeAssets.folder.created" = "Added \"%@\".";
 "knowledgeAssets.count.one" = "%lld asset";
 "knowledgeAssets.count.many" = "%lld assets";
 "knowledgeAssets.search.count.one" = "%lld match for \"%@\"";

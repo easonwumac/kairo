@@ -24,9 +24,9 @@
 "root.section.chat.subtitle" = "告訴 Kairo 要在這支手機上完成什麼";
 "root.section.chat.shortTitle" = "Chat";
 "root.section.chat.chromeTitle" = "iOS Agent";
-"root.section.assets.title" = "Library";
+"root.section.assets.title" = "資料庫";
 "root.section.assets.subtitle" = "截圖、檔案、連結與資訊頁";
-"root.section.assets.shortTitle" = "Library";
+"root.section.assets.shortTitle" = "資料庫";
 "root.section.memory.title" = "記憶";
 "root.section.memory.subtitle" = "Kairo 可使用的已核准脈絡";
 "root.section.memory.shortTitle" = "記憶";
@@ -41,6 +41,15 @@
 "knowledgeAssets.import.result.many" = "已匯入 %lld 筆資產。";
 "knowledgeAssets.search.placeholder" = "搜尋資產";
 "knowledgeAssets.search.clear" = "清除";
+"knowledgeAssets.filter.kind.all" = "所有類型";
+"knowledgeAssets.filter.date.all" = "所有時間";
+"knowledgeAssets.filter.date.today" = "今天";
+"knowledgeAssets.filter.date.last7Days" = "最近 7 天";
+"knowledgeAssets.filter.date.last30Days" = "最近 30 天";
+"knowledgeAssets.filter.date.thisYear" = "今年";
+"knowledgeAssets.filter.folder.all" = "所有資料夾";
+"knowledgeAssets.folder.new.placeholder" = "新增資料夾";
+"knowledgeAssets.folder.created" = "已新增「%@」。";
 "knowledgeAssets.count.one" = "%lld 筆資產";
 "knowledgeAssets.count.many" = "%lld 筆資產";
 "knowledgeAssets.search.count.one" = "找到 %lld 筆「%@」符合項目";

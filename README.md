@@ -19,6 +19,7 @@ Capture -> Understand -> Prepare Actions
 - Import text, URLs, screenshots/images, PDFs, file metadata, and manual notes.
 - Keep original asset references when available.
 - Store source, created date, extracted text, tags, sensitivity, and linked InfoPages.
+- Organize assets by type, date, search text, and user-created folders.
 - Let users choose whether imported assets participate in iCloud backup.
 
 ### Understand
@@ -82,6 +83,8 @@ Kairo suggests reminders or drafts from an InfoPage. The user previews the actio
 - File-backed `KnowledgeAsset` store and backend API.
 - Asset import from pending shares.
 - Asset list/search/detail/delete/export.
+- Library query API for fuzzy text, asset type, date range, and folder filters.
+- File-backed `KnowledgeAssetFolder` metadata.
 - iCloud backup policy toggle for imported assets.
 - `InfoPage`, `InfoSpace`, and `ReminderLink` data models.
 - File-backed `InfoPageStore`.
@@ -94,6 +97,8 @@ Kairo suggests reminders or drafts from an InfoPage. The user previews the actio
 
 - InfoPage List and InfoPage Detail UI.
 - Asset selection into InfoPage creation/update.
+- Node directory layout with `html/`, `json/`, and `resources/`; see `docs/ASSET_LIBRARY_STORAGE.md`.
+- SQLite index layer for large Library search.
 - Real OCR/vision extraction for screenshots and PDFs.
 - Model evaluation catalog for asset understanding.
 - Confirmed EventKit write-back from InfoPage reminder drafts.

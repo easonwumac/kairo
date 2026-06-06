@@ -160,19 +160,85 @@ final class KairoKnowledgeAssetBackendAPITests: XCTestCase {
         XCTAssertEqual(exported.assets.map(\.id), [second.id])
     }
 
-    private func sampleAsset(title: String) -> KnowledgeAsset {
+    func testKnowledgeAssetQueryFiltersByKindFolderAndDate() async throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let older = sampleAsset(
+            title: "Old hotel booking",
+            kind: .pdf,
+            collections: ["Hong Kong"],
+            createdAt: try XCTUnwrap(calendar.date(from: DateComponents(year: 2025, month: 12, day: 1)))
+        )
+        let target = sampleAsset(
+            title: "Airport pickup screenshot",
+            kind: .screenshot,
+            collections: ["Hong Kong"],
+            createdAt: try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 6, day: 5)))
+        )
+        let otherFolder = sampleAsset(
+            title: "Tokyo airport pickup screenshot",
+            kind: .screenshot,
+            collections: ["Tokyo"],
+            createdAt: try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 6, day: 5)))
+        )
+        let store = InMemoryKnowledgeAssetStore(seed: [older, target, otherFolder])
+        let query = KnowledgeAssetQuery(
+            text: "pickup",
+            kinds: [.screenshot],
+            folderName: "Hong Kong",
+            createdAfter: try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 1))),
+            createdBefore: try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 1, day: 1)))
+        )
+
+        let results = try await store.query(query, limit: 10)
+
+        XCTAssertEqual(results.map(\.id), [target.id])
+    }
+
+    func testKnowledgeAssetSearchMatchesSmallTypos() async throws {
+        let target = sampleAsset(title: "Airport pickup screenshot")
+        let store = InMemoryKnowledgeAssetStore(seed: [target])
+
+        let results = try await store.search(query: "airprt", limit: 10)
+
+        XCTAssertEqual(results.map(\.id), [target.id])
+    }
+
+    func testKnowledgeAssetFoldersPersistAndExport() async throws {
+        let fileURL = temporaryBackendTestFileURL(named: "knowledge-assets-with-folders.json")
+        let folder = KnowledgeAssetFolder(name: "Hong Kong")
+        let store = try await JSONFileKnowledgeAssetStore(fileURL: fileURL)
+
+        try await store.saveFolder(folder)
+        try await store.save(sampleAsset(title: "Airport pickup", collections: ["Hong Kong"]))
+
+        let reloaded = try await JSONFileKnowledgeAssetStore(fileURL: fileURL)
+        let folders = try await reloaded.listFolders()
+        let exported = try await reloaded.export(limit: 10)
+
+        XCTAssertEqual(folders.map(\.name), ["Hong Kong"])
+        XCTAssertEqual(exported.folders.map(\.name), ["Hong Kong"])
+    }
+
+    private func sampleAsset(
+        title: String,
+        kind: KnowledgeAssetKind = .text,
+        collections: [String] = [],
+        createdAt: Date = Date()
+    ) -> KnowledgeAsset {
         KnowledgeAsset(
             title: title,
-            kind: .text,
+            kind: kind,
             source: .manual,
             attachments: [],
             extractedText: title,
             generatedDescription: nil,
             summary: title,
             tags: [],
-            collections: [],
+            collections: collections,
             checklistItems: [],
-            proposedActions: []
+            proposedActions: [],
+            createdAt: createdAt,
+            updatedAt: createdAt
         )
     }
 

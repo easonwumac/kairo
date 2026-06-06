@@ -9,7 +9,12 @@ import AppKit
 public struct KnowledgeAssetsView: View {
     @State private var searchQuery = ""
     @State private var assets: [KnowledgeAsset] = []
+    @State private var folders: [KnowledgeAssetFolder] = []
     @State private var selectedAsset: KnowledgeAsset?
+    @State private var selectedKind: KnowledgeAssetKind?
+    @State private var selectedFolderName: String?
+    @State private var selectedDateFilter: KnowledgeAssetDateFilter = .all
+    @State private var newFolderName = ""
     @State private var errorMessage: String?
     @State private var statusMessage: String?
     @State private var exportText = "{}"
@@ -60,7 +65,7 @@ public struct KnowledgeAssetsView: View {
             .background(KairoDesign.background.ignoresSafeArea())
             .scrollIndicators(.hidden)
             .kairoHiddenNavigationChrome()
-            .task(id: searchQuery) { await reload() }
+            .task(id: reloadToken) { await reload() }
             .refreshable { await reload() }
             .preference(key: RootChromePreferenceKey.self, value: rootChromeContext)
             .onChange(of: rootChromeBackRequestID) { _, _ in
@@ -97,8 +102,18 @@ public struct KnowledgeAssetsView: View {
             if assets.isEmpty {
                 emptyState
             } else {
-                ForEach(assets) { asset in
-                    assetCard(asset)
+                ForEach(groupedAssets) { group in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(group.title)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 2)
+                            .accessibilityIdentifier("knowledgeAssets.group.\(group.id)")
+
+                        ForEach(group.assets) { asset in
+                            assetCard(asset)
+                        }
+                    }
                 }
             }
         }
@@ -190,8 +205,91 @@ public struct KnowledgeAssetsView: View {
                     .disabled(assets.isEmpty)
                     .accessibilityIdentifier("knowledgeAssets.export")
                 }
+
+                filterControls
             }
         }
+    }
+
+    private var filterControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    filterMenu(
+                        title: selectedKind.map(kindLabel(for:)) ?? KairoL10n.string("knowledgeAssets.filter.kind.all"),
+                        systemImage: "square.grid.2x2"
+                    ) {
+                        Button(KairoL10n.string("knowledgeAssets.filter.kind.all")) {
+                            selectedKind = nil
+                        }
+                        ForEach(KnowledgeAssetKind.allCases, id: \.self) { kind in
+                            Button(kindLabel(for: kind)) {
+                                selectedKind = kind
+                            }
+                        }
+                    }
+
+                    filterMenu(
+                        title: selectedDateFilter.title,
+                        systemImage: "calendar"
+                    ) {
+                        ForEach(KnowledgeAssetDateFilter.allCases, id: \.self) { filter in
+                            Button(filter.title) {
+                                selectedDateFilter = filter
+                            }
+                        }
+                    }
+
+                    filterMenu(
+                        title: selectedFolderName ?? KairoL10n.string("knowledgeAssets.filter.folder.all"),
+                        systemImage: "folder"
+                    ) {
+                        Button(KairoL10n.string("knowledgeAssets.filter.folder.all")) {
+                            selectedFolderName = nil
+                        }
+                        ForEach(folderNames, id: \.self) { folderName in
+                            Button(folderName) {
+                                selectedFolderName = folderName
+                            }
+                        }
+                    }
+                }
+            }
+
+            HStack(spacing: 8) {
+                TextField(KairoL10n.string("knowledgeAssets.folder.new.placeholder"), text: $newFolderName)
+                    .textFieldStyle(.plain)
+                    .font(.caption.weight(.medium))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .accessibilityIdentifier("knowledgeAssets.folder.new.text")
+
+                Button {
+                    createFolder()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.caption.weight(.bold))
+                }
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal, isCompact: true))
+                .disabled(newFolderName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityIdentifier("knowledgeAssets.folder.new.button")
+            }
+        }
+    }
+
+    private func filterMenu<Content: View>(
+        title: String,
+        systemImage: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Menu {
+            content()
+        } label: {
+            Label(title, systemImage: systemImage)
+                .font(.caption.weight(.semibold))
+        }
+        .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isCompact: true))
     }
 
     private var emptyState: some View {
@@ -395,16 +493,57 @@ public struct KnowledgeAssetsView: View {
         )
     }
 
+    private var reloadToken: String {
+        [
+            trimmedSearchQuery,
+            selectedKind?.rawValue ?? "allKinds",
+            selectedFolderName ?? "allFolders",
+            selectedDateFilter.rawValue
+        ].joined(separator: "|")
+    }
+
+    private var query: KnowledgeAssetQuery {
+        let interval = selectedDateFilter.interval(now: Date())
+        return KnowledgeAssetQuery(
+            text: trimmedSearchQuery,
+            kinds: selectedKind.map { Set([$0]) } ?? [],
+            folderName: selectedFolderName,
+            createdAfter: interval?.start,
+            createdBefore: interval?.end
+        )
+    }
+
+    private var folderNames: [String] {
+        let explicit = folders.map(\.name)
+        let derived = assets.flatMap(\.collections)
+        return Array(Set(explicit + derived)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+
+    private var groupedAssets: [KnowledgeAssetGroup] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: assets) { asset in
+            KnowledgeAssetGroupKey(date: asset.createdAt, calendar: calendar)
+        }
+        return grouped
+            .map { key, assets in
+                KnowledgeAssetGroup(
+                    id: key.id,
+                    title: key.title,
+                    assets: assets.sorted { $0.createdAt > $1.createdAt }
+                )
+            }
+            .sorted { $0.id > $1.id }
+    }
+
     private func reload() async {
         do {
-            let query = trimmedSearchQuery
-            let loaded = query.isEmpty
-                ? try await assetAPI.list(limit: 100)
-                : try await assetAPI.search(query: query, limit: 100)
+            let loaded = try await assetAPI.query(query, limit: 200)
+            let folders = try await assetAPI.listFolders()
             let export = try await assetAPI.export(limit: 500)
             let exportText = try Self.exportText(for: export)
             await MainActor.run {
                 assets = loaded
+                self.folders = folders
                 self.exportText = exportText
                 errorMessage = nil
                 if let selectedAssetID = selectedAsset?.id {
@@ -414,6 +553,27 @@ public struct KnowledgeAssetsView: View {
         } catch {
             await MainActor.run {
                 errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func createFolder() {
+        let name = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+
+        Task {
+            do {
+                try await assetAPI.saveFolder(KnowledgeAssetFolder(name: name))
+                await reload()
+                await MainActor.run {
+                    selectedFolderName = name
+                    newFolderName = ""
+                    statusMessage = KairoL10n.string("knowledgeAssets.folder.created", name)
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                }
             }
         }
     }
@@ -562,5 +722,79 @@ private struct KnowledgeAssetThumbnail: View {
         return nil
         #endif
     }
+}
+
+private struct KnowledgeAssetGroup: Identifiable {
+    var id: String
+    var title: String
+    var assets: [KnowledgeAsset]
+}
+
+private struct KnowledgeAssetGroupKey: Hashable {
+    var id: String
+    var title: String
+
+    init(date: Date, calendar: Calendar) {
+        let components = calendar.dateComponents([.year, .month], from: date)
+        let year = components.year ?? 0
+        let month = components.month ?? 0
+        self.id = String(format: "%04d-%02d", year, month)
+        self.title = DateFormatter.knowledgeAssetMonth.string(from: date)
+    }
+}
+
+private enum KnowledgeAssetDateFilter: String, CaseIterable {
+    case all
+    case today
+    case last7Days
+    case last30Days
+    case thisYear
+
+    var title: String {
+        switch self {
+        case .all:
+            return KairoL10n.string("knowledgeAssets.filter.date.all")
+        case .today:
+            return KairoL10n.string("knowledgeAssets.filter.date.today")
+        case .last7Days:
+            return KairoL10n.string("knowledgeAssets.filter.date.last7Days")
+        case .last30Days:
+            return KairoL10n.string("knowledgeAssets.filter.date.last30Days")
+        case .thisYear:
+            return KairoL10n.string("knowledgeAssets.filter.date.thisYear")
+        }
+    }
+
+    func interval(now: Date, calendar: Calendar = .current) -> DateInterval? {
+        switch self {
+        case .all:
+            return nil
+        case .today:
+            let start = calendar.startOfDay(for: now)
+            let end = calendar.date(byAdding: .day, value: 1, to: start) ?? now
+            return DateInterval(start: start, end: end)
+        case .last7Days:
+            let end = now
+            let start = calendar.date(byAdding: .day, value: -7, to: end) ?? end
+            return DateInterval(start: start, end: end)
+        case .last30Days:
+            let end = now
+            let start = calendar.date(byAdding: .day, value: -30, to: end) ?? end
+            return DateInterval(start: start, end: end)
+        case .thisYear:
+            let year = calendar.component(.year, from: now)
+            let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? now
+            let end = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? now
+            return DateInterval(start: start, end: end)
+        }
+    }
+}
+
+private extension DateFormatter {
+    static let knowledgeAssetMonth: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy MMM"
+        return formatter
+    }()
 }
 #endif

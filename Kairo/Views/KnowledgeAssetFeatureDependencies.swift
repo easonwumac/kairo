@@ -32,11 +32,27 @@ private struct UnavailableKnowledgeAssetAPI: KairoKnowledgeAssetAPI {
         throw KnowledgeAssetFeatureDependencyError.assetAPIUnavailable
     }
 
+    func query(_ query: KnowledgeAssetQuery, limit: Int) async throws -> [KnowledgeAsset] {
+        throw KnowledgeAssetFeatureDependencyError.assetAPIUnavailable
+    }
+
     func save(_ asset: KnowledgeAsset) async throws {
         throw KnowledgeAssetFeatureDependencyError.assetAPIUnavailable
     }
 
     func delete(id: UUID) async throws {
+        throw KnowledgeAssetFeatureDependencyError.assetAPIUnavailable
+    }
+
+    func listFolders() async throws -> [KnowledgeAssetFolder] {
+        throw KnowledgeAssetFeatureDependencyError.assetAPIUnavailable
+    }
+
+    func saveFolder(_ folder: KnowledgeAssetFolder) async throws {
+        throw KnowledgeAssetFeatureDependencyError.assetAPIUnavailable
+    }
+
+    func deleteFolder(id: UUID) async throws {
         throw KnowledgeAssetFeatureDependencyError.assetAPIUnavailable
     }
 

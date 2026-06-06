@@ -14,8 +14,12 @@ public protocol KairoKnowledgeAssetAPI: Sendable {
     func importPendingShares(limit: Int, iCloudBackupAllowed: Bool) async throws -> KairoKnowledgeAssetImportResult
     func list(limit: Int) async throws -> [KnowledgeAsset]
     func search(query: String, limit: Int) async throws -> [KnowledgeAsset]
+    func query(_ query: KnowledgeAssetQuery, limit: Int) async throws -> [KnowledgeAsset]
     func save(_ asset: KnowledgeAsset) async throws
     func delete(id: UUID) async throws
+    func listFolders() async throws -> [KnowledgeAssetFolder]
+    func saveFolder(_ folder: KnowledgeAssetFolder) async throws
+    func deleteFolder(id: UUID) async throws
     func export(limit: Int) async throws -> KnowledgeAssetExport
 }
 
@@ -56,12 +60,28 @@ public struct KairoKnowledgeAssetBackendService: KairoKnowledgeAssetAPI {
         try await assetStore.search(query: query, limit: limit)
     }
 
+    public func query(_ query: KnowledgeAssetQuery, limit: Int = 100) async throws -> [KnowledgeAsset] {
+        try await assetStore.query(query, limit: limit)
+    }
+
     public func save(_ asset: KnowledgeAsset) async throws {
         try await assetStore.save(asset)
     }
 
     public func delete(id: UUID) async throws {
         try await assetStore.delete(id: id)
+    }
+
+    public func listFolders() async throws -> [KnowledgeAssetFolder] {
+        try await assetStore.listFolders()
+    }
+
+    public func saveFolder(_ folder: KnowledgeAssetFolder) async throws {
+        try await assetStore.saveFolder(folder)
+    }
+
+    public func deleteFolder(id: UUID) async throws {
+        try await assetStore.deleteFolder(id: id)
     }
 
     public func export(limit: Int = 500) async throws -> KnowledgeAssetExport {
