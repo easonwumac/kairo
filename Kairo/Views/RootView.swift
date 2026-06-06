@@ -143,6 +143,12 @@ public struct RootView: View {
                 chromeActionRequest: chatChromeActionRequest
             )
                 .ignoresSafeArea(.container, edges: .top)
+        case .assets:
+            KnowledgeAssetsView(
+                dependencies: environment.knowledgeAssetFeatureDependencies,
+                rootChromeBackRequestID: $chromeBackRequestID,
+                usesRootChromeNavigation: true
+            )
         case .memory:
             MemoryCenterView(dependencies: environment.memoryFeatureDependencies)
         case .shortcuts:
@@ -382,7 +388,7 @@ public struct RootView: View {
 
                     navigationGroup(
                         title: KairoL10n.string("root.menu.group.primary"),
-                        sections: [.memory, .shortcuts]
+                        sections: [.assets, .memory, .shortcuts]
                     )
 
                     navigationGroup(
@@ -581,6 +587,7 @@ public struct RootView: View {
 
 private enum RootSection: String, CaseIterable, Identifiable {
     case chat
+    case assets
     case memory
     case shortcuts
     case access
@@ -593,6 +600,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
         switch self {
         case .chat:
             return KairoL10n.string("root.section.chat.title")
+        case .assets:
+            return KairoL10n.string("root.section.assets.title")
         case .memory:
             return KairoL10n.string("root.section.memory.title")
         case .shortcuts:
@@ -610,6 +619,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
         switch self {
         case .chat:
             return KairoL10n.string("root.section.chat.subtitle")
+        case .assets:
+            return KairoL10n.string("root.section.assets.subtitle")
         case .memory:
             return KairoL10n.string("root.section.memory.subtitle")
         case .shortcuts:
@@ -627,6 +638,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
         switch self {
         case .chat:
             return KairoL10n.string("root.section.chat.shortTitle")
+        case .assets:
+            return KairoL10n.string("root.section.assets.shortTitle")
         case .memory:
             return KairoL10n.string("root.section.memory.shortTitle")
         case .shortcuts:
@@ -653,6 +666,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
         switch self {
         case .chat:
             return "message.fill"
+        case .assets:
+            return "archivebox.fill"
         case .memory:
             return "brain.head.profile"
         case .shortcuts:
@@ -668,7 +683,7 @@ private enum RootSection: String, CaseIterable, Identifiable {
 
     var tint: Color {
         switch self {
-        case .memory, .access:
+        case .assets, .memory, .access:
             return KairoDesign.teal
         case .chat, .models:
             return KairoDesign.blue

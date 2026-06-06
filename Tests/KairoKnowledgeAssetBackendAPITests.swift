@@ -116,6 +116,22 @@ final class KairoKnowledgeAssetBackendAPITests: XCTestCase {
         XCTAssertEqual(try isExcludedFromBackup(imageURL), true)
     }
 
+    func testKnowledgeAssetAPIDeletesAndExportsActiveAssets() async throws {
+        let first = sampleAsset(title: "First asset")
+        let second = sampleAsset(title: "Second asset")
+        let api = KairoKnowledgeAssetBackendService(
+            assetStore: InMemoryKnowledgeAssetStore(seed: [first, second]),
+            shareIngestionQueue: InMemoryShareIngestionQueue()
+        )
+
+        try await api.delete(id: first.id)
+        let listed = try await api.list(limit: 10)
+        let exported = try await api.export(limit: 10)
+
+        XCTAssertEqual(listed.map(\.id), [second.id])
+        XCTAssertEqual(exported.assets.map(\.id), [second.id])
+    }
+
     private func sampleAsset(title: String) -> KnowledgeAsset {
         KnowledgeAsset(
             title: title,

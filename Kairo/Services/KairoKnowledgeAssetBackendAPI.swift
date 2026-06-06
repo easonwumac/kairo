@@ -15,6 +15,8 @@ public protocol KairoKnowledgeAssetAPI: Sendable {
     func list(limit: Int) async throws -> [KnowledgeAsset]
     func search(query: String, limit: Int) async throws -> [KnowledgeAsset]
     func save(_ asset: KnowledgeAsset) async throws
+    func delete(id: UUID) async throws
+    func export(limit: Int) async throws -> KnowledgeAssetExport
 }
 
 public struct KairoKnowledgeAssetBackendService: KairoKnowledgeAssetAPI {
@@ -56,6 +58,14 @@ public struct KairoKnowledgeAssetBackendService: KairoKnowledgeAssetAPI {
 
     public func save(_ asset: KnowledgeAsset) async throws {
         try await assetStore.save(asset)
+    }
+
+    public func delete(id: UUID) async throws {
+        try await assetStore.delete(id: id)
+    }
+
+    public func export(limit: Int = 500) async throws -> KnowledgeAssetExport {
+        try await assetStore.export(limit: limit)
     }
 
     private func applyBackupPolicyToAssetFiles(_ asset: KnowledgeAsset, iCloudBackupAllowed: Bool) throws {
