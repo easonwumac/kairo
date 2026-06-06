@@ -37,27 +37,20 @@ public struct KnowledgeCategoriesView: View {
     }
 
     private var headerCard: some View {
-        KairoFocusCard {
-            HStack(alignment: .center, spacing: 12) {
-                Image(systemName: "folder.fill.badge.gearshape")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(KairoDesign.blue)
-                    .frame(width: 42, height: 42)
-                    .background(KairoDesign.blue.opacity(0.10), in: Circle())
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: "folder.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.blue)
+                .frame(width: 30, height: 30)
+                .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(KairoL10n.string("categories.title"))
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(KairoDesign.ink)
-                    Text(KairoL10n.string("categories.subtitle"))
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(KairoDesign.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            Text(KairoL10n.string("categories.title"))
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
 
-                Spacer(minLength: 0)
-            }
+            Spacer(minLength: 0)
         }
+        .padding(.top, 2)
     }
 
     private func errorCard(_ message: String) -> some View {
@@ -70,7 +63,7 @@ public struct KnowledgeCategoriesView: View {
     }
 
     private var categoryGrid: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: 10)], alignment: .leading, spacing: 10) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 136), spacing: 8)], alignment: .leading, spacing: 8) {
             ForEach(KairoOnboarding.defaultCategories) { category in
                 categoryButton(category)
             }
@@ -86,29 +79,27 @@ public struct KnowledgeCategoriesView: View {
         return Button {
             toggle(category, existingFolder: folder)
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .center, spacing: 8) {
-                    Image(systemName: isEnabled ? "checkmark.circle.fill" : "circle")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(isEnabled ? KairoDesign.teal : KairoDesign.muted)
-                    Spacer(minLength: 0)
-                    if isUpdating {
-                        ProgressView()
-                            .controlSize(.mini)
-                    }
-                }
-
+            HStack(alignment: .center, spacing: 8) {
+                Image(systemName: isEnabled ? "checkmark.circle.fill" : "circle")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(isEnabled ? KairoDesign.teal : KairoDesign.muted)
                 Text(KairoL10n.string(category.titleKey))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                Spacer(minLength: 0)
+                if isUpdating {
+                    ProgressView()
+                        .controlSize(.mini)
+                }
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
-            .background(KairoDesign.elevatedSurface.opacity(isEnabled ? 0.72 : 0.46), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
+            .background(KairoDesign.elevatedSurface.opacity(isEnabled ? 0.72 : 0.42), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(isEnabled ? KairoDesign.teal.opacity(0.28) : KairoDesign.line, lineWidth: 1)
             }
         }
