@@ -205,6 +205,7 @@ public struct SettingsView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         appearanceSettingsSection
+                        iCloudBackupSettingsSection
                         privacySettingsSection
 
                         if let connectorStatusMessage {
@@ -231,9 +232,11 @@ public struct SettingsView: View {
     private var appearanceSettingsSection: some View {
         KairoGroupedSurface {
             VStack(alignment: .leading, spacing: 10) {
-                Label(KairoL10n.string("settings.appearance.section"), systemImage: "circle.lefthalf.filled")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
+                settingsSectionHeader(
+                    KairoL10n.string("settings.appearance.section"),
+                    systemImage: "circle.lefthalf.filled",
+                    tint: KairoDesign.teal
+                )
 
                 Picker(KairoL10n.string("settings.appearance.picker"), selection: Binding(
                     get: { KairoAppearancePreference(rawValue: appearancePreferenceRawValue) ?? .system },
@@ -260,10 +263,45 @@ public struct SettingsView: View {
     private var privacySettingsSection: some View {
         SettingsPrivacySection(
             statusMessage: privacyStatusMessage,
-            iCloudBackupAllowed: $assetLibraryICloudBackupAllowed,
             deleteAllChatHistory: deleteAllChatHistory,
             deleteAllUserData: deleteAllUserData
         )
+    }
+
+    private var iCloudBackupSettingsSection: some View {
+        KairoGroupedSurface {
+            HStack(alignment: .center, spacing: 12) {
+                settingsSectionIcon("icloud.fill", tint: KairoDesign.blue)
+
+                Text(KairoL10n.string("settings.backup.iCloudBackup"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+
+                Spacer(minLength: 8)
+
+                Toggle("", isOn: $assetLibraryICloudBackupAllowed)
+                    .labelsHidden()
+            }
+        }
+        .accessibilityIdentifier("settings.backup.icloud")
+    }
+
+    private func settingsSectionHeader(_ title: String, systemImage: String, tint: Color) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            settingsSectionIcon(systemImage, tint: tint)
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+            Spacer(minLength: 8)
+        }
+    }
+
+    private func settingsSectionIcon(_ systemImage: String, tint: Color) -> some View {
+        Image(systemName: systemImage)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(tint)
+            .frame(width: 30, height: 30)
+            .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private var connectedConnectorCount: Int {

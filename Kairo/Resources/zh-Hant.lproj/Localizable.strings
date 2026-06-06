@@ -780,7 +780,7 @@
 "settings.privacy.clearAuditLog" = "清除安全記錄";
 "settings.privacy.deleteAllChatHistory" = "刪除所有對話紀錄";
 "settings.privacy.deleteAllData" = "刪除所有資料";
-"settings.privacy.iCloudBackup" = "啟用 iCloud 備份";
+"settings.backup.iCloudBackup" = "啟用 iCloud 備份";
 "settings.privacy.auditLogDetail" = "清除本機安全記錄。這不會刪除聊天紀錄、記憶、API keys、已儲存登入資料或已下載模型。";
 "settings.privacy.statusReady" = "安全記錄控制已就緒。";
 "settings.privacy.auditLogClearing" = "正在清除本機安全記錄...";

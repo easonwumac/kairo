@@ -780,7 +780,7 @@
 "settings.privacy.clearAuditLog" = "Clear safety log";
 "settings.privacy.deleteAllChatHistory" = "Delete all chat history";
 "settings.privacy.deleteAllData" = "Delete all data";
-"settings.privacy.iCloudBackup" = "Enable iCloud backup";
+"settings.backup.iCloudBackup" = "Enable iCloud backup";
 "settings.privacy.auditLogDetail" = "Clears the local safety log. It does not delete chat history, memories, API keys, saved logins, or downloaded models.";
 "settings.privacy.statusReady" = "Safety log controls ready.";
 "settings.privacy.auditLogClearing" = "Clearing local safety log...";

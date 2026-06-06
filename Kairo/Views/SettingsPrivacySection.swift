@@ -3,7 +3,6 @@ import SwiftUI
 
 struct SettingsPrivacySection: View {
     let statusMessage: String?
-    @Binding var iCloudBackupAllowed: Bool
     let deleteAllChatHistory: () -> Void
     let deleteAllUserData: () -> Void
 
@@ -19,14 +18,6 @@ struct SettingsPrivacySection: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("settings.privacy.status")
                 }
-
-                Toggle(isOn: $iCloudBackupAllowed) {
-                    Label(KairoL10n.string("settings.privacy.iCloudBackup"), systemImage: "icloud.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(KairoDesign.ink)
-                }
-                .toggleStyle(.switch)
-                .accessibilityIdentifier("settings.privacy.icloud-backup")
 
                 Button(role: .destructive) {
                     deleteAllChatHistory()
@@ -52,7 +43,8 @@ struct SettingsPrivacySection: View {
             Image(systemName: "lock.shield.fill")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(KairoDesign.teal)
-                .frame(width: 28, height: 28)
+                .frame(width: 30, height: 30)
+                .background(KairoDesign.teal.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(KairoL10n.string("settings.privacy.section"))
