@@ -3,6 +3,7 @@ import Foundation
 public protocol KairoDeletionAPI: Sendable {
     func deleteChatThread(id: UUID) async throws
     func deleteAllChatThreads() async throws
+    func deleteAllUserData() async throws
     func purgeDeletedChatThreads() async throws
     func deleteMemory(id: UUID) async throws
     func purgeDeletedMemories() async throws
@@ -21,6 +22,7 @@ public struct KairoDeletionBackendService: KairoDeletionAPI {
     private let memoryStore: any MemoryStore
     private let credentialStore: any CredentialStore
     private let auditLogger: any AuditLogger
+    private let knowledgeAssetStore: (any KnowledgeAssetStore)?
     private let oauthLoginService: any OAuthConnectorLoginServicing
     private let localModelSettingsService: LocalModelSettingsService?
 
@@ -29,6 +31,7 @@ public struct KairoDeletionBackendService: KairoDeletionAPI {
         memoryStore: any MemoryStore,
         credentialStore: any CredentialStore,
         auditLogger: any AuditLogger,
+        knowledgeAssetStore: (any KnowledgeAssetStore)? = nil,
         oauthLoginService: (any OAuthConnectorLoginServicing)? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil
     ) {
@@ -36,6 +39,7 @@ public struct KairoDeletionBackendService: KairoDeletionAPI {
         self.memoryStore = memoryStore
         self.credentialStore = credentialStore
         self.auditLogger = auditLogger
+        self.knowledgeAssetStore = knowledgeAssetStore
         self.oauthLoginService = OAuthConnectorLoginServiceFactory().makeLoginService(
             override: oauthLoginService,
             credentialStore: credentialStore,
@@ -53,6 +57,18 @@ public struct KairoDeletionBackendService: KairoDeletionAPI {
     public func deleteAllChatThreads() async throws {
         try await chatHistoryStore.deleteAllThreads()
         try await chatHistoryStore.purgeDeletedThreads()
+    }
+
+    public func deleteAllUserData() async throws {
+        try await chatHistoryStore.deleteAllThreads()
+        try await chatHistoryStore.purgeDeletedThreads()
+        let memories = try await memoryStore.list(limit: Int.max)
+        for memory in memories {
+            try await memoryStore.delete(id: memory.id)
+        }
+        try await memoryStore.purgeDeleted()
+        try await knowledgeAssetStore?.deleteAll()
+        try await auditLogger.clear()
     }
 
     public func purgeDeletedChatThreads() async throws {

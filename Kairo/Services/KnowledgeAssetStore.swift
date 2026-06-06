@@ -25,6 +25,7 @@ public protocol KnowledgeAssetStore: Sendable {
     func search(query: String, limit: Int) async throws -> [KnowledgeAsset]
     func query(_ query: KnowledgeAssetQuery, limit: Int) async throws -> [KnowledgeAsset]
     func delete(id: UUID) async throws
+    func deleteAll() async throws
     func erase(id: UUID) async throws
     func saveFolder(_ folder: KnowledgeAssetFolder) async throws
     func listFolders() async throws -> [KnowledgeAssetFolder]
@@ -80,6 +81,18 @@ public actor InMemoryKnowledgeAssetStore: KnowledgeAssetStore {
         asset.deletedAt = Date()
         asset.updatedAt = Date()
         assets[id] = asset
+    }
+
+    public func deleteAll() async throws {
+        let now = Date()
+        for id in assets.keys {
+            assets[id]?.deletedAt = now
+            assets[id]?.updatedAt = now
+        }
+        for id in folders.keys {
+            folders[id]?.deletedAt = now
+            folders[id]?.updatedAt = now
+        }
     }
 
     public func erase(id: UUID) async throws {
@@ -187,6 +200,20 @@ public actor JSONFileKnowledgeAssetStore: KnowledgeAssetStore {
         asset.updatedAt = Date()
         assets[id] = asset
         try persist()
+    }
+
+    public func deleteAll() async throws {
+        let now = Date()
+        for id in assets.keys {
+            assets[id]?.deletedAt = now
+            assets[id]?.updatedAt = now
+        }
+        for id in folders.keys {
+            folders[id]?.deletedAt = now
+            folders[id]?.updatedAt = now
+        }
+        try persist()
+        try persistFolders()
     }
 
     public func erase(id: UUID) async throws {

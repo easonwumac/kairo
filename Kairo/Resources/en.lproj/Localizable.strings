@@ -779,6 +779,8 @@
 "settings.privacy.summary" = "Manage local privacy data.";
 "settings.privacy.clearAuditLog" = "Clear safety log";
 "settings.privacy.deleteAllChatHistory" = "Delete all chat history";
+"settings.privacy.deleteAllData" = "Delete all data";
+"settings.privacy.iCloudBackup" = "Enable iCloud backup";
 "settings.privacy.auditLogDetail" = "Clears the local safety log. It does not delete chat history, memories, API keys, saved logins, or downloaded models.";
 "settings.privacy.statusReady" = "Safety log controls ready.";
 "settings.privacy.auditLogClearing" = "Clearing local safety log...";
@@ -789,6 +791,10 @@
 "settings.privacy.chatHistoryUnavailable" = "Chat history deletion is unavailable in this environment.";
 "settings.privacy.chatHistoryDeleted" = "All chat history deleted.";
 "settings.privacy.chatHistoryDeleteFailed" = "Could not delete chat history: %@";
+"settings.privacy.allDataDeleting" = "Deleting local data...";
+"settings.privacy.allDataUnavailable" = "Data deletion is unavailable in this environment.";
+"settings.privacy.allDataDeleted" = "Local chats, memories, assets, and safety log deleted.";
+"settings.privacy.allDataDeleteFailed" = "Could not delete local data: %@";
 "settings.status.section" = "Status";
 "settings.models.section" = "Model settings";
 "settings.models.emptyCatalog" = "The local model list has not loaded yet.";

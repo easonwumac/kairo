@@ -212,6 +212,7 @@ public struct KairoDeletionBackendServiceFactory<Dependencies: KairoBackendDepen
             memoryStore: dependencies.memoryStore,
             credentialStore: dependencies.credentialStore,
             auditLogger: dependencies.auditLogger,
+            knowledgeAssetStore: dependencies.knowledgeAssetStore,
             oauthLoginService: dependencies.oauthLoginServiceFactory.makeLoginService(
                 override: nil,
                 credentialStore: dependencies.credentialStore,

@@ -18,5 +18,12 @@ public actor SettingsPrivacyCoordinator {
         }
         try await deletionAPI.deleteAllChatThreads()
     }
+
+    public func deleteAllUserData() async throws {
+        guard let deletionAPI else {
+            throw SettingsPrivacyCoordinatorError.unavailable
+        }
+        try await deletionAPI.deleteAllUserData()
+    }
 }
 #endif

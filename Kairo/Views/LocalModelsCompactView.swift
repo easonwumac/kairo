@@ -170,11 +170,6 @@ struct LocalModelsCompactView: View {
                     Text(KairoL10n.string("settings.models.section"))
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(KairoDesign.ink)
-
-                    Text(KairoL10n.string("settings.models.defaultModel.detail"))
-                        .font(compactModelMetadataFont)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
                 }
 
                 responseLanguageInline
@@ -346,12 +341,6 @@ struct LocalModelsCompactView: View {
                     .font(compactModelMetadataFont)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
-
-                Text(localModelStatus.responseLanguage.settingsDetailText)
-                    .font(compactModelMetadataFont)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 8)
@@ -363,10 +352,12 @@ struct LocalModelsCompactView: View {
     }
 
     private var selectedModelInline: some View {
-        HStack(alignment: .center, spacing: 8) {
+        HStack(alignment: .center, spacing: 10) {
             Image(systemName: selectedModelSummaryIconName)
                 .font(.headline)
                 .foregroundStyle(selectedModelSummaryIconColor)
+                .frame(width: 30, height: 30)
+                .background(selectedModelSummaryIconColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(KairoL10n.string("settings.models.compact.selectedModel"))

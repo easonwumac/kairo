@@ -102,7 +102,7 @@ public struct KnowledgeAssetsView: View {
                     .accessibilityIdentifier("knowledgeAssets.error")
             }
 
-            if assets.isEmpty {
+            if assets.isEmpty, !trimmedSearchQuery.isEmpty || activeFilterCount > 0 {
                 emptyState
             } else {
                 ForEach(groupedAssets) { group in
@@ -141,9 +141,15 @@ public struct KnowledgeAssetsView: View {
                         isFilterPresented.toggle()
                     }
                 } label: {
-                    Image(systemName: activeFilterCount > 0 ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                        .font(.title3.weight(.semibold))
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.caption.weight(.bold))
                         .foregroundStyle(activeFilterCount > 0 ? KairoDesign.blue : KairoDesign.ink)
+                        .frame(width: 28, height: 28)
+                        .background(KairoDesign.softSurface.opacity(0.72), in: Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(KairoDesign.line, lineWidth: 1)
+                        }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(KairoL10n.string("knowledgeAssets.filter.open"))

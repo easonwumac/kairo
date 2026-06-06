@@ -779,6 +779,8 @@
 "settings.privacy.summary" = "管理本機隱私資料。";
 "settings.privacy.clearAuditLog" = "清除安全記錄";
 "settings.privacy.deleteAllChatHistory" = "刪除所有對話紀錄";
+"settings.privacy.deleteAllData" = "刪除所有資料";
+"settings.privacy.iCloudBackup" = "啟用 iCloud 備份";
 "settings.privacy.auditLogDetail" = "清除本機安全記錄。這不會刪除聊天紀錄、記憶、API keys、已儲存登入資料或已下載模型。";
 "settings.privacy.statusReady" = "安全記錄控制已就緒。";
 "settings.privacy.auditLogClearing" = "正在清除本機安全記錄...";
@@ -789,6 +791,10 @@
 "settings.privacy.chatHistoryUnavailable" = "此環境無法刪除對話紀錄。";
 "settings.privacy.chatHistoryDeleted" = "所有對話紀錄已刪除。";
 "settings.privacy.chatHistoryDeleteFailed" = "對話紀錄刪除失敗：%@";
+"settings.privacy.allDataDeleting" = "正在刪除本機資料...";
+"settings.privacy.allDataUnavailable" = "此環境無法刪除資料。";
+"settings.privacy.allDataDeleted" = "本機對話、記憶、資料庫與安全記錄已刪除。";
+"settings.privacy.allDataDeleteFailed" = "本機資料刪除失敗：%@";
 "settings.status.section" = "狀態";
 "settings.models.section" = "模型設定";
 "settings.models.emptyCatalog" = "尚未載入本機模型清單。";

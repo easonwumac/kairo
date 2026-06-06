@@ -138,6 +138,64 @@ final class KairoDeletionBackendAPITests: XCTestCase {
         XCTAssertTrue(threads.isEmpty)
     }
 
+    func testSettingsPrivacyCoordinatorDeletesLocalUserDataThroughDeletionAPI() async throws {
+        let memoryID = UUID(uuidString: "66666666-6666-6666-6666-666666666666")!
+        let assetID = UUID(uuidString: "77777777-7777-7777-7777-777777777777")!
+        let chatStore = InMemoryChatHistoryStore(seed: [
+            ChatThread(messages: [ChatMessage(role: .user, text: "Delete this local chat")])
+        ])
+        let memoryStore = InMemoryMemoryStore(seed: [
+            MemoryRecord(
+                id: memoryID,
+                title: "Delete local memory",
+                summary: "Local data deletion",
+                content: "Sensitive local memory",
+                source: .manual
+            )
+        ])
+        let assetStore = InMemoryKnowledgeAssetStore(seed: [
+            KnowledgeAsset(
+                id: assetID,
+                title: "Delete local asset",
+                kind: .text,
+                source: .manual,
+                attachments: [],
+                summary: "Local library content"
+            )
+        ])
+        let auditLogger = InMemoryAuditLogger()
+        let deletionAPI = KairoDeletionBackendService(
+            chatHistoryStore: chatStore,
+            memoryStore: memoryStore,
+            credentialStore: InMemoryCredentialStore(),
+            auditLogger: auditLogger,
+            knowledgeAssetStore: assetStore
+        )
+        let coordinator = SettingsPrivacyCoordinator(deletionAPI: deletionAPI)
+
+        try await auditLogger.record(AuditEvent(
+            actionKind: .saveMemory,
+            memoryIDs: [memoryID],
+            capabilityKeys: [.memory],
+            usedCloudModel: false,
+            requiredConfirmation: true,
+            userConfirmed: true,
+            result: .completed
+        ))
+
+        try await coordinator.deleteAllUserData()
+
+        let threads = try await chatStore.listThreads(limit: 10)
+        let memories = try await memoryStore.list(limit: 10)
+        let assets = try await assetStore.list(limit: 10)
+        let auditEvents = try await auditLogger.list(limit: 10)
+
+        XCTAssertTrue(threads.isEmpty)
+        XCTAssertTrue(memories.isEmpty)
+        XCTAssertTrue(assets.isEmpty)
+        XCTAssertTrue(auditEvents.isEmpty)
+    }
+
     func testSettingsPrivacyCoordinatorFailsClosedWhenDeletionAPIIsUnavailable() async throws {
         let coordinator = SettingsPrivacyCoordinator(deletionAPI: nil)
 

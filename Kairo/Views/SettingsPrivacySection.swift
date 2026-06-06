@@ -3,7 +3,9 @@ import SwiftUI
 
 struct SettingsPrivacySection: View {
     let statusMessage: String?
+    @Binding var iCloudBackupAllowed: Bool
     let deleteAllChatHistory: () -> Void
+    let deleteAllUserData: () -> Void
 
     var body: some View {
         KairoGroupedSurface {
@@ -18,23 +20,37 @@ struct SettingsPrivacySection: View {
                         .accessibilityIdentifier("settings.privacy.status")
                 }
 
+                Toggle(isOn: $iCloudBackupAllowed) {
+                    Label(KairoL10n.string("settings.privacy.iCloudBackup"), systemImage: "icloud.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                }
+                .toggleStyle(.switch)
+                .accessibilityIdentifier("settings.privacy.icloud-backup")
+
                 Button(role: .destructive) {
                     deleteAllChatHistory()
                 } label: {
-                    Label(KairoL10n.string("settings.privacy.deleteAllChatHistory"), systemImage: "trash.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    destructiveLabel(KairoL10n.string("settings.privacy.deleteAllChatHistory"), systemImage: "text.bubble.fill")
                 }
                 .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.red, isCompact: true))
                 .accessibilityIdentifier("settings.privacy.delete-all-chat-history")
+
+                Button(role: .destructive) {
+                    deleteAllUserData()
+                } label: {
+                    destructiveLabel(KairoL10n.string("settings.privacy.deleteAllData"), systemImage: "trash.fill")
+                }
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.red, isCompact: true))
+                .accessibilityIdentifier("settings.privacy.delete-all-user-data")
             }
         }
     }
 
     private var headerRow: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 10) {
             Image(systemName: "lock.shield.fill")
-                .font(.headline)
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(KairoDesign.teal)
                 .frame(width: 28, height: 28)
 
@@ -46,6 +62,18 @@ struct SettingsPrivacySection: View {
 
             Spacer(minLength: 8)
         }
+    }
+
+    private func destructiveLabel(_ title: String, systemImage: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .frame(width: 24, height: 24)
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
     }
 }
 #endif

@@ -21,6 +21,7 @@ public enum SettingsViewMode: String, Sendable {
 public struct SettingsView: View {
     @Environment(\.openURL) private var openURL
     @AppStorage(KairoAppearancePreference.storageKey) private var appearancePreferenceRawValue = KairoAppearancePreference.system.rawValue
+    @AppStorage("kairo.assetLibrary.iCloudBackupAllowed") private var assetLibraryICloudBackupAllowed = false
 
     @State private var apiKey: String = ""
     @State private var hasAPIKey: Bool = false
@@ -259,7 +260,9 @@ public struct SettingsView: View {
     private var privacySettingsSection: some View {
         SettingsPrivacySection(
             statusMessage: privacyStatusMessage,
-            deleteAllChatHistory: deleteAllChatHistory
+            iCloudBackupAllowed: $assetLibraryICloudBackupAllowed,
+            deleteAllChatHistory: deleteAllChatHistory,
+            deleteAllUserData: deleteAllUserData
         )
     }
 
@@ -549,6 +552,26 @@ public struct SettingsView: View {
             } catch {
                 await MainActor.run {
                     privacyStatusMessage = KairoL10n.string("settings.privacy.chatHistoryDeleteFailed", error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private func deleteAllUserData() {
+        privacyStatusMessage = KairoL10n.string("settings.privacy.allDataDeleting")
+        Task {
+            do {
+                try await privacyCoordinator.deleteAllUserData()
+                await MainActor.run {
+                    privacyStatusMessage = KairoL10n.string("settings.privacy.allDataDeleted")
+                }
+            } catch SettingsPrivacyCoordinatorError.unavailable {
+                await MainActor.run {
+                    privacyStatusMessage = KairoL10n.string("settings.privacy.allDataUnavailable")
+                }
+            } catch {
+                await MainActor.run {
+                    privacyStatusMessage = KairoL10n.string("settings.privacy.allDataDeleteFailed", error.localizedDescription)
                 }
             }
         }
