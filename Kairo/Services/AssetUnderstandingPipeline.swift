@@ -32,8 +32,12 @@ public struct AssetUnderstandingResult: Equatable, Sendable {
     public var attempts: Int
     public var validationIssues: [InfoPageDraftValidationIssue]
 
+    public var requiresCategoryChoice: Bool {
+        (draft.candidateCategories?.count ?? 0) > 1
+    }
+
     public var shouldAutoCreateInfoPage: Bool {
-        status == .validated && draft.createInfoPage
+        status == .validated && draft.createInfoPage && !requiresCategoryChoice
     }
 }
 
@@ -55,6 +59,10 @@ public struct InfoPageDraft: Codable, Equatable, Sendable {
     public var confidence: Double
     public var missingInfo: [String]
     public var sourceAssetIDs: [UUID]
+    public var assetDescription: String?
+    public var ocrSummary: String?
+    public var keywords: [String]?
+    public var candidateCategories: [InfoPageDraftCategoryCandidate]?
 
     public init(
         createInfoPage: Bool,
@@ -68,7 +76,11 @@ public struct InfoPageDraft: Codable, Equatable, Sendable {
         folderName: String? = nil,
         confidence: Double,
         missingInfo: [String] = [],
-        sourceAssetIDs: [UUID] = []
+        sourceAssetIDs: [UUID] = [],
+        assetDescription: String? = nil,
+        ocrSummary: String? = nil,
+        keywords: [String]? = nil,
+        candidateCategories: [InfoPageDraftCategoryCandidate]? = nil
     ) {
         self.createInfoPage = createInfoPage
         self.title = title
@@ -82,6 +94,10 @@ public struct InfoPageDraft: Codable, Equatable, Sendable {
         self.confidence = confidence
         self.missingInfo = missingInfo
         self.sourceAssetIDs = sourceAssetIDs
+        self.assetDescription = assetDescription
+        self.ocrSummary = ocrSummary
+        self.keywords = keywords
+        self.candidateCategories = candidateCategories
     }
 
     public func makeInfoPage(now: Date = Date()) -> InfoPage {
@@ -112,6 +128,28 @@ public struct InfoPageDraft: Codable, Equatable, Sendable {
             createdAt: now,
             updatedAt: now
         )
+    }
+}
+
+public struct InfoPageDraftCategoryCandidate: Codable, Equatable, Sendable {
+    public var folderName: String?
+    public var templateID: InfoPageTemplateID
+    public var category: InfoPageCategory
+    public var confidence: Double
+    public var reason: String
+
+    public init(
+        folderName: String? = nil,
+        templateID: InfoPageTemplateID,
+        category: InfoPageCategory,
+        confidence: Double,
+        reason: String
+    ) {
+        self.folderName = folderName
+        self.templateID = templateID
+        self.category = category
+        self.confidence = confidence
+        self.reason = reason
     }
 }
 
@@ -300,13 +338,20 @@ public struct AssetUnderstandingPipeline: Sendable {
         Use a folderName only if it exactly matches one provided folder.
         Minimum confidence for automatic InfoPage creation: \(request.minimumConfidence).
 
+        Workflow:
+        1. Describe the asset from OCR, labels, file metadata, and user text.
+        2. Choose 1 best category when confidence is clear.
+        3. If multiple enabled folders/categories are plausible, include 2-4 candidateCategories and do not force a single automatic save.
+        4. Extract searchable keywords.
+        5. Fill the fixed template JSON fields. Do not generate HTML.
+
         Schema:
-        {"createInfoPage":true,"title":"short title","templateID":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","category":"same category required by template","summary":"one sentence","facts":[{"label":"required or optional key","value":"source-backed value","sourceAssetID":"uuid"}],"timeline":[{"title":"event","note":"source-backed note","sourceAssetID":"uuid"}],"reminderDrafts":[{"title":"draft title","dueDateText":"optional natural date","needsUserConfirmation":true}],"folderName":"optional exact folder name","confidence":0.0,"missingInfo":["unknown but useful fields"],"sourceAssetIDs":["uuid"]}
+        {"createInfoPage":true,"title":"short title","templateID":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","category":"same category required by template","assetDescription":"plain description of image or document","ocrSummary":"OCR/user text summary or empty string","keywords":["searchable","terms"],"candidateCategories":[{"folderName":"optional exact folder name","templateID":"travel","category":"travel","confidence":0.0,"reason":"why it fits"}],"summary":"one sentence","facts":[{"label":"required or optional key","value":"source-backed value","sourceAssetID":"uuid"}],"timeline":[{"title":"event","note":"source-backed note","sourceAssetID":"uuid"}],"reminderDrafts":[{"title":"draft title","dueDateText":"optional natural date","needsUserConfirmation":true}],"folderName":"optional exact folder name","confidence":0.0,"missingInfo":["unknown but useful fields"],"sourceAssetIDs":["uuid"]}
 
         Templates:
         \(templateSchemaLines())
 
-        Folders:
+        Enabled folders/categories:
         \(request.folders.map(\.name).joined(separator: ", "))
 
         Assets:

@@ -192,6 +192,63 @@ final class InfoPageFeatureTests: XCTestCase {
         XCTAssertTrue(page.actionDrafts.allSatisfy(\.requiresConfirmation))
     }
 
+    func testAssetUnderstandingPipelineRequiresUserChoiceForMultipleCategoryCandidates() async throws {
+        let asset = KnowledgeAsset(
+            title: "flower-photo.jpg",
+            kind: .image,
+            source: .chat,
+            attachments: [],
+            extractedText: "",
+            generatedDescription: "Apple Vision labels: flower, plant, outdoor",
+            summary: "Flower photo",
+            tags: ["image"]
+        )
+        let json = """
+        {
+          "createInfoPage": true,
+          "title": "Flower Reference",
+          "templateID": "generalNote",
+          "category": "generalNote",
+          "assetDescription": "A flower photo with plant-related visual labels.",
+          "ocrSummary": "",
+          "keywords": ["flower", "plant", "photo"],
+          "candidateCategories": [
+            {"folderName": "Learning", "templateID": "generalNote", "category": "generalNote", "confidence": 0.62, "reason": "Could be a plant reference."},
+            {"folderName": "Ideas", "templateID": "generalNote", "category": "generalNote", "confidence": 0.58, "reason": "Could be saved as visual inspiration."}
+          ],
+          "summary": "A flower image that may be useful as a plant reference or visual inspiration.",
+          "facts": [
+            {"label": "topic", "value": "Flower photo", "sourceAssetID": "\(asset.id.uuidString)"}
+          ],
+          "timeline": [],
+          "reminderDrafts": [],
+          "folderName": "Learning",
+          "confidence": 0.74,
+          "missingInfo": [],
+          "sourceAssetIDs": ["\(asset.id.uuidString)"]
+        }
+        """
+        let model = StubAssetUnderstandingModel(replies: [json])
+        let pipeline = AssetUnderstandingPipeline(model: model)
+
+        let result = await pipeline.understand(AssetUnderstandingRequest(
+            assets: [asset],
+            folders: [
+                KnowledgeAssetFolder(name: "Learning"),
+                KnowledgeAssetFolder(name: "Ideas")
+            ],
+            minimumConfidence: 0.72,
+            maximumAttempts: 1
+        ))
+
+        XCTAssertEqual(result.status, .validated)
+        XCTAssertTrue(result.requiresCategoryChoice)
+        XCTAssertFalse(result.shouldAutoCreateInfoPage)
+        XCTAssertEqual(result.draft.assetDescription, "A flower photo with plant-related visual labels.")
+        XCTAssertEqual(result.draft.keywords ?? [], ["flower", "plant", "photo"])
+        XCTAssertEqual(result.draft.candidateCategories?.map(\.folderName), ["Learning", "Ideas"])
+    }
+
     func testAssetUnderstandingPipelineFallsBackWhenDraftCannotPassSafetyValidation() async throws {
         let asset = KnowledgeAsset(
             title: "unknown-note.txt",
