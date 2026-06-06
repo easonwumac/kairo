@@ -963,3 +963,5 @@
 "knowledgeAsset.action.reviewTripChecklist" = "檢查%@旅遊確認表";
 "knowledgeAsset.action.rationale.tripChecklist" = "從已保存的旅遊資產內容產生的草稿。";
 "knowledgeAsset.travel.hongKong" = "香港";
+"infoPage.action.rationale.travel" = "從旅遊資料頁產生的草稿。";
+"infoPage.action.rationale.project" = "從專案資料頁產生的草稿。";

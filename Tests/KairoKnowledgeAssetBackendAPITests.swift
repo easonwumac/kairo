@@ -2,6 +2,34 @@ import XCTest
 @testable import KairoCore
 
 final class KairoKnowledgeAssetBackendAPITests: XCTestCase {
+    func testKnowledgeAssetDecodesLegacyStoredAssetWithDefaultInfoPageFields() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "title": "Legacy asset",
+          "kind": "text",
+          "source": "manual",
+          "attachments": [],
+          "extractedText": "Legacy saved text",
+          "summary": "Legacy summary",
+          "tags": [],
+          "collections": [],
+          "checklistItems": [],
+          "proposedActions": [],
+          "iCloudBackupAllowed": false,
+          "createdAt": "2026-06-06T00:00:00Z",
+          "updatedAt": "2026-06-06T00:00:00Z"
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let asset = try decoder.decode(KnowledgeAsset.self, from: Data(json.utf8))
+
+        XCTAssertEqual(asset.sensitivity, .standard)
+        XCTAssertEqual(asset.linkedInfoPageIDs, [])
+    }
+
     func testBackendComposerExposesInjectedKnowledgeAssetStore() async throws {
         let store = InMemoryKnowledgeAssetStore()
         let environment = KairoEnvironment(

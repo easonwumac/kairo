@@ -235,6 +235,10 @@ public struct KairoPaths: Sendable {
         applicationSupportDirectory.appendingPathComponent("KnowledgeAssets", isDirectory: true)
     }
 
+    public var infoPageStoreURL: URL {
+        knowledgeAssetsDirectory.appendingPathComponent("info-pages.json")
+    }
+
     public var auditLogURL: URL {
         applicationSupportDirectory.appendingPathComponent("audit-log.json")
     }

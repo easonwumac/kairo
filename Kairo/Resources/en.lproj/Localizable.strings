@@ -963,3 +963,5 @@
 "knowledgeAsset.action.reviewTripChecklist" = "Review %@ trip checklist";
 "knowledgeAsset.action.rationale.tripChecklist" = "Drafted from saved travel asset context.";
 "knowledgeAsset.travel.hongKong" = "Hong Kong";
+"infoPage.action.rationale.travel" = "Drafted from the travel info page.";
+"infoPage.action.rationale.project" = "Drafted from the project info page.";

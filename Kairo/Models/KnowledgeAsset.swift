@@ -10,6 +10,8 @@ public struct KnowledgeAsset: Identifiable, Codable, Equatable, Sendable {
     public var generatedDescription: String?
     public var summary: String
     public var tags: [String]
+    public var sensitivity: KnowledgeAssetSensitivity
+    public var linkedInfoPageIDs: [UUID]
     public var collections: [String]
     public var checklistItems: [KnowledgeAssetChecklistItem]
     public var proposedActions: [AgentAction]
@@ -28,6 +30,8 @@ public struct KnowledgeAsset: Identifiable, Codable, Equatable, Sendable {
         generatedDescription: String? = nil,
         summary: String = "",
         tags: [String] = [],
+        sensitivity: KnowledgeAssetSensitivity = .standard,
+        linkedInfoPageIDs: [UUID] = [],
         collections: [String] = [],
         checklistItems: [KnowledgeAssetChecklistItem] = [],
         proposedActions: [AgentAction] = [],
@@ -45,6 +49,8 @@ public struct KnowledgeAsset: Identifiable, Codable, Equatable, Sendable {
         self.generatedDescription = generatedDescription
         self.summary = summary
         self.tags = tags
+        self.sensitivity = sensitivity
+        self.linkedInfoPageIDs = linkedInfoPageIDs
         self.collections = collections
         self.checklistItems = checklistItems
         self.proposedActions = proposedActions
@@ -52,6 +58,49 @@ public struct KnowledgeAsset: Identifiable, Codable, Equatable, Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.deletedAt = deletedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case kind
+        case source
+        case attachments
+        case extractedText
+        case generatedDescription
+        case summary
+        case tags
+        case sensitivity
+        case linkedInfoPageIDs
+        case collections
+        case checklistItems
+        case proposedActions
+        case iCloudBackupAllowed
+        case createdAt
+        case updatedAt
+        case deletedAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.kind = try container.decode(KnowledgeAssetKind.self, forKey: .kind)
+        self.source = try container.decode(KnowledgeAssetSource.self, forKey: .source)
+        self.attachments = try container.decode([ChatAttachment].self, forKey: .attachments)
+        self.extractedText = try container.decodeIfPresent(String.self, forKey: .extractedText) ?? ""
+        self.generatedDescription = try container.decodeIfPresent(String.self, forKey: .generatedDescription)
+        self.summary = try container.decodeIfPresent(String.self, forKey: .summary) ?? ""
+        self.tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+        self.sensitivity = try container.decodeIfPresent(KnowledgeAssetSensitivity.self, forKey: .sensitivity) ?? .standard
+        self.linkedInfoPageIDs = try container.decodeIfPresent([UUID].self, forKey: .linkedInfoPageIDs) ?? []
+        self.collections = try container.decodeIfPresent([String].self, forKey: .collections) ?? []
+        self.checklistItems = try container.decodeIfPresent([KnowledgeAssetChecklistItem].self, forKey: .checklistItems) ?? []
+        self.proposedActions = try container.decodeIfPresent([AgentAction].self, forKey: .proposedActions) ?? []
+        self.iCloudBackupAllowed = try container.decodeIfPresent(Bool.self, forKey: .iCloudBackupAllowed) ?? false
+        self.createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        self.updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? createdAt
+        self.deletedAt = try container.decodeIfPresent(Date.self, forKey: .deletedAt)
     }
 }
 
@@ -70,6 +119,14 @@ public enum KnowledgeAssetSource: String, Codable, CaseIterable, Sendable {
     case chat
     case shortcut
     case manual
+}
+
+public enum KnowledgeAssetSensitivity: String, Codable, CaseIterable, Sendable {
+    case standard
+    case personal
+    case financial
+    case medical
+    case identity
 }
 
 public struct KnowledgeAssetChecklistItem: Identifiable, Codable, Equatable, Sendable {
