@@ -145,14 +145,14 @@
 "access.skills.search.summary.many" = "顯示 %lld / %lld 個工具。";
 "access.skills.more" = "顯示另外 %lld 個工具";
 "access.skills.action.manage" = "管理";
-"access.skills.action.install" = "安裝";
+"access.skills.action.install" = "加入";
 "access.skills.action.previewUpdate" = "檢查更新";
 "access.skills.action.disable" = "停用";
 "access.skills.action.enable" = "啟用";
 "access.skills.action.remove" = "移除";
 "access.skills.action.details" = "更多";
 "access.skills.status.installed" = "已加入";
-"access.skills.status.available" = "未加入";
+"access.skills.status.available" = "可加入";
 "access.skills.shortcut.summary" = "把「%@」加入 Chat 建議。";
 "access.skills.homekit.previewOnly" = "僅預覽。";
 "access.skills.manifestPreview.noChangelog" = "沒有更新說明。";

@@ -145,14 +145,14 @@
 "access.skills.search.summary.many" = "Showing %lld of %lld tools.";
 "access.skills.more" = "Show %lld more tools";
 "access.skills.action.manage" = "Manage";
-"access.skills.action.install" = "Install";
+"access.skills.action.install" = "Add";
 "access.skills.action.previewUpdate" = "Review update";
 "access.skills.action.disable" = "Disable";
 "access.skills.action.enable" = "Enable";
 "access.skills.action.remove" = "Remove";
 "access.skills.action.details" = "More";
 "access.skills.status.installed" = "Added";
-"access.skills.status.available" = "Not added";
+"access.skills.status.available" = "Available";
 "access.skills.shortcut.summary" = "Adds %@ to Chat suggestions.";
 "access.skills.homekit.previewOnly" = "Preview only.";
 "access.skills.manifestPreview.noChangelog" = "No update notes.";

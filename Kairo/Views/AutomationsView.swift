@@ -72,7 +72,6 @@ public struct AutomationsView: View {
                         recipeCenterCard
                     } else {
                         savedRecipesCard
-                        recipeCenterCard
                     }
 
                     if let message {
@@ -154,25 +153,46 @@ public struct AutomationsView: View {
 
     private var recipeCenterCard: some View {
         KairoFocusCard {
-            VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 14) {
                 Color.clear
                     .frame(width: 1, height: 1)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.emptySection" : "automations.recipeCenter.section"))
                     .accessibilityIdentifier("automations.recipe-center")
 
-                automationSectionTitle(
-                    title: KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.emptySection" : "automations.recipeCenter.section")
-                )
+                Image(systemName: "sparkles.rectangle.stack")
+                    .font(.title3.weight(.semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(KairoDesign.blue)
+                    .frame(width: 42, height: 42)
+                    .background(KairoDesign.softSurface.opacity(0.62), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.emptySection" : "automations.recipeCenter.section"))
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(KairoL10n.string("automations.recipe.previewHint"))
+                        .font(.caption)
+                        .foregroundStyle(KairoDesign.muted)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
 
                 Button {
                     Task { await seedSampleRecipes() }
                 } label: {
-                    Label(KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.addStarter" : "automations.recipeCenter.addSamples"), systemImage: "plus.circle.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, alignment: .center)
+                    Image(systemName: "plus")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(KairoDesign.ink)
+                        .frame(width: 38, height: 38)
+                        .background(KairoDesign.softSurface.opacity(0.62), in: Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(KairoDesign.line, lineWidth: 1)
+                        }
                 }
-                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
+                .buttonStyle(.plain)
                 .disabled(isLoading)
                 .accessibilityLabel(KairoL10n.string(recipes.isEmpty ? "automations.recipeCenter.addStarter" : "automations.recipeCenter.addSamples"))
                 .accessibilityIdentifier("automations.seed-samples")
@@ -183,9 +203,31 @@ public struct AutomationsView: View {
     private var savedRecipesCard: some View {
         KairoFocusCard {
             VStack(alignment: .leading, spacing: 12) {
-                automationSectionTitle(
-                    title: KairoL10n.string("automations.recipes.section")
-                )
+                HStack(spacing: 12) {
+                    automationSectionTitle(
+                        title: KairoL10n.string("automations.recipes.section")
+                    )
+
+                    Spacer(minLength: 8)
+
+                    Button {
+                        Task { await seedSampleRecipes() }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(KairoDesign.ink)
+                            .frame(width: 34, height: 34)
+                            .background(KairoDesign.softSurface.opacity(0.62), in: Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(KairoDesign.line, lineWidth: 1)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isLoading)
+                    .accessibilityLabel(KairoL10n.string("automations.recipeCenter.addSamples"))
+                    .accessibilityIdentifier("automations.seed-samples")
+                }
 
                 if recipes.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
@@ -200,10 +242,9 @@ public struct AutomationsView: View {
                     .padding(.vertical, 4)
                     .accessibilityIdentifier("automations.recipes.empty")
                 } else {
-                    ForEach(recipes) { recipe in
-                        recipeRow(recipe)
-                        if recipe.id != recipes.last?.id {
-                            Divider()
+                    LazyVStack(spacing: 10) {
+                        ForEach(recipes) { recipe in
+                            recipeRow(recipe)
                         }
                     }
                 }
@@ -409,45 +450,54 @@ public struct AutomationsView: View {
     }
 
     private func recipeRow(_ recipe: KairoRecipe) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 10) {
-                Text(recipe.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                    .lineLimit(2)
-                Spacer()
-                KairoStatusPill(
-                    title: recipe.isEnabled ? KairoL10n.string("automations.recipe.enabled") : KairoL10n.string("automations.recipe.disabled"),
-                    systemImage: recipe.isEnabled ? "checkmark.circle.fill" : "pause.circle.fill",
-                    tint: recipe.isEnabled ? KairoDesign.green : KairoDesign.ink.opacity(0.55)
-                )
-            }
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("automations.recipe.\(recipe.id)")
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 13) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .fill(KairoDesign.softSurface.opacity(0.64))
+                    Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(KairoDesign.blue)
+                }
+                .frame(width: 42, height: 42)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .stroke(KairoDesign.blue.opacity(0.22), lineWidth: 1)
+                }
 
-            HStack(spacing: 8) {
-                KairoStatusPill(
-                    title: KairoL10n.string("automations.recipe.reviewThenRun"),
-                    systemImage: "doc.text.magnifyingglass",
-                    tint: KairoDesign.blue
-                )
-            }
+                VStack(alignment: .leading, spacing: 7) {
+                    Text(recipe.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
 
-            Text(KairoL10n.string("automations.recipe.previewHint"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .fixedSize(horizontal: false, vertical: true)
+                    Text(recipe.isEnabled ? KairoL10n.string("automations.recipe.enabled") : KairoL10n.string("automations.recipe.disabled"))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(recipe.isEnabled ? KairoDesign.green : KairoDesign.muted)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background((recipe.isEnabled ? KairoDesign.green : KairoDesign.muted).opacity(0.12), in: Capsule())
+                }
 
-            HStack(spacing: 8) {
+                Spacer(minLength: 6)
+
                 Button {
                     Task { await preview(recipe) }
                 } label: {
-                    Label(KairoL10n.string("automations.recipe.preview"), systemImage: "doc.text.magnifyingglass")
-                        .frame(maxWidth: .infinity)
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(KairoDesign.blue)
+                        .frame(width: 34, height: 34)
+                        .background(KairoDesign.softSurface.opacity(0.62), in: Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(KairoDesign.line, lineWidth: 1)
+                        }
                 }
-                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
+                .buttonStyle(.plain)
                 .disabled(!recipe.isEnabled || isLoading)
+                .accessibilityLabel(KairoL10n.string("automations.recipe.preview"))
                 .accessibilityIdentifier("automations.recipe.\(recipe.id).preview")
 
                 Button {
@@ -457,15 +507,21 @@ public struct AutomationsView: View {
                 } label: {
                     Label(KairoL10n.string("automations.recipe.more"), systemImage: "ellipsis")
                         .labelStyle(.iconOnly)
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(KairoDesign.ink)
-                        .frame(width: 38, height: 38)
-                        .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(KairoDesign.blue)
+                        .frame(width: 34, height: 34)
+                        .background(KairoDesign.softSurface.opacity(0.62), in: Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(KairoDesign.line, lineWidth: 1)
+                        }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(KairoL10n.string("automations.recipe.more"))
                 .accessibilityIdentifier("automations.recipe.\(recipe.id).more")
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("automations.recipe.\(recipe.id)")
 
             if expandedRecipeActionID == recipe.id {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 8)], spacing: 8) {
@@ -496,7 +552,14 @@ public struct AutomationsView: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 11)
+        .background(KairoDesign.elevatedSurface.opacity(0.66), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(KairoDesign.line, lineWidth: 1)
+        }
+        .shadow(color: KairoDesign.shadow.opacity(0.34), radius: 16, x: 0, y: 10)
         .accessibilityElement(children: .contain)
     }
 
