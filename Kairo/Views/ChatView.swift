@@ -216,6 +216,9 @@ public struct ChatView: View {
 
             composer
         }
+        .overlay(alignment: .top) {
+            chatTopMistOverlay
+        }
         .sheet(item: $viewModel.pendingAction) { action in
             ActionPreviewView(
                 action: action,
@@ -230,6 +233,36 @@ public struct ChatView: View {
 
     private var chatMessagesTopPadding: CGFloat {
         viewModel.currentThread.messages.count <= 1 ? 116 : 16
+    }
+
+    private var chatTopMistOverlay: some View {
+        Rectangle()
+            .fill(.ultraThinMaterial)
+            .overlay {
+                LinearGradient(
+                    colors: [
+                        KairoDesign.background.opacity(0.82),
+                        KairoDesign.background.opacity(0.36),
+                        KairoDesign.background.opacity(0.0)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+            .frame(height: 122)
+            .mask {
+                LinearGradient(
+                    stops: [
+                        .init(color: .black, location: 0.0),
+                        .init(color: .black.opacity(0.92), location: 0.54),
+                        .init(color: .clear, location: 1.0)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     private var composer: some View {
