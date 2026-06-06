@@ -156,6 +156,10 @@
 "access.skills.shortcut.summary" = "Adds %@ to Chat suggestions.";
 "access.skills.homekit.previewOnly" = "Preview only.";
 "access.skills.manifestPreview.noChangelog" = "No update notes.";
+"actionInbox.summary.sharedContent" = "Shared content";
+"actionInbox.suggestion.summary" = "Summary";
+"actionInbox.action.createReminder" = "Create reminder";
+"actionInbox.action.rationale.sharedReminder" = "Drafted from Action Inbox shared content.";
 "access.skills.manifestPreview.confirmInstall" = "Add tool";
 "access.skills.manifestPreview.versionUpdate" = "Current %@ -> New %@";
 "access.skills.manifestPreview.versionIncoming" = "New %@";

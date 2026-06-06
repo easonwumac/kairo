@@ -28,6 +28,7 @@ public protocol KairoBackendServiceMaking: Sendable {
     func makeMemoryAPI() -> any KairoMemoryAPI
     func makeRecipeAPI() -> any KairoRecipeAPI
     func makeShareImportAPI() -> any KairoShareImportAPI
+    func makeActionInboxAPI() -> any KairoActionInboxAPI
     func makeActionAPI() -> any KairoActionAPI
     func makeDeletionAPI() -> any KairoDeletionAPI
     func makeLocalModelAPI() -> any KairoLocalModelAPI
@@ -173,6 +174,12 @@ public struct KairoShareImportBackendServiceFactory<Dependencies: KairoBackendDe
             sharedFilesDirectory: dependencies.sharedFilesDirectory
         )
     }
+
+    public func makeActionInboxAPI() -> any KairoActionInboxAPI {
+        KairoActionInboxBackendService(
+            shareIngestionQueue: dependencies.shareIngestionQueue
+        )
+    }
 }
 
 public struct KairoActionBackendServiceFactory<Dependencies: KairoBackendDependencies>: Sendable {
@@ -250,6 +257,10 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
 
     public func makeShareImportAPI() -> any KairoShareImportAPI {
         shareImportFactory.makeShareImportAPI()
+    }
+
+    public func makeActionInboxAPI() -> any KairoActionInboxAPI {
+        shareImportFactory.makeActionInboxAPI()
     }
 
     public func makeActionAPI() -> any KairoActionAPI {

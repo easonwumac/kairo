@@ -18,6 +18,7 @@ public struct KairoBackendModuleComposer: Sendable {
             memory: serviceFactory.makeMemoryAPI(),
             recipes: serviceFactory.makeRecipeAPI(),
             shareImports: serviceFactory.makeShareImportAPI(),
+            actionInbox: serviceFactory.makeActionInboxAPI(),
             actions: serviceFactory.makeActionAPI(),
             deletion: serviceFactory.makeDeletionAPI(),
             localModels: serviceFactory.makeLocalModelAPI(),

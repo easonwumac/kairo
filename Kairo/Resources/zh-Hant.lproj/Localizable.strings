@@ -156,6 +156,10 @@
 "access.skills.shortcut.summary" = "把「%@」加入 Chat 建議。";
 "access.skills.homekit.previewOnly" = "僅預覽。";
 "access.skills.manifestPreview.noChangelog" = "沒有更新說明。";
+"actionInbox.summary.sharedContent" = "分享內容";
+"actionInbox.suggestion.summary" = "摘要";
+"actionInbox.action.createReminder" = "建立提醒";
+"actionInbox.action.rationale.sharedReminder" = "從 Action Inbox 分享內容產生的草稿。";
 "access.skills.manifestPreview.confirmInstall" = "加入工具";
 "access.skills.manifestPreview.versionUpdate" = "目前 %@ -> 新版 %@";
 "access.skills.manifestPreview.versionIncoming" = "新版 %@";

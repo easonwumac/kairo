@@ -14,6 +14,7 @@ final class KairoBackendAPITests: XCTestCase {
             memory: KairoMemoryBackendService(memoryStore: InMemoryMemoryStore()),
             recipes: KairoRecipeBackendService(recipeStore: InMemoryKairoRecipeStore()),
             shareImports: KairoShareImportBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
+            actionInbox: KairoActionInboxBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
             actions: KairoActionBackendService(
                 actionExecutor: AllowingBackendActionExecutor()
             ),
