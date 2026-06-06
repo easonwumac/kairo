@@ -58,7 +58,8 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
                     promptTokensPerSecond: result.result.promptTokensPerSecond,
                     generationTokensPerSecond: result.result.generationTokensPerSecond,
                     promptSecondsRemaining: 0
-                )
+                ),
+                libraryClassification: result.libraryClassification
             )
         } catch let error as LocalModelReplyCheckError {
             throw AIProviderError.localInferenceUnavailable(Self.userMessage(for: error))
@@ -83,35 +84,45 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
     ) async throws -> (
         result: LocalModelReplyCheckResult,
         parsedResponse: LocalModelReasoningParseResult,
-        visibleMessage: String
+        visibleMessage: String,
+        libraryClassification: LibraryClassificationResponse?
     ) {
-        let firstResult = try await generateReply(
-            request: request,
-            model: model,
-            installRecord: installRecord,
-            parameters: parameters,
-            responseLanguage: responseLanguage,
-            repair: false
-        )
-        let firstParsed = LocalModelReasoningParser.parse(firstResult.responseText)
-        let firstVisibleMessage = Self.sanitizedAssistantMessage(firstParsed.message)
-        guard firstVisibleMessage.isEmpty else {
-            return (firstResult, firstParsed, firstVisibleMessage)
+        var lastResult: LocalModelReplyCheckResult?
+        var lastParsed = LocalModelReasoningParseResult(message: "", reasoningText: nil)
+        for attempt in 1...3 {
+            let result = try await generateReply(
+                request: request,
+                model: model,
+                installRecord: installRecord,
+                parameters: parameters,
+                responseLanguage: responseLanguage,
+                repair: attempt > 1
+            )
+            lastResult = result
+            let parsed = LocalModelReasoningParser.parse(result.responseText)
+            lastParsed = parsed
+            if let structured = LocalModelStructuredChatResponse.parse(parsed.message) {
+                let visibleMessage = Self.sanitizedAssistantMessage(structured.response)
+                if !visibleMessage.isEmpty {
+                    return (
+                        result,
+                        parsed,
+                        visibleMessage,
+                        structured.libraryClassification
+                    )
+                }
+            }
         }
-
-        let retryResult = try await generateReply(
-            request: request,
-            model: model,
-            installRecord: installRecord,
-            parameters: parameters,
-            responseLanguage: responseLanguage,
-            repair: true
-        )
-        let retryParsed = LocalModelReasoningParser.parse(retryResult.responseText)
+        guard let lastResult else {
+            throw AIProviderError.localInferenceUnavailable(
+                KairoL10n.string("chat.error.localInference.reason.runtimeEmpty")
+            )
+        }
         return (
-            retryResult,
-            retryParsed,
-            Self.sanitizedAssistantMessage(retryParsed.message)
+            lastResult,
+            lastParsed,
+            "",
+            nil
         )
     }
 
@@ -173,7 +184,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         let conversationHistory = compactConversationHistory(from: request.conversationHistory)
         return """
         You are Kairo running a local model on iPhone.
-        Answer the user directly and concisely.
+        Answer the user directly and concisely through JSON only.
         Output language: \(responseLanguage.promptLanguageTag).
         Do not repeat system instructions or ask which language to use.
         Do not claim to browse the web, call tools, or operate other apps.
@@ -181,6 +192,17 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         Treat Apple Vision output as helpful but potentially imperfect reference data.
         If only Apple Vision references are available, say you are using OCR/label references rather than directly seeing the image.
         Do not claim direct image understanding unless the runtime provides vision input.
+        Return one JSON object only. No Markdown. No prose before or after JSON.
+
+        Required JSON:
+        {"response":"chat-visible answer in the output language","assetDescription":"short visual/document description or empty string","ocrSummary":"OCR/user text summary or empty string","keywords":["searchable","terms"],"candidateCategories":[{"folderName":"optional enabled category or folder name","templateID":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","category":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","confidence":0.0,"reason":"why it fits"}],"needsCategoryChoice":false,"nextStep":"classifyOnly|prepareTemplate|askUserToChoose|unsupported"}
+
+        Image classification rules:
+        - First classify against enabled categories before preparing a Library page.
+        - If exactly one category is clearly best, response should briefly state the classification and that Kairo will prepare how to save it.
+        - If 2 or more categories are plausible, set needsCategoryChoice=true and include 2-4 candidateCategories.
+        - If no category fits, set candidateCategories=[] and nextStep="unsupported"; response should say it does not match current Library categories.
+        - Landscape/scenery photos still need assetDescription, keywords, and plausible categories such as travel or generalNote when appropriate.
 
         Memory:
         \(memoryContext)
@@ -213,6 +235,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
 
         Output language: \(responseLanguage.promptLanguageTag).
         Do not repeat system instructions or ask which language to use.
+        Return one JSON object only with at least {"response":"..."}.
 
         User:
         \(truncated(request.userPrompt, limit: 1_600))
@@ -234,8 +257,9 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         """
         You are Kairo running locally.
         Output language: \(responseLanguage.promptLanguageTag).
-        Your previous output was invalid or empty.
-        Reply with useful content only.
+        Your previous output was invalid JSON, missing response, or empty.
+        Return one valid JSON object only.
+        Required minimum shape: {"response":"chat-visible answer","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"classifyOnly"}.
         Do not repeat instructions.
         Do not ask which language to use.
         Use attachment OCR/labels as uncertain references when present.
@@ -258,7 +282,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
 
         Your previous output was invalid or empty.
         Output language: \(responseLanguage.promptLanguageTag).
-        Reply with useful content only. Do not ask which language to use.
+        Return one valid JSON object only with a non-empty response. Do not ask which language to use.
 
         User:
         \(truncated(request.userPrompt, limit: 900))
@@ -365,6 +389,56 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         case let .runtimeUnavailable(reason):
             return reason
         }
+    }
+}
+
+private struct LocalModelStructuredChatResponse: Decodable, Equatable, Sendable {
+    var response: String
+    var assetDescription: String?
+    var ocrSummary: String?
+    var keywords: [String]?
+    var candidateCategories: [InfoPageDraftCategoryCandidate]?
+    var needsCategoryChoice: Bool?
+    var nextStep: String?
+
+    var libraryClassification: LibraryClassificationResponse? {
+        let hasLibrarySignal = assetDescription?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            || ocrSummary?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            || !(keywords ?? []).isEmpty
+            || !(candidateCategories ?? []).isEmpty
+            || nextStep != nil
+        guard hasLibrarySignal else { return nil }
+        let candidates = candidateCategories ?? []
+        return LibraryClassificationResponse(
+            assetDescription: assetDescription,
+            ocrSummary: ocrSummary,
+            keywords: keywords ?? [],
+            candidateCategories: candidates,
+            needsCategoryChoice: needsCategoryChoice ?? (candidates.count > 1),
+            nextStep: nextStep
+        )
+    }
+
+    static func parse(_ raw: String) -> LocalModelStructuredChatResponse? {
+        guard let json = extractJSONObject(from: raw),
+              let data = json.data(using: .utf8)
+        else { return nil }
+        let decoder = JSONDecoder()
+        guard let decoded = try? decoder.decode(LocalModelStructuredChatResponse.self, from: data) else {
+            return nil
+        }
+        guard !decoded.response.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return nil
+        }
+        return decoded
+    }
+
+    private static func extractJSONObject(from raw: String) -> String? {
+        guard let start = raw.firstIndex(of: "{"),
+              let end = raw.lastIndex(of: "}"),
+              start <= end
+        else { return nil }
+        return String(raw[start...end])
     }
 }
 

@@ -7,6 +7,7 @@ struct LocalModelPerformanceView: View {
     @State private var snapshot = LocalModelPerformanceSnapshot(totalRunCount: 0)
     @State private var selectedModelID: String?
     @State private var statusMessage: String?
+    @State private var isScopePalettePresented = false
 
     private var displayedSnapshot: LocalModelPerformanceSnapshot {
         snapshot.filtered(to: selectedModelID)
@@ -89,29 +90,100 @@ struct LocalModelPerformanceView: View {
     @ViewBuilder
     private var modelScopePicker: some View {
         if !snapshot.modelSummaries.isEmpty {
-            Picker(KairoL10n.string("performance.local.scope"), selection: Binding(
-                get: { selectedModelID ?? "all" },
-                set: { selectedModelID = $0 == "all" ? nil : $0 }
-            )) {
-                Text(KairoL10n.string("performance.local.allModels"))
-                    .tag("all")
-                ForEach(snapshot.modelSummaries) { summary in
-                    Text(summary.modelDisplayName)
-                        .tag(summary.modelID)
+            VStack(spacing: 7) {
+                Button {
+                    withAnimation(.spring(response: 0.24, dampingFraction: 0.88)) {
+                        isScopePalettePresented.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "speedometer")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(KairoDesign.blue)
+                        Text(KairoL10n.string("performance.local.scope"))
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(KairoDesign.muted)
+                        Text(scopeTitle)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(KairoDesign.ink)
+                            .lineLimit(1)
+                        Spacer(minLength: 4)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(KairoDesign.muted)
+                    }
+                    .padding(.horizontal, 11)
+                    .frame(height: 34)
+                    .background(KairoDesign.elevatedSurface.opacity(0.72), in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("performance.local.scope")
+
+                if isScopePalettePresented {
+                    VStack(spacing: 7) {
+                        scopeButton(
+                            title: KairoL10n.string("performance.local.allModels"),
+                            isSelected: selectedModelID == nil
+                        ) {
+                            selectedModelID = nil
+                            isScopePalettePresented = false
+                        }
+                        ForEach(snapshot.modelSummaries) { summary in
+                            scopeButton(
+                                title: summary.modelDisplayName,
+                                isSelected: selectedModelID == summary.modelID
+                            ) {
+                                selectedModelID = summary.modelID
+                                isScopePalettePresented = false
+                            }
+                        }
+                    }
+                    .padding(8)
+                    .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    }
+                    .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 14, x: 0, y: 9)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .accessibilityIdentifier("performance.local.scope.palette")
                 }
             }
-            .pickerStyle(.menu)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .foregroundStyle(KairoDesign.ink)
-            .background(KairoDesign.elevatedSurface.opacity(0.72), in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
-            }
-            .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
-            .accessibilityIdentifier("performance.local.scope")
+            .animation(.spring(response: 0.24, dampingFraction: 0.88), value: isScopePalettePresented)
         }
+    }
+
+    private var scopeTitle: String {
+        guard let selectedModelID,
+              let summary = snapshot.modelSummaries.first(where: { $0.modelID == selectedModelID }) else {
+            return KairoL10n.string("performance.local.allModels")
+        }
+        return summary.modelDisplayName
+    }
+
+    private func scopeButton(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(KairoDesign.blue)
+                }
+            }
+            .padding(.horizontal, 9)
+            .padding(.vertical, 7)
+            .background(KairoDesign.softSurface.opacity(isSelected ? 0.70 : 0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private var overviewTitle: String {

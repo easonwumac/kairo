@@ -128,7 +128,7 @@ final class LocalModelFeatureTests: XCTestCase {
             paths: paths,
             credentialStore: InMemoryCredentialStore(),
             replyCheckRuntimeOverride: DeterministicLocalModelReplyCheckRuntime(
-                responseText: "Live factory local reply",
+                responseText: #"{"response":"Live factory local reply","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"classifyOnly"}"#,
                 generationTokensPerSecond: 42
             )
         ).makeComponents()
@@ -1135,7 +1135,7 @@ final class LocalModelFeatureTests: XCTestCase {
         )
         let runtime = DeterministicLocalModelReplyCheckRuntime(
             runtimePackage: "deterministic-chat-runtime",
-            responseText: "Runtime-backed local answer.",
+            responseText: #"{"response":"Runtime-backed local answer.","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"classifyOnly"}"#,
             promptTokens: 128,
             generatedTokens: 32,
             promptTokensPerSecond: 410.5,
@@ -1248,7 +1248,7 @@ final class LocalModelFeatureTests: XCTestCase {
         )
         let runtime = DeterministicLocalModelReplyCheckRuntime(
             runtimePackage: "chat-runtime",
-            responseText: "recorded answer",
+            responseText: #"{"response":"recorded answer","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"classifyOnly"}"#,
             promptTokens: 96,
             generatedTokens: 24,
             promptTokensPerSecond: 32,
@@ -1337,7 +1337,7 @@ final class LocalModelFeatureTests: XCTestCase {
             <think>
             Internal chain of thought.
             </think>
-            Visible local answer.
+            {"response":"Visible local answer.","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"classifyOnly"}
             """,
             generationTokensPerSecond: 12.5
         )
@@ -1356,6 +1356,67 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertFalse(response.message.contains("<think>"))
     }
 
+    func testLocalModelRuntimeAIProviderExtractsChatResponseFromStructuredJSON() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .localOnly,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let runtime = DeterministicLocalModelReplyCheckRuntime(
+            responseText: """
+            {"response":"我判斷這張圖片比較像旅遊素材，會先準備存入 Library。","assetDescription":"海邊風景照。","keywords":["海邊","風景","旅行"],"candidateCategories":[{"templateID":"travel","category":"travel","confidence":0.82,"reason":"風景照片可能屬於旅行資料。"}],"needsCategoryChoice":false,"nextStep":"prepareTemplate"}
+            """,
+            generationTokensPerSecond: 12.5
+        )
+        let provider = LocalModelRuntimeAIProvider(
+            localModelSettingsService: service,
+            runtime: runtime
+        )
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "檢查附加內容。",
+            attachmentContext: [
+                ChatAttachment(
+                    kind: .image,
+                    displayName: "beach.jpg",
+                    textPreview: "Apple Vision 參考資料：Image labels: beach, ocean, sky"
+                )
+            ]
+        ))
+
+        XCTAssertEqual(response.message, "我判斷這張圖片比較像旅遊素材，會先準備存入 Library。")
+        XCTAssertEqual(response.libraryClassification?.assetDescription, "海邊風景照。")
+        XCTAssertEqual(response.libraryClassification?.keywords, ["海邊", "風景", "旅行"])
+        XCTAssertEqual(response.libraryClassification?.candidateCategories.map(\.category), [.travel])
+        XCTAssertEqual(response.libraryClassification?.needsCategoryChoice, false)
+        XCTAssertEqual(response.libraryClassification?.nextStep, "prepareTemplate")
+    }
+
+    func testLocalModelRuntimeAIProviderRetriesUntilStructuredJSONIsValid() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .localOnly,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let runtime = SequencedLocalModelReplyRuntime(responses: [
+            "不是 JSON",
+            #"{"candidateCategories":[]}"#,
+            #"{"response":"第三次格式正確。","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"classifyOnly"}"#
+        ])
+        let provider = LocalModelRuntimeAIProvider(
+            localModelSettingsService: service,
+            runtime: runtime
+        )
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "檢查附加內容。"
+        ))
+
+        XCTAssertEqual(response.message, "第三次格式正確。")
+        let callCount = await runtime.callCount()
+        XCTAssertEqual(callCount, 3)
+    }
+
     func testLocalModelRuntimeAIProviderRetriesOnceWhenRuntimeOutputIsInvalid() async throws {
         let service = try await makeLocalModelSettingsService(
             preference: .localOnly,
@@ -1363,7 +1424,7 @@ final class LocalModelFeatureTests: XCTestCase {
         )
         let runtime = SequencedLocalModelReplyRuntime(responses: [
             "Language rule:\nReply using the current iOS system language: 繁體中文（台灣） (zh-Hant-TW).",
-            "第二次本機回覆可用。"
+            #"{"response":"第二次本機回覆可用。","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"classifyOnly"}"#
         ])
         let provider = LocalModelRuntimeAIProvider(
             localModelSettingsService: service,
@@ -3061,7 +3122,7 @@ private actor RecordingLocalModelReplyRuntime: LocalModelReplyCheckRuntime {
             runtime: .gguf,
             runtimePackage: "recording-runtime",
             prompt: prompt,
-            responseText: "runtime parameters applied",
+            responseText: #"{"response":"runtime parameters applied","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"classifyOnly"}"#,
             generatedTokens: parameters.maxOutputTokens,
             generationTokensPerSecond: 1,
             measuredAt: Date(timeIntervalSince1970: 1_780_358_400),
@@ -3116,7 +3177,7 @@ private actor RecordingConversationalLocalModelReplyRuntime: LocalModelConversat
             runtime: .gguf,
             runtimePackage: "recording-conversation-runtime",
             prompt: prompt,
-            responseText: "conversation key applied",
+            responseText: #"{"response":"conversation key applied","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"classifyOnly"}"#,
             generatedTokens: parameters.maxOutputTokens,
             generationTokensPerSecond: 1,
             measuredAt: Date(timeIntervalSince1970: 1_780_358_400),

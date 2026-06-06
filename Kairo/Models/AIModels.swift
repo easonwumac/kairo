@@ -61,6 +61,7 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
     public var memoryContextCount: Int
     public var reasoningText: String?
     public var inferenceMetrics: AIInferenceMetrics?
+    public var libraryClassification: LibraryClassificationResponse?
 
     public init(
         message: String,
@@ -68,7 +69,8 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
         toolCandidates: [AgentToolInvocationCandidate] = [],
         memoryContextCount: Int = 0,
         reasoningText: String? = nil,
-        inferenceMetrics: AIInferenceMetrics? = nil
+        inferenceMetrics: AIInferenceMetrics? = nil,
+        libraryClassification: LibraryClassificationResponse? = nil
     ) {
         self.message = message
         self.proposedActions = proposedActions
@@ -76,6 +78,32 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
         self.memoryContextCount = memoryContextCount
         self.reasoningText = reasoningText
         self.inferenceMetrics = inferenceMetrics
+        self.libraryClassification = libraryClassification
+    }
+}
+
+public struct LibraryClassificationResponse: Codable, Equatable, Sendable {
+    public var assetDescription: String?
+    public var ocrSummary: String?
+    public var keywords: [String]
+    public var candidateCategories: [InfoPageDraftCategoryCandidate]
+    public var needsCategoryChoice: Bool
+    public var nextStep: String?
+
+    public init(
+        assetDescription: String? = nil,
+        ocrSummary: String? = nil,
+        keywords: [String] = [],
+        candidateCategories: [InfoPageDraftCategoryCandidate] = [],
+        needsCategoryChoice: Bool = false,
+        nextStep: String? = nil
+    ) {
+        self.assetDescription = assetDescription
+        self.ocrSummary = ocrSummary
+        self.keywords = keywords
+        self.candidateCategories = candidateCategories
+        self.needsCategoryChoice = needsCategoryChoice
+        self.nextStep = nextStep
     }
 }
 
