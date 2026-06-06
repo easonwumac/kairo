@@ -295,7 +295,13 @@ public final class ChatViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         do {
-            let response = try await chatAPI.respond(to: text, attachments: attachments, privacyMode: privacyMode)
+            let response = try await chatAPI.respond(
+                to: text,
+                attachments: attachments,
+                conversationID: currentThread.id.uuidString,
+                conversationHistory: localConversationHistory(),
+                privacyMode: privacyMode
+            )
             let assistantMessage = ChatMessage(
                 role: .assistant,
                 text: response.message,
@@ -464,6 +470,24 @@ public final class ChatViewModel: ObservableObject {
         importedShareItemIDs = []
         shareImportNotice = nil
         shareImportPreview = nil
+    }
+
+    private func localConversationHistory(limit: Int = 12) -> [AIConversationTurn] {
+        currentThread.messages
+            .filter { $0.id != Self.welcomeMessage.id }
+            .suffix(limit)
+            .compactMap { message in
+                let text = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !text.isEmpty else { return nil }
+                switch message.role {
+                case .user:
+                    return AIConversationTurn(role: .user, text: text)
+                case .assistant:
+                    return AIConversationTurn(role: .assistant, text: text)
+                case .system:
+                    return nil
+                }
+            }
     }
 
     private static func actionResultMessage(for result: ActionExecutionResult, action: AgentAction, source: PendingActionSource?) -> String {

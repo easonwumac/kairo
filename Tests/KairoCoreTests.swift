@@ -853,11 +853,9 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
         XCTAssertEqual(availableModels.count, 3)
 
-        let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
-        let mlxBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .mlx })
-        XCTAssertEqual(mlxBenchmark.artifactReference, "mlx-community/Qwen3.5-0.8B-OptiQ-4bit")
-        XCTAssertFalse(mlxBenchmark.supportsInAppDownload)
-        XCTAssertTrue(mlxBenchmark.isReferenceOnlyForIOS)
+        let qwenVision = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-vl-3b-instruct-q4-k-m" })
+        XCTAssertTrue(qwenVision.capabilities.contains(.imageUnderstanding))
+        XCTAssertEqual(qwenVision.companionArtifacts.map(\.role), ["multimodalProjector"])
     }
 
     func testSandboxActionExecutorRequiresConfirmationBeforeHomeKitControl() async throws {
@@ -1037,6 +1035,26 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertNil(viewModel.replyTarget)
     }
 
+    @MainActor
+    func testChatViewModelPassesThreadConversationContextToChatAPI() async throws {
+        let chatAPI = CapturingChatAPI()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(),
+            chatAPI: chatAPI
+        )
+        let threadID = viewModel.currentThread.id.uuidString
+
+        viewModel.composerText = "first turn"
+        await viewModel.sendComposerMessage()
+        viewModel.composerText = "second turn"
+        await viewModel.sendComposerMessage()
+
+        let captured = await chatAPI.captured()
+        XCTAssertEqual(captured.conversationID, threadID)
+        XCTAssertEqual(captured.history.map(\.role), [.user, .assistant, .user])
+    }
+
     private func makeKairoCoreChatAPI() -> any KairoChatAPI {
         KairoChatBackendService(
             agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
@@ -1153,8 +1171,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(expandedEnvironment.localModelCatalog.availableModels(
             minimumSafetyPolicyVersion: expandedEnvironment.localModelCatalog.minimumSafetyPolicyVersion
         ).map(\.id), [
-            "qwen3-5-0-8b-q4-k-m",
-            "qwen3-5-2b-q4-k-m",
+            "qwen2-5-0-5b-instruct-q4-k-m",
+            "qwen2-5-1-5b-instruct-q4-k-m",
             "qwen2-5-vl-3b-instruct-q4-k-m",
             "remote-catalog-test-model-q4-k-m"
         ])
@@ -1337,11 +1355,11 @@ final class KairoCoreTests: XCTestCase {
         }
         let benchmarkScenarioIdentifiers = catalog.scenario(id: "settings-local-model-benchmark")?.requiredAccessibilityIdentifiers ?? []
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.local"))
-        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.benchmark"))
-        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run"))
-        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.download-preview"))
-        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.download-confirm"))
-        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen3-5-0-8b-q4-k-m.download-cancel"))
+        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen2-5-0-5b-instruct-q4-k-m.benchmark"))
+        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen2-5-0-5b-instruct-q4-k-m.benchmark-run"))
+        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen2-5-0-5b-instruct-q4-k-m.download-preview"))
+        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen2-5-0-5b-instruct-q4-k-m.download-confirm"))
+        XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen2-5-0-5b-instruct-q4-k-m.download-cancel"))
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.benchmark-message"))
         let expandedModelsScenarioIdentifiers = catalog.scenario(id: "settings-local-model-expanded-catalog")?.requiredAccessibilityIdentifiers ?? []
         XCTAssertTrue(expandedModelsScenarioIdentifiers.contains("settings.models.qwen2-5-vl-3b-instruct-q4-k-m.name"))
@@ -1408,11 +1426,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("testSettingsExpandedModelCatalogKeepsPopularStarterRowsVisible"))
         XCTAssertTrue(uiTestSources.contains("testSettingsShowsQwenBenchmarkFlowRequiresDownload"))
         XCTAssertTrue(uiTestSources.contains("testSettingsRunsQwen35BenchmarkThroughEmbeddedLlamaRuntime"))
-        XCTAssertTrue(uiTestSources.contains(#""settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run""#))
+        XCTAssertTrue(uiTestSources.contains(#""settings.models.qwen2-5-0-5b-instruct-q4-k-m.benchmark-run""#))
         XCTAssertTrue(uiTestSources.contains("--ui-testing-settings-shortcut-demos-only"))
         XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(anyElement("settings.models.show-more").exists)"#))
         XCTAssertTrue(uiTestSources.contains(#"XCTAssertFalse(anyElement("settings.models.remote-catalog-test-model-q4-k-m.name").exists)"#))
-        XCTAssertTrue(uiTestSources.contains(#"message.label.contains("Download Qwen3.5 0.8B Q4_K_M")"#))
+        XCTAssertTrue(uiTestSources.contains(#"message.label.contains("Download Qwen2.5 0.5B Instruct Q4_K_M")"#))
         XCTAssertTrue(uiTestSources.contains(#"message.label.localizedCaseInsensitiveContains("benchmark")"#))
         XCTAssertTrue(uiTestSources.contains("--ui-testing-installed-local-model"))
         XCTAssertTrue(uiTestSources.contains("--ui-testing-expanded-local-model-catalog"))
@@ -1535,8 +1553,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("settings.shortcuts.demos"))
         XCTAssertTrue(uiTestSources.contains("settings.models.local"))
         for displayName in [
-            "Qwen3.5 0.8B Q4_K_M",
-            "Qwen3.5 2B Q4_K_M",
+            "Qwen2.5 0.5B Instruct Q4_K_M",
+            "Qwen2.5 1.5B Instruct Q4_K_M",
             "Qwen2.5-VL 3B Instruct Q4_K_M"
         ] {
             XCTAssertTrue(uiTestSources.contains(displayName), displayName)
@@ -1573,7 +1591,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains(#""access.skills.message""#))
         XCTAssertTrue(uiTestSources.contains(#""access.skills.manifest-preview.compatibility""#))
         XCTAssertTrue(uiTestSources.contains("Connect OAuth provider google"))
-        XCTAssertTrue(uiTestSources.contains("Download local model qwen3-5-0-8b-q4-k-m"))
+        XCTAssertTrue(uiTestSources.contains("Download local model qwen2-5-0-5b-instruct-q4-k-m"))
         XCTAssertTrue(uiTestSources.contains(#""access.skills.manifest-preview.confirm""#))
         XCTAssertTrue(uiTestSources.contains(#""access.homekit.demo.evening-scene.confirm""#))
         XCTAssertTrue(uiTestSources.contains("access.homekit.demos"))
@@ -1743,6 +1761,33 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(attachment.promptSummary.contains("Deck.pdf"))
         XCTAssertTrue(attachment.promptSummary.contains("Quarterly plan"))
         XCTAssertEqual(item.suggestedPrompt, KairoL10n.string("chat.share.prompt.summarizeNamed", "Deck.pdf"))
+    }
+
+    func testAttachmentVisionReferenceBuildsPromptPreviewWithOCRAndLabels() {
+        let reference = AttachmentVisionReference(
+            ocrText: "Flight pickup at 10:30",
+            labels: ["flower 82%", "plant 64%"]
+        )
+        let preview = reference.promptPreview ?? ""
+
+        XCTAssertTrue(preview.contains("Flight pickup at 10:30"))
+        XCTAssertTrue(preview.contains("flower 82%"))
+        XCTAssertTrue(preview.contains("plant 64%"))
+    }
+
+    func testLibraryAssetClassificationContextUsesCompactTemplateSchema() {
+        let attachment = ChatAttachment(
+            kind: .image,
+            displayName: "flower.jpg",
+            textPreview: "Apple Vision reference. Image labels: flower 82%, plant 64%"
+        )
+        let context = LibraryAssetClassificationPromptBuilder.context(for: [attachment])
+
+        XCTAssertTrue(context.contains(#""id":"travel""#))
+        XCTAssertTrue(context.contains(#""view":"travel""#))
+        XCTAssertTrue(context.contains(#""createInfoPage": true|false"#))
+        XCTAssertFalse(context.localizedCaseInsensitiveContains("<html"))
+        XCTAssertFalse(context.localizedCaseInsensitiveContains("<body"))
     }
 
     func testJSONFileShareIngestionQueuePersistsPendingItems() async throws {
@@ -2147,6 +2192,46 @@ private actor CapturingAIProvider: AIProvider {
 
     func capturedRequest() -> AICompletionRequest? {
         lastRequest
+    }
+}
+
+private actor CapturingChatAPI: KairoChatAPI {
+    private var requestCount = 0
+    private var lastConversationID: String?
+    private var lastConversationHistory: [AIConversationTurn] = []
+
+    func respond(
+        to message: String,
+        attachments: [ChatAttachment],
+        privacyMode: ChatPrivacyMode
+    ) async throws -> AICompletionResponse {
+        try await respond(
+            to: message,
+            attachments: attachments,
+            conversationID: nil,
+            conversationHistory: [],
+            privacyMode: privacyMode
+        )
+    }
+
+    func respond(
+        to message: String,
+        attachments: [ChatAttachment],
+        conversationID: String?,
+        conversationHistory: [AIConversationTurn],
+        privacyMode: ChatPrivacyMode
+    ) async throws -> AICompletionResponse {
+        _ = message
+        _ = attachments
+        _ = privacyMode
+        requestCount += 1
+        lastConversationID = conversationID
+        lastConversationHistory = conversationHistory
+        return AICompletionResponse(message: "assistant \(requestCount)")
+    }
+
+    func captured() -> (conversationID: String?, history: [AIConversationTurn]) {
+        (lastConversationID, lastConversationHistory)
     }
 }
 

@@ -63,6 +63,42 @@ public protocol LocalModelReplyCheckRuntime: Sendable {
     ) async throws -> LocalModelReplyCheckResult
 }
 
+public struct LocalModelConversationRuntimeKey: Hashable, Sendable {
+    public var conversationID: String
+    public var modelID: String
+    public var modelFilePath: String
+    public var contextSize: Int
+    public var maxOutputTokens: Int
+    public var temperature: Double
+
+    public init(
+        conversationID: String,
+        modelID: String,
+        modelFilePath: String,
+        contextSize: Int,
+        maxOutputTokens: Int,
+        temperature: Double
+    ) {
+        self.conversationID = conversationID
+        self.modelID = modelID
+        self.modelFilePath = modelFilePath
+        self.contextSize = contextSize
+        self.maxOutputTokens = maxOutputTokens
+        self.temperature = temperature
+    }
+}
+
+public protocol LocalModelConversationalReplyRuntime: LocalModelReplyCheckRuntime {
+    func generateReply(
+        model: LocalModelManifest,
+        installRecord: LocalModelInstallRecord,
+        initialPrompt: String,
+        turnPrompt: String,
+        conversationKey: LocalModelConversationRuntimeKey,
+        parameters: LocalModelRuntimeParameters
+    ) async throws -> LocalModelReplyCheckResult
+}
+
 public struct UnavailableLocalModelReplyCheckRuntime: LocalModelReplyCheckRuntime {
     private let reason: String
 

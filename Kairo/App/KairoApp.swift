@@ -1,5 +1,6 @@
 #if canImport(SwiftUI)
 import KairoCore
+import OSLog
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
@@ -22,6 +23,7 @@ final class KairoAppDelegate: NSObject, UIApplicationDelegate {
 
 @main
 struct KairoApp: App {
+    private static let smokeLogger = Logger(subsystem: "app.kairo.ios", category: "LocalModelSmoke")
     #if canImport(UIKit)
     @UIApplicationDelegateAdaptor(KairoAppDelegate.self) private var appDelegate
     #endif
@@ -79,6 +81,10 @@ struct KairoApp: App {
                             environment = uiTestingEnvironment
                             environmentRevision += 1
                             isLoadingLaunchEnvironment = false
+                            Self.runUITestingLocalModelSmokeIfNeeded(
+                                arguments: arguments,
+                                environment: uiTestingEnvironment
+                            )
                         } catch {
                             launchEnvironmentError = Self.launchErrorMessage(
                                 "root.environment.uiTestingLoadFailed",
@@ -159,20 +165,9 @@ struct KairoApp: App {
             localModelBenchmarkEngineOverride: runtime
         )
         #else
-        #if DEBUG && targetEnvironment(simulator)
-        return try await KairoEnvironment.live(
-            appGroupIdentifier: KairoSharedAppStorage.appGroupIdentifier,
-            localModelReplyCheckRuntimeOverride: DeterministicLocalModelReplyCheckRuntime(
-                runtimePackage: "simulator-dev-local-runtime",
-                responseText: KairoL10n.string("chat.provider.localSimulator.response"),
-                generationTokensPerSecond: 38.5
-            )
-        )
-        #else
         return try await KairoEnvironment.live(
             appGroupIdentifier: KairoSharedAppStorage.appGroupIdentifier
         )
-        #endif
         #endif
     }
 
@@ -190,6 +185,43 @@ struct KairoApp: App {
             return nil
         }
         return ProviderRoutePreference(rawValue: String(argument.dropFirst(prefix.count)))
+    }
+
+    private static func runUITestingLocalModelSmokeIfNeeded(
+        arguments: [String],
+        environment: KairoEnvironment
+    ) {
+        let prefix = "--ui-testing-run-local-model-smoke="
+        guard let argument = arguments.first(where: { $0.hasPrefix(prefix) }) else {
+            return
+        }
+        let prompt = String(argument.dropFirst(prefix.count)).removingPercentEncoding ?? "Say hello."
+        Task {
+            do {
+                print("KAIRO_LOCAL_MODEL_SMOKE_START promptLength=\(prompt.count)")
+                Self.smokeLogger.notice("KAIRO_LOCAL_MODEL_SMOKE_START promptLength=\(prompt.count)")
+                let response = try await environment.aiProvider.complete(
+                    AICompletionRequest(
+                        systemPrompt: DefaultAgentCompletionRequestBuilder.defaultSystemPrompt,
+                        userPrompt: prompt,
+                        memoryContext: [],
+                        allowedCapabilities: [],
+                        attachmentContext: [],
+                        toolContext: nil,
+                        privacyMode: .standard
+                    )
+                )
+                print(
+                    "KAIRO_LOCAL_MODEL_SMOKE_SUCCESS responseLength=\(response.message.count) message=\(String(response.message.prefix(160)))"
+                )
+                Self.smokeLogger.notice(
+                    "KAIRO_LOCAL_MODEL_SMOKE_SUCCESS responseLength=\(response.message.count) message=\(String(response.message.prefix(160)), privacy: .public)"
+                )
+            } catch {
+                print("KAIRO_LOCAL_MODEL_SMOKE_ERROR \(error.localizedDescription)")
+                Self.smokeLogger.error("KAIRO_LOCAL_MODEL_SMOKE_ERROR \(error.localizedDescription, privacy: .public)")
+            }
+        }
     }
 
     private static func uiTestingLocalModelReplyRuntime(arguments: [String]) -> (any LocalModelReplyCheckRuntime)? {

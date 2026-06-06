@@ -43,13 +43,10 @@ private func kairo_llama_batch_add(
     _ seqIDs: [llama_seq_id],
     _ logits: Bool
 ) {
+    _ = seqIDs
     let index = Int(batch.n_tokens)
     batch.token[index] = id
     batch.pos[index] = pos
-    batch.n_seq_id[index] = Int32(seqIDs.count)
-    for seqIndex in 0..<seqIDs.count {
-        batch.seq_id[index]![seqIndex] = seqIDs[seqIndex]
-    }
     batch.logits[index] = logits ? 1 : 0
     batch.n_tokens += 1
 }
@@ -86,7 +83,9 @@ actor LlamaCppSession {
         }
         context = loadedContext
         vocab = llama_model_get_vocab(model)
-        batch = llama_batch_init(512, 0, 1)
+        batch = llama_batch_init(512, 0, 0)
+        batch.n_seq_id = nil
+        batch.seq_id = nil
 
         let samplerParameters = llama_sampler_chain_default_params()
         sampler = llama_sampler_chain_init(samplerParameters)
@@ -102,7 +101,7 @@ actor LlamaCppSession {
         llama_backend_free()
     }
 
-    func generate(prompt: String, maxTokens: Int32) throws -> (
+    func generate(prompt: String, maxTokens: Int32, resetContext: Bool, addBOS: Bool) throws -> (
         text: String,
         promptTokens: Int,
         generatedTokens: Int,
@@ -111,24 +110,26 @@ actor LlamaCppSession {
         firstTokenLatencyMS: Double?,
         peakMemoryMB: Int?
     ) {
-        llama_memory_clear(llama_get_memory(context), true)
+        if resetContext {
+            llama_memory_clear(llama_get_memory(context), true)
+            position = 0
+        }
         pendingUTF8Bytes.removeAll()
-        position = 0
         let startedAt = Date()
         var peakMemoryMB = Self.currentResidentMemoryMB()
 
-        let promptTokens = tokenize(text: prompt, addBOS: true)
+        let promptTokens = tokenize(text: prompt, addBOS: addBOS)
         guard !promptTokens.isEmpty else {
             throw LlamaCppRuntimeError.couldNotTokenizePrompt
         }
         let contextSize = llama_n_ctx(context)
-        guard promptTokens.count + Int(maxTokens) <= Int(contextSize) else {
+        guard Int(position) + promptTokens.count + Int(maxTokens) <= Int(contextSize) else {
             throw LlamaCppRuntimeError.promptTooLarge
         }
 
         kairo_llama_batch_clear(&batch)
         for tokenIndex in 0..<promptTokens.count {
-            kairo_llama_batch_add(&batch, promptTokens[tokenIndex], Int32(tokenIndex), [0], false)
+            kairo_llama_batch_add(&batch, promptTokens[tokenIndex], position + Int32(tokenIndex), [0], false)
         }
         batch.logits[Int(batch.n_tokens) - 1] = 1
         let prefillStartedAt = Date()
@@ -137,7 +138,7 @@ actor LlamaCppSession {
         }
         peakMemoryMB = Self.maxMemoryMB(peakMemoryMB, Self.currentResidentMemoryMB())
         let prefillElapsed = max(Date().timeIntervalSince(prefillStartedAt), 0.001)
-        position = batch.n_tokens
+        position += batch.n_tokens
 
         var generatedText = ""
         var generatedTokens = 0
@@ -155,6 +156,9 @@ actor LlamaCppSession {
             }
             generatedTokens += 1
             generatedText += decodePiece(token: token)
+            if generatedText.contains("<|im_end|>") {
+                break
+            }
 
             kairo_llama_batch_clear(&batch)
             kairo_llama_batch_add(&batch, token, position, [0], true)
@@ -165,7 +169,9 @@ actor LlamaCppSession {
             position += 1
         }
 
-        let trimmed = generatedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = generatedText
+            .replacingOccurrences(of: "<|im_end|>", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             throw LlamaCppRuntimeError.emptyResponse
         }
@@ -248,22 +254,26 @@ actor LlamaCppSession {
 }
 
 struct LlamaCppLocalModelRuntime: LocalModelReplyCheckRuntime, LocalModelBenchmarkEngine {
+    private static let sessionPool = LlamaCppSessionPool()
+
     func generateReply(
         model: LocalModelManifest,
         installRecord: LocalModelInstallRecord,
         prompt: String,
         parameters: LocalModelRuntimeParameters
     ) async throws -> LocalModelReplyCheckResult {
-        let startedAt = Date()
         let clampedParameters = parameters.clamped(to: model)
         let session = try LlamaCppSession(
             modelPath: installRecord.fileURL.path,
             contextLength: UInt32(max(clampedParameters.contextSize, 1)),
             temperature: clampedParameters.temperature
         )
+        let preparedPrompt = Self.preparedPrompt(prompt, for: model)
         let output = try await session.generate(
-            prompt: prompt,
-            maxTokens: Int32(max(1, clampedParameters.maxOutputTokens))
+            prompt: preparedPrompt.text,
+            maxTokens: Int32(max(1, clampedParameters.maxOutputTokens)),
+            resetContext: true,
+            addBOS: preparedPrompt.addBOS
         )
 
         return LocalModelReplyCheckResult(
@@ -271,7 +281,7 @@ struct LlamaCppLocalModelRuntime: LocalModelReplyCheckRuntime, LocalModelBenchma
             modelDisplayName: model.displayName,
             runtime: .gguf,
             runtimePackage: "llama.cpp iOS",
-            prompt: prompt,
+            prompt: preparedPrompt.text,
             responseText: output.text,
             generatedTokens: output.generatedTokens,
             generationTokensPerSecond: output.generationTokensPerSecond,
@@ -288,7 +298,13 @@ struct LlamaCppLocalModelRuntime: LocalModelReplyCheckRuntime, LocalModelBenchma
         contextSize: Int
     ) async throws -> LocalModelBenchmarkRunResult {
         let session = try LlamaCppSession(modelPath: installRecord.fileURL.path, contextLength: UInt32(max(contextSize, 1)))
-        let output = try await session.generate(prompt: prompt, maxTokens: Int32(generatedTokenTarget))
+        let preparedPrompt = Self.preparedPrompt(prompt, for: model)
+        let output = try await session.generate(
+            prompt: preparedPrompt.text,
+            maxTokens: Int32(generatedTokenTarget),
+            resetContext: true,
+            addBOS: preparedPrompt.addBOS
+        )
 
         return LocalModelBenchmarkRunResult(
             id: "\(model.id)-ios-llama-\(Int(Date().timeIntervalSince1970))",
@@ -306,6 +322,153 @@ struct LlamaCppLocalModelRuntime: LocalModelReplyCheckRuntime, LocalModelBenchma
             isReferenceOnlyForIOS: false,
             notes: "Generated \(output.generatedTokens) tokens through embedded llama.xcframework."
         )
+    }
+
+    private static func preparedPrompt(
+        _ prompt: String,
+        for model: LocalModelManifest
+    ) -> (text: String, addBOS: Bool) {
+        guard model.usesQwenChatTemplate else {
+            return (prompt, true)
+        }
+        return (qwenChatPrompt(from: prompt), false)
+    }
+
+    private static func qwenChatPrompt(from prompt: String) -> String {
+        let cleanedPrompt = prompt
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingSuffix("Assistant:")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let sections = qwenPromptSections(from: cleanedPrompt)
+        return """
+        <|im_start|>system
+        \(sections.system)
+        <|im_end|>
+        <|im_start|>user
+        \(sections.user)
+        <|im_end|>
+        <|im_start|>assistant
+
+        """
+    }
+
+    private static func qwenPromptSections(from prompt: String) -> (system: String, user: String) {
+        guard let userRange = prompt.range(of: "\nUser:\n", options: .backwards) else {
+            return (prompt, prompt)
+        }
+        let system = String(prompt[..<userRange.lowerBound])
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let afterUser = prompt[userRange.upperBound...]
+        let user: String
+        if let assistantRange = afterUser.range(of: "\n\nAssistant:", options: .backwards) {
+            user = String(afterUser[..<assistantRange.lowerBound])
+        } else {
+            user = String(afterUser)
+        }
+        return (
+            system.isEmpty ? "You are Kairo. Answer directly and concisely." : system,
+            user.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+    }
+}
+
+extension LlamaCppLocalModelRuntime: LocalModelConversationalReplyRuntime {
+    func generateReply(
+        model: LocalModelManifest,
+        installRecord: LocalModelInstallRecord,
+        initialPrompt: String,
+        turnPrompt: String,
+        conversationKey: LocalModelConversationRuntimeKey,
+        parameters: LocalModelRuntimeParameters
+    ) async throws -> LocalModelReplyCheckResult {
+        let clampedParameters = parameters.clamped(to: model)
+        let pooledSession = try await Self.sessionPool.session(
+            for: conversationKey,
+            modelPath: installRecord.fileURL.path,
+            contextLength: UInt32(max(clampedParameters.contextSize, 1)),
+            temperature: clampedParameters.temperature
+        )
+        let prompt = pooledSession.isNew ? initialPrompt : turnPrompt
+        let preparedPrompt = Self.preparedPrompt(prompt, for: model)
+        let output = try await pooledSession.session.generate(
+            prompt: preparedPrompt.text,
+            maxTokens: Int32(max(1, clampedParameters.maxOutputTokens)),
+            resetContext: pooledSession.isNew,
+            addBOS: pooledSession.isNew && preparedPrompt.addBOS
+        )
+
+        return LocalModelReplyCheckResult(
+            modelID: model.id,
+            modelDisplayName: model.displayName,
+            runtime: .gguf,
+            runtimePackage: "llama.cpp iOS",
+            prompt: preparedPrompt.text,
+            responseText: output.text,
+            generatedTokens: output.generatedTokens,
+            generationTokensPerSecond: output.generationTokensPerSecond,
+            measuredAt: Date(),
+            notes: pooledSession.isNew
+                ? "Generated in a new Kairo local conversation session."
+                : "Generated by appending to an existing Kairo local conversation session."
+        )
+    }
+}
+
+private extension LocalModelManifest {
+    var usesQwenChatTemplate: Bool {
+        let probe = "\(id) \(displayName) \(family)".lowercased()
+        return probe.contains("qwen")
+    }
+}
+
+private extension String {
+    func trimmingSuffix(_ suffix: String) -> String {
+        guard hasSuffix(suffix) else { return self }
+        return String(dropLast(suffix.count))
+    }
+}
+
+private struct PooledLlamaCppSession: Sendable {
+    var session: LlamaCppSession
+    var isNew: Bool
+}
+
+private actor LlamaCppSessionPool {
+    private var sessions: [LocalModelConversationRuntimeKey: LlamaCppSession] = [:]
+    private var mostRecentKeys: [LocalModelConversationRuntimeKey] = []
+    private let maxSessionCount = 3
+
+    func session(
+        for key: LocalModelConversationRuntimeKey,
+        modelPath: String,
+        contextLength: UInt32,
+        temperature: Double
+    ) throws -> PooledLlamaCppSession {
+        if let session = sessions[key] {
+            touch(key)
+            return PooledLlamaCppSession(session: session, isNew: false)
+        }
+
+        let session = try LlamaCppSession(
+            modelPath: modelPath,
+            contextLength: contextLength,
+            temperature: temperature
+        )
+        sessions[key] = session
+        touch(key)
+        trimIfNeeded()
+        return PooledLlamaCppSession(session: session, isNew: true)
+    }
+
+    private func touch(_ key: LocalModelConversationRuntimeKey) {
+        mostRecentKeys.removeAll { $0 == key }
+        mostRecentKeys.insert(key, at: 0)
+    }
+
+    private func trimIfNeeded() {
+        while mostRecentKeys.count > maxSessionCount, let key = mostRecentKeys.popLast() {
+            sessions[key] = nil
+        }
     }
 }
 #endif

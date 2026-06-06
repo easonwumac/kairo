@@ -8,6 +8,8 @@ public enum ChatPrivacyMode: String, Codable, Equatable, Sendable {
 public struct AICompletionRequest: Codable, Equatable, Sendable {
     public var systemPrompt: String
     public var userPrompt: String
+    public var conversationID: String?
+    public var conversationHistory: [AIConversationTurn]
     public var memoryContext: [MemoryRecord]
     public var allowedCapabilities: [CapabilityKey]
     public var attachmentContext: [ChatAttachment]
@@ -17,6 +19,8 @@ public struct AICompletionRequest: Codable, Equatable, Sendable {
     public init(
         systemPrompt: String,
         userPrompt: String,
+        conversationID: String? = nil,
+        conversationHistory: [AIConversationTurn] = [],
         memoryContext: [MemoryRecord] = [],
         allowedCapabilities: [CapabilityKey] = [],
         attachmentContext: [ChatAttachment] = [],
@@ -25,11 +29,28 @@ public struct AICompletionRequest: Codable, Equatable, Sendable {
     ) {
         self.systemPrompt = systemPrompt
         self.userPrompt = userPrompt
+        self.conversationID = conversationID
+        self.conversationHistory = conversationHistory
         self.memoryContext = memoryContext
         self.allowedCapabilities = allowedCapabilities
         self.attachmentContext = attachmentContext
         self.toolContext = toolContext
         self.privacyMode = privacyMode
+    }
+}
+
+public struct AIConversationTurn: Codable, Equatable, Sendable {
+    public enum Role: String, Codable, Equatable, Sendable {
+        case user
+        case assistant
+    }
+
+    public var role: Role
+    public var text: String
+
+    public init(role: Role, text: String) {
+        self.role = role
+        self.text = text
     }
 }
 

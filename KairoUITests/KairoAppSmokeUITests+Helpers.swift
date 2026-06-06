@@ -233,11 +233,11 @@ extension KairoAppSmokeUITests {
     }
 
     func verifyQwenLocalModelDiagnostics() {
-        let id = "qwen3-5-0-8b-q4-k-m"
+        let id = "qwen2-5-0-5b-instruct-q4-k-m"
         let runtimeFit = findElement("settings.models.\(id).runtime-fit", direction: .down, maxSwipes: 6)
         XCTAssertTrue(runtimeFit.exists)
         XCTAssertTrue(runtimeFit.label.contains("Download: GGUF"))
-        XCTAssertTrue(runtimeFit.label.contains("MLX ref only"))
+        XCTAssertTrue(runtimeFit.label.contains("Device test pending"))
         XCTAssertTrue(findElement("settings.models.\(id).runtime-pill.0", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findElement("settings.models.\(id).runtime-pill.1", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findElement("settings.models.\(id).runtime-pill.2", direction: .both, maxSwipes: 1).exists)

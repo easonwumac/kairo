@@ -196,6 +196,8 @@ public struct RootView: View {
                 rootChromeBackRequestID: $chromeBackRequestID,
                 usesRootChromeNavigation: true
             )
+        case .performance:
+            LocalModelPerformanceView(benchmarkService: environment.localModelBenchmarkService)
         case .settings:
             SettingsView(
                 dependencies: environment.settingsFeatureDependencies,
@@ -422,7 +424,7 @@ public struct RootView: View {
 
                     navigationGroup(
                         title: KairoL10n.string("root.menu.group.system"),
-                        sections: [.models, .access, .settings]
+                        sections: [.models, .performance, .access, .settings]
                     )
                 }
                 .padding(.horizontal, 18)
@@ -622,6 +624,7 @@ private enum RootSection: String, CaseIterable, Identifiable {
     case shortcuts
     case access
     case models
+    case performance
     case settings
 
     var id: String { rawValue }
@@ -642,6 +645,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return KairoL10n.string("root.section.access.title")
         case .models:
             return KairoL10n.string("root.section.models.title")
+        case .performance:
+            return KairoL10n.string("root.section.performance.title")
         case .settings:
             return KairoL10n.string("root.section.settings.title")
         }
@@ -663,6 +668,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return KairoL10n.string("root.section.access.subtitle")
         case .models:
             return KairoL10n.string("root.section.models.subtitle")
+        case .performance:
+            return KairoL10n.string("root.section.performance.subtitle")
         case .settings:
             return KairoL10n.string("root.section.settings.subtitle")
         }
@@ -684,6 +691,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return KairoL10n.string("root.section.access.shortTitle")
         case .models:
             return KairoL10n.string("root.section.models.shortTitle")
+        case .performance:
+            return KairoL10n.string("root.section.performance.shortTitle")
         case .settings:
             return KairoL10n.string("root.section.settings.shortTitle")
         }
@@ -714,6 +723,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return "iphone"
         case .models:
             return "cpu"
+        case .performance:
+            return "speedometer"
         case .settings:
             return "gearshape"
         }
@@ -723,7 +734,7 @@ private enum RootSection: String, CaseIterable, Identifiable {
         switch self {
         case .assets, .categories, .memory, .access:
             return KairoDesign.teal
-        case .chat, .models:
+        case .chat, .models, .performance:
             return KairoDesign.blue
         case .shortcuts:
             return KairoDesign.amber

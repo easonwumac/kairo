@@ -40,13 +40,13 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertTrue(localModelCatalogSource.contains("kairoStarterModels"))
         XCTAssertEqual(availableModels.count, 3)
         XCTAssertEqual(availableModels.map(\.id), [
-            "qwen3-5-0-8b-q4-k-m",
-            "qwen3-5-2b-q4-k-m",
+            "qwen2-5-0-5b-instruct-q4-k-m",
+            "qwen2-5-1-5b-instruct-q4-k-m",
             "qwen2-5-vl-3b-instruct-q4-k-m"
         ])
         XCTAssertEqual(availableModels.map(\.displayName), [
-            "Qwen3.5 0.8B Q4_K_M",
-            "Qwen3.5 2B Q4_K_M",
+            "Qwen2.5 0.5B Instruct Q4_K_M",
+            "Qwen2.5 1.5B Instruct Q4_K_M",
             "Qwen2.5-VL 3B Instruct Q4_K_M"
         ])
 
@@ -61,40 +61,20 @@ final class LocalModelFeatureTests: XCTestCase {
             XCTAssertTrue(model.disallowedCapabilities.contains(.toolUse), model.id)
         }
 
-        let qwenTwoB = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-2b-q4-k-m" })
-        XCTAssertEqual(qwenTwoB.sha256, "a511452ec932613d6b26b4fa24488fd431eb61eac69321460447d475edc221e2")
-        XCTAssertFalse(qwenTwoB.capabilities.contains(.imageUnderstanding))
+        let qwenHalfB = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-0-5b-instruct-q4-k-m" })
+        XCTAssertEqual(qwenHalfB.sha256, "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db")
+        XCTAssertFalse(qwenHalfB.capabilities.contains(.imageUnderstanding))
+
+        let qwenOneAndHalfB = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-1-5b-instruct-q4-k-m" })
+        XCTAssertEqual(qwenOneAndHalfB.sha256, "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e")
+        XCTAssertFalse(qwenOneAndHalfB.capabilities.contains(.imageUnderstanding))
 
         let qwenVision = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-vl-3b-instruct-q4-k-m" })
         XCTAssertTrue(qwenVision.capabilities.contains(.imageUnderstanding))
         XCTAssertEqual(qwenVision.companionArtifacts.map(\.id), ["mmproj-q8-0"])
         XCTAssertEqual(qwenVision.totalDownloadSizeBytes, 2_774_658_784)
 
-        let qwenTiny = try XCTUnwrap(availableModels.first { $0.id == "qwen3-5-0-8b-q4-k-m" })
-        let ggufBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .gguf })
-        let mlxBenchmark = try XCTUnwrap(qwenTiny.benchmarkProfiles.first { $0.runtime == .mlx })
-        XCTAssertEqual(ggufBenchmark.runtimePackage, "llama.cpp Metal")
-        XCTAssertEqual(ggufBenchmark.promptTokens, 512)
-        XCTAssertEqual(ggufBenchmark.generatedTokens, 128)
-        XCTAssertEqual(ggufBenchmark.trials, 5)
-        XCTAssertEqual(ggufBenchmark.promptTokensPerSecond, 8_810, accuracy: 0.1)
-        XCTAssertEqual(ggufBenchmark.generationTokensPerSecond, 214, accuracy: 0.1)
-        XCTAssertTrue(ggufBenchmark.supportsInAppDownload)
-        XCTAssertTrue(ggufBenchmark.isReferenceOnlyForIOS)
-        XCTAssertEqual(mlxBenchmark.runtimePackage, "mlx-lm")
-        XCTAssertEqual(mlxBenchmark.artifactReference, "mlx-community/Qwen3.5-0.8B-OptiQ-4bit")
-        XCTAssertEqual(mlxBenchmark.promptTokensPerSecond, 10_639, accuracy: 0.1)
-        XCTAssertEqual(mlxBenchmark.generationTokensPerSecond, 286, accuracy: 0.1)
-        XCTAssertEqual(mlxBenchmark.peakMemoryMB, 1_360)
-        XCTAssertFalse(mlxBenchmark.supportsInAppDownload)
-        XCTAssertTrue(mlxBenchmark.isReferenceOnlyForIOS)
-        XCTAssertEqual(mlxBenchmark.sourceURL?.absoluteString, "https://huggingface.co/mlx-community/Qwen3.5-0.8B-OptiQ-4bit")
-        XCTAssertEqual(qwenTiny.recommendedBenchmarkProfile?.runtime, .mlx)
-        XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("MLX ref") == true)
-        XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("PP 10639 tok/s") == true)
-        XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("TK 286 tok/s") == true)
-        XCTAssertTrue(qwenTiny.benchmarkSummaryText?.contains("iPhone not verified") == true)
-
+        XCTAssertFalse(availableModels.contains { $0.id == "qwen3-5-0-8b-q4-k-m" })
         XCTAssertFalse(availableModels.contains { $0.id == "smollm2-1-7b-instruct-q4-k-m" })
     }
 
@@ -109,7 +89,7 @@ final class LocalModelFeatureTests: XCTestCase {
 
         let status = await components.settingsService.status()
 
-        XCTAssertEqual(status.selectedModelID, LocalModelManifest.qwen35Tiny.id)
+        XCTAssertEqual(status.selectedModelID, LocalModelManifest.qwen25HalfBInstruct.id)
         XCTAssertEqual(status.installedRecord?.status, .installed)
         XCTAssertEqual(status.preference, .localOnly)
         XCTAssertEqual(components.chatRuntimeAvailable, false)
@@ -123,12 +103,12 @@ final class LocalModelFeatureTests: XCTestCase {
         ) { _ in rootDirectory }
         let registry = try await FileBackedLocalModelInstallRegistry(fileURL: paths.localModelInstallRegistryURL)
         try await registry.upsert(LocalModelInstallRecord(
-            modelID: LocalModelManifest.qwen35Tiny.id,
-            version: LocalModelManifest.qwen35Tiny.version,
+            modelID: LocalModelManifest.qwen25HalfBInstruct.id,
+            version: LocalModelManifest.qwen25HalfBInstruct.version,
             status: .installed,
-            fileURL: paths.localModelsDirectory.appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf"),
-            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
-            sha256: LocalModelManifest.qwen35Tiny.sha256
+            fileURL: paths.localModelsDirectory.appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf"),
+            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
         ))
         let components = try await KairoLiveLocalModelFactory(
             paths: paths,
@@ -139,7 +119,7 @@ final class LocalModelFeatureTests: XCTestCase {
             )
         ).makeComponents()
 
-        try await components.settingsService.selectModel(id: LocalModelManifest.qwen35Tiny.id)
+        try await components.settingsService.selectModel(id: LocalModelManifest.qwen25HalfBInstruct.id)
         try await components.settingsService.setPreference(.localOnly)
         let status = await components.settingsService.status()
         let response = try await components.aiProvider.complete(AICompletionRequest(
@@ -147,18 +127,39 @@ final class LocalModelFeatureTests: XCTestCase {
             userPrompt: "Summarize this offline"
         ))
 
-        XCTAssertEqual(components.installedModelIDs, [LocalModelManifest.qwen35Tiny.id])
-        XCTAssertEqual(status.selectedModelID, LocalModelManifest.qwen35Tiny.id)
+        XCTAssertEqual(components.installedModelIDs, [LocalModelManifest.qwen25HalfBInstruct.id])
+        XCTAssertEqual(status.selectedModelID, LocalModelManifest.qwen25HalfBInstruct.id)
         XCTAssertEqual(status.preference, .localOnly)
         XCTAssertEqual(response.message, "Live factory local reply")
         XCTAssertTrue(components.chatRuntimeAvailable)
     }
 
+    func testUITestingLocalModelFactoryDoesNotUseMockWhenLocalRouteHasNoRuntime() async throws {
+        let root = temporaryDirectory(named: "KairoUITestingLocalRouteNoRuntime")
+        let components = try await KairoUITestingLocalModelFactory(
+            rootDirectory: root,
+            seedInstalledLocalModel: true,
+            selectInstalledLocalModel: true,
+            routePreference: .localOnly
+        ).makeComponents()
+
+        await XCTAssertThrowsErrorAsync(try await components.aiProvider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "hi"
+        ))) { error in
+            guard case .localInferenceUnavailable? = error as? AIProviderError else {
+                XCTFail("Expected local route to fail closed without using the preview provider.")
+                return
+            }
+        }
+        XCTAssertFalse(components.chatRuntimeAvailable)
+    }
+
     func testLocalModelManifestTransparencyTextIsCompactForSettingsList() throws {
-        let qwenTiny = LocalModelManifest.qwen35Tiny
+        let qwenTiny = LocalModelManifest.qwen25HalfBInstruct
         let text = qwenTiny.manifestTransparencyText
 
-        XCTAssertEqual(text, "huggingface.co · GGUF · Apache-2.0 · iOS 17.0/A15+/4 GB · SHA e8e3882 · policy 2026.1")
+        XCTAssertEqual(text, "huggingface.co · GGUF · Apache-2.0 · iOS 17.0/A15+/4 GB · SHA 74a4da8 · policy 2026.1")
         XCTAssertFalse(text.contains("Source:"))
         XCTAssertFalse(text.contains("Runtime:"))
         XCTAssertFalse(text.contains("License:"))
@@ -166,13 +167,13 @@ final class LocalModelFeatureTests: XCTestCase {
     }
 
     func testLocalModelRuntimePillsKeepDownloadAndMLXStatusReadable() throws {
-        let qwenTiny = LocalModelManifest.qwen35Tiny
+        let qwenTiny = LocalModelManifest.qwen25HalfBInstruct
         let llamaTiny = LocalModelManifest.llama32OneBInstruct
 
         XCTAssertEqual(qwenTiny.runtimePillTexts, [
             "Download GGUF",
             "A15+/4 GB",
-            "MLX ref only"
+            "Device test pending"
         ])
         XCTAssertEqual(llamaTiny.runtimePillTexts, [
             "Download GGUF",
@@ -187,8 +188,8 @@ final class LocalModelFeatureTests: XCTestCase {
             minimumSafetyPolicyVersion: "2026.2",
             modelsJSON: [
                 remoteModelManifestJSON(
-                    id: "qwen3-5-0-8b-q4-k-m",
-                    displayName: "Qwen3.5 0.8B Q4_K_M",
+                    id: "qwen2-5-0-5b-instruct-q4-k-m",
+                    displayName: "Qwen2.5 0.5B Instruct Q4_K_M",
                     version: "1.1.0"
                 )
             ]
@@ -304,8 +305,8 @@ final class LocalModelFeatureTests: XCTestCase {
         let signedCatalog = try signedRemoteModelCatalogJSON(
             modelsJSON: [
                 remoteModelManifestJSON(
-                    id: "qwen3-5-0-8b-q4-k-m",
-                    displayName: "Qwen3.5 0.8B Q4_K_M",
+                    id: "qwen2-5-0-5b-instruct-q4-k-m",
+                    displayName: "Qwen2.5 0.5B Instruct Q4_K_M",
                     version: "1.2.0"
                 )
             ]
@@ -320,7 +321,7 @@ final class LocalModelFeatureTests: XCTestCase {
 
         XCTAssertEqual(result.source, .remote)
         XCTAssertNil(result.error)
-        XCTAssertEqual(result.catalog.models.first { $0.id == "qwen3-5-0-8b-q4-k-m" }?.version, "1.2.0")
+        XCTAssertEqual(result.catalog.models.first { $0.id == "qwen2-5-0-5b-instruct-q4-k-m" }?.version, "1.2.0")
     }
 
     func testLocalModelCatalogServiceRejectsUnsafeRemoteModelDownloads() async throws {
@@ -1035,6 +1036,7 @@ final class LocalModelFeatureTests: XCTestCase {
         )
         let selectedStatus = ChatProviderRouteStatusBuilder.build(from: await service.status())
 
+        XCTAssertEqual(selectedStatus.title, "Qwen Small Test")
         XCTAssertNil(selectedStatus.selectedOptionID)
         XCTAssertTrue(selectedStatus.options.isEmpty)
 
@@ -1064,6 +1066,7 @@ final class LocalModelFeatureTests: XCTestCase {
             installedModels: [installedRecord]
         ))
 
+        XCTAssertEqual(localOnlyInstalledStatus.title, "Qwen Small Test")
         XCTAssertNil(localOnlyInstalledStatus.selectedOptionID)
         XCTAssertTrue(localOnlyInstalledStatus.options.isEmpty)
 
@@ -1168,6 +1171,59 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(response.message, "runtime parameters applied")
         let capturedParameters = await runtime.lastParameters()
         XCTAssertEqual(capturedParameters, parameters)
+    }
+
+    func testLocalModelRuntimeAIProviderBuildsConversationKeyFromThreadModelAndParameters() async throws {
+        let settingsURL = temporaryFileURL(named: "local-model-settings.json")
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen-large-context.gguf")
+        let catalog = LocalModelCatalog(
+            signingKeyID: "test-key",
+            signature: "test-signature",
+            minimumSafetyPolicyVersion: "2026.1",
+            models: [
+                makeLocalModelManifest(
+                    id: "qwen-large-context",
+                    safetyPolicyVersion: "2026.1",
+                    contextWindow: 16_384
+                )
+            ]
+        )
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let store = try await FileBackedLocalModelSettingsStore(fileURL: settingsURL)
+        let service = LocalModelSettingsService(catalog: catalog, installRegistry: registry, settingsStore: store)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen-large-context",
+            version: "1.0",
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: 1024,
+            sha256: "abc123"
+        ))
+        let parameters = LocalModelRuntimeParameters(contextSize: 8_192, maxOutputTokens: 512, temperature: 0.6)
+        try await service.selectModel(id: "qwen-large-context")
+        try await service.setRuntimeParameters(parameters, for: "qwen-large-context")
+        let runtime = RecordingConversationalLocalModelReplyRuntime()
+        let provider = LocalModelRuntimeAIProvider(localModelSettingsService: service, runtime: runtime)
+
+        _ = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Continue this local thread.",
+            conversationID: "thread-A",
+            conversationHistory: [
+                AIConversationTurn(role: .user, text: "first"),
+                AIConversationTurn(role: .assistant, text: "second")
+            ]
+        ))
+
+        let capturedKey = await runtime.lastConversationKey()
+        let key = try XCTUnwrap(capturedKey)
+        XCTAssertEqual(key.conversationID, "thread-A")
+        XCTAssertEqual(key.modelID, "qwen-large-context")
+        XCTAssertEqual(key.modelFilePath, modelURL.path)
+        XCTAssertEqual(key.contextSize, 8_192)
+        XCTAssertEqual(key.maxOutputTokens, 512)
+        XCTAssertEqual(key.temperature, 0.6)
     }
 
     func testLocalModelRuntimeSeparatesThinkReasoningFromVisibleReply() async throws {
@@ -1404,7 +1460,7 @@ final class LocalModelFeatureTests: XCTestCase {
 
         let status = await service.status(minimumSafetyPolicyVersion: "2026.1")
         XCTAssertEqual(status.runtimeParametersByModelID["qwen-large-context"]?.contextSize, 16_384)
-        XCTAssertEqual(status.runtimeParametersByModelID["qwen-large-context"]?.maxOutputTokens, 256)
+        XCTAssertEqual(status.runtimeParametersByModelID["qwen-large-context"]?.maxOutputTokens, 512)
         XCTAssertEqual(status.runtimeParametersByModelID["qwen-large-context"]?.temperature, 0.7)
         XCTAssertNil(status.runtimeParametersByModelID["qwen-default"])
 
@@ -1508,31 +1564,31 @@ final class LocalModelFeatureTests: XCTestCase {
 
         do {
             _ = try await service.runBenchmark(
-                modelID: "qwen3-5-0-8b-q4-k-m",
+                modelID: "qwen2-5-0-5b-instruct-q4-k-m",
                 prompt: "Benchmark Kairo local drafting.",
                 generatedTokenTarget: 64
             )
             XCTFail("Expected benchmark to require a downloaded local model.")
         } catch let error as LocalModelBenchmarkError {
-            XCTAssertEqual(error, .modelNotInstalled("qwen3-5-0-8b-q4-k-m"))
+            XCTAssertEqual(error, .modelNotInstalled("qwen2-5-0-5b-instruct-q4-k-m"))
         }
 
-        let persisted = await resultStore.latestResult(for: "qwen3-5-0-8b-q4-k-m")
+        let persisted = await resultStore.latestResult(for: "qwen2-5-0-5b-instruct-q4-k-m")
         XCTAssertNil(persisted)
     }
 
     func testLocalModelBenchmarkServiceRunsInstalledQwenThroughInjectedEngineAndPersistsResult() async throws {
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
         let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
-        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf")
         let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
         try await registry.upsert(LocalModelInstallRecord(
-            modelID: "qwen3-5-0-8b-q4-k-m",
-            version: LocalModelManifest.qwen35Tiny.version,
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
+            version: LocalModelManifest.qwen25HalfBInstruct.version,
             status: .installed,
             fileURL: modelURL,
-            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
-            sha256: LocalModelManifest.qwen35Tiny.sha256
+            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
         ))
         let resultStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
         let service = LocalModelBenchmarkService(
@@ -1549,12 +1605,12 @@ final class LocalModelFeatureTests: XCTestCase {
         )
 
         let result = try await service.runBenchmark(
-            modelID: "qwen3-5-0-8b-q4-k-m",
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
             prompt: "Benchmark Kairo local drafting.",
             generatedTokenTarget: 64
         )
 
-        XCTAssertEqual(result.modelID, "qwen3-5-0-8b-q4-k-m")
+        XCTAssertEqual(result.modelID, "qwen2-5-0-5b-instruct-q4-k-m")
         XCTAssertEqual(result.runtime, .gguf)
         XCTAssertEqual(result.promptTokens, 32)
         XCTAssertEqual(result.generatedTokens, 64)
@@ -1564,26 +1620,65 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(result.peakMemoryMB, 980)
         XCTAssertFalse(result.isReferenceOnlyForIOS)
 
-        let latestResult = await resultStore.latestResult(for: "qwen3-5-0-8b-q4-k-m")
+        let latestResult = await resultStore.latestResult(for: "qwen2-5-0-5b-instruct-q4-k-m")
         let persisted = try XCTUnwrap(latestResult)
         XCTAssertEqual(persisted, result)
         let reloadedStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
-        let reloadedResult = await reloadedStore.latestResult(for: "qwen3-5-0-8b-q4-k-m")
+        let reloadedResult = await reloadedStore.latestResult(for: "qwen2-5-0-5b-instruct-q4-k-m")
         XCTAssertEqual(reloadedResult, result)
+    }
+
+    func testLocalModelBenchmarkServiceBuildsPerformanceSnapshot() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
+            version: LocalModelManifest.qwen25HalfBInstruct.version,
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
+        ))
+        let resultStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
+        let service = LocalModelBenchmarkService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            resultStore: resultStore,
+            engine: DeterministicLocalModelBenchmarkEngine(
+                runtime: .gguf,
+                generationTokensPerSecond: 40,
+                promptTokensPerSecond: 120,
+                firstTokenLatencyMS: 900,
+                peakMemoryMB: 768
+            )
+        )
+
+        _ = try await service.runBenchmark(modelID: "qwen2-5-0-5b-instruct-q4-k-m", generatedTokenTarget: 512)
+        let snapshot = await service.performanceSnapshot()
+
+        XCTAssertEqual(snapshot.totalRunCount, 1)
+        XCTAssertEqual(snapshot.averagePromptTokensPerSecond, 120)
+        XCTAssertEqual(snapshot.averageGenerationTokensPerSecond, 40)
+        XCTAssertEqual(snapshot.averageFirstTokenLatencyMS, 900)
+        XCTAssertEqual(snapshot.peakMemoryMB, 768)
+        XCTAssertEqual(snapshot.kvCacheHitRate, 0)
+        XCTAssertEqual(snapshot.modelSummaries.first?.modelID, "qwen2-5-0-5b-instruct-q4-k-m")
     }
 
     func testLocalModelBenchmarkServiceSurfacesRuntimeUnavailableReason() async throws {
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
         let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
-        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf")
         let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
         try await registry.upsert(LocalModelInstallRecord(
-            modelID: "qwen3-5-0-8b-q4-k-m",
-            version: LocalModelManifest.qwen35Tiny.version,
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
+            version: LocalModelManifest.qwen25HalfBInstruct.version,
             status: .installed,
             fileURL: modelURL,
-            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
-            sha256: LocalModelManifest.qwen35Tiny.sha256
+            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
         ))
         let resultStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
         let service = LocalModelBenchmarkService(
@@ -1594,7 +1689,7 @@ final class LocalModelFeatureTests: XCTestCase {
         )
 
         do {
-            _ = try await service.runBenchmark(modelID: "qwen3-5-0-8b-q4-k-m")
+            _ = try await service.runBenchmark(modelID: "qwen2-5-0-5b-instruct-q4-k-m")
             XCTFail("Expected unavailable runtime to fail closed.")
         } catch let error as LocalModelBenchmarkError {
             XCTAssertEqual(error, .runtimeUnavailable("Runtime not shipped in this beta."))
@@ -1604,15 +1699,15 @@ final class LocalModelFeatureTests: XCTestCase {
     func testDefaultLocalModelBenchmarkUnavailableReasonNamesSimulatorQwenBoundary() async throws {
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
         let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
-        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf")
         let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
         try await registry.upsert(LocalModelInstallRecord(
-            modelID: "qwen3-5-0-8b-q4-k-m",
-            version: LocalModelManifest.qwen35Tiny.version,
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
+            version: LocalModelManifest.qwen25HalfBInstruct.version,
             status: .installed,
             fileURL: modelURL,
-            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
-            sha256: LocalModelManifest.qwen35Tiny.sha256
+            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
         ))
         let service = LocalModelBenchmarkService(
             catalog: .kairoDefault,
@@ -1621,7 +1716,7 @@ final class LocalModelFeatureTests: XCTestCase {
         )
 
         do {
-            _ = try await service.runBenchmark(modelID: "qwen3-5-0-8b-q4-k-m")
+            _ = try await service.runBenchmark(modelID: "qwen2-5-0-5b-instruct-q4-k-m")
             XCTFail("Expected default unavailable runtime to fail closed.")
         } catch let error as LocalModelBenchmarkError {
             XCTAssertEqual(error, .runtimeUnavailable(KairoL10n.string("settings.models.runtimeUnavailable.iOSSimulatorQwen")))
@@ -1642,26 +1737,26 @@ final class LocalModelFeatureTests: XCTestCase {
 
         do {
             _ = try await service.runReplyCheck(
-                modelID: "qwen3-5-0-8b-q4-k-m",
+                modelID: "qwen2-5-0-5b-instruct-q4-k-m",
                 prompt: "Reply with one sentence."
             )
             XCTFail("Expected reply check to require a downloaded local model.")
         } catch let error as LocalModelReplyCheckError {
-            XCTAssertEqual(error, .modelNotInstalled("qwen3-5-0-8b-q4-k-m"))
+            XCTAssertEqual(error, .modelNotInstalled("qwen2-5-0-5b-instruct-q4-k-m"))
         }
     }
 
     func testLocalModelReplyCheckRunsInstalledQwenThroughInjectedRuntime() async throws {
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
-        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf")
         let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
         try await registry.upsert(LocalModelInstallRecord(
-            modelID: "qwen3-5-0-8b-q4-k-m",
-            version: LocalModelManifest.qwen35Tiny.version,
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
+            version: LocalModelManifest.qwen25HalfBInstruct.version,
             status: .installed,
             fileURL: modelURL,
-            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
-            sha256: LocalModelManifest.qwen35Tiny.sha256
+            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
         ))
         let service = LocalModelReplyCheckService(
             catalog: .kairoDefault,
@@ -1673,12 +1768,12 @@ final class LocalModelFeatureTests: XCTestCase {
         )
 
         let result = try await service.runReplyCheck(
-            modelID: "qwen3-5-0-8b-q4-k-m",
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
             prompt: "Reply with one sentence."
         )
 
-        XCTAssertEqual(result.modelID, "qwen3-5-0-8b-q4-k-m")
-        XCTAssertEqual(result.modelDisplayName, "Qwen3.5 0.8B Q4_K_M")
+        XCTAssertEqual(result.modelID, "qwen2-5-0-5b-instruct-q4-k-m")
+        XCTAssertEqual(result.modelDisplayName, "Qwen2.5 0.5B Instruct Q4_K_M")
         XCTAssertEqual(result.runtime, .gguf)
         XCTAssertEqual(result.responseText, "Local model reply is alive.")
         XCTAssertEqual(result.generationTokensPerSecond, 38.5)
@@ -1688,15 +1783,15 @@ final class LocalModelFeatureTests: XCTestCase {
 
     func testLocalModelReplyCheckSurfacesRuntimeUnavailableReason() async throws {
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
-        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf")
         let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
         try await registry.upsert(LocalModelInstallRecord(
-            modelID: "qwen3-5-0-8b-q4-k-m",
-            version: LocalModelManifest.qwen35Tiny.version,
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
+            version: LocalModelManifest.qwen25HalfBInstruct.version,
             status: .installed,
             fileURL: modelURL,
-            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
-            sha256: LocalModelManifest.qwen35Tiny.sha256
+            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
         ))
         let service = LocalModelReplyCheckService(
             catalog: .kairoDefault,
@@ -1705,7 +1800,7 @@ final class LocalModelFeatureTests: XCTestCase {
         )
 
         do {
-            _ = try await service.runReplyCheck(modelID: "qwen3-5-0-8b-q4-k-m")
+            _ = try await service.runReplyCheck(modelID: "qwen2-5-0-5b-instruct-q4-k-m")
             XCTFail("Expected unavailable reply runtime to fail closed.")
         } catch let error as LocalModelReplyCheckError {
             XCTAssertEqual(error, .runtimeUnavailable("Runtime not shipped in this beta."))
@@ -1714,20 +1809,20 @@ final class LocalModelFeatureTests: XCTestCase {
 
     func testDefaultLocalModelReplyCheckUnavailableReasonNamesSimulatorQwenBoundary() async throws {
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
-        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf")
         let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
         try await registry.upsert(LocalModelInstallRecord(
-            modelID: "qwen3-5-0-8b-q4-k-m",
-            version: LocalModelManifest.qwen35Tiny.version,
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
+            version: LocalModelManifest.qwen25HalfBInstruct.version,
             status: .installed,
             fileURL: modelURL,
-            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
-            sha256: LocalModelManifest.qwen35Tiny.sha256
+            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
         ))
         let service = LocalModelReplyCheckService(catalog: .kairoDefault, installRegistry: registry)
 
         do {
-            _ = try await service.runReplyCheck(modelID: "qwen3-5-0-8b-q4-k-m")
+            _ = try await service.runReplyCheck(modelID: "qwen2-5-0-5b-instruct-q4-k-m")
             XCTFail("Expected default unavailable reply runtime to fail closed.")
         } catch let error as LocalModelReplyCheckError {
             XCTAssertEqual(error, .runtimeUnavailable(KairoL10n.string("settings.models.runtimeUnavailable.iOSSimulatorQwen")))
@@ -1737,15 +1832,15 @@ final class LocalModelFeatureTests: XCTestCase {
     func testLocalModelExternalCommandRuntimeRunsDownloadedQwenThroughLlamaCLI() async throws {
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
         let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
-        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf")
         let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
         try await registry.upsert(LocalModelInstallRecord(
-            modelID: "qwen3-5-0-8b-q4-k-m",
-            version: LocalModelManifest.qwen35Tiny.version,
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
+            version: LocalModelManifest.qwen25HalfBInstruct.version,
             status: .installed,
             fileURL: modelURL,
-            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
-            sha256: LocalModelManifest.qwen35Tiny.sha256
+            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
         ))
         let commandRunner = LocalModelFakeCommandRunner(result: LocalModelCommandRunResult(
             stdout: "Local model reply is alive.\n",
@@ -1770,11 +1865,11 @@ final class LocalModelFeatureTests: XCTestCase {
         )
 
         let reply = try await replyService.runReplyCheck(
-            modelID: "qwen3-5-0-8b-q4-k-m",
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
             prompt: "Reply with one sentence."
         )
 
-        XCTAssertEqual(reply.modelID, "qwen3-5-0-8b-q4-k-m")
+        XCTAssertEqual(reply.modelID, "qwen2-5-0-5b-instruct-q4-k-m")
         XCTAssertEqual(reply.runtime, .gguf)
         XCTAssertEqual(reply.runtimePackage, "llama.cpp CLI")
         XCTAssertEqual(reply.responseText, "Local model reply is alive.")
@@ -1802,7 +1897,7 @@ final class LocalModelFeatureTests: XCTestCase {
             engine: runtime
         )
         let benchmark = try await benchmarkService.runBenchmark(
-            modelID: "qwen3-5-0-8b-q4-k-m",
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
             prompt: "Benchmark Kairo local drafting.",
             generatedTokenTarget: 32
         )
@@ -1848,12 +1943,12 @@ final class LocalModelFeatureTests: XCTestCase {
         let result = try await runtime.generateReply(
             model: .qwen35Tiny,
             installRecord: LocalModelInstallRecord(
-                modelID: LocalModelManifest.qwen35Tiny.id,
-                version: LocalModelManifest.qwen35Tiny.version,
+                modelID: LocalModelManifest.qwen25HalfBInstruct.id,
+                version: LocalModelManifest.qwen25HalfBInstruct.version,
                 status: .installed,
                 fileURL: modelURL,
-                installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
-                sha256: LocalModelManifest.qwen35Tiny.sha256
+                installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+                sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
             ),
             prompt: "Ping Kairo.",
             parameters: .defaultValue
@@ -1919,31 +2014,31 @@ final class LocalModelFeatureTests: XCTestCase {
 
     func testLocalModelSettingsRowBuildsManifestTransparencyText() throws {
         let row = LocalModelSettingsRow(
-            model: LocalModelManifest.qwen35Tiny,
+            model: LocalModelManifest.qwen25HalfBInstruct,
             installRecord: nil,
             isSelected: false
         )
 
         XCTAssertEqual(
             row.manifestTransparencyText,
-            "huggingface.co · GGUF · Apache-2.0 · iOS 17.0/A15+/4 GB · SHA e8e3882 · policy 2026.1"
+            "huggingface.co · GGUF · Apache-2.0 · iOS 17.0/A15+/4 GB · SHA 74a4da8 · policy 2026.1"
         )
         XCTAssertEqual(
             row.runtimeFitText,
-            "Download: GGUF · Fit: A15+/4 GB · MLX ref only"
+            "Download: GGUF · Fit: A15+/4 GB · Device test pending"
         )
     }
 
     func testLocalModelSettingsRowExposesDownloadStorageAndPurposePolicy() throws {
         let row = LocalModelSettingsRow(
-            model: LocalModelManifest.qwen35Tiny,
+            model: LocalModelManifest.qwen25HalfBInstruct,
             installRecord: nil,
             isSelected: false
         )
 
         XCTAssertEqual(
             row.downloadApprovalText,
-            "User-triggered download · 503.1 MB · Apache-2.0"
+            "User-triggered download · 468.6 MB · Apache-2.0"
         )
         XCTAssertEqual(
             row.licenseApprovalText,
@@ -2637,6 +2732,57 @@ private actor RecordingLocalModelReplyRuntime: LocalModelReplyCheckRuntime {
 
     func lastParameters() -> LocalModelRuntimeParameters? {
         capturedParameters
+    }
+}
+
+private actor RecordingConversationalLocalModelReplyRuntime: LocalModelConversationalReplyRuntime {
+    private var capturedConversationKey: LocalModelConversationRuntimeKey?
+
+    func generateReply(
+        model: LocalModelManifest,
+        installRecord: LocalModelInstallRecord,
+        prompt: String,
+        parameters: LocalModelRuntimeParameters
+    ) async throws -> LocalModelReplyCheckResult {
+        _ = installRecord
+        return reply(model: model, prompt: prompt, parameters: parameters)
+    }
+
+    func generateReply(
+        model: LocalModelManifest,
+        installRecord: LocalModelInstallRecord,
+        initialPrompt: String,
+        turnPrompt: String,
+        conversationKey: LocalModelConversationRuntimeKey,
+        parameters: LocalModelRuntimeParameters
+    ) async throws -> LocalModelReplyCheckResult {
+        _ = installRecord
+        _ = turnPrompt
+        capturedConversationKey = conversationKey
+        return reply(model: model, prompt: initialPrompt, parameters: parameters)
+    }
+
+    func lastConversationKey() -> LocalModelConversationRuntimeKey? {
+        capturedConversationKey
+    }
+
+    private func reply(
+        model: LocalModelManifest,
+        prompt: String,
+        parameters: LocalModelRuntimeParameters
+    ) -> LocalModelReplyCheckResult {
+        LocalModelReplyCheckResult(
+            modelID: model.id,
+            modelDisplayName: model.displayName,
+            runtime: .gguf,
+            runtimePackage: "recording-conversation-runtime",
+            prompt: prompt,
+            responseText: "conversation key applied",
+            generatedTokens: parameters.maxOutputTokens,
+            generationTokensPerSecond: 1,
+            measuredAt: Date(timeIntervalSince1970: 1_780_358_400),
+            notes: "Recording local model runtime for conversation key propagation tests."
+        )
     }
 }
 

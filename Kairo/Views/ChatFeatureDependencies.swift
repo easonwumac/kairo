@@ -118,6 +118,26 @@ private struct UnavailableChatAPI: KairoChatAPI {
         attachments: [ChatAttachment],
         privacyMode: ChatPrivacyMode
     ) async throws -> AICompletionResponse {
+        _ = message
+        _ = attachments
+        _ = privacyMode
+        throw AIProviderError.localInferenceUnavailable(
+            KairoL10n.string("chat.error.localInference.reason.runtimeUnavailable")
+        )
+    }
+
+    func respond(
+        to message: String,
+        attachments: [ChatAttachment],
+        conversationID: String?,
+        conversationHistory: [AIConversationTurn],
+        privacyMode: ChatPrivacyMode
+    ) async throws -> AICompletionResponse {
+        _ = message
+        _ = attachments
+        _ = conversationID
+        _ = conversationHistory
+        _ = privacyMode
         throw AIProviderError.localInferenceUnavailable(
             KairoL10n.string("chat.error.localInference.reason.runtimeUnavailable")
         )

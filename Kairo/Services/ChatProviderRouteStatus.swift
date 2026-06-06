@@ -80,13 +80,17 @@ public enum ChatProviderRouteStatusBuilder {
         }
 
         let localOptions = makeLocalOptions(from: status, localRuntimeAvailable: localRuntimeAvailable)
-        let options = ([cloudOption] + localOptions)
+        let allOptions = [cloudOption] + localOptions
+        let options = allOptions
             .filter(\.isEnabled)
             .prefix(6)
         let selectedOptionID = selectedOptionID(for: status, fallback: cloudOption.id)
-        let selectedOption = options.first { $0.id == selectedOptionID }
-            ?? options.first
-            ?? cloudOption
+        let preferredOption = allOptions.first { $0.id == selectedOptionID }
+        let selectedOption = if let preferredOption, preferredOption.isEnabled || preferredOption.modelID != nil {
+            preferredOption
+        } else {
+            options.first ?? preferredOption ?? cloudOption
+        }
         let selectedModelName = status.selectedModel?.displayName ?? status.selectedModelID
 
         let detail: String

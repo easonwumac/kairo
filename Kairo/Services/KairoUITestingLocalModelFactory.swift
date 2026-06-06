@@ -88,7 +88,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
             modelsDirectory: localModelsDirectory
         )
         if selectInstalledLocalModel {
-            try await settingsService.selectModel(id: LocalModelManifest.qwen35Tiny.id)
+            try await settingsService.selectModel(id: LocalModelManifest.qwen25HalfBInstruct.id)
         }
         if let routePreference {
             try await settingsService.setPreference(routePreference)
@@ -102,17 +102,24 @@ public struct KairoUITestingLocalModelFactory: Sendable {
             resultStore: benchmarkStore,
             engine: benchmarkEngineOverride ?? UnavailableLocalModelBenchmarkEngine()
         )
-        let replyRuntime = replyCheckRuntimeOverride ?? DeterministicLocalModelReplyCheckRuntime(
-            responseText: "Local model reply is alive.",
-            generationTokensPerSecond: 38.5
-        )
+        let usesLocalModelRoute = seedInstalledLocalModel
+            || selectInstalledLocalModel
+            || routePreference == .localOnly
+            || routePreference == .preferLocal
+        let replyRuntime: any LocalModelReplyCheckRuntime = replyCheckRuntimeOverride
+            ?? (usesLocalModelRoute
+                ? UnavailableLocalModelReplyCheckRuntime()
+                : DeterministicLocalModelReplyCheckRuntime(
+                    responseText: "Local model reply is alive.",
+                    generationTokensPerSecond: 38.5
+                ))
         let replyCheckService = LocalModelReplyCheckService(
             catalog: catalog,
             installRegistry: installRegistry,
             runtime: replyRuntime
         )
         let aiProvider: any AIProvider
-        if replyCheckRuntimeOverride != nil {
+        if usesLocalModelRoute || replyCheckRuntimeOverride != nil {
             aiProvider = LocalModelRoutingAIProvider(
                 cloudProvider: MockAIProvider(),
                 localModelSettingsService: settingsService,
@@ -120,7 +127,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
                     localModelSettingsService: settingsService,
                     runtime: replyRuntime
                 ),
-                localRuntimeAvailable: true
+                localRuntimeAvailable: replyCheckRuntimeOverride != nil
             )
         } else {
             aiProvider = MockAIProvider()
@@ -157,7 +164,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
     }
 
     private func seedInstalledModel(in installRegistry: FileBackedLocalModelInstallRegistry) async throws {
-        let defaultInstalledModelURL = localModelsDirectory.appendingPathComponent("qwen3-5-0-8b-q4-k-m.gguf")
+        let defaultInstalledModelURL = localModelsDirectory.appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf")
         let installedModelURL: URL
         if let installedLocalModelFileURL {
             try FileManager.default.createDirectory(
@@ -173,12 +180,12 @@ public struct KairoUITestingLocalModelFactory: Sendable {
             installedModelURL = defaultInstalledModelURL
         }
         try await installRegistry.upsert(LocalModelInstallRecord(
-            modelID: LocalModelManifest.qwen35Tiny.id,
-            version: LocalModelManifest.qwen35Tiny.version,
+            modelID: LocalModelManifest.qwen25HalfBInstruct.id,
+            version: LocalModelManifest.qwen25HalfBInstruct.version,
             status: .installed,
             fileURL: installedModelURL,
-            installedSizeBytes: LocalModelManifest.qwen35Tiny.installedSizeBytes,
-            sha256: LocalModelManifest.qwen35Tiny.sha256
+            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
         ))
     }
 

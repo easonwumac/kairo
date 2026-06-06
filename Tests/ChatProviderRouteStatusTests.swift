@@ -135,7 +135,25 @@ private struct StubChatAPI: KairoChatAPI {
         attachments: [ChatAttachment],
         privacyMode: ChatPrivacyMode
     ) async throws -> AICompletionResponse {
-        AICompletionResponse(message: "stub-composer-response")
+        _ = message
+        _ = attachments
+        _ = privacyMode
+        return AICompletionResponse(message: "stub-composer-response")
+    }
+
+    func respond(
+        to message: String,
+        attachments: [ChatAttachment],
+        conversationID: String?,
+        conversationHistory: [AIConversationTurn],
+        privacyMode: ChatPrivacyMode
+    ) async throws -> AICompletionResponse {
+        _ = message
+        _ = attachments
+        _ = conversationID
+        _ = conversationHistory
+        _ = privacyMode
+        return AICompletionResponse(message: "stub-composer-response")
     }
 }
 

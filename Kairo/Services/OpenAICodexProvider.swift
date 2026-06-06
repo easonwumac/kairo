@@ -72,6 +72,7 @@ public struct OpenAICodexProvider: AIProvider {
         let memoryContext = MemoryPromptContextBuilder().build(from: request.memoryContext)
         let capabilities = request.allowedCapabilities.map(\.rawValue).joined(separator: ", ")
         let attachmentContext = CapabilityPromptContextBuilder.attachmentContext(request.attachmentContext)
+        let libraryClassificationContext = LibraryAssetClassificationPromptBuilder.context(for: request.attachmentContext)
         let context = """
         Relevant memory:
         \(memoryContext)
@@ -80,6 +81,8 @@ public struct OpenAICodexProvider: AIProvider {
         \(capabilities.isEmpty ? "None" : capabilities)
 
         \(attachmentContext)
+
+        \(libraryClassificationContext)
 
         Tool context:
         \(request.toolContext ?? "No tool context supplied.")

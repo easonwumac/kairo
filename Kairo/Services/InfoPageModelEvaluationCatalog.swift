@@ -62,23 +62,23 @@ public struct InfoPageModelEvaluationCase: Identifiable, Codable, Equatable, Sen
 public enum InfoPageModelEvaluationCatalog {
     public static let candidates: [InfoPageModelEvaluationCandidate] = [
         InfoPageModelEvaluationCandidate(
-            id: "qwen3-5-0-8b-q4-k-m",
-            displayName: "Qwen3.5 0.8B Q4_K_M",
+            id: "qwen2-5-0-5b-instruct-q4-k-m",
+            displayName: "Qwen2.5 0.5B Instruct Q4_K_M",
             recommendedRole: .fallbackTextExtraction,
             expectedTemplateCoverage: [.generalNote, .project, .order],
             minimumAcceptedScore: 0.68,
             requiresVisionInput: false,
-            downloadableModelID: LocalModelManifest.qwen35Tiny.id,
-            notes: "Lowest fallback for OCR text cleanup and simple extraction. Not acceptable as the primary screenshot understanding model."
+            downloadableModelID: LocalModelManifest.qwen25HalfBInstruct.id,
+            notes: "Lowest instruct fallback for OCR text cleanup and simple extraction. Not acceptable as the primary screenshot understanding model."
         ),
         InfoPageModelEvaluationCandidate(
-            id: "qwen3-5-2b-q4-k-m",
-            displayName: "Qwen3.5 2B Q4_K_M",
+            id: "qwen2-5-1-5b-instruct-q4-k-m",
+            displayName: "Qwen2.5 1.5B Instruct Q4_K_M",
             recommendedRole: .fallbackTextExtraction,
             expectedTemplateCoverage: [.generalNote, .project, .order, .travel],
             minimumAcceptedScore: 0.72,
             requiresVisionInput: false,
-            downloadableModelID: LocalModelManifest.qwen35TwoB.id,
+            downloadableModelID: LocalModelManifest.qwen25OneAndHalfBInstruct.id,
             notes: "Required text fallback for Apple Vision OCR output and Library asset extraction when a direct vision model is unavailable."
         ),
         InfoPageModelEvaluationCandidate(

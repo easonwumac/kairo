@@ -2,6 +2,21 @@ import XCTest
 @testable import KairoCore
 
 final class InfoPageFeatureTests: XCTestCase {
+    actor StubAssetUnderstandingModel: AssetUnderstandingModel {
+        private var replies: [String]
+        private(set) var prompts: [String] = []
+
+        init(replies: [String]) {
+            self.replies = replies
+        }
+
+        func complete(prompt: String) async throws -> String {
+            prompts.append(prompt)
+            guard !replies.isEmpty else { return "{}" }
+            return replies.removeFirst()
+        }
+    }
+
     func testInfoPageCodableAndFileBackedStoreSearchActivePages() async throws {
         let fileURL = temporaryBackendTestFileURL(named: "info-pages.json")
         let page = InfoPage(
@@ -101,19 +116,127 @@ final class InfoPageFeatureTests: XCTestCase {
         XCTAssertEqual(Set(preferred.expectedTemplateCoverage), Set(InfoPageTemplateID.allCases))
         XCTAssertGreaterThan(preferred.minimumAcceptedScore, minimum.minimumAcceptedScore)
 
-        let fallback = try XCTUnwrap(InfoPageModelEvaluationCatalog.candidates.first { $0.id == LocalModelManifest.qwen35Tiny.id })
+        let fallback = try XCTUnwrap(InfoPageModelEvaluationCatalog.candidates.first { $0.id == LocalModelManifest.qwen25HalfBInstruct.id })
         XCTAssertEqual(fallback.recommendedRole, .fallbackTextExtraction)
         XCTAssertFalse(fallback.requiresVisionInput)
-        XCTAssertEqual(fallback.downloadableModelID, LocalModelManifest.qwen35Tiny.id)
+        XCTAssertEqual(fallback.downloadableModelID, LocalModelManifest.qwen25HalfBInstruct.id)
 
         let qwenVision = try XCTUnwrap(InfoPageModelEvaluationCatalog.candidates.first { $0.id == LocalModelManifest.qwen25VLThreeBInstruct.id })
         XCTAssertEqual(qwenVision.recommendedRole, .minimumVisionExtraction)
         XCTAssertTrue(qwenVision.requiresVisionInput)
         XCTAssertEqual(qwenVision.downloadableModelID, LocalModelManifest.qwen25VLThreeBInstruct.id)
 
-        let qwenTwoB = try XCTUnwrap(InfoPageModelEvaluationCatalog.candidates.first { $0.id == LocalModelManifest.qwen35TwoB.id })
+        let qwenTwoB = try XCTUnwrap(InfoPageModelEvaluationCatalog.candidates.first { $0.id == LocalModelManifest.qwen25OneAndHalfBInstruct.id })
         XCTAssertEqual(qwenTwoB.recommendedRole, .fallbackTextExtraction)
         XCTAssertFalse(qwenTwoB.requiresVisionInput)
-        XCTAssertEqual(qwenTwoB.downloadableModelID, LocalModelManifest.qwen35TwoB.id)
+        XCTAssertEqual(qwenTwoB.downloadableModelID, LocalModelManifest.qwen25OneAndHalfBInstruct.id)
+    }
+
+    func testAssetUnderstandingPipelineRetriesInvalidJSONAndValidatesStructuredDraft() async throws {
+        let folder = KnowledgeAssetFolder(name: "Hong Kong Travel")
+        let asset = KnowledgeAsset(
+            title: "airport-pickup.png",
+            kind: .screenshot,
+            source: .shareExtension,
+            attachments: [],
+            extractedText: "香港機場接送已預訂，去程接機 10:30，尚未看到回程安排。",
+            generatedDescription: "Apple Vision OCR found airport pickup details.",
+            summary: "Hong Kong pickup booking",
+            tags: ["travel"]
+        )
+        let validJSON = """
+        {
+          "createInfoPage": true,
+          "title": "Hong Kong Travel",
+          "templateID": "travel",
+          "category": "travel",
+          "summary": "Hong Kong airport pickup is booked, but return trip details are missing.",
+          "facts": [
+            {"label": "destination", "value": "Hong Kong", "sourceAssetID": "\(asset.id.uuidString)"},
+            {"label": "bookingStatus", "value": "Outbound pickup booked", "sourceAssetID": "\(asset.id.uuidString)"}
+          ],
+          "timeline": [
+            {"title": "Airport pickup", "note": "Pickup at 10:30", "sourceAssetID": "\(asset.id.uuidString)"}
+          ],
+          "reminderDrafts": [
+            {"title": "Confirm Hong Kong return trip", "dueDateText": "before departure", "needsUserConfirmation": true}
+          ],
+          "folderName": "Hong Kong Travel",
+          "confidence": 0.91,
+          "missingInfo": ["return trip"],
+          "sourceAssetIDs": ["\(asset.id.uuidString)"]
+        }
+        """
+        let model = StubAssetUnderstandingModel(replies: ["not json", validJSON])
+        let pipeline = AssetUnderstandingPipeline(model: model)
+
+        let result = await pipeline.understand(AssetUnderstandingRequest(
+            assets: [asset],
+            folders: [folder],
+            minimumConfidence: 0.72,
+            maximumAttempts: 2
+        ))
+        let prompts = await model.prompts
+        let page = result.draft.makeInfoPage()
+
+        XCTAssertEqual(result.status, .validated)
+        XCTAssertEqual(result.attempts, 2)
+        XCTAssertTrue(result.shouldAutoCreateInfoPage)
+        XCTAssertTrue(prompts[0].contains("Output one JSON object only"))
+        XCTAssertTrue(prompts[1].contains("Output must be one valid JSON object."))
+        XCTAssertEqual(result.draft.templateID, .travel)
+        XCTAssertEqual(result.draft.folderName, "Hong Kong Travel")
+        XCTAssertEqual(result.draft.facts.map(\.label), ["destination", "bookingStatus"])
+        XCTAssertEqual(page.assetIDs, [asset.id])
+        XCTAssertTrue(page.actionDrafts.allSatisfy(\.requiresConfirmation))
+    }
+
+    func testAssetUnderstandingPipelineFallsBackWhenDraftCannotPassSafetyValidation() async throws {
+        let asset = KnowledgeAsset(
+            title: "unknown-note.txt",
+            kind: .text,
+            source: .chat,
+            attachments: [],
+            extractedText: "Remember to check the trip later.",
+            summary: "Trip note"
+        )
+        let unsafeJSON = """
+        {
+          "createInfoPage": true,
+          "title": "Trip",
+          "templateID": "travel",
+          "category": "travel",
+          "summary": "<html>Trip page</html>",
+          "facts": [
+            {"label": "destination", "value": "Unknown", "sourceAssetID": "\(asset.id.uuidString)"}
+          ],
+          "timeline": [],
+          "reminderDrafts": [
+            {"title": "Book return trip", "needsUserConfirmation": false}
+          ],
+          "folderName": "Not Existing",
+          "confidence": 0.41,
+          "missingInfo": [],
+          "sourceAssetIDs": ["\(asset.id.uuidString)"]
+        }
+        """
+        let model = StubAssetUnderstandingModel(replies: [unsafeJSON])
+        let pipeline = AssetUnderstandingPipeline(model: model)
+
+        let result = await pipeline.understand(AssetUnderstandingRequest(
+            assets: [asset],
+            folders: [KnowledgeAssetFolder(name: "Travel")],
+            minimumConfidence: 0.72,
+            maximumAttempts: 1
+        ))
+
+        XCTAssertEqual(result.status, .needsReview)
+        XCTAssertFalse(result.shouldAutoCreateInfoPage)
+        XCTAssertEqual(result.draft.createInfoPage, false)
+        XCTAssertTrue(result.validationIssues.contains(.confidenceTooLow(0.41)))
+        XCTAssertTrue(result.validationIssues.contains(.unknownFolder("Not Existing")))
+        XCTAssertTrue(result.validationIssues.contains(.missingRequiredFact("bookingStatus")))
+        XCTAssertTrue(result.validationIssues.contains(.unsafeGeneratedMarkup))
+        XCTAssertTrue(result.validationIssues.contains(.reminderWithoutConfirmation("Book return trip")))
     }
 }

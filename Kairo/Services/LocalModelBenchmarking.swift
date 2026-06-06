@@ -95,6 +95,66 @@ public struct LocalModelBenchmarkRunResult: Codable, Equatable, Identifiable, Se
     }
 }
 
+public struct LocalModelPerformanceModelSummary: Equatable, Identifiable, Sendable {
+    public var id: String { modelID }
+    public var modelID: String
+    public var modelDisplayName: String
+    public var runCount: Int
+    public var averagePromptTokensPerSecond: Double
+    public var averageGenerationTokensPerSecond: Double
+    public var averageFirstTokenLatencyMS: Double?
+    public var peakMemoryMB: Int?
+    public var kvCacheHitRate: Double
+
+    public init(
+        modelID: String,
+        modelDisplayName: String,
+        runCount: Int,
+        averagePromptTokensPerSecond: Double,
+        averageGenerationTokensPerSecond: Double,
+        averageFirstTokenLatencyMS: Double? = nil,
+        peakMemoryMB: Int? = nil,
+        kvCacheHitRate: Double = 0
+    ) {
+        self.modelID = modelID
+        self.modelDisplayName = modelDisplayName
+        self.runCount = runCount
+        self.averagePromptTokensPerSecond = averagePromptTokensPerSecond
+        self.averageGenerationTokensPerSecond = averageGenerationTokensPerSecond
+        self.averageFirstTokenLatencyMS = averageFirstTokenLatencyMS
+        self.peakMemoryMB = peakMemoryMB
+        self.kvCacheHitRate = kvCacheHitRate
+    }
+}
+
+public struct LocalModelPerformanceSnapshot: Equatable, Sendable {
+    public var totalRunCount: Int
+    public var averagePromptTokensPerSecond: Double?
+    public var averageGenerationTokensPerSecond: Double?
+    public var averageFirstTokenLatencyMS: Double?
+    public var peakMemoryMB: Int?
+    public var kvCacheHitRate: Double
+    public var modelSummaries: [LocalModelPerformanceModelSummary]
+
+    public init(
+        totalRunCount: Int,
+        averagePromptTokensPerSecond: Double? = nil,
+        averageGenerationTokensPerSecond: Double? = nil,
+        averageFirstTokenLatencyMS: Double? = nil,
+        peakMemoryMB: Int? = nil,
+        kvCacheHitRate: Double = 0,
+        modelSummaries: [LocalModelPerformanceModelSummary] = []
+    ) {
+        self.totalRunCount = totalRunCount
+        self.averagePromptTokensPerSecond = averagePromptTokensPerSecond
+        self.averageGenerationTokensPerSecond = averageGenerationTokensPerSecond
+        self.averageFirstTokenLatencyMS = averageFirstTokenLatencyMS
+        self.peakMemoryMB = peakMemoryMB
+        self.kvCacheHitRate = kvCacheHitRate
+        self.modelSummaries = modelSummaries
+    }
+}
+
 public protocol LocalModelBenchmarkEngine: Sendable {
     func runBenchmark(
         model: LocalModelManifest,
@@ -203,6 +263,17 @@ public actor FileBackedLocalModelBenchmarkStore {
         (resultsByModelID[modelID] ?? []).sorted { $0.measuredAt > $1.measuredAt }
     }
 
+    public func allResults() -> [LocalModelBenchmarkRunResult] {
+        resultsByModelID.values
+            .flatMap { $0 }
+            .sorted {
+                if $0.measuredAt == $1.measuredAt {
+                    return $0.modelID < $1.modelID
+                }
+                return $0.measuredAt > $1.measuredAt
+            }
+    }
+
     public func upsert(_ result: LocalModelBenchmarkRunResult) throws {
         var results = resultsByModelID[result.modelID] ?? []
         if let existingIndex = results.firstIndex(where: { $0.id == result.id }) {
@@ -283,10 +354,48 @@ public actor LocalModelBenchmarkService {
         await resultStore.latestResult(for: modelID)
     }
 
+    public func performanceSnapshot() async -> LocalModelPerformanceSnapshot {
+        let results = await resultStore.allResults()
+        guard !results.isEmpty else {
+            return LocalModelPerformanceSnapshot(totalRunCount: 0)
+        }
+        let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
+        let modelNamesByID = Dictionary(uniqueKeysWithValues: availableModels.map { ($0.id, $0.displayName) })
+        let grouped = Dictionary(grouping: results, by: \.modelID)
+        let summaries = grouped.map { modelID, modelResults in
+            LocalModelPerformanceModelSummary(
+                modelID: modelID,
+                modelDisplayName: modelNamesByID[modelID] ?? modelResults.first?.modelDisplayName ?? modelID,
+                runCount: modelResults.count,
+                averagePromptTokensPerSecond: Self.average(modelResults.map(\.promptTokensPerSecond)) ?? 0,
+                averageGenerationTokensPerSecond: Self.average(modelResults.map(\.generationTokensPerSecond)) ?? 0,
+                averageFirstTokenLatencyMS: Self.average(modelResults.compactMap(\.firstTokenLatencyMS)),
+                peakMemoryMB: modelResults.compactMap(\.peakMemoryMB).max(),
+                kvCacheHitRate: 0
+            )
+        }
+        .sorted {
+            if $0.runCount == $1.runCount {
+                return $0.modelDisplayName < $1.modelDisplayName
+            }
+            return $0.runCount > $1.runCount
+        }
+
+        return LocalModelPerformanceSnapshot(
+            totalRunCount: results.count,
+            averagePromptTokensPerSecond: Self.average(results.map(\.promptTokensPerSecond)),
+            averageGenerationTokensPerSecond: Self.average(results.map(\.generationTokensPerSecond)),
+            averageFirstTokenLatencyMS: Self.average(results.compactMap(\.firstTokenLatencyMS)),
+            peakMemoryMB: results.compactMap(\.peakMemoryMB).max(),
+            kvCacheHitRate: 0,
+            modelSummaries: summaries
+        )
+    }
+
     public func runBenchmark(
         modelID: String,
         prompt: String = "Benchmark Kairo local drafting.",
-        generatedTokenTarget: Int = 128,
+        generatedTokenTarget: Int = 512,
         contextSize: Int = 4096,
         minimumSafetyPolicyVersion: String = "2026.1"
     ) async throws -> LocalModelBenchmarkRunResult {
@@ -309,5 +418,10 @@ public actor LocalModelBenchmarkService {
         )
         try await resultStore.upsert(result)
         return result
+    }
+
+    private static func average(_ values: [Double]) -> Double? {
+        guard !values.isEmpty else { return nil }
+        return values.reduce(0, +) / Double(values.count)
     }
 }

@@ -1090,7 +1090,7 @@ struct LocalModelsCompactView: View {
                         set: { updateRuntimeParameters(for: row, maxOutputTokens: $0) }
                     )
                 ) {
-                    ForEach([64, 128, 256, 512, 1_024, 2_048], id: \.self) { tokens in
+                    ForEach(LocalModelRuntimeParameters.maxOutputTokenChoices, id: \.self) { tokens in
                         Text(KairoL10n.string("settings.models.parameters.outputOption", Int64(tokens)))
                             .tag(tokens)
                     }

@@ -424,14 +424,14 @@ public enum LocalModelCatalogSignatureStatus: String, Codable, Equatable, Sendab
 
 public extension LocalModelCatalog {
     static let kairoStarterModelIDs = [
-        "qwen3-5-0-8b-q4-k-m",
-        "qwen3-5-2b-q4-k-m",
+        "qwen2-5-0-5b-instruct-q4-k-m",
+        "qwen2-5-1-5b-instruct-q4-k-m",
         "qwen2-5-vl-3b-instruct-q4-k-m"
     ]
 
     static let kairoStarterModels: [LocalModelManifest] = [
-        .qwen35Tiny,
-        .qwen35TwoB,
+        .qwen25HalfBInstruct,
+        .qwen25OneAndHalfBInstruct,
         .qwen25VLThreeBInstruct
     ]
 
@@ -1052,6 +1052,34 @@ public struct LocalModelCatalogRefreshResult: Sendable {
 }
 
 public extension LocalModelManifest {
+    static let qwen25HalfBInstruct = ggufManifest(
+        id: "qwen2-5-0-5b-instruct-q4-k-m",
+        displayName: "Qwen2.5 0.5B Instruct Q4_K_M",
+        family: "Qwen2.5",
+        parameterCount: "0.5B",
+        fileSizeBytes: 491_400_032,
+        installedSizeBytes: 800 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen2.5-tokenizer",
+        minRAMGB: 4,
+        downloadURL: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        sha256: "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
+    )
+
+    static let qwen25OneAndHalfBInstruct = ggufManifest(
+        id: "qwen2-5-1-5b-instruct-q4-k-m",
+        displayName: "Qwen2.5 1.5B Instruct Q4_K_M",
+        family: "Qwen2.5",
+        parameterCount: "1.5B",
+        fileSizeBytes: 1_117_320_736,
+        installedSizeBytes: 1_700 * 1024 * 1024,
+        contextWindow: 32_768,
+        tokenizerID: "qwen2.5-tokenizer",
+        minRAMGB: 6,
+        downloadURL: "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+        sha256: "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e"
+    )
+
     static let qwen35Tiny = ggufManifest(
         id: "qwen3-5-0-8b-q4-k-m",
         displayName: "Qwen3.5 0.8B Q4_K_M",

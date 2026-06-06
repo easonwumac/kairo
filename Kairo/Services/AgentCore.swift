@@ -94,6 +94,8 @@ public actor AgentCore {
     public func respond(
         to message: String,
         attachments: [ChatAttachment] = [],
+        conversationID: String? = nil,
+        conversationHistory: [AIConversationTurn] = [],
         privacyMode: ChatPrivacyMode = .standard
     ) async throws -> AICompletionResponse {
         let memoryContext = try await memoryContextProvider.context(for: message, privacyMode: privacyMode)
@@ -106,13 +108,15 @@ public actor AgentCore {
         )
         let toolPlan = toolInvocationPlanner.plan(for: toolRequest, skillCatalog: skillCatalog)
 
-        let request = completionRequestBuilder.buildCompletionRequest(
+        var request = completionRequestBuilder.buildCompletionRequest(
             message: message,
             attachments: attachments,
             memoryContext: memoryContext,
             toolContext: toolContext,
             privacyMode: privacyMode
         )
+        request.conversationID = conversationID
+        request.conversationHistory = conversationHistory
 
         let response = try await aiProvider.complete(request)
         let actionPlan = responseActionPlanner.planActions(for: AgentResponseActionPlanningRequest(

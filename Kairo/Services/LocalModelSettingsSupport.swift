@@ -47,8 +47,8 @@ public struct LocalModelRuntimeParameters: Codable, Equatable, Sendable {
 
     public init(
         contextSize: Int = 4096,
-        maxOutputTokens: Int = 128,
-        temperature: Double = 0.2
+        maxOutputTokens: Int = 512,
+        temperature: Double = 1.0
     ) {
         self.contextSize = Self.clampedContextSize(contextSize)
         self.maxOutputTokens = Self.clampedMaxOutputTokens(maxOutputTokens)
@@ -56,7 +56,8 @@ public struct LocalModelRuntimeParameters: Codable, Equatable, Sendable {
     }
 
     public static let defaultValue = LocalModelRuntimeParameters()
-    public static let contextSizeChoices = [1_024, 4_096, 8_192, 16_384, 32_768, 65_536]
+    public static let contextSizeChoices = [4_096, 8_192, 16_384, 32_768, 65_536]
+    public static let maxOutputTokenChoices = [512, 1_024, 2_048, 4_096]
 
     public func clamped(to manifest: LocalModelManifest) -> LocalModelRuntimeParameters {
         LocalModelRuntimeParameters(
@@ -67,11 +68,11 @@ public struct LocalModelRuntimeParameters: Codable, Equatable, Sendable {
     }
 
     private static func clampedContextSize(_ value: Int) -> Int {
-        max(1_024, min(value, 65_536))
+        max(4_096, min(value, 65_536))
     }
 
     private static func clampedMaxOutputTokens(_ value: Int) -> Int {
-        max(16, min(value, 2_048))
+        max(512, min(value, 4_096))
     }
 
     private static func clampedTemperature(_ value: Double) -> Double {

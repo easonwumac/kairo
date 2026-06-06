@@ -244,7 +244,7 @@ public struct ChatView: View {
     }
 
     private var chatMessagesTopPadding: CGFloat {
-        viewModel.currentThread.messages.count <= 1 ? 116 : 16
+        viewModel.currentThread.messages.count <= 1 ? 132 : 58
     }
 
     private var chatTopMistOverlay: some View {
@@ -536,13 +536,16 @@ public struct ChatView: View {
             let fileURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent("kairo-photo-\(UUID().uuidString).jpg")
             try data.write(to: fileURL, options: .atomic)
+            let visionReference = await AttachmentVisionAnalyzer.reference(from: data)
             let attachment = ChatAttachment(
                 kind: .image,
                 displayName: fileURL.lastPathComponent,
                 uniformTypeIdentifier: "public.jpeg",
                 fileURL: fileURL,
                 byteCount: Int64(data.count),
-                textPreview: KairoL10n.string("chat.capture.photoTextPreview"),
+                textPreview: visionReference.promptPreview.map {
+                    KairoL10n.string("chat.capture.photoVisionTextPreview", $0)
+                } ?? KairoL10n.string("chat.capture.photoTextPreview"),
                 source: .photoPicker
             )
             await MainActor.run {

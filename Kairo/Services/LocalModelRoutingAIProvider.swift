@@ -121,6 +121,8 @@ public struct LocalModelRoutingAIProvider: AIProvider {
             If the user explicitly asks for another language, follow the user's explicit language request.
             """,
             userPrompt: request.userPrompt,
+            conversationID: request.conversationID,
+            conversationHistory: request.conversationHistory,
             memoryContext: request.memoryContext,
             allowedCapabilities: request.allowedCapabilities,
             attachmentContext: request.attachmentContext,

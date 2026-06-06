@@ -9,8 +9,8 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     var app: XCUIApplication!
     let localModelExpectations = [
-        ("qwen3-5-0-8b-q4-k-m", "Qwen3.5 0.8B Q4_K_M"),
-        ("qwen3-5-2b-q4-k-m", "Qwen3.5 2B Q4_K_M"),
+        ("qwen2-5-0-5b-instruct-q4-k-m", "Qwen2.5 0.5B Instruct Q4_K_M"),
+        ("qwen2-5-1-5b-instruct-q4-k-m", "Qwen2.5 1.5B Instruct Q4_K_M"),
         ("qwen2-5-vl-3b-instruct-q4-k-m", "Qwen2.5-VL 3B Instruct Q4_K_M")
     ]
 
@@ -35,7 +35,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     func testSettingsLocalModelCatalogListsDownloadableModels() throws {
         relaunchForUITesting(initialSection: "models")
         openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: false, selectFromDrawer: false)
-        XCTAssertTrue(findButton("settings.models.local.add.qwen3-5-2b-q4-k-m", direction: .down, maxSwipes: 4).exists)
+        XCTAssertTrue(findButton("settings.models.local.add.qwen2-5-1-5b-instruct-q4-k-m", direction: .down, maxSwipes: 4).exists)
         XCTAssertTrue(findButton("settings.models.local.add.qwen2-5-vl-3b-instruct-q4-k-m", direction: .down, maxSwipes: 4).exists)
         XCTAssertFalse(anyElement("settings.models.show-more").exists)
     }
@@ -199,8 +199,8 @@ final class KairoAppSmokeUITests: XCTestCase {
         relaunchForUITesting(initialSection: "models", seedExpandedLocalModelCatalog: true)
 
         XCTAssertTrue(anyElement("settings.models.screen").waitForExistence(timeout: 5))
-        XCTAssertTrue(anyElement("settings.models.qwen3-5-0-8b-q4-k-m.name").exists)
-        XCTAssertTrue(anyElement("settings.models.qwen3-5-2b-q4-k-m.name").exists)
+        XCTAssertTrue(anyElement("settings.models.qwen2-5-0-5b-instruct-q4-k-m.name").exists)
+        XCTAssertTrue(anyElement("settings.models.qwen2-5-1-5b-instruct-q4-k-m.name").exists)
         XCTAssertTrue(findElement("settings.models.trimmed-note", direction: .down, maxSwipes: 2).waitForExistence(timeout: 3))
         XCTAssertFalse(anyElement("settings.models.remote-catalog-test-model-q4-k-m.name").exists)
         XCTAssertFalse(anyElement("settings.models.show-more").exists)
@@ -329,17 +329,17 @@ final class KairoAppSmokeUITests: XCTestCase {
         selectDrawerSection(identifier: "root.drawer.models", label: "Models")
 
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
-        XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
+        XCTAssertTrue(findElement("settings.models.qwen2-5-0-5b-instruct-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
         openAdvancedModelDiagnosticsIfNeeded()
         verifyQwenLocalModelDiagnostics()
 
-        let benchmarkButton = findButton("settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run", direction: .both, maxSwipes: 4)
+        let benchmarkButton = findButton("settings.models.qwen2-5-0-5b-instruct-q4-k-m.benchmark-run", direction: .both, maxSwipes: 4)
         XCTAssertTrue(benchmarkButton.exists)
         benchmarkButton.tap()
 
         let message = findElement("settings.models.benchmark-message", direction: .both, maxSwipes: 2)
         XCTAssertTrue(message.exists)
-        XCTAssertTrue(message.label.contains("Download Qwen3.5 0.8B Q4_K_M"), message.label)
+        XCTAssertTrue(message.label.contains("Download Qwen2.5 0.5B Instruct Q4_K_M"), message.label)
         XCTAssertTrue(message.label.localizedCaseInsensitiveContains("benchmark"), message.label)
     }
 
@@ -356,14 +356,14 @@ final class KairoAppSmokeUITests: XCTestCase {
         )
 
         XCTAssertTrue(findElement("settings.models.local", direction: .down).exists)
-        XCTAssertTrue(findElement("settings.models.qwen3-5-0-8b-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
+        XCTAssertTrue(findElement("settings.models.qwen2-5-0-5b-instruct-q4-k-m.name", direction: .down, maxSwipes: 8).exists)
         openAdvancedModelDiagnosticsIfNeeded()
-        let benchmarkButton = findButton("settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run", direction: .down, maxSwipes: 2)
+        let benchmarkButton = findButton("settings.models.qwen2-5-0-5b-instruct-q4-k-m.benchmark-run", direction: .down, maxSwipes: 2)
         XCTAssertTrue(benchmarkButton.exists)
         benchmarkButton.tap()
 
         let finishedRunInfo = findElement(
-            "settings.models.qwen3-5-0-8b-q4-k-m.benchmark-run-info.finished",
+            "settings.models.qwen2-5-0-5b-instruct-q4-k-m.benchmark-run-info.finished",
             direction: .both,
             maxSwipes: 2
         )
@@ -703,7 +703,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(findElement("access.skills.manifest-preview.compatibility", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "Blocked Qwen OAuth Workflow", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findStaticText(containing: "Connect OAuth provider google", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "Download local model qwen3-5-0-8b-q4-k-m", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findStaticText(containing: "Download local model qwen2-5-0-5b-instruct-q4-k-m", direction: .both, maxSwipes: 1).exists)
 
         let confirmInstall = findButton("access.skills.manifest-preview.confirm", direction: .both, maxSwipes: 1)
         XCTAssertTrue(confirmInstall.exists)
