@@ -616,15 +616,19 @@ private struct AttachmentTray: View {
                         .accessibilityLabel(KairoL10n.string("chat.attachment.remove"))
                     }
                     .font(.caption)
+                    .foregroundStyle(KairoDesign.ink)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
-                    .background(Color.accentColor.opacity(0.12), in: Capsule())
+                    .background(KairoDesign.elevatedSurface.opacity(0.68), in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    }
                 }
             }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
         }
-        .background(.regularMaterial)
     }
 }
 
