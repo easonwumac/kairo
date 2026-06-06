@@ -2,6 +2,7 @@ import Foundation
 
 public struct KairoUITestingStoreComponents: Sendable {
     public var memoryStore: any MemoryStore
+    public var knowledgeAssetStore: any KnowledgeAssetStore
     public var auditLogger: any AuditLogger
     public var chatHistoryStore: any ChatHistoryStore
     public var shareIngestionQueue: any ShareIngestionQueue
@@ -10,6 +11,7 @@ public struct KairoUITestingStoreComponents: Sendable {
 
     public init(
         memoryStore: any MemoryStore,
+        knowledgeAssetStore: any KnowledgeAssetStore,
         auditLogger: any AuditLogger,
         chatHistoryStore: any ChatHistoryStore,
         shareIngestionQueue: any ShareIngestionQueue,
@@ -17,6 +19,7 @@ public struct KairoUITestingStoreComponents: Sendable {
         oauthCallbackStore: FileBackedOAuthConnectorCallbackStore
     ) {
         self.memoryStore = memoryStore
+        self.knowledgeAssetStore = knowledgeAssetStore
         self.auditLogger = auditLogger
         self.chatHistoryStore = chatHistoryStore
         self.shareIngestionQueue = shareIngestionQueue
@@ -48,6 +51,7 @@ public struct KairoUITestingStoreFactory: Sendable {
 
         return KairoUITestingStoreComponents(
             memoryStore: InMemoryMemoryStore(),
+            knowledgeAssetStore: InMemoryKnowledgeAssetStore(),
             auditLogger: InMemoryAuditLogger(),
             chatHistoryStore: chatHistoryStore,
             shareIngestionQueue: KairoUITestingShareImportFactory(

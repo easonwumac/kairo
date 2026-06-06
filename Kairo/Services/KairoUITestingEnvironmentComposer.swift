@@ -67,6 +67,7 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
 
         return KairoEnvironment(
             memoryStore: storeComponents.memoryStore,
+            knowledgeAssetStore: storeComponents.knowledgeAssetStore,
             credentialStore: credentialStore,
             aiProvider: localModelComponents.aiProvider,
             chatHistoryStore: storeComponents.chatHistoryStore,

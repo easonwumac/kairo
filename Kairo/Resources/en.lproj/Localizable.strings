@@ -916,3 +916,13 @@
 "shortcut.integration.blocked.missingCatalog" = "This Shortcut demo references %@, but that integration is not in the app integration catalog.";
 "shortcut.integration.blocked.setupRequired" = "%@ is not ready for execution. Finish setup or use a visible fallback before running this Shortcut step.";
 "shortcut.integration.blocked.nodeMismatch" = "%@ is not wired to this Shortcut node. Use a supported visible handoff or keep this as a preview.";
+"knowledgeAsset.title.untitled" = "Untitled asset";
+"knowledgeAsset.title.travelAsset" = "%@ travel asset";
+"knowledgeAsset.summary.pendingAnalysis" = "Pending analysis";
+"knowledgeAsset.collection.trip" = "%@ trip";
+"knowledgeAsset.checklist.outboundTransfer" = "Outbound airport transfer saved";
+"knowledgeAsset.checklist.returnTransfer" = "Confirm return transfer";
+"knowledgeAsset.checklist.travelDocuments" = "Confirm travel documents";
+"knowledgeAsset.action.reviewTripChecklist" = "Review %@ trip checklist";
+"knowledgeAsset.action.rationale.tripChecklist" = "Drafted from saved travel asset context.";
+"knowledgeAsset.travel.hongKong" = "Hong Kong";

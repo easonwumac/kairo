@@ -18,6 +18,7 @@ public enum KairoSharedAppStorage {
 
 public struct KairoEnvironment: KairoBackendDependencies {
     public let memoryStore: MemoryStore
+    public let knowledgeAssetStore: KnowledgeAssetStore
     public let credentialStore: CredentialStore
     public let aiProvider: AIProvider
     public let chatHistoryStore: ChatHistoryStore
@@ -49,6 +50,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
 
     public init(
         memoryStore: MemoryStore,
+        knowledgeAssetStore: KnowledgeAssetStore = InMemoryKnowledgeAssetStore(),
         credentialStore: CredentialStore,
         aiProvider: AIProvider,
         chatHistoryStore: ChatHistoryStore = InMemoryChatHistoryStore(),
@@ -79,6 +81,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         shortcutDemoRecipeRunner: (any ShortcutDemoRecipeRunnerProtocol)? = nil
     ) {
         self.memoryStore = memoryStore
+        self.knowledgeAssetStore = knowledgeAssetStore
         self.credentialStore = credentialStore
         self.aiProvider = aiProvider
         self.chatHistoryStore = chatHistoryStore
@@ -222,6 +225,14 @@ public struct KairoPaths: Sendable {
 
     public var memoryStoreURL: URL {
         applicationSupportDirectory.appendingPathComponent("memory-store.json")
+    }
+
+    public var knowledgeAssetStoreURL: URL {
+        knowledgeAssetsDirectory.appendingPathComponent("knowledge-assets.json")
+    }
+
+    public var knowledgeAssetsDirectory: URL {
+        applicationSupportDirectory.appendingPathComponent("KnowledgeAssets", isDirectory: true)
     }
 
     public var auditLogURL: URL {

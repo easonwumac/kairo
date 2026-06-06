@@ -3,6 +3,7 @@ import Foundation
 public enum KairoBackendModuleID: String, CaseIterable, Sendable {
     case chat
     case memory
+    case knowledgeAssets
     case recipes
     case shareImports
     case actionInbox
@@ -51,6 +52,8 @@ private extension KairoBackendModuleID {
             return "Chat"
         case .memory:
             return "Memory"
+        case .knowledgeAssets:
+            return "Knowledge Assets"
         case .recipes:
             return "Internal Recipes"
         case .shareImports:
@@ -78,6 +81,8 @@ private extension KairoBackendModuleID {
             return "Agent response orchestration, privacy routing, memory context, and tool/action preview candidates."
         case .memory:
             return "Memory list, search, save, delete, export, and purge lifecycle."
+        case .knowledgeAssets:
+            return "Personal asset library for screenshots, files, extracted text, LLM descriptions, tags, checklists, and backup policy."
         case .recipes:
             return "Kairo-owned internal recipe lifecycle and dry-run execution without Apple Shortcut mutation."
         case .shareImports:

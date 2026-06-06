@@ -2,6 +2,7 @@ import Foundation
 
 public protocol KairoBackendDependencies: Sendable {
     var memoryStore: MemoryStore { get }
+    var knowledgeAssetStore: KnowledgeAssetStore { get }
     var credentialStore: CredentialStore { get }
     var aiProvider: AIProvider { get }
     var chatHistoryStore: ChatHistoryStore { get }
@@ -26,6 +27,7 @@ public protocol KairoBackendDependencies: Sendable {
 public protocol KairoBackendServiceMaking: Sendable {
     func makeChatAPI() -> any KairoChatAPI
     func makeMemoryAPI() -> any KairoMemoryAPI
+    func makeKnowledgeAssetAPI() -> any KairoKnowledgeAssetAPI
     func makeRecipeAPI() -> any KairoRecipeAPI
     func makeShareImportAPI() -> any KairoShareImportAPI
     func makeActionInboxAPI() -> any KairoActionInboxAPI
@@ -249,6 +251,14 @@ public struct ProductionKairoBackendServiceFactory<Dependencies: KairoBackendDep
 
     public func makeMemoryAPI() -> any KairoMemoryAPI {
         KairoMemoryBackendService(memoryStore: dependencies.memoryStore)
+    }
+
+    public func makeKnowledgeAssetAPI() -> any KairoKnowledgeAssetAPI {
+        KairoKnowledgeAssetBackendService(
+            assetStore: dependencies.knowledgeAssetStore,
+            shareIngestionQueue: dependencies.shareIngestionQueue,
+            sharedFilesDirectory: dependencies.sharedFilesDirectory
+        )
     }
 
     public func makeRecipeAPI() -> any KairoRecipeAPI {

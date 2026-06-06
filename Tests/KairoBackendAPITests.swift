@@ -12,6 +12,10 @@ final class KairoBackendAPITests: XCTestCase {
         let api = KairoBackendAPI(
             chat: KairoChatBackendService(agent: AgentCore()),
             memory: KairoMemoryBackendService(memoryStore: InMemoryMemoryStore()),
+            knowledgeAssets: KairoKnowledgeAssetBackendService(
+                assetStore: InMemoryKnowledgeAssetStore(),
+                shareIngestionQueue: InMemoryShareIngestionQueue()
+            ),
             recipes: KairoRecipeBackendService(recipeStore: InMemoryKairoRecipeStore()),
             shareImports: KairoShareImportBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
             actionInbox: KairoActionInboxBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),

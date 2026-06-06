@@ -916,3 +916,13 @@
 "shortcut.integration.blocked.missingCatalog" = "這個 Shortcut demo 參照 %@，但該 integration 不在 App Integration Catalog 中。";
 "shortcut.integration.blocked.setupRequired" = "%@ 尚未可執行。請先完成設定，或改用可見 fallback，再執行這個 Shortcut step。";
 "shortcut.integration.blocked.nodeMismatch" = "%@ 尚未接到這個 Shortcut node。請使用支援的可見 handoff，或只保留 preview。";
+"knowledgeAsset.title.untitled" = "未命名資產";
+"knowledgeAsset.title.travelAsset" = "%@旅遊資產";
+"knowledgeAsset.summary.pendingAnalysis" = "等待分析";
+"knowledgeAsset.collection.trip" = "%@旅遊";
+"knowledgeAsset.checklist.outboundTransfer" = "已保存去程機場接送";
+"knowledgeAsset.checklist.returnTransfer" = "確認回程交通";
+"knowledgeAsset.checklist.travelDocuments" = "確認旅遊證件";
+"knowledgeAsset.action.reviewTripChecklist" = "檢查%@旅遊確認表";
+"knowledgeAsset.action.rationale.tripChecklist" = "從已保存的旅遊資產內容產生的草稿。";
+"knowledgeAsset.travel.hongKong" = "香港";
