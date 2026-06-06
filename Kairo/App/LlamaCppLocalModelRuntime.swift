@@ -52,6 +52,7 @@ private func kairo_llama_batch_add(
 }
 
 actor LlamaCppSession {
+    private static let batchTokenCapacity = 512
     private let model: OpaquePointer
     private let context: OpaquePointer
     private let vocab: OpaquePointer
@@ -133,16 +134,28 @@ actor LlamaCppSession {
             throw LlamaCppRuntimeError.promptTooLarge
         }
 
-        kairo_llama_batch_clear(&batch)
-        for tokenIndex in 0..<promptTokens.count {
-            kairo_llama_batch_add(&batch, promptTokens[tokenIndex], position + Int32(tokenIndex), [0], false)
-        }
-        batch.logits[Int(batch.n_tokens) - 1] = 1
         let prefillStartedAt = Date()
-        guard llama_decode(context, batch) == 0 else {
-            throw LlamaCppRuntimeError.decodeFailed
+        var consumedPromptTokens = 0
+        while consumedPromptTokens < promptTokens.count {
+            let chunkEnd = min(consumedPromptTokens + Self.batchTokenCapacity, promptTokens.count)
+            kairo_llama_batch_clear(&batch)
+            for tokenIndex in consumedPromptTokens..<chunkEnd {
+                let isLastPromptToken = tokenIndex == promptTokens.count - 1
+                kairo_llama_batch_add(
+                    &batch,
+                    promptTokens[tokenIndex],
+                    position + Int32(tokenIndex - consumedPromptTokens),
+                    [0],
+                    isLastPromptToken
+                )
+            }
+            guard llama_decode(context, batch) == 0 else {
+                throw LlamaCppRuntimeError.decodeFailed
+            }
+            peakMemoryMB = Self.maxMemoryMB(peakMemoryMB, Self.currentResidentMemoryMB())
+            position += batch.n_tokens
+            consumedPromptTokens = chunkEnd
         }
-        peakMemoryMB = Self.maxMemoryMB(peakMemoryMB, Self.currentResidentMemoryMB())
         let prefillElapsed = max(Date().timeIntervalSince(prefillStartedAt), 0.001)
         let promptTokensPerSecond = Double(promptTokens.count) / prefillElapsed
         progress?(AIInferenceMetrics(
@@ -151,8 +164,6 @@ actor LlamaCppSession {
             promptTokensPerSecond: promptTokensPerSecond,
             generationTokensPerSecond: nil
         ))
-        position += batch.n_tokens
-
         var generatedText = ""
         var generatedTokens = 0
         var firstTokenLatencyMS: Double?
