@@ -968,18 +968,19 @@ final class KairoCoreTests: XCTestCase {
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: InMemoryShareIngestionQueue(),
             chatAPI: makeKairoCoreChatAPI(),
-            localModelSettingsService: service
+            localModelSettingsService: service,
+            localModelChatRuntimeAvailable: true
         )
 
         await viewModel.load()
 
         XCTAssertEqual(viewModel.providerRouteStatus.selectedOptionID, "local.qwen-small")
-        XCTAssertEqual(viewModel.providerRouteStatus.options.map(\.id), ["cloud.openai", "local.qwen-small"])
-        XCTAssertNotNil(viewModel.providerRouteStatus.warning)
+        XCTAssertEqual(viewModel.providerRouteStatus.options.map(\.id), ["local.qwen-small"])
+        XCTAssertNil(viewModel.providerRouteStatus.warning)
 
         await viewModel.setProviderRoutePreference(.preferCloud)
 
-        XCTAssertEqual(viewModel.providerRouteStatus.selectedOptionID, "cloud.openai")
+        XCTAssertEqual(viewModel.providerRouteStatus.selectedOptionID, "local.qwen-small")
         XCTAssertEqual(viewModel.providerRouteStatus.preference, .preferCloud)
         let persistedStatus = await service.status()
         XCTAssertEqual(persistedStatus.preference, .preferCloud)
@@ -1516,8 +1517,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("Output: outputJSON, displayText, fields.taskCount, fields.chainText"))
         XCTAssertTrue(uiTestSources.contains("Input: text, sourceName, variables"))
         XCTAssertTrue(uiTestSources.contains("Output: memoryID, fields.taskCount, tasks, fields.chainText"))
-        XCTAssertTrue(uiTestSources.contains("settings.models.refresh-catalog"))
-        XCTAssertTrue(uiTestSources.contains("github.com/easonwumac/kairo-models"))
         XCTAssertTrue(uiTestSources.contains("chat.history.thread"))
         XCTAssertTrue(uiTestSources.contains("testChatMessageReplyPreviewAndCopyControlsExist"))
         XCTAssertTrue(uiTestSources.contains(#""chat.tools.menu""#))
@@ -1542,9 +1541,6 @@ final class KairoCoreTests: XCTestCase {
         ] {
             XCTAssertTrue(uiTestSources.contains(displayName), displayName)
         }
-        XCTAssertTrue(uiTestSources.contains(#"downloadIdentifier: "settings.models.\(localModel.0).download""#))
-        XCTAssertTrue(uiTestSources.contains("Downloadable"))
-        XCTAssertTrue(uiTestSources.contains("Download"))
         XCTAssertTrue(uiTestSources.contains("access.skills.marketplace-refresh"))
         XCTAssertTrue(uiTestSources.contains("access.skills.manifest-import"))
         XCTAssertTrue(uiTestSources.contains("access.skills.manifest-import.text"))

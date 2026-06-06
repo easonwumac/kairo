@@ -65,7 +65,13 @@ public struct KairoLiveLocalModelFactory: Sendable {
             installRegistry: installRegistry,
             settingsStore: settingsStore
         )
+        #if os(iOS)
+        let artifactDownloadClient: (any LocalModelArtifactDownloadClient)? = URLSessionLocalModelArtifactDownloader.background()
+        #else
+        let artifactDownloadClient: (any LocalModelArtifactDownloadClient)? = nil
+        #endif
         let downloader = VerifiedLocalModelDownloader(
+            artifactDownloadClient: artifactDownloadClient,
             installRegistry: installRegistry,
             modelsDirectory: paths.localModelsDirectory
         )

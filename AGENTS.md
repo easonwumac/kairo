@@ -8,6 +8,7 @@
 - Never run destructive commands without explicit confirmation.
 - After each completed development stage, commit and push.
 - Before every commit/push, scan for secrets and avoid committing tokens, API keys, credentials, model weights, or generated build artifacts.
+- Avoid low-value descriptive UI copy. Prefer concise labels and actionable controls; only show explanatory text when it changes what the user can do or prevents a real mistake.
 - Do not add tests that only assert user-facing copy, docs, readiness checklists, source files, or localization text contains specific strings.
 - Do not add source-health or snapshot-style tests that read Swift/docs/localization files just to prove naming, file placement, line count, or exact wording.
 - If a behavior matters, test the behavior through state, data model, permission, confirmation, risk-tier, persistence, API, UI smoke flow, or accessibility identifiers instead of matching prose.

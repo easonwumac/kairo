@@ -68,20 +68,25 @@ public enum ChatProviderRouteStatusBuilder {
         let cloudWarning = cloudProviderWarning(from: openAIStatus)
         let cloudOption = makeCloudOption(openAIStatus: openAIStatus)
         guard let status else {
+            let options = cloudOption.isEnabled ? [cloudOption] : []
             return ChatProviderRouteStatus(
                 title: cloudOption.title,
                 detail: cloudProviderDetail(from: openAIStatus),
                 badge: cloudOption.sourceTitle,
                 warning: cloudWarning,
-                selectedOptionID: cloudOption.id,
-                options: [cloudOption]
+                selectedOptionID: cloudOption.isEnabled ? cloudOption.id : nil,
+                options: options
             )
         }
 
         let localOptions = makeLocalOptions(from: status, localRuntimeAvailable: localRuntimeAvailable)
-        let options = [cloudOption] + localOptions
+        let options = ([cloudOption] + localOptions)
+            .filter(\.isEnabled)
+            .prefix(6)
         let selectedOptionID = selectedOptionID(for: status, fallback: cloudOption.id)
-        let selectedOption = options.first { $0.id == selectedOptionID } ?? cloudOption
+        let selectedOption = options.first { $0.id == selectedOptionID }
+            ?? options.first
+            ?? cloudOption
         let selectedModelName = status.selectedModel?.displayName ?? status.selectedModelID
 
         let detail: String
@@ -127,8 +132,8 @@ public enum ChatProviderRouteStatusBuilder {
             badge: selectedOption.sourceTitle,
             warning: warning,
             preference: status.preference,
-            selectedOptionID: selectedOption.id,
-            options: options
+            selectedOptionID: selectedOption.isEnabled ? selectedOption.id : nil,
+            options: Array(options)
         )
     }
 
@@ -157,17 +162,7 @@ public enum ChatProviderRouteStatusBuilder {
             installedRecordsByID[model.id]?.status == .installed
         }
         guard !installedModels.isEmpty else {
-            return [
-                ChatProviderRouteOption(
-                    id: "local.none",
-                    title: KairoL10n.string("chat.provider.localModelUnavailable.title"),
-                    sourceTitle: KairoL10n.string("chat.provider.source.local"),
-                    detail: KairoL10n.string("chat.provider.detail.localOnlyNeedsModel"),
-                    systemImage: "arrow.down.circle",
-                    preference: .localOnly,
-                    isEnabled: false
-                )
-            ]
+            return []
         }
         return installedModels.map { model in
             ChatProviderRouteOption(

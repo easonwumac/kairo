@@ -160,7 +160,14 @@ public struct RootView: View {
         case .chat:
             ChatView(
                 dependencies: environment.chatFeatureDependencies,
-                chromeActionRequest: chatChromeActionRequest
+                chromeActionRequest: chatChromeActionRequest,
+                openModelSettings: {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                        selectedSection = .models
+                        isMenuPresented = false
+                        isPageActionsPresented = false
+                    }
+                }
             )
                 .ignoresSafeArea(.container, edges: .top)
         case .assets:

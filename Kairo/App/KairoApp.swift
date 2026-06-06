@@ -1,9 +1,31 @@
 #if canImport(SwiftUI)
 import KairoCore
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
+
+#if canImport(UIKit)
+final class KairoAppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        handleEventsForBackgroundURLSession identifier: String,
+        completionHandler: @escaping () -> Void
+    ) {
+        URLSessionLocalModelArtifactDownloader.setBackgroundEventsCompletionHandler(
+            completionHandler,
+            for: identifier
+        )
+    }
+}
+#endif
 
 @main
 struct KairoApp: App {
+    #if canImport(UIKit)
+    @UIApplicationDelegateAdaptor(KairoAppDelegate.self) private var appDelegate
+    #endif
+
     @State private var environment: KairoEnvironment = .preview()
     @State private var environmentRevision = 0
     @State private var didLoadEnvironment = false

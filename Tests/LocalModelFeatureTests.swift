@@ -1035,10 +1035,8 @@ final class LocalModelFeatureTests: XCTestCase {
         )
         let selectedStatus = ChatProviderRouteStatusBuilder.build(from: await service.status())
 
-        XCTAssertEqual(selectedStatus.selectedOptionID, "local.qwen-small")
-        XCTAssertEqual(selectedStatus.options.map(\.id), ["cloud.openai", "local.qwen-small"])
-        XCTAssertEqual(selectedStatus.options.first { $0.id == "local.qwen-small" }?.isEnabled, false)
-        XCTAssertNotNil(selectedStatus.warning)
+        XCTAssertNil(selectedStatus.selectedOptionID)
+        XCTAssertTrue(selectedStatus.options.isEmpty)
 
         let selectedRuntimeReadyStatus = ChatProviderRouteStatusBuilder.build(
             from: await service.status(),
@@ -1066,9 +1064,8 @@ final class LocalModelFeatureTests: XCTestCase {
             installedModels: [installedRecord]
         ))
 
-        XCTAssertEqual(localOnlyInstalledStatus.selectedOptionID, "local.qwen-small")
-        XCTAssertEqual(localOnlyInstalledStatus.options.first { $0.id == "local.qwen-small" }?.isEnabled, false)
-        XCTAssertNotNil(localOnlyInstalledStatus.warning)
+        XCTAssertNil(localOnlyInstalledStatus.selectedOptionID)
+        XCTAssertTrue(localOnlyInstalledStatus.options.isEmpty)
 
         let localOnlyRuntimeReadyStatus = ChatProviderRouteStatusBuilder.build(
             from: LocalModelSettingsStatus(
@@ -1093,9 +1090,8 @@ final class LocalModelFeatureTests: XCTestCase {
             installedModels: []
         ))
 
-        XCTAssertEqual(warningStatus.selectedOptionID, "local.none")
-        XCTAssertEqual(warningStatus.options.map(\.id), ["cloud.openai", "local.none"])
-        XCTAssertEqual(warningStatus.options.first { $0.id == "local.none" }?.isEnabled, false)
+        XCTAssertNil(warningStatus.selectedOptionID)
+        XCTAssertTrue(warningStatus.options.isEmpty)
         XCTAssertNotNil(warningStatus.warning)
     }
 
@@ -2088,6 +2084,33 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(progressValues, [0.05, 0.55, 0.9, 1.0])
     }
 
+    func testVerifiedLocalModelDownloaderInstallsBackgroundDownloadedFile() async throws {
+        let registryURL = temporaryFileURL(named: "install-registry.json")
+        let modelsDirectory = registryURL.deletingLastPathComponent().appendingPathComponent("Models", isDirectory: true)
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let artifactClient = LocalModelFileArtifactDownloadClient(body: "model-bytes")
+        let downloader = VerifiedLocalModelDownloader(
+            httpClient: LocalModelMockHTTPClient(statusCode: 500, body: "unused"),
+            artifactDownloadClient: artifactClient,
+            installRegistry: registry,
+            modelsDirectory: modelsDirectory
+        )
+        let manifest = makeLocalModelManifest(
+            id: "qwen-small",
+            version: "1.0",
+            sha256: "357e5d6fafa34d27360fec24b4326d3534905e33c6acdee60198fb078b7b79e5"
+        )
+
+        let installedURL = try await downloader.download(manifest, progress: nil)
+
+        XCTAssertEqual(try String(contentsOf: installedURL, encoding: .utf8), "model-bytes")
+        let downloadedURLs = await artifactClient.downloadedURLs()
+        XCTAssertEqual(downloadedURLs, [manifest.downloadURL])
+        let record = await registry.record(for: manifest.id)
+        XCTAssertEqual(record?.status, .installed)
+        XCTAssertEqual(record?.installedSizeBytes, Int64("model-bytes".utf8.count))
+    }
+
     func testVerifiedLocalModelDownloaderCancelsAndCleansUpPartialState() async throws {
         let registryURL = temporaryFileURL(named: "install-registry.json")
         let modelsDirectory = registryURL.deletingLastPathComponent().appendingPathComponent("Models", isDirectory: true)
@@ -2541,6 +2564,30 @@ private actor LocalModelCancellingHTTPClient: HTTPClient {
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         _ = request
         throw CancellationError()
+    }
+}
+
+private actor LocalModelFileArtifactDownloadClient: LocalModelArtifactDownloadClient {
+    private let body: String
+    private var urls: [URL] = []
+
+    init(body: String) {
+        self.body = body
+    }
+
+    func downloadArtifact(from url: URL, progress: (@Sendable (Double) -> Void)?) async throws -> URL {
+        urls.append(url)
+        progress?(0.5)
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "kairo-test-artifact-\(UUID().uuidString).download"
+        )
+        try Data(body.utf8).write(to: fileURL, options: [.atomic])
+        progress?(1.0)
+        return fileURL
+    }
+
+    func downloadedURLs() -> [URL] {
+        urls
     }
 }
 

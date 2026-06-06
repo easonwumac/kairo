@@ -986,7 +986,7 @@
 "settings.models.download.approvalRequired" = "Download requires explicit approval.";
 "settings.models.download.confirm" = "Confirm Download";
 "settings.models.download.cancel" = "Cancel";
-"settings.models.download.keepOpen" = "Keep this screen open while Kairo downloads and verifies the model. Cancel can clean up unfinished files.";
+"settings.models.download.keepOpen" = "Downloads can continue in the background. Return to finish verification and install.";
 "settings.models.download.cancelActive" = "Cancel Download";
 "settings.models.download.failure.checksumMismatch" = "Checksum mismatch. Expected %@, got %@.";
 "settings.models.download.failure.cancelled" = "Download cancelled by user.";

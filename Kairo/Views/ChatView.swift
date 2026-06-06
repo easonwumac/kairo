@@ -13,15 +13,21 @@ public struct ChatView: View {
     @StateObject private var viewModel: ChatViewModel
     private let actionDescriptorProvider: any AgentActionDescriptorProviding
     private let chromeActionRequest: ChatChromeActionRequest?
+    private let openModelSettings: () -> Void
     @State private var showToolPalette = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var captureStatusMessage: String?
     @FocusState private var isComposerFocused: Bool
 
-    public init(dependencies: ChatFeatureDependencies, chromeActionRequest: ChatChromeActionRequest? = nil) {
+    public init(
+        dependencies: ChatFeatureDependencies,
+        chromeActionRequest: ChatChromeActionRequest? = nil,
+        openModelSettings: @escaping () -> Void = {}
+    ) {
         _viewModel = StateObject(wrappedValue: ChatViewModel(dependencies: dependencies))
         self.actionDescriptorProvider = dependencies.actionDescriptorProvider
         self.chromeActionRequest = chromeActionRequest
+        self.openModelSettings = openModelSettings
     }
 
     public init(environment: KairoEnvironment = .preview()) {
@@ -405,6 +411,7 @@ public struct ChatView: View {
         ChatProviderRouteBar(
             status: viewModel.providerRouteStatus,
             canEdit: viewModel.canEditProviderRoute,
+            openModelSettings: openModelSettings,
             selectOption: { option in
                 Task { await viewModel.selectProviderRouteOption(option) }
             }

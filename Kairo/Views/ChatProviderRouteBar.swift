@@ -4,12 +4,18 @@ import SwiftUI
 struct ChatProviderRouteBar: View {
     let status: ChatProviderRouteStatus
     let canEdit: Bool
+    let openModelSettings: () -> Void
     let selectOption: (ChatProviderRouteOption) -> Void
     @State private var isPalettePresented = false
 
     var body: some View {
         VStack(spacing: 7) {
             Button {
+                guard !status.options.isEmpty else {
+                    isPalettePresented = false
+                    openModelSettings()
+                    return
+                }
                 withAnimation(.spring(response: 0.24, dampingFraction: 0.88)) {
                     isPalettePresented.toggle()
                 }
@@ -76,7 +82,6 @@ struct ChatProviderRouteBar: View {
                         routePaletteRow(
                             title: option.title,
                             sourceTitle: option.sourceTitle,
-                            detail: option.detail,
                             systemImage: option.systemImage,
                             isSelected: status.selectedOptionID == option.id,
                             isEnabled: option.isEnabled
@@ -90,7 +95,6 @@ struct ChatProviderRouteBar: View {
                 routePaletteRow(
                     title: KairoL10n.string("chat.provider.route.settingsUnavailable"),
                     sourceTitle: KairoL10n.string("chat.provider.model.label"),
-                    detail: KairoL10n.string("chat.provider.route.settingsUnavailable"),
                     systemImage: "lock.slash",
                     isSelected: false,
                     isEnabled: false
@@ -112,38 +116,28 @@ struct ChatProviderRouteBar: View {
     private func routePaletteRow(
         title: String,
         sourceTitle: String,
-        detail: String,
         systemImage: String,
         isSelected: Bool,
         isEnabled: Bool
     ) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Image(systemName: systemImage)
-                .font(.subheadline.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(isSelected ? KairoDesign.blue : (isEnabled ? KairoDesign.ink : KairoDesign.muted))
-                .frame(width: 30, height: 30)
+                .frame(width: 24, height: 24)
                 .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 5) {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(isEnabled ? KairoDesign.ink : KairoDesign.muted)
-                        .lineLimit(1)
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(isEnabled ? KairoDesign.ink : KairoDesign.muted)
+                .lineLimit(1)
 
-                    Text(sourceTitle)
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(isEnabled ? KairoDesign.blue : KairoDesign.muted)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(KairoDesign.softSurface.opacity(0.65), in: Capsule())
-                }
-
-                Text(detail)
-                    .font(.caption2)
-                    .foregroundStyle(KairoDesign.muted)
-                    .lineLimit(2)
-            }
+            Text(sourceTitle)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(isEnabled ? KairoDesign.blue : KairoDesign.muted)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(KairoDesign.softSurface.opacity(0.65), in: Capsule())
 
             Spacer(minLength: 0)
 
@@ -153,10 +147,10 @@ struct ChatProviderRouteBar: View {
                     .foregroundStyle(KairoDesign.blue)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 6)
         .opacity(isEnabled ? 1 : 0.66)
-        .background(KairoDesign.softSurface.opacity(isSelected ? 0.70 : 0.55), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .background(KairoDesign.softSurface.opacity(isSelected ? 0.70 : 0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func routePill(label: String, value: String, systemImage: String, tint: Color) -> some View {

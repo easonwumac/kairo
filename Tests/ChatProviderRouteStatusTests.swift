@@ -52,9 +52,8 @@ final class ChatProviderRouteStatusTests: XCTestCase {
         )
 
         await viewModel.refreshProviderRouteStatus()
-        XCTAssertEqual(viewModel.providerRouteStatus.selectedOptionID, "cloud.openai")
-        XCTAssertEqual(viewModel.providerRouteStatus.options.first?.id, "cloud.openai")
-        XCTAssertEqual(viewModel.providerRouteStatus.options.first?.isEnabled, false)
+        XCTAssertNil(viewModel.providerRouteStatus.selectedOptionID)
+        XCTAssertTrue(viewModel.providerRouteStatus.options.isEmpty)
 
         try await settingsService.saveAPIKey("sk-test-chat-route")
         await viewModel.refreshProviderRouteStatus()
@@ -64,7 +63,8 @@ final class ChatProviderRouteStatusTests: XCTestCase {
 
         try await settingsService.deleteAPIKey()
         await viewModel.refreshProviderRouteStatus()
-        XCTAssertEqual(viewModel.providerRouteStatus.options.first?.isEnabled, false)
+        XCTAssertNil(viewModel.providerRouteStatus.selectedOptionID)
+        XCTAssertTrue(viewModel.providerRouteStatus.options.isEmpty)
     }
 
     private func makeProviderRouteChatAPI() -> any KairoChatAPI {

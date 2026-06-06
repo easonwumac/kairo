@@ -986,7 +986,7 @@
 "settings.models.download.approvalRequired" = "下載需要明確確認。";
 "settings.models.download.confirm" = "確認下載";
 "settings.models.download.cancel" = "取消";
-"settings.models.download.keepOpen" = "請保持此畫面開啟，Kairo 會下載並驗證模型；取消時可清理未完成檔案。";
+"settings.models.download.keepOpen" = "下載可在背景續傳。回到 App 後完成驗證與安裝。";
 "settings.models.download.cancelActive" = "取消下載";
 "settings.models.download.failure.checksumMismatch" = "Checksum 不相符。預期 %@，實際 %@。";
 "settings.models.download.failure.cancelled" = "使用者已取消下載。";
