@@ -652,8 +652,17 @@
 "chat.capture.photoTextPreview" = "Image selected from Photos. Kairo can save it as an asset or analyze it after model setup.";
 "onboarding.hero.title" = "Build a searchable personal library";
 "onboarding.hero.subtitle" = "Send screenshots, links, text, and files to Kairo. Kairo stores the original asset, adds descriptions, and helps you find it later.";
+"onboarding.feature.capture" = "Capture screenshots, links, notes, and files.";
+"onboarding.feature.understand" = "Turn raw assets into summaries, facts, and actions.";
+"onboarding.feature.retrieve" = "Search by what you remember, not by file name.";
+"onboarding.step.label" = "Step %lld of %lld";
+"onboarding.next" = "Next";
 "onboarding.model.title" = "Choose how Kairo understands assets";
 "onboarding.model.subtitle" = "Local models keep analysis on device. Cloud models can be higher quality, but require account setup.";
+"onboarding.model.chatgpt" = "Connect ChatGPT";
+"onboarding.model.chatgpt.detail" = "Use a cloud model for stronger image and document understanding.";
+"onboarding.model.local" = "Download a local model";
+"onboarding.model.local.detail" = "Keep analysis on device when a compatible runtime and model are available.";
 "onboarding.model.open" = "Set up model";
 "onboarding.model.later" = "Later";
 "onboarding.model.requiredNotice" = "Model setup is required for AI analysis. You can still save and browse assets before setup.";

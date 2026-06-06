@@ -209,19 +209,31 @@ final class KairoAppSmokeUITests: XCTestCase {
 
         XCTAssertTrue(anyElement("onboarding.screen").waitForExistence(timeout: 5))
         XCTAssertTrue(anyElement("onboarding.hero").exists)
-        XCTAssertTrue(anyElement("onboarding.model-card").exists)
-        XCTAssertTrue(anyElement("onboarding.categories").exists)
+        XCTAssertFalse(anyElement("onboarding.model-card").exists)
+        XCTAssertFalse(anyElement("onboarding.categories").exists)
+
+        let firstNext = findElement("onboarding.next", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(firstNext.exists)
+        tapElement(firstNext)
+
+        XCTAssertTrue(anyElement("onboarding.categories").waitForExistence(timeout: 3))
+
+        let travel = findButton("onboarding.category.travel", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(travel.exists)
+        tapElement(travel)
+
+        let secondNext = findElement("onboarding.next", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(secondNext.exists)
+        tapElement(secondNext)
+
+        XCTAssertTrue(anyElement("onboarding.model-card").waitForExistence(timeout: 3))
 
         let later = findButton("onboarding.model.later", direction: .both, maxSwipes: 1)
         XCTAssertTrue(later.exists)
         tapElement(later)
         XCTAssertTrue(anyElement("onboarding.model.required-notice").waitForExistence(timeout: 2))
 
-        let travel = findButton("onboarding.category.travel", direction: .both, maxSwipes: 2)
-        XCTAssertTrue(travel.exists)
-        tapElement(travel)
-
-        let finish = findButton("onboarding.finish", direction: .down, maxSwipes: 4)
+        let finish = findButton("onboarding.finish", direction: .both, maxSwipes: 1)
         XCTAssertTrue(finish.exists)
         tapElement(finish)
 
@@ -238,6 +250,12 @@ final class KairoAppSmokeUITests: XCTestCase {
         relaunchForUITesting(showOnboarding: true)
 
         XCTAssertTrue(anyElement("onboarding.screen").waitForExistence(timeout: 5))
+        let firstNext = findElement("onboarding.next", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(firstNext.exists)
+        tapElement(firstNext)
+        let secondNext = findElement("onboarding.next", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(secondNext.exists)
+        tapElement(secondNext)
         let setup = findButton("onboarding.model.open", direction: .both, maxSwipes: 1)
         XCTAssertTrue(setup.exists)
         tapElement(setup)

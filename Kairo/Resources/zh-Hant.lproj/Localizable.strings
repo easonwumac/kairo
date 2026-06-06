@@ -652,8 +652,17 @@
 "chat.capture.photoTextPreview" = "從照片選取的圖片。模型設定完成後，Kairo 可以將它儲存為資產或進行分析。";
 "onboarding.hero.title" = "建立可搜尋的個人資料庫";
 "onboarding.hero.subtitle" = "把截圖、連結、文字與檔案送進 Kairo。Kairo 會保存原始資產、加入描述，並協助你之後找回。";
+"onboarding.feature.capture" = "收集截圖、連結、筆記與檔案。";
+"onboarding.feature.understand" = "把原始資料整理成摘要、事實與行動。";
+"onboarding.feature.retrieve" = "用你記得的線索搜尋，不必記檔名。";
+"onboarding.step.label" = "第 %lld / %lld 步";
+"onboarding.next" = "下一步";
 "onboarding.model.title" = "選擇 Kairo 如何理解資料";
 "onboarding.model.subtitle" = "本地模型讓分析留在裝置上；雲端模型通常品質較高，但需要帳號設定。";
+"onboarding.model.chatgpt" = "連接 ChatGPT";
+"onboarding.model.chatgpt.detail" = "使用雲端模型取得較強的圖片與文件理解能力。";
+"onboarding.model.local" = "下載本地模型";
+"onboarding.model.local.detail" = "在相容 runtime 與模型可用時，讓分析留在裝置上。";
 "onboarding.model.open" = "設定模型";
 "onboarding.model.later" = "稍後";
 "onboarding.model.requiredNotice" = "AI 分析需要完成模型設定。設定前仍可先儲存與瀏覽資產。";
