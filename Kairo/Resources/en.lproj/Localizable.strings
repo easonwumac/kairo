@@ -729,6 +729,12 @@
 "settings.models.default.change" = "Change";
 "settings.models.default.cloud.openai" = "OpenAI · Cloud";
 "settings.models.default.local" = "%@ · Local";
+"settings.models.default.page.title" = "Default model";
+"settings.models.default.page.detail" = "Choose which connected cloud provider or downloaded local model Chat should use first.";
+"settings.models.default.cloud.section" = "Cloud";
+"settings.models.default.local.section" = "Local";
+"settings.models.default.local.subtitle" = "Downloaded local model";
+"settings.models.default.emptyNotice" = "Connect a cloud model account or download a local model before choosing a default.";
 "settings.models.routePreference" = "Reply route";
 "settings.models.entry.accessibility" = "Open model settings. %@";
 "settings.models.entry.summary" = "%@ · %lld connected accounts · %@";

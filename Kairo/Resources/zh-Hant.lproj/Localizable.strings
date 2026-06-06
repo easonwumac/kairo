@@ -729,6 +729,12 @@
 "settings.models.default.change" = "更改";
 "settings.models.default.cloud.openai" = "OpenAI · 雲端";
 "settings.models.default.local" = "%@ · 本地";
+"settings.models.default.page.title" = "預設模型";
+"settings.models.default.page.detail" = "選擇 Chat 優先使用的雲端 provider 或已下載本地模型。";
+"settings.models.default.cloud.section" = "雲端";
+"settings.models.default.local.section" = "本地";
+"settings.models.default.local.subtitle" = "已下載本地模型";
+"settings.models.default.emptyNotice" = "請先連接雲端模型帳號，或下載本地模型後再選擇預設模型。";
 "settings.models.routePreference" = "回覆路由";
 "settings.models.entry.accessibility" = "開啟模型設定。%@";
 "settings.models.entry.summary" = "%@ · %lld 個已連接帳號 · %@";

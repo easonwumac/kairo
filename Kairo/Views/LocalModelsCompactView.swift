@@ -3,6 +3,7 @@ import SwiftUI
 
 struct LocalModelsCompactView: View {
     @State private var pageStack: [ModelSettingsPage] = []
+    @State private var defaultModelNotice: String?
 
     var topPadding: CGFloat = 16
     @Binding var apiKey: String
@@ -89,6 +90,8 @@ struct LocalModelsCompactView: View {
         switch page {
         case .addCloud, .addLocal:
             return page.title
+        case .defaultModel:
+            return page.title
         case let .cloudDetail(providerID):
             return cloudProviderRows.first { $0.id == providerID }?.title ?? page.title
         case let .localDetail(modelID):
@@ -98,6 +101,11 @@ struct LocalModelsCompactView: View {
 
     private var modelSettingsHome: some View {
         VStack(alignment: .leading, spacing: 14) {
+            if let defaultModelNotice {
+                defaultModelNoticeView(defaultModelNotice)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
             answerRouteCard
 
             cloudModelsSection
@@ -222,6 +230,8 @@ struct LocalModelsCompactView: View {
         switch page {
         case .addCloud, .addLocal:
             addPage(for: page)
+        case .defaultModel:
+            defaultModelSelectionPage
         case .cloudDetail(let providerID):
             if let row = cloudProviderRows.first(where: { $0.id == providerID }) {
                 cloudDetailPage(for: row)
@@ -259,7 +269,7 @@ struct LocalModelsCompactView: View {
                         cloudAddList
                     case .addLocal:
                         localAddList
-                    case .cloudDetail, .localDetail:
+                    case .cloudDetail, .localDetail, .defaultModel:
                         EmptyView()
                     }
                 }
@@ -381,37 +391,31 @@ struct LocalModelsCompactView: View {
 
             Spacer(minLength: 8)
 
-            defaultModelMenu
+            defaultModelSelectorButton
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(selectedModelSummaryText)
         .accessibilityIdentifier("settings.models.selected-summary")
     }
 
-    private var defaultModelMenu: some View {
-        Menu {
-            Button {
-                setLocalModelPreference(.preferCloud)
-            } label: {
-                Text(KairoL10n.string("settings.models.default.cloud.openai"))
-            }
-            .disabled(!hasOpenAIAPIKey)
-            .accessibilityIdentifier("settings.models.default.openai")
-
-            ForEach(selectableLocalModelRows) { row in
-                Button {
-                    selectLocalModel(row)
-                } label: {
-                    Text(KairoL10n.string("settings.models.default.local", row.displayName))
+    private var defaultModelSelectorButton: some View {
+        Button {
+            guard hasSelectableDefaultModels else {
+                withAnimation(.snappy(duration: 0.2)) {
+                    defaultModelNotice = KairoL10n.string("settings.models.default.emptyNotice")
                 }
-                .accessibilityIdentifier("settings.models.default.\(row.modelID)")
+                return
+            }
+            withAnimation(.snappy(duration: 0.2)) {
+                defaultModelNotice = nil
+                pushPage(.defaultModel)
             }
         } label: {
             HStack(spacing: 4) {
                 Text(KairoL10n.string("settings.models.default.change"))
                     .font(compactButtonLabelFont)
                     .lineLimit(1)
-                Image(systemName: "chevron.up.chevron.down")
+                Image(systemName: "chevron.right")
                     .font(.caption2.weight(.semibold))
             }
             .foregroundStyle(KairoDesign.blue)
@@ -422,6 +426,149 @@ struct LocalModelsCompactView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(KairoL10n.string("settings.models.default.change"))
         .accessibilityIdentifier("settings.models.default.menu")
+    }
+
+    private var hasSelectableDefaultModels: Bool {
+        !configuredCloudProviderRows.isEmpty || !selectableLocalModelRows.isEmpty
+    }
+
+    private var defaultModelSelectionPage: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if !usesRootChromeNavigation {
+                pageBackButton
+            }
+
+            KairoFocusCard {
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(KairoL10n.string("settings.models.default.page.title"))
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(KairoDesign.ink)
+                        Text(KairoL10n.string("settings.models.default.page.detail"))
+                            .font(compactModelMetadataFont)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if !configuredCloudProviderRows.isEmpty {
+                        defaultModelSectionHeader(KairoL10n.string("settings.models.default.cloud.section"))
+                        ForEach(configuredCloudProviderRows) { row in
+                            defaultCloudModelRow(row)
+                            if row.id != configuredCloudProviderRows.last?.id {
+                                Divider()
+                            }
+                        }
+                    }
+
+                    if !selectableLocalModelRows.isEmpty {
+                        if !configuredCloudProviderRows.isEmpty {
+                            Divider()
+                        }
+                        defaultModelSectionHeader(KairoL10n.string("settings.models.default.local.section"))
+                        ForEach(selectableLocalModelRows) { row in
+                            defaultLocalModelRow(row)
+                            if row.modelID != selectableLocalModelRows.last?.modelID {
+                                Divider()
+                            }
+                        }
+                    }
+                }
+            }
+            .accessibilityIdentifier("settings.models.default.page")
+        }
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
+    }
+
+    private func defaultModelNoticeView(_ message: String) -> some View {
+        Label(message, systemImage: "info.circle.fill")
+            .font(compactModelMetadataFont.weight(.semibold))
+            .foregroundStyle(KairoDesign.blue)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(KairoDesign.blue.opacity(0.10), in: Capsule())
+            .accessibilityIdentifier("settings.models.default.empty-notice")
+    }
+
+    private func defaultModelSectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(compactModelMetadataFont.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+    }
+
+    private func defaultCloudModelRow(_ row: CloudModelProviderRow) -> some View {
+        Button {
+            setLocalModelPreference(.preferCloud)
+            withAnimation(.snappy(duration: 0.2)) {
+                popPage()
+            }
+        } label: {
+            defaultModelRowContent(
+                title: row.title,
+                subtitle: row.method,
+                systemImage: "cloud.fill",
+                tint: KairoDesign.blue,
+                isSelected: localModelStatus.preference == .preferCloud
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("settings.models.default.cloud.\(row.id)")
+    }
+
+    private func defaultLocalModelRow(_ row: LocalModelSettingsRow) -> some View {
+        Button {
+            selectLocalModel(row)
+            withAnimation(.snappy(duration: 0.2)) {
+                popPage()
+            }
+        } label: {
+            defaultModelRowContent(
+                title: row.displayName,
+                subtitle: KairoL10n.string("settings.models.default.local.subtitle"),
+                systemImage: "cpu.fill",
+                tint: KairoDesign.teal,
+                isSelected: localModelStatus.selectedModel?.id == row.modelID
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("settings.models.default.local.\(row.modelID)")
+    }
+
+    private func defaultModelRowContent(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        tint: Color,
+        isSelected: Bool
+    ) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .background(tint.opacity(0.10), in: Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(compactModelNameFont)
+                    .foregroundStyle(KairoDesign.ink)
+                Text(subtitle)
+                    .font(compactModelMetadataFont)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.teal)
+            }
+        }
     }
 
     private var selectedModelSummaryText: String {
@@ -1402,6 +1549,7 @@ private enum CloudModelProviderSetupKind: Equatable {
 private enum ModelSettingsPage: Equatable {
     case addCloud
     case addLocal
+    case defaultModel
     case cloudDetail(String)
     case localDetail(String)
 
@@ -1411,6 +1559,8 @@ private enum ModelSettingsPage: Equatable {
             return KairoL10n.string("settings.models.cloud.add.title")
         case .addLocal:
             return KairoL10n.string("settings.models.local.add.title")
+        case .defaultModel:
+            return KairoL10n.string("settings.models.default.page.title")
         case .cloudDetail:
             return KairoL10n.string("settings.models.cloud.detail.title")
         case .localDetail:
@@ -1424,6 +1574,8 @@ private enum ModelSettingsPage: Equatable {
             return KairoL10n.string("settings.models.cloud.add.detail")
         case .addLocal:
             return KairoL10n.string("settings.models.local.add.detail")
+        case .defaultModel:
+            return KairoL10n.string("settings.models.default.page.detail")
         case .cloudDetail:
             return KairoL10n.string("settings.models.cloud.detail.detail")
         case .localDetail:
@@ -1437,6 +1589,8 @@ private enum ModelSettingsPage: Equatable {
             return "settings.models.cloud.add.page"
         case .addLocal:
             return "settings.models.local.add.page"
+        case .defaultModel:
+            return "settings.models.default.page"
         case .cloudDetail:
             return "settings.models.cloud.detail.page"
         case .localDetail:
