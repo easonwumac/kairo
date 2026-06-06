@@ -2,6 +2,23 @@ import XCTest
 @testable import KairoCore
 
 final class KairoKnowledgeAssetBackendAPITests: XCTestCase {
+    func testOnboardingDefaultCategoriesCreateKnowledgeFolders() async throws {
+        XCTAssertGreaterThanOrEqual(KairoOnboarding.defaultCategories.count, 20)
+        let selectedIDs = Set(["travel", "projects", "finance"])
+        let folders = KairoOnboarding.folders(for: selectedIDs)
+
+        XCTAssertEqual(folders.count, 3)
+        XCTAssertTrue(folders.allSatisfy { !$0.name.isEmpty })
+
+        let store = InMemoryKnowledgeAssetStore()
+        for folder in folders {
+            try await store.saveFolder(folder)
+        }
+
+        let stored = try await store.listFolders()
+        XCTAssertEqual(Set(stored.map(\.name)), Set(folders.map(\.name)))
+    }
+
     func testKnowledgeAssetDecodesLegacyStoredAssetWithDefaultInfoPageFields() throws {
         let json = """
         {

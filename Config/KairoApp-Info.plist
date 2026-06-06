@@ -52,5 +52,9 @@
 	<string>Kairo 會用通知提醒你 briefing、待確認動作與重要待辦。</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Kairo 只會在你明確要求並確認後，透過 Contacts.framework 建立聯絡人。</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Kairo 只會讀取你明確選取的圖片，用來建立資產、摘要或待辦草稿。</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Kairo 需要相機權限，才能在你選擇拍照時將照片加入資產或 Chat。</string>
 </dict>
 </plist>

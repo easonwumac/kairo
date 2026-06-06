@@ -204,6 +204,64 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(anyElement("chat.message.assistant").waitForExistence(timeout: 5))
     }
 
+    func testOnboardingCreatesStarterCategoriesAndReturnsToChat() throws {
+        relaunchForUITesting(showOnboarding: true)
+
+        XCTAssertTrue(anyElement("onboarding.screen").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("onboarding.hero").exists)
+        XCTAssertTrue(anyElement("onboarding.model-card").exists)
+        XCTAssertTrue(anyElement("onboarding.categories").exists)
+
+        let later = findButton("onboarding.model.later", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(later.exists)
+        tapElement(later)
+        XCTAssertTrue(anyElement("onboarding.model.required-notice").waitForExistence(timeout: 2))
+
+        let travel = findButton("onboarding.category.travel", direction: .both, maxSwipes: 2)
+        XCTAssertTrue(travel.exists)
+        tapElement(travel)
+
+        let finish = findButton("onboarding.finish", direction: .down, maxSwipes: 4)
+        XCTAssertTrue(finish.exists)
+        tapElement(finish)
+
+        XCTAssertTrue(anyElement("root.safe-area-header").waitForExistence(timeout: 5))
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+        XCTAssertTrue(anyElement("chat.composer.text").waitForExistence(timeout: 5))
+        selectDrawerSection(identifier: "root.drawer.categories", label: "Categories")
+        XCTAssertTrue(anyElement("categories.screen").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("categories.list").exists)
+    }
+
+    func testModelSetupFromOnboardingOpensModelSettings() throws {
+        relaunchForUITesting(showOnboarding: true)
+
+        XCTAssertTrue(anyElement("onboarding.screen").waitForExistence(timeout: 5))
+        let setup = findButton("onboarding.model.open", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(setup.exists)
+        tapElement(setup)
+
+        XCTAssertTrue(anyElement("settings.models.screen").waitForExistence(timeout: 5))
+    }
+
+    func testChatPlusShowsImageAndCameraCaptureOptions() throws {
+        assertPrimaryDrawerItemsExist()
+        selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")
+        openCurrentThreadIfNeeded()
+        dismissKeyboardIfPresent()
+
+        let menu = findButton("chat.tools.menu", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(menu.exists)
+        menu.tap()
+
+        XCTAssertTrue(anyElement("chat.capture.photo-library").waitForExistence(timeout: 3))
+        let camera = findButton("chat.capture.camera", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(camera.exists)
+        camera.tap()
+        XCTAssertTrue(anyElement("chat.capture.status").waitForExistence(timeout: 3))
+    }
+
     func testChatMessageReplyPreviewAndCopyControlsExist() throws {
         assertPrimaryDrawerItemsExist()
         selectDrawerSection(identifier: "root.drawer.chat", label: "Chat")

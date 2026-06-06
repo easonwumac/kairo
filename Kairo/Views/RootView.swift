@@ -26,6 +26,7 @@ public struct RootView: View {
     private let rootDependencies: RootFeatureDependencies
     private let settingsMode: SettingsViewMode
     @AppStorage(KairoAppearancePreference.storageKey) private var appearancePreferenceRawValue = KairoAppearancePreference.system.rawValue
+    @AppStorage(KairoOnboarding.completedStorageKey) private var isOnboardingCompleted = false
     @State private var selectedSection: RootSection = .chat
     @State private var isMenuPresented = false
     @State private var isPageActionsPresented = false
@@ -57,27 +58,46 @@ public struct RootView: View {
 
                 shellMarker
 
-                selectedContent
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .ignoresSafeArea(.container, edges: .top)
-                    .onPreferenceChange(RootChromePreferenceKey.self) { context in
-                        chromeContext = context
+                if isOnboardingCompleted {
+                    selectedContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .ignoresSafeArea(.container, edges: .top)
+                        .onPreferenceChange(RootChromePreferenceKey.self) { context in
+                            chromeContext = context
+                        }
+
+                    rootHeader(topInset: safeAreaInsets.top)
+                        .zIndex(5)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+
+                    if isPageActionsPresented && !isMenuPresented {
+                        pageActionsOverlay(topInset: safeAreaInsets.top)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                            .zIndex(6)
                     }
 
-                rootHeader(topInset: safeAreaInsets.top)
-                    .zIndex(5)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-
-                if isPageActionsPresented && !isMenuPresented {
-                    pageActionsOverlay(topInset: safeAreaInsets.top)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                        .zIndex(6)
-                }
-
-                if isMenuPresented {
-                    drawerOverlay(safeAreaInsets: safeAreaInsets, containerWidth: proxy.size.width)
-                        .transition(.move(edge: .leading))
-                        .zIndex(10)
+                    if isMenuPresented {
+                        drawerOverlay(safeAreaInsets: safeAreaInsets, containerWidth: proxy.size.width)
+                            .transition(.move(edge: .leading))
+                            .zIndex(10)
+                    }
+                } else {
+                    OnboardingView(
+                        assetAPI: environment.backendAPI.knowledgeAssets,
+                        openModelSettings: {
+                            selectedSection = .models
+                            isOnboardingCompleted = true
+                        },
+                        finish: {
+                            isOnboardingCompleted = true
+                            Task { @MainActor in
+                                await Task.yield()
+                                triggerChatChromeAction(.newThread)
+                            }
+                        }
+                    )
+                    .transition(.opacity)
+                    .zIndex(20)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -149,6 +169,8 @@ public struct RootView: View {
                 rootChromeBackRequestID: $chromeBackRequestID,
                 usesRootChromeNavigation: true
             )
+        case .categories:
+            KnowledgeCategoriesView(dependencies: environment.knowledgeAssetFeatureDependencies)
         case .memory:
             MemoryCenterView(dependencies: environment.memoryFeatureDependencies)
         case .shortcuts:
@@ -388,7 +410,7 @@ public struct RootView: View {
 
                     navigationGroup(
                         title: KairoL10n.string("root.menu.group.primary"),
-                        sections: [.assets]
+                        sections: [.assets, .categories]
                     )
 
                     navigationGroup(
@@ -588,6 +610,7 @@ public struct RootView: View {
 private enum RootSection: String, CaseIterable, Identifiable {
     case chat
     case assets
+    case categories
     case memory
     case shortcuts
     case access
@@ -602,6 +625,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return KairoL10n.string("root.section.chat.title")
         case .assets:
             return KairoL10n.string("root.section.assets.title")
+        case .categories:
+            return KairoL10n.string("root.section.categories.title")
         case .memory:
             return KairoL10n.string("root.section.memory.title")
         case .shortcuts:
@@ -621,6 +646,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return KairoL10n.string("root.section.chat.subtitle")
         case .assets:
             return KairoL10n.string("root.section.assets.subtitle")
+        case .categories:
+            return KairoL10n.string("root.section.categories.subtitle")
         case .memory:
             return KairoL10n.string("root.section.memory.subtitle")
         case .shortcuts:
@@ -640,6 +667,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return KairoL10n.string("root.section.chat.shortTitle")
         case .assets:
             return KairoL10n.string("root.section.assets.shortTitle")
+        case .categories:
+            return KairoL10n.string("root.section.categories.shortTitle")
         case .memory:
             return KairoL10n.string("root.section.memory.shortTitle")
         case .shortcuts:
@@ -668,6 +697,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return "message.fill"
         case .assets:
             return "archivebox.fill"
+        case .categories:
+            return "folder.fill"
         case .memory:
             return "brain.head.profile"
         case .shortcuts:
@@ -683,7 +714,7 @@ private enum RootSection: String, CaseIterable, Identifiable {
 
     var tint: Color {
         switch self {
-        case .assets, .memory, .access:
+        case .assets, .categories, .memory, .access:
             return KairoDesign.teal
         case .chat, .models:
             return KairoDesign.blue

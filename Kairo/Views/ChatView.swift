@@ -1,5 +1,8 @@
 #if canImport(SwiftUI)
 import SwiftUI
+#if canImport(PhotosUI)
+import PhotosUI
+#endif
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -11,6 +14,8 @@ public struct ChatView: View {
     private let actionDescriptorProvider: any AgentActionDescriptorProviding
     private let chromeActionRequest: ChatChromeActionRequest?
     @State private var showToolPalette = false
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var captureStatusMessage: String?
     @FocusState private var isComposerFocused: Bool
 
     public init(dependencies: ChatFeatureDependencies, chromeActionRequest: ChatChromeActionRequest? = nil) {
@@ -33,6 +38,10 @@ public struct ChatView: View {
         }
         .onChange(of: chromeActionRequest) { _, request in
             handleChromeAction(request)
+        }
+        .onChange(of: selectedPhotoItem) { _, item in
+            guard let item else { return }
+            Task { await importPhotoItem(item) }
         }
         #else
         NavigationSplitView {
@@ -406,8 +415,9 @@ public struct ChatView: View {
 
     private var toolMenu: some View {
         Button {
+            isComposerFocused = false
             withAnimation(.spring(response: 0.24, dampingFraction: 0.88)) {
-                showToolPalette.toggle()
+                showToolPalette = true
             }
         } label: {
             Image(systemName: "plus")
@@ -430,6 +440,7 @@ public struct ChatView: View {
 
     private var toolPalette: some View {
         VStack(spacing: 7) {
+            capturePalette
             capabilityPromptButton(
                 title: KairoL10n.string("chat.tools.phoneTools"),
                 systemImage: "iphone.gen3",
@@ -460,6 +471,57 @@ public struct ChatView: View {
         .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 16, x: 0, y: 10)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.tools.palette")
+    }
+
+    @ViewBuilder
+    private var capturePalette: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 8) {
+                #if canImport(PhotosUI)
+                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                    captureButtonLabel(
+                        title: KairoL10n.string("chat.capture.photoLibrary"),
+                        systemImage: "photo.on.rectangle"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("chat.capture.photo-library")
+                #else
+                captureButtonLabel(title: KairoL10n.string("chat.capture.photoLibrary"), systemImage: "photo.on.rectangle")
+                    .accessibilityIdentifier("chat.capture.photo-library")
+                #endif
+
+                Button {
+                    handleCameraCaptureRequest()
+                } label: {
+                    captureButtonLabel(
+                        title: KairoL10n.string("chat.capture.camera"),
+                        systemImage: "camera.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("chat.capture.camera")
+            }
+
+            if let captureStatusMessage {
+                Label(captureStatusMessage, systemImage: "info.circle.fill")
+                    .font(.caption2)
+                    .foregroundStyle(KairoDesign.amber)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("chat.capture.status")
+            }
+        }
+        .padding(.bottom, 3)
+    }
+
+    private func captureButtonLabel(title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(KairoDesign.ink)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+            .background(KairoDesign.softSurface.opacity(0.58), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
     }
 
     private func capabilityPromptButton(
@@ -494,6 +556,57 @@ public struct ChatView: View {
         showToolPalette = false
         viewModel.composerText = prompt
         isComposerFocused = true
+    }
+
+    private func handleCameraCaptureRequest() {
+        #if canImport(UIKit)
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+            captureStatusMessage = KairoL10n.string("chat.capture.cameraUnavailable")
+            return
+        }
+        captureStatusMessage = KairoL10n.string("chat.capture.cameraRequiresDevice")
+        #else
+        captureStatusMessage = KairoL10n.string("chat.capture.cameraUnavailable")
+        #endif
+    }
+
+    private func importPhotoItem(_ item: PhotosPickerItem) async {
+        #if canImport(PhotosUI)
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self) else {
+                await MainActor.run {
+                    captureStatusMessage = KairoL10n.string("chat.capture.photoImportFailed")
+                    selectedPhotoItem = nil
+                }
+                return
+            }
+            let fileURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("kairo-photo-\(UUID().uuidString).jpg")
+            try data.write(to: fileURL, options: .atomic)
+            let attachment = ChatAttachment(
+                kind: .image,
+                displayName: fileURL.lastPathComponent,
+                uniformTypeIdentifier: "public.jpeg",
+                fileURL: fileURL,
+                byteCount: Int64(data.count),
+                textPreview: KairoL10n.string("chat.capture.photoTextPreview"),
+                source: .photoPicker
+            )
+            await MainActor.run {
+                viewModel.addAttachment(attachment)
+                captureStatusMessage = KairoL10n.string("chat.capture.photoAttached")
+                showToolPalette = false
+                selectedPhotoItem = nil
+            }
+        } catch {
+            await MainActor.run {
+                captureStatusMessage = KairoL10n.string("chat.capture.photoImportFailed")
+                selectedPhotoItem = nil
+            }
+        }
+        #else
+        _ = item
+        #endif
     }
 
     private var isSendDisabled: Bool {

@@ -8,18 +8,11 @@ extension KairoAppSmokeUITests {
         XCTAssertGreaterThan(menuButton.frame.minY, 20)
 
         openDrawer()
-        XCTAssertTrue(findButton("root.drawer.chat", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findButton("root.drawer.memory", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findButton("root.drawer.shortcuts", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findButton("root.drawer.access", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.chat.new", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.assets", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.categories", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findButton("root.drawer.models", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findButton("root.drawer.settings", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "Phone tools", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "Workflows", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "AI setup", direction: .both, maxSwipes: 1).exists)
-        let closeButton = findButton("root.drawer.close", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(closeButton.exists)
-        XCTAssertGreaterThan(closeButton.frame.minY, 20)
         closeDrawerIfOpen()
     }
 
@@ -398,6 +391,12 @@ extension KairoAppSmokeUITests {
         if identifiedButton.exists {
             return identifiedButton
         }
+        if identifier == "root.drawer.chat" {
+            let newChatButton = app.buttons["root.drawer.chat.new"]
+            if newChatButton.exists {
+                return newChatButton
+            }
+        }
 
         return app.buttons[label]
     }
@@ -515,7 +514,8 @@ extension KairoAppSmokeUITests {
         liveLocalModelRuntime: Bool = false,
         localModelFilePath: String? = nil,
         selectLocalModel: Bool = false,
-        localRoutePreference: String? = nil
+        localRoutePreference: String? = nil,
+        showOnboarding: Bool = false
     ) {
         app.terminate()
         app = XCUIApplication()
@@ -548,6 +548,9 @@ extension KairoAppSmokeUITests {
         }
         if let localRoutePreference {
             app.launchArguments.append("--ui-testing-local-route-preference=\(localRoutePreference)")
+        }
+        if showOnboarding {
+            app.launchArguments.append("--ui-testing-show-onboarding")
         }
         if let initialSection {
             app.launchArguments.append("--ui-testing-root-section=\(initialSection)")
@@ -643,7 +646,11 @@ extension KairoAppSmokeUITests {
         let returnButton = keyboard.buttons["Return"]
         let keyboardDismissButton = doneButton.exists ? doneButton : returnButton
         if keyboardDismissButton.exists {
-            keyboardDismissButton.tap()
+            if keyboardDismissButton.isHittable {
+                keyboardDismissButton.tap()
+            } else {
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap()
+            }
             if keyboard.waitForNonExistence(timeout: 2) {
                 return
             }

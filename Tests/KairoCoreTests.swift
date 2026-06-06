@@ -1455,8 +1455,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("Opened visible Safari web search handoff. No browsing has happened inside Kairo."))
         XCTAssertTrue(uiTestSources.contains("testAutomationsRecipeCenterPreviewsInternalRecipeAndShowsActionsDirectly"))
         XCTAssertTrue(uiTestSources.contains("testAutomationsShowsShortcutTemplatesRequireUserApproval"))
-        XCTAssertTrue(uiTestSources.contains(#""root.drawer.shortcuts""#))
-        XCTAssertTrue(uiTestSources.contains(#""root.drawer.memory""#))
         XCTAssertTrue(uiTestSources.contains(#""root.drawer.models""#))
         XCTAssertTrue(uiTestSources.contains(#""automations.seed-samples""#))
         XCTAssertTrue(uiTestSources.contains(#""automations.recipe.daily-briefing.preview""#))

@@ -37,6 +37,10 @@ struct KairoApp: App {
 
                     let arguments = ProcessInfo.processInfo.arguments
                     if arguments.contains("--ui-testing") {
+                        UserDefaults.standard.set(
+                            !arguments.contains("--ui-testing-show-onboarding"),
+                            forKey: KairoOnboarding.completedStorageKey
+                        )
                         do {
                             let uiTestingEnvironment = try await KairoEnvironment.uiTesting(
                                 resetPersistentState: arguments.contains("--reset-ui-testing-data"),
