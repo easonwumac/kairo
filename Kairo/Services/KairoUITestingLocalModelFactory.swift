@@ -129,7 +129,8 @@ public struct KairoUITestingLocalModelFactory: Sendable {
                 localModelSettingsService: settingsService,
                 localProvider: LocalModelRuntimeAIProvider(
                     localModelSettingsService: settingsService,
-                    runtime: replyRuntime
+                    runtime: replyRuntime,
+                    performanceRecorder: benchmarkService
                 ),
                 localRuntimeAvailable: replyCheckRuntimeOverride != nil
             )

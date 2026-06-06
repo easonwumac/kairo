@@ -1212,6 +1212,68 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(capturedParameters, parameters)
     }
 
+    func testLocalModelRuntimeAIProviderRecordsChatInferencePerformance() async throws {
+        let settingsURL = temporaryFileURL(named: "local-model-settings.json")
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
+        let catalog = LocalModelCatalog(
+            signingKeyID: "test-key",
+            signature: "test-signature",
+            minimumSafetyPolicyVersion: "2026.1",
+            models: [
+                makeLocalModelManifest(id: "qwen-small", safetyPolicyVersion: "2026.1")
+            ]
+        )
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let store = try await FileBackedLocalModelSettingsStore(fileURL: settingsURL)
+        let settingsService = LocalModelSettingsService(
+            catalog: catalog,
+            installRegistry: registry,
+            settingsStore: store
+        )
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen-small",
+            version: "1.0",
+            status: .installed,
+            fileURL: registryURL.deletingLastPathComponent().appendingPathComponent("qwen-small.gguf"),
+            installedSizeBytes: 1024,
+            sha256: "abc123"
+        ))
+        try await settingsService.selectModel(id: "qwen-small")
+        let benchmarkStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
+        let benchmarkService = LocalModelBenchmarkService(
+            catalog: catalog,
+            installRegistry: registry,
+            resultStore: benchmarkStore
+        )
+        let runtime = DeterministicLocalModelReplyCheckRuntime(
+            runtimePackage: "chat-runtime",
+            responseText: "recorded answer",
+            promptTokens: 96,
+            generatedTokens: 24,
+            promptTokensPerSecond: 32,
+            generationTokensPerSecond: 8
+        )
+        let provider = LocalModelRuntimeAIProvider(
+            localModelSettingsService: settingsService,
+            runtime: runtime,
+            performanceRecorder: benchmarkService
+        )
+
+        _ = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Record this local chat inference."
+        ))
+
+        let snapshot = await benchmarkService.performanceSnapshot()
+        XCTAssertEqual(snapshot.totalRunCount, 1)
+        XCTAssertEqual(snapshot.averagePromptTokensPerSecond, 32)
+        XCTAssertEqual(snapshot.averageGenerationTokensPerSecond, 8)
+        XCTAssertEqual(snapshot.prefillTokenCount, 96)
+        XCTAssertEqual(snapshot.modelSummaries.map(\.modelID), ["qwen-small"])
+        XCTAssertEqual(snapshot.modelSummaries.first?.runCount, 1)
+    }
+
     func testLocalModelRuntimeAIProviderBuildsConversationKeyFromThreadModelAndParameters() async throws {
         let settingsURL = temporaryFileURL(named: "local-model-settings.json")
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
@@ -1292,6 +1354,30 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(response.message, "Visible local answer.")
         XCTAssertEqual(response.reasoningText, "Internal chain of thought.")
         XCTAssertFalse(response.message.contains("<think>"))
+    }
+
+    func testLocalModelRuntimeAIProviderRetriesOnceWhenRuntimeOutputIsInvalid() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .localOnly,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let runtime = SequencedLocalModelReplyRuntime(responses: [
+            "Language rule:\nReply using the current iOS system language: 繁體中文（台灣） (zh-Hant-TW).",
+            "第二次本機回覆可用。"
+        ])
+        let provider = LocalModelRuntimeAIProvider(
+            localModelSettingsService: service,
+            runtime: runtime
+        )
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "hello"
+        ))
+
+        XCTAssertFalse(response.message.isEmpty)
+        let callCount = await runtime.callCount()
+        XCTAssertEqual(callCount, 2)
     }
 
     func testLocalModelRoutingAIProviderFailsClosedWhenSelectedRuntimeIsUnavailable() async throws {
@@ -2996,6 +3082,46 @@ private actor RecordingConversationalLocalModelReplyRuntime: LocalModelConversat
             measuredAt: Date(timeIntervalSince1970: 1_780_358_400),
             notes: "Recording local model runtime for conversation key propagation tests."
         )
+    }
+}
+
+private actor SequencedLocalModelReplyRuntime: LocalModelReplyCheckRuntime {
+    private var responses: [String]
+    private var calls = 0
+
+    init(responses: [String]) {
+        self.responses = responses
+    }
+
+    func generateReply(
+        model: LocalModelManifest,
+        installRecord: LocalModelInstallRecord,
+        prompt: String,
+        parameters: LocalModelRuntimeParameters
+    ) async throws -> LocalModelReplyCheckResult {
+        _ = installRecord
+        _ = prompt
+        _ = parameters
+        calls += 1
+        let response = responses.isEmpty ? "" : responses.removeFirst()
+        return LocalModelReplyCheckResult(
+            modelID: model.id,
+            modelDisplayName: model.displayName,
+            runtime: .gguf,
+            runtimePackage: "sequenced-runtime",
+            prompt: prompt,
+            responseText: response,
+            promptTokens: 12,
+            generatedTokens: 6,
+            promptTokensPerSecond: 10,
+            generationTokensPerSecond: 5,
+            measuredAt: Date(timeIntervalSince1970: 1_780_358_400 + Double(calls)),
+            notes: "Sequenced local model runtime for retry validation."
+        )
+    }
+
+    func callCount() -> Int {
+        calls
     }
 }
 

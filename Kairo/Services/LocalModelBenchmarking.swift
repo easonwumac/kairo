@@ -213,6 +213,10 @@ public protocol LocalModelBenchmarkEngine: Sendable {
     ) async throws -> LocalModelBenchmarkRunResult
 }
 
+public protocol LocalModelPerformanceRecording: Sendable {
+    func recordInferenceResult(_ result: LocalModelReplyCheckResult) async
+}
+
 public struct UnavailableLocalModelBenchmarkEngine: LocalModelBenchmarkEngine {
     private let reason: String
 
@@ -470,7 +474,7 @@ public actor FileBackedLocalModelInferenceCacheStore {
     }
 }
 
-public actor LocalModelBenchmarkService {
+public actor LocalModelBenchmarkService: LocalModelPerformanceRecording {
     private var catalog: LocalModelCatalog
     private let installRegistry: FileBackedLocalModelInstallRegistry
     private let resultStore: FileBackedLocalModelBenchmarkStore
@@ -567,6 +571,24 @@ public actor LocalModelBenchmarkService {
 
     public func clearInferenceCache() async throws {
         try await inferenceCacheStore?.clear()
+    }
+
+    public func recordInferenceResult(_ result: LocalModelReplyCheckResult) async {
+        let benchmarkResult = LocalModelBenchmarkRunResult(
+            id: "\(result.modelID)-chat-\(Int(result.measuredAt.timeIntervalSince1970 * 1_000))",
+            modelID: result.modelID,
+            modelDisplayName: result.modelDisplayName,
+            runtime: result.runtime,
+            runtimePackage: result.runtimePackage,
+            promptTokens: result.promptTokens ?? 0,
+            generatedTokens: result.generatedTokens,
+            promptTokensPerSecond: result.promptTokensPerSecond ?? 0,
+            generationTokensPerSecond: result.generationTokensPerSecond,
+            measuredAt: result.measuredAt,
+            isReferenceOnlyForIOS: false,
+            notes: "Recorded from Chat local inference."
+        )
+        try? await resultStore.upsert(benchmarkResult)
     }
 
     public func runBenchmark(

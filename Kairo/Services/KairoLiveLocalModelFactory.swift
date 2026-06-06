@@ -99,7 +99,8 @@ public struct KairoLiveLocalModelFactory: Sendable {
             localModelSettingsService: settingsService,
             localProvider: LocalModelRuntimeAIProvider(
                 localModelSettingsService: settingsService,
-                runtime: runtimeBundle.replyRuntime
+                runtime: runtimeBundle.replyRuntime,
+                performanceRecorder: benchmarkService
             ),
             localRuntimeAvailable: runtimeBundle.chatRuntimeAvailable
         )

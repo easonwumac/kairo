@@ -33,6 +33,7 @@ struct KairoApp: App {
     @State private var didLoadEnvironment = false
     @State private var isLoadingLaunchEnvironment = true
     @State private var launchEnvironmentError: String?
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -106,6 +107,14 @@ struct KairoApp: App {
                         )
                         isLoadingLaunchEnvironment = false
                     }
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    guard newPhase == .background else { return }
+                    #if canImport(llama)
+                    Task {
+                        await LlamaCppLocalModelRuntime.clearLoadedSessions()
+                    }
+                    #endif
                 }
         }
     }

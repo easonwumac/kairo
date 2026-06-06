@@ -219,6 +219,37 @@ public enum ChatResponseLanguagePreference: String, Codable, CaseIterable, Equat
         }
     }
 
+    public var promptLanguageTag: String {
+        switch self {
+        case .system:
+            return Self.systemLanguageDescription()
+        case .english:
+            return "English"
+        case .traditionalChinese:
+            return "Traditional Chinese"
+        case .simplifiedChinese:
+            return "Simplified Chinese"
+        case .japanese:
+            return "Japanese"
+        case .korean:
+            return "Korean"
+        case .spanish:
+            return "Spanish"
+        case .french:
+            return "French"
+        case .german:
+            return "German"
+        case .portuguese:
+            return "Portuguese"
+        case .indonesian:
+            return "Indonesian"
+        case .thai:
+            return "Thai"
+        case .vietnamese:
+            return "Vietnamese"
+        }
+    }
+
     private static func systemLanguageDescription() -> String {
         let preferredIdentifier = Locale.preferredLanguages.first
             ?? Locale.current.identifier
