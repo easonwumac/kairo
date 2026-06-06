@@ -9,6 +9,7 @@ public struct KairoUITestingLocalModelComponents: Sendable {
     public var catalog: LocalModelCatalog
     public var catalogService: LocalModelCatalogService
     public var settingsService: LocalModelSettingsService
+    public var downloader: any LocalModelDownloader
     public var benchmarkService: LocalModelBenchmarkService
     public var replyCheckService: LocalModelReplyCheckService
     public var aiProvider: any AIProvider
@@ -18,6 +19,7 @@ public struct KairoUITestingLocalModelComponents: Sendable {
         catalog: LocalModelCatalog,
         catalogService: LocalModelCatalogService,
         settingsService: LocalModelSettingsService,
+        downloader: any LocalModelDownloader,
         benchmarkService: LocalModelBenchmarkService,
         replyCheckService: LocalModelReplyCheckService,
         aiProvider: any AIProvider,
@@ -26,6 +28,7 @@ public struct KairoUITestingLocalModelComponents: Sendable {
         self.catalog = catalog
         self.catalogService = catalogService
         self.settingsService = settingsService
+        self.downloader = downloader
         self.benchmarkService = benchmarkService
         self.replyCheckService = replyCheckService
         self.aiProvider = aiProvider
@@ -80,6 +83,10 @@ public struct KairoUITestingLocalModelFactory: Sendable {
             installRegistry: installRegistry,
             settingsStore: settingsStore
         )
+        let downloader = KairoUITestingLocalModelDownloader(
+            installRegistry: installRegistry,
+            modelsDirectory: localModelsDirectory
+        )
         if selectInstalledLocalModel {
             try await settingsService.selectModel(id: LocalModelManifest.qwen35Tiny.id)
         }
@@ -123,6 +130,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
             catalog: catalog,
             catalogService: catalogService,
             settingsService: settingsService,
+            downloader: downloader,
             benchmarkService: benchmarkService,
             replyCheckService: replyCheckService,
             aiProvider: aiProvider,
@@ -238,5 +246,48 @@ public struct KairoUITestingLocalModelFactory: Sendable {
             httpClient: httpClient,
             trustStore: LocalModelCatalogTrustStore(trustedKeys: trustedKeys)
         )
+    }
+}
+
+private actor KairoUITestingLocalModelDownloader: LocalModelDownloader {
+    private let installRegistry: FileBackedLocalModelInstallRegistry
+    private let modelsDirectory: URL
+
+    init(
+        installRegistry: FileBackedLocalModelInstallRegistry,
+        modelsDirectory: URL
+    ) {
+        self.installRegistry = installRegistry
+        self.modelsDirectory = modelsDirectory
+    }
+
+    func download(_ manifest: LocalModelManifest, progress: (@Sendable (Double) -> Void)?) async throws -> URL {
+        try FileManager.default.createDirectory(at: modelsDirectory, withIntermediateDirectories: true)
+        let destinationURL = modelsDirectory.appendingPathComponent("\(manifest.id)-ui-testing.gguf")
+        progress?(0.15)
+        try await installRegistry.upsert(LocalModelInstallRecord(
+            modelID: manifest.id,
+            version: manifest.version,
+            status: .downloading,
+            fileURL: destinationURL,
+            installedSizeBytes: 0,
+            sha256: manifest.sha256
+        ))
+
+        try await Task.sleep(for: .milliseconds(120))
+        progress?(0.65)
+        let placeholder = Data("kairo-ui-testing-local-model-\(manifest.id)".utf8)
+        try placeholder.write(to: destinationURL, options: [.atomic])
+        try await installRegistry.upsert(LocalModelInstallRecord(
+            modelID: manifest.id,
+            version: manifest.version,
+            status: .installed,
+            fileURL: destinationURL,
+            installedSizeBytes: Int64(placeholder.count),
+            sha256: manifest.sha256,
+            lastVerifiedAt: Date()
+        ))
+        progress?(1.0)
+        return destinationURL
     }
 }

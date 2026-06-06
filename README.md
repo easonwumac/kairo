@@ -2,85 +2,117 @@
 
 ![Kairo GitHub cover](Assets/github-readme-cover.svg)
 
-Kairo is an open-source iOS app for personal information asset management.
+Kairo is a personal information library for iPhone.
 
-The core idea is simple: users capture screenshots, links, files, notes, and messages into Kairo; Kairo turns them into searchable assets, structured information pages, reminders, drafts, and safe visible handoffs.
+It is built for the everyday problem of saving useful things and never finding them again: screenshots, booking confirmations, receipts, URLs, PDFs, travel plans, project notes, warranty cards, medical instructions, customer messages, and random details that only matter later.
 
-Kairo is not trying to be a hidden phone controller. It does not read other apps' private data, control other app UIs, or silently execute external actions. It uses public iOS paths such as Share Extension, App Intents, EventKit, UserNotifications, document/photo input, URL handoff, and explicit user confirmation.
+Send them to Kairo. Kairo keeps the original asset, describes what it contains, organizes it into a searchable Library, and helps turn it into reminders, checklists, drafts, or structured InfoPages.
+
+## Why Kairo Exists
+
+Your camera roll is not a knowledge base.
+
+Screenshots are easy to save but hard to recover. A pickup confirmation for a Hong Kong trip, a hotel address, a return-flight reminder, a client request, or a warranty screenshot all become anonymous images mixed with everything else.
+
+Kairo turns those scattered captures into personal information assets:
+
+- searchable by meaning, not just filename;
+- grouped into folders and InfoPages;
+- linked back to the original screenshot, URL, PDF, or note;
+- usable from Chat when you need to ask, “where was that thing?”;
+- able to produce confirmed reminders and drafts without silently acting for you.
 
 ## Product Loop
 
 ```text
-Capture -> Understand -> Prepare Actions
+Capture -> Understand -> Organize -> Prepare Actions
 ```
 
 ### Capture
 
-- Import text, URLs, screenshots/images, PDFs, file metadata, and manual notes.
-- Shared content lands in Chat review first, then Kairo decides whether to save, merge, or ask.
-- Keep original asset references when available.
-- Store source, created date, extracted text, tags, sensitivity, and linked InfoPages.
-- Organize assets by type, date, search text, and user-created folders.
-- Let users choose whether imported assets participate in iCloud backup.
+Import from Share Sheet, Chat, App Intents, manual notes, image picker, camera, URLs, PDFs, and file metadata.
+
+Kairo should preserve the original asset reference whenever possible. A screenshot stays connected to the description, extracted text, source date, folder, and InfoPage it belongs to.
 
 ### Understand
 
-- Summarize content.
-- Extract tasks, dates, facts, locations, contacts, reply intent, and travel/order/project details.
-- Use Kairo memory and existing assets as context.
-- Prefer typed structured data over model-generated UI.
+Kairo extracts what matters:
+
+- summaries;
+- tasks and dates;
+- travel, booking, order, warranty, project, finance, medical, and document facts;
+- locations and contact/reply intent;
+- links to related saved assets.
+
+If OCR or image understanding is not actually available in a build, Kairo must say so. It should never pretend a screenshot was analyzed by a real vision model when only metadata or mock text exists.
+
+### Organize
+
+Saved assets live in Library.
+
+Library is the source of truth for:
+
+- folders/categories;
+- fuzzy search;
+- date grouping;
+- type filters;
+- asset detail;
+- linked InfoPages;
+- original resources;
+- delete and data controls.
+
+InfoPages turn multiple assets into a readable page. The first dedicated template is Travel: flights, pickup, hotel, bookings, itinerary, missing checklist, reminders, and original assets.
 
 ### Prepare Actions
 
-- Create Reminder drafts.
-- Create Calendar drafts.
-- Prepare email/message replies.
-- Prepare maps, phone, web, or external app visible handoffs.
-- Save memory or link assets into InfoPages.
-- Require preview and explicit confirmation before any write or external handoff.
+Kairo can prepare drafts, not silently act:
+
+- Reminder drafts;
+- Calendar drafts;
+- email/message replies;
+- maps, phone, web visible handoffs;
+- memory/asset saves;
+- checklist items.
+
+All writes and external handoffs require preview and explicit confirmation.
+
+## Example Flow
+
+You book an airport pickup for a Hong Kong trip and share the screenshot to Kairo.
+
+Kairo should:
+
+1. Store the screenshot as an asset.
+2. Describe the screenshot and extract booking facts.
+3. Search existing Library items for the same trip.
+4. Add or merge the data into a “Hong Kong Trip” InfoPage.
+5. Notice missing items, such as return transport.
+6. Suggest a reminder or checklist item.
+7. Write the reminder only after confirmation, with a link back to the InfoPage.
 
 ## Main Surfaces
 
 | Surface | Purpose |
 |---|---|
-| Library | Searchable asset database, filters, folders, detail, and delete. |
-| InfoPages | Organized pages such as travel, order, project, warranty, medical, finance, and documents. |
-| Chat | Ask about saved assets, clarify imported content, and request drafts/actions. |
-| Model Settings | Configure cloud/local models used for understanding assets. |
-| Permissions | Choose what Kairo may suggest or use: allow, ask every time, or deny. |
-| Settings | App-level preferences and data controls. |
+| Onboarding | Introduces the Library, lets users pick starter categories, then guides model setup. |
+| Library | The searchable database of saved assets, folders, filters, and detail pages. |
+| InfoPages | Organized pages for travel, projects, orders, warranty, medical, finance, documents, and general notes. |
+| Chat | Ask about saved assets, review new captures, and request drafts/actions. |
+| Model Settings | Connect cloud models or download local models used for asset understanding. |
+| Permissions | Control what Kairo may suggest or use: allow, ask, or deny. |
+| Settings | Appearance, iCloud backup, data deletion, and app-level preferences. |
 
-Recipes, Skill Manager, phone-tool catalogs, and integration harness screens are legacy/supporting code. They should not be promoted as primary user flows unless they directly support Library, InfoPages, or confirmed action previews.
-
-## MVP Flows
-
-### Flow A: Screenshot or shared item to asset
-
-The user shares a screenshot, URL, text, PDF, or file metadata into Kairo. The content appears in Chat first. Kairo analyzes it, searches similar Library items, then proposes one of three outcomes: create a new asset, merge into an existing asset or InfoPage, or skip saving. If auto-create is enabled in Settings, Kairo may save low-risk matches without asking; otherwise it asks before creating or merging.
-
-### Flow B: Assets to InfoPage
-
-The user selects one or more assets and asks Kairo to organize them. Kairo creates or updates an InfoPage with title, category, summary, timeline, facts, linked assets, and suggested reminders.
-
-The first dedicated template is Travel:
-
-- Flights.
-- Hotel, pickup, booking, and transport details.
-- Itinerary timeline.
-- Missing-item checklist.
-- Reminder drafts.
-- Original assets.
-
-### Flow C: InfoPage to reminder/action
-
-Kairo suggests reminders or drafts from an InfoPage. The user previews the action, confirms it, and Kairo writes only the confirmed item. Reminder notes should link back to `kairo://info-page/{id}` when possible.
+Recipes, Skill Manager, phone-tool catalogs, and integration harness code are supporting or legacy surfaces. They should not be promoted as the primary product unless they directly help Library, InfoPages, or confirmed action previews.
 
 ## Current Status
 
 ### Implemented
 
-- SwiftUI app shell with Library entry.
+- SwiftUI app shell with Chat, Library entry, Model Settings, Permissions, and Settings.
+- Three-step onboarding: feature intro, starter category selection, model setup or later.
+- Category/folder creation from onboarding presets.
 - Share Extension queue for text, URL, image, PDF, and file metadata.
+- Chat attachment intake for image picker and camera entry point.
 - File-backed `KnowledgeAsset` store and backend API.
 - Asset import from pending shares.
 - Asset list/search/detail/delete.
@@ -89,61 +121,75 @@ Kairo suggests reminders or drafts from an InfoPage. The user previews the actio
 - iCloud backup policy toggle for imported assets.
 - `InfoPage`, `InfoSpace`, and `ReminderLink` data models.
 - File-backed `InfoPageStore`.
-- Deterministic InfoPage generator for structured text/extracted text.
+- Deterministic InfoPage generation for structured text/extracted text.
 - Travel/order/project/general InfoPage generation paths in package tests.
 - Reminder deep link model using `kairo://info-page/{id}`.
-- Chat, Memory, model settings, and permissions remain available as supporting surfaces.
+- User-triggered local model catalog/download/select/delete plumbing.
+- API key/OAuth setup surfaces for cloud model providers.
 
-### Scaffolded
+### In Progress
 
-- InfoPage List and InfoPage Detail UI.
-- Asset selection into InfoPage creation/update.
-- Node directory layout with `html/`, `json/`, and `resources/`; see `docs/ASSET_LIBRARY_STORAGE.md`.
-- SQLite index layer for large Library search.
-- Real OCR/vision extraction for screenshots and PDFs.
-- Model evaluation catalog for asset understanding.
-- Confirmed EventKit write-back from InfoPage reminder drafts.
+- Making Library the strongest first-class surface.
+- Share -> Chat review -> create/merge/skip asset proposal.
+- Dedicated InfoPage List and InfoPage Detail UI.
+- Travel InfoPage template UI.
+- InfoPage -> Reminder preview -> confirm write.
+- Real OCR / screenshot understanding.
+- Local model evaluation for asset extraction quality.
+
+### Planned
+
+- Node storage layout with `html/`, `json/`, and `resources/`.
+- SQLite index for larger Library search.
+- Asset similarity retrieval before model classification.
+- Per-folder backup/sync policy.
+- Vision/OCR-assisted screenshot analysis.
+- Stronger model evaluation for structured InfoPage JSON.
 
 ### Deprioritized
 
-- Recipes / sample flows.
-- Skill marketplace / managed tools.
+- Recipes as a primary product surface.
+- Skill marketplace and managed tools.
 - App Integration Harness expansion.
 - More Shortcut nodes.
 - Keyboard, Widget, CarPlay.
 - HomeKit live control.
-- Local model benchmark/backend platform work.
+- Generic backend/platform refactors.
+- Local model benchmark UI/API expansion.
 
 ## Model Direction
 
-Local models are important, but their job is asset understanding.
+Local models are important because Kairo is a personal library, but models must serve asset understanding rather than become the product.
 
-- Small text-only models can summarize and extract tasks from text or OCR output.
-- Screenshot search needs OCR and/or a vision-capable model.
+- Text-only small models can summarize and extract tasks from user text or OCR output.
+- Screenshot understanding needs OCR, a vision-capable model, or OCR plus a stronger text model.
 - Qwen 0.8B-class models should be treated as fallback text extractors, not reliable screenshot analysts.
-- Gemma-class 2B/4B or similar vision/OCR-assisted models should be evaluated for screenshot description, structured JSON extraction, and InfoPage generation.
-- Do not bundle or commit model weights, GGUF files, tokenizers, caches, API keys, OAuth tokens, or generated credentials.
+- Gemma-class 2B/4B or similar candidates should be evaluated for screenshot description, structured JSON extraction, and InfoPage generation.
+- Kairo must not bundle or commit model weights, GGUF files, tokenizers, caches, API keys, OAuth tokens, or generated credentials.
 
 ## Safety Boundaries
 
-Kairo does not claim capabilities that normal App Store apps cannot provide:
+Kairo is not a hidden phone controller.
 
-- No arbitrary reading of other apps' private data.
-- No background screen watching or hidden screenshots.
-- No unprompted control of other app UIs.
-- No private APIs, jailbreak APIs, background daemons, or permission bypasses.
-- No Apple Mail, Messages, Notes, Safari, or ChatGPT web-session scraping.
-- No silent Apple Shortcuts creation or modification.
-- No silent sending, calling, deleting, or external app execution.
+It does not:
+
+- read other apps' private data;
+- watch the screen in the background;
+- click or control other app UIs;
+- use private APIs or jailbreak-only behavior;
+- scrape Mail, Messages, Notes, Safari, or ChatGPT web sessions;
+- silently create or modify Apple Shortcuts;
+- silently send, call, delete, write, or open external apps.
 
 Supported paths are public and user-visible:
 
-- Share Extension for user-shared content.
-- EventKit for user-confirmed reminders and calendar events.
-- UserNotifications for user-confirmed local notifications.
-- Contacts.framework for create-only contact actions when still relevant.
-- App Intents for user-triggered automation.
-- URL handoff for visible email, message, phone, web search, and maps flows.
+- Share Extension for user-shared content;
+- PhotosUI / camera / document input for user-selected assets;
+- EventKit for confirmed reminders/calendar events;
+- UserNotifications for confirmed local notifications;
+- Contacts.framework only for confirmed create flows when relevant;
+- App Intents for user-triggered automation;
+- URL handoff for visible email, message, phone, web, and maps flows;
 - API key/OAuth only through official provider APIs and explicit account setup.
 
 ## Development
@@ -155,7 +201,7 @@ xcodegen generate
 
 Before committing:
 
-- Run relevant tests.
-- Check `git status`.
-- Scan for secrets, tokens, model weights, GGUF, tokenizers, caches, and generated credentials.
-- Commit and push a small measurable stage.
+- run relevant package/UI tests;
+- check `git status`;
+- scan for secrets, tokens, model weights, GGUF, tokenizers, caches, and generated credentials;
+- commit and push one measurable stage.

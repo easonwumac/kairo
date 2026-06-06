@@ -83,6 +83,7 @@
 "knowledgeAssets.kind.file" = "檔案";
 "knowledgeAssets.kind.note" = "筆記";
 "categories.title" = "分類";
+"categories.subtitle" = "選擇 Kairo 整理資料時可以使用的內建資料夾。";
 "categories.new.placeholder" = "新增分類";
 "category.travel" = "旅行計劃";
 "category.bookings" = "訂位與預約";

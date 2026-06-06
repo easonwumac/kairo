@@ -38,23 +38,43 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertFalse(anyElement("settings.models.show-more").exists)
     }
 
-    func testSettingsLocalModelDownloadRequiresConfirmationPreview() throws {
+    func testSettingsLocalModelAddStartsDownloadFlow() throws {
         relaunchForUITesting(initialSection: "models")
 
-        let modelID = "qwen3-5-0-8b-q4-k-m"
-        let download = findButton("settings.models.\(modelID).download", direction: .down, maxSwipes: 1)
-        XCTAssertTrue(download.waitForExistence(timeout: 5))
-        download.tap()
+        let addLocal = findButton("settings.models.local.add", direction: .down, maxSwipes: 2)
+        XCTAssertTrue(addLocal.waitForExistence(timeout: 5))
+        tapElement(addLocal)
 
-        XCTAssertTrue(findElement("settings.models.\(modelID).download-preview", direction: .both, maxSwipes: 1).waitForExistence(timeout: 3))
-        XCTAssertTrue(findStaticText(containing: "Download requires explicit approval.", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findStaticText(containing: "Apache-2.0", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findButton("settings.models.\(modelID).download-confirm", direction: .both, maxSwipes: 1).exists)
+        let addModelCandidates = app.buttons.matching(NSPredicate(
+            format: "identifier BEGINSWITH %@ AND identifier != %@",
+            "settings.models.local.add.",
+            "settings.models.local.add.page"
+        ))
+        let addModel = addModelCandidates.firstMatch
+        XCTAssertTrue(addModel.waitForExistence(timeout: 5))
+        let modelID = addModel.identifier.replacingOccurrences(of: "settings.models.local.add.", with: "")
+        XCTAssertFalse(modelID.isEmpty)
+        tapElement(addModel)
 
-        let cancel = findButton("settings.models.\(modelID).download-cancel", direction: .both, maxSwipes: 1)
-        XCTAssertTrue(cancel.exists)
-        cancel.tap()
-        XCTAssertFalse(anyElement("settings.models.\(modelID).download-preview").exists)
+        XCTAssertTrue(anyElement("settings.models.\(modelID).detail").waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            anyElement("settings.models.\(modelID).download-progress").waitForExistence(timeout: 5)
+                || anyElement("settings.models.\(modelID).select").waitForExistence(timeout: 5)
+        )
+    }
+
+    func testCategoriesUseBuiltInPresetsOnly() throws {
+        relaunchForUITesting(initialSection: "categories")
+
+        XCTAssertTrue(anyElement("categories.screen").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("categories.list").exists)
+        XCTAssertFalse(anyElement("categories.new.text").exists)
+        XCTAssertFalse(anyElement("categories.new.button").exists)
+
+        let travel = findButton("categories.preset.travel", direction: .both, maxSwipes: 1)
+        XCTAssertTrue(travel.waitForExistence(timeout: 5))
+        tapElement(travel)
+        XCTAssertTrue(anyElement("categories.preset.travel").waitForExistence(timeout: 5))
     }
 
     func testSettingsCanSaveDryRunAndDeleteOpenAIAPIKey() throws {

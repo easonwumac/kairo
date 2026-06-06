@@ -261,7 +261,6 @@ struct LocalModelsCompactView: View {
                     }
                 }
             }
-            .accessibilityIdentifier(page.accessibilityIdentifier)
         }
         .transition(.asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -1180,11 +1179,11 @@ struct LocalModelsCompactView: View {
 
     @ViewBuilder
     private func localModelDetailActions(for row: LocalModelSettingsRow) -> some View {
-        if row.primaryAction == .retryDownload {
+        if row.primaryAction == .download || row.primaryAction == .retryDownload {
             compactActionButton(
                 row.primaryAction.title,
                 systemImage: "arrow.down.circle",
-                accessibilityIdentifier: "settings.models.\(row.modelID).retry",
+                accessibilityIdentifier: "settings.models.\(row.modelID).download",
                 tint: .blue
             ) {
                 downloadLocalModel(row)

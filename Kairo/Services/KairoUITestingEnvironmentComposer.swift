@@ -81,6 +81,7 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
             localModelCatalog: localModelComponents.catalog,
             localModelCatalogService: localModelComponents.catalogService,
             localModelSettingsService: localModelComponents.settingsService,
+            localModelDownloader: localModelComponents.downloader,
             localModelBenchmarkService: localModelComponents.benchmarkService,
             localModelReplyCheckService: localModelComponents.replyCheckService,
             localModelChatRuntimeAvailable: localModelComponents.chatRuntimeAvailable,

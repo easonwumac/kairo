@@ -83,6 +83,7 @@
 "knowledgeAssets.kind.file" = "File";
 "knowledgeAssets.kind.note" = "Note";
 "categories.title" = "Categories";
+"categories.subtitle" = "Choose the built-in folders Kairo can use when organizing assets.";
 "categories.new.placeholder" = "New category";
 "category.travel" = "Travel Plans";
 "category.bookings" = "Bookings";

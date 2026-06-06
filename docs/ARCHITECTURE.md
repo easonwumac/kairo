@@ -1,155 +1,207 @@
 # Architecture
 
-> Current product scope: the architecture should serve Library, Asset Inbox, InfoPages, model-assisted asset understanding, and confirmed action previews. Agent/tool/skill layers are supporting infrastructure only; do not expand them unless they directly support asset capture, asset organization, or InfoPage-to-action flows.
+Kairo is now designed around a personal information asset library.
 
-## High-Level Components
+The architecture should make one product loop reliable:
 
 ```text
-┌────────────────────────────────────┐
-│ SwiftUI App                         │
-│ - Chat                              │
-│ - Memory Center                     │
-│ - Permission Hub                    │
-│ - Action Preview                    │
-└────────────────────────────────────┘
-                 │
-┌────────────────▼────────────────────┐
-│ Agent Core                           │
-│ - Planner                            │
-│ - Memory Retriever                   │
-│ - Safety Policy Engine               │
-│ - Capability Registry                │
-│ - Integration Registry               │
-│ - Agent Skill Catalog                │
-│ - Background Task Policy             │
-│ - Audit Logger                       │
-└────────────────┬────────────────────┘
-                 │
-┌────────────────▼────────────────────┐
-│ Services                             │
-│ - AIProvider                         │
-│ - MemoryStore                        │
-│ - PermissionService                  │
-│ - ActionExecutor                     │
-│ - CredentialStore                    │
-│ - NotificationService                │
-│ - CalendarReminderService            │
-│ - IntegrationRegistry                │
-│ - AgentSkillCatalog                  │
-│ - BackgroundTaskPolicy               │
-└────────────────┬────────────────────┘
-                 │
-┌────────────────▼────────────────────┐
-│ iOS System Surfaces                  │
-│ - App Intents / Shortcuts            │
-│ - Share Extension                    │
-│ - EventKit                           │
-│ - UserNotifications                  │
-│ - PhotosUI / DocumentPicker          │
-│ - BackgroundTasks                    │
-└─────────────────────────────────────┘
+Capture -> Understand -> Organize -> Prepare confirmed actions
 ```
 
-## Core Flow
+Agent/tool/skill code may remain as supporting infrastructure, but it is not the product spine. Do not expand platform abstractions unless they directly improve asset capture, Library retrieval, InfoPage generation, or confirmed action previews.
 
-1. 使用者輸入或分享內容。
-2. Kairo 建立 `AgentRequest`。
-3. `MemoryRetriever` 找相關記憶。
-4. `AIProvider` 產生回應或 action plan。
-5. `SafetyPolicyEngine` 評估 action risk。
-6. 若需要確認，顯示 `ActionPreviewView`。
-7. 使用者確認後，`ActionExecutor` 呼叫對應 iOS service。
-8. `AuditLogger` 記錄結果。
-9. 可選擇寫入新記憶。
+## Product Data Flow
 
-Live app wiring uses `FileBackedAuditLogger` at `KairoPaths.auditLogURL`. Audit records are metadata-only: action kind, related memory ids, capability keys, cloud/local model use, confirmation state, and result. They do not persist full action payloads, message bodies, tokens, or attachment contents.
+```text
+Share / Chat / App Intent / Picker
+        |
+        v
+Capture Intake
+- pending shared item
+- manual note
+- image/file metadata
+- source reference
+        |
+        v
+Asset Store
+- KnowledgeAsset
+- original resource reference
+- extracted text
+- tags / sensitivity
+- folder links
+        |
+        v
+Retrieval
+- fuzzy text search
+- date/type/folder filters
+- similar assets
+- candidate InfoPages
+        |
+        v
+Understanding
+- summary
+- facts
+- timeline
+- tasks
+- suggested category/folder
+- create / merge / skip proposal
+        |
+        v
+InfoPage / Library
+- structured JSON
+- rendered template
+- linked assets
+- suggested reminders/actions
+        |
+        v
+Preview + Confirmation
+- Reminder
+- Calendar
+- draft reply
+- maps/web/phone/message visible handoff
+```
 
-## Backend API boundary
+## Core Objects
 
-SwiftUI views should call app-facing backend APIs instead of directly coordinating stores, credentials, model services, share queues, and audit loggers. `KairoBackendAPI` is the facade for that split and currently exposes Chat, Memory, Kairo-owned internal recipes, Share Extension imports, deletion, local models, Skill Manager, Settings/OAuth, and Access permission status/request APIs. `KairoBackendModuleRegistry.production` is the explicit core composition list for these mounted backend modules, including a boundary summary for each module so module responsibilities can be verified without coupling views to concrete service implementations.
+### `KnowledgeAsset`
 
-`KairoBackendDependencies` is the dependency-inversion boundary between app wiring and backend modules. `KairoEnvironment` conforms to that protocol, while `KairoBackendModuleComposer` owns the concrete module mounting: it builds `KairoChatAPI`, `KairoMemoryAPI`, `KairoRecipeAPI`, `KairoShareImportAPI`, `KairoDeletionAPI`, `KairoLocalModelAPI`, `KairoSkillAPI`, `KairoSettingsAPI`, and `KairoAccessAPI` from injected stores/services. This keeps UI and app setup from manually constructing feature services, and gives tests one Core-level composition point to verify fail-closed behavior when optional services are not mounted.
+The raw item the user saved or shared.
 
-`KairoChatAPI` wraps `AgentCore.respond` behind an app-facing interface that accepts message text, attachments, and `ChatPrivacyMode`. This keeps memory lookup, tool candidate filtering, provider routing, and private-chat fail-closed behavior in Core instead of SwiftUI.
+It should preserve:
 
-`KairoShareImportAPI` wraps Share Extension queue import. It reads pending queue items, returns attachment metadata plus the suggested prompt, and marks imported items without executing agent actions inside the extension.
+- type: text, URL, image, PDF, file metadata, manual note;
+- source;
+- created date;
+- original file/resource reference when available;
+- extracted text;
+- tags and sensitivity;
+- linked folder and InfoPage IDs.
 
-`KairoMemoryAPI` and `KairoRecipeAPI` wrap memory lifecycle/export and Kairo-owned internal recipe lifecycle/run/sample seeding. Internal recipes remain Kairo data; they do not silently create or modify Apple Shortcuts.
+### `KnowledgeAssetFolder`
 
-`KairoDeletionAPI` groups these deletion operations behind one Core interface:
+User-visible organization categories.
 
-- chat thread deletion through `ChatHistoryStore`;
-- memory delete and purge through `MemoryStore`;
-- OpenAI API key deletion through `CredentialStore`;
-- OAuth provider disconnect through `OAuthConnectorLoginCenter`;
-- local model deletion through `LocalModelSettingsService`, fail-closed when unavailable;
-- metadata-only audit log clearing through `AuditLogger`.
+Current UX uses built-in category presets. Free-form folder creation should not be the default user path until there is a stronger management flow.
 
-The UI pass should bind screens to these backend APIs rather than adding feature logic directly into SwiftUI views.
+### `InfoPage`
 
-Settings / Privacy uses this boundary for the user-triggered Clear Audit Log action, which clears only metadata-only audit records and does not delete chat history, memories, credentials, OAuth tokens, or downloaded models.
+A structured page generated from one or more assets.
 
-## Agent skills
+MVP templates:
 
-`AgentSkillCatalog` packages usable capabilities as managed skills. A skill can bind to an `AgentAction`, a Shortcut recipe, an OAuth connector, a local model, or a marketplace manifest. Installed skills are included in `CapabilityPromptContextBuilder` so the model sees named tools it may propose, including whether each skill requires confirmation.
+- Travel;
+- order/booking;
+- project;
+- warranty;
+- medical;
+- finance;
+- identity/document;
+- general note.
 
-`AgentToolInvocationPlanner` provides a deterministic preview layer before execution. It maps user text to installed Shortcut/HomeKit/custom skills and official OAuth connector metadata, ignores disabled skills, and blocks tool-use candidates when local/no-tool routing is active. Shortcut and OAuth matches remain handoff/connector candidates; action-backed skills can contribute `AgentAction` previews to `AgentCore.respond(to:)`, where they are merged with model-proposed actions and filtered through `SafetyPolicyEngine` before the chat UI displays them. `AICompletionResponse` and `ChatMessage` carry `toolCandidates` separately from `proposedActions`; old chat JSON without that field decodes to an empty candidate list.
+Models should fill structured data. They should not invent arbitrary UI.
 
-`AgentSkillManifest` is the package boundary for downloadable skills. It requires signature metadata, verifies a SHA-256 checksum over the skill payload, and can verify P-256 signatures against `AgentSkillManifestTrustStore` before `AgentSkillManagerService` installs it. `AgentSkillManagerService.previewInstall(jsonString:)` is the app-facing import path for signed JSON manifests: it validates the manifest and returns installed version, incoming version, package version, changelog, and whether the change is install, reinstall, update, or blocked downgrade. Confirmed installs reject semantic version downgrades for an existing skill id, while allowing same-version reinstalls and newer updates. `AgentSkillCatalog.default` maps every official `ShortcutDemoCatalog` recipe into a built-in installed Shortcut skill, and `FileBackedAgentSkillStore` persists marketplace, user-created, and built-in skill overrides, including disabled state, so prompt context can later be derived from the user's actual installed tool set.
+### `ReminderLink`
 
-The Access Skill Manager is the first app-facing surface for installed, available, and disabled skills. In live app wiring, `KairoEnvironment` creates a `FileBackedAgentSkillStore` at `KairoPaths.agentSkillStoreURL` and injects `AgentSkillManagerService` into `PermissionHubView`; preview mode still falls back to a local sample catalog. `KairoEnvironment.uiTesting(resetPersistentState:)` provides a deterministic file-backed Skill Manager plus static marketplace HTTP responses so XCUITest can exercise refresh, disable/enable, manifest preview, confirm install, and HomeKit preview without network dependency. Access includes a signed manifest JSON preview control and a separate confirm install action for the previewed manifest. It is intentionally metadata-first: showing skills, capabilities, source, installation state, and confirmation requirements does not bypass iOS permissions. Downloadable marketplace skills still need published production trust-store key material, a rotation/revocation runbook, and compatibility gates before production distribution.
+A confirmed or suggested reminder connected to an InfoPage.
 
-`Website/skills` is the static marketplace seed. It contains `skills.json`, card artwork, and signed manifest examples mirrored to `https://github.com/easonwumac/kairo-skills` for live skill updates, while this app repo keeps reference tests for the expected catalog and manifest shape.
+Use `kairo://info-page/{id}` when possible. If a target API field does not support URLs, write the deep link into notes.
 
-`AgentSkillMarketplaceCatalogService.defaultStandaloneRepository` fetches `https://easonwumac.github.io/kairo-skills/skills.json`, resolves relative manifest URLs against that catalog URL, maps remote entries into available `AgentSkill` values, and downloads a selected skill's signed manifest for preview. `PermissionHubView` can refresh that catalog through an injected service and merges remote marketplace skills without overwriting already installed or disabled local skill state. Tapping Install on a downloadable marketplace skill fetches its manifest, asks `AgentSkillManagerService` for an install preview, and still requires the separate confirm install action.
+## Main Modules
 
-`Website/models` is the static model-catalog seed intended for the planned `https://github.com/easonwumac/kairo-models` repository. It contains `models.json` and a small GitHub Pages index, but no model weights. `LocalModelCatalogService.defaultStandaloneRepository` fetches `https://easonwumac.github.io/kairo-models/models.json`, validates HTTPS download URLs and SHA-256 metadata, and merges remote entries with the built-in fallback catalog. Settings exposes a visible Refresh Catalog control and source label; model downloads still require a separate user-triggered Download action. `LocalModelExternalCommandRuntime` is the development validation bridge for downloaded local models: macOS can call an injected `llama-cli` or MLX-style command runner and parse reply/benchmark token rates, while iOS stays explicit about the missing production inference runtime until an App Store-compatible engine is wired.
+| Module | Responsibility |
+|---|---|
+| SwiftUI App | Onboarding, Library, InfoPages, Chat review, Model Settings, Permissions, Settings. |
+| Share Extension | Queue user-shared text, URLs, images, PDFs, and file metadata. No model inference or actions in the extension. |
+| Knowledge Asset API | App-facing API for asset import, search, folders, delete, export, and backup policy. |
+| InfoPage API | Store, generate, search, update, delete, and export structured information pages. |
+| Model Settings | Cloud/local model setup used for asset understanding. |
+| Retrieval Layer | Finds similar assets, folders, and InfoPages before model decisions. |
+| Action Preview | Shows Reminder/Calendar/draft/handoff previews before any write or open. |
+| Audit Logger | Metadata-only action records; never full sensitive payloads. |
 
-## Modules
+## Storage Direction
 
-- `Models`：Memory、Action、Permission、Audit、AI request/response。
-- `Services`：資料儲存、模型呼叫、權限、iOS action、通知、憑證。
-- `Views`：Chat、Memory Center、Permission Hub、Action Preview。
-- `Intents`：App Intents / Shortcuts。
-- `Extensions`：Share Extension。
-- `Shared`：可在 app/extension 共用的型別。
+Current implementation uses file-backed JSON stores.
 
-## Integration registry
+Target Library node format:
 
-`IntegrationRegistry` is metadata, not a permission bypass. It records supported and planned surfaces for popular apps:
+```text
+Library/
+  index.sqlite
+  folders.json
+  nodes/
+    <node-id>/
+      node.json
+      html/
+        index.html
+      json/
+        assets.json
+        info-page.json
+        actions.json
+      resources/
+        <asset-id>.<ext>
+```
 
-- App Intents / Shortcuts for user-configured automation.
-- URL schemes and universal links for visible handoff only.
-- Share Extension and document picker intake for user-selected content.
-- OAuth connector metadata for official APIs, scopes, token-exchange expectations, and data boundaries.
+Rules:
 
-The agent prompt context includes this registry so model plans can choose safe handoff/API paths and produce `unsupportedSandboxAction` when a user asks for private cross-app access.
+- JSON is the source of truth for structured data.
+- HTML is a rendered template snapshot for viewing/export.
+- `resources/` stores original images/PDFs/files only when Kairo owns the copy.
+- SQLite is an index, not the only source of truth.
+- iCloud backup is user-controlled from Settings.
+- Never store model weights, tokenizers, caches, tokens, or credentials in Library nodes.
 
-## Background task policy
+See `docs/ASSET_LIBRARY_STORAGE.md`.
 
-`BackgroundTaskPolicy` describes BGTaskScheduler-compatible work:
+## Model Boundary
 
-- `com.kairo.app.refresh` maps to bounded `BGAppRefreshTaskRequest` style work such as importing queued shared items.
-- `com.kairo.app.processing.local-model` maps to user-approved bounded model maintenance.
-- `com.kairo.app.processing.connectors` maps to OAuth connector sync checkpoints.
+Models are used for asset understanding:
 
-Kairo must not claim always-on background execution. iOS chooses launch timing, may skip launches, and can expire work. Every task needs checkpointing, expiration handling, and user-visible recovery/rescheduling.
+- summarize;
+- extract facts;
+- classify category/folder;
+- propose create/merge/skip;
+- generate structured InfoPage JSON;
+- suggest reminder/action drafts.
 
-## Persistence
+Model output must be treated as a proposal until saved by app logic.
 
-MVP 可先用 protocol + in-memory implementation，後續接 SwiftData/Core Data。
+Screenshot understanding requires real OCR/vision evidence. If a build only has metadata or mock extracted text, the UI and docs must say that.
 
-正式版：
+## Safety Boundary
 
-- SwiftData/Core Data：metadata。
-- Encrypted file storage：raw chunks。
-- Keychain：secrets。
-- Vector index：sqlite-vec / USearch。
+Kairo may prepare actions, but it must not silently execute external side effects.
 
-## Xcode Target 建議
+Allowed:
 
-- `KairoApp`：主 iOS App。
-- `KairoShareExtension`：Share Extension。
-- `KairoWidget`：Widget。
-- `KairoCore`：Swift Package / shared library。
-- `KairoTests`：unit tests。
+- Share Extension intake.
+- PhotosUI/camera/document picker with user-selected input.
+- EventKit writes after preview and confirmation.
+- UserNotifications after preview and confirmation.
+- Contacts create-only after preview and confirmation when relevant.
+- Visible URL handoff for mail, messages, phone, maps, and web.
+- App Intents triggered by the user.
+- Official API/OAuth integrations only after explicit setup.
+
+Not allowed:
+
+- private cross-app data reads;
+- background screen watching;
+- arbitrary app UI control;
+- ChatGPT web-session scraping;
+- silent Shortcut creation/modification;
+- silent send/call/delete/write/open actions.
+
+## Deprioritized Infrastructure
+
+These systems may stay in the repo but should not drive new work:
+
+- Skill marketplace;
+- broad App Integration Harness catalog expansion;
+- generic phone-tool platform;
+- recipe/sample-flow UI;
+- backend factory extraction;
+- local model benchmark/platform APIs;
+- Keyboard, Widget, CarPlay, HomeKit live control.
+
+Only touch them when they directly support Library, InfoPages, model setup, or confirmed action previews.
