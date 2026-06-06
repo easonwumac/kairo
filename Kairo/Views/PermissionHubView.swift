@@ -423,7 +423,6 @@ public struct PermissionHubView: View {
     @ViewBuilder
     private func capabilityRow(_ capability: Capability, forceExpanded: Bool = false) -> some View {
         let isExpanded = expandedCapabilityDetails.contains(capability.key)
-        let showsDetails = forceExpanded || isExpanded
 
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: iconName(for: capability.key))
@@ -464,42 +463,6 @@ public struct PermissionHubView: View {
                 }
 
                 capabilityPolicyPicker(capability)
-
-                if showsDetails {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(capability.description)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        if shouldShowFallbackMessage(for: capability),
-                           let fallbackMessage = capability.status.accessFallbackMessage {
-                            Text(fallbackMessage)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("access.capability.\(capability.key.rawValue).status-fallback")
-                        }
-
-                        HStack {
-                            if capability.isMVP {
-                                Text(KairoL10n.string("access.capability.core"))
-                                    .font(.caption2.weight(.semibold))
-                                    .padding(.horizontal, 7)
-                                    .padding(.vertical, 3)
-                                    .background(KairoDesign.blue.opacity(0.12), in: Capsule())
-                            }
-                            ForEach(toolSummaries(for: capability.key).prefix(2)) { toolSummary in
-                                AccessToolChipView(summary: toolSummary)
-                            }
-                            ForEach(integrationSummaries(for: capability.key).prefix(2)) { integrationSummary in
-                                AccessIntegrationChipView(summary: integrationSummary)
-                            }
-                        }
-                    }
-                    .accessibilityIdentifier("access.capability.\(capability.key.rawValue).details-content")
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
             }
         }
         .padding(.vertical, 4)
@@ -1163,10 +1126,11 @@ public struct PermissionHubView: View {
 
     private var filteredSkills: [AgentSkill] {
         let query = normalizedSkillSearchText
+        let visibleSkills = skillCatalog.skills.filter { $0.kind != .homeKitControl }
         guard !query.isEmpty else {
-            return skillCatalog.skills
+            return visibleSkills
         }
-        return skillCatalog.skills.filter { skillMatchesSearch($0, query: query) }
+        return visibleSkills.filter { skillMatchesSearch($0, query: query) }
     }
 
     private var normalizedSkillSearchText: String {
@@ -1174,7 +1138,7 @@ public struct PermissionHubView: View {
     }
 
     private var skillSearchSummary: String {
-        let total = skillCatalog.skills.count
+        let total = skillCatalog.skills.filter { $0.kind != .homeKitControl }.count
         let filtered = filteredSkills.count
         if normalizedSkillSearchText.isEmpty {
             return KairoL10n.string("access.skills.search.summary.all", Int64(total))

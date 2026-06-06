@@ -512,7 +512,7 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
         AgentSkill(
             id: "homekit-evening-scene",
             displayName: "HomeKit Preview: Evening Scene",
-            summary: "Preview-only HomeKit scene draft. Kairo does not read HomeKit data or control HomeKit devices in this beta.",
+            summary: "Preview a Home scene draft.",
             kind: .homeKitControl,
             source: .builtIn,
             installationStatus: .installed,
@@ -522,7 +522,7 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
         AgentSkill(
             id: "homekit-desk-lamp",
             displayName: "HomeKit Preview: Desk Lamp",
-            summary: "Preview-only HomeKit accessory draft. Kairo does not read HomeKit data or control HomeKit devices in this beta.",
+            summary: "Preview a Home accessory draft.",
             kind: .homeKitControl,
             source: .builtIn,
             installationStatus: .installed,
@@ -532,7 +532,7 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
         AgentSkill(
             id: "homekit-front-door-lock",
             displayName: "HomeKit Preview: Door Lock",
-            summary: "Preview-only HomeKit security-device draft. Kairo does not read HomeKit data or control HomeKit devices in this beta.",
+            summary: "Preview a Home security-device draft.",
             kind: .homeKitControl,
             source: .builtIn,
             installationStatus: .installed,
