@@ -1486,6 +1486,26 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(context.localContextWindow, 16_384)
     }
 
+    func testLocalModelSettingsServicePersistsCachePreference() async throws {
+        let settingsURL = temporaryFileURL(named: "local-model-settings.json")
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let store = try await FileBackedLocalModelSettingsStore(fileURL: settingsURL)
+        let service = LocalModelSettingsService(catalog: .kairoDefault, installRegistry: registry, settingsStore: store)
+
+        let initialStatus = await service.status()
+        XCTAssertTrue(initialStatus.cacheSettings.isEnabled)
+        XCTAssertEqual(initialStatus.cacheSettings.capacityBytes, LocalModelCacheSettings.defaultCapacityBytes)
+
+        try await service.setCacheEnabled(false)
+
+        let secondStore = try await FileBackedLocalModelSettingsStore(fileURL: settingsURL)
+        let secondService = LocalModelSettingsService(catalog: .kairoDefault, installRegistry: registry, settingsStore: secondStore)
+        let status = await secondService.status()
+        XCTAssertFalse(status.cacheSettings.isEnabled)
+        XCTAssertEqual(status.cacheSettings.capacityBytes, LocalModelCacheSettings.defaultCapacityBytes)
+    }
+
     func testLocalModelSettingsServiceDeletesInstalledModelFileRecordAndSelection() async throws {
         let settingsURL = temporaryFileURL(named: "local-model-settings.json")
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
@@ -1678,7 +1698,49 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(snapshot.averageFirstTokenLatencyMS, 900)
         XCTAssertEqual(snapshot.peakMemoryMB, 768)
         XCTAssertEqual(snapshot.kvCacheHitRate, 0)
+        XCTAssertEqual(snapshot.prefillTokenCount, 32)
+        XCTAssertEqual(snapshot.cachedTokenCount, 0)
+        XCTAssertEqual(snapshot.cacheCapacityBytes, LocalModelCacheSettings.defaultCapacityBytes)
+        XCTAssertTrue(snapshot.isCacheEnabled)
         XCTAssertEqual(snapshot.modelSummaries.first?.modelID, "qwen2-5-0-5b-instruct-q4-k-m")
+        XCTAssertEqual(snapshot.modelSummaries.first?.prefillTokenCount, 32)
+        XCTAssertEqual(snapshot.modelSummaries.first?.cachedTokenCount, 0)
+    }
+
+    func testLocalModelBenchmarkServiceDeletesResultsForRemovedModel() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
+        let modelURL = registryURL.deletingLastPathComponent().appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        try await registry.upsert(LocalModelInstallRecord(
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
+            version: LocalModelManifest.qwen25HalfBInstruct.version,
+            status: .installed,
+            fileURL: modelURL,
+            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
+            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
+        ))
+        let resultStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
+        let service = LocalModelBenchmarkService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            resultStore: resultStore,
+            engine: DeterministicLocalModelBenchmarkEngine(
+                runtime: .gguf,
+                generationTokensPerSecond: 40,
+                promptTokensPerSecond: 120
+            )
+        )
+
+        _ = try await service.runBenchmark(modelID: "qwen2-5-0-5b-instruct-q4-k-m", generatedTokenTarget: 512)
+        let beforeDelete = await service.performanceSnapshot()
+        XCTAssertEqual(beforeDelete.totalRunCount, 1)
+
+        try await service.deleteResults(for: "qwen2-5-0-5b-instruct-q4-k-m")
+
+        let snapshot = await service.performanceSnapshot()
+        XCTAssertEqual(snapshot.totalRunCount, 0)
+        XCTAssertTrue(snapshot.modelSummaries.isEmpty)
     }
 
     func testLocalModelBenchmarkServiceSurfacesRuntimeUnavailableReason() async throws {

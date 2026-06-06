@@ -5,17 +5,20 @@ public struct LocalModelSettings: Codable, Equatable, Sendable {
     public var preference: ProviderRoutePreference
     public var responseLanguage: ChatResponseLanguagePreference
     public var runtimeParametersByModelID: [String: LocalModelRuntimeParameters]
+    public var cacheSettings: LocalModelCacheSettings
 
     public init(
         selectedModelID: String? = nil,
         preference: ProviderRoutePreference = .automatic,
         responseLanguage: ChatResponseLanguagePreference = .system,
-        runtimeParametersByModelID: [String: LocalModelRuntimeParameters] = [:]
+        runtimeParametersByModelID: [String: LocalModelRuntimeParameters] = [:],
+        cacheSettings: LocalModelCacheSettings = .defaultValue
     ) {
         self.selectedModelID = selectedModelID
         self.preference = preference
         self.responseLanguage = responseLanguage
         self.runtimeParametersByModelID = runtimeParametersByModelID
+        self.cacheSettings = cacheSettings
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -23,6 +26,7 @@ public struct LocalModelSettings: Codable, Equatable, Sendable {
         case preference
         case responseLanguage
         case runtimeParametersByModelID
+        case cacheSettings
     }
 
     public init(from decoder: Decoder) throws {
@@ -37,6 +41,26 @@ public struct LocalModelSettings: Codable, Equatable, Sendable {
             [String: LocalModelRuntimeParameters].self,
             forKey: .runtimeParametersByModelID
         ) ?? [:]
+        cacheSettings = try container.decodeIfPresent(
+            LocalModelCacheSettings.self,
+            forKey: .cacheSettings
+        ) ?? .defaultValue
+    }
+}
+
+public struct LocalModelCacheSettings: Codable, Equatable, Sendable {
+    public static let defaultCapacityBytes: Int64 = 1_073_741_824
+    public static let defaultValue = LocalModelCacheSettings()
+
+    public var isEnabled: Bool
+    public var capacityBytes: Int64
+
+    public init(
+        isEnabled: Bool = true,
+        capacityBytes: Int64 = Self.defaultCapacityBytes
+    ) {
+        self.isEnabled = isEnabled
+        self.capacityBytes = max(0, min(capacityBytes, Self.defaultCapacityBytes))
     }
 }
 
@@ -249,6 +273,7 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
     public var preference: ProviderRoutePreference
     public var responseLanguage: ChatResponseLanguagePreference
     public var runtimeParametersByModelID: [String: LocalModelRuntimeParameters]
+    public var cacheSettings: LocalModelCacheSettings
     public var availableModels: [LocalModelManifest]
     public var installedModels: [LocalModelInstallRecord]
 
@@ -259,6 +284,7 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
         preference: ProviderRoutePreference,
         responseLanguage: ChatResponseLanguagePreference = .system,
         runtimeParametersByModelID: [String: LocalModelRuntimeParameters] = [:],
+        cacheSettings: LocalModelCacheSettings = .defaultValue,
         availableModels: [LocalModelManifest],
         installedModels: [LocalModelInstallRecord]
     ) {
@@ -268,6 +294,7 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
         self.preference = preference
         self.responseLanguage = responseLanguage
         self.runtimeParametersByModelID = runtimeParametersByModelID
+        self.cacheSettings = cacheSettings
         self.availableModels = availableModels
         self.installedModels = installedModels
     }
@@ -578,6 +605,7 @@ public actor LocalModelSettingsService {
             preference: settings.preference,
             responseLanguage: settings.responseLanguage,
             runtimeParametersByModelID: settings.runtimeParametersByModelID,
+            cacheSettings: settings.cacheSettings,
             availableModels: availableModels,
             installedModels: installedModels
         )
@@ -626,6 +654,15 @@ public actor LocalModelSettingsService {
         }
         var settings = await settingsStore.settings()
         settings.runtimeParametersByModelID[modelID] = runtimeParameters.clamped(to: model)
+        try await settingsStore.save(settings)
+    }
+
+    public func setCacheEnabled(_ isEnabled: Bool) async throws {
+        var settings = await settingsStore.settings()
+        settings.cacheSettings = LocalModelCacheSettings(
+            isEnabled: isEnabled,
+            capacityBytes: settings.cacheSettings.capacityBytes
+        )
         try await settingsStore.save(settings)
     }
 

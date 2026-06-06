@@ -92,6 +92,26 @@ extension SettingsView {
         }
     }
 
+    func setLocalModelCacheEnabled(_ isEnabled: Bool) {
+        Task {
+            guard let localModelSettingsService else {
+                await MainActor.run {
+                    localModelStatusMessage = KairoL10n.string("settings.models.message.settingsServiceMissing")
+                }
+                return
+            }
+
+            do {
+                try await localModelSettingsService.setCacheEnabled(isEnabled)
+                await reloadLocalModelStatus()
+            } catch {
+                await MainActor.run {
+                    localModelStatusMessage = KairoL10n.string("settings.models.cache.toggleFailed", error.localizedDescription)
+                }
+            }
+        }
+    }
+
 
     func downloadLocalModel(_ row: LocalModelSettingsRow) {
         if let progress = localModelDownloadProgress {
@@ -388,6 +408,7 @@ extension SettingsView {
 
             do {
                 try await localModelSettingsService.deleteModel(id: row.modelID)
+                try? await localModelBenchmarkService?.deleteResults(for: row.modelID)
                 await MainActor.run {
                     localModelStatusMessageModelID = row.modelID
                     localModelStatusMessage = KairoL10n.string("settings.models.message.deleted", row.displayName)

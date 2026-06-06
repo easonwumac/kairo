@@ -206,6 +206,7 @@ public struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         appearanceSettingsSection
                         iCloudBackupSettingsSection
+                        localModelCacheSettingsSection
                         privacySettingsSection
 
                         if let connectorStatusMessage {
@@ -283,6 +284,43 @@ public struct SettingsView: View {
             }
         }
         .accessibilityIdentifier("settings.backup.icloud")
+    }
+
+    private var localModelCacheSettingsSection: some View {
+        KairoGroupedSurface {
+            HStack(alignment: .center, spacing: 12) {
+                settingsSectionIcon("externaldrive.fill", tint: KairoDesign.teal)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(KairoL10n.string("settings.models.cache.enabled"))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(KairoL10n.string(
+                        "settings.models.cache.capacity",
+                        formattedLocalModelCacheCapacity(localModelStatus.cacheSettings.capacityBytes)
+                    ))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(KairoDesign.muted)
+                }
+
+                Spacer(minLength: 8)
+
+                glassToggle(isOn: Binding(
+                    get: { localModelStatus.cacheSettings.isEnabled },
+                    set: { setLocalModelCacheEnabled($0) }
+                ))
+                .accessibilityIdentifier("settings.models.cache.toggle")
+            }
+        }
+        .accessibilityIdentifier("settings.models.cache.section")
+    }
+
+    private func formattedLocalModelCacheCapacity(_ bytes: Int64) -> String {
+        let gb = Double(bytes) / 1_073_741_824
+        if gb.rounded() == gb {
+            return "\(Int(gb)) GB"
+        }
+        return String(format: "%.1f GB", gb)
     }
 
     private func settingsSectionHeader(_ title: String, systemImage: String, tint: Color) -> some View {

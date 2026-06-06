@@ -197,7 +197,10 @@ public struct RootView: View {
                 usesRootChromeNavigation: true
             )
         case .performance:
-            LocalModelPerformanceView(benchmarkService: environment.localModelBenchmarkService)
+            LocalModelPerformanceView(
+                benchmarkService: environment.localModelBenchmarkService,
+                settingsService: environment.localModelSettingsService
+            )
         case .settings:
             SettingsView(
                 dependencies: environment.settingsFeatureDependencies,

@@ -3,18 +3,28 @@ import SwiftUI
 
 struct LocalModelPerformanceView: View {
     let benchmarkService: LocalModelBenchmarkService?
+    let settingsService: LocalModelSettingsService?
     @State private var snapshot = LocalModelPerformanceSnapshot(totalRunCount: 0)
+    @State private var statusMessage: String?
 
     var body: some View {
         GeometryReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
+                    overviewCard
+
+                    if let statusMessage {
+                        Text(statusMessage)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(KairoDesign.muted)
+                            .accessibilityIdentifier("performance.local.status")
+                    }
+
                     if benchmarkService == nil {
                         emptyState(KairoL10n.string("performance.local.unavailable"))
                     } else if snapshot.totalRunCount == 0 {
                         emptyState(KairoL10n.string("performance.local.empty"))
                     } else {
-                        overviewCard
                         modelBreakdown
                     }
                 }
@@ -26,7 +36,7 @@ struct LocalModelPerformanceView: View {
             .background(KairoDesign.background.ignoresSafeArea())
         }
         .task {
-            snapshot = await benchmarkService?.performanceSnapshot() ?? LocalModelPerformanceSnapshot(totalRunCount: 0)
+            await reloadSnapshot()
         }
         .accessibilityIdentifier("performance.local.screen")
     }
@@ -39,12 +49,33 @@ struct LocalModelPerformanceView: View {
                     .foregroundStyle(KairoDesign.ink)
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    metricTile(KairoL10n.string("performance.local.runs"), "\(snapshot.totalRunCount)")
-                    metricTile(KairoL10n.string("performance.local.kvHitRate"), formattedPercent(snapshot.kvCacheHitRate))
+                    metricTile(KairoL10n.string("performance.local.prefillTokens"), "\(snapshot.prefillTokenCount)")
+                    metricTile(KairoL10n.string("performance.local.cachedTokens"), "\(snapshot.cachedTokenCount)")
+                    metricTile(KairoL10n.string("performance.local.cacheEfficiency"), formattedPercent(snapshot.kvCacheHitRate))
                     metricTile(KairoL10n.string("performance.local.pp"), formattedRate(snapshot.averagePromptTokensPerSecond))
                     metricTile(KairoL10n.string("performance.local.tk"), formattedRate(snapshot.averageGenerationTokensPerSecond))
+                    metricTile(KairoL10n.string("performance.local.cacheStorage"), formattedStorage(snapshot.cacheUsedBytes, capacity: snapshot.cacheCapacityBytes))
                     metricTile(KairoL10n.string("performance.local.firstToken"), formattedLatency(snapshot.averageFirstTokenLatencyMS))
                     metricTile(KairoL10n.string("performance.local.peakMemory"), formattedMemory(snapshot.peakMemoryMB))
+                }
+
+                HStack(spacing: 8) {
+                    compactMetric(
+                        KairoL10n.string("performance.local.cacheState"),
+                        snapshot.isCacheEnabled
+                            ? KairoL10n.string("performance.local.cacheEnabled")
+                            : KairoL10n.string("performance.local.cacheDisabled")
+                    )
+                    Spacer(minLength: 8)
+                    Button {
+                        clearCache()
+                    } label: {
+                        Label(KairoL10n.string("performance.local.clearCache"), systemImage: "trash")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(snapshot.cacheUsedBytes == 0)
+                    .accessibilityIdentifier("performance.local.clearCache")
                 }
             }
         }
@@ -70,9 +101,13 @@ struct LocalModelPerformanceView: View {
                                 .foregroundStyle(KairoDesign.muted)
                         }
                         HStack(spacing: 8) {
+                            compactMetric(KairoL10n.string("performance.local.prefillTokens"), "\(summary.prefillTokenCount)")
+                            compactMetric(KairoL10n.string("performance.local.cachedTokens"), "\(summary.cachedTokenCount)")
+                        }
+                        HStack(spacing: 8) {
                             compactMetric(KairoL10n.string("performance.local.pp"), formattedRate(summary.averagePromptTokensPerSecond))
                             compactMetric(KairoL10n.string("performance.local.tk"), formattedRate(summary.averageGenerationTokensPerSecond))
-                            compactMetric(KairoL10n.string("performance.local.kvHitRate"), formattedPercent(summary.kvCacheHitRate))
+                            compactMetric(KairoL10n.string("performance.local.cacheEfficiency"), formattedPercent(summary.kvCacheHitRate))
                         }
                         HStack(spacing: 8) {
                             compactMetric(KairoL10n.string("performance.local.firstToken"), formattedLatency(summary.averageFirstTokenLatencyMS))
@@ -88,6 +123,35 @@ struct LocalModelPerformanceView: View {
                 }
             }
         }
+    }
+
+    @MainActor
+    private func reloadSnapshot() async {
+        let cacheSettings = await settingsService?.status().cacheSettings ?? .defaultValue
+        snapshot = await benchmarkService?.performanceSnapshot(cacheSettings: cacheSettings)
+            ?? LocalModelPerformanceSnapshot(
+                totalRunCount: 0,
+                cacheCapacityBytes: cacheSettings.capacityBytes,
+                isCacheEnabled: cacheSettings.isEnabled
+            )
+    }
+
+    private func clearCache() {
+        snapshot = LocalModelPerformanceSnapshot(
+            totalRunCount: snapshot.totalRunCount,
+            averagePromptTokensPerSecond: snapshot.averagePromptTokensPerSecond,
+            averageGenerationTokensPerSecond: snapshot.averageGenerationTokensPerSecond,
+            averageFirstTokenLatencyMS: snapshot.averageFirstTokenLatencyMS,
+            peakMemoryMB: snapshot.peakMemoryMB,
+            kvCacheHitRate: snapshot.kvCacheHitRate,
+            prefillTokenCount: snapshot.prefillTokenCount,
+            cachedTokenCount: snapshot.cachedTokenCount,
+            cacheUsedBytes: 0,
+            cacheCapacityBytes: snapshot.cacheCapacityBytes,
+            isCacheEnabled: snapshot.isCacheEnabled,
+            modelSummaries: snapshot.modelSummaries
+        )
+        statusMessage = KairoL10n.string("performance.local.cacheCleared")
     }
 
     private func metricTile(_ title: String, _ value: String) -> some View {
@@ -156,6 +220,20 @@ struct LocalModelPerformanceView: View {
             return String(format: "%.2f GB", Double(value) / 1024.0)
         }
         return "\(value) MB"
+    }
+
+    private func formattedStorage(_ usedBytes: Int64, capacity: Int64) -> String {
+        "\(formattedBytes(usedBytes)) / \(formattedBytes(capacity))"
+    }
+
+    private func formattedBytes(_ bytes: Int64) -> String {
+        if bytes >= 1_073_741_824 {
+            return String(format: "%.1f GB", Double(bytes) / 1_073_741_824)
+        }
+        if bytes >= 1_048_576 {
+            return "\(Int((Double(bytes) / 1_048_576).rounded())) MB"
+        }
+        return "\(bytes) B"
     }
 
     private func formattedNumber(_ value: Double) -> String {

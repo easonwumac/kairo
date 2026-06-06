@@ -105,6 +105,8 @@ public struct LocalModelPerformanceModelSummary: Equatable, Identifiable, Sendab
     public var averageFirstTokenLatencyMS: Double?
     public var peakMemoryMB: Int?
     public var kvCacheHitRate: Double
+    public var prefillTokenCount: Int
+    public var cachedTokenCount: Int
 
     public init(
         modelID: String,
@@ -114,7 +116,9 @@ public struct LocalModelPerformanceModelSummary: Equatable, Identifiable, Sendab
         averageGenerationTokensPerSecond: Double,
         averageFirstTokenLatencyMS: Double? = nil,
         peakMemoryMB: Int? = nil,
-        kvCacheHitRate: Double = 0
+        kvCacheHitRate: Double = 0,
+        prefillTokenCount: Int = 0,
+        cachedTokenCount: Int = 0
     ) {
         self.modelID = modelID
         self.modelDisplayName = modelDisplayName
@@ -124,6 +128,8 @@ public struct LocalModelPerformanceModelSummary: Equatable, Identifiable, Sendab
         self.averageFirstTokenLatencyMS = averageFirstTokenLatencyMS
         self.peakMemoryMB = peakMemoryMB
         self.kvCacheHitRate = kvCacheHitRate
+        self.prefillTokenCount = prefillTokenCount
+        self.cachedTokenCount = cachedTokenCount
     }
 }
 
@@ -134,6 +140,11 @@ public struct LocalModelPerformanceSnapshot: Equatable, Sendable {
     public var averageFirstTokenLatencyMS: Double?
     public var peakMemoryMB: Int?
     public var kvCacheHitRate: Double
+    public var prefillTokenCount: Int
+    public var cachedTokenCount: Int
+    public var cacheUsedBytes: Int64
+    public var cacheCapacityBytes: Int64
+    public var isCacheEnabled: Bool
     public var modelSummaries: [LocalModelPerformanceModelSummary]
 
     public init(
@@ -143,6 +154,11 @@ public struct LocalModelPerformanceSnapshot: Equatable, Sendable {
         averageFirstTokenLatencyMS: Double? = nil,
         peakMemoryMB: Int? = nil,
         kvCacheHitRate: Double = 0,
+        prefillTokenCount: Int = 0,
+        cachedTokenCount: Int = 0,
+        cacheUsedBytes: Int64 = 0,
+        cacheCapacityBytes: Int64 = LocalModelCacheSettings.defaultCapacityBytes,
+        isCacheEnabled: Bool = true,
         modelSummaries: [LocalModelPerformanceModelSummary] = []
     ) {
         self.totalRunCount = totalRunCount
@@ -151,6 +167,11 @@ public struct LocalModelPerformanceSnapshot: Equatable, Sendable {
         self.averageFirstTokenLatencyMS = averageFirstTokenLatencyMS
         self.peakMemoryMB = peakMemoryMB
         self.kvCacheHitRate = kvCacheHitRate
+        self.prefillTokenCount = prefillTokenCount
+        self.cachedTokenCount = cachedTokenCount
+        self.cacheUsedBytes = cacheUsedBytes
+        self.cacheCapacityBytes = cacheCapacityBytes
+        self.isCacheEnabled = isCacheEnabled
         self.modelSummaries = modelSummaries
     }
 }
@@ -285,6 +306,12 @@ public actor FileBackedLocalModelBenchmarkStore {
         try persist()
     }
 
+    public func deleteResults(for modelID: String) throws {
+        guard resultsByModelID[modelID] != nil else { return }
+        resultsByModelID[modelID] = nil
+        try persist()
+    }
+
     private func loadFromDisk() async throws {
         let directory = fileURL.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -354,16 +381,29 @@ public actor LocalModelBenchmarkService {
         await resultStore.latestResult(for: modelID)
     }
 
-    public func performanceSnapshot() async -> LocalModelPerformanceSnapshot {
+    public func deleteResults(for modelID: String) async throws {
+        try await resultStore.deleteResults(for: modelID)
+    }
+
+    public func performanceSnapshot(
+        cacheSettings: LocalModelCacheSettings = .defaultValue,
+        cacheUsedBytes: Int64 = 0
+    ) async -> LocalModelPerformanceSnapshot {
         let results = await resultStore.allResults()
         guard !results.isEmpty else {
-            return LocalModelPerformanceSnapshot(totalRunCount: 0)
+            return LocalModelPerformanceSnapshot(
+                totalRunCount: 0,
+                cacheUsedBytes: cacheUsedBytes,
+                cacheCapacityBytes: cacheSettings.capacityBytes,
+                isCacheEnabled: cacheSettings.isEnabled
+            )
         }
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
         let modelNamesByID = Dictionary(uniqueKeysWithValues: availableModels.map { ($0.id, $0.displayName) })
         let grouped = Dictionary(grouping: results, by: \.modelID)
-        let summaries = grouped.map { modelID, modelResults in
-            LocalModelPerformanceModelSummary(
+        let summaries: [LocalModelPerformanceModelSummary] = grouped.map { modelID, modelResults in
+            let prefillTokenCount = modelResults.reduce(0) { $0 + $1.promptTokens }
+            return LocalModelPerformanceModelSummary(
                 modelID: modelID,
                 modelDisplayName: modelNamesByID[modelID] ?? modelResults.first?.modelDisplayName ?? modelID,
                 runCount: modelResults.count,
@@ -371,14 +411,16 @@ public actor LocalModelBenchmarkService {
                 averageGenerationTokensPerSecond: Self.average(modelResults.map(\.generationTokensPerSecond)) ?? 0,
                 averageFirstTokenLatencyMS: Self.average(modelResults.compactMap(\.firstTokenLatencyMS)),
                 peakMemoryMB: modelResults.compactMap(\.peakMemoryMB).max(),
-                kvCacheHitRate: 0
+                kvCacheHitRate: 0,
+                prefillTokenCount: prefillTokenCount,
+                cachedTokenCount: 0
             )
         }
-        .sorted {
-            if $0.runCount == $1.runCount {
-                return $0.modelDisplayName < $1.modelDisplayName
+        .sorted { lhs, rhs in
+            if lhs.runCount == rhs.runCount {
+                return lhs.modelDisplayName < rhs.modelDisplayName
             }
-            return $0.runCount > $1.runCount
+            return lhs.runCount > rhs.runCount
         }
 
         return LocalModelPerformanceSnapshot(
@@ -388,6 +430,11 @@ public actor LocalModelBenchmarkService {
             averageFirstTokenLatencyMS: Self.average(results.compactMap(\.firstTokenLatencyMS)),
             peakMemoryMB: results.compactMap(\.peakMemoryMB).max(),
             kvCacheHitRate: 0,
+            prefillTokenCount: results.reduce(0) { $0 + $1.promptTokens },
+            cachedTokenCount: 0,
+            cacheUsedBytes: cacheUsedBytes,
+            cacheCapacityBytes: cacheSettings.capacityBytes,
+            isCacheEnabled: cacheSettings.isEnabled,
             modelSummaries: summaries
         )
     }
