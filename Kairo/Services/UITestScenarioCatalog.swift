@@ -480,8 +480,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
                 "access.skill.shortcut-email-triage",
                 "access.skill.shortcut-meeting-prep-brief",
                 "access.skill.shortcut-generic-node-runner",
-                "access.skill.shortcut-save-shared-text.disable",
-                "access.skill.shortcut-save-shared-text.enable",
+                "access.skill.shortcut-save-shared-text.install",
                 "access.skill.marketplace-weather-briefing.install",
                 "access.skill.marketplace-weather-briefing.update",
                 "access.skill.marketplace-qwen-oauth-workflow.install",
@@ -497,17 +496,17 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             ],
             assertions: [
                 "Skill Manager section is visible.",
-                "A user-created local skill draft can be created disabled before it is enabled.",
+                "A user-created local skill draft can be added before it appears in Chat suggestions.",
                 "Marketplace refresh control is visible.",
                 "Signed manifest import controls are visible.",
                 "Shortcut demo skills are visible in the Skill Manager.",
-                "A built-in Shortcut skill can be disabled and enabled.",
+                "A built-in Shortcut skill can be added or removed.",
                 "A marketplace skill can show a signed manifest preview and confirm install.",
                 "A marketplace skill with missing OAuth/model prerequisites is compatibility-blocked.",
                 "HomeKit demo section is visible.",
                 "A scene preview demo is visible.",
                 "A high-risk lock demo is visible.",
-                "The demos state that live HomeKit control is not enabled in this beta."
+                "HomeKit preview demos do not appear in the management tool list."
             ]
         )
     ])

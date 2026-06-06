@@ -622,14 +622,7 @@ final class KairoCoreTests: XCTestCase {
 
         XCTAssertTrue(context.contains("Installed skills/tools the model may use"))
         XCTAssertTrue(context.contains("homekit-evening-scene"))
-        XCTAssertTrue(context.contains("shortcut-daily-briefing"))
-        XCTAssertTrue(context.contains("shortcut-save-shared-text"))
-        XCTAssertTrue(context.contains("shortcut-screenshot-to-reminders"))
-        XCTAssertTrue(context.contains("shortcut-reply-draft-from-shared-text"))
-        XCTAssertTrue(context.contains("shortcut-email-triage"))
-        XCTAssertTrue(context.contains("shortcut-email-draft-from-shared-text"))
-        XCTAssertTrue(context.contains("shortcut-contact-draft-from-shared-text"))
-        XCTAssertTrue(context.contains("shortcut-meeting-prep-brief"))
+        XCTAssertFalse(context.contains("shortcut-save-shared-text"))
         XCTAssertTrue(context.contains("requiresConfirmation=true"))
     }
 
@@ -781,7 +774,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(lockRecipe.action.requiresConfirmation)
     }
 
-    func testAgentSkillCatalogExposesInstalledToolsAndDownloadableMarketplaceSkills() throws {
+    func testAgentSkillCatalogExposesBuiltInToolsAndDownloadableMarketplaceSkills() throws {
         let catalog = AgentSkillCatalog.default
         let homeKitSkill = try XCTUnwrap(catalog.skill(id: "homekit-evening-scene"))
         let lockSkill = try XCTUnwrap(catalog.skill(id: "homekit-front-door-lock"))
@@ -797,22 +790,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(catalog.installedSkills.map(\.id), [
             "homekit-evening-scene",
             "homekit-desk-lamp",
-            "homekit-front-door-lock",
-            "shortcut-daily-briefing",
-            "shortcut-save-shared-text",
-            "shortcut-screenshot-to-reminders",
-            "shortcut-reply-draft-from-shared-text",
-            "shortcut-message-reply-handoff",
-            "shortcut-email-triage",
-            "shortcut-email-draft-from-shared-text",
-            "shortcut-phone-call-handoff",
-            "shortcut-web-search-handoff",
-            "shortcut-contact-draft-from-shared-text",
-            "shortcut-meeting-prep-brief",
-            "shortcut-request-to-recipe-draft",
-            "shortcut-meeting-text-to-calendar-draft",
-            "shortcut-generic-node-runner",
-            "shortcut-home-action-preview"
+            "homekit-front-door-lock"
         ])
         XCTAssertEqual(homeKitSkill.kind, .homeKitControl)
         XCTAssertEqual(homeKitSkill.installationStatus, .installed)
@@ -822,21 +800,22 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(lockSkill.action?.riskTier, .tier3HighRiskExternal)
         XCTAssertTrue(lockSkill.action?.requiresConfirmation == true)
         XCTAssertEqual(shortcutSkill.kind, .shortcutWorkflow)
+        XCTAssertEqual(shortcutSkill.installationStatus, .available)
         XCTAssertTrue(marketplaceSkill.canDownload)
         XCTAssertEqual(marketplaceSkill.source, .marketplace)
     }
 
-    func testAgentSkillCatalogExposesEveryShortcutDemoAsInstalledSkill() throws {
+    func testAgentSkillCatalogExposesEveryShortcutDemoAsAvailableSkill() throws {
         let catalog = AgentSkillCatalog.default
 
         for recipe in ShortcutDemoCatalog.default.recipes {
             let skill = try XCTUnwrap(catalog.skill(id: "shortcut-\(recipe.id)"))
             XCTAssertEqual(skill.kind, .shortcutWorkflow)
             XCTAssertEqual(skill.source, .builtIn)
-            XCTAssertEqual(skill.installationStatus, .installed)
+            XCTAssertEqual(skill.installationStatus, .available)
             XCTAssertEqual(skill.requiredCapabilities, [.appIntents])
             XCTAssertEqual(skill.shortcutRecipeID, recipe.id)
-            XCTAssertTrue(skill.summary.contains(recipe.title))
+            XCTAssertEqual(skill.displayName, recipe.title)
         }
     }
 
@@ -1110,8 +1089,6 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).update""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.action.previewUpdate""#))
         XCTAssertTrue(permissionHubView.contains("skill.source == .marketplace"))
-        XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).disable""#))
-        XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).enable""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skill.\(skill.id).remove""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import""#))
         XCTAssertTrue(permissionHubView.contains(#""access.skills.manifest-import.text""#))
@@ -1154,15 +1131,15 @@ final class KairoCoreTests: XCTestCase {
         let modelCatalogService = try XCTUnwrap(environment.localModelCatalogService)
 
         var catalog = try await skillManagerService.catalog()
-        XCTAssertEqual(catalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .installed)
+        XCTAssertEqual(catalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .available)
 
-        let disabled = try await skillManagerService.disableSkill(id: "shortcut-save-shared-text")
-        XCTAssertEqual(disabled?.installationStatus, .disabled)
+        let installed = try await skillManagerService.enableSkill(id: "shortcut-save-shared-text")
+        XCTAssertEqual(installed?.installationStatus, .installed)
 
         let reloadedEnvironment = try await KairoEnvironment.uiTesting(resetPersistentState: false)
         let reloadedSkillManagerService = try XCTUnwrap(reloadedEnvironment.agentSkillManagerService)
         catalog = try await reloadedSkillManagerService.catalog()
-        XCTAssertEqual(catalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .disabled)
+        XCTAssertEqual(catalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .installed)
         let reloadedRecipes = try await reloadedEnvironment.kairoRecipeStore.listRecipes()
         XCTAssertTrue(reloadedRecipes.isEmpty)
 
@@ -1405,8 +1382,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-email-triage") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-meeting-prep-brief") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-generic-node-runner") == true)
-        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text.disable") == true)
-        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text.enable") == true)
+        XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.shortcut-save-shared-text.install") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.marketplace-weather-briefing.install") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skill.marketplace-qwen-oauth-workflow.install") == true)
         XCTAssertTrue(catalog.scenario(id: "access-homekit-demos")?.requiredAccessibilityIdentifiers.contains("access.skills.message") == true)
@@ -1610,9 +1586,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains(#""access.skills.local-create.name""#))
         XCTAssertTrue(uiTestSources.contains(#""access.skills.local-create.summary""#))
         XCTAssertTrue(uiTestSources.contains(#""access.skills.local-create.button""#))
-        XCTAssertTrue(uiTestSources.contains(#""access.skill.user-ui-created-skill.enable""#))
-        XCTAssertTrue(uiTestSources.contains(#""access.skill.shortcut-save-shared-text.disable""#))
-        XCTAssertTrue(uiTestSources.contains(#""access.skill.shortcut-save-shared-text.enable""#))
+        XCTAssertTrue(uiTestSources.contains(#""access.skill.user-ui-created-skill.install""#))
+        XCTAssertTrue(uiTestSources.contains(#""access.skill.shortcut-save-shared-text.install""#))
         XCTAssertTrue(uiTestSources.contains(#""access.skill.marketplace-weather-briefing.install""#))
         XCTAssertTrue(uiTestSources.contains(#""access.skill.marketplace-weather-briefing.update""#))
         XCTAssertTrue(uiTestSources.contains("--ui-testing-installed-weather-skill"))

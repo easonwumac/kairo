@@ -245,10 +245,19 @@ final class AgentCoreActionPreviewTests: XCTestCase {
         AgentCore(
             memoryStore: InMemoryMemoryStore(),
             aiProvider: MockAIProvider(),
-            skillCatalog: .default,
+            skillCatalog: installedShortcutSkillCatalog(),
             integrationRegistry: IntegrationRegistry()
         )
     }
+}
+
+private func installedShortcutSkillCatalog() -> AgentSkillCatalog {
+    AgentSkillCatalog(skills: AgentSkillCatalog.default.skills.map { skill in
+        guard skill.kind == .shortcutWorkflow else { return skill }
+        var installed = skill
+        installed.installationStatus = .installed
+        return installed
+    })
 }
 
 private struct BlockingPhoneToolActionGate: PhoneToolActionGating {

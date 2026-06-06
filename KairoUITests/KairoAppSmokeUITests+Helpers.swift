@@ -74,15 +74,15 @@ extension KairoAppSmokeUITests {
         XCTAssertTrue(refreshMarketplace.exists)
         refreshMarketplace.tap()
 
-        let disableShortcut = findButton("access.skill.shortcut-save-shared-text.disable")
-        XCTAssertTrue(disableShortcut.exists)
-        disableShortcut.tap()
-        XCTAssertTrue(findButton("access.skill.shortcut-save-shared-text.enable").waitForExistence(timeout: 5))
+        let installShortcut = findButton("access.skill.shortcut-save-shared-text.install")
+        XCTAssertTrue(installShortcut.exists)
+        installShortcut.tap()
+        XCTAssertTrue(findButton("access.skill.shortcut-save-shared-text.remove").waitForExistence(timeout: 5))
 
-        let enableShortcut = findButton("access.skill.shortcut-save-shared-text.enable")
-        XCTAssertTrue(enableShortcut.exists)
-        enableShortcut.tap()
-        XCTAssertTrue(findButton("access.skill.shortcut-save-shared-text.disable").waitForExistence(timeout: 5))
+        let removeShortcut = findButton("access.skill.shortcut-save-shared-text.remove")
+        XCTAssertTrue(removeShortcut.exists)
+        removeShortcut.tap()
+        XCTAssertTrue(findButton("access.skill.shortcut-save-shared-text.install").waitForExistence(timeout: 5))
 
         let installWeather = findButton("access.skill.marketplace-weather-briefing.install")
         XCTAssertTrue(installWeather.exists)

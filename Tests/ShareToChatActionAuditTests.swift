@@ -104,12 +104,25 @@ final class ShareToChatActionAuditTests: XCTestCase {
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: shareQueue,
             chatAPI: KairoChatBackendService(
-                agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+                agent: AgentCore(
+                    memoryStore: InMemoryMemoryStore(),
+                    aiProvider: MockAIProvider(),
+                    skillCatalog: installedShortcutSkillCatalog()
+                )
             ),
             actionExecutor: SandboxActionExecutor(memoryStore: InMemoryMemoryStore(), reminderScheduler: reminderScheduler, auditLogger: auditLogger)
         )
         return (viewModel, shareQueue, auditLogger)
     }
+}
+
+private func installedShortcutSkillCatalog() -> AgentSkillCatalog {
+    AgentSkillCatalog(skills: AgentSkillCatalog.default.skills.map { skill in
+        guard skill.kind == .shortcutWorkflow else { return skill }
+        var installed = skill
+        installed.installationStatus = .installed
+        return installed
+    })
 }
 
 private actor CapturingReminderScheduler: ReminderScheduling {

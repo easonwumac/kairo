@@ -3,7 +3,7 @@ import XCTest
 
 final class AgentToolInvocationPlannerTests: XCTestCase {
     func testAgentToolInvocationPlannerSuggestsInstalledShortcutSkillForTaskExtraction() throws {
-        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+        let planner = AgentToolInvocationPlanner(skillCatalog: installedShortcutSkillCatalog())
 
         let plan = planner.plan(for: AgentToolInvocationRequest(userText: "把這段內容變成待辦 todo"))
         let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == "shortcut-save-shared-text" })
@@ -21,7 +21,7 @@ final class AgentToolInvocationPlannerTests: XCTestCase {
     }
 
     func testAgentToolInvocationPlannerSuggestsReplyDraftAndMeetingPrepShortcutSkills() throws {
-        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+        let planner = AgentToolInvocationPlanner(skillCatalog: installedShortcutSkillCatalog())
 
         let replyPlan = planner.plan(for: AgentToolInvocationRequest(userText: "幫我回覆這封信，語氣簡短一點"))
         let replyCandidate = try XCTUnwrap(replyPlan.candidates.first { $0.skillID == "shortcut-reply-draft-from-shared-text" })
@@ -1611,6 +1611,15 @@ private struct FixedVisibleHandoffCandidateProvider: AgentVisibleHandoffCandidat
     ) -> [AgentToolInvocationCandidate] {
         candidates
     }
+}
+
+private func installedShortcutSkillCatalog() -> AgentSkillCatalog {
+    AgentSkillCatalog(skills: AgentSkillCatalog.default.skills.map { skill in
+        guard skill.kind == .shortcutWorkflow else { return skill }
+        var installed = skill
+        installed.installationStatus = .installed
+        return installed
+    })
 }
 
 private func appIntegrationSkill(

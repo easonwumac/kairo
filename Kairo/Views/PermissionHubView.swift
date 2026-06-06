@@ -966,7 +966,7 @@ public struct PermissionHubView: View {
                 Spacer(minLength: 8)
 
                 KairoStatusPill(
-                    title: skill.installationStatus.rawValue,
+                    title: skillInstallationStatusTitle(for: skill),
                     systemImage: skillStatusIcon(for: skill),
                     tint: skillStatusTint(for: skill)
                 )
@@ -977,25 +977,15 @@ public struct PermissionHubView: View {
 
                 if skill.installationStatus == .installed {
                     skillActionButton(
-                        title: KairoL10n.string("access.skills.action.disable"),
-                        systemImage: "pause.circle",
-                        accessibilityIdentifier: "access.skill.\(skill.id).disable"
+                        title: KairoL10n.string("access.skills.action.remove"),
+                        systemImage: "trash",
+                        role: .destructive,
+                        tint: KairoDesign.red,
+                        accessibilityIdentifier: "access.skill.\(skill.id).remove"
                     ) {
                         Task {
-                            await disableSkill(skill)
+                            await removeSkill(skill)
                         }
-                    }
-                }
-
-                skillActionButton(
-                    title: KairoL10n.string("access.skills.action.remove"),
-                    systemImage: "trash",
-                    role: .destructive,
-                    tint: KairoDesign.red,
-                    accessibilityIdentifier: "access.skill.\(skill.id).remove"
-                ) {
-                    Task {
-                        await removeSkill(skill)
                     }
                 }
             }
@@ -1006,24 +996,11 @@ public struct PermissionHubView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-
-                    Text(skill.managementSummary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("access.skill.\(skill.id).summary")
-
-                    if skill.kind == .homeKitControl {
-                        Text(KairoL10n.string("access.skills.homekit.previewOnly"))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(KairoDesign.amber)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("access.skill.\(skill.id).homekit-boundary")
-                    }
                 }
             } icon: {
-                Image(systemName: skill.kind == .homeKitControl ? "house.badge.exclamationmark" : "checklist.checked")
-                    .foregroundStyle(skill.kind == .homeKitControl ? KairoDesign.amber : KairoDesign.teal)
+                Image(systemName: "checklist.checked")
+                    .foregroundStyle(KairoDesign.teal)
             }
             .padding(10)
             .background(KairoDesign.softSurface.opacity(0.45), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -1043,7 +1020,7 @@ public struct PermissionHubView: View {
                 accessibilityIdentifier: "access.skill.\(skill.id).install"
             ) {
                 Task {
-                    await installSkill(skill)
+                    await addSkill(skill)
                 }
             }
         case .installed:
@@ -1060,14 +1037,23 @@ public struct PermissionHubView: View {
             }
         case .disabled:
             skillActionButton(
-                title: KairoL10n.string("access.skills.action.enable"),
-                systemImage: "play.circle",
-                accessibilityIdentifier: "access.skill.\(skill.id).enable"
+                title: KairoL10n.string("access.skills.action.install"),
+                systemImage: "square.and.arrow.down",
+                accessibilityIdentifier: "access.skill.\(skill.id).install"
             ) {
                 Task {
-                    await enableSkill(skill)
+                    await addSkill(skill)
                 }
             }
+        }
+    }
+
+    private func skillInstallationStatusTitle(for skill: AgentSkill) -> String {
+        switch skill.installationStatus {
+        case .installed:
+            return KairoL10n.string("access.skills.status.installed")
+        case .available, .disabled:
+            return KairoL10n.string("access.skills.status.available")
         }
     }
 
@@ -1109,7 +1095,7 @@ public struct PermissionHubView: View {
         case .installed:
             return "checkmark.seal.fill"
         case .disabled:
-            return "pause.circle.fill"
+            return "square.and.arrow.down"
         }
     }
 
@@ -1120,7 +1106,7 @@ public struct PermissionHubView: View {
         case .installed:
             return KairoDesign.green
         case .disabled:
-            return KairoDesign.amber
+            return KairoDesign.blue
         }
     }
 
@@ -1300,6 +1286,16 @@ public struct PermissionHubView: View {
     }
 
     @MainActor
+    private func addSkill(_ skill: AgentSkill) async {
+        guard skill.source == .marketplace else {
+            await enableSkill(skill)
+            return
+        }
+
+        await installSkill(skill)
+    }
+
+    @MainActor
     private func installSkill(_ skill: AgentSkill) async {
         guard let skillManagerService else {
             skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .installed)
@@ -1363,16 +1359,16 @@ public struct PermissionHubView: View {
     private func enableSkill(_ skill: AgentSkill) async {
         guard let skillManagerService else {
             skillCatalog = skillCatalog.updatingStatus(id: skill.id, to: .installed)
-            skillManagerMessage = KairoL10n.string("access.skills.message.enabled", skill.displayName)
+            skillManagerMessage = KairoL10n.string("access.skills.message.installed", skill.displayName)
             return
         }
 
         do {
             _ = try await skillManagerService.enableSkill(id: skill.id)
             skillCatalog = try await skillManagerService.catalog()
-            skillManagerMessage = KairoL10n.string("access.skills.message.enabled", skill.displayName)
+            skillManagerMessage = KairoL10n.string("access.skills.message.installed", skill.displayName)
         } catch {
-            skillManagerMessage = KairoL10n.string("access.skills.message.enableFailed", skill.displayName)
+            skillManagerMessage = KairoL10n.string("access.skills.message.installFailed", skill.displayName)
         }
     }
 

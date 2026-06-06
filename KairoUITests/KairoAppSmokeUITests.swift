@@ -637,9 +637,9 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(confirmInstall.isEnabled)
         confirmInstall.tap()
 
-        XCTAssertTrue(findStaticText(containing: "Weather Briefing installed from signed manifest.", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "Weather Briefing added.", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
         openSkillDetailsIfNeeded(skillID: "marketplace-weather-briefing")
-        XCTAssertTrue(findButton("access.skill.marketplace-weather-briefing.disable", direction: .both, maxSwipes: 2).exists)
+        XCTAssertTrue(findButton("access.skill.marketplace-weather-briefing.remove", direction: .both, maxSwipes: 2).exists)
     }
 
     func testAccessSkillManagerCreatesLocalUserSkillDraft() throws {
@@ -670,16 +670,16 @@ final class KairoAppSmokeUITests: XCTestCase {
         XCTAssertTrue(createMessage.waitForExistence(timeout: 5))
         XCTAssertTrue(findElement("access.skill.user-ui-created-skill", direction: .both, maxSwipes: 10).exists)
 
-        let enableDraft = findButton("access.skill.user-ui-created-skill.enable", direction: .both, maxSwipes: 10)
-        XCTAssertTrue(enableDraft.exists)
-        enableDraft.tap()
+        let installDraft = findButton("access.skill.user-ui-created-skill.install", direction: .both, maxSwipes: 10)
+        XCTAssertTrue(installDraft.exists)
+        installDraft.tap()
         openSkillDetailsIfNeeded(skillID: "user-ui-created-skill")
-        XCTAssertTrue(findButton("access.skill.user-ui-created-skill.disable", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertTrue(findButton("access.skill.user-ui-created-skill.remove", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
 
         let removeDraft = findButton("access.skill.user-ui-created-skill.remove", direction: .both, maxSwipes: 2)
         XCTAssertTrue(removeDraft.exists)
         removeDraft.tap()
-        XCTAssertTrue(findStaticText(containing: "UI Created Skill removed from manager.", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
+        XCTAssertTrue(findStaticText(containing: "UI Created Skill removed.", direction: .both, maxSwipes: 2).waitForExistence(timeout: 5))
         XCTAssertFalse(anyElement("access.skill.user-ui-created-skill").exists)
     }
 

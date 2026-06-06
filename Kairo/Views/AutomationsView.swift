@@ -70,13 +70,10 @@ public struct AutomationsView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     if recipes.isEmpty {
                         recipeCenterCard
-                        workflowOverviewCard
                     } else {
                         savedRecipesCard
                         recipeCenterCard
-                        workflowOverviewCard
                     }
-                    advancedWorkflowReferenceCard
 
                     if let message {
                         statusCard(message)

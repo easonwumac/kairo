@@ -7,7 +7,7 @@ import FoundationNetworking
 
 final class AgentSkillFeatureTests: XCTestCase {
     func testAgentToolInvocationPlannerSuggestsPhoneCallHandoffShortcutSkill() throws {
-        let planner = AgentToolInvocationPlanner(skillCatalog: .default)
+        let planner = AgentToolInvocationPlanner(skillCatalog: installedShortcutSkillCatalog())
 
         let plan = planner.plan(for: AgentToolInvocationRequest(userText: "Call Alex about the Kairo TestFlight"))
         let candidate = try XCTUnwrap(plan.candidates.first { $0.skillID == "shortcut-phone-call-handoff" })
@@ -713,6 +713,15 @@ final class AgentSkillFeatureTests: XCTestCase {
         var screenshots: [String]
         var compatibilityRequirements: AgentSkillCompatibilityRequirements?
     }
+}
+
+private func installedShortcutSkillCatalog() -> AgentSkillCatalog {
+    AgentSkillCatalog(skills: AgentSkillCatalog.default.skills.map { skill in
+        guard skill.kind == .shortcutWorkflow else { return skill }
+        var installed = skill
+        installed.installationStatus = .installed
+        return installed
+    })
 }
 
 private actor AgentSkillMockHTTPClient: HTTPClient {

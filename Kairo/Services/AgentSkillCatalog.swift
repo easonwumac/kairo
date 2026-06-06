@@ -386,11 +386,11 @@ public struct AgentSkill: Codable, Equatable, Identifiable, Sendable {
     public static func shortcutDemoSkill(for recipe: ShortcutDemoRecipe) -> AgentSkill {
         AgentSkill(
             id: "shortcut-\(recipe.id)",
-            displayName: "Shortcut \(recipe.title)",
-            summary: "Use the \(recipe.title) Shortcut recipe as an installed skill.",
+            displayName: recipe.title,
+            summary: KairoL10n.string("access.skills.shortcut.summary", recipe.title),
             kind: .shortcutWorkflow,
             source: .builtIn,
-            installationStatus: .installed,
+            installationStatus: .available,
             requiredCapabilities: [.appIntents],
             shortcutRecipeID: recipe.id
         )
@@ -470,7 +470,13 @@ public struct AgentSkillCatalog: Codable, Equatable, Sendable {
     }
 
     public func removingSkill(id: String) -> AgentSkillCatalog {
-        AgentSkillCatalog(skills: skills.filter { $0.id != id })
+        AgentSkillCatalog(skills: skills.compactMap { skill in
+            guard skill.id == id else { return skill }
+            guard skill.source == .builtIn else { return nil }
+            var updated = skill
+            updated.installationStatus = .available
+            return updated
+        })
     }
 
     public func mergingMarketplaceCatalog(_ marketplaceCatalog: AgentSkillCatalog) -> AgentSkillCatalog {
@@ -723,6 +729,12 @@ public struct AgentSkillManagerService: Sendable {
     }
 
     public func removeSkill(id: String) async throws {
+        if var builtInSkill = builtInCatalog.skill(id: id) {
+            builtInSkill.installationStatus = .available
+            try await store.upsert(builtInSkill)
+            return
+        }
+
         try await store.removeSkill(id: id)
     }
 

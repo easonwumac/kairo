@@ -287,18 +287,25 @@ final class AgentSkillManagerLifecycleTests: XCTestCase {
         let store = try await FileBackedAgentSkillStore(fileURL: storeURL)
         let service = AgentSkillManagerService(store: store, builtInCatalog: .default)
 
-        let disabled = try await service.disableSkill(id: "shortcut-save-shared-text")
-        XCTAssertEqual(disabled?.source, .builtIn)
-        XCTAssertEqual(disabled?.shortcutRecipeID, "save-shared-text")
-        XCTAssertEqual(disabled?.installationStatus, .disabled)
+        let initialCatalog = try await service.catalog()
+        XCTAssertEqual(initialCatalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .available)
+
+        let installed = try await service.enableSkill(id: "shortcut-save-shared-text")
+        XCTAssertEqual(installed?.source, .builtIn)
+        XCTAssertEqual(installed?.shortcutRecipeID, "save-shared-text")
+        XCTAssertEqual(installed?.installationStatus, .installed)
 
         let reloadedStore = try await FileBackedAgentSkillStore(fileURL: storeURL)
         let reloadedService = AgentSkillManagerService(store: reloadedStore, builtInCatalog: .default)
-        let reloadedCatalog = try await reloadedService.catalog()
+        var reloadedCatalog = try await reloadedService.catalog()
 
-        XCTAssertEqual(reloadedCatalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .disabled)
+        XCTAssertEqual(reloadedCatalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .installed)
+        XCTAssertTrue(reloadedCatalog.installedSkills.map(\.id).contains("shortcut-save-shared-text"))
+
+        try await reloadedService.removeSkill(id: "shortcut-save-shared-text")
+        reloadedCatalog = try await reloadedService.catalog()
+        XCTAssertEqual(reloadedCatalog.skill(id: "shortcut-save-shared-text")?.installationStatus, .available)
         XCTAssertFalse(reloadedCatalog.installedSkills.map(\.id).contains("shortcut-save-shared-text"))
-        XCTAssertTrue(reloadedCatalog.installedSkills.map(\.id).contains("shortcut-screenshot-to-reminders"))
     }
 
     private func trustStore(for signingKey: P256.Signing.PrivateKey) -> AgentSkillManifestTrustStore {
