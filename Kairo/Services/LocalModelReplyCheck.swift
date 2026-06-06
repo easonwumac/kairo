@@ -17,6 +17,8 @@ public struct LocalModelReplyCheckResult: Codable, Equatable, Sendable {
     public var generatedTokens: Int
     public var promptTokensPerSecond: Double?
     public var generationTokensPerSecond: Double
+    public var firstTokenLatencyMS: Double?
+    public var peakMemoryMB: Int?
     public var measuredAt: Date
     public var notes: String
 
@@ -31,6 +33,8 @@ public struct LocalModelReplyCheckResult: Codable, Equatable, Sendable {
         generatedTokens: Int,
         promptTokensPerSecond: Double? = nil,
         generationTokensPerSecond: Double,
+        firstTokenLatencyMS: Double? = nil,
+        peakMemoryMB: Int? = nil,
         measuredAt: Date,
         notes: String
     ) {
@@ -44,6 +48,8 @@ public struct LocalModelReplyCheckResult: Codable, Equatable, Sendable {
         self.generatedTokens = generatedTokens
         self.promptTokensPerSecond = promptTokensPerSecond
         self.generationTokensPerSecond = generationTokensPerSecond
+        self.firstTokenLatencyMS = firstTokenLatencyMS
+        self.peakMemoryMB = peakMemoryMB
         self.measuredAt = measuredAt
         self.notes = notes
     }
@@ -131,6 +137,8 @@ public struct DeterministicLocalModelReplyCheckRuntime: LocalModelReplyCheckRunt
     private let generatedTokens: Int
     private let promptTokensPerSecond: Double?
     private let generationTokensPerSecond: Double
+    private let firstTokenLatencyMS: Double?
+    private let peakMemoryMB: Int?
     private let measuredAt: Date
 
     public init(
@@ -141,6 +149,8 @@ public struct DeterministicLocalModelReplyCheckRuntime: LocalModelReplyCheckRunt
         generatedTokens: Int = 24,
         promptTokensPerSecond: Double? = nil,
         generationTokensPerSecond: Double,
+        firstTokenLatencyMS: Double? = nil,
+        peakMemoryMB: Int? = nil,
         measuredAt: Date = Date(timeIntervalSince1970: 1_780_358_400)
     ) {
         self.runtime = runtime
@@ -150,6 +160,8 @@ public struct DeterministicLocalModelReplyCheckRuntime: LocalModelReplyCheckRunt
         self.generatedTokens = generatedTokens
         self.promptTokensPerSecond = promptTokensPerSecond
         self.generationTokensPerSecond = generationTokensPerSecond
+        self.firstTokenLatencyMS = firstTokenLatencyMS
+        self.peakMemoryMB = peakMemoryMB
         self.measuredAt = measuredAt
     }
 
@@ -171,6 +183,8 @@ public struct DeterministicLocalModelReplyCheckRuntime: LocalModelReplyCheckRunt
             generatedTokens: generatedTokens,
             promptTokensPerSecond: promptTokensPerSecond,
             generationTokensPerSecond: generationTokensPerSecond,
+            firstTokenLatencyMS: firstTokenLatencyMS,
+            peakMemoryMB: peakMemoryMB,
             measuredAt: measuredAt,
             notes: "Deterministic reply check runtime for tests and UI smoke validation."
         )

@@ -584,6 +584,8 @@ public actor LocalModelBenchmarkService: LocalModelPerformanceRecording {
             generatedTokens: result.generatedTokens,
             promptTokensPerSecond: result.promptTokensPerSecond ?? 0,
             generationTokensPerSecond: result.generationTokensPerSecond,
+            firstTokenLatencyMS: result.firstTokenLatencyMS,
+            peakMemoryMB: result.peakMemoryMB,
             measuredAt: result.measuredAt,
             isReferenceOnlyForIOS: false,
             notes: "Recorded from Chat local inference."

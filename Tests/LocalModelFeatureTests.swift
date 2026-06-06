@@ -1818,6 +1818,46 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(snapshot.modelSummaries.first?.cachedTokenCount, 0)
     }
 
+    func testLocalModelBenchmarkServiceRecordsChatInferenceTimingAndMemory() async throws {
+        let registryURL = temporaryFileURL(named: "local-model-registry.json")
+        let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")
+        let registry = try await FileBackedLocalModelInstallRegistry(fileURL: registryURL)
+        let resultStore = try await FileBackedLocalModelBenchmarkStore(fileURL: benchmarkURL)
+        let service = LocalModelBenchmarkService(
+            catalog: .kairoDefault,
+            installRegistry: registry,
+            resultStore: resultStore
+        )
+        let result = LocalModelReplyCheckResult(
+            modelID: "qwen2-5-0-5b-instruct-q4-k-m",
+            modelDisplayName: "Qwen2.5 0.5B Instruct Q4_K_M",
+            runtime: .gguf,
+            runtimePackage: "llama.cpp iOS",
+            prompt: "Classify this asset.",
+            responseText: "{\"category\":\"travel\"}",
+            promptTokens: 128,
+            generatedTokens: 42,
+            promptTokensPerSecond: 96,
+            generationTokensPerSecond: 11,
+            firstTokenLatencyMS: 1_250,
+            peakMemoryMB: 1_420,
+            measuredAt: Date(timeIntervalSince1970: 1_780_358_401),
+            notes: "Recorded from Chat."
+        )
+
+        await service.recordInferenceResult(result)
+        let snapshot = await service.performanceSnapshot()
+
+        XCTAssertEqual(snapshot.totalRunCount, 1)
+        XCTAssertEqual(snapshot.averagePromptTokensPerSecond, 96)
+        XCTAssertEqual(snapshot.averageGenerationTokensPerSecond, 11)
+        XCTAssertEqual(snapshot.averageFirstTokenLatencyMS, 1_250)
+        XCTAssertEqual(snapshot.peakMemoryMB, 1_420)
+        XCTAssertEqual(snapshot.prefillTokenCount, 128)
+        XCTAssertEqual(snapshot.modelSummaries.first?.averageFirstTokenLatencyMS, 1_250)
+        XCTAssertEqual(snapshot.modelSummaries.first?.peakMemoryMB, 1_420)
+    }
+
     func testLocalModelBenchmarkServiceDeletesResultsForRemovedModel() async throws {
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
         let benchmarkURL = temporaryFileURL(named: "local-model-benchmarks.json")

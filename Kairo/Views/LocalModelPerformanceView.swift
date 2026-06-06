@@ -28,8 +28,6 @@ struct LocalModelPerformanceView: View {
 
                     if benchmarkService == nil {
                         emptyState(KairoL10n.string("performance.local.unavailable"))
-                    } else if displayedSnapshot.totalRunCount > 0 {
-                        modelBreakdown
                     }
                 }
                 .padding(.horizontal, 16)
@@ -55,7 +53,7 @@ struct LocalModelPerformanceView: View {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                     metricTile(KairoL10n.string("performance.local.prefillTokens"), "\(displayedSnapshot.prefillTokenCount)")
                     metricTile(KairoL10n.string("performance.local.cachedTokens"), "\(displayedSnapshot.cachedTokenCount)")
-                    metricTile(KairoL10n.string("performance.local.cacheEfficiency"), formattedPercent(displayedSnapshot.kvCacheHitRate))
+                    metricTile(KairoL10n.string("performance.local.cacheEfficiency"), formattedCacheEfficiency)
                     metricTile(KairoL10n.string("performance.local.pp"), formattedRate(displayedSnapshot.averagePromptTokensPerSecond))
                     metricTile(KairoL10n.string("performance.local.tk"), formattedRate(displayedSnapshot.averageGenerationTokensPerSecond))
                     metricTile(KairoL10n.string("performance.local.cacheStorage"), formattedStorage(displayedSnapshot.cacheUsedBytes, capacity: displayedSnapshot.cacheCapacityBytes))
@@ -104,12 +102,14 @@ struct LocalModelPerformanceView: View {
             }
             .pickerStyle(.menu)
             .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(.vertical, 9)
+            .foregroundStyle(KairoDesign.ink)
+            .background(KairoDesign.elevatedSurface.opacity(0.72), in: Capsule())
             .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(KairoDesign.line, lineWidth: 1)
+                Capsule()
+                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
             }
+            .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
             .accessibilityIdentifier("performance.local.scope")
         }
     }
@@ -120,49 +120,6 @@ struct LocalModelPerformanceView: View {
             return KairoL10n.string("performance.local.overview")
         }
         return summary.modelDisplayName
-    }
-
-    private var modelBreakdown: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(KairoL10n.string("performance.local.models"))
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            KairoGroupedSurface {
-                ForEach(displayedSnapshot.modelSummaries) { summary in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(alignment: .firstTextBaseline) {
-                            Text(summary.modelDisplayName)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(KairoDesign.ink)
-                            Spacer()
-                            Text(KairoL10n.string("performance.local.modelRuns", Int64(summary.runCount)))
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(KairoDesign.muted)
-                        }
-                        HStack(spacing: 8) {
-                            compactMetric(KairoL10n.string("performance.local.prefillTokens"), "\(summary.prefillTokenCount)")
-                            compactMetric(KairoL10n.string("performance.local.cachedTokens"), "\(summary.cachedTokenCount)")
-                        }
-                        HStack(spacing: 8) {
-                            compactMetric(KairoL10n.string("performance.local.pp"), formattedRate(summary.averagePromptTokensPerSecond))
-                            compactMetric(KairoL10n.string("performance.local.tk"), formattedRate(summary.averageGenerationTokensPerSecond))
-                            compactMetric(KairoL10n.string("performance.local.cacheEfficiency"), formattedPercent(summary.kvCacheHitRate))
-                        }
-                        HStack(spacing: 8) {
-                            compactMetric(KairoL10n.string("performance.local.firstToken"), formattedLatency(summary.averageFirstTokenLatencyMS))
-                            compactMetric(KairoL10n.string("performance.local.peakMemory"), formattedMemory(summary.peakMemoryMB))
-                        }
-                    }
-                    .padding(.vertical, 10)
-                    .accessibilityIdentifier("performance.local.model.\(summary.modelID)")
-
-                    if summary.id != displayedSnapshot.modelSummaries.last?.id {
-                        Divider()
-                    }
-                }
-            }
-        }
     }
 
     @MainActor
@@ -227,7 +184,7 @@ struct LocalModelPerformanceView: View {
     }
 
     private func formattedRate(_ value: Double?) -> String {
-        guard let value else { return "0 tok/s" }
+        guard let value else { return "--" }
         return "\(formattedNumber(value)) tok/s"
     }
 
@@ -239,8 +196,13 @@ struct LocalModelPerformanceView: View {
         "\(Int((value * 100).rounded()))%"
     }
 
+    private var formattedCacheEfficiency: String {
+        guard displayedSnapshot.cachedTokenCount > 0 else { return "--" }
+        return formattedPercent(displayedSnapshot.kvCacheHitRate)
+    }
+
     private func formattedLatency(_ value: Double?) -> String {
-        guard let value else { return "0ms" }
+        guard let value else { return "--" }
         if value >= 1000 {
             return String(format: "%.2fs", value / 1000.0)
         }
@@ -248,7 +210,7 @@ struct LocalModelPerformanceView: View {
     }
 
     private func formattedMemory(_ value: Int?) -> String {
-        guard let value else { return "0 MB" }
+        guard let value else { return "--" }
         if value >= 1024 {
             return String(format: "%.2f GB", Double(value) / 1024.0)
         }
