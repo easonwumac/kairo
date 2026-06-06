@@ -668,6 +668,12 @@
 "chat.capture.photoVisionTextPreview" = "Apple Vision 參考資料，可能有辨識誤差：\n%@";
 "chat.capture.photoVisionOCRSection" = "OCR 文字：\n%@";
 "chat.capture.photoVisionLabelsSection" = "影像標籤：%@";
+"chat.local.imageClassification.fallback.response" = "這張圖片沒有可靠 OCR 文字，但仍是可保存的圖片資產。我會先準備低信心的 Library 分類選項讓你選。";
+"chat.local.imageClassification.fallback.assetDescription" = "OCR 或影像標籤參考有限的圖片附件。";
+"chat.local.imageClassification.fallback.reason" = "模型無法穩定判斷圖片分類，因此 Kairo 先把它保留為一般圖片資產。";
+"chat.local.imageClassification.fallback.keyword.image" = "圖片";
+"chat.local.imageClassification.fallback.keyword.library" = "資料庫";
+"chat.local.imageClassification.fallback.subcategory" = "未分類圖片";
 "onboarding.hero.title" = "建立可搜尋的個人資料庫";
 "onboarding.hero.subtitle" = "把截圖、連結、文字與檔案送進 Kairo。Kairo 會保存原始資產、加入描述，並協助你之後找回。";
 "onboarding.feature.capture" = "收集截圖、連結、筆記與檔案。";

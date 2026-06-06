@@ -10,8 +10,8 @@ struct ChatBubble: View {
     let message: ChatMessage
     let onCopy: (String) -> Void
     let onReply: (ChatMessage) -> Void
+    let onShowRawJSON: (String) -> Void
     @State private var isReasoningExpanded = false
-    @State private var isRawJSONPresented = false
 
     private var isUser: Bool { message.role == .user }
     private var bubbleMaxWidth: CGFloat { isUser ? 306 : 334 }
@@ -41,32 +41,11 @@ struct ChatBubble: View {
                 .padding(.vertical, 8)
                 .background(bubbleColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .frame(maxWidth: bubbleMaxWidth, alignment: bubbleAlignment)
-                .contextMenu {
-                    Button {
-                        onCopy(message.text)
-                    } label: {
-                        Label(KairoL10n.string("chat.message.copy"), systemImage: "doc.on.doc")
+                .onLongPressGesture {
+                    guard !isUser, let rawJSON = message.rawModelResponse?.trimmingCharacters(in: .whitespacesAndNewlines), !rawJSON.isEmpty else {
+                        return
                     }
-                    .accessibilityIdentifier("chat.message.copy-menu.\(message.id.uuidString)")
-
-                    Button {
-                        onReply(message)
-                    } label: {
-                        Label(KairoL10n.string("chat.message.reply"), systemImage: "arrowshape.turn.up.left")
-                    }
-                    .accessibilityIdentifier("chat.message.reply-menu.\(message.id.uuidString)")
-
-                    if hasRawModelResponse {
-                        Button {
-                            isRawJSONPresented = true
-                        } label: {
-                            Label(KairoL10n.string("chat.message.rawJSON"), systemImage: "curlybraces")
-                        }
-                        .accessibilityIdentifier("chat.message.raw-json-menu.\(message.id.uuidString)")
-                    }
-                }
-                .sheet(isPresented: $isRawJSONPresented) {
-                    ChatRawJSONView(rawJSON: message.rawModelResponse ?? "")
+                    onShowRawJSON(rawJSON)
                 }
 
                 if let reasoningText = message.reasoningText, !reasoningText.isEmpty, !isUser {
@@ -142,10 +121,6 @@ struct ChatBubble: View {
         return KairoDesign.elevatedSurface.opacity(0.72)
     }
 
-    private var hasRawModelResponse: Bool {
-        message.rawModelResponse?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
-    }
-
     private var memoryContextLabel: String {
         if message.memoryContextCount == 1 {
             return KairoL10n.string("chat.message.memoryContext.one")
@@ -170,36 +145,6 @@ struct ChatBubble: View {
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityIdentifier(identifier)
-    }
-}
-
-private struct ChatRawJSONView: View {
-    let rawJSON: String
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                Text(rawJSON)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(KairoDesign.ink)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(14)
-                    .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .padding(16)
-            }
-            .background(KairoDesign.background.ignoresSafeArea())
-            .navigationTitle(KairoL10n.string("chat.message.rawJSON"))
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(KairoL10n.string("common.done")) {
-                        dismiss()
-                    }
-                }
-            }
-            .accessibilityIdentifier("chat.message.raw-json.sheet")
-        }
     }
 }
 

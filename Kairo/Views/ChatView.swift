@@ -17,6 +17,7 @@ public struct ChatView: View {
     @State private var showToolPalette = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var captureStatusMessage: String?
+    @State private var rawJSONPanelText: String?
     @FocusState private var isComposerFocused: Bool
 
     public init(
@@ -112,7 +113,12 @@ public struct ChatView: View {
                                 ChatBubble(
                                     message: message,
                                     onCopy: copyToPasteboard,
-                                    onReply: { viewModel.replyToMessage($0) }
+                                    onReply: { viewModel.replyToMessage($0) },
+                                    onShowRawJSON: { rawJSON in
+                                        withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+                                            rawJSONPanelText = rawJSON
+                                        }
+                                    }
                                 )
                                 if !message.attachments.isEmpty {
                                     AttachmentStrip(attachments: message.attachments)
@@ -230,6 +236,16 @@ public struct ChatView: View {
         }
         .overlay(alignment: .top) {
             chatTopMistOverlay
+        }
+        .overlay(alignment: .trailing) {
+            if let rawJSONPanelText {
+                ChatRawJSONSlidePanel(rawJSON: rawJSONPanelText) {
+                    withAnimation(.spring(response: 0.24, dampingFraction: 0.92)) {
+                        self.rawJSONPanelText = nil
+                    }
+                }
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
         }
         .sheet(item: $viewModel.pendingAction) { action in
             ActionPreviewView(
@@ -651,6 +667,64 @@ private struct AttachmentTray: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 4)
+        }
+    }
+}
+
+private struct ChatRawJSONSlidePanel: View {
+    let rawJSON: String
+    let close: () -> Void
+
+    var body: some View {
+        GeometryReader { proxy in
+            HStack(spacing: 0) {
+                Color.black.opacity(0.20)
+                    .ignoresSafeArea()
+                    .onTapGesture(perform: close)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 10) {
+                        Button(action: close) {
+                            Image(systemName: "chevron.right")
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(KairoDesign.ink)
+                                .frame(width: 34, height: 34)
+                                .background(KairoDesign.softSurface.opacity(0.68), in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(KairoL10n.string("root.back"))
+
+                        Text(KairoL10n.string("chat.message.rawJSON"))
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(KairoDesign.ink)
+
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.top, 12)
+
+                    ScrollView {
+                        Text(rawJSON)
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(KairoDesign.ink)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(13)
+                            .background(KairoDesign.softSurface.opacity(0.62), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .padding(.horizontal, 14)
+                            .padding(.bottom, 18)
+                    }
+                }
+                .frame(width: min(proxy.size.width * 0.90, 390))
+                .frame(maxHeight: .infinity)
+                .background(.ultraThinMaterial)
+                .overlay(alignment: .leading) {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.10))
+                        .frame(width: 1)
+                }
+                .accessibilityIdentifier("chat.message.raw-json.panel")
+            }
         }
     }
 }

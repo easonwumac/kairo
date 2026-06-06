@@ -668,6 +668,12 @@
 "chat.capture.photoVisionTextPreview" = "Apple Vision reference. It may contain recognition errors:\n%@";
 "chat.capture.photoVisionOCRSection" = "OCR text:\n%@";
 "chat.capture.photoVisionLabelsSection" = "Image labels: %@";
+"chat.local.imageClassification.fallback.response" = "I could not get reliable OCR from this image, but it is still an image asset. I will prepare low-confidence Library category options for you to choose.";
+"chat.local.imageClassification.fallback.assetDescription" = "Image attachment with limited OCR or label references.";
+"chat.local.imageClassification.fallback.reason" = "The model could not confidently classify the image, so Kairo keeps it as a general image asset first.";
+"chat.local.imageClassification.fallback.keyword.image" = "image";
+"chat.local.imageClassification.fallback.keyword.library" = "library";
+"chat.local.imageClassification.fallback.subcategory" = "Unsorted images";
 "onboarding.hero.title" = "Build a searchable personal library";
 "onboarding.hero.subtitle" = "Send screenshots, links, text, and files to Kairo. Kairo stores the original asset, adds descriptions, and helps you find it later.";
 "onboarding.feature.capture" = "Capture screenshots, links, notes, and files.";

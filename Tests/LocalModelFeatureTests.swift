@@ -1420,6 +1420,37 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(callCount, 3)
     }
 
+    func testLocalModelRuntimeAIProviderFallsBackWhenImageClassificationKeepsRefusing() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .localOnly,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let runtime = SequencedLocalModelReplyRuntime(responses: Array(
+            repeating: #"{"response":"圖片已附加但無法從中讀取任何內容，所以無法執行分類或儲存操作。","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"unsupported"}"#,
+            count: 3
+        ))
+        let provider = LocalModelRuntimeAIProvider(
+            localModelSettingsService: service,
+            runtime: runtime
+        )
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "檢查附加內容。",
+            attachmentContext: [
+                ChatAttachment(kind: .image, displayName: "flower.jpg")
+            ]
+        ))
+
+        XCTAssertFalse(response.message.contains("無法執行分類或儲存操作"))
+        XCTAssertEqual(response.libraryClassification?.candidateCategories.map(\.category), [.generalNote])
+        XCTAssertEqual(response.libraryClassification?.needsCategoryChoice, true)
+        XCTAssertEqual(response.libraryClassification?.nextStep, "askUserToChoose")
+        XCTAssertEqual(response.rawModelResponse?.contains(#""candidateCategories""#), true)
+        let callCount = await runtime.callCount()
+        XCTAssertEqual(callCount, 3)
+    }
+
     func testLocalModelRuntimeAIProviderRetriesOnceWhenRuntimeOutputIsInvalid() async throws {
         let service = try await makeLocalModelSettingsService(
             preference: .localOnly,

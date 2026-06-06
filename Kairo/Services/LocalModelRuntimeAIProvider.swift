@@ -91,6 +91,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
     ) {
         var lastResult: LocalModelReplyCheckResult?
         var lastParsed = LocalModelReasoningParseResult(message: "", reasoningText: nil)
+        var sawInvalidImageClassificationRefusal = false
         for attempt in 1...3 {
             let result = try await generateReply(
                 request: request,
@@ -105,7 +106,12 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
             lastParsed = parsed
             if let structured = LocalModelStructuredChatResponse.parse(parsed.message) {
                 let visibleMessage = Self.sanitizedAssistantMessage(structured.response)
-                if !visibleMessage.isEmpty {
+                let isInvalidImageRefusal = Self.isInvalidImageClassificationRefusal(
+                    visibleMessage,
+                    attachments: request.attachmentContext
+                )
+                sawInvalidImageClassificationRefusal = sawInvalidImageClassificationRefusal || isInvalidImageRefusal
+                if !visibleMessage.isEmpty, !isInvalidImageRefusal {
                     return (
                         result,
                         parsed,
@@ -119,6 +125,17 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         guard let lastResult else {
             throw AIProviderError.localInferenceUnavailable(
                 KairoL10n.string("chat.error.localInference.reason.runtimeEmpty")
+            )
+        }
+        if sawInvalidImageClassificationRefusal,
+           request.attachmentContext.contains(where: { $0.kind == .image }) {
+            let fallback = Self.imageClassificationFallback()
+            return (
+                lastResult,
+                lastParsed,
+                fallback.message,
+                fallback.classification,
+                fallback.rawJSON
             )
         }
         return (
@@ -343,6 +360,63 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         If category confidence is low or multiple categories fit, fill candidateCategories with 2-4 options.
         Do not say the image has no useful content just because OCR or labels are empty.
         """
+    }
+
+    private static func isInvalidImageClassificationRefusal(_ message: String, attachments: [ChatAttachment]) -> Bool {
+        guard attachments.contains(where: { $0.kind == .image }) else { return false }
+        let normalized = message
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "\n", with: "")
+        let refusalSignals = [
+            "無法從中讀取任何內容",
+            "無法執行分類",
+            "無法分類或儲存",
+            "無法讀取任何內容",
+            "cannotread",
+            "cannotclassify",
+            "unabletoread",
+            "unabletoclassify"
+        ]
+        return refusalSignals.contains { normalized.contains($0) }
+    }
+
+    private static func imageClassificationFallback() -> (
+        message: String,
+        classification: LibraryClassificationResponse,
+        rawJSON: String
+    ) {
+        let message = KairoL10n.string("chat.local.imageClassification.fallback.response")
+        let candidate = InfoPageDraftCategoryCandidate(
+            templateID: .generalNote,
+            category: .generalNote,
+            confidence: 0.25,
+            reason: KairoL10n.string("chat.local.imageClassification.fallback.reason")
+        )
+        let classification = LibraryClassificationResponse(
+            assetDescription: KairoL10n.string("chat.local.imageClassification.fallback.assetDescription"),
+            ocrSummary: "",
+            keywords: [
+                KairoL10n.string("chat.local.imageClassification.fallback.keyword.image"),
+                KairoL10n.string("chat.local.imageClassification.fallback.keyword.library")
+            ],
+            candidateCategories: [candidate],
+            selectedSubcategoryIDs: [],
+            suggestedSubcategoryName: KairoL10n.string("chat.local.imageClassification.fallback.subcategory"),
+            needsCategoryChoice: true,
+            nextStep: "askUserToChoose"
+        )
+        let rawJSON = """
+        {"response":"\(escapedJSONString(message))","assetDescription":"\(escapedJSONString(classification.assetDescription ?? ""))","ocrSummary":"","keywords":["\(escapedJSONString(classification.keywords[0]))","\(escapedJSONString(classification.keywords[1]))"],"candidateCategories":[{"templateID":"generalNote","category":"generalNote","confidence":0.25,"reason":"\(escapedJSONString(candidate.reason))"}],"selectedSubcategoryIDs":[],"suggestedSubcategoryName":"\(escapedJSONString(classification.suggestedSubcategoryName ?? ""))","needsCategoryChoice":true,"nextStep":"askUserToChoose"}
+        """
+        return (message, classification, rawJSON)
+    }
+
+    private static func escapedJSONString(_ value: String) -> String {
+        guard let data = try? JSONEncoder().encode(value),
+              let encoded = String(data: data, encoding: .utf8)
+        else { return value }
+        return encoded.trimmingCharacters(in: CharacterSet(charactersIn: "\""))
     }
 
     private static func truncated(_ value: String, limit: Int) -> String {
