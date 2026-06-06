@@ -92,24 +92,24 @@ public enum InfoPageModelEvaluationCatalog {
             notes: "First downloadable vision-language candidate because its GGUF model and mmproj companion are both represented in the local catalog."
         ),
         InfoPageModelEvaluationCandidate(
-            id: "gemma-4-e2b-it",
-            displayName: "Gemma 4 E2B IT",
+            id: "gemma-4-e2b-it-qat-q4-0-gguf",
+            displayName: "Gemma 4 E2B IT QAT Q4_0",
             recommendedRole: .minimumVisionExtraction,
             expectedTemplateCoverage: [.travel, .order, .warranty, .event, .homeDevice, .subscription, .generalNote],
             minimumAcceptedScore: 0.78,
             requiresVisionInput: true,
-            downloadableModelID: nil,
-            notes: "Preferred product direction for on-device image-to-structured-info extraction once a signed iOS-compatible artifact and projector/runtime path are verified."
+            downloadableModelID: LocalModelManifest.gemma4E2BQATQ4_0.id,
+            notes: "Primary downloadable QAT candidate for asset understanding. Kairo still validates JSON output and uses Apple Vision references until direct iOS multimodal runtime is verified."
         ),
         InfoPageModelEvaluationCandidate(
-            id: "gemma-4-e4b-it",
-            displayName: "Gemma 4 E4B IT",
+            id: "gemma-4-e4b-it-qat-q4-0-gguf",
+            displayName: "Gemma 4 E4B IT QAT Q4_0",
             recommendedRole: .preferredOnDeviceExtraction,
             expectedTemplateCoverage: InfoPageTemplateID.allCases,
             minimumAcceptedScore: 0.84,
             requiresVisionInput: true,
-            downloadableModelID: nil,
-            notes: "Preferred local target for multi-asset InfoPage generation, especially travel, project, and high-ambiguity screenshots; not marked downloadable until the artifact path is verified."
+            downloadableModelID: LocalModelManifest.gemma4E4BQATQ4_0.id,
+            notes: "Higher-quality QAT candidate for multi-asset InfoPage generation. Larger download and memory footprint keep E2B as the default recommendation."
         )
     ]
 
@@ -138,10 +138,10 @@ public enum InfoPageModelEvaluationCatalog {
     ]
 
     public static var minimumPrimaryCandidate: InfoPageModelEvaluationCandidate {
-        candidates.first { $0.id == "gemma-4-e2b-it" }!
+        candidates.first { $0.id == LocalModelManifest.gemma4E2BQATQ4_0.id }!
     }
 
     public static var preferredCandidate: InfoPageModelEvaluationCandidate {
-        candidates.first { $0.id == "gemma-4-e4b-it" }!
+        candidates.first { $0.id == LocalModelManifest.gemma4E4BQATQ4_0.id }!
     }
 }

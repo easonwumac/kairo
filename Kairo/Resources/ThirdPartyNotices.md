@@ -33,10 +33,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Qwen GGUF Catalog Entries
+## Local Model Catalog Entries
 
-Kairo's starter model catalog references Qwen GGUF artifacts, including
-`AaryanK/Qwen3.5-0.8B-GGUF`, `AaryanK/Qwen3.5-2B-GGUF`, and
+Kairo's starter model catalog references Apache-2.0 GGUF artifacts, including
+`google/gemma-4-E2B-it-qat-q4_0-gguf`,
+`google/gemma-4-E4B-it-qat-q4_0-gguf`,
+`Qwen/Qwen2.5-0.5B-Instruct-GGUF`,
+`Qwen/Qwen2.5-1.5B-Instruct-GGUF`, and
 `ggml-org/Qwen2.5-VL-3B-Instruct-GGUF`.
 The catalog records `licenseName = Apache-2.0` and
 `licenseURL = https://www.apache.org/licenses/LICENSE-2.0`.

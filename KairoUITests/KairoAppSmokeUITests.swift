@@ -9,9 +9,11 @@ final class KairoAppSmokeUITests: XCTestCase {
 
     var app: XCUIApplication!
     let localModelExpectations = [
+        ("gemma-4-e2b-it-qat-q4-0-gguf", "Gemma 4 E2B IT QAT Q4_0"),
         ("qwen2-5-0-5b-instruct-q4-k-m", "Qwen2.5 0.5B Instruct Q4_K_M"),
         ("qwen2-5-1-5b-instruct-q4-k-m", "Qwen2.5 1.5B Instruct Q4_K_M"),
-        ("qwen2-5-vl-3b-instruct-q4-k-m", "Qwen2.5-VL 3B Instruct Q4_K_M")
+        ("qwen2-5-vl-3b-instruct-q4-k-m", "Qwen2.5-VL 3B Instruct Q4_K_M"),
+        ("gemma-4-e4b-it-qat-q4-0-gguf", "Gemma 4 E4B IT QAT Q4_0")
     ]
 
     override func setUpWithError() throws {
@@ -35,6 +37,7 @@ final class KairoAppSmokeUITests: XCTestCase {
     func testSettingsLocalModelCatalogListsDownloadableModels() throws {
         relaunchForUITesting(initialSection: "models")
         openModelsAndVerifyLocalModelCatalog(verifyAllLocalModels: false, selectFromDrawer: false)
+        XCTAssertTrue(findButton("settings.models.local.add.gemma-4-e2b-it-qat-q4-0-gguf", direction: .down, maxSwipes: 4).exists)
         XCTAssertTrue(findButton("settings.models.local.add.qwen2-5-1-5b-instruct-q4-k-m", direction: .down, maxSwipes: 4).exists)
         XCTAssertTrue(findButton("settings.models.local.add.qwen2-5-vl-3b-instruct-q4-k-m", direction: .down, maxSwipes: 4).exists)
         XCTAssertFalse(anyElement("settings.models.show-more").exists)
@@ -199,6 +202,7 @@ final class KairoAppSmokeUITests: XCTestCase {
         relaunchForUITesting(initialSection: "models", seedExpandedLocalModelCatalog: true)
 
         XCTAssertTrue(anyElement("settings.models.screen").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("settings.models.gemma-4-e2b-it-qat-q4-0-gguf.name").exists)
         XCTAssertTrue(anyElement("settings.models.qwen2-5-0-5b-instruct-q4-k-m.name").exists)
         XCTAssertTrue(anyElement("settings.models.qwen2-5-1-5b-instruct-q4-k-m.name").exists)
         XCTAssertTrue(findElement("settings.models.trimmed-note", direction: .down, maxSwipes: 2).waitForExistence(timeout: 3))

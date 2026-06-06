@@ -438,6 +438,7 @@ public struct UITestScenarioCatalog: Codable, Equatable, Sendable {
             userGoal: "Open Models with a remote catalog seed and verify Kairo keeps a compact popular starter set visible without flooding the first screen.",
             requiredAccessibilityIdentifiers: [
                 "settings.models.local",
+                "settings.models.gemma-4-e2b-it-qat-q4-0-gguf.name",
                 "settings.models.qwen2-5-0-5b-instruct-q4-k-m.name",
                 "settings.models.qwen2-5-1-5b-instruct-q4-k-m.name",
                 "settings.models.qwen2-5-vl-3b-instruct-q4-k-m.name",

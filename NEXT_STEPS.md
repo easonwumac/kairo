@@ -72,7 +72,7 @@ The local model goal is asset understanding, not benchmark UI.
 - Minimum candidate: small text LLM can summarize/extract from user text and OCR text, but cannot be treated as screenshot understanding.
 - Preferred candidates for screenshot/PDF understanding should support vision or pair with OCR plus a stronger text model.
 - Qwen 0.8B-style models are acceptable only as fallback text extractors.
-- Gemma-class 2B/4B vision-capable or OCR-assisted models should be evaluated for screenshot description and structured InfoPage JSON.
+- Validate Gemma 4 E2B/E4B QAT on simulator/device for screenshot description and structured InfoPage JSON.
 - Do not commit model weights, GGUF, tokenizer, cache, or generated credentials.
 
 ## Deprioritized

@@ -851,7 +851,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(availableModels.allSatisfy { $0.runtime == .gguf })
         XCTAssertTrue(availableModels.allSatisfy { $0.downloadURL.scheme == "https" })
         XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
-        XCTAssertEqual(availableModels.count, 3)
+        XCTAssertEqual(availableModels.count, 5)
+        XCTAssertEqual(availableModels.first?.id, "gemma-4-e2b-it-qat-q4-0-gguf")
 
         let qwenVision = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-vl-3b-instruct-q4-k-m" })
         XCTAssertTrue(qwenVision.capabilities.contains(.imageUnderstanding))
@@ -1171,9 +1172,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(expandedEnvironment.localModelCatalog.availableModels(
             minimumSafetyPolicyVersion: expandedEnvironment.localModelCatalog.minimumSafetyPolicyVersion
         ).map(\.id), [
+            "gemma-4-e2b-it-qat-q4-0-gguf",
             "qwen2-5-0-5b-instruct-q4-k-m",
             "qwen2-5-1-5b-instruct-q4-k-m",
             "qwen2-5-vl-3b-instruct-q4-k-m",
+            "gemma-4-e4b-it-qat-q4-0-gguf",
             "remote-catalog-test-model-q4-k-m"
         ])
     }
@@ -1362,6 +1365,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.qwen2-5-0-5b-instruct-q4-k-m.download-cancel"))
         XCTAssertTrue(benchmarkScenarioIdentifiers.contains("settings.models.benchmark-message"))
         let expandedModelsScenarioIdentifiers = catalog.scenario(id: "settings-local-model-expanded-catalog")?.requiredAccessibilityIdentifiers ?? []
+        XCTAssertTrue(expandedModelsScenarioIdentifiers.contains("settings.models.gemma-4-e2b-it-qat-q4-0-gguf.name"))
         XCTAssertTrue(expandedModelsScenarioIdentifiers.contains("settings.models.qwen2-5-vl-3b-instruct-q4-k-m.name"))
         XCTAssertTrue(expandedModelsScenarioIdentifiers.contains("settings.models.trimmed-note"))
         let shortcutDemoScenarioIdentifiers = catalog.scenario(id: "settings-shortcut-demo-io")?.requiredAccessibilityIdentifiers ?? []
@@ -1553,9 +1557,11 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(uiTestSources.contains("settings.shortcuts.demos"))
         XCTAssertTrue(uiTestSources.contains("settings.models.local"))
         for displayName in [
+            "Gemma 4 E2B IT QAT Q4_0",
             "Qwen2.5 0.5B Instruct Q4_K_M",
             "Qwen2.5 1.5B Instruct Q4_K_M",
-            "Qwen2.5-VL 3B Instruct Q4_K_M"
+            "Qwen2.5-VL 3B Instruct Q4_K_M",
+            "Gemma 4 E4B IT QAT Q4_0"
         ] {
             XCTAssertTrue(uiTestSources.contains(displayName), displayName)
         }

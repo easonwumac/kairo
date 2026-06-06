@@ -38,23 +38,27 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
         XCTAssertTrue(localModelCatalogSource.contains("static let kairoStarterModelIDs"))
         XCTAssertTrue(localModelCatalogSource.contains("kairoStarterModels"))
-        XCTAssertEqual(availableModels.count, 3)
+        XCTAssertEqual(availableModels.count, 5)
         XCTAssertEqual(availableModels.map(\.id), [
+            "gemma-4-e2b-it-qat-q4-0-gguf",
             "qwen2-5-0-5b-instruct-q4-k-m",
             "qwen2-5-1-5b-instruct-q4-k-m",
-            "qwen2-5-vl-3b-instruct-q4-k-m"
+            "qwen2-5-vl-3b-instruct-q4-k-m",
+            "gemma-4-e4b-it-qat-q4-0-gguf"
         ])
         XCTAssertEqual(availableModels.map(\.displayName), [
+            "Gemma 4 E2B IT QAT Q4_0",
             "Qwen2.5 0.5B Instruct Q4_K_M",
             "Qwen2.5 1.5B Instruct Q4_K_M",
-            "Qwen2.5-VL 3B Instruct Q4_K_M"
+            "Qwen2.5-VL 3B Instruct Q4_K_M",
+            "Gemma 4 E4B IT QAT Q4_0"
         ])
 
         for model in availableModels {
             XCTAssertEqual(model.downloadURL.scheme, "https", model.id)
             XCTAssertEqual(model.downloadURL.host(), "huggingface.co", model.id)
             XCTAssertEqual(model.sha256.count, 64, model.id)
-            XCTAssertLessThanOrEqual(model.minRAMGB, 8, model.id)
+            XCTAssertLessThanOrEqual(model.minRAMGB, 10, model.id)
             XCTAssertEqual(model.runtime, .gguf, model.id)
             XCTAssertTrue(model.capabilities.contains(.offlineChat), model.id)
             XCTAssertTrue(model.disallowedCapabilities.contains(.webCurrentInfo), model.id)
@@ -73,6 +77,16 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertTrue(qwenVision.capabilities.contains(.imageUnderstanding))
         XCTAssertEqual(qwenVision.companionArtifacts.map(\.id), ["mmproj-q8-0"])
         XCTAssertEqual(qwenVision.totalDownloadSizeBytes, 2_774_658_784)
+
+        let gemmaE2B = try XCTUnwrap(availableModels.first { $0.id == "gemma-4-e2b-it-qat-q4-0-gguf" })
+        XCTAssertEqual(gemmaE2B.sha256, "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd")
+        XCTAssertEqual(gemmaE2B.companionArtifacts.map(\.id), ["gemma4-e2b-mmproj"])
+        XCTAssertEqual(gemmaE2B.totalDownloadSizeBytes, 4_336_347_424)
+
+        let gemmaE4B = try XCTUnwrap(availableModels.first { $0.id == "gemma-4-e4b-it-qat-q4-0-gguf" })
+        XCTAssertEqual(gemmaE4B.sha256, "e8b6a059ba86947a44ace84d6e5679795bc41862c25c30513142588f0e9dba1d")
+        XCTAssertEqual(gemmaE4B.companionArtifacts.map(\.id), ["gemma4-e4b-mmproj"])
+        XCTAssertEqual(gemmaE4B.totalDownloadSizeBytes, 6_146_491_040)
 
         XCTAssertFalse(availableModels.contains { $0.id == "qwen3-5-0-8b-q4-k-m" })
         XCTAssertFalse(availableModels.contains { $0.id == "smollm2-1-7b-instruct-q4-k-m" })

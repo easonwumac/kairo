@@ -424,15 +424,19 @@ public enum LocalModelCatalogSignatureStatus: String, Codable, Equatable, Sendab
 
 public extension LocalModelCatalog {
     static let kairoStarterModelIDs = [
+        "gemma-4-e2b-it-qat-q4-0-gguf",
         "qwen2-5-0-5b-instruct-q4-k-m",
         "qwen2-5-1-5b-instruct-q4-k-m",
-        "qwen2-5-vl-3b-instruct-q4-k-m"
+        "qwen2-5-vl-3b-instruct-q4-k-m",
+        "gemma-4-e4b-it-qat-q4-0-gguf"
     ]
 
     static let kairoStarterModels: [LocalModelManifest] = [
+        .gemma4E2BQATQ4_0,
         .qwen25HalfBInstruct,
         .qwen25OneAndHalfBInstruct,
-        .qwen25VLThreeBInstruct
+        .qwen25VLThreeBInstruct,
+        .gemma4E4BQATQ4_0
     ]
 
     static let kairoDefault = LocalModelCatalog(
@@ -1052,6 +1056,80 @@ public struct LocalModelCatalogRefreshResult: Sendable {
 }
 
 public extension LocalModelManifest {
+    static let gemma4E2BQATQ4_0 = LocalModelManifest(
+        id: "gemma-4-e2b-it-qat-q4-0-gguf",
+        displayName: "Gemma 4 E2B IT QAT Q4_0",
+        family: "Gemma 4",
+        version: "1.0",
+        parameterCount: "E2B",
+        quantization: "QAT Q4_0 + mmproj",
+        runtime: .gguf,
+        fileSizeBytes: 3_349_514_112,
+        installedSizeBytes: 4_800 * 1024 * 1024,
+        contextWindow: 131_072,
+        tokenizerID: "gemma4-tokenizer",
+        licenseName: "Apache-2.0",
+        licenseURL: URL(string: "https://www.apache.org/licenses/LICENSE-2.0")!,
+        minOSVersion: "17.0",
+        minDeviceClass: "A17",
+        minRAMGB: 8,
+        supportedLocales: ["en", "zh-Hant"],
+        capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat, .rewriting, .extraction, .imageUnderstanding],
+        disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
+        downloadURL: URL(string: "https://huggingface.co/google/gemma-4-E2B-it-qat-q4_0-gguf/resolve/main/gemma-4-E2B_q4_0-it.gguf")!,
+        sha256: "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd",
+        companionArtifacts: [
+            LocalModelCompanionArtifact(
+                id: "gemma4-e2b-mmproj",
+                role: "multimodalProjector",
+                displayName: "Gemma 4 E2B mmproj",
+                fileSizeBytes: 986_833_312,
+                downloadURL: URL(string: "https://huggingface.co/google/gemma-4-E2B-it-qat-q4_0-gguf/resolve/main/gemma-4-E2B-it-mmproj.gguf")!,
+                sha256: "58c187648007cab392bd5678b87e862c3e8794017deb945feea2cf256195e96a"
+            )
+        ],
+        createdAt: Date(timeIntervalSince1970: 1_780_358_400),
+        updatedAt: Date(timeIntervalSince1970: 1_780_358_400),
+        safetyPolicyVersion: "2026.1"
+    )
+
+    static let gemma4E4BQATQ4_0 = LocalModelManifest(
+        id: "gemma-4-e4b-it-qat-q4-0-gguf",
+        displayName: "Gemma 4 E4B IT QAT Q4_0",
+        family: "Gemma 4",
+        version: "1.0",
+        parameterCount: "E4B",
+        quantization: "QAT Q4_0 + mmproj",
+        runtime: .gguf,
+        fileSizeBytes: 5_154_939_136,
+        installedSizeBytes: 6_900 * 1024 * 1024,
+        contextWindow: 131_072,
+        tokenizerID: "gemma4-tokenizer",
+        licenseName: "Apache-2.0",
+        licenseURL: URL(string: "https://www.apache.org/licenses/LICENSE-2.0")!,
+        minOSVersion: "17.0",
+        minDeviceClass: "A17 Pro",
+        minRAMGB: 10,
+        supportedLocales: ["en", "zh-Hant"],
+        capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat, .rewriting, .extraction, .imageUnderstanding],
+        disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
+        downloadURL: URL(string: "https://huggingface.co/google/gemma-4-E4B-it-qat-q4_0-gguf/resolve/main/gemma-4-E4B_q4_0-it.gguf")!,
+        sha256: "e8b6a059ba86947a44ace84d6e5679795bc41862c25c30513142588f0e9dba1d",
+        companionArtifacts: [
+            LocalModelCompanionArtifact(
+                id: "gemma4-e4b-mmproj",
+                role: "multimodalProjector",
+                displayName: "Gemma 4 E4B mmproj",
+                fileSizeBytes: 991_551_904,
+                downloadURL: URL(string: "https://huggingface.co/google/gemma-4-E4B-it-qat-q4_0-gguf/resolve/main/gemma-4-E4B-it-mmproj.gguf")!,
+                sha256: "c6398448d84a4836fdedf58f9775979e69ae0cc4dfdf4d697b5597693a555b12"
+            )
+        ],
+        createdAt: Date(timeIntervalSince1970: 1_780_358_400),
+        updatedAt: Date(timeIntervalSince1970: 1_780_358_400),
+        safetyPolicyVersion: "2026.1"
+    )
+
     static let qwen25HalfBInstruct = ggufManifest(
         id: "qwen2-5-0-5b-instruct-q4-k-m",
         displayName: "Qwen2.5 0.5B Instruct Q4_K_M",

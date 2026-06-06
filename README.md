@@ -164,7 +164,7 @@ Local models are important because Kairo is a personal library, but models must 
 - Text-only small models can summarize and extract tasks from user text or OCR output.
 - Screenshot understanding needs OCR, a vision-capable model, or OCR plus a stronger text model.
 - Qwen 0.8B-class models should be treated as fallback text extractors, not reliable screenshot analysts.
-- Gemma-class 2B/4B or similar candidates should be evaluated for screenshot description, structured JSON extraction, and InfoPage generation.
+- Gemma 4 E2B/E4B QAT is the preferred local-model candidate for screenshot description, structured JSON extraction, and InfoPage generation; Kairo still validates model output before saving.
 - Kairo must not bundle or commit model weights, GGUF files, tokenizers, caches, API keys, OAuth tokens, or generated credentials.
 
 ## Safety Boundaries

@@ -26,7 +26,7 @@ Current beta supports catalog, explicit user-triggered download, select, delete,
 - Qwen 3 / Qwen 3.5 0.6B～2B 等級模型。
 - Qwen2.5-VL 3B 等小型 vision-language 模型。
 - Llama 3.2 1B 等自訂授權模型只能作為手動匯入或未來 license approval flow，不預設進 starter。
-- Phi / Gemma / SmolLM 等小模型作為未來遠端 catalog 候選，不預設進 starter。
+- Gemma 4 E2B/E4B QAT 與 Qwen 系列是目前 starter catalog 候選；下載仍必須由使用者明確觸發。
 - Apple Foundation Models（若部署目標與 API 條件允許）。
 - Core ML 轉換後的小型 LLM 或 classifier。
 
@@ -94,9 +94,9 @@ The default development catalog starts with compact public GGUF downloads throug
 - `Qwen3.5 2B Q4_K_M`: `AaryanK/Qwen3.5-2B-GGUF`, file `Qwen3.5-2B.q4_k_m.gguf`, about 1.27 GB.
 - `Qwen2.5-VL 3B Instruct Q4_K_M`: `ggml-org/Qwen2.5-VL-3B-Instruct-GGUF`, file `Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf`, plus `mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf`, about 2.77 GB total.
 
-SHA-256 and file size are stored in each manifest and verified after download. The built-in downloadable list is Qwen-only for now because those entries are Apache-2.0 and have clear Hugging Face LFS metadata. Models with noncommercial, custom, gated, or unclear license terms should not be added to the built-in download catalog.
+SHA-256 and file size are stored in each manifest and verified after download. The built-in downloadable list currently uses Apache-2.0 Gemma 4 QAT and Qwen entries with clear Hugging Face LFS metadata. Models with noncommercial, custom, gated, or unclear license terms should not be added to the built-in download catalog.
 
-Settings can parse a user-supplied Hugging Face repo id or repo URL. That path only creates a downloadable manifest when the repo card reports `Apache-2.0`, exposes at least one GGUF file with Hugging Face LFS SHA-256 metadata, and passes the same HTTPS/size/checksum validation as the signed catalog. Llama, Gemma, or other custom-license repos must stay manual/import-only until Kairo has explicit license approval UI and notices for that family.
+Settings can parse a user-supplied Hugging Face repo id or repo URL. That path only creates a downloadable manifest when the repo card reports `Apache-2.0`, exposes at least one GGUF file with Hugging Face LFS SHA-256 metadata, and passes the same HTTPS/size/checksum validation as the signed catalog. Custom-license repos must stay manual/import-only until Kairo has explicit license approval UI and notices for that family.
 
 Kairo must keep this as an explicit user-triggered download. Do not commit model weights, tokenizer blobs, downloaded `.gguf` files, or cached model artifacts into this repository.
 
@@ -104,7 +104,7 @@ Kairo must keep this as an explicit user-triggered download. Do not commit model
 
 Library screenshot intake should still run Apple Vision first for OCR and lightweight device-native extraction. Text-only models such as Qwen3.5 0.8B/2B consume that Apple Vision output and should not be labeled as direct image-understanding models. Vision-language entries must include every required artifact, including multimodal projector files such as `mmproj`, before Kairo marks them as downloadable.
 
-Gemma 4 E2B/E4B remains the preferred product direction for local image-to-InfoPage quality, but it is not marked as downloadable in this repo until the license, signed artifact path, projector/runtime requirements, and iOS simulator/device proof are verified. Qwen2.5-VL 3B is the first catalog entry that can represent a complete downloadable GGUF + projector package; Chat image inference still needs runtime wiring that passes the projector and image tokens.
+Gemma 4 E2B/E4B QAT is now represented as downloadable catalog metadata because the official GGUF repos expose Apache-2.0 license metadata and Hugging Face LFS checksums. It is still not runtime proof for direct iOS multimodal image inference; Kairo should continue using Apple Vision OCR/labels plus validated JSON until projector/image-token wiring is verified on simulator and device.
 
 ### Planned PP/KV cache
 

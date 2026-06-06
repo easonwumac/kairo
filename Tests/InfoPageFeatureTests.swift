@@ -105,16 +105,17 @@ final class InfoPageFeatureTests: XCTestCase {
         let minimum = InfoPageModelEvaluationCatalog.minimumPrimaryCandidate
         let preferred = InfoPageModelEvaluationCatalog.preferredCandidate
 
-        XCTAssertEqual(minimum.id, "gemma-4-e2b-it")
+        XCTAssertEqual(minimum.id, LocalModelManifest.gemma4E2BQATQ4_0.id)
         XCTAssertEqual(minimum.recommendedRole, .minimumVisionExtraction)
         XCTAssertTrue(minimum.requiresVisionInput)
         XCTAssertTrue(minimum.expectedTemplateCoverage.contains(.travel))
-        XCTAssertNil(minimum.downloadableModelID)
+        XCTAssertEqual(minimum.downloadableModelID, LocalModelManifest.gemma4E2BQATQ4_0.id)
 
-        XCTAssertEqual(preferred.id, "gemma-4-e4b-it")
+        XCTAssertEqual(preferred.id, LocalModelManifest.gemma4E4BQATQ4_0.id)
         XCTAssertEqual(preferred.recommendedRole, .preferredOnDeviceExtraction)
         XCTAssertEqual(Set(preferred.expectedTemplateCoverage), Set(InfoPageTemplateID.allCases))
         XCTAssertGreaterThan(preferred.minimumAcceptedScore, minimum.minimumAcceptedScore)
+        XCTAssertEqual(preferred.downloadableModelID, LocalModelManifest.gemma4E4BQATQ4_0.id)
 
         let fallback = try XCTUnwrap(InfoPageModelEvaluationCatalog.candidates.first { $0.id == LocalModelManifest.qwen25HalfBInstruct.id })
         XCTAssertEqual(fallback.recommendedRole, .fallbackTextExtraction)
