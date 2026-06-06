@@ -66,9 +66,11 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
                 reasoningText: parsedResponse.reasoningText,
                 inferenceMetrics: AIInferenceMetrics(
                     promptTokens: result.promptTokens,
+                    promptTokensProcessed: result.promptTokens,
                     generatedTokens: result.generatedTokens,
                     promptTokensPerSecond: result.promptTokensPerSecond,
-                    generationTokensPerSecond: result.generationTokensPerSecond
+                    generationTokensPerSecond: result.generationTokensPerSecond,
+                    promptSecondsRemaining: 0
                 )
             )
         } catch let error as LocalModelReplyCheckError {
@@ -196,9 +198,10 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         return """
         There is an image attachment. This runtime receives OCR text and Apple Vision labels as text references, not raw image pixels.
         If OCR is empty but labels exist, still describe what the labels suggest and state uncertainty.
+        If OCR and labels are both empty, say an image asset is attached but visual references are unavailable; do not ask what language or topic the user wants.
         Decide whether the item should be saved to Library. If useful, ask the user whether to save it.
-        If category confidence is low, offer 2-4 likely categories and ask the user to choose.
-        Do not say the image has no useful content just because OCR is empty.
+        If category confidence is low, offer 2-4 likely categories such as Travel, Receipt/Order, Document, Photo/Plant, Project, or Other and ask the user to choose.
+        Do not say the image has no useful content just because OCR or labels are empty.
         """
     }
 

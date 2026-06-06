@@ -611,6 +611,8 @@
 "chat.loading" = "Kairo 正在思考...";
 "chat.inference.latest" = "上次推論";
 "chat.inference.status" = "%@ · PP %@ / TK %@";
+"chat.inference.statusWithPromptProgress" = "%@ · PP %@ · %@/%@ · 剩 %@ / TK %@";
+"chat.inference.eta" = "約 %@s";
 "chat.reply.cancel" = "取消回覆";
 "chat.reply.preview" = "回覆預覽";
 "chat.replyingTo" = "正在回覆 %@";
@@ -655,7 +657,7 @@
 "chat.capture.cameraRequiresDevice" = "拍照會在真機上開啟。";
 "chat.capture.photoImportFailed" = "圖片匯入失敗。";
 "chat.capture.photoAttached" = "圖片已加入。";
-"chat.capture.photoTextPreview" = "圖片已附加，尚未擷取 OCR 文字或影像標籤。";
+"chat.capture.photoTextPreview" = "圖片已附加。Apple Vision 未擷取到文字或標籤；仍請視為可儲存、可分類的圖片資產。";
 "chat.capture.photoVisionTextPreview" = "Apple Vision 參考資料，可能有辨識誤差：\n%@";
 "chat.capture.photoVisionOCRSection" = "OCR 文字：\n%@";
 "chat.capture.photoVisionLabelsSection" = "影像標籤：%@";

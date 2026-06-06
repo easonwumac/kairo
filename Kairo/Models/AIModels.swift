@@ -81,20 +81,26 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
 
 public struct AIInferenceMetrics: Codable, Equatable, Sendable {
     public var promptTokens: Int?
+    public var promptTokensProcessed: Int?
     public var generatedTokens: Int?
     public var promptTokensPerSecond: Double?
     public var generationTokensPerSecond: Double?
+    public var promptSecondsRemaining: Double?
 
     public init(
         promptTokens: Int? = nil,
+        promptTokensProcessed: Int? = nil,
         generatedTokens: Int? = nil,
         promptTokensPerSecond: Double? = nil,
-        generationTokensPerSecond: Double? = nil
+        generationTokensPerSecond: Double? = nil,
+        promptSecondsRemaining: Double? = nil
     ) {
         self.promptTokens = promptTokens
+        self.promptTokensProcessed = promptTokensProcessed
         self.generatedTokens = generatedTokens
         self.promptTokensPerSecond = promptTokensPerSecond
         self.generationTokensPerSecond = generationTokensPerSecond
+        self.promptSecondsRemaining = promptSecondsRemaining
     }
 }
 

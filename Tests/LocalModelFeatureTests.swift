@@ -1159,9 +1159,11 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(response.message, "Runtime-backed local answer.")
         XCTAssertTrue(response.proposedActions.isEmpty)
         XCTAssertEqual(response.inferenceMetrics?.promptTokens, 128)
+        XCTAssertEqual(response.inferenceMetrics?.promptTokensProcessed, 128)
         XCTAssertEqual(response.inferenceMetrics?.generatedTokens, 32)
         XCTAssertEqual(response.inferenceMetrics?.promptTokensPerSecond, 410.5)
         XCTAssertEqual(response.inferenceMetrics?.generationTokensPerSecond, 12.5)
+        XCTAssertEqual(response.inferenceMetrics?.promptSecondsRemaining, 0)
     }
 
     func testLocalModelRuntimeAIProviderPassesStoredRuntimeParameters() async throws {

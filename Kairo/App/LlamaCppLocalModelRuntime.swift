@@ -136,6 +136,7 @@ actor LlamaCppSession {
 
         let prefillStartedAt = Date()
         var consumedPromptTokens = 0
+        var lastPrefillProgressAt = Date.distantPast
         while consumedPromptTokens < promptTokens.count {
             let chunkEnd = min(consumedPromptTokens + Self.batchTokenCapacity, promptTokens.count)
             kairo_llama_batch_clear(&batch)
@@ -155,15 +156,27 @@ actor LlamaCppSession {
             peakMemoryMB = Self.maxMemoryMB(peakMemoryMB, Self.currentResidentMemoryMB())
             position += batch.n_tokens
             consumedPromptTokens = chunkEnd
+            let now = Date()
+            if now.timeIntervalSince(lastPrefillProgressAt) >= 3 || consumedPromptTokens == promptTokens.count {
+                let prefillElapsed = max(now.timeIntervalSince(prefillStartedAt), 0.001)
+                let promptTokensPerSecond = Double(consumedPromptTokens) / prefillElapsed
+                let remainingTokens = max(0, promptTokens.count - consumedPromptTokens)
+                let remainingSeconds = promptTokensPerSecond > 0
+                    ? Double(remainingTokens) / promptTokensPerSecond
+                    : nil
+                progress?(AIInferenceMetrics(
+                    promptTokens: promptTokens.count,
+                    promptTokensProcessed: consumedPromptTokens,
+                    generatedTokens: 0,
+                    promptTokensPerSecond: promptTokensPerSecond,
+                    generationTokensPerSecond: nil,
+                    promptSecondsRemaining: remainingSeconds
+                ))
+                lastPrefillProgressAt = now
+            }
         }
         let prefillElapsed = max(Date().timeIntervalSince(prefillStartedAt), 0.001)
         let promptTokensPerSecond = Double(promptTokens.count) / prefillElapsed
-        progress?(AIInferenceMetrics(
-            promptTokens: promptTokens.count,
-            generatedTokens: 0,
-            promptTokensPerSecond: promptTokensPerSecond,
-            generationTokensPerSecond: nil
-        ))
         var generatedText = ""
         var generatedTokens = 0
         var firstTokenLatencyMS: Double?
@@ -186,9 +199,11 @@ actor LlamaCppSession {
                 let generationElapsed = max(Date().timeIntervalSince(generationStartedAt), 0.001)
                 progress?(AIInferenceMetrics(
                     promptTokens: promptTokens.count,
+                    promptTokensProcessed: promptTokens.count,
                     generatedTokens: generatedTokens,
                     promptTokensPerSecond: promptTokensPerSecond,
-                    generationTokensPerSecond: Double(generatedTokens) / generationElapsed
+                    generationTokensPerSecond: Double(generatedTokens) / generationElapsed,
+                    promptSecondsRemaining: 0
                 ))
                 lastProgressTokenCount = generatedTokens
             }
@@ -214,9 +229,11 @@ actor LlamaCppSession {
         let generationElapsed = max(Date().timeIntervalSince(generationStartedAt ?? startedAt), 0.001)
         progress?(AIInferenceMetrics(
             promptTokens: promptTokens.count,
+            promptTokensProcessed: promptTokens.count,
             generatedTokens: generatedTokens,
             promptTokensPerSecond: promptTokensPerSecond,
-            generationTokensPerSecond: Double(generatedTokens) / generationElapsed
+            generationTokensPerSecond: Double(generatedTokens) / generationElapsed,
+            promptSecondsRemaining: 0
         ))
         return (
             trimmed,

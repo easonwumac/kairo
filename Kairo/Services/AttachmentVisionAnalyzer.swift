@@ -55,9 +55,9 @@ public enum AttachmentVisionAnalyzer {
                 .joined(separator: "\n")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
 
-            let labels = (classifyRequest.results ?? [])
-                .prefix(5)
-                .filter { $0.confidence >= 0.12 }
+            let rawLabels = Array((classifyRequest.results ?? []).prefix(8))
+            let selectedLabels = rawLabels.filter { $0.confidence >= 0.03 }
+            let labels = (selectedLabels.isEmpty ? rawLabels.prefix(3) : selectedLabels.prefix(5))
                 .map { observation in
                     let confidence = Int((observation.confidence * 100).rounded())
                     return "\(observation.identifier) \(confidence)%"

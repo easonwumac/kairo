@@ -611,6 +611,8 @@
 "chat.loading" = "Kairo is thinking...";
 "chat.inference.latest" = "Last inference";
 "chat.inference.status" = "%@ · PP %@ / TK %@";
+"chat.inference.statusWithPromptProgress" = "%@ · PP %@ · %@/%@ · %@ left / TK %@";
+"chat.inference.eta" = "~%@s";
 "chat.reply.cancel" = "Cancel reply";
 "chat.reply.preview" = "Reply preview";
 "chat.replyingTo" = "Replying to %@";
@@ -655,7 +657,7 @@
 "chat.capture.cameraRequiresDevice" = "Camera capture opens on a real device.";
 "chat.capture.photoImportFailed" = "Image import failed.";
 "chat.capture.photoAttached" = "Image attached.";
-"chat.capture.photoTextPreview" = "Image attached. No OCR text or image labels were extracted yet.";
+"chat.capture.photoTextPreview" = "Image attached. Apple Vision did not extract text or labels; still treat it as a visual asset that can be saved and categorized.";
 "chat.capture.photoVisionTextPreview" = "Apple Vision reference. It may contain recognition errors:\n%@";
 "chat.capture.photoVisionOCRSection" = "OCR text:\n%@";
 "chat.capture.photoVisionLabelsSection" = "Image labels: %@";

@@ -697,6 +697,20 @@ public final class ChatViewModel: ObservableObject {
         guard let metrics else {
             return KairoL10n.string("chat.inference.status", prefix, "--", "--")
         }
+        if let processed = metrics.promptTokensProcessed,
+           let total = metrics.promptTokens,
+           total > 0,
+           processed < total {
+            return KairoL10n.string(
+                "chat.inference.statusWithPromptProgress",
+                prefix,
+                formattedRate(metrics.promptTokensPerSecond),
+                formattedTokenCount(processed),
+                formattedTokenCount(total),
+                formattedETA(metrics.promptSecondsRemaining),
+                formattedRate(metrics.generationTokensPerSecond)
+            )
+        }
         return KairoL10n.string(
             "chat.inference.status",
             prefix,
@@ -711,6 +725,19 @@ public final class ChatViewModel: ObservableObject {
             return String(format: "%.0f", value)
         }
         return String(format: "%.1f", value)
+    }
+
+    private static func formattedTokenCount(_ value: Int) -> String {
+        if value >= 1_000 {
+            return String(format: "%.1fk", Double(value) / 1_000.0)
+        }
+        return "\(value)"
+    }
+
+    private static func formattedETA(_ value: Double?) -> String {
+        guard let value, value.isFinite, value > 0 else { return "--" }
+        let seconds = max(1, Int(ceil(value)))
+        return KairoL10n.string("chat.inference.eta", "\(seconds)")
     }
 
     public static let welcomeMessage = ChatMessage(
