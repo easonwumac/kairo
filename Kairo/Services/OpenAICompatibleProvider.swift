@@ -80,23 +80,13 @@ public struct OpenAICompatibleProvider: AIProvider {
                 let preview = String(m.text.replacingOccurrences(of: "\n", with: " ").prefix(140))
                 kairoOmlxLog("[OMLX]   msg[\(i)] role=\(m.role) len=\(m.text.count) preview=\(preview)")
             }
-            let data = try JSONEncoder().encode(payload)
-            var urlRequest = URLRequest(url: chatURL)
-            urlRequest.httpMethod = "POST"
-            urlRequest.setValue("Bearer \(try await apiKey())", forHTTPHeaderField: "Authorization")
-            urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            urlRequest.httpBody = data
-            urlRequest.timeoutInterval = 120
 
-            let startTime = CFAbsoluteTimeGetCurrent()
-            let (responseData, response) = try await httpClient.data(for: urlRequest)
-            let elapsed = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
-            try validate(response, data: responseData)
-
-            let decoded = try JSONDecoder().decode(OAICompatResponse.self, from: responseData)
-            let rawText = decoded.choices.first?.message.text ?? ""
+            let (decoded, rawText, elapsed, statusCode) = try await postWithTransientRetry(
+                payload: payload,
+                url: chatURL
+            )
             lastRawText = rawText
-            kairoOmlxLog("[OMLX] response status=\(response.statusCode) elapsed=\(String(format: "%.0f", elapsed))ms tokens=\(decoded.usage?.totalTokens ?? 0) messageLen=\(rawText.count)")
+            kairoOmlxLog("[OMLX] response status=\(statusCode) elapsed=\(String(format: "%.0f", elapsed))ms tokens=\(decoded.usage?.totalTokens ?? 0) messageLen=\(rawText.count)")
             kairoOmlxLog("[OMLX] message=\(String(rawText.prefix(200)))")
 
             let (displayMessage, rawJSON, infoPageDraft) = Self.parseStructuredResponse(rawText)
@@ -135,6 +125,90 @@ public struct OpenAICompatibleProvider: AIProvider {
             rawModelResponse: rawJSON,
             infoPageDraft: infoPageDraft
         )
+    }
+
+    /// Retries the HTTP call up to 4 times (initial + 3 retries) when the server returns a 5xx,
+    /// an unexpected body shape, or a transient transport error. Auth and missing-credential
+    /// failures are not retried because they would just repeat the same failure.
+    private func postWithTransientRetry(
+        payload: OAICompatRequest,
+        url: URL
+    ) async throws -> (decoded: OAICompatResponse, rawText: String, elapsedMs: Double, statusCode: Int) {
+        let maxAttempts = 4
+        var lastError: Error?
+        for attempt in 0..<maxAttempts {
+            do {
+                let result = try await postOnce(payload: payload, url: url)
+                if attempt > 0 {
+                    kairoOmlxLog("[OMLX] transient retry succeeded after attempt=\(attempt)")
+                }
+                return result
+            } catch let error as AIProviderError {
+                lastError = error
+                if case .missingCredential = error { throw error }
+                if !Self.isRetryable(error) { throw error }
+                kairoOmlxLog("[OMLX] transient retry attempt=\(attempt + 1)/\(maxAttempts) error=\(error)")
+                try? await Task.sleep(nanoseconds: UInt64(Self.backoffMilliseconds(forAttempt: attempt)) * 1_000_000)
+            } catch {
+                lastError = error
+                kairoOmlxLog("[OMLX] transient retry attempt=\(attempt + 1)/\(maxAttempts) error=\(error.localizedDescription)")
+                try? await Task.sleep(nanoseconds: UInt64(Self.backoffMilliseconds(forAttempt: attempt)) * 1_000_000)
+            }
+        }
+        throw lastError ?? AIProviderError.requestFailed("OMLX call failed after \(maxAttempts) attempts")
+    }
+
+    private func postOnce(
+        payload: OAICompatRequest,
+        url: URL
+    ) async throws -> (decoded: OAICompatResponse, rawText: String, elapsedMs: Double, statusCode: Int) {
+        let data = try JSONEncoder().encode(payload)
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("Bearer \(try await apiKey())", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.httpBody = data
+        urlRequest.timeoutInterval = 120
+
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let (responseData, response) = try await httpClient.data(for: urlRequest)
+        let elapsed = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
+        try validate(response, data: responseData)
+
+        do {
+            let decoded = try JSONDecoder().decode(OAICompatResponse.self, from: responseData)
+            let rawText = decoded.choices.first?.message.text ?? ""
+            return (decoded, rawText, elapsed, response.statusCode)
+        } catch {
+            let bodyPreview = String(data: responseData, encoding: .utf8).map { String($0.prefix(800)) } ?? "<non-utf8 body>"
+            kairoOmlxLog("[OMLX] decode failed status=\(response.statusCode) elapsed=\(String(format: "%.0f", elapsed))ms error=\(error.localizedDescription) body=\(bodyPreview)")
+            if let envelope = try? JSONDecoder().decode(OAICompatErrorEnvelope.self, from: responseData),
+               let message = envelope.error?.message, !message.isEmpty {
+                throw AIProviderError.requestFailed(message)
+            }
+            throw AIProviderError.requestFailed("OMLX response not in OpenAI chat-completions shape: \(bodyPreview)")
+        }
+    }
+
+    private static func isRetryable(_ error: AIProviderError) -> Bool {
+        switch error {
+        case .missingCredential, .unsupported:
+            return false
+        case .requestFailed(let message):
+            // 4xx (other than 408 / 429) is a client problem — retrying repeats it. Retry 5xx and shape errors.
+            if message.hasPrefix("HTTP 4") {
+                return message.hasPrefix("HTTP 408") || message.hasPrefix("HTTP 429")
+            }
+            return true
+        case .localInferenceUnavailable:
+            return false
+        }
+    }
+
+    private static func backoffMilliseconds(forAttempt attempt: Int) -> Int {
+        // 300ms, 700ms, 1500ms — short enough to be unobtrusive on a chat turn.
+        let base = [300, 700, 1500]
+        return base[min(attempt, base.count - 1)]
     }
 
     public func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
@@ -417,7 +491,7 @@ private struct OAICompatRequest: Codable {
 
 private struct OAICompatMessage: Codable {
     var role: String
-    var content: OAICompatMessageContent
+    var content: OAICompatMessageContent?
 
     init(role: String, text: String) {
         self.role = role
@@ -432,7 +506,8 @@ private struct OAICompatMessage: Codable {
     var text: String {
         switch content {
         case .text(let s): return s
-        case .parts: return ""
+        case .parts(let parts): return parts.compactMap(\.text).joined(separator: " ")
+        case nil: return ""
         }
     }
 }
@@ -451,11 +526,26 @@ private enum OAICompatMessageContent: Codable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .text("")
+            return
+        }
         if let str = try? container.decode(String.self) {
             self = .text(str)
-        } else {
-            self = .parts(try container.decode([OAICompatContentPart].self))
+            return
         }
+        if let parts = try? container.decode([OAICompatContentPart].self) {
+            self = .parts(parts)
+            return
+        }
+        // Some servers wrap message content into an object like {"text": "..."} or {"value": "..."}.
+        // Tolerate that instead of failing the whole response decode.
+        if let dict = try? container.decode([String: String].self),
+           let value = dict["text"] ?? dict["value"] ?? dict["content"] {
+            self = .text(value)
+            return
+        }
+        self = .text("")
     }
 }
 
@@ -484,6 +574,16 @@ private struct OAICompatImageURL: Codable {
 private struct OAICompatResponse: Codable {
     var choices: [OAICompatChoice]
     var usage: OAICompatUsage?
+}
+
+private struct OAICompatErrorEnvelope: Codable {
+    var error: OAICompatErrorBody?
+}
+
+private struct OAICompatErrorBody: Codable {
+    var message: String?
+    var type: String?
+    var code: String?
 }
 
 private struct OAICompatUsage: Codable {
