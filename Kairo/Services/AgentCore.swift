@@ -133,7 +133,9 @@ public actor AgentCore {
             toolCandidates: actionPlan.toolCandidates,
             memoryContextCount: memoryContext.relevantMemories.count,
             reasoningText: response.reasoningText,
-            inferenceMetrics: response.inferenceMetrics
+            inferenceMetrics: response.inferenceMetrics,
+            rawModelResponse: response.rawModelResponse,
+            infoPageDraft: response.infoPageDraft
         )
     }
 

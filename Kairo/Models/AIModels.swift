@@ -63,6 +63,7 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
     public var inferenceMetrics: AIInferenceMetrics?
     public var libraryClassification: LibraryClassificationResponse?
     public var rawModelResponse: String?
+    public var infoPageDraft: InfoPageDraft?
 
     public init(
         message: String,
@@ -72,7 +73,8 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
         reasoningText: String? = nil,
         inferenceMetrics: AIInferenceMetrics? = nil,
         libraryClassification: LibraryClassificationResponse? = nil,
-        rawModelResponse: String? = nil
+        rawModelResponse: String? = nil,
+        infoPageDraft: InfoPageDraft? = nil
     ) {
         self.message = message
         self.proposedActions = proposedActions
@@ -82,6 +84,7 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
         self.inferenceMetrics = inferenceMetrics
         self.libraryClassification = libraryClassification
         self.rawModelResponse = rawModelResponse
+        self.infoPageDraft = infoPageDraft
     }
 }
 
