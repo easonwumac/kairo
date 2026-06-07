@@ -179,7 +179,12 @@ public struct RootView: View {
                 usesRootChromeNavigation: true
             )
         case .pages:
-            InfoPageListView(store: environment.sharedInfoPageStore)
+            InfoPageListView(
+                store: environment.sharedInfoPageStore,
+                assetAPI: environment.backendAPI.knowledgeAssets,
+                rootChromeBackRequestID: $chromeBackRequestID,
+                usesRootChromeNavigation: true
+            )
         case .categories:
             KnowledgeCategoriesView(dependencies: environment.knowledgeAssetFeatureDependencies)
         case .memory:
