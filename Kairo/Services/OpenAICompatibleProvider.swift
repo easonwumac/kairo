@@ -76,6 +76,10 @@ public struct OpenAICompatibleProvider: AIProvider {
                 maxTokens: 1024
             )
             kairoOmlxLog("[OMLX] url=\(chatURL.absoluteString) model=\(model) messagesCount=\(payload.messages.count) attempt=\(attempt)")
+            for (i, m) in payload.messages.enumerated() {
+                let preview = String(m.text.replacingOccurrences(of: "\n", with: " ").prefix(140))
+                kairoOmlxLog("[OMLX]   msg[\(i)] role=\(m.role) len=\(m.text.count) preview=\(preview)")
+            }
             let data = try JSONEncoder().encode(payload)
             var urlRequest = URLRequest(url: chatURL)
             urlRequest.httpMethod = "POST"
