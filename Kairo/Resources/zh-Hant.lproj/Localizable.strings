@@ -26,8 +26,12 @@
 "root.section.chat.shortTitle" = "Chat";
 "root.section.chat.chromeTitle" = "iOS Agent";
 "root.section.assets.title" = "資料庫";
-"root.section.assets.subtitle" = "截圖、檔案、連結與資訊頁";
+"root.section.assets.subtitle" = "截圖、檔案、連結等原始素材";
 "root.section.assets.shortTitle" = "資料庫";
+"root.section.pages.title" = "頁面";
+"root.section.pages.subtitle" = "從素材整理出的結構化摘要";
+"root.section.pages.shortTitle" = "頁面";
+"root.section.pages.chromeTitle" = "頁面";
 "root.section.categories.title" = "分類";
 "root.section.categories.subtitle" = "資料庫預設分類";
 "root.section.categories.shortTitle" = "分類";
@@ -816,6 +820,25 @@
 "settings.openai.dryRun.noNetwork" = "僅在本機檢查，未送出網路請求。";
 "settings.openai.error.emptyAPIKey" = "OpenAI API key 是空的。請先貼上 API key，再儲存或測試。";
 "settings.openai.loadFailed" = "讀取設定失敗：%@";
+
+// OpenAI Compatible (omlx / vLLM / etc.)
+"settings.omlx.section" = "OpenAI 相容";
+"settings.omlx.apiKey" = "API Key";
+"settings.omlx.keychainNote" = "";
+"settings.omlx.status.configured" = "已設定";
+"settings.omlx.status.notConfigured" = "未設定";
+"settings.omlx.displayName" = "描述";
+"settings.omlx.displayNamePlaceholder" = "用於識別";
+"settings.omlx.endpoint" = "端點 URL";
+"settings.omlx.endpointPlaceholder" = "http://localhost:8000/v1";
+"settings.omlx.keyLabel" = "Key";
+"settings.omlx.apiKeyPlaceholder" = "sk-...";
+"settings.omlx.fetchModels" = "獲取模型";
+"settings.omlx.modelPicker.title" = "選擇模型";
+"settings.omlx.model" = "模型";
+"settings.omlx.modelPlaceholder" = "gemma-4-e2b-it-4bit";
+"settings.omlx.save" = "儲存";
+"settings.omlx.delete" = "刪除";
 "settings.oauth.section" = "已連接帳號";
 "settings.oauth.empty" = "尚未載入帳號狀態。";
 "settings.oauth.status.connected" = "已連線";
@@ -903,7 +926,7 @@
 "settings.models.cloud.remove" = "移除";
 "settings.models.cloud.manage" = "管理 %@";
 "settings.models.cloud.method.apiKey" = "API key";
-"settings.models.cloud.method.oauth" = "OAuth 帳號";
+"settings.models.cloud.method.oauth" = "OAuth";
 "settings.models.cloud.method.apiKeyOrOAuth" = "API key 或 OAuth";
 "settings.models.cloud.status.configured" = "已設定";
 "settings.models.cloud.status.needsApiKey" = "需要 key";

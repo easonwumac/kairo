@@ -26,8 +26,12 @@
 "root.section.chat.shortTitle" = "Chat";
 "root.section.chat.chromeTitle" = "iOS Agent";
 "root.section.assets.title" = "Library";
-"root.section.assets.subtitle" = "Screenshots, files, links, and info pages";
+"root.section.assets.subtitle" = "Screenshots, files, links, and raw assets";
 "root.section.assets.shortTitle" = "Library";
+"root.section.pages.title" = "Pages";
+"root.section.pages.subtitle" = "Structured summaries created from your assets";
+"root.section.pages.shortTitle" = "Pages";
+"root.section.pages.chromeTitle" = "Pages";
 "root.section.categories.title" = "Categories";
 "root.section.categories.subtitle" = "Default folders for organizing assets";
 "root.section.categories.shortTitle" = "Categories";
@@ -816,6 +820,25 @@
 "settings.openai.dryRun.noNetwork" = "Local check only. No network request was sent.";
 "settings.openai.error.emptyAPIKey" = "OpenAI API key is empty. Paste an API key before saving or testing.";
 "settings.openai.loadFailed" = "Could not load settings: %@";
+
+// OpenAI Compatible (omlx / vLLM / etc.)
+"settings.omlx.section" = "OpenAI Compatible";
+"settings.omlx.apiKey" = "API Key";
+"settings.omlx.keychainNote" = "";
+"settings.omlx.status.configured" = "Configured";
+"settings.omlx.status.notConfigured" = "Not configured";
+"settings.omlx.displayName" = "Description";
+"settings.omlx.displayNamePlaceholder" = "For identification";
+"settings.omlx.endpoint" = "Endpoint";
+"settings.omlx.endpointPlaceholder" = "http://localhost:8000/v1";
+"settings.omlx.keyLabel" = "Key";
+"settings.omlx.apiKeyPlaceholder" = "sk-...";
+"settings.omlx.fetchModels" = "Fetch models";
+"settings.omlx.modelPicker.title" = "Select model";
+"settings.omlx.model" = "Model";
+"settings.omlx.modelPlaceholder" = "gemma-4-e2b-it-4bit";
+"settings.omlx.save" = "Save";
+"settings.omlx.delete" = "Delete";
 "settings.oauth.section" = "Connected accounts";
 "settings.oauth.empty" = "Account status has not loaded yet.";
 "settings.oauth.status.connected" = "Connected";

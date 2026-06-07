@@ -27,6 +27,10 @@ public actor InMemoryCredentialStore: CredentialStore {
 public enum CredentialKey {
     public static let openAIAPIKey = "openai.api_key"
     public static let chatGPTOAuthTokenSet = "chatgpt.oauth_token_set"
+    public static let openAICompatibleAPIKey = "openai_compatible.api_key"
+    public static let openAICompatibleEndpoint = "openai_compatible.endpoint"
+    public static let openAICompatibleModel = "openai_compatible.model"
+    public static let openAICompatibleDisplayName = "openai_compatible.display_name"
 
     public static func oauthTokenSet(providerKey: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
