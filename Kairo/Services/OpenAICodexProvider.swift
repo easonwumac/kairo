@@ -87,10 +87,19 @@ public struct OpenAICodexProvider: AIProvider {
         Tool context:
         \(request.toolContext ?? "No tool context supplied.")
         """
-        return [
-            .message(role: "user", text: context),
-            .message(role: "user", text: request.userPrompt)
+        var input: [OpenAICodexInputItem] = [
+            .message(role: "user", text: context)
         ]
+        for turn in request.conversationHistory {
+            switch turn.role {
+            case .user:
+                input.append(.message(role: "user", text: turn.text))
+            case .assistant:
+                input.append(.message(role: "assistant", text: turn.text))
+            }
+        }
+        input.append(.message(role: "user", text: request.userPrompt))
+        return input
     }
 
     private func validate(_ response: HTTPURLResponse, data: Data) throws {

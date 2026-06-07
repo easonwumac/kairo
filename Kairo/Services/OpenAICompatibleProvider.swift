@@ -196,7 +196,7 @@ public struct OpenAICompatibleProvider: AIProvider {
             OAICompatMessage(role: "system", text: context)
         ]
 
-        for turn in request.conversationHistory.suffix(10) {
+        for turn in request.conversationHistory {
             switch turn.role {
             case .user:
                 messages.append(OAICompatMessage(role: "user", text: turn.text))

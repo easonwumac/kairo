@@ -95,11 +95,20 @@ public struct OpenAIProvider: AIProvider {
         \(request.toolContext ?? "No tool context supplied.")
         """
 
-        return [
+        var input: [OpenAIInputMessage] = [
             OpenAIInputMessage(role: "system", content: request.systemPrompt),
-            OpenAIInputMessage(role: "system", content: context),
-            OpenAIInputMessage(role: "user", content: request.userPrompt)
+            OpenAIInputMessage(role: "system", content: context)
         ]
+        for turn in request.conversationHistory {
+            switch turn.role {
+            case .user:
+                input.append(OpenAIInputMessage(role: "user", content: turn.text))
+            case .assistant:
+                input.append(OpenAIInputMessage(role: "assistant", content: turn.text))
+            }
+        }
+        input.append(OpenAIInputMessage(role: "user", content: request.userPrompt))
+        return input
     }
 
     private func validate(_ response: HTTPURLResponse, data: Data) throws {

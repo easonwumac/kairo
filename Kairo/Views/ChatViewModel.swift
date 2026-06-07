@@ -542,10 +542,13 @@ public final class ChatViewModel: ObservableObject {
         shareImportPreview = nil
     }
 
-    private func localConversationHistory(limit: Int = 12) -> [AIConversationTurn] {
-        currentThread.messages
+    private func localConversationHistory() -> [AIConversationTurn] {
+        var messages = currentThread.messages
+        if let last = messages.last, last.role == .user {
+            messages.removeLast()
+        }
+        return messages
             .filter { $0.id != Self.welcomeMessage.id }
-            .suffix(limit)
             .compactMap { message in
                 let text = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
                 let hasAttachment = !message.attachments.isEmpty

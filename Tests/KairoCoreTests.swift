@@ -1053,7 +1053,7 @@ final class KairoCoreTests: XCTestCase {
 
         let captured = await chatAPI.captured()
         XCTAssertEqual(captured.conversationID, threadID)
-        XCTAssertEqual(captured.history.map(\.role), [.user, .assistant, .user])
+        XCTAssertEqual(captured.history.map(\.role), [.user, .assistant])
     }
 
     private func makeKairoCoreChatAPI() -> any KairoChatAPI {
