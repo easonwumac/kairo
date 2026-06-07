@@ -437,6 +437,9 @@
 "chat.action.result.web.failure" = "無法開啟 Safari 搜尋 handoff，Kairo 內沒有瀏覽網頁。";
 "chat.action.result.contact.success" = "已建立聯絡人。";
 "chat.action.result.contact.failure" = "聯絡人未建立。";
+"chat.history.imagePlaceholder" = "[圖片]";
+"chat.infoPage.savedWithSubcategory" = "已儲存：%@（%@ → %@）";
+"chat.infoPage.saveFailed" = "儲存 InfoPage 失敗：%@";
 "chat.action.result.notification.success" = "已排程本機通知。";
 "chat.action.result.notification.failure" = "本機通知未排程。";
 "chat.action.result.memory.success" = "已儲存 Memory。";

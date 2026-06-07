@@ -437,6 +437,9 @@
 "chat.action.result.web.failure" = "Could not open the Safari web search handoff. No browsing has happened inside Kairo.";
 "chat.action.result.contact.success" = "Created contact.";
 "chat.action.result.contact.failure" = "Contact was not created.";
+"chat.history.imagePlaceholder" = "[Image]";
+"chat.infoPage.savedWithSubcategory" = "Saved: %@ (%@ → %@)";
+"chat.infoPage.saveFailed" = "Failed to save InfoPage: %@";
 "chat.action.result.notification.success" = "Scheduled local notification.";
 "chat.action.result.notification.failure" = "Local notification was not scheduled.";
 "chat.action.result.memory.success" = "Saved memory.";
