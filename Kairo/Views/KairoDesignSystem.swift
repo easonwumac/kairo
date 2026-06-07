@@ -109,12 +109,50 @@ enum KairoDesign {
         )
     }
 
-    static var teal: Color { Color(.sRGB, red: 0.38, green: 0.87, blue: 0.73, opacity: 1) }
-    static var blue: Color { Color(.sRGB, red: 0.29, green: 0.43, blue: 0.86, opacity: 1) }
+    static var teal: Color {
+        color(
+            light: (0.38, 0.87, 0.73, 1.00),
+            dark: (0.32, 0.80, 0.68, 1.00),
+            warm: (0.35, 0.68, 0.52, 1.00)
+        )
+    }
+    static var blue: Color {
+        color(
+            light: (0.29, 0.43, 0.86, 1.00),
+            dark: (0.42, 0.55, 0.92, 1.00),
+            warm: (0.22, 0.38, 0.72, 1.00)
+        )
+    }
     static var amber: Color { Color(.sRGB, red: 1.00, green: 0.72, blue: 0.42, opacity: 1) }
-    static var red: Color { Color(.sRGB, red: 0.90, green: 0.20, blue: 0.25, opacity: 1) }
+    static var red: Color {
+        color(
+            light: (0.90, 0.20, 0.25, 1.00),
+            dark: (0.85, 0.25, 0.28, 1.00),
+            warm: (0.80, 0.32, 0.28, 1.00)
+        )
+    }
     static var green: Color { Color(.sRGB, red: 0.11, green: 0.55, blue: 0.38, opacity: 1) }
-    static var violet: Color { Color(.sRGB, red: 0.45, green: 0.35, blue: 0.82, opacity: 1) }
+    static var violet: Color {
+        color(
+            light: (0.45, 0.35, 0.82, 1.00),
+            dark: (0.62, 0.52, 0.92, 1.00),
+            warm: (0.55, 0.42, 0.68, 1.00)
+        )
+    }
+
+    static func onColor(isOn: Bool) -> Color {
+        if isOn {
+            return KairoDesign.blue.opacity(0.32)
+        }
+        return KairoDesign.elevatedSurface
+    }
+
+    static func warmOnColor(isOn: Bool) -> Color {
+        if isOn {
+            return KairoDesign.amber.opacity(0.45)
+        }
+        return KairoDesign.softSurface
+    }
 
     static var shadow: Color {
         color(

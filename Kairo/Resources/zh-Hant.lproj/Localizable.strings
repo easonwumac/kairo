@@ -29,7 +29,7 @@
 "root.section.assets.subtitle" = "截圖、檔案、連結與資訊頁";
 "root.section.assets.shortTitle" = "資料庫";
 "root.section.categories.title" = "分類";
-"root.section.categories.subtitle" = "Kairo 用來整理資產的預設資料夾";
+"root.section.categories.subtitle" = "資料庫預設分類";
 "root.section.categories.shortTitle" = "分類";
 "root.section.memory.title" = "記憶";
 "root.section.memory.subtitle" = "Kairo 可使用的已核准脈絡";

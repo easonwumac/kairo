@@ -351,13 +351,9 @@ public struct SettingsView: View {
             ZStack(alignment: isOn.wrappedValue ? .trailing : .leading) {
                 Capsule()
                     .fill(
-                        LinearGradient(
-                            colors: isOn.wrappedValue
-                                ? [KairoDesign.blue.opacity(0.84), KairoDesign.teal.opacity(0.58)]
-                                : [KairoDesign.elevatedSurface.opacity(0.68), KairoDesign.softSurface.opacity(0.52)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                        KairoAppearancePreference.current == .warm
+                            ? KairoDesign.warmOnColor(isOn: isOn.wrappedValue)
+                            : KairoDesign.onColor(isOn: isOn.wrappedValue)
                     )
                     .overlay {
                         Capsule()

@@ -29,7 +29,7 @@
 "root.section.assets.subtitle" = "Screenshots, files, links, and info pages";
 "root.section.assets.shortTitle" = "Library";
 "root.section.categories.title" = "Categories";
-"root.section.categories.subtitle" = "Default folders Kairo uses to organize assets";
+"root.section.categories.subtitle" = "Default folders for organizing assets";
 "root.section.categories.shortTitle" = "Categories";
 "root.section.memory.title" = "Memory";
 "root.section.memory.subtitle" = "Approved context Kairo can use";
