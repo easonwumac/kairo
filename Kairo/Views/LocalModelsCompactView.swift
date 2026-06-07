@@ -5,6 +5,14 @@ struct LocalModelsCompactView: View {
     @State private var pageStack: [ModelSettingsPage] = []
     @State private var defaultModelNotice: String?
     @State private var customHuggingFaceModelInput = ""
+    @State private var omlxEndpoint = ""
+    @State private var omlxAPIKey = ""
+    @State private var omlxModel = ""
+    @State private var omlxDisplayName = ""
+    @State private var showOmlxEditor = false
+    @State private var omlxStatusMessage: String?
+    @State private var hasOmlxConfigured = false
+    @State private var omlxFetchedModels: [String] = []
 
     var topPadding: CGFloat = 16
     @Binding var apiKey: String
@@ -75,6 +83,9 @@ struct LocalModelsCompactView: View {
             }
         }
         .preference(key: RootChromePreferenceKey.self, value: rootChromeContext)
+        .task {
+            loadOmlxSettings()
+        }
         .onChange(of: rootChromeBackRequestID) { _, _ in
             popPage()
         }
@@ -116,6 +127,8 @@ struct LocalModelsCompactView: View {
             return cloudProviderRows.first { $0.id == providerID }?.title ?? page.title
         case let .localDetail(modelID):
             return localModelStatus.settingsRows.first { $0.modelID == modelID }?.displayName ?? page.title
+        case .omlxModelPicker:
+            return page.title
         }
     }
 
@@ -236,6 +249,8 @@ struct LocalModelsCompactView: View {
             } else {
                 unavailablePage
             }
+        case .omlxModelPicker:
+            omlxModelPickerPage
         }
     }
 
@@ -251,17 +266,12 @@ struct LocalModelsCompactView: View {
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(KairoDesign.ink)
 
-                    Text(page.detail)
-                        .font(compactModelMetadataFont)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
                     switch page {
                     case .addCloud:
                         cloudAddList
                     case .addLocal:
                         localAddList
-                    case .cloudDetail, .localDetail, .defaultModel, .responseLanguage:
+                    case .cloudDetail, .localDetail, .defaultModel, .responseLanguage, .omlxModelPicker:
                         EmptyView()
                     }
                 }
@@ -431,9 +441,6 @@ struct LocalModelsCompactView: View {
                         Text(KairoL10n.string("settings.models.default.page.title"))
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(KairoDesign.ink)
-                        Text(KairoL10n.string("settings.models.default.page.detail"))
-                            .font(compactModelMetadataFont)
-                            .foregroundStyle(.secondary)
                     }
 
                     if !configuredCloudProviderRows.isEmpty {
@@ -548,10 +555,13 @@ struct LocalModelsCompactView: View {
                 Text(title)
                     .font(compactModelNameFont)
                     .foregroundStyle(KairoDesign.ink)
-                Text(subtitle)
-                    .font(compactModelMetadataFont)
-                    .foregroundStyle(.secondary)
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(.secondary)
+                }
             }
+            .frame(minHeight: 30, alignment: .center)
 
             Spacer(minLength: 8)
 
@@ -608,6 +618,9 @@ struct LocalModelsCompactView: View {
     }
 
     private var selectedModelSummaryText: String {
+        if localModelStatus.preference == .preferCloud, let first = configuredCloudProviderRows.first {
+            return first.title
+        }
         if localModelStatus.localModelInstalled, let selectedModel = localModelStatus.selectedModel {
             return KairoL10n.string("settings.models.compact.activeForLocalTasks", selectedModel.displayName)
         }
@@ -622,24 +635,32 @@ struct LocalModelsCompactView: View {
             CloudModelProviderRow(
                 id: "openai-api",
                 title: "OpenAI",
-                method: KairoL10n.string("settings.models.cloud.method.apiKey"),
+                method: "",
                 status: hasOpenAIAPIKey
                     ? KairoL10n.string("settings.models.cloud.status.configured")
-                    : KairoL10n.string("settings.models.cloud.status.needsApiKey"),
+                    : "",
                 isConfigured: hasOpenAIAPIKey,
                 setupKind: .openAIAPIKey
             ),
             CloudModelProviderRow(
                 id: "openai-codex-oauth",
                 title: "OpenAI Codex",
-                method: KairoL10n.string("settings.models.cloud.method.oauth"),
+                method: "",
                 status: isChatGPTOAuthConnected
                     ? KairoL10n.string("settings.models.cloud.status.configured")
-                    : isChatGPTOAuthAvailable
-                        ? KairoL10n.string("settings.models.cloud.status.oauthSetup")
-                        : KairoL10n.string("settings.models.cloud.status.metadataOnly"),
+                    : "",
                 isConfigured: isChatGPTOAuthConnected,
                 setupKind: .chatGPTOAuth
+            ),
+            CloudModelProviderRow(
+                id: "openai-compatible",
+                title: KairoL10n.string("settings.omlx.section"),
+                method: hasOmlxConfigured && !omlxDisplayName.isEmpty ? omlxDisplayName : "",
+                status: hasOmlxConfigured
+                    ? KairoL10n.string("settings.models.cloud.status.configured")
+                    : "",
+                isConfigured: hasOmlxConfigured,
+                setupKind: .openAICompatible
             )
         ]
     }
@@ -669,7 +690,7 @@ struct LocalModelsCompactView: View {
                 } label: {
                     addListRow(
                         title: row.title,
-                        subtitle: row.method,
+                        subtitle: "",
                         systemImage: row.setupKind.systemImage
                     )
                 }
@@ -684,6 +705,7 @@ struct LocalModelsCompactView: View {
             withAnimation(.snappy(duration: 0.2)) {
                 pushPage(.cloudDetail(row.id))
             }
+            prepareSetup(for: row)
         } label: {
             providerSummaryRow(row)
         }
@@ -699,15 +721,10 @@ struct LocalModelsCompactView: View {
                 .frame(width: 30, height: 30)
                 .background((row.isConfigured ? Color.green : KairoDesign.blue).opacity(0.10), in: Circle())
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(row.title)
-                    .font(compactModelNameFont)
-                    .foregroundStyle(KairoDesign.ink)
-
-                Text(row.method)
-                    .font(compactModelMetadataFont)
-                    .foregroundStyle(.secondary)
-            }
+            Text(row.title)
+                .font(compactModelNameFont)
+                .foregroundStyle(KairoDesign.ink)
+                .frame(minHeight: 30, alignment: .leading)
 
             Spacer(minLength: 8)
 
@@ -715,11 +732,6 @@ struct LocalModelsCompactView: View {
                 .font(compactModelStatusFont)
                 .foregroundStyle(row.isConfigured ? .green : .secondary)
                 .multilineTextAlignment(.trailing)
-                .lineLimit(2)
-
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -729,6 +741,8 @@ struct LocalModelsCompactView: View {
             showAPIKeyEditor = true
         case .chatGPTOAuth:
             expandedOAuthConnectorDetails.insert("openai-codex")
+        case .openAICompatible:
+            showOmlxEditor = true
         }
     }
 
@@ -744,9 +758,11 @@ struct LocalModelsCompactView: View {
 
                     Divider()
 
+                    cloudDetailSubtitleView(for: row.setupKind)
+
                     cloudProviderSetup(for: row.id)
 
-                    if row.isConfigured {
+                    if row.isConfigured && row.setupKind != .openAICompatible {
                         compactActionButton(
                             KairoL10n.string("settings.models.cloud.remove"),
                             systemImage: "trash",
@@ -771,30 +787,135 @@ struct LocalModelsCompactView: View {
     }
 
     @ViewBuilder
+    private func cloudDetailSubtitleView(for kind: CloudModelProviderSetupKind) -> some View {
+        let text: String? = {
+            switch kind {
+            case .openAIAPIKey:
+                return nil
+            case .chatGPTOAuth:
+                return nil
+            case .openAICompatible:
+                return nil
+            }
+        }()
+        if let text {
+            Text(text)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
     private func cloudProviderSetup(for providerID: String) -> some View {
         switch providerID {
-        case "openai-api":
-            SettingsOpenAIAccountSection(
-                apiKey: $apiKey,
-                showAPIKeyEditor: $showAPIKeyEditor,
-                hasAPIKey: hasOpenAIAPIKey,
-                statusMessage: openAIStatusMessage,
-                saveAPIKey: saveAPIKey,
-                dryRunAPIKey: dryRunAPIKey,
-                deleteAPIKey: deleteAPIKey
-            )
-            .accessibilityIdentifier("settings.models.cloud.openai.setup")
-        case "openai-codex-oauth":
-            SettingsOAuthConnectorsSection(
-                connectorOptions: connectorOptions.filter { $0.providerKey == "openai-codex" },
-                expandedConnectorDetails: $expandedOAuthConnectorDetails,
-                presentation: .compact,
-                authorizeConnector: authorizeConnector,
-                disconnectConnector: disconnectConnector
-            )
-            .accessibilityIdentifier("settings.models.cloud.openai-codex.setup")
-        default:
-            EmptyView()
+        case "openai-api": openAISetupSection
+        case "openai-codex-oauth": codexSetupSection
+        case "openai-compatible": omlxSetupSection
+        default: EmptyView()
+        }
+    }
+
+    private var openAISetupSection: some View {
+        SettingsOpenAIAccountSection(
+            apiKey: $apiKey,
+            showAPIKeyEditor: $showAPIKeyEditor,
+            hasAPIKey: hasOpenAIAPIKey,
+            statusMessage: openAIStatusMessage,
+            saveAPIKey: saveAPIKey,
+            dryRunAPIKey: dryRunAPIKey,
+            deleteAPIKey: deleteAPIKey
+        )
+        .accessibilityIdentifier("settings.models.cloud.openai.setup")
+    }
+
+    private var codexSetupSection: some View {
+        let options = connectorOptions.filter { $0.providerKey == "openai-codex" }.map { option in
+            var copy = option
+            copy.displayName = KairoL10n.string("settings.models.cloud.method.oauth")
+            return copy
+        }
+        return SettingsOAuthConnectorsSection(
+            connectorOptions: options,
+            expandedConnectorDetails: $expandedOAuthConnectorDetails,
+            presentation: .compact,
+            authorizeConnector: authorizeConnector,
+            disconnectConnector: disconnectConnector
+        )
+        .accessibilityIdentifier("settings.models.cloud.openai-codex.setup")
+    }
+
+    private var omlxSetupSection: some View {
+        SettingsOpenAICompatibleSection(
+            endpoint: $omlxEndpoint,
+            apiKey: $omlxAPIKey,
+            model: $omlxModel,
+            displayName: $omlxDisplayName,
+            showEditor: $showOmlxEditor,
+            isConfigured: hasOmlxConfigured,
+            statusMessage: omlxStatusMessage,
+            save: saveOmlxSettings,
+            delete: deleteOmlxSettings,
+            onPushModelPicker: { models in
+                omlxFetchedModels = models
+                withAnimation(.snappy(duration: 0.2)) {
+                    pushPage(.omlxModelPicker)
+                }
+            }
+        )
+        .accessibilityIdentifier("settings.models.cloud.omlx.setup")
+    }
+
+    private var omlxModelPickerPage: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if !usesRootChromeNavigation {
+                pageBackButton
+            }
+
+            if omlxFetchedModels.isEmpty {
+                KairoFocusCard {
+                    HStack {
+                        Spacer()
+                        Text("No models found")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.vertical, 24)
+                }
+            } else {
+                KairoFocusCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(omlxFetchedModels, id: \.self) { m in
+                            Button {
+                                omlxModel = m
+                                omlxFetchedModels = []
+                                popPage()
+                            } label: {
+                                HStack {
+                                    Text(m)
+                                        .font(.subheadline)
+                                        .foregroundStyle(KairoDesign.ink)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    if omlxModel.trimmingCharacters(in: .whitespacesAndNewlines) == m {
+                                        Image(systemName: "checkmark")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(KairoDesign.blue)
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                            }
+                            .buttonStyle(.plain)
+                            if m != omlxFetchedModels.last {
+                                Divider()
+                                    .padding(.leading, 12)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -806,7 +927,45 @@ struct LocalModelsCompactView: View {
             if let option = connectorOptions.first(where: { $0.providerKey == "openai-codex" }) {
                 disconnectConnector(option)
             }
+        case .openAICompatible:
+            deleteOmlxSettings()
         }
+    }
+
+    private func saveOmlxSettings() {
+        let ep = omlxEndpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        let key = omlxAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !ep.isEmpty, !key.isEmpty else {
+            omlxStatusMessage = "Endpoint and API key are required"
+            return
+        }
+        UserDefaults.standard.set(ep, forKey: "omlx_endpoint")
+        UserDefaults.standard.set(key, forKey: "omlx_api_key")
+        UserDefaults.standard.set(omlxModel.trimmingCharacters(in: .whitespacesAndNewlines), forKey: "omlx_model")
+        UserDefaults.standard.set(omlxDisplayName.trimmingCharacters(in: .whitespacesAndNewlines), forKey: "omlx_display_name")
+        hasOmlxConfigured = true
+        omlxStatusMessage = "Saved"
+    }
+
+    private func deleteOmlxSettings() {
+        UserDefaults.standard.removeObject(forKey: "omlx_endpoint")
+        UserDefaults.standard.removeObject(forKey: "omlx_api_key")
+        UserDefaults.standard.removeObject(forKey: "omlx_model")
+        UserDefaults.standard.removeObject(forKey: "omlx_display_name")
+        omlxEndpoint = ""
+        omlxAPIKey = ""
+        omlxModel = ""
+        omlxDisplayName = ""
+        hasOmlxConfigured = false
+        omlxStatusMessage = nil
+    }
+
+    private func loadOmlxSettings() {
+        omlxEndpoint = UserDefaults.standard.string(forKey: "omlx_endpoint") ?? ""
+        omlxAPIKey = UserDefaults.standard.string(forKey: "omlx_api_key") ?? ""
+        omlxModel = UserDefaults.standard.string(forKey: "omlx_model") ?? ""
+        omlxDisplayName = UserDefaults.standard.string(forKey: "omlx_display_name") ?? ""
+        hasOmlxConfigured = !omlxEndpoint.isEmpty && !omlxAPIKey.isEmpty
     }
 
     private var configuredLocalModelRows: [LocalModelSettingsRow] {
@@ -904,6 +1063,9 @@ struct LocalModelsCompactView: View {
     }
 
     private var selectedModelSummaryIconName: String {
+        if localModelStatus.preference == .preferCloud, !configuredCloudProviderRows.isEmpty {
+            return "cloud.fill"
+        }
         if localModelStatus.localModelInstalled {
             return "checkmark.seal.fill"
         }
@@ -914,6 +1076,9 @@ struct LocalModelsCompactView: View {
     }
 
     private var selectedModelSummaryIconColor: Color {
+        if localModelStatus.preference == .preferCloud, !configuredCloudProviderRows.isEmpty {
+            return KairoDesign.blue
+        }
         if localModelStatus.localModelInstalled || downloadedModel != nil {
             return .blue
         }
@@ -1402,7 +1567,7 @@ struct LocalModelsCompactView: View {
 
     private var compactSectionHeadingFont: Font { .subheadline.weight(.semibold) }
 
-    private var compactModelNameFont: Font { .subheadline.weight(.semibold) }
+    private var compactModelNameFont: Font { .footnote.weight(.semibold) }
 
     private var compactModelMetadataFont: Font { .caption }
 
@@ -1485,10 +1650,12 @@ struct LocalModelsCompactView: View {
                     .foregroundStyle(KairoDesign.ink)
                     .lineLimit(2)
 
-                Text(subtitle)
-                    .font(compactModelMetadataFont)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(compactModelMetadataFont)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
             }
 
             Spacer(minLength: 8)
@@ -1598,6 +1765,8 @@ private struct CloudModelProviderRow: Identifiable, Equatable {
             return true
         case .chatGPTOAuth:
             return true
+        case .openAICompatible:
+            return true
         }
     }
 }
@@ -1605,6 +1774,7 @@ private struct CloudModelProviderRow: Identifiable, Equatable {
 private enum CloudModelProviderSetupKind: Equatable {
     case openAIAPIKey
     case chatGPTOAuth
+    case openAICompatible
 
     var systemImage: String {
         switch self {
@@ -1612,6 +1782,8 @@ private enum CloudModelProviderSetupKind: Equatable {
             return "key.fill"
         case .chatGPTOAuth:
             return "person.crop.circle.badge.checkmark"
+        case .openAICompatible:
+            return "network"
         }
     }
 }
@@ -1623,6 +1795,7 @@ private enum ModelSettingsPage: Equatable {
     case responseLanguage
     case cloudDetail(String)
     case localDetail(String)
+    case omlxModelPicker
 
     var title: String {
         switch self {
@@ -1638,6 +1811,8 @@ private enum ModelSettingsPage: Equatable {
             return KairoL10n.string("settings.models.cloud.detail.title")
         case .localDetail:
             return KairoL10n.string("settings.models.local.detail.title")
+        case .omlxModelPicker:
+            return KairoL10n.string("settings.omlx.modelPicker.title")
         }
     }
 
@@ -1655,6 +1830,8 @@ private enum ModelSettingsPage: Equatable {
             return KairoL10n.string("settings.models.cloud.detail.detail")
         case .localDetail:
             return KairoL10n.string("settings.models.local.detail.detail")
+        case .omlxModelPicker:
+            return ""
         }
     }
 
@@ -1672,6 +1849,8 @@ private enum ModelSettingsPage: Equatable {
             return "settings.models.cloud.detail.page"
         case .localDetail:
             return "settings.models.local.detail.page"
+        case .omlxModelPicker:
+            return "settings.models.cloud.omlx.modelPicker"
         }
     }
 }

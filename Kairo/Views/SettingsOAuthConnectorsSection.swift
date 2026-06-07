@@ -58,11 +58,6 @@ struct SettingsOAuthConnectorsSection: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
                     .accessibilityIdentifier("settings.oauth.\(option.providerKey).name")
-
-                Text(option.readiness.settingsStatusText)
-                    .font(.caption)
-                    .foregroundStyle(statusColor(for: option.readiness))
-                    .accessibilityIdentifier("settings.oauth.\(option.providerKey).status")
             }
 
             Spacer(minLength: 8)

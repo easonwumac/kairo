@@ -16,17 +16,13 @@ struct SettingsOpenAIAccountSection: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionHeader(title: KairoL10n.string("settings.openai.section"))
+        KairoGroupedSurface {
+            VStack(alignment: .leading, spacing: 12) {
+                summaryRow
 
-            KairoGroupedSurface {
-                VStack(alignment: .leading, spacing: 12) {
-                    summaryRow
-
-                    if showAPIKeyEditor {
-                        editor
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
+                if showAPIKeyEditor {
+                    editor
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
         }
@@ -42,9 +38,6 @@ struct SettingsOpenAIAccountSection: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(KairoL10n.string("settings.openai.apiKey"))
                     .font(.subheadline.weight(.semibold))
-                Text(KairoL10n.string("settings.openai.keychainNote"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 8)
@@ -90,19 +83,13 @@ struct SettingsOpenAIAccountSection: View {
                 .disabled(trimmedAPIKey.isEmpty)
                 .accessibilityIdentifier("settings.openai.save-api-key")
 
-                Button(KairoL10n.string("settings.openai.dryRun")) {
-                    dryRunAPIKey()
+                if hasAPIKey {
+                    Button(KairoL10n.string("settings.openai.delete"), role: .destructive) {
+                        deleteAPIKey()
+                    }
+                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.red, isCompact: true))
+                    .accessibilityIdentifier("settings.openai.delete-api-key")
                 }
-                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal, isCompact: true))
-                .disabled(trimmedAPIKey.isEmpty && !hasAPIKey)
-                .accessibilityIdentifier("settings.openai.dry-run-api-key")
-
-                Button(KairoL10n.string("settings.openai.delete"), role: .destructive) {
-                    deleteAPIKey()
-                }
-                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.red, isCompact: true))
-                .disabled(!hasAPIKey)
-                .accessibilityIdentifier("settings.openai.delete-api-key")
             }
 
             if let statusMessage {
