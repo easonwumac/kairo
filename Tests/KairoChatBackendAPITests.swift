@@ -27,9 +27,9 @@ final class KairoChatBackendAPITests: XCTestCase {
         let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
         XCTAssertEqual(payload["model"] as? String, "gpt-4.1")
         let input = try XCTUnwrap(payload["input"] as? [[String: String]])
-        XCTAssertTrue(input.contains { $0["role"] == "user" && $0["content"] == "Tone" })
         XCTAssertTrue(input.contains { message in
-            message["role"] == "system"
+            message["role"] == "user"
+                && (message["content"]?.contains("Tone") == true)
                 && (message["content"]?.contains("Prefers concise Traditional Chinese replies") == true)
                 && (message["content"]?.contains("Keep answers short.") == true)
         })

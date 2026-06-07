@@ -69,26 +69,8 @@ public struct OpenAICodexProvider: AIProvider {
     }
 
     private func buildInput(from request: AICompletionRequest) -> [OpenAICodexInputItem] {
-        let memoryContext = MemoryPromptContextBuilder().build(from: request.memoryContext)
-        let capabilities = request.allowedCapabilities.map(\.rawValue).joined(separator: ", ")
-        let attachmentContext = CapabilityPromptContextBuilder.attachmentContext(request.attachmentContext)
-        let libraryClassificationContext = LibraryAssetClassificationPromptBuilder.context(for: request.attachmentContext)
-        let context = """
-        Relevant memory:
-        \(memoryContext)
-
-        Allowed capabilities:
-        \(capabilities.isEmpty ? "None" : capabilities)
-
-        \(attachmentContext)
-
-        \(libraryClassificationContext)
-
-        Tool context:
-        \(request.toolContext ?? "No tool context supplied.")
-        """
         var input: [OpenAICodexInputItem] = [
-            .message(role: "user", text: context)
+            .message(role: "user", text: AIRequestPromptComposer.sessionContext(from: request))
         ]
         for turn in request.conversationHistory {
             switch turn.role {
@@ -98,7 +80,7 @@ public struct OpenAICodexProvider: AIProvider {
                 input.append(.message(role: "assistant", text: turn.text))
             }
         }
-        input.append(.message(role: "user", text: request.userPrompt))
+        input.append(.message(role: "user", text: AIRequestPromptComposer.currentUserText(from: request)))
         return input
     }
 

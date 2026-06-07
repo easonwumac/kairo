@@ -173,31 +173,9 @@ public struct OpenAICompatibleProvider: AIProvider {
     }
 
     private func buildMessages(from request: AICompletionRequest) -> [OAICompatMessage] {
-        let memoryContext = MemoryPromptContextBuilder().build(from: request.memoryContext)
-        let capabilities = request.allowedCapabilities.map(\.rawValue).joined(separator: ", ")
-        let attachmentContext = CapabilityPromptContextBuilder.attachmentContext(request.attachmentContext)
-
-        var context = """
-        Relevant memory:
-        \(memoryContext)
-
-        Allowed capabilities:
-        \(capabilities.isEmpty ? "None" : capabilities)
-
-        \(attachmentContext)
-
-        Tool context:
-        \(request.toolContext ?? "No tool context supplied.")
-        """
-
-        if !request.attachmentContext.isEmpty {
-            let libraryClassificationContext = LibraryAssetClassificationPromptBuilder.context(for: request.attachmentContext)
-            context += "\n\n\(libraryClassificationContext)"
-        }
-
         var messages: [OAICompatMessage] = [
             OAICompatMessage(role: "system", text: request.systemPrompt),
-            OAICompatMessage(role: "system", text: context)
+            OAICompatMessage(role: "system", text: AIRequestPromptComposer.sessionContext(from: request))
         ]
 
         for turn in request.conversationHistory {
@@ -209,6 +187,7 @@ public struct OpenAICompatibleProvider: AIProvider {
             }
         }
 
+        let currentUserText = AIRequestPromptComposer.currentUserText(from: request)
         let imageAttachments = request.attachmentContext.filter { $0.kind == .image }
         let maxImages = 6
         if !imageAttachments.isEmpty {
@@ -218,14 +197,14 @@ public struct OpenAICompatibleProvider: AIProvider {
                     parts.append(OAICompatContentPart(imageURL: dataURL))
                 }
             }
-            if !request.userPrompt.isEmpty {
-                parts.append(OAICompatContentPart(text: request.userPrompt))
+            if !currentUserText.isEmpty {
+                parts.append(OAICompatContentPart(text: currentUserText))
             }
             if !parts.isEmpty {
                 messages.append(OAICompatMessage(role: "user", parts: parts))
             }
         } else {
-            messages.append(OAICompatMessage(role: "user", text: request.userPrompt))
+            messages.append(OAICompatMessage(role: "user", text: currentUserText))
         }
 
         return messages

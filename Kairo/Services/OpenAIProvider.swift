@@ -76,28 +76,9 @@ public struct OpenAIProvider: AIProvider {
     }
 
     private func buildInput(from request: AICompletionRequest) -> [OpenAIInputMessage] {
-        let memoryContext = MemoryPromptContextBuilder().build(from: request.memoryContext)
-        let capabilities = request.allowedCapabilities.map(\.rawValue).joined(separator: ", ")
-        let attachmentContext = CapabilityPromptContextBuilder.attachmentContext(request.attachmentContext)
-        let libraryClassificationContext = LibraryAssetClassificationPromptBuilder.context(for: request.attachmentContext)
-        let context = """
-        Relevant memory:
-        \(memoryContext)
-
-        Allowed capabilities:
-        \(capabilities.isEmpty ? "None" : capabilities)
-
-        \(attachmentContext)
-
-        \(libraryClassificationContext)
-
-        Tool context:
-        \(request.toolContext ?? "No tool context supplied.")
-        """
-
         var input: [OpenAIInputMessage] = [
             OpenAIInputMessage(role: "system", content: request.systemPrompt),
-            OpenAIInputMessage(role: "system", content: context)
+            OpenAIInputMessage(role: "system", content: AIRequestPromptComposer.sessionContext(from: request))
         ]
         for turn in request.conversationHistory {
             switch turn.role {
@@ -107,7 +88,7 @@ public struct OpenAIProvider: AIProvider {
                 input.append(OpenAIInputMessage(role: "assistant", content: turn.text))
             }
         }
-        input.append(OpenAIInputMessage(role: "user", content: request.userPrompt))
+        input.append(OpenAIInputMessage(role: "user", content: AIRequestPromptComposer.currentUserText(from: request)))
         return input
     }
 
