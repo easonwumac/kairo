@@ -167,7 +167,9 @@ public struct RootView: View {
                         isMenuPresented = false
                         isPageActionsPresented = false
                     }
-                }
+                },
+                rootChromeBackRequestID: $chromeBackRequestID,
+                usesRootChromeNavigation: true
             )
                 .ignoresSafeArea(.container, edges: .top)
         case .assets:
@@ -177,7 +179,7 @@ public struct RootView: View {
                 usesRootChromeNavigation: true
             )
         case .pages:
-            InfoPageListView(store: InMemoryInfoPageStore())
+            InfoPageListView(store: environment.sharedInfoPageStore)
         case .categories:
             KnowledgeCategoriesView(dependencies: environment.knowledgeAssetFeatureDependencies)
         case .memory:

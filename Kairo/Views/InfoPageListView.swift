@@ -6,6 +6,7 @@ public struct InfoPageListView: View {
     @State private var errorMessage: String?
     @State private var selectedPage: InfoPage?
     @State private var showHTMLForPage: InfoPage?
+    @State private var reloadToken = 0
 
     private let store: any InfoPageStore
 
@@ -46,6 +47,10 @@ public struct InfoPageListView: View {
         #endif
         .kairoHiddenNavigationChrome()
         .task { await reload() }
+        .task(id: reloadToken) { await reload() }
+        .onReceive(NotificationCenter.default.publisher(for: .infoPageSaved)) { _ in
+            reloadToken += 1
+        }
         .refreshable { await reload() }
         }
         .sheet(item: $selectedPage) { page in

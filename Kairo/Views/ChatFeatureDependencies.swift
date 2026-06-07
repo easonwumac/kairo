@@ -6,6 +6,7 @@ public struct ChatFeatureDependencies {
     public var shareImportAPI: any KairoShareImportAPI
     public var chatAPI: any KairoChatAPI
     public var actionAPI: any KairoActionAPI
+    public var infoPageStore: InfoPageStore?
     public var localModelSettingsService: LocalModelSettingsService?
     public var openAISettingsService: OpenAISettingsService?
     public var localModelChatRuntimeAvailable: Bool
@@ -16,6 +17,7 @@ public struct ChatFeatureDependencies {
         shareImportAPI: any KairoShareImportAPI,
         chatAPI: any KairoChatAPI,
         actionAPI: any KairoActionAPI,
+        infoPageStore: InfoPageStore? = nil,
         localModelSettingsService: LocalModelSettingsService? = nil,
         openAISettingsService: OpenAISettingsService? = nil,
         localModelChatRuntimeAvailable: Bool = false,
@@ -25,6 +27,7 @@ public struct ChatFeatureDependencies {
         self.shareImportAPI = shareImportAPI
         self.chatAPI = chatAPI
         self.actionAPI = actionAPI
+        self.infoPageStore = infoPageStore
         self.localModelSettingsService = localModelSettingsService
         self.openAISettingsService = openAISettingsService
         self.localModelChatRuntimeAvailable = localModelChatRuntimeAvailable
@@ -94,10 +97,11 @@ public struct ChatFeatureDependencyFactory: Sendable {
         actionExecutor: any ActionExecutor,
         localModelSettingsService: LocalModelSettingsService?,
         openAISettingsService: OpenAISettingsService? = nil,
+        infoPageStore: InfoPageStore? = nil,
         localModelChatRuntimeAvailable: Bool,
         actionDescriptorProvider: any AgentActionDescriptorProviding = BuiltInPhoneToolActionDescriptorProvider()
     ) -> ChatFeatureDependencies {
-        composer.makeDependencies(
+        var deps = composer.makeDependencies(
             historyStore: historyStore,
             shareIngestionQueue: shareIngestionQueue,
             chatAPI: chatAPI,
@@ -109,6 +113,8 @@ public struct ChatFeatureDependencyFactory: Sendable {
             localModelChatRuntimeAvailable: localModelChatRuntimeAvailable,
             actionDescriptorProvider: actionDescriptorProvider
         )
+        deps.infoPageStore = infoPageStore
+        return deps
     }
 }
 
@@ -155,8 +161,24 @@ public extension KairoEnvironment {
             actionAPI: backendAPI.actions,
             actionExecutor: actionExecutor,
             localModelSettingsService: localModelSettingsService,
+            infoPageStore: sharedInfoPageStore,
             localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
         )
+    }
+
+    var sharedInfoPageStore: InfoPageStore {
+        if let store = Self._infoPageStoreCache {
+            return store
+        }
+        let store = InMemoryInfoPageStore()
+        Self._infoPageStoreCache = store
+        return store
+    }
+
+    private static var _infoPageStoreCache: InMemoryInfoPageStore?
+
+    var infoPageStore: InfoPageStore {
+        sharedInfoPageStore
     }
 }
 #endif
