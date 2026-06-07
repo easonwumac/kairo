@@ -103,7 +103,7 @@ final class LocalModelFeatureTests: XCTestCase {
 
         let status = await components.settingsService.status()
 
-        XCTAssertEqual(status.selectedModelID, LocalModelManifest.qwen25HalfBInstruct.id)
+        XCTAssertEqual(status.selectedModelID, LocalModelManifest.gemma4E2BQATQ4_0.id)
         XCTAssertEqual(status.installedRecord?.status, .installed)
         XCTAssertEqual(status.preference, .localOnly)
         XCTAssertEqual(components.chatRuntimeAvailable, false)

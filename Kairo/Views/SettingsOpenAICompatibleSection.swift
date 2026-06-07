@@ -102,8 +102,10 @@ struct SettingsOpenAICompatibleSection: View {
             TextField(KairoL10n.string("settings.omlx.endpointPlaceholder"), text: $endpoint)
                 .font(.subheadline)
                 .autocorrectionDisabled()
+                #if os(iOS)
                 .textInputAutocapitalization(.never)
                 .keyboardType(.URL)
+                #endif
                 .padding(.horizontal, 10)
                 .padding(.vertical, 9)
                 .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
