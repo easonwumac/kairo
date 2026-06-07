@@ -384,7 +384,15 @@ public final class ChatViewModel: ObservableObject {
     }
 
     public func refreshProviderRouteStatus() async {
-        let openAIStatus = try? await openAISettingsService?.status()
+        var openAIStatus = try? await openAISettingsService?.status()
+        if openAIStatus?.hasAPIKey != true {
+            let omlxEndpoint = UserDefaults.standard.string(forKey: "omlx_endpoint") ?? ""
+            let omlxAPIKey = UserDefaults.standard.string(forKey: "omlx_api_key") ?? ""
+            if !omlxEndpoint.isEmpty && !omlxAPIKey.isEmpty {
+                let omlxDisplayName = UserDefaults.standard.string(forKey: "omlx_display_name") ?? ""
+                openAIStatus = OpenAISettingsStatus(hasAPIKey: true, providerName: omlxDisplayName.isEmpty ? "OpenAI Compatible" : omlxDisplayName)
+            }
+        }
         guard let localModelSettingsService else {
             providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil, openAIStatus: openAIStatus)
             return

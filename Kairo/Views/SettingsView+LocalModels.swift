@@ -3,6 +3,8 @@ import SwiftUI
 
 extension SettingsView {
     func setLocalModelPreference(_ preference: ProviderRoutePreference) {
+        localModelStatus.preference = preference
+
         Task {
             guard let localModelSettingsService else {
                 await MainActor.run {
@@ -15,13 +17,13 @@ extension SettingsView {
             do {
                 try await localModelSettingsService.setPreference(preference)
                 await MainActor.run {
-                    localModelStatus.preference = preference
                     localModelStatusMessageModelID = nil
                     localModelStatusMessage = KairoL10n.string("settings.models.message.preferenceSaved", preference.settingsTitle)
                 }
                 await reloadLocalModelStatus()
             } catch {
                 await MainActor.run {
+                    localModelStatus.preference = .automatic
                     localModelStatusMessageModelID = nil
                     localModelStatusMessage = KairoL10n.string("settings.models.message.preferenceFailed", error.localizedDescription)
                 }
