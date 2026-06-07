@@ -7,6 +7,10 @@ public struct ChatThread: Identifiable, Codable, Equatable, Sendable {
     public var updatedAt: Date
     public var deletedAt: Date?
     public var messages: [ChatMessage]
+    public var lastPromptTokens: Int?
+    public var rollingSummary: String?
+    public var compactedThroughMessageID: UUID?
+    public var compactionGeneration: Int
 
     public init(
         id: UUID = UUID(),
@@ -14,7 +18,11 @@ public struct ChatThread: Identifiable, Codable, Equatable, Sendable {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         deletedAt: Date? = nil,
-        messages: [ChatMessage] = []
+        messages: [ChatMessage] = [],
+        lastPromptTokens: Int? = nil,
+        rollingSummary: String? = nil,
+        compactedThroughMessageID: UUID? = nil,
+        compactionGeneration: Int = 0
     ) {
         self.id = id
         self.title = title
@@ -22,6 +30,10 @@ public struct ChatThread: Identifiable, Codable, Equatable, Sendable {
         self.updatedAt = updatedAt
         self.deletedAt = deletedAt
         self.messages = messages
+        self.lastPromptTokens = lastPromptTokens
+        self.rollingSummary = rollingSummary
+        self.compactedThroughMessageID = compactedThroughMessageID
+        self.compactionGeneration = compactionGeneration
     }
 
     public var lastMessagePreview: String {
@@ -50,6 +62,33 @@ public struct ChatThread: Identifiable, Codable, Equatable, Sendable {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "New Chat" }
         return String(trimmed.prefix(42))
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case createdAt
+        case updatedAt
+        case deletedAt
+        case messages
+        case lastPromptTokens
+        case rollingSummary
+        case compactedThroughMessageID
+        case compactionGeneration
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.createdAt = try container.decode(Date.self, forKey: .createdAt)
+        self.updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        self.deletedAt = try container.decodeIfPresent(Date.self, forKey: .deletedAt)
+        self.messages = try container.decode([ChatMessage].self, forKey: .messages)
+        self.lastPromptTokens = try container.decodeIfPresent(Int.self, forKey: .lastPromptTokens)
+        self.rollingSummary = try container.decodeIfPresent(String.self, forKey: .rollingSummary)
+        self.compactedThroughMessageID = try container.decodeIfPresent(UUID.self, forKey: .compactedThroughMessageID)
+        self.compactionGeneration = try container.decodeIfPresent(Int.self, forKey: .compactionGeneration) ?? 0
     }
 }
 

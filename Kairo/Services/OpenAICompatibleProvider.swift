@@ -100,11 +100,17 @@ public struct OpenAICompatibleProvider: AIProvider {
             kairoOmlxLog("[OMLX] message=\(String(rawText.prefix(200)))")
 
             let (displayMessage, rawJSON, infoPageDraft) = Self.parseStructuredResponse(rawText)
+            let metrics = AIInferenceMetrics(
+                stage: .complete,
+                promptTokens: decoded.usage?.promptTokens ?? decoded.usage?.totalTokens,
+                generatedTokens: decoded.usage?.completionTokens
+            )
 
             if infoPageDraft != nil || !hasImages {
                 return AICompletionResponse(
                     message: displayMessage,
                     proposedActions: [],
+                    inferenceMetrics: metrics,
                     rawModelResponse: rawJSON,
                     infoPageDraft: infoPageDraft
                 )
@@ -482,9 +488,13 @@ private struct OAICompatResponse: Codable {
 
 private struct OAICompatUsage: Codable {
     var totalTokens: Int?
+    var promptTokens: Int?
+    var completionTokens: Int?
 
     enum CodingKeys: String, CodingKey {
         case totalTokens = "total_tokens"
+        case promptTokens = "prompt_tokens"
+        case completionTokens = "completion_tokens"
     }
 }
 

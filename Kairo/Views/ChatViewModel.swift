@@ -52,6 +52,7 @@ public final class ChatViewModel: ObservableObject {
     private let localModelSettingsService: LocalModelSettingsService?
     private let openAISettingsService: OpenAISettingsService?
     private let localModelChatRuntimeAvailable: Bool
+    private let threadCompactor: (any ChatThreadCompacting)?
     private var pendingActionSource: PendingActionSource?
     private var importedShareItemIDs: [UUID] = []
     private var inferenceProgressTask: Task<Void, Never>?
@@ -67,6 +68,7 @@ public final class ChatViewModel: ObservableObject {
         self.localModelSettingsService = dependencies.localModelSettingsService
         self.openAISettingsService = dependencies.openAISettingsService
         self.localModelChatRuntimeAvailable = dependencies.localModelChatRuntimeAvailable
+        self.threadCompactor = dependencies.threadCompactor
         self.currentThread = ChatThread(messages: [Self.welcomeMessage])
         self.providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil)
     }
@@ -304,6 +306,7 @@ public final class ChatViewModel: ObservableObject {
 
     public func send(_ text: String, attachments: [ChatAttachment] = []) async {
         clearTransientActionState()
+        await compactCurrentThreadIfNeeded(forPendingUserText: text)
         let userMessage = ChatMessage(role: .user, text: text, attachments: attachments)
         currentThread.append(userMessage, now: userMessage.createdAt)
         await persistCurrentThread()
@@ -315,7 +318,7 @@ public final class ChatViewModel: ObservableObject {
             let response = try await chatAPI.respond(
                 to: text,
                 attachments: attachments,
-                conversationID: currentThread.id.uuidString,
+                conversationID: runtimeConversationID(),
                 conversationHistory: localConversationHistory(),
                 privacyMode: privacyMode
             )
@@ -330,6 +333,9 @@ public final class ChatViewModel: ObservableObject {
             )
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
             latestInferenceMetrics = response.inferenceMetrics
+            if let promptTokens = response.inferenceMetrics?.promptTokens, promptTokens > 0 {
+                currentThread.lastPromptTokens = promptTokens
+            }
 
             if let draft = response.infoPageDraft, draft.createInfoPage {
                 await saveInfoPageDraft(draft, after: assistantMessage.id)
@@ -547,7 +553,14 @@ public final class ChatViewModel: ObservableObject {
         if let last = messages.last, last.role == .user {
             messages.removeLast()
         }
-        return messages
+        var turns: [AIConversationTurn] = []
+        if let summary = currentThread.rollingSummary?.trimmingCharacters(in: .whitespacesAndNewlines), !summary.isEmpty {
+            turns.append(AIConversationTurn(
+                role: .assistant,
+                text: "[Earlier conversation summary]\n\(summary)"
+            ))
+        }
+        let priorTurns: [AIConversationTurn] = messages
             .filter { $0.id != Self.welcomeMessage.id }
             .compactMap { message in
                 let text = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -563,6 +576,47 @@ public final class ChatViewModel: ObservableObject {
                     return nil
                 }
             }
+        turns.append(contentsOf: priorTurns)
+        return turns
+    }
+
+    private func runtimeConversationID() -> String {
+        let generation = currentThread.compactionGeneration
+        guard generation > 0 else { return currentThread.id.uuidString }
+        return "\(currentThread.id.uuidString)#g\(generation)"
+    }
+
+    private func compactCurrentThreadIfNeeded(forPendingUserText text: String) async {
+        guard let compactor = threadCompactor else { return }
+        let budget = await activeContextBudget()
+        let pressure = compactor.pressure(
+            for: currentThread,
+            additionalUserTextChars: text.count,
+            budget: budget
+        )
+        guard pressure == .hard else { return }
+        do {
+            let result = try await compactor.compact(currentThread, budget: budget)
+            guard result.summarizedMessageCount > 0 else { return }
+            currentThread = result.thread
+            await persistCurrentThread()
+        } catch {
+            // Compaction is best-effort. Log via inference channel; do not block the send.
+            errorMessage = nil
+        }
+    }
+
+    private func activeContextBudget() async -> ChatContextBudget {
+        if let localStatus = await localModelSettingsService?.status(),
+           let manifest = localStatus.selectedModel {
+            let runtimeContext = localStatus.runtimeParametersByModelID[manifest.id]?.contextSize
+            let effective = min(manifest.contextWindow, runtimeContext ?? manifest.contextWindow)
+            return ChatContextBudget(contextWindow: effective)
+        }
+        if providerRouteStatus.options.contains(where: { $0.id.hasPrefix("cloud.") && $0.isEnabled }) {
+            return ChatContextBudget(contextWindow: 128_000, reservedOutputTokens: 4096)
+        }
+        return ChatContextBudget(contextWindow: 8192)
     }
 
     private static func actionResultMessage(for result: ActionExecutionResult, action: AgentAction, source: PendingActionSource?) -> String {

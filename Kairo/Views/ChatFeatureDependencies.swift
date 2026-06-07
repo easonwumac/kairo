@@ -11,6 +11,7 @@ public struct ChatFeatureDependencies {
     public var openAISettingsService: OpenAISettingsService?
     public var localModelChatRuntimeAvailable: Bool
     public var actionDescriptorProvider: any AgentActionDescriptorProviding
+    public var threadCompactor: (any ChatThreadCompacting)?
 
     public init(
         historyStore: any ChatHistoryStore,
@@ -21,7 +22,8 @@ public struct ChatFeatureDependencies {
         localModelSettingsService: LocalModelSettingsService? = nil,
         openAISettingsService: OpenAISettingsService? = nil,
         localModelChatRuntimeAvailable: Bool = false,
-        actionDescriptorProvider: any AgentActionDescriptorProviding = BuiltInPhoneToolActionDescriptorProvider()
+        actionDescriptorProvider: any AgentActionDescriptorProviding = BuiltInPhoneToolActionDescriptorProvider(),
+        threadCompactor: (any ChatThreadCompacting)? = nil
     ) {
         self.historyStore = historyStore
         self.shareImportAPI = shareImportAPI
@@ -32,6 +34,7 @@ public struct ChatFeatureDependencies {
         self.openAISettingsService = openAISettingsService
         self.localModelChatRuntimeAvailable = localModelChatRuntimeAvailable
         self.actionDescriptorProvider = actionDescriptorProvider
+        self.threadCompactor = threadCompactor
     }
 }
 
@@ -152,7 +155,7 @@ private struct UnavailableChatAPI: KairoChatAPI {
 
 public extension KairoEnvironment {
     var chatFeatureDependencies: ChatFeatureDependencies {
-        ChatFeatureDependencyFactory().makeDependencies(
+        var deps = ChatFeatureDependencyFactory().makeDependencies(
             historyStore: chatHistoryStore,
             shareIngestionQueue: shareIngestionQueue,
             credentialStore: credentialStore,
@@ -164,6 +167,8 @@ public extension KairoEnvironment {
             infoPageStore: sharedInfoPageStore,
             localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
         )
+        deps.threadCompactor = DefaultChatThreadCompactor(summarizer: aiProvider)
+        return deps
     }
 
     var sharedInfoPageStore: InfoPageStore {

@@ -45,7 +45,12 @@ public struct OpenAIProvider: AIProvider {
         try validate(response, data: responseData)
 
         let decoded = try JSONDecoder().decode(OpenAIResponsesResponse.self, from: responseData)
-        return AICompletionResponse(message: decoded.outputText, proposedActions: [])
+        let metrics = AIInferenceMetrics(
+            stage: .complete,
+            promptTokens: decoded.usage?.inputTokens ?? decoded.usage?.totalTokens,
+            generatedTokens: decoded.usage?.outputTokens
+        )
+        return AICompletionResponse(message: decoded.outputText, proposedActions: [], inferenceMetrics: metrics)
     }
 
     public func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
@@ -129,10 +134,12 @@ private struct OpenAIInputMessage: Codable, Equatable {
 private struct OpenAIResponsesResponse: Codable, Equatable {
     var output: [OpenAIOutputItem]?
     var outputTextFallback: String?
+    var usage: OpenAIResponsesUsage?
 
     enum CodingKeys: String, CodingKey {
         case output
         case outputTextFallback = "output_text"
+        case usage
     }
 
     var outputText: String {
@@ -143,6 +150,18 @@ private struct OpenAIResponsesResponse: Codable, Equatable {
             .flatMap { $0.content ?? [] }
             .compactMap(\.text)
             .joined(separator: "\n") ?? ""
+    }
+}
+
+private struct OpenAIResponsesUsage: Codable, Equatable {
+    var inputTokens: Int?
+    var outputTokens: Int?
+    var totalTokens: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case inputTokens = "input_tokens"
+        case outputTokens = "output_tokens"
+        case totalTokens = "total_tokens"
     }
 }
 
