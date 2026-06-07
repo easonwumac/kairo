@@ -67,6 +67,10 @@ struct KairoApp: App {
                             forKey: KairoOnboarding.completedStorageKey
                         )
                         do {
+                            let omlxCloudProvider = Self.makeOmlxCloudProvider(arguments: arguments)
+                            let routePreference: ProviderRoutePreference? = omlxCloudProvider != nil
+                                ? .preferCloud
+                                : Self.uiTestingLocalModelRoutePreference(arguments: arguments)
                             let uiTestingEnvironment = try await KairoEnvironment.uiTesting(
                                 resetPersistentState: arguments.contains("--reset-ui-testing-data"),
                                 seedInstalledLocalModel: arguments.contains("--ui-testing-installed-local-model"),
@@ -74,10 +78,11 @@ struct KairoApp: App {
                                 seedExpandedLocalModelCatalog: arguments.contains("--ui-testing-expanded-local-model-catalog"),
                                 seedSharedTaskText: arguments.contains("--ui-testing-seed-shared-task"),
                                 selectInstalledLocalModel: arguments.contains("--ui-testing-select-local-model"),
-                                localModelRoutePreference: Self.uiTestingLocalModelRoutePreference(arguments: arguments),
+                                localModelRoutePreference: routePreference,
                                 installedLocalModelFileURL: Self.uiTestingLocalModelFileURL(arguments: arguments),
                                 localModelReplyCheckRuntimeOverride: Self.uiTestingLocalModelReplyRuntime(arguments: arguments),
-                                localModelBenchmarkEngineOverride: Self.uiTestingLocalModelBenchmarkEngine(arguments: arguments)
+                                localModelBenchmarkEngineOverride: Self.uiTestingLocalModelBenchmarkEngine(arguments: arguments),
+                                cloudProviderOverride: omlxCloudProvider
                             )
                             environment = uiTestingEnvironment
                             environmentRevision += 1
@@ -258,6 +263,41 @@ struct KairoApp: App {
         return arguments
             .first { $0.hasPrefix(prefix) }
             .map { String($0.dropFirst(prefix.count)) }
+    }
+
+    private static func uiTestingOmlxEndpoint(arguments: [String]) -> String? {
+        let prefix = "--ui-testing-omlx-endpoint="
+        return arguments
+            .first { $0.hasPrefix(prefix) }
+            .map { String($0.dropFirst(prefix.count)) }
+    }
+
+    private static func uiTestingOmlxAPIKey(arguments: [String]) -> String? {
+        let prefix = "--ui-testing-omlx-api-key="
+        return arguments
+            .first { $0.hasPrefix(prefix) }
+            .map { String($0.dropFirst(prefix.count)) }
+    }
+
+    private static func uiTestingOmlxModel(arguments: [String]) -> String? {
+        let prefix = "--ui-testing-omlx-model="
+        return arguments
+            .first { $0.hasPrefix(prefix) }
+            .map { String($0.dropFirst(prefix.count)) }
+    }
+
+    private static func makeOmlxCloudProvider(arguments: [String]) -> (any AIProvider)? {
+        guard let endpoint = uiTestingOmlxEndpoint(arguments: arguments),
+              let apiKey = uiTestingOmlxAPIKey(arguments: arguments)
+        else { return nil }
+        let model = uiTestingOmlxModel(arguments: arguments) ?? "gemma-4-e2b-it-4bit"
+        let store = InMemoryCredentialStore()
+        return OpenAICompatibleProvider(
+            credentialStore: store,
+            endpoint: endpoint,
+            apiKey: apiKey,
+            model: model
+        )
     }
 
     private static func launchSettingsMode(arguments: [String]) -> SettingsViewMode {

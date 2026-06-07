@@ -12,6 +12,7 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
     public var installedLocalModelFileURL: URL?
     public var localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)?
     public var localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)?
+    public var cloudProviderOverride: (any AIProvider)?
 
     public init(
         rootDirectory: URL = FileManager.default.temporaryDirectory
@@ -25,7 +26,8 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
         localModelRoutePreference: ProviderRoutePreference? = nil,
         installedLocalModelFileURL: URL? = nil,
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
-        localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
+        localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil,
+        cloudProviderOverride: (any AIProvider)? = nil
     ) {
         self.rootDirectory = rootDirectory
         self.resetPersistentState = resetPersistentState
@@ -38,6 +40,7 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
         self.installedLocalModelFileURL = installedLocalModelFileURL
         self.localModelReplyCheckRuntimeOverride = localModelReplyCheckRuntimeOverride
         self.localModelBenchmarkEngineOverride = localModelBenchmarkEngineOverride
+        self.cloudProviderOverride = cloudProviderOverride
     }
 
     public func makeEnvironment() async throws -> KairoEnvironment {
@@ -57,7 +60,8 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
             routePreference: localModelRoutePreference,
             installedLocalModelFileURL: installedLocalModelFileURL,
             replyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
-            benchmarkEngineOverride: localModelBenchmarkEngineOverride
+            benchmarkEngineOverride: localModelBenchmarkEngineOverride,
+            cloudProviderOverride: cloudProviderOverride
         ).makeComponents()
         let storeComponents = try await KairoUITestingStoreFactory(
             rootDirectory: rootDirectory,

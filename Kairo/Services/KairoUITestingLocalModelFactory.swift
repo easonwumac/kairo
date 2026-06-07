@@ -45,6 +45,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
     public var installedLocalModelFileURL: URL?
     public var replyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)?
     public var benchmarkEngineOverride: (any LocalModelBenchmarkEngine)?
+    public var cloudProviderOverride: (any AIProvider)?
 
     public init(
         rootDirectory: URL,
@@ -54,7 +55,8 @@ public struct KairoUITestingLocalModelFactory: Sendable {
         routePreference: ProviderRoutePreference? = nil,
         installedLocalModelFileURL: URL? = nil,
         replyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
-        benchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil
+        benchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil,
+        cloudProviderOverride: (any AIProvider)? = nil
     ) {
         self.rootDirectory = rootDirectory
         self.seedInstalledLocalModel = seedInstalledLocalModel
@@ -64,6 +66,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
         self.installedLocalModelFileURL = installedLocalModelFileURL
         self.replyCheckRuntimeOverride = replyCheckRuntimeOverride
         self.benchmarkEngineOverride = benchmarkEngineOverride
+        self.cloudProviderOverride = cloudProviderOverride
     }
 
     public func makeComponents() async throws -> KairoUITestingLocalModelComponents {
@@ -88,7 +91,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
             modelsDirectory: localModelsDirectory
         )
         if selectInstalledLocalModel {
-            try await settingsService.selectModel(id: LocalModelManifest.qwen25HalfBInstruct.id)
+            try await settingsService.selectModel(id: LocalModelManifest.gemma4E2BQATQ4_0.id)
         }
         if let routePreference {
             try await settingsService.setPreference(routePreference)
@@ -123,9 +126,10 @@ public struct KairoUITestingLocalModelFactory: Sendable {
             runtime: replyRuntime
         )
         let aiProvider: any AIProvider
+        let effectiveCloudProvider = cloudProviderOverride ?? MockAIProvider()
         if usesLocalModelRoute || replyCheckRuntimeOverride != nil {
             aiProvider = LocalModelRoutingAIProvider(
-                cloudProvider: MockAIProvider(),
+                cloudProvider: effectiveCloudProvider,
                 localModelSettingsService: settingsService,
                 localProvider: LocalModelRuntimeAIProvider(
                     localModelSettingsService: settingsService,
@@ -135,7 +139,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
                 localRuntimeAvailable: replyCheckRuntimeOverride != nil
             )
         } else {
-            aiProvider = MockAIProvider()
+            aiProvider = effectiveCloudProvider
         }
 
         return KairoUITestingLocalModelComponents(
@@ -169,7 +173,10 @@ public struct KairoUITestingLocalModelFactory: Sendable {
     }
 
     private func seedInstalledModel(in installRegistry: FileBackedLocalModelInstallRegistry) async throws {
-        let defaultInstalledModelURL = localModelsDirectory.appendingPathComponent("qwen2-5-0-5b-instruct-q4-k-m.gguf")
+        let manifest = LocalModelManifest.gemma4E2BQATQ4_0
+        let fileExtension = manifest.downloadURL.pathExtension.isEmpty ? "model" : manifest.downloadURL.pathExtension
+        let fileName = "\(VerifiedLocalModelDownloader.sanitizedFileComponent(manifest.id))-\(VerifiedLocalModelDownloader.sanitizedFileComponent(manifest.version)).\(fileExtension)"
+        let defaultInstalledModelURL = localModelsDirectory.appendingPathComponent(fileName)
         let installedModelURL: URL
         if let installedLocalModelFileURL {
             try FileManager.default.createDirectory(
@@ -185,12 +192,12 @@ public struct KairoUITestingLocalModelFactory: Sendable {
             installedModelURL = defaultInstalledModelURL
         }
         try await installRegistry.upsert(LocalModelInstallRecord(
-            modelID: LocalModelManifest.qwen25HalfBInstruct.id,
-            version: LocalModelManifest.qwen25HalfBInstruct.version,
+            modelID: manifest.id,
+            version: manifest.version,
             status: .installed,
             fileURL: installedModelURL,
-            installedSizeBytes: LocalModelManifest.qwen25HalfBInstruct.installedSizeBytes,
-            sha256: LocalModelManifest.qwen25HalfBInstruct.sha256
+            installedSizeBytes: manifest.installedSizeBytes,
+            sha256: manifest.sha256
         ))
     }
 

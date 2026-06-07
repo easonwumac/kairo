@@ -9,7 +9,8 @@ bundle_id="${KAIRO_BUNDLE_ID:-app.kairo.ios}"
 derived_data_path="${repo_root}/.build/xcode-sim-llama"
 framework_path="${repo_root}/.build/local-runtime/llama.xcframework"
 simulator_framework_path="${framework_path}/ios-arm64_x86_64-simulator/llama.framework"
-launch_args="${KAIRO_LAUNCH_ARGS:-}"
+model_file="${KAIRO_MODEL_FILE:-}"
+launch_args="${KAIRO_LAUNCH_ARGS:---ui-testing --reset-ui-testing-data --ui-testing-omlx-endpoint=http://localhost:8000/v1 --ui-testing-omlx-api-key=365114 --ui-testing-omlx-model=gemma-4-e2b-it-4bit}"
 
 if [[ ! -d "${simulator_framework_path}" ]]; then
     cat >&2 <<EOF
@@ -27,8 +28,8 @@ xcodebuild \
     -scheme "${scheme}" \
     -destination "id=${simulator_id}" \
     -derivedDataPath "${derived_data_path}" \
-    "FRAMEWORK_SEARCH_PATHS=\$(SRCROOT)/.build/local-runtime/llama.xcframework/ios-arm64_x86_64-simulator \$(inherited)" \
-    "OTHER_SWIFT_FLAGS=\$(inherited) -F \$(SRCROOT)/.build/local-runtime/llama.xcframework/ios-arm64_x86_64-simulator" \
+    "FRAMEWORK_SEARCH_PATHS=${simulator_framework_path}/.. \$(inherited)" \
+    "OTHER_SWIFT_FLAGS=\$(inherited) -F ${simulator_framework_path}/.." \
     "OTHER_LDFLAGS=\$(inherited) -framework llama" \
     build
 

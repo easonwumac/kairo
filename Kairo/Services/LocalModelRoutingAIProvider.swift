@@ -1,5 +1,26 @@
 import Foundation
 
+private let kairoRouterLogFileURL: URL = {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent("KairoUITesting", isDirectory: true)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    return dir.appendingPathComponent("router.log")
+}()
+
+private func kairoRouterLog(_ message: String) {
+    let line = "[\(Date())] \(message)\n"
+    print("[KAIRO_ROUTER] \(message)")
+    fflush(stdout)
+    if let data = line.data(using: .utf8) {
+        if let fh = try? FileHandle(forUpdating: kairoRouterLogFileURL) {
+            _ = try? fh.seekToEnd()
+            try? fh.write(contentsOf: data)
+            try? fh.close()
+        } else {
+            try? data.write(to: kairoRouterLogFileURL, options: .atomic)
+        }
+    }
+}
+
 public struct LocalModelRoutingAIProvider: AIProvider {
     private let cloudProvider: any AIProvider
     private let localModelSettingsService: LocalModelSettingsService
@@ -37,6 +58,7 @@ public struct LocalModelRoutingAIProvider: AIProvider {
             localProvider: localProvider
         )
         let decision = router.decision(for: routedRequest, context: context)
+        kairoRouterLog("[ROUTER] decision=\(decision.route.rawValue) reason=\(decision.reason.rawValue) taskClass=\(String(describing: Self.taskClass(for: routedRequest))) localInstalled=\(context.localModelInstalled) runtimeAvail=\(context.localRuntimeAvailable) preference=\(context.preference.rawValue)")
         if decision.route == .unavailable {
             throw AIProviderError.localInferenceUnavailable(Self.unavailableMessage(status: status, decision: decision))
         }
