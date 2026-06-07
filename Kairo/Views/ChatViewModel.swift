@@ -2,6 +2,10 @@
 import Foundation
 import SwiftUI
 
+extension Notification.Name {
+    static let infoPageSaved = Notification.Name("KairoInfoPageSaved")
+}
+
 @MainActor
 public final class ChatViewModel: ObservableObject {
     @Published public private(set) var threads: [ChatThread] = []
@@ -44,6 +48,7 @@ public final class ChatViewModel: ObservableObject {
     private let shareImportAPI: any KairoShareImportAPI
     private let chatAPI: any KairoChatAPI
     private let actionAPI: any KairoActionAPI
+    private let infoPageStore: InfoPageStore?
     private let localModelSettingsService: LocalModelSettingsService?
     private let openAISettingsService: OpenAISettingsService?
     private let localModelChatRuntimeAvailable: Bool
@@ -58,6 +63,7 @@ public final class ChatViewModel: ObservableObject {
         self.shareImportAPI = dependencies.shareImportAPI
         self.chatAPI = dependencies.chatAPI
         self.actionAPI = dependencies.actionAPI
+        self.infoPageStore = dependencies.infoPageStore
         self.localModelSettingsService = dependencies.localModelSettingsService
         self.openAISettingsService = dependencies.openAISettingsService
         self.localModelChatRuntimeAvailable = dependencies.localModelChatRuntimeAvailable
@@ -324,6 +330,10 @@ public final class ChatViewModel: ObservableObject {
             )
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
             latestInferenceMetrics = response.inferenceMetrics
+
+            if let draft = response.infoPageDraft, draft.createInfoPage {
+                await saveInfoPageDraft(draft, after: assistantMessage.id)
+            }
             await persistCurrentThread()
             calendarReviewAction = firstCalendarActionFromLatestAssistantMessage()
             handoffReviewAction = firstHandoffActionFromLatestAssistantMessage()
@@ -339,6 +349,30 @@ public final class ChatViewModel: ObservableObject {
             await persistCurrentThread()
         }
         isLoading = false
+    }
+
+    private func saveInfoPageDraft(_ draft: InfoPageDraft, after messageID: UUID) async {
+        guard let store = infoPageStore else { return }
+        let page = draft.makeInfoPage()
+        do {
+            try await store.save(page)
+            let subcategoryNote = draft.candidateCategories?.first?.folderName ?? draft.folderName
+            let savedText: String
+            if let sub = subcategoryNote, !sub.isEmpty {
+                savedText = KairoL10n.string("chat.infoPage.savedWithSubcategory", page.title, page.category.rawValue, sub)
+            } else {
+                savedText = KairoL10n.string("chat.infoPage.saved", page.title, page.category.rawValue)
+            }
+            let infoMessage = ChatMessage(
+                role: .system,
+                text: savedText
+            )
+            currentThread.append(infoMessage, now: infoMessage.createdAt)
+            await persistCurrentThread()
+            NotificationCenter.default.post(name: .infoPageSaved, object: nil)
+        } catch {
+            errorMessage = KairoL10n.string("chat.infoPage.saveFailed", error.localizedDescription)
+        }
     }
 
     public func previewAction(_ action: AgentAction) {
@@ -514,12 +548,14 @@ public final class ChatViewModel: ObservableObject {
             .suffix(limit)
             .compactMap { message in
                 let text = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !text.isEmpty else { return nil }
+                let hasAttachment = !message.attachments.isEmpty
+                guard !text.isEmpty || hasAttachment else { return nil }
+                let turnText = text.isEmpty ? KairoL10n.string("chat.history.imagePlaceholder") : text
                 switch message.role {
                 case .user:
-                    return AIConversationTurn(role: .user, text: text)
+                    return AIConversationTurn(role: .user, text: turnText)
                 case .assistant:
-                    return AIConversationTurn(role: .assistant, text: text)
+                    return AIConversationTurn(role: .assistant, text: turnText)
                 case .system:
                     return nil
                 }
@@ -626,10 +662,7 @@ public final class ChatViewModel: ObservableObject {
     }
 
     private func composedMessageText(text: String, replyTarget: ChatMessage?, hasAttachments: Bool) -> String {
-        let fallback = hasAttachments
-            ? KairoL10n.string("chat.composer.fallback.reviewAttachments")
-            : KairoL10n.string("chat.composer.fallback.replySelected")
-        let body = text.isEmpty ? fallback : text
+        let body = text
         guard let replyTarget else {
             return body
         }

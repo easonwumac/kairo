@@ -32,7 +32,6 @@ struct ChatBubble: View {
                         Text(message.text)
                             .font(.callout)
                             .foregroundStyle(isUser ? .white : KairoDesign.ink)
-                            .textSelection(.enabled)
                             .lineSpacing(1)
                             .fixedSize(horizontal: false, vertical: true)
                     }

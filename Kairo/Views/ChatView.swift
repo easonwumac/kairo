@@ -14,21 +14,28 @@ public struct ChatView: View {
     private let actionDescriptorProvider: any AgentActionDescriptorProviding
     private let chromeActionRequest: ChatChromeActionRequest?
     private let openModelSettings: () -> Void
+    @Binding var rootChromeBackRequestID: Int
+    let usesRootChromeNavigation: Bool
     @State private var showToolPalette = false
-    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var captureStatusMessage: String?
     @State private var rawJSONPanelText: String?
+    @State private var showRawJSONPage: Bool = false
     @FocusState private var isComposerFocused: Bool
 
     public init(
         dependencies: ChatFeatureDependencies,
         chromeActionRequest: ChatChromeActionRequest? = nil,
-        openModelSettings: @escaping () -> Void = {}
+        openModelSettings: @escaping () -> Void = {},
+        rootChromeBackRequestID: Binding<Int> = .constant(0),
+        usesRootChromeNavigation: Bool = false
     ) {
         _viewModel = StateObject(wrappedValue: ChatViewModel(dependencies: dependencies))
         self.actionDescriptorProvider = dependencies.actionDescriptorProvider
         self.chromeActionRequest = chromeActionRequest
         self.openModelSettings = openModelSettings
+        _rootChromeBackRequestID = rootChromeBackRequestID
+        self.usesRootChromeNavigation = usesRootChromeNavigation
     }
 
     public init(environment: KairoEnvironment = .preview()) {
@@ -38,17 +45,47 @@ public struct ChatView: View {
     @ViewBuilder
     public var body: some View {
         #if os(iOS)
-        chatSurface
-        .task {
-            await viewModel.load()
-            await viewModel.importPendingShares()
+        ZStack {
+            chatSurface
+                .task {
+                    await viewModel.load()
+                    await viewModel.importPendingShares()
+                }
+                .onChange(of: chromeActionRequest) { _, request in
+                    handleChromeAction(request)
+                }
+                .onChange(of: selectedPhotoItems) { _, items in
+                    guard !items.isEmpty else { return }
+                    Task { await importPhotos(items) }
+                }
+
+            if showRawJSONPage, let text = rawJSONPanelText {
+                ChatRawJSONPage(rawJSON: text) {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+                        showRawJSONPage = false
+                    }
+                }
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+                .zIndex(100)
+            }
         }
-        .onChange(of: chromeActionRequest) { _, request in
-            handleChromeAction(request)
+        .sheet(item: $viewModel.pendingAction) { action in
+            ActionPreviewView(
+                action: action,
+                descriptorProvider: actionDescriptorProvider
+            ) {
+                Task { await viewModel.confirmPendingAction() }
+            } onCancel: {
+                viewModel.cancelPendingAction()
+            }
         }
-        .onChange(of: selectedPhotoItem) { _, item in
-            guard let item else { return }
-            Task { await importPhotoItem(item) }
+        .preference(key: RootChromePreferenceKey.self, value: rawJSONChromeContext)
+        .onChange(of: rootChromeBackRequestID) { _, _ in
+            if showRawJSONPage {
+                withAnimation(.snappy(duration: 0.2)) {
+                    showRawJSONPage = false
+                }
+            }
         }
         #else
         NavigationSplitView {
@@ -115,8 +152,9 @@ public struct ChatView: View {
                                     onCopy: copyToPasteboard,
                                     onReply: { viewModel.replyToMessage($0) },
                                     onShowRawJSON: { rawJSON in
+                                        rawJSONPanelText = rawJSON
                                         withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
-                                            rawJSONPanelText = rawJSON
+                                            showRawJSONPage = true
                                         }
                                     }
                                 )
@@ -237,25 +275,13 @@ public struct ChatView: View {
         .overlay(alignment: .top) {
             chatTopMistOverlay
         }
-        .overlay(alignment: .trailing) {
-            if let rawJSONPanelText {
-                ChatRawJSONSlidePanel(rawJSON: rawJSONPanelText) {
-                    withAnimation(.spring(response: 0.24, dampingFraction: 0.92)) {
-                        self.rawJSONPanelText = nil
-                    }
-                }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
-            }
-        }
-        .sheet(item: $viewModel.pendingAction) { action in
-            ActionPreviewView(
-                action: action,
-                descriptorProvider: actionDescriptorProvider
-            ) {
-                Task { await viewModel.confirmPendingAction() }
-            } onCancel: {
-                viewModel.cancelPendingAction()
-            }
+    }
+
+    private var rawJSONChromeContext: RootChromeContext {
+        if showRawJSONPage {
+            RootChromeContext(leadingAction: .back, title: KairoL10n.string("chat.message.rawJSON"))
+        } else {
+            .standard
         }
     }
 
@@ -481,11 +507,21 @@ public struct ChatView: View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
                 #if canImport(PhotosUI)
-                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                    captureButtonLabel(
-                        title: KairoL10n.string("chat.capture.photoLibrary"),
-                        systemImage: "photo.on.rectangle"
-                    )
+                PhotosPicker(selection: $selectedPhotoItems, maxSelectionCount: 6, matching: .images) {
+                    HStack(spacing: 6) {
+                        captureButtonLabel(
+                            title: KairoL10n.string("chat.capture.photoLibrary"),
+                            systemImage: "photo.on.rectangle"
+                        )
+                        if !selectedPhotoItems.isEmpty {
+                            Text("\(selectedPhotoItems.count)")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(KairoDesign.blue)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(KairoDesign.blue.opacity(0.12), in: Capsule())
+                        }
+                    }
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("chat.capture.photo-library")
@@ -539,46 +575,45 @@ public struct ChatView: View {
         #endif
     }
 
-    private func importPhotoItem(_ item: PhotosPickerItem) async {
+    private func importPhotos(_ items: [PhotosPickerItem]) async {
         #if canImport(PhotosUI)
-        do {
-            guard let data = try await item.loadTransferable(type: Data.self) else {
+        var attachments: [ChatAttachment] = []
+        for item in items {
+            do {
+                guard let data = try await item.loadTransferable(type: Data.self) else { continue }
+                let normalizedData = Self.normalizedImageDataForAIAnalysis(from: data)
+                let fileURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("kairo-photo-\(UUID().uuidString).jpg")
+                try normalizedData.write(to: fileURL, options: .atomic)
+                let visionReference = await AttachmentVisionAnalyzer.reference(from: normalizedData)
+                let attachment = ChatAttachment(
+                    kind: .image,
+                    displayName: fileURL.lastPathComponent,
+                    uniformTypeIdentifier: "public.jpeg",
+                    fileURL: fileURL,
+                    byteCount: Int64(normalizedData.count),
+                    textPreview: visionReference.promptPreview.map {
+                        KairoL10n.string("chat.capture.photoVisionTextPreview", $0)
+                    } ?? KairoL10n.string("chat.capture.photoTextPreview"),
+                    source: .photoPicker
+                )
+                attachments.append(attachment)
+            } catch {
                 await MainActor.run {
                     captureStatusMessage = KairoL10n.string("chat.capture.photoImportFailed")
-                    selectedPhotoItem = nil
                 }
-                return
-            }
-            let normalizedData = Self.normalizedImageDataForAIAnalysis(from: data)
-            let fileURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("kairo-photo-\(UUID().uuidString).jpg")
-            try normalizedData.write(to: fileURL, options: .atomic)
-            let visionReference = await AttachmentVisionAnalyzer.reference(from: normalizedData)
-            let attachment = ChatAttachment(
-                kind: .image,
-                displayName: fileURL.lastPathComponent,
-                uniformTypeIdentifier: "public.jpeg",
-                fileURL: fileURL,
-                byteCount: Int64(normalizedData.count),
-                textPreview: visionReference.promptPreview.map {
-                    KairoL10n.string("chat.capture.photoVisionTextPreview", $0)
-                } ?? KairoL10n.string("chat.capture.photoTextPreview"),
-                source: .photoPicker
-            )
-            await MainActor.run {
-                viewModel.addAttachment(attachment)
-                captureStatusMessage = nil
-                showToolPalette = false
-                selectedPhotoItem = nil
-            }
-        } catch {
-            await MainActor.run {
-                captureStatusMessage = KairoL10n.string("chat.capture.photoImportFailed")
-                selectedPhotoItem = nil
             }
         }
+        await MainActor.run {
+            for attachment in attachments {
+                viewModel.addAttachment(attachment)
+            }
+            captureStatusMessage = nil
+            showToolPalette = false
+            selectedPhotoItems = []
+        }
         #else
-        _ = item
+        _ = items
         #endif
     }
 
@@ -646,6 +681,7 @@ private struct AttachmentTray: View {
                         Image(systemName: iconName(for: attachment.kind))
                         Text(attachment.displayName)
                             .lineLimit(1)
+                            .truncationMode(.middle)
                         Button {
                             remove(attachment.id)
                         } label: {
@@ -658,6 +694,7 @@ private struct AttachmentTray: View {
                     .foregroundStyle(KairoDesign.ink)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
+                    .frame(maxWidth: 220)
                     .background(KairoDesign.elevatedSurface.opacity(0.68), in: Capsule())
                     .overlay {
                         Capsule()
@@ -671,63 +708,245 @@ private struct AttachmentTray: View {
     }
 }
 
-private struct ChatRawJSONSlidePanel: View {
+private struct ChatRawJSONPage: View {
     let rawJSON: String
     let close: () -> Void
 
     var body: some View {
-        GeometryReader { proxy in
-            HStack(spacing: 0) {
-                Color.black.opacity(0.20)
-                    .ignoresSafeArea()
-                    .onTapGesture(perform: close)
+        InfoPageJSONView(json: rawJSON)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(KairoDesign.background)
+    }
+}
 
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 10) {
-                        Button(action: close) {
-                            Image(systemName: "chevron.right")
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(KairoDesign.ink)
-                                .frame(width: 34, height: 34)
-                                .background(KairoDesign.softSurface.opacity(0.68), in: Circle())
+private struct InfoPageJSONView: View {
+    let json: String
+
+    private struct ParsedInfo {
+        var title: String = ""
+        var category: String = ""
+        var summary: String = ""
+        var assetDescription: String = ""
+        var ocrSummary: String = ""
+        var keywords: [String] = []
+        var candidateCategories: [(folder: String, reason: String)] = []
+        var facts: [(label: String, value: String)] = []
+        var confidence: Double = 0
+    }
+
+    private var info: ParsedInfo {
+        guard let data = json.data(using: .utf8),
+              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return ParsedInfo() }
+        var result = ParsedInfo()
+        result.title = dict["title"] as? String ?? ""
+        result.category = dict["category"] as? String ?? ""
+        result.summary = dict["summary"] as? String ?? ""
+        result.assetDescription = dict["assetDescription"] as? String ?? ""
+        result.ocrSummary = dict["ocrSummary"] as? String ?? ""
+        result.keywords = dict["keywords"] as? [String] ?? []
+        result.confidence = dict["confidence"] as? Double ?? 0
+        if let facts = dict["facts"] as? [[String: Any]] {
+            result.facts = facts.compactMap {
+                guard let label = $0["label"] as? String, let value = $0["value"] as? String else { return nil }
+                return (label, value)
+            }
+        }
+        if let cats = dict["candidateCategories"] as? [[String: Any]] {
+            result.candidateCategories = cats.compactMap {
+                guard let folder = $0["folderName"] as? String, let reason = $0["reason"] as? String else { return nil }
+                return (folder, reason)
+            }
+        }
+        return result
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if !info.title.isEmpty {
+                    infoField(label: "Title", value: info.title)
+                }
+
+                HStack(spacing: 10) {
+                    if !info.category.isEmpty {
+                        infoPill(info.category, tint: .blue)
+                    }
+                    if info.confidence > 0 {
+                        infoPill(String(format: "%.0f%%", info.confidence * 100), tint: .green)
+                    }
+                }
+
+                if !info.summary.isEmpty {
+                    infoField(label: "Summary", value: info.summary)
+                }
+
+                if !info.assetDescription.isEmpty {
+                    infoField(label: "Description", value: info.assetDescription)
+                }
+
+                if !info.ocrSummary.isEmpty {
+                    infoField(label: "OCR", value: info.ocrSummary)
+                }
+
+                if !info.keywords.isEmpty {
+                    infoSection("Keywords") {
+                        InfoPageKeywordTags(keywords: info.keywords)
+                    }
+                }
+
+                if !info.candidateCategories.isEmpty {
+                    infoSection("Categories") {
+                        ForEach(info.candidateCategories.indices, id: \.self) { i in
+                            let cat = info.candidateCategories[i]
+                            HStack(spacing: 6) {
+                                infoPill(cat.folder, tint: .orange)
+                                Text(cat.reason)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(KairoL10n.string("root.back"))
-
-                        Text(KairoL10n.string("chat.message.rawJSON"))
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(KairoDesign.ink)
-
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.top, 12)
-
-                    ScrollView {
-                        Text(rawJSON)
-                            .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(KairoDesign.ink)
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(13)
-                            .background(KairoDesign.softSurface.opacity(0.62), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .padding(.horizontal, 14)
-                            .padding(.bottom, 18)
                     }
                 }
-                .frame(width: min(proxy.size.width * 0.90, 390))
-                .frame(maxHeight: .infinity)
-                .background(.ultraThinMaterial)
-                .overlay(alignment: .leading) {
-                    Rectangle()
-                        .fill(Color.white.opacity(0.10))
-                        .frame(width: 1)
+
+                if !info.facts.isEmpty {
+                    infoSection("Facts") {
+                        ForEach(info.facts.indices, id: \.self) { i in
+                            let fact = info.facts[i]
+                            HStack(spacing: 6) {
+                                Text(fact.label)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                Text(fact.value)
+                                    .font(.caption)
+                                    .foregroundStyle(KairoDesign.ink)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(KairoDesign.softSurface.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
                 }
-                .accessibilityIdentifier("chat.message.raw-json.panel")
+
+                Divider()
+
+                Text(KairoL10n.string("chat.message.rawJSON"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Text(json)
+                    .font(.system(.caption2, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .padding(10)
+                    .background(KairoDesign.softSurface.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
+            }
+        }
+    }
+
+    private func infoSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+            content()
+        }
+    }
+
+    private func infoField(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+            Text(value)
+                .font(.subheadline)
+                .foregroundStyle(KairoDesign.ink)
+        }
+    }
+
+    private func infoPill(_ text: String, tint: Color) -> some View {
+        Text(text)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(tint.opacity(0.12), in: Capsule())
+    }
+}
+
+private struct InfoPageKeywordTags: View {
+    let keywords: [String]
+
+    var body: some View {
+        FlowLayout(spacing: 6) {
+            ForEach(keywords, id: \.self) { keyword in
+                Text(keyword)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(KairoDesign.teal)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(KairoDesign.teal.opacity(0.10), in: Capsule())
             }
         }
     }
 }
+
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = arrange(proposal: proposal, subviews: subviews)
+        let height = rows.last?.maxY ?? 0
+        return CGSize(width: proposal.width ?? 0, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rows = arrange(proposal: proposal, subviews: subviews)
+        for row in rows {
+            for item in row.items {
+                subviews[item.index].place(
+                    at: CGPoint(x: bounds.minX + item.x, y: bounds.minY + row.y),
+                    proposal: .unspecified
+                )
+            }
+        }
+    }
+
+    private struct RowItem { var index: Int; var x: CGFloat }
+    private struct Row { var items: [RowItem]; var maxY: CGFloat; var y: CGFloat }
+
+    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> [Row] {
+        let maxWidth = proposal.width ?? 0
+        var rows: [Row] = []
+        var currentRow: [RowItem] = []
+        var currentX: CGFloat = 0
+        var currentY: CGFloat = 0
+
+        for (index, subview) in subviews.enumerated() {
+            let size = subview.sizeThatFits(.unspecified)
+            if !currentRow.isEmpty, currentX + spacing + size.width > maxWidth {
+                let rowHeight = currentRow.map { _ in size.height }.max() ?? size.height
+                rows.append(Row(items: currentRow, maxY: currentY + rowHeight, y: currentY))
+                currentRow = []
+                currentX = 0
+                currentY += rowHeight + spacing
+            }
+            currentRow.append(RowItem(index: index, x: currentX))
+            currentX += size.width + spacing
+        }
+        if !currentRow.isEmpty {
+            let size = subviews.last?.sizeThatFits(.unspecified) ?? .zero
+            rows.append(Row(items: currentRow, maxY: currentY + size.height, y: currentY))
+        }
+        return rows
+    }
+}
+
+
 
 private struct AttachmentStrip: View {
     let attachments: [ChatAttachment]
