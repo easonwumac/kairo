@@ -49,9 +49,20 @@ public struct KairoUITestingStoreFactory: Sendable {
             ]))
         }
 
+        let knowledgeAssetStore: any KnowledgeAssetStore
+        do {
+            knowledgeAssetStore = try await JSONFileKnowledgeAssetStore(
+                fileURL: rootDirectory
+                    .appendingPathComponent("KnowledgeAssets", isDirectory: true)
+                    .appendingPathComponent("knowledge-assets.json")
+            )
+        } catch {
+            knowledgeAssetStore = InMemoryKnowledgeAssetStore()
+        }
+
         return KairoUITestingStoreComponents(
             memoryStore: InMemoryMemoryStore(),
-            knowledgeAssetStore: InMemoryKnowledgeAssetStore(),
+            knowledgeAssetStore: knowledgeAssetStore,
             auditLogger: InMemoryAuditLogger(),
             chatHistoryStore: chatHistoryStore,
             shareIngestionQueue: KairoUITestingShareImportFactory(

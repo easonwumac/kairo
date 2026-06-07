@@ -53,9 +53,12 @@ public final class ChatViewModel: ObservableObject {
     private let openAISettingsService: OpenAISettingsService?
     private let localModelChatRuntimeAvailable: Bool
     private let threadCompactor: (any ChatThreadCompacting)?
+    private let knowledgeAssetAPI: (any KairoKnowledgeAssetAPI)?
+    private let chatAttachmentRootDirectory: URL?
     private var pendingActionSource: PendingActionSource?
     private var importedShareItemIDs: [UUID] = []
     private var inferenceProgressTask: Task<Void, Never>?
+    private var lastTurnAssetIDs: [UUID] = []
 
     public init(
         dependencies: ChatFeatureDependencies
@@ -69,6 +72,8 @@ public final class ChatViewModel: ObservableObject {
         self.openAISettingsService = dependencies.openAISettingsService
         self.localModelChatRuntimeAvailable = dependencies.localModelChatRuntimeAvailable
         self.threadCompactor = dependencies.threadCompactor
+        self.knowledgeAssetAPI = dependencies.knowledgeAssetAPI
+        self.chatAttachmentRootDirectory = dependencies.chatAttachmentRootDirectory
         self.currentThread = ChatThread(messages: [Self.welcomeMessage])
         self.providerRouteStatus = ChatProviderRouteStatusBuilder.build(from: nil)
     }
@@ -307,9 +312,11 @@ public final class ChatViewModel: ObservableObject {
     public func send(_ text: String, attachments: [ChatAttachment] = []) async {
         clearTransientActionState()
         await compactCurrentThreadIfNeeded(forPendingUserText: text)
-        let userMessage = ChatMessage(role: .user, text: text, attachments: attachments)
+        let persistedAttachments = await persistAttachmentsAsKnowledgeAssets(attachments, userText: text)
+        let userMessage = ChatMessage(role: .user, text: text, attachments: persistedAttachments.attachments)
         currentThread.append(userMessage, now: userMessage.createdAt)
         await persistCurrentThread()
+        lastTurnAssetIDs = persistedAttachments.assetIDs
 
         isLoading = true
         latestInferenceMetrics = AIInferenceMetrics(stage: .preparingInput)
@@ -317,7 +324,7 @@ public final class ChatViewModel: ObservableObject {
         do {
             let response = try await chatAPI.respond(
                 to: text,
-                attachments: attachments,
+                attachments: persistedAttachments.attachments,
                 conversationID: runtimeConversationID(),
                 conversationHistory: localConversationHistory(),
                 privacyMode: privacyMode
@@ -355,13 +362,18 @@ public final class ChatViewModel: ObservableObject {
             await persistCurrentThread()
         }
         isLoading = false
+        lastTurnAssetIDs = []
     }
 
     private func saveInfoPageDraft(_ draft: InfoPageDraft, after messageID: UUID) async {
         guard let store = infoPageStore else { return }
-        let page = draft.makeInfoPage()
+        var page = draft.makeInfoPage()
+        if page.assetIDs.isEmpty {
+            page.assetIDs = lastTurnAssetIDs
+        }
         do {
             try await store.save(page)
+            await backfillAssetLinks(infoPageID: page.id, assetIDs: page.assetIDs)
             let subcategoryNote = draft.candidateCategories?.first?.folderName ?? draft.folderName
             let savedText: String
             if let sub = subcategoryNote, !sub.isEmpty {
@@ -379,6 +391,101 @@ public final class ChatViewModel: ObservableObject {
         } catch {
             errorMessage = KairoL10n.string("chat.infoPage.saveFailed", error.localizedDescription)
         }
+    }
+
+    private func backfillAssetLinks(infoPageID: UUID, assetIDs: [UUID]) async {
+        guard let api = knowledgeAssetAPI, !assetIDs.isEmpty else { return }
+        do {
+            let allAssets = try await api.list(limit: 200)
+            let wanted = Set(assetIDs)
+            for var asset in allAssets where wanted.contains(asset.id) {
+                if !asset.linkedInfoPageIDs.contains(infoPageID) {
+                    asset.linkedInfoPageIDs.append(infoPageID)
+                    asset.updatedAt = Date()
+                    try await api.save(asset)
+                }
+            }
+        } catch {
+            // Non-fatal: detail view can still render via existing assetIDs.
+        }
+    }
+
+    private struct PersistedAttachmentResult {
+        var attachments: [ChatAttachment]
+        var assetIDs: [UUID]
+    }
+
+    private func persistAttachmentsAsKnowledgeAssets(
+        _ attachments: [ChatAttachment],
+        userText: String
+    ) async -> PersistedAttachmentResult {
+        guard let api = knowledgeAssetAPI, !attachments.isEmpty else {
+            return PersistedAttachmentResult(attachments: attachments, assetIDs: [])
+        }
+        var resultAttachments: [ChatAttachment] = []
+        var assetIDs: [UUID] = []
+        for original in attachments {
+            guard original.kind == .image else {
+                resultAttachments.append(original)
+                continue
+            }
+            guard let stableURL = copyToPersistentLocation(original.fileURL) else {
+                resultAttachments.append(original)
+                continue
+            }
+            var stableAttachment = original
+            stableAttachment.fileURL = stableURL
+            resultAttachments.append(stableAttachment)
+            let title = trimmedTitle(from: userText) ?? defaultImageTitle()
+            let asset = KnowledgeAsset(
+                title: title,
+                kind: .image,
+                source: .chat,
+                attachments: [stableAttachment],
+                extractedText: original.textPreview ?? "",
+                summary: trimmedTitle(from: userText) ?? ""
+            )
+            do {
+                try await api.save(asset)
+                assetIDs.append(asset.id)
+            } catch {
+                // Best effort: keep going if a single save fails.
+            }
+        }
+        return PersistedAttachmentResult(attachments: resultAttachments, assetIDs: assetIDs)
+    }
+
+    private func copyToPersistentLocation(_ source: URL?) -> URL? {
+        guard let source else { return nil }
+        guard let rootDirectory = chatAttachmentRootDirectory else { return source }
+        let destinationDirectory = rootDirectory
+        let destination = destinationDirectory.appendingPathComponent(
+            "\(UUID().uuidString)-\(source.lastPathComponent)"
+        )
+        do {
+            try FileManager.default.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
+            if source.path == destination.path { return source }
+            if FileManager.default.fileExists(atPath: destination.path) {
+                try FileManager.default.removeItem(at: destination)
+            }
+            try FileManager.default.copyItem(at: source, to: destination)
+            return destination
+        } catch {
+            return source
+        }
+    }
+
+    private func trimmedTitle(from text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return String(trimmed.prefix(80))
+    }
+
+    private func defaultImageTitle() -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return KairoL10n.string("chat.attachment.image.defaultTitle", formatter.string(from: Date()))
     }
 
     public func previewAction(_ action: AgentAction) {

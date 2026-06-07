@@ -12,6 +12,8 @@ public struct ChatFeatureDependencies {
     public var localModelChatRuntimeAvailable: Bool
     public var actionDescriptorProvider: any AgentActionDescriptorProviding
     public var threadCompactor: (any ChatThreadCompacting)?
+    public var knowledgeAssetAPI: (any KairoKnowledgeAssetAPI)?
+    public var chatAttachmentRootDirectory: URL?
 
     public init(
         historyStore: any ChatHistoryStore,
@@ -23,7 +25,9 @@ public struct ChatFeatureDependencies {
         openAISettingsService: OpenAISettingsService? = nil,
         localModelChatRuntimeAvailable: Bool = false,
         actionDescriptorProvider: any AgentActionDescriptorProviding = BuiltInPhoneToolActionDescriptorProvider(),
-        threadCompactor: (any ChatThreadCompacting)? = nil
+        threadCompactor: (any ChatThreadCompacting)? = nil,
+        knowledgeAssetAPI: (any KairoKnowledgeAssetAPI)? = nil,
+        chatAttachmentRootDirectory: URL? = nil
     ) {
         self.historyStore = historyStore
         self.shareImportAPI = shareImportAPI
@@ -35,6 +39,8 @@ public struct ChatFeatureDependencies {
         self.localModelChatRuntimeAvailable = localModelChatRuntimeAvailable
         self.actionDescriptorProvider = actionDescriptorProvider
         self.threadCompactor = threadCompactor
+        self.knowledgeAssetAPI = knowledgeAssetAPI
+        self.chatAttachmentRootDirectory = chatAttachmentRootDirectory
     }
 }
 
@@ -168,19 +174,16 @@ public extension KairoEnvironment {
             localModelChatRuntimeAvailable: localModelChatRuntimeAvailable
         )
         deps.threadCompactor = DefaultChatThreadCompactor(summarizer: aiProvider)
+        deps.knowledgeAssetAPI = backendAPI.knowledgeAssets
+        deps.chatAttachmentRootDirectory = chatAttachmentsDirectory
         return deps
     }
 
     var sharedInfoPageStore: InfoPageStore {
-        if let store = Self._infoPageStoreCache {
-            return store
-        }
-        let store = InMemoryInfoPageStore()
-        Self._infoPageStoreCache = store
-        return store
+        injectedInfoPageStore ?? Self.fallbackInMemoryInfoPageStore
     }
 
-    private static var _infoPageStoreCache: InMemoryInfoPageStore?
+    private static let fallbackInMemoryInfoPageStore: InfoPageStore = InMemoryInfoPageStore()
 
     var infoPageStore: InfoPageStore {
         sharedInfoPageStore

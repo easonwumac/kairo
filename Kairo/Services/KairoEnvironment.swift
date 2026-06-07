@@ -47,6 +47,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public let capabilityToolPolicyStore: any CapabilityToolPolicyStoring
     public let actionSafetyPolicy: any ActionSafetyPolicyEvaluating
     public let shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol
+    public let injectedInfoPageStore: InfoPageStore?
+    public let chatAttachmentsDirectory: URL?
 
     public init(
         memoryStore: MemoryStore,
@@ -78,7 +80,9 @@ public struct KairoEnvironment: KairoBackendDependencies {
         capabilityRegistry: any CapabilityRegistryProviding = CapabilityRegistry(),
         capabilityToolPolicyStore: any CapabilityToolPolicyStoring = InMemoryCapabilityToolPolicyStore(),
         actionSafetyPolicy: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine(),
-        shortcutDemoRecipeRunner: (any ShortcutDemoRecipeRunnerProtocol)? = nil
+        shortcutDemoRecipeRunner: (any ShortcutDemoRecipeRunnerProtocol)? = nil,
+        injectedInfoPageStore: InfoPageStore? = nil,
+        chatAttachmentsDirectory: URL? = nil
     ) {
         self.memoryStore = memoryStore
         self.knowledgeAssetStore = knowledgeAssetStore
@@ -119,6 +123,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
             ),
             appIntegrationSkillCatalog: appIntegrationSkillCatalog
         )
+        self.injectedInfoPageStore = injectedInfoPageStore
+        self.chatAttachmentsDirectory = chatAttachmentsDirectory
     }
 
     public static func preview() -> KairoEnvironment {

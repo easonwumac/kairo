@@ -69,6 +69,17 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
         ).makeComponents()
         let credentialStore = InMemoryCredentialStore()
 
+        let knowledgeAssetsDir = rootDirectory.appendingPathComponent("KnowledgeAssets", isDirectory: true)
+        let infoPageStore: InfoPageStore
+        do {
+            infoPageStore = try await JSONFileInfoPageStore(
+                fileURL: knowledgeAssetsDir.appendingPathComponent("info-pages.json")
+            )
+        } catch {
+            infoPageStore = InMemoryInfoPageStore()
+        }
+        let chatAttachmentsDirectory = knowledgeAssetsDir.appendingPathComponent("ChatAttachments", isDirectory: true)
+
         return KairoEnvironment(
             memoryStore: storeComponents.memoryStore,
             knowledgeAssetStore: storeComponents.knowledgeAssetStore,
@@ -92,7 +103,9 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
             actionExecutor: KairoUITestingActionFactory(
                 memoryStore: storeComponents.memoryStore,
                 auditLogger: storeComponents.auditLogger
-            ).makeActionExecutor()
+            ).makeActionExecutor(),
+            injectedInfoPageStore: infoPageStore,
+            chatAttachmentsDirectory: chatAttachmentsDirectory
         )
     }
 }
