@@ -6,6 +6,31 @@ import llama
 import Darwin
 #endif
 
+private let kairoLogFileURL: URL = {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent("KairoUITesting", isDirectory: true)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    return dir.appendingPathComponent("llama-runtime.log")
+}()
+
+private let kairoLogQueue = DispatchQueue(label: "app.kairo.ios.llama-log")
+
+private func kairoLog(_ message: String) {
+    let line = "[\(Date())] \(message)\n"
+    print("[KAIRO_LLAMA] \(message)")
+    fflush(stdout)
+    kairoLogQueue.async {
+        if let data = line.data(using: .utf8) {
+            if let fh = try? FileHandle(forUpdating: kairoLogFileURL) {
+                _ = try? fh.seekToEnd()
+                try? fh.write(contentsOf: data)
+                try? fh.close()
+            } else {
+                try? data.write(to: kairoLogFileURL, options: .atomic)
+            }
+        }
+    }
+}
+
 enum LlamaCppRuntimeError: LocalizedError {
     case couldNotLoadModel(String)
     case couldNotCreateContext
@@ -67,27 +92,47 @@ actor LlamaCppSession {
     private var pendingUTF8Bytes: [CChar] = []
 
     init(modelPath: String, contextLength: UInt32 = 4_096, temperature: Double = 0.2) throws {
+        let loadStart = CFAbsoluteTimeGetCurrent()
+        kairoLog("[LLAMA_INIT] modelPath=\(modelPath) contextLength=\(contextLength) temperature=\(temperature)")
+        
+        let fileSize: Int64
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: modelPath) {
+            fileSize = (attrs[.size] as? Int64) ?? 0
+            kairoLog("[LLAMA_INIT] modelFileSize=\(String(format: "%.1f", Double(fileSize) / 1_073_741_824)) GB")
+        } else {
+            fileSize = 0
+            kairoLog("[LLAMA_INIT] cannot stat model file at \(modelPath)")
+        }
+        
         llama_backend_init()
         var modelParameters = llama_model_default_params()
         #if targetEnvironment(simulator)
         modelParameters.n_gpu_layers = 0
+        kairoLog("[LLAMA_INIT] simulator: n_gpu_layers=0 (CPU-only, MTLSimDriver unsupported for GGML)")
         #endif
         guard let loadedModel = llama_model_load_from_file(modelPath, modelParameters) else {
+            kairoLog("[LLAMA_INIT] FAILED to load model from \(modelPath)")
             throw LlamaCppRuntimeError.couldNotLoadModel(modelPath)
         }
         model = loadedModel
+        let loadDuration = (CFAbsoluteTimeGetCurrent() - loadStart) * 1000
+        kairoLog("[LLAMA_INIT] model loaded in \(String(format: "%.0f", loadDuration)) ms")
 
         var contextParameters = llama_context_default_params()
         let threadCount = max(1, min(8, ProcessInfo.processInfo.processorCount - 2))
         contextParameters.n_ctx = contextLength
         contextParameters.n_threads = Int32(threadCount)
         contextParameters.n_threads_batch = Int32(threadCount)
+        let ctxStart = CFAbsoluteTimeGetCurrent()
         guard let loadedContext = llama_init_from_model(model, contextParameters) else {
             llama_model_free(model)
             llama_backend_free()
+            kairoLog("[LLAMA_INIT] FAILED to create context")
             throw LlamaCppRuntimeError.couldNotCreateContext
         }
         context = loadedContext
+        let ctxDuration = (CFAbsoluteTimeGetCurrent() - ctxStart) * 1000
+        kairoLog("[LLAMA_INIT] context created in \(String(format: "%.0f", ctxDuration)) ms threads=\(threadCount) ctxLen=\(contextLength)")
         vocab = llama_model_get_vocab(model)
         batch = llama_batch_init(Int32(Self.batchTokenCapacity), 0, 0)
         batch.n_seq_id = nil
@@ -132,10 +177,13 @@ actor LlamaCppSession {
 
         let promptTokens = tokenize(text: prompt, addBOS: addBOS)
         guard !promptTokens.isEmpty else {
+            kairoLog("[LLAMA_GEN] could not tokenize prompt, promptLen=\(prompt.count)")
             throw LlamaCppRuntimeError.couldNotTokenizePrompt
         }
+        kairoLog("[LLAMA_GEN] promptLen=\(prompt.count) promptTokens=\(promptTokens.count) maxTokens=\(maxTokens) resetContext=\(resetContext)")
         let contextSize = llama_n_ctx(context)
         guard Int(position) + promptTokens.count + Int(maxTokens) <= Int(contextSize) else {
+            kairoLog("[LLAMA_GEN] prompt too large: position=\(self.position) promptTokens=\(promptTokens.count) maxTokens=\(maxTokens) ctxSize=\(contextSize)")
             throw LlamaCppRuntimeError.promptTooLarge
         }
 
@@ -247,6 +295,11 @@ actor LlamaCppSession {
             generationTokensPerSecond: Double(generatedTokens) / generationElapsed,
             promptSecondsRemaining: 0
         ))
+        let totalDuration = (CFAbsoluteTimeGetCurrent() - startedAt.timeIntervalSinceReferenceDate) * 1000
+        let genTPS = Double(generatedTokens) / generationElapsed
+        kairoLog("[LLAMA_GEN] done: promptTokens=\(promptTokens.count) generatedTokens=\(generatedTokens) promptTPS=\(String(format: "%.1f", promptTokensPerSecond)) genTPS=\(String(format: "%.1f", genTPS)) firstTokenMS=\(firstTokenLatencyMS.map { String(format: "%.0f", $0) } ?? "nil") totalMS=\(String(format: "%.0f", totalDuration))")
+        let responsePreview = String(trimmed.prefix(120))
+        kairoLog("[LLAMA_GEN] response=\(responsePreview)")
         return (
             trimmed,
             promptTokens.count,

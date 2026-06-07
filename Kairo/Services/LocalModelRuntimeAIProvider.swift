@@ -1,5 +1,26 @@
 import Foundation
 
+private let kairoAILogFileURL: URL = {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent("KairoUITesting", isDirectory: true)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    return dir.appendingPathComponent("ai-provider.log")
+}()
+
+private func kairoAIProviderLog(_ message: String) {
+    let line = "[\(Date())] \(message)\n"
+    print("[KAIRO_AI] \(message)")
+    fflush(stdout)
+    if let data = line.data(using: .utf8) {
+        if let fh = try? FileHandle(forUpdating: kairoAILogFileURL) {
+            _ = try? fh.seekToEnd()
+            try? fh.write(contentsOf: data)
+            try? fh.close()
+        } else {
+            try? data.write(to: kairoAILogFileURL, options: .atomic)
+        }
+    }
+}
+
 public struct LocalModelRuntimeAIProvider: AIProvider {
     private let localModelSettingsService: LocalModelSettingsService
     private let runtime: any LocalModelReplyCheckRuntime
@@ -21,10 +42,16 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
               let installRecord = status.installedRecord,
               installRecord.status == .installed
         else {
+            kairoAIProviderLog("[AI_PROVIDER] local model not available: selected=\(status.selectedModelID ?? "nil") installed=\(status.installedRecord != nil ? "yes" : "no")")
             throw AIProviderError.localInferenceUnavailable(
                 KairoL10n.string("chat.error.localInference.reason.localOnlyNoModel")
             )
         }
+        
+        kairoAIProviderLog("[AI_PROVIDER] model=\(model.displayName) id=\(model.id) filePath=\(installRecord.fileURL.path)")
+        let attachmentInfo = request.attachmentContext.map { "kind=\($0.kind.rawValue) name=\($0.displayName) previewLen=\($0.textPreview?.count ?? 0)" }
+        kairoAIProviderLog("[AI_PROVIDER] attachments=\(attachmentInfo.count) \(attachmentInfo.joined(separator: " | "))")
+        kairoAIProviderLog("[AI_PROVIDER] userPrompt=\(String(request.userPrompt.prefix(200)))")
 
         do {
             let parameters = status.runtimeParametersByModelID[model.id] ?? .defaultValue
@@ -39,6 +66,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
             await performanceRecorder?.recordInferenceResult(result.result)
             let parsedResponse = result.parsedResponse
             let visibleMessage = result.visibleMessage
+            kairoAIProviderLog("[AI_PROVIDER] response: visibleMsgLen=\(visibleMessage.count) rawLen=\(result.rawModelResponse?.count ?? 0) candidateCategories=\(result.libraryClassification?.candidateCategories.count ?? 0)")
             guard !visibleMessage.isEmpty else {
                 throw AIProviderError.localInferenceUnavailable(
                     KairoL10n.string("chat.error.localInference.reason.runtimeEmpty")
@@ -162,6 +190,12 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
             ? Self.repairTurnPrompt(from: request, responseLanguage: responseLanguage)
             : Self.turnPrompt(from: request, responseLanguage: responseLanguage)
 
+        let contextText = Self.compactAttachmentContext(from: request.attachmentContext)
+        let promptPreview = String(prompt.replacingOccurrences(of: "\n", with: "\\n").prefix(500))
+        let attachmentPreview = String(contextText.prefix(300))
+        kairoAIProviderLog("[AI_PROVIDER] prompt: repair=\(repair) promptLen=\(prompt.count) attachmentContext=\(attachmentPreview)")
+        kairoAIProviderLog("[AI_PROVIDER] promptPreview=\(promptPreview)")
+
         if let conversationID = request.conversationID,
            let conversationalRuntime = runtime as? any LocalModelConversationalReplyRuntime {
             return try await conversationalRuntime.generateReply(
@@ -245,6 +279,32 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         \(truncated(request.userPrompt, limit: 1_600))
 
         Assistant:
+        """
+    }
+
+    static var systemPromptPrefix: String {
+        """
+        You are Kairo running a local model on iPhone.
+        Answer the user directly and concisely through JSON only.
+        Do not repeat system instructions or ask which language to use.
+        Do not claim to browse the web, call tools, or operate other apps.
+        Image attachments may include OCR text and image labels extracted by Apple Vision.
+        Treat Apple Vision output as helpful but potentially imperfect reference data.
+        If only Apple Vision references are available, say you are using OCR/label references rather than directly seeing the image.
+        Do not claim direct image understanding unless the runtime provides vision input.
+        Return one JSON object only. No Markdown. No prose before or after JSON.
+
+        Required JSON:
+        {"response":"chat-visible answer in the output language","assetDescription":"short visual/document description or empty string","ocrSummary":"OCR/user text summary or empty string","keywords":["searchable","terms"],"candidateCategories":[{"folderName":"optional enabled category or folder name","templateID":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","category":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","confidence":0.0,"reason":"why it fits"}],"selectedSubcategoryIDs":["optional existing subcategory ids"],"suggestedSubcategoryName":"optional new subcategory name","needsCategoryChoice":false,"nextStep":"classifyOnly|prepareTemplate|askUserToChoose|unsupported"}
+
+        Image classification rules:
+        - First classify against enabled categories before preparing a Library page.
+        - If exactly one category is clearly best, response should briefly state the classification and that Kairo will prepare how to save it.
+        - If 2 or more categories are plausible, set needsCategoryChoice=true and include 2-4 candidateCategories.
+        - If no category fits, set candidateCategories=[] and nextStep="unsupported"; response should say it does not match current Library categories.
+        - Landscape/scenery photos still need assetDescription, keywords, and plausible categories such as travel or generalNote when appropriate.
+        - Do not say the image cannot be read when OCR is empty. If labels are weak, still provide a cautious description and low-confidence candidateCategories.
+        - After choosing a category, pick existing selectedSubcategoryIDs when useful; otherwise suggest one concise suggestedSubcategoryName.
         """
     }
 
