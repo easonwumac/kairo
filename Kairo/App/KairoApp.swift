@@ -33,6 +33,7 @@ struct KairoApp: App {
     @State private var didLoadEnvironment = false
     @State private var isLoadingLaunchEnvironment = true
     @State private var launchEnvironmentError: String?
+    @State private var urlRouter: KairoURLRouterViewModel = KairoURLRouterViewModel(router: KairoURLRouter())
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
@@ -49,13 +50,17 @@ struct KairoApp: App {
                     RootView(
                         environment: environment,
                         initialSection: Self.launchInitialSection(arguments: ProcessInfo.processInfo.arguments),
-                        settingsMode: Self.launchSettingsMode(arguments: ProcessInfo.processInfo.arguments)
+                        settingsMode: Self.launchSettingsMode(arguments: ProcessInfo.processInfo.arguments),
+                        urlRouter: urlRouter
                     )
                         .id(environmentRevision)
                 }
             }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Self.launchBackgroundColor.ignoresSafeArea())
+                .onOpenURL { url in
+                    urlRouter.handle(url)
+                }
                 .task {
                     guard !didLoadEnvironment else { return }
                     didLoadEnvironment = true
@@ -112,7 +117,7 @@ struct KairoApp: App {
                         )
                         isLoadingLaunchEnvironment = false
                     }
-                }
+                    urlRouter.reanchor(to: environment.urlRouter)
                 .onChange(of: scenePhase) { _, newPhase in
                     guard newPhase == .background else { return }
                     #if canImport(llama)

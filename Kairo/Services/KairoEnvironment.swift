@@ -49,6 +49,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
     public let shortcutDemoRecipeRunner: any ShortcutDemoRecipeRunnerProtocol
     public let injectedInfoPageStore: InfoPageStore?
     public let chatAttachmentsDirectory: URL?
+    public let urlRouter: KairoURLRouter
 
     public init(
         memoryStore: MemoryStore,
@@ -82,7 +83,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
         actionSafetyPolicy: any ActionSafetyPolicyEvaluating = SafetyPolicyEngine(),
         shortcutDemoRecipeRunner: (any ShortcutDemoRecipeRunnerProtocol)? = nil,
         injectedInfoPageStore: InfoPageStore? = nil,
-        chatAttachmentsDirectory: URL? = nil
+        chatAttachmentsDirectory: URL? = nil,
+        urlRouter: KairoURLRouter = KairoURLRouter()
     ) {
         self.memoryStore = memoryStore
         self.knowledgeAssetStore = knowledgeAssetStore
@@ -125,6 +127,7 @@ public struct KairoEnvironment: KairoBackendDependencies {
         )
         self.injectedInfoPageStore = injectedInfoPageStore
         self.chatAttachmentsDirectory = chatAttachmentsDirectory
+        self.urlRouter = urlRouter
     }
 
     public static func preview() -> KairoEnvironment {

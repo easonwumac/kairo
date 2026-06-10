@@ -25,6 +25,7 @@ public struct RootView: View {
     private let environment: KairoEnvironment
     private let rootDependencies: RootFeatureDependencies
     private let settingsMode: SettingsViewMode
+    @State private var urlRouter: KairoURLRouterViewModel
     @AppStorage(KairoAppearancePreference.storageKey) private var appearancePreferenceRawValue = KairoAppearancePreference.system.rawValue
     @AppStorage(KairoOnboarding.completedStorageKey) private var isOnboardingCompleted = false
     @State private var selectedSection: RootSection = .chat
@@ -39,11 +40,13 @@ public struct RootView: View {
     public init(
         environment: KairoEnvironment = .preview(),
         initialSection: String? = nil,
-        settingsMode: SettingsViewMode = .all
+        settingsMode: SettingsViewMode = .all,
+        urlRouter: KairoURLRouterViewModel? = nil
     ) {
         self.environment = environment
         self.rootDependencies = environment.rootFeatureDependencies
         self.settingsMode = settingsMode
+        _urlRouter = State(initialValue: urlRouter ?? KairoURLRouterViewModel(router: environment.urlRouter))
         let section = initialSection.flatMap(RootSection.init(rawValue:)) ?? .chat
         _selectedSection = State(initialValue: section)
     }
