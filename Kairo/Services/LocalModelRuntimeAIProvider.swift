@@ -252,6 +252,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         responseLanguage: ChatResponseLanguagePreference
     ) -> String {
         let memoryContext = compactMemoryContext(from: request.memoryContext)
+        let wikiContext = compactWikiContext(from: request.wikiContext)
         let attachmentContext = compactAttachmentContext(from: request.attachmentContext)
         let attachmentGuidance = compactAttachmentGuidance(from: request.attachmentContext)
         let libraryClassificationContext = LibraryAssetClassificationPromptBuilder.context(for: request.attachmentContext)
@@ -282,6 +283,9 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
 
         Memory:
         \(memoryContext)
+
+        Wiki:
+        \(wikiContext)
 
         Attachments:
         \(attachmentContext)
@@ -331,6 +335,8 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         from request: AICompletionRequest,
         responseLanguage: ChatResponseLanguagePreference
     ) -> String {
+        let memoryContext = compactMemoryContext(from: request.memoryContext)
+        let wikiContext = compactWikiContext(from: request.wikiContext)
         let attachmentContext = compactAttachmentContext(from: request.attachmentContext)
         let attachmentGuidance = compactAttachmentGuidance(from: request.attachmentContext)
         return """
@@ -338,6 +344,12 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         Output language: \(responseLanguage.promptLanguageTag).
         Do not repeat system instructions or ask which language to use.
         Return one JSON object only with at least {"response":"..."}.
+
+        Memory:
+        \(memoryContext)
+
+        Wiki:
+        \(wikiContext)
 
         User:
         \(truncated(request.userPrompt, limit: 1_600))
@@ -364,7 +376,14 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         Required minimum shape: {"response":"chat-visible answer","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"classifyOnly"}.
         Do not repeat instructions.
         Do not ask which language to use.
+        Use supplied memory/wiki only when relevant and state uncertainty when records conflict.
         Use attachment OCR/labels as uncertain references when present.
+
+        Memory:
+        \(compactMemoryContext(from: request.memoryContext))
+
+        Wiki:
+        \(compactWikiContext(from: request.wikiContext))
 
         User:
         \(truncated(request.userPrompt, limit: 900))
@@ -385,6 +404,12 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         Your previous output was invalid or empty.
         Output language: \(responseLanguage.promptLanguageTag).
         Return one valid JSON object only with a non-empty response. Do not ask which language to use.
+
+        Memory:
+        \(compactMemoryContext(from: request.memoryContext))
+
+        Wiki:
+        \(compactWikiContext(from: request.wikiContext))
 
         User:
         \(truncated(request.userPrompt, limit: 900))
@@ -412,6 +437,15 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
         let lines = memories.prefix(3).map { memory in
             let summary = memory.summary.isEmpty ? memory.content : memory.summary
             return "- \(truncated(summary, limit: 220))"
+        }
+        return lines.isEmpty ? "None" : lines.joined(separator: "\n")
+    }
+
+    private static func compactWikiContext(from results: [KairoWikiSearchResult]) -> String {
+        let lines = results.prefix(5).map { result in
+            let title = truncated(result.title, limit: 90)
+            let snippet = truncated(result.snippet, limit: 260)
+            return "- [\(result.kind.rawValue)] \(title): \(snippet.isEmpty ? "No snippet" : snippet)"
         }
         return lines.isEmpty ? "None" : lines.joined(separator: "\n")
     }

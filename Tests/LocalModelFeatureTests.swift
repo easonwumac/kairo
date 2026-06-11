@@ -1208,6 +1208,35 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(capturedParameters, parameters)
     }
 
+    func testLocalModelRuntimeAIProviderIncludesWikiContextInRuntimePrompt() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .localOnly,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let runtime = RecordingLocalModelReplyRuntime()
+        let provider = LocalModelRuntimeAIProvider(localModelSettingsService: service, runtime: runtime)
+        let wikiResult = KairoWikiSearchResult(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000801")!,
+            kind: .knowledgeAsset,
+            title: "Warranty card",
+            snippet: "Serial number KA-42 expires in 2027.",
+            updatedAt: Date(timeIntervalSince1970: 100),
+            score: 90
+        )
+
+        _ = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "What warranty info do I have?",
+            wikiContext: [wikiResult]
+        ))
+
+        let capturedPrompt = await runtime.lastPrompt()
+        let prompt = try XCTUnwrap(capturedPrompt)
+        XCTAssertTrue(prompt.contains("Wiki:"))
+        XCTAssertTrue(prompt.contains("Warranty card"))
+        XCTAssertTrue(prompt.contains("Serial number KA-42 expires in 2027."))
+    }
+
     func testLocalModelRuntimeAIProviderRecordsChatInferencePerformance() async throws {
         let settingsURL = temporaryFileURL(named: "local-model-settings.json")
         let registryURL = temporaryFileURL(named: "local-model-registry.json")
@@ -1414,6 +1443,41 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(response.message, "第三次格式正確。")
         let callCount = await runtime.callCount()
         XCTAssertEqual(callCount, 3)
+    }
+
+    func testLocalModelRuntimeAIProviderKeepsWikiContextInRepairPrompt() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .localOnly,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let runtime = SequencedLocalModelReplyRuntime(responses: [
+            "不是 JSON",
+            #"{"response":"第二次格式正確。","candidateCategories":[],"needsCategoryChoice":false,"nextStep":"classifyOnly"}"#
+        ])
+        let provider = LocalModelRuntimeAIProvider(
+            localModelSettingsService: service,
+            runtime: runtime
+        )
+        let wikiResult = KairoWikiSearchResult(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000802")!,
+            kind: .infoPage,
+            title: "Travel booking",
+            snippet: "Hotel check-in is Thursday after 3 PM.",
+            updatedAt: Date(timeIntervalSince1970: 100),
+            score: 90
+        )
+
+        _ = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "When can I check in?",
+            wikiContext: [wikiResult]
+        ))
+
+        let prompts = await runtime.capturedPrompts()
+        XCTAssertEqual(prompts.count, 2)
+        XCTAssertTrue(prompts[1].contains("Wiki:"))
+        XCTAssertTrue(prompts[1].contains("Travel booking"))
+        XCTAssertTrue(prompts[1].contains("Hotel check-in is Thursday after 3 PM."))
     }
 
     func testLocalModelRuntimeAIProviderFallsBackWhenImageClassificationKeepsRefusing() async throws {
@@ -3276,6 +3340,7 @@ private actor FixedResponseAIProvider: AIProvider {
 
 private actor RecordingLocalModelReplyRuntime: LocalModelReplyCheckRuntime {
     private var capturedParameters: LocalModelRuntimeParameters?
+    private var capturedPrompt: String?
 
     func generateReply(
         model: LocalModelManifest,
@@ -3284,6 +3349,7 @@ private actor RecordingLocalModelReplyRuntime: LocalModelReplyCheckRuntime {
         parameters: LocalModelRuntimeParameters
     ) async throws -> LocalModelReplyCheckResult {
         _ = installRecord
+        capturedPrompt = prompt
         capturedParameters = parameters
         return LocalModelReplyCheckResult(
             modelID: model.id,
@@ -3301,6 +3367,10 @@ private actor RecordingLocalModelReplyRuntime: LocalModelReplyCheckRuntime {
 
     func lastParameters() -> LocalModelRuntimeParameters? {
         capturedParameters
+    }
+
+    func lastPrompt() -> String? {
+        capturedPrompt
     }
 }
 
@@ -3358,6 +3428,7 @@ private actor RecordingConversationalLocalModelReplyRuntime: LocalModelConversat
 private actor SequencedLocalModelReplyRuntime: LocalModelReplyCheckRuntime {
     private var responses: [String]
     private var calls = 0
+    private var prompts: [String] = []
 
     init(responses: [String]) {
         self.responses = responses
@@ -3370,9 +3441,9 @@ private actor SequencedLocalModelReplyRuntime: LocalModelReplyCheckRuntime {
         parameters: LocalModelRuntimeParameters
     ) async throws -> LocalModelReplyCheckResult {
         _ = installRecord
-        _ = prompt
         _ = parameters
         calls += 1
+        prompts.append(prompt)
         let response = responses.isEmpty ? "" : responses.removeFirst()
         return LocalModelReplyCheckResult(
             modelID: model.id,
@@ -3392,6 +3463,10 @@ private actor SequencedLocalModelReplyRuntime: LocalModelReplyCheckRuntime {
 
     func callCount() -> Int {
         calls
+    }
+
+    func capturedPrompts() -> [String] {
+        prompts
     }
 }
 
