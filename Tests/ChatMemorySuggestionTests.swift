@@ -116,6 +116,10 @@ private actor SearchMissMemoryStore: MemoryStore {
 
     func save(_ memory: MemoryRecord) async throws {}
 
+    func get(id: UUID) async throws -> MemoryRecord? {
+        recentMemories.first { $0.id == id }
+    }
+
     func search(query: String, limit: Int) async throws -> [MemoryRecord] {
         return []
     }
@@ -146,6 +150,10 @@ private actor SearchAndRecentMemoryStore: MemoryStore {
 
     func save(_ memory: MemoryRecord) async throws {}
 
+    func get(id: UUID) async throws -> MemoryRecord? {
+        (searchResults + recentMemories).first { $0.id == id }
+    }
+
     func search(query: String, limit: Int) async throws -> [MemoryRecord] {
         searchResults
     }
@@ -170,6 +178,10 @@ private actor CountingMemoryStore: MemoryStore {
     private(set) var listCount = 0
 
     func save(_ memory: MemoryRecord) async throws {}
+
+    func get(id: UUID) async throws -> MemoryRecord? {
+        nil
+    }
 
     func search(query: String, limit: Int) async throws -> [MemoryRecord] {
         searchCount += 1

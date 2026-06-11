@@ -21,6 +21,7 @@ public struct KnowledgeAssetExport: Codable, Equatable, Sendable {
 
 public protocol KnowledgeAssetStore: Sendable {
     func save(_ asset: KnowledgeAsset) async throws
+    func get(id: UUID) async throws -> KnowledgeAsset?
     func list(limit: Int) async throws -> [KnowledgeAsset]
     func search(query: String, limit: Int) async throws -> [KnowledgeAsset]
     func query(_ query: KnowledgeAssetQuery, limit: Int) async throws -> [KnowledgeAsset]
@@ -44,6 +45,11 @@ public actor InMemoryKnowledgeAssetStore: KnowledgeAssetStore {
 
     public func save(_ asset: KnowledgeAsset) async throws {
         assets[asset.id] = asset
+    }
+
+    public func get(id: UUID) async throws -> KnowledgeAsset? {
+        guard let asset = assets[id], asset.deletedAt == nil else { return nil }
+        return asset
     }
 
     public func list(limit: Int = 50) async throws -> [KnowledgeAsset] {
@@ -162,6 +168,11 @@ public actor JSONFileKnowledgeAssetStore: KnowledgeAssetStore {
         updated.updatedAt = Date()
         assets[updated.id] = updated
         try persist()
+    }
+
+    public func get(id: UUID) async throws -> KnowledgeAsset? {
+        guard let asset = assets[id], asset.deletedAt == nil else { return nil }
+        return asset
     }
 
     public func list(limit: Int = 50) async throws -> [KnowledgeAsset] {

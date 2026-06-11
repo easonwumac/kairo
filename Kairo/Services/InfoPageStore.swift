@@ -14,6 +14,7 @@ public struct InfoPageExport: Codable, Equatable, Sendable {
 
 public protocol InfoPageStore: Sendable {
     func save(_ page: InfoPage) async throws
+    func get(id: UUID) async throws -> InfoPage?
     func list(limit: Int) async throws -> [InfoPage]
     func search(query: String, limit: Int) async throws -> [InfoPage]
     func delete(id: UUID) async throws
@@ -30,6 +31,11 @@ public actor InMemoryInfoPageStore: InfoPageStore {
 
     public func save(_ page: InfoPage) async throws {
         pages[page.id] = page
+    }
+
+    public func get(id: UUID) async throws -> InfoPage? {
+        guard let page = pages[id], page.deletedAt == nil else { return nil }
+        return page
     }
 
     public func list(limit: Int = 50) async throws -> [InfoPage] {
@@ -98,6 +104,11 @@ public actor JSONFileInfoPageStore: InfoPageStore {
         updated.updatedAt = Date()
         pages[updated.id] = updated
         try persist()
+    }
+
+    public func get(id: UUID) async throws -> InfoPage? {
+        guard let page = pages[id], page.deletedAt == nil else { return nil }
+        return page
     }
 
     public func list(limit: Int = 50) async throws -> [InfoPage] {

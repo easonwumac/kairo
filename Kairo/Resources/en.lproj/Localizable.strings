@@ -1164,3 +1164,11 @@
 "wikiSearch.result.knowledgeAsset" = "Asset";
 "wikiSearch.result.memory" = "Memory";
 "wikiSearch.result.score" = "Score %lld";
+"wikiSearch.detail.back" = "Results";
+"wikiSearch.detail.loading" = "Opening item";
+"wikiSearch.detail.missing" = "This item is no longer available.";
+"wikiSearch.detail.summary" = "Summary";
+"wikiSearch.detail.facts" = "Facts";
+"wikiSearch.detail.extractedText" = "Extracted text";
+"wikiSearch.detail.content" = "Content";
+"wikiSearch.detail.empty" = "No details saved yet.";

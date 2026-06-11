@@ -176,7 +176,10 @@ public struct RootView: View {
             )
                 .ignoresSafeArea(.container, edges: .top)
         case .wiki:
-            WikiSearchView(searchService: environment.wikiSearchService)
+            WikiSearchView(
+                searchService: environment.wikiSearchService,
+                detailResolver: environment.wikiDetailResolver
+            )
         case .assets:
             KnowledgeAssetsView(
                 dependencies: environment.knowledgeAssetFeatureDependencies,

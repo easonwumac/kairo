@@ -18,6 +18,7 @@ public struct MemoryExport: Codable, Equatable, Sendable {
 
 public protocol MemoryStore: Sendable {
     func save(_ memory: MemoryRecord) async throws
+    func get(id: UUID) async throws -> MemoryRecord?
     func search(query: String, limit: Int) async throws -> [MemoryRecord]
     func list(limit: Int) async throws -> [MemoryRecord]
     func delete(id: UUID) async throws
@@ -37,6 +38,14 @@ public actor InMemoryMemoryStore: MemoryStore {
 
     public func save(_ memory: MemoryRecord) async throws {
         records[memory.id] = memory
+    }
+
+    public func get(id: UUID) async throws -> MemoryRecord? {
+        guard let record = records[id], record.deletedAt == nil else { return nil }
+        if let expiresAt = record.expiresAt, expiresAt < Date() {
+            return nil
+        }
+        return record
     }
 
     public func search(query: String, limit: Int = 20) async throws -> [MemoryRecord] {

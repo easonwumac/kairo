@@ -116,6 +116,69 @@ final class KairoWikiSearchServiceTests: XCTestCase {
         XCTAssertTrue(results.isEmpty)
     }
 
+    func testWikiDetailResolverLoadsResultSourceByKind() async throws {
+        let page = InfoPage(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000111")!,
+            title: "Trip page",
+            category: .travel,
+            templateID: .travel,
+            summary: "Trip summary"
+        )
+        let asset = KnowledgeAsset(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000112")!,
+            title: "Trip asset",
+            kind: .text,
+            source: .manual,
+            attachments: [],
+            extractedText: "Asset body",
+            summary: "Asset summary"
+        )
+        let memory = MemoryRecord(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000113")!,
+            title: "Trip memory",
+            summary: "Memory summary",
+            content: "Memory body",
+            source: .manual
+        )
+        let resolver = KairoWikiDetailResolver(
+            memoryStore: InMemoryMemoryStore(seed: [memory]),
+            knowledgeAssetStore: InMemoryKnowledgeAssetStore(seed: [asset]),
+            infoPageStore: InMemoryInfoPageStore(seed: [page])
+        )
+
+        let pageDetail = try await resolver.detail(for: result(id: page.id, kind: .infoPage))
+        let assetDetail = try await resolver.detail(for: result(id: asset.id, kind: .knowledgeAsset))
+        let memoryDetail = try await resolver.detail(for: result(id: memory.id, kind: .memory))
+
+        XCTAssertEqual(pageDetail, .infoPage(page))
+        XCTAssertEqual(assetDetail, .knowledgeAsset(asset))
+        XCTAssertEqual(memoryDetail, .memory(memory))
+    }
+
+    func testWikiDetailResolverSkipsDeletedItems() async throws {
+        let store = InMemoryMemoryStore(seed: [
+            MemoryRecord(
+                id: UUID(uuidString: "00000000-0000-0000-0000-000000000114")!,
+                title: "Deleted memory",
+                summary: "Deleted",
+                content: "Deleted body",
+                source: .manual
+            )
+        ])
+        let memories = try await store.list(limit: 1)
+        let memory = try XCTUnwrap(memories.first)
+        try await store.delete(id: memory.id)
+        let resolver = KairoWikiDetailResolver(
+            memoryStore: store,
+            knowledgeAssetStore: InMemoryKnowledgeAssetStore(),
+            infoPageStore: InMemoryInfoPageStore()
+        )
+
+        let detail = try await resolver.detail(for: result(id: memory.id, kind: .memory))
+
+        XCTAssertNil(detail)
+    }
+
     @MainActor
     func testWikiSearchViewModelPublishesSearchResults() async throws {
         let result = KairoWikiSearchResult(
@@ -127,15 +190,27 @@ final class KairoWikiSearchServiceTests: XCTestCase {
             score: 90
         )
         let service = StubWikiSearchService(results: [result])
-        let viewModel = KairoWikiSearchViewModel(searchService: service, limit: 5)
+        let resolver = StubWikiDetailResolver(detail: .knowledgeAsset(KnowledgeAsset(
+            id: result.id,
+            title: "Boarding pass",
+            kind: .text,
+            source: .manual,
+            attachments: [],
+            summary: "Flight gate and seat"
+        )))
+        let viewModel = KairoWikiSearchViewModel(searchService: service, detailResolver: resolver, limit: 5)
 
         await viewModel.search(query: "boarding")
+        await viewModel.select(result)
 
         XCTAssertEqual(service.receivedQuery, "boarding")
         XCTAssertEqual(service.receivedLimit, 5)
         XCTAssertEqual(viewModel.results, [result])
+        XCTAssertEqual(resolver.receivedResultID, result.id)
+        XCTAssertNotNil(viewModel.selectedDetail)
         XCTAssertNil(viewModel.errorMessage)
         XCTAssertFalse(viewModel.isLoading)
+        XCTAssertFalse(viewModel.isLoadingDetail)
     }
 
     @MainActor
@@ -149,6 +224,17 @@ final class KairoWikiSearchServiceTests: XCTestCase {
         XCTAssertTrue(viewModel.results.isEmpty)
         XCTAssertEqual(viewModel.errorMessage, "Search failed")
         XCTAssertFalse(viewModel.isLoading)
+    }
+
+    private func result(id: UUID, kind: KairoWikiSearchResultKind) -> KairoWikiSearchResult {
+        KairoWikiSearchResult(
+            id: id,
+            kind: kind,
+            title: "Result",
+            snippet: "Snippet",
+            updatedAt: Date(timeIntervalSince1970: 10),
+            score: 1
+        )
     }
 }
 
@@ -173,5 +259,19 @@ private final class StubWikiSearchService: KairoWikiSearchProviding, @unchecked 
             throw error
         }
         return results
+    }
+}
+
+private final class StubWikiDetailResolver: KairoWikiDetailResolving, @unchecked Sendable {
+    private let detail: KairoWikiDetail?
+    private(set) var receivedResultID: UUID?
+
+    init(detail: KairoWikiDetail?) {
+        self.detail = detail
+    }
+
+    func detail(for result: KairoWikiSearchResult) async throws -> KairoWikiDetail? {
+        receivedResultID = result.id
+        return detail
     }
 }

@@ -1164,3 +1164,11 @@
 "wikiSearch.result.knowledgeAsset" = "資產";
 "wikiSearch.result.memory" = "記憶";
 "wikiSearch.result.score" = "分數 %lld";
+"wikiSearch.detail.back" = "結果";
+"wikiSearch.detail.loading" = "正在開啟項目";
+"wikiSearch.detail.missing" = "這個項目已不存在。";
+"wikiSearch.detail.summary" = "摘要";
+"wikiSearch.detail.facts" = "重點";
+"wikiSearch.detail.extractedText" = "擷取文字";
+"wikiSearch.detail.content" = "內容";
+"wikiSearch.detail.empty" = "尚未保存詳細內容。";

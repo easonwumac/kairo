@@ -23,6 +23,14 @@ public actor JSONFileMemoryStore: MemoryStore {
         try persist()
     }
 
+    public func get(id: UUID) async throws -> MemoryRecord? {
+        guard let record = records[id], record.deletedAt == nil else { return nil }
+        if let expiresAt = record.expiresAt, expiresAt < Date() {
+            return nil
+        }
+        return record
+    }
+
     public func search(query: String, limit: Int = 20) async throws -> [MemoryRecord] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
