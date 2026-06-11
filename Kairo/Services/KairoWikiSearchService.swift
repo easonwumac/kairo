@@ -53,6 +53,7 @@ public struct KairoWikiSearchService: KairoWikiSearchProviding {
     public func search(query: String, limit: Int = 20) async throws -> [KairoWikiSearchResult] {
         let boundedLimit = max(limit, 1)
         let perStoreLimit = max(boundedLimit, 10)
+        let graphLimit = max(perStoreLimit, 200)
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
 
         async let pages = trimmed.isEmpty
@@ -64,15 +65,33 @@ public struct KairoWikiSearchService: KairoWikiSearchProviding {
         async let memories = trimmed.isEmpty
             ? memoryStore.list(limit: perStoreLimit)
             : memoryStore.search(query: trimmed, limit: perStoreLimit)
+        async let graphPages = trimmed.isEmpty
+            ? [InfoPage]()
+            : infoPageStore.list(limit: graphLimit)
+        async let graphAssets = trimmed.isEmpty
+            ? [KnowledgeAsset]()
+            : knowledgeAssetStore.list(limit: graphLimit)
 
-        let pageResults = try await pages.map {
+        var pageResults = try await pages.map {
             result(from: $0, query: trimmed)
         }
-        let assetResults = try await assets.map {
+        var assetResults = try await assets.map {
             result(from: $0, query: trimmed)
         }
         let memoryResults = try await memories.map {
             result(from: $0, query: trimmed)
+        }
+
+        if !trimmed.isEmpty {
+            let linked = try await linkedResults(
+                pages: graphPages,
+                assets: graphAssets,
+                matchedPages: pageResults,
+                matchedAssets: assetResults,
+                query: trimmed
+            )
+            pageResults.append(contentsOf: linked.pages)
+            assetResults.append(contentsOf: linked.assets)
         }
 
         return (pageResults + assetResults + memoryResults)
@@ -90,7 +109,56 @@ public struct KairoWikiSearchService: KairoWikiSearchProviding {
             .map { $0 }
     }
 
-    private func result(from page: InfoPage, query: String) -> KairoWikiSearchResult {
+    private func linkedResults(
+        pages: [InfoPage],
+        assets: [KnowledgeAsset],
+        matchedPages: [KairoWikiSearchResult],
+        matchedAssets: [KairoWikiSearchResult],
+        query: String
+    ) -> (pages: [KairoWikiSearchResult], assets: [KairoWikiSearchResult]) {
+        let pagesByID = Dictionary(uniqueKeysWithValues: pages.map { ($0.id, $0) })
+        let assetsByID = Dictionary(uniqueKeysWithValues: assets.map { ($0.id, $0) })
+        var existingPageIDs = Set(matchedPages.map(\.id))
+        var existingAssetIDs = Set(matchedAssets.map(\.id))
+        var extraPages: [KairoWikiSearchResult] = []
+        var extraAssets: [KairoWikiSearchResult] = []
+
+        for assetResult in matchedAssets {
+            guard let asset = assetsByID[assetResult.id] else { continue }
+            let linkedPageIDs = Set(asset.linkedInfoPageIDs)
+            for page in pages where !existingPageIDs.contains(page.id) {
+                guard page.assetIDs.contains(asset.id) || linkedPageIDs.contains(page.id) else { continue }
+                existingPageIDs.insert(page.id)
+                extraPages.append(result(
+                    from: page,
+                    query: query,
+                    scoreOverride: linkedScore(from: assetResult.score)
+                ))
+            }
+        }
+
+        for pageResult in matchedPages {
+            guard let page = pagesByID[pageResult.id] else { continue }
+            let linkedAssetIDs = Set(page.assetIDs)
+            for asset in assets where !existingAssetIDs.contains(asset.id) {
+                guard linkedAssetIDs.contains(asset.id) || asset.linkedInfoPageIDs.contains(page.id) else { continue }
+                existingAssetIDs.insert(asset.id)
+                extraAssets.append(result(
+                    from: asset,
+                    query: query,
+                    scoreOverride: linkedScore(from: pageResult.score)
+                ))
+            }
+        }
+
+        return (extraPages, extraAssets)
+    }
+
+    private func linkedScore(from sourceScore: Int) -> Int {
+        max(1, min(sourceScore - 1, 20 + (sourceScore / 2)))
+    }
+
+    private func result(from page: InfoPage, query: String, scoreOverride: Int? = nil) -> KairoWikiSearchResult {
         KairoWikiSearchResult(
             id: page.id,
             kind: .infoPage,
@@ -101,11 +169,11 @@ public struct KairoWikiSearchService: KairoWikiSearchProviding {
                 page.timeline.map { "\($0.title) \($0.note ?? "")" }.joined(separator: " ")
             ]),
             updatedAt: page.updatedAt,
-            score: query.isEmpty ? 1 : InfoPageSearchMatcher(query: query).score(page) + 15
+            score: scoreOverride ?? (query.isEmpty ? 1 : InfoPageSearchMatcher(query: query).score(page) + 15)
         )
     }
 
-    private func result(from asset: KnowledgeAsset, query: String) -> KairoWikiSearchResult {
+    private func result(from asset: KnowledgeAsset, query: String, scoreOverride: Int? = nil) -> KairoWikiSearchResult {
         KairoWikiSearchResult(
             id: asset.id,
             kind: .knowledgeAsset,
@@ -118,7 +186,7 @@ public struct KairoWikiSearchService: KairoWikiSearchProviding {
                 asset.collections.joined(separator: " ")
             ]),
             updatedAt: asset.updatedAt,
-            score: query.isEmpty ? 1 : KnowledgeAssetSearchMatcher(query: query).score(asset) + 10
+            score: scoreOverride ?? (query.isEmpty ? 1 : KnowledgeAssetSearchMatcher(query: query).score(asset) + 10)
         )
     }
 

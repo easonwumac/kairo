@@ -97,6 +97,80 @@ final class KairoWikiSearchServiceTests: XCTestCase {
         XCTAssertTrue(result.snippet.contains("important"))
     }
 
+    func testWikiSearchIncludesInfoPageLinkedFromMatchingAsset() async throws {
+        let assetID = UUID(uuidString: "00000000-0000-0000-0000-000000000104")!
+        let page = InfoPage(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000105")!,
+            title: "Camera warranty page",
+            category: .warranty,
+            templateID: .warranty,
+            summary: "Coverage details",
+            assetIDs: [assetID],
+            updatedAt: Date(timeIntervalSince1970: 10)
+        )
+        let asset = KnowledgeAsset(
+            id: assetID,
+            title: "Receipt image",
+            kind: .image,
+            source: .chat,
+            attachments: [],
+            generatedDescription: "Lens serial KA-42 warranty card",
+            summary: "Original image",
+            linkedInfoPageIDs: [page.id],
+            updatedAt: Date(timeIntervalSince1970: 20)
+        )
+        let service = KairoWikiSearchService(
+            memoryStore: InMemoryMemoryStore(),
+            knowledgeAssetStore: InMemoryKnowledgeAssetStore(seed: [asset]),
+            infoPageStore: InMemoryInfoPageStore(seed: [page])
+        )
+
+        let results = try await service.search(query: "KA-42", limit: 10)
+
+        XCTAssertTrue(results.contains { $0.id == assetID && $0.kind == .knowledgeAsset })
+        XCTAssertTrue(results.contains { $0.id == page.id && $0.kind == .infoPage })
+        XCTAssertLessThan(
+            try XCTUnwrap(results.first { $0.id == page.id && $0.kind == .infoPage }).score,
+            try XCTUnwrap(results.first { $0.id == assetID && $0.kind == .knowledgeAsset }).score
+        )
+    }
+
+    func testWikiSearchIncludesAssetLinkedFromMatchingInfoPage() async throws {
+        let assetID = UUID(uuidString: "00000000-0000-0000-0000-000000000106")!
+        let page = InfoPage(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000107")!,
+            title: "Appliance repair",
+            category: .homeDevice,
+            templateID: .homeDevice,
+            summary: "Washer repair booking",
+            facts: [
+                InfoPageFact(label: "Case", value: "Repair ticket ZX-88")
+            ],
+            assetIDs: [assetID],
+            updatedAt: Date(timeIntervalSince1970: 20)
+        )
+        let asset = KnowledgeAsset(
+            id: assetID,
+            title: "Washer photo",
+            kind: .image,
+            source: .chat,
+            attachments: [],
+            summary: "Original photo",
+            linkedInfoPageIDs: [page.id],
+            updatedAt: Date(timeIntervalSince1970: 10)
+        )
+        let service = KairoWikiSearchService(
+            memoryStore: InMemoryMemoryStore(),
+            knowledgeAssetStore: InMemoryKnowledgeAssetStore(seed: [asset]),
+            infoPageStore: InMemoryInfoPageStore(seed: [page])
+        )
+
+        let results = try await service.search(query: "ZX-88", limit: 10)
+
+        XCTAssertTrue(results.contains { $0.id == page.id && $0.kind == .infoPage })
+        XCTAssertTrue(results.contains { $0.id == assetID && $0.kind == .knowledgeAsset })
+    }
+
     func testDefaultAgentWikiContextProviderSkipsPrivateChat() async throws {
         let memory = MemoryRecord(
             title: "Private lookup",
