@@ -32,7 +32,15 @@ public extension LocalModelSettingsRow {
 
 public extension LocalModelManifest {
     var manifestTransparencyText: String {
-        [
+        if isSystemProvided {
+            return [
+                "Apple system framework",
+                runtime.settingsDisplayName,
+                "iOS \(minOSVersion)+",
+                "policy \(safetyPolicyVersion)"
+            ].joined(separator: " · ")
+        }
+        return [
             downloadSourceHost,
             runtime.settingsDisplayName,
             licenseName,
@@ -43,11 +51,17 @@ public extension LocalModelManifest {
     }
 
     var downloadApprovalText: String {
-        "User-triggered download · \(formattedDownloadSize) · \(licenseName)"
+        if isSystemProvided {
+            return "System runtime · no model download"
+        }
+        return "User-triggered download · \(formattedDownloadSize) · \(licenseName)"
     }
 
     var licenseApprovalText: String {
-        "License approval required · \(licenseName) · \(licenseURL.host() ?? licenseURL.absoluteString)"
+        if isSystemProvided {
+            return "Provided by Apple Foundation Models on supported devices"
+        }
+        return "License approval required · \(licenseName) · \(licenseURL.host() ?? licenseURL.absoluteString)"
     }
 
     var storagePolicyText: String {
@@ -59,7 +73,10 @@ public extension LocalModelManifest {
     }
 
     var runtimeFitText: String {
-        [
+        if isSystemProvided {
+            return "System runtime: Apple Foundation Models · requires Apple Intelligence"
+        }
+        return [
             "Download: \(runtime.settingsDisplayName)",
             "Fit: \(minDeviceClass)+/\(formattedRAMRequirement)",
             mlxReferenceText
@@ -67,7 +84,14 @@ public extension LocalModelManifest {
     }
 
     var runtimePillTexts: [String] {
-        [
+        if isSystemProvided {
+            return [
+                runtime.settingsDisplayName,
+                "No download",
+                "Apple Intelligence"
+            ]
+        }
+        return [
             "Download \(runtime.settingsDisplayName)",
             "\(minDeviceClass)+/\(formattedRAMRequirement)",
             mlxReferenceText
@@ -133,6 +157,8 @@ private extension LocalModelRuntime {
             return "MLX"
         case .coreML:
             return "Core ML"
+        case .appleFoundationModels:
+            return "Foundation Models"
         case .unknown:
             return "Unknown"
         }

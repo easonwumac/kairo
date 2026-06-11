@@ -20,6 +20,7 @@ public enum LocalModelRuntime: String, Codable, Equatable, Sendable, CaseIterabl
     case gguf
     case mlx
     case coreML
+    case appleFoundationModels
     case unknown
 }
 
@@ -424,6 +425,7 @@ public enum LocalModelCatalogSignatureStatus: String, Codable, Equatable, Sendab
 
 public extension LocalModelCatalog {
     static let kairoStarterModelIDs = [
+        "apple-foundation-models-system",
         "gemma-4-e2b-it-qat-q4-0-gguf",
         "qwen2-5-0-5b-instruct-q4-k-m",
         "qwen2-5-1-5b-instruct-q4-k-m",
@@ -432,6 +434,7 @@ public extension LocalModelCatalog {
     ]
 
     static let kairoStarterModels: [LocalModelManifest] = [
+        .appleFoundationModelsSystem,
         .gemma4E2BQATQ4_0,
         .qwen25HalfBInstruct,
         .qwen25OneAndHalfBInstruct,
@@ -833,6 +836,9 @@ public struct LocalModelCatalogService: Sendable {
     }
 
     private func validateModelArtifacts(_ model: LocalModelManifest) throws {
+        guard !model.isSystemProvided else {
+            return
+        }
         guard model.downloadURL.scheme?.lowercased() == "https" else {
             throw LocalModelCatalogServiceError.unsafeDownloadURL(
                 modelID: model.id,
@@ -1056,6 +1062,52 @@ public struct LocalModelCatalogRefreshResult: Sendable {
 }
 
 public extension LocalModelManifest {
+    static let appleFoundationModelsSystem = LocalModelManifest(
+        id: "apple-foundation-models-system",
+        displayName: "Apple Foundation Models",
+        family: "Apple Foundation Models",
+        version: "system",
+        parameterCount: "System",
+        quantization: "On-device",
+        runtime: .appleFoundationModels,
+        fileSizeBytes: 0,
+        installedSizeBytes: 0,
+        contextWindow: 8_192,
+        tokenizerID: "foundation-models-system",
+        licenseName: "Apple system framework",
+        licenseURL: URL(string: "https://developer.apple.com/documentation/FoundationModels")!,
+        minOSVersion: "26.0",
+        minDeviceClass: "Apple Intelligence",
+        minRAMGB: 8,
+        supportedLocales: ["en", "zh-Hant"],
+        capabilities: [.drafts, .summarization, .simpleQuestionAnswer, .offlineChat, .rewriting, .extraction],
+        disallowedCapabilities: [.toolUse, .webCurrentInfo, .codeExecution, .accountActions, .regulatedAdvice],
+        downloadURL: URL(string: "https://developer.apple.com/documentation/FoundationModels")!,
+        sha256: "system",
+        benchmarkProfiles: [
+            LocalModelBenchmarkProfile(
+                id: "apple-foundation-models-system-ios26-reference",
+                runtime: .appleFoundationModels,
+                runtimePackage: "FoundationModels",
+                artifactReference: "SystemLanguageModel.default",
+                promptTokens: 0,
+                generatedTokens: 0,
+                trials: 0,
+                promptTokensPerSecond: 0,
+                generationTokensPerSecond: 0,
+                testPlatform: "Apple Intelligence device",
+                measuredAt: Date(timeIntervalSince1970: 1_780_358_400),
+                sourceURL: URL(string: "https://developer.apple.com/documentation/FoundationModels"),
+                supportsInAppDownload: false,
+                isReferenceOnlyForIOS: false,
+                notes: "System-provided Apple Foundation Models runtime. Availability depends on OS version, device support, region, and Apple Intelligence settings."
+            )
+        ],
+        createdAt: Date(timeIntervalSince1970: 1_780_358_400),
+        updatedAt: Date(timeIntervalSince1970: 1_780_358_400),
+        safetyPolicyVersion: "2026.1"
+    )
+
     static let gemma4E2BQATQ4_0 = LocalModelManifest(
         id: "gemma-4-e2b-it-qat-q4-0-gguf",
         displayName: "Gemma 4 E2B IT QAT Q4_0",

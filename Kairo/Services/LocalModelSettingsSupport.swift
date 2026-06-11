@@ -340,7 +340,8 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
     }
 
     public var localModelInstalled: Bool {
-        selectedModel != nil && installedRecord?.status == .installed
+        guard let selectedModel else { return false }
+        return selectedModel.isSystemProvided || installedRecord?.status == .installed
     }
 
     public var settingsRows: [LocalModelSettingsRow] {
@@ -349,7 +350,7 @@ public struct LocalModelSettingsStatus: Equatable, Sendable {
             .enumerated()
             .map { index, model in
                 let record = installedByID[model.id]
-                let isSelected = selectedModelID == model.id && record?.status == .installed
+                let isSelected = selectedModelID == model.id && (model.isSystemProvided || record?.status == .installed)
                 let runtimeParameters = (runtimeParametersByModelID[model.id] ?? .defaultValue).clamped(to: model)
                 return (index, LocalModelSettingsRow(
                     model: model,
@@ -445,6 +446,9 @@ public struct LocalModelSettingsRow: Identifiable, Equatable, Sendable {
         if isSelected {
             self.statusText = KairoL10n.string("settings.models.status.selected")
             self.primaryAction = .selected
+        } else if model.isSystemProvided {
+            self.statusText = KairoL10n.string("settings.models.status.installed")
+            self.primaryAction = .select
         } else if let installRecord {
             switch installRecord.status {
             case .installed:
@@ -465,8 +469,19 @@ public struct LocalModelSettingsRow: Identifiable, Equatable, Sendable {
 }
 
 public extension LocalModelManifest {
+    var isSystemProvided: Bool {
+        runtime == .appleFoundationModels
+    }
+
     var settingsDetailText: String {
-        [
+        if isSystemProvided {
+            return [
+                parameterCount,
+                quantization,
+                "\(contextWindow / 1000)K ctx"
+            ].joined(separator: " · ")
+        }
+        return [
             parameterCount,
             quantization,
             "\(Self.formattedBytes(totalDownloadSizeBytes))",
@@ -496,6 +511,8 @@ public extension LocalModelManifest {
             runtimeLabel = "GGUF"
         case .coreML:
             runtimeLabel = "Core ML"
+        case .appleFoundationModels:
+            runtimeLabel = "Foundation Models"
         case .unknown:
             runtimeLabel = benchmark.runtimePackage
         }
@@ -653,11 +670,13 @@ public actor LocalModelSettingsService {
 
     public func selectModel(id: String, minimumSafetyPolicyVersion: String = "2026.1") async throws {
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: minimumSafetyPolicyVersion)
-        guard availableModels.contains(where: { $0.id == id }) else {
+        guard let selectedModel = availableModels.first(where: { $0.id == id }) else {
             throw LocalModelSelectionError.modelUnavailable(id)
         }
-        guard await installRegistry.record(for: id)?.status == .installed else {
-            throw LocalModelSelectionError.modelNotInstalled(id)
+        if !selectedModel.isSystemProvided {
+            guard await installRegistry.record(for: id)?.status == .installed else {
+                throw LocalModelSelectionError.modelNotInstalled(id)
+            }
         }
 
         var settings = await settingsStore.settings()

@@ -163,7 +163,7 @@ public enum ChatProviderRouteStatusBuilder {
     ) -> [ChatProviderRouteOption] {
         let installedRecordsByID = Dictionary(uniqueKeysWithValues: status.installedModels.map { ($0.modelID, $0) })
         let installedModels = status.availableModels.filter { model in
-            installedRecordsByID[model.id]?.status == .installed
+            model.isSystemProvided || installedRecordsByID[model.id]?.status == .installed
         }
         guard !installedModels.isEmpty else {
             return []

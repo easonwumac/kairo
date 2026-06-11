@@ -844,6 +844,7 @@ final class KairoCoreTests: XCTestCase {
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
         let builtInIDs = LocalModelCatalog.kairoDefault
             .availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
+            .filter { !$0.isSystemProvided }
             .map(\.id)
 
         XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
@@ -851,7 +852,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(availableModels.allSatisfy { $0.runtime == .gguf })
         XCTAssertTrue(availableModels.allSatisfy { $0.downloadURL.scheme == "https" })
         XCTAssertTrue(availableModels.allSatisfy { $0.sha256.count == 64 })
-        XCTAssertEqual(availableModels.count, 5)
+        XCTAssertEqual(availableModels.count, builtInIDs.count)
         XCTAssertEqual(availableModels.first?.id, "gemma-4-e2b-it-qat-q4-0-gguf")
 
         let qwenVision = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-vl-3b-instruct-q4-k-m" })
@@ -1172,6 +1173,7 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(expandedEnvironment.localModelCatalog.availableModels(
             minimumSafetyPolicyVersion: expandedEnvironment.localModelCatalog.minimumSafetyPolicyVersion
         ).map(\.id), [
+            "apple-foundation-models-system",
             "gemma-4-e2b-it-qat-q4-0-gguf",
             "qwen2-5-0-5b-instruct-q4-k-m",
             "qwen2-5-1-5b-instruct-q4-k-m",

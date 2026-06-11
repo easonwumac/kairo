@@ -25,24 +25,43 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
     private let localModelSettingsService: LocalModelSettingsService
     private let runtime: any LocalModelReplyCheckRuntime
     private let performanceRecorder: (any LocalModelPerformanceRecording)?
+    private let foundationModelProvider: (any AIProvider)?
 
     public init(
         localModelSettingsService: LocalModelSettingsService,
         runtime: any LocalModelReplyCheckRuntime,
-        performanceRecorder: (any LocalModelPerformanceRecording)? = nil
+        performanceRecorder: (any LocalModelPerformanceRecording)? = nil,
+        foundationModelProvider: (any AIProvider)? = nil
     ) {
         self.localModelSettingsService = localModelSettingsService
         self.runtime = runtime
         self.performanceRecorder = performanceRecorder
+        self.foundationModelProvider = foundationModelProvider
     }
 
     public func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
         let status = await localModelSettingsService.status()
-        guard let model = status.selectedModel,
-              let installRecord = status.installedRecord,
+        guard let model = status.selectedModel else {
+            kairoAIProviderLog("[AI_PROVIDER] local model not available: selected=\(status.selectedModelID ?? "nil") installed=\(status.installedRecord != nil ? "yes" : "no")")
+            throw AIProviderError.localInferenceUnavailable(
+                KairoL10n.string("chat.error.localInference.reason.localOnlyNoModel")
+            )
+        }
+
+        if model.runtime == .appleFoundationModels {
+            guard let foundationModelProvider else {
+                throw AIProviderError.localInferenceUnavailable(
+                    KairoL10n.string("chat.error.localInference.reason.localOnlyRuntimeUnavailable")
+                )
+            }
+            kairoAIProviderLog("[AI_PROVIDER] model=\(model.displayName) id=\(model.id) runtime=FoundationModels")
+            return try await foundationModelProvider.complete(request)
+        }
+
+        guard let installRecord = status.installedRecord,
               installRecord.status == .installed
         else {
-            kairoAIProviderLog("[AI_PROVIDER] local model not available: selected=\(status.selectedModelID ?? "nil") installed=\(status.installedRecord != nil ? "yes" : "no")")
+            kairoAIProviderLog("[AI_PROVIDER] local model not installed: selected=\(status.selectedModelID ?? "nil")")
             throw AIProviderError.localInferenceUnavailable(
                 KairoL10n.string("chat.error.localInference.reason.localOnlyNoModel")
             )

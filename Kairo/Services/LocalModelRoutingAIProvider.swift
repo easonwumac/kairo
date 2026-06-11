@@ -51,7 +51,10 @@ public struct LocalModelRoutingAIProvider: AIProvider {
             requiresToolUse: Self.requiresToolUse(routedRequest),
             requiresCurrentInfo: Self.requiresCurrentInfo(routedRequest),
             contextTokenEstimate: Self.estimatedTokenCount(for: routedRequest),
-            localRuntimeAvailable: localRuntimeAvailable
+            localRuntimeAvailable: Self.runtimeAvailable(
+                for: status.selectedModel,
+                fallbackRuntimeAvailable: localRuntimeAvailable
+            )
         )
         let router = ProviderRouter(
             cloudProvider: cloudProvider,
@@ -67,6 +70,16 @@ public struct LocalModelRoutingAIProvider: AIProvider {
 
     public func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
         try await cloudProvider.embed(request)
+    }
+
+    private static func runtimeAvailable(
+        for model: LocalModelManifest?,
+        fallbackRuntimeAvailable: Bool
+    ) -> Bool {
+        guard model?.runtime == .appleFoundationModels else {
+            return fallbackRuntimeAvailable
+        }
+        return AppleFoundationModelAIProvider.isRuntimeSupported
     }
 
     private static func taskClass(for request: AICompletionRequest) -> ProviderTaskClass {

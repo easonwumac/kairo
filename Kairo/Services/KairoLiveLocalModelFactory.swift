@@ -65,6 +65,12 @@ public struct KairoLiveLocalModelFactory: Sendable {
             installRegistry: installRegistry,
             settingsStore: settingsStore
         )
+        if AppleFoundationModelAIProvider.isRuntimeSupported {
+            let status = await settingsService.status()
+            if status.selectedModelID == nil {
+                try await settingsService.selectModel(id: LocalModelManifest.appleFoundationModelsSystem.id)
+            }
+        }
         #if os(iOS)
         let artifactDownloadClient: (any LocalModelArtifactDownloadClient)? = URLSessionLocalModelArtifactDownloader.background()
         #else
@@ -100,9 +106,10 @@ public struct KairoLiveLocalModelFactory: Sendable {
             localProvider: LocalModelRuntimeAIProvider(
                 localModelSettingsService: settingsService,
                 runtime: runtimeBundle.replyRuntime,
-                performanceRecorder: benchmarkService
+                performanceRecorder: benchmarkService,
+                foundationModelProvider: AppleFoundationModelAIProvider()
             ),
-            localRuntimeAvailable: runtimeBundle.chatRuntimeAvailable
+            localRuntimeAvailable: runtimeBundle.chatRuntimeAvailable || AppleFoundationModelAIProvider.isRuntimeSupported
         )
 
         return KairoLiveLocalModelComponents(

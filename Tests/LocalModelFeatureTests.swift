@@ -27,26 +27,22 @@ final class LocalModelFeatureTests: XCTestCase {
     }
 
     func testDefaultLocalModelCatalogExposesPopularStarterModelsForSettings() throws {
-        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let localModelCatalogSource = try String(
-            contentsOf: root.appendingPathComponent("Kairo/Services/LocalModelCatalog.swift"),
-            encoding: .utf8
-        )
         let catalog = LocalModelCatalog.kairoDefault
         let availableModels = catalog.availableModels(minimumSafetyPolicyVersion: catalog.minimumSafetyPolicyVersion)
+        let systemModels = availableModels.filter(\.isSystemProvided)
+        let downloadableModels = availableModels.filter { !$0.isSystemProvided }
 
         XCTAssertEqual(catalog.sourceRepository?.absoluteString, "https://github.com/easonwumac/kairo-models")
-        XCTAssertTrue(localModelCatalogSource.contains("static let kairoStarterModelIDs"))
-        XCTAssertTrue(localModelCatalogSource.contains("kairoStarterModels"))
-        XCTAssertEqual(availableModels.count, 5)
-        XCTAssertEqual(availableModels.map(\.id), [
+        XCTAssertEqual(systemModels.map(\.runtime), [.appleFoundationModels])
+        XCTAssertEqual(downloadableModels.count, 5)
+        XCTAssertEqual(downloadableModels.map(\.id), [
             "gemma-4-e2b-it-qat-q4-0-gguf",
             "qwen2-5-0-5b-instruct-q4-k-m",
             "qwen2-5-1-5b-instruct-q4-k-m",
             "qwen2-5-vl-3b-instruct-q4-k-m",
             "gemma-4-e4b-it-qat-q4-0-gguf"
         ])
-        XCTAssertEqual(availableModels.map(\.displayName), [
+        XCTAssertEqual(downloadableModels.map(\.displayName), [
             "Gemma 4 E2B IT QAT Q4_0",
             "Qwen2.5 0.5B Instruct Q4_K_M",
             "Qwen2.5 1.5B Instruct Q4_K_M",
@@ -54,7 +50,7 @@ final class LocalModelFeatureTests: XCTestCase {
             "Gemma 4 E4B IT QAT Q4_0"
         ])
 
-        for model in availableModels {
+        for model in downloadableModels {
             XCTAssertEqual(model.downloadURL.scheme, "https", model.id)
             XCTAssertEqual(model.downloadURL.host(), "huggingface.co", model.id)
             XCTAssertEqual(model.sha256.count, 64, model.id)
@@ -65,7 +61,7 @@ final class LocalModelFeatureTests: XCTestCase {
             XCTAssertTrue(model.disallowedCapabilities.contains(.toolUse), model.id)
         }
 
-        let qwenHalfB = try XCTUnwrap(availableModels.first { $0.id == "qwen2-5-0-5b-instruct-q4-k-m" })
+        let qwenHalfB = try XCTUnwrap(downloadableModels.first { $0.id == "qwen2-5-0-5b-instruct-q4-k-m" })
         XCTAssertEqual(qwenHalfB.sha256, "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db")
         XCTAssertFalse(qwenHalfB.capabilities.contains(.imageUnderstanding))
 

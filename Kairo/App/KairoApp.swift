@@ -118,6 +118,7 @@ struct KairoApp: App {
                         isLoadingLaunchEnvironment = false
                     }
                     urlRouter.reanchor(to: environment.urlRouter)
+                }
                 .onChange(of: scenePhase) { _, newPhase in
                     guard newPhase == .background else { return }
                     #if canImport(llama)
