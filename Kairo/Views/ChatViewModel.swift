@@ -373,7 +373,7 @@ public final class ChatViewModel: ObservableObject {
         }
         do {
             try await store.save(page)
-            await backfillAssetLinks(infoPageID: page.id, assetIDs: page.assetIDs)
+            await enrichLinkedAssets(from: draft, page: page)
             let subcategoryNote = draft.candidateCategories?.first?.folderName ?? draft.folderName
             let savedText: String
             if let sub = subcategoryNote, !sub.isEmpty {
@@ -393,21 +393,71 @@ public final class ChatViewModel: ObservableObject {
         }
     }
 
-    private func backfillAssetLinks(infoPageID: UUID, assetIDs: [UUID]) async {
-        guard let api = knowledgeAssetAPI, !assetIDs.isEmpty else { return }
+    private func enrichLinkedAssets(from draft: InfoPageDraft, page: InfoPage) async {
+        guard let api = knowledgeAssetAPI, !page.assetIDs.isEmpty else { return }
         do {
             let allAssets = try await api.list(limit: 200)
-            let wanted = Set(assetIDs)
-            for var asset in allAssets where wanted.contains(asset.id) {
-                if !asset.linkedInfoPageIDs.contains(infoPageID) {
-                    asset.linkedInfoPageIDs.append(infoPageID)
-                    asset.updatedAt = Date()
-                    try await api.save(asset)
+            let wanted = Set(page.assetIDs)
+            for asset in allAssets where wanted.contains(asset.id) {
+                let enriched = Self.enrichedAsset(asset, draft: draft, page: page)
+                if enriched != asset {
+                    try await api.save(enriched)
                 }
             }
         } catch {
             // Non-fatal: detail view can still render via existing assetIDs.
         }
+    }
+
+    static func enrichedAsset(_ asset: KnowledgeAsset, draft: InfoPageDraft, page: InfoPage) -> KnowledgeAsset {
+        var enriched = asset
+        if !enriched.linkedInfoPageIDs.contains(page.id) {
+            enriched.linkedInfoPageIDs.append(page.id)
+        }
+
+        if let description = draft.assetDescription?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !description.isEmpty,
+           enriched.generatedDescription?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true {
+            enriched.generatedDescription = description
+        }
+
+        let summaryCandidates = [
+            draft.ocrSummary,
+            draft.summary,
+            page.summary
+        ]
+        if enriched.summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           let summary = summaryCandidates.compactMap({ $0?.trimmingCharacters(in: .whitespacesAndNewlines) }).first(where: { !$0.isEmpty }) {
+            enriched.summary = summary
+        }
+
+        let keywordTags = draft.keywords ?? []
+        enriched.tags = mergedUniqueStrings(
+            existing: enriched.tags,
+            additions: keywordTags + [page.category.rawValue, page.templateID.rawValue]
+        )
+
+        let collections = [draft.folderName, draft.candidateCategories?.first?.folderName]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        enriched.collections = mergedUniqueStrings(existing: enriched.collections, additions: collections)
+
+        if enriched != asset {
+            enriched.updatedAt = Date()
+        }
+        return enriched
+    }
+
+    private static func mergedUniqueStrings(existing: [String], additions: [String]) -> [String] {
+        var result = existing
+        for value in additions {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty,
+                  !result.contains(where: { $0.localizedCaseInsensitiveCompare(trimmed) == .orderedSame })
+            else { continue }
+            result.append(trimmed)
+        }
+        return result
     }
 
     private struct PersistedAttachmentResult {

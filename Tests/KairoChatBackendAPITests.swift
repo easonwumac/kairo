@@ -149,6 +149,73 @@ final class KairoChatBackendAPITests: XCTestCase {
     }
 
     @MainActor
+    func testChatViewModelEnrichesLinkedAssetsAfterInfoPageAutoSave() async throws {
+        let infoPageStore = InMemoryInfoPageStore()
+        let assetStore = InMemoryKnowledgeAssetStore()
+        let assetAPI = KairoKnowledgeAssetBackendService(
+            assetStore: assetStore,
+            shareIngestionQueue: InMemoryShareIngestionQueue()
+        )
+        let draft = InfoPageDraft(
+            createInfoPage: true,
+            title: "Camera warranty",
+            templateID: .warranty,
+            category: .warranty,
+            summary: "Camera warranty expires in 2027.",
+            facts: [
+                InfoPageDraftFact(label: "Serial", value: "KA-42")
+            ],
+            folderName: "Devices",
+            confidence: 0.91,
+            assetDescription: "Photo of a warranty card for a camera.",
+            ocrSummary: "Warranty card serial KA-42 expires 2027.",
+            keywords: ["camera", "warranty", "KA-42"],
+            candidateCategories: [
+                InfoPageDraftCategoryCandidate(
+                    folderName: "Devices",
+                    templateID: .warranty,
+                    category: .warranty,
+                    confidence: 0.91,
+                    reason: "The card contains warranty and serial details."
+                )
+            ]
+        )
+        let viewModel = ChatViewModel(dependencies: ChatFeatureDependencies(
+            historyStore: InMemoryChatHistoryStore(),
+            shareImportAPI: KairoShareImportBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
+            chatAPI: FixedInfoPageDraftChatAPI(draft: draft),
+            actionAPI: NoopKairoActionAPI(),
+            infoPageStore: infoPageStore,
+            knowledgeAssetAPI: assetAPI,
+            chatAttachmentRootDirectory: temporaryDirectory(named: "chat-attachments")
+        ))
+        let sourceURL = temporaryFileURL(named: "warranty-card.jpg")
+        try Data("fake image".utf8).write(to: sourceURL)
+
+        await viewModel.send("", attachments: [
+            ChatAttachment(
+                kind: .image,
+                displayName: "warranty-card.jpg",
+                fileURL: sourceURL,
+                textPreview: "OCR: serial KA-42"
+            )
+        ])
+
+        let pages = try await infoPageStore.list(limit: 10)
+        let page = try XCTUnwrap(pages.first)
+        let assets = try await assetStore.list(limit: 10)
+        let asset = try XCTUnwrap(assets.first)
+        XCTAssertEqual(page.assetIDs, [asset.id])
+        XCTAssertEqual(asset.linkedInfoPageIDs, [page.id])
+        XCTAssertEqual(asset.generatedDescription, "Photo of a warranty card for a camera.")
+        XCTAssertEqual(asset.summary, "Warranty card serial KA-42 expires 2027.")
+        XCTAssertTrue(asset.tags.contains("camera"))
+        XCTAssertTrue(asset.tags.contains("warranty"))
+        XCTAssertTrue(asset.tags.contains("KA-42"))
+        XCTAssertTrue(asset.collections.contains("Devices"))
+    }
+
+    @MainActor
     func testPrivateThreadStartsNewChatAndDoesNotPersistHistory() async throws {
         let historyStore = InMemoryChatHistoryStore()
         let viewModel = ChatViewModel(
@@ -172,5 +239,74 @@ final class KairoChatBackendAPITests: XCTestCase {
         let savedPrivateThread = try await historyStore.thread(id: privateThreadID)
         XCTAssertNil(savedPrivateThread)
         XCTAssertNotEqual(privateThreadID, savedStandardThread?.id)
+    }
+
+    private func temporaryDirectory(named name: String) -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("kairo-chat-tests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent(name, isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    private func temporaryFileURL(named name: String) -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("kairo-chat-tests-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory.appendingPathComponent(name)
+    }
+}
+
+private actor FixedInfoPageDraftChatAPI: KairoChatAPI {
+    private let draft: InfoPageDraft
+
+    init(draft: InfoPageDraft) {
+        self.draft = draft
+    }
+
+    func respond(
+        to message: String,
+        attachments: [ChatAttachment],
+        privacyMode: ChatPrivacyMode
+    ) async throws -> AICompletionResponse {
+        try await respond(
+            to: message,
+            attachments: attachments,
+            conversationID: nil,
+            conversationHistory: [],
+            privacyMode: privacyMode
+        )
+    }
+
+    func respond(
+        to message: String,
+        attachments: [ChatAttachment],
+        conversationID: String?,
+        conversationHistory: [AIConversationTurn],
+        privacyMode: ChatPrivacyMode
+    ) async throws -> AICompletionResponse {
+        _ = message
+        _ = attachments
+        _ = conversationID
+        _ = conversationHistory
+        _ = privacyMode
+        return AICompletionResponse(
+            message: "Created page.",
+            infoPageDraft: draft
+        )
+    }
+}
+
+private struct NoopKairoActionAPI: KairoActionAPI {
+    func preview(_ action: AgentAction) async -> KairoActionPreview {
+        KairoActionPreview(
+            action: action,
+            decision: SafetyPolicyDecision(allowed: true, requiresConfirmation: false, reason: "test")
+        )
+    }
+
+    func confirm(_ action: AgentAction) async throws -> ActionExecutionResult {
+        _ = action
+        return ActionExecutionResult(completed: true, message: "")
     }
 }
