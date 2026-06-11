@@ -1172,3 +1172,5 @@
 "wikiSearch.detail.extractedText" = "Extracted text";
 "wikiSearch.detail.content" = "Content";
 "wikiSearch.detail.empty" = "No details saved yet.";
+"wikiSearch.related.title" = "Related";
+"wikiSearch.related.empty" = "No related items yet.";

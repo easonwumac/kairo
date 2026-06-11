@@ -7,22 +7,27 @@ public final class KairoWikiSearchViewModel: ObservableObject {
     @Published public private(set) var results: [KairoWikiSearchResult] = []
     @Published public private(set) var selectedResult: KairoWikiSearchResult?
     @Published public private(set) var selectedDetail: KairoWikiDetail?
+    @Published public private(set) var relatedResults: [KairoWikiSearchResult] = []
     @Published public private(set) var errorMessage: String?
     @Published public private(set) var isLoading = false
     @Published public private(set) var isLoadingDetail = false
+    @Published public private(set) var isLoadingRelated = false
 
     private let searchService: any KairoWikiSearchProviding
     private let detailResolver: (any KairoWikiDetailResolving)?
     private let limit: Int
+    private let relatedLimit: Int
 
     public init(
         searchService: any KairoWikiSearchProviding,
         detailResolver: (any KairoWikiDetailResolving)? = nil,
-        limit: Int = 30
+        limit: Int = 30,
+        relatedLimit: Int = 5
     ) {
         self.searchService = searchService
         self.detailResolver = detailResolver
         self.limit = limit
+        self.relatedLimit = relatedLimit
     }
 
     public func search(query: String) async {
@@ -34,10 +39,12 @@ public final class KairoWikiSearchViewModel: ObservableObject {
             results = try await searchService.search(query: query, limit: limit)
             selectedResult = nil
             selectedDetail = nil
+            relatedResults = []
         } catch {
             results = []
             selectedResult = nil
             selectedDetail = nil
+            relatedResults = []
             errorMessage = error.localizedDescription
         }
     }
@@ -45,18 +52,25 @@ public final class KairoWikiSearchViewModel: ObservableObject {
     public func select(_ result: KairoWikiSearchResult) async {
         selectedResult = result
         selectedDetail = nil
-        guard let detailResolver else { return }
+        relatedResults = []
 
-        isLoadingDetail = true
+        isLoadingDetail = detailResolver != nil
+        isLoadingRelated = true
         errorMessage = nil
-        defer { isLoadingDetail = false }
+        defer {
+            isLoadingDetail = false
+            isLoadingRelated = false
+        }
 
         do {
-            if let detail = try await detailResolver.detail(for: result) {
-                selectedDetail = detail
-            } else {
-                errorMessage = KairoL10n.string("wikiSearch.detail.missing")
+            if let detailResolver {
+                if let detail = try await detailResolver.detail(for: result) {
+                    selectedDetail = detail
+                } else {
+                    errorMessage = KairoL10n.string("wikiSearch.detail.missing")
+                }
             }
+            relatedResults = try await relatedResults(for: result)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -65,7 +79,21 @@ public final class KairoWikiSearchViewModel: ObservableObject {
     public func closeDetail() {
         selectedResult = nil
         selectedDetail = nil
+        relatedResults = []
         isLoadingDetail = false
+        isLoadingRelated = false
+    }
+
+    private func relatedResults(for result: KairoWikiSearchResult) async throws -> [KairoWikiSearchResult] {
+        let query = [result.title, result.snippet]
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+        guard !query.isEmpty else { return [] }
+        return try await searchService.search(query: query, limit: relatedLimit + 1)
+            .filter { $0.id != result.id || $0.kind != result.kind }
+            .prefix(relatedLimit)
+            .map { $0 }
     }
 }
 
@@ -302,8 +330,38 @@ public struct WikiSearchView: View {
                     memoryDetail(memory)
                 }
             }
+
+            relatedSection
         }
         .accessibilityIdentifier("wikiSearch.detail")
+    }
+
+    private var relatedSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Text(KairoL10n.string("wikiSearch.related.title"))
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                if viewModel.isLoadingRelated {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+
+            if viewModel.relatedResults.isEmpty, !viewModel.isLoadingRelated {
+                KairoGroupedSurface {
+                    Text(KairoL10n.string("wikiSearch.related.empty"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                }
+            } else {
+                ForEach(viewModel.relatedResults) { result in
+                    resultCard(result)
+                }
+            }
+        }
+        .accessibilityIdentifier("wikiSearch.related")
     }
 
     private func resultHeader(_ result: KairoWikiSearchResult) -> some View {

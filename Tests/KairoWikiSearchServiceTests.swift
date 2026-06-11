@@ -189,7 +189,15 @@ final class KairoWikiSearchServiceTests: XCTestCase {
             updatedAt: Date(timeIntervalSince1970: 10),
             score: 90
         )
-        let service = StubWikiSearchService(results: [result])
+        let related = KairoWikiSearchResult(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000502")!,
+            kind: .infoPage,
+            title: "Flight itinerary",
+            snippet: "Airport gate context",
+            updatedAt: Date(timeIntervalSince1970: 20),
+            score: 70
+        )
+        let service = StubWikiSearchService(resultBatches: [[result], [result, related]])
         let resolver = StubWikiDetailResolver(detail: .knowledgeAsset(KnowledgeAsset(
             id: result.id,
             title: "Boarding pass",
@@ -203,14 +211,19 @@ final class KairoWikiSearchServiceTests: XCTestCase {
         await viewModel.search(query: "boarding")
         await viewModel.select(result)
 
-        XCTAssertEqual(service.receivedQuery, "boarding")
-        XCTAssertEqual(service.receivedLimit, 5)
+        XCTAssertEqual(service.receivedQueries.first, "boarding")
+        XCTAssertEqual(service.receivedLimits.first, 5)
+        XCTAssertEqual(service.receivedQueries.count, 2)
+        XCTAssertTrue(service.receivedQueries[1].contains("Boarding pass"))
+        XCTAssertTrue(service.receivedQueries[1].contains("Flight gate and seat"))
         XCTAssertEqual(viewModel.results, [result])
+        XCTAssertEqual(viewModel.relatedResults, [related])
         XCTAssertEqual(resolver.receivedResultID, result.id)
         XCTAssertNotNil(viewModel.selectedDetail)
         XCTAssertNil(viewModel.errorMessage)
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertFalse(viewModel.isLoadingDetail)
+        XCTAssertFalse(viewModel.isLoadingRelated)
     }
 
     @MainActor
@@ -239,8 +252,10 @@ final class KairoWikiSearchServiceTests: XCTestCase {
 }
 
 private final class StubWikiSearchService: KairoWikiSearchProviding, @unchecked Sendable {
-    private let results: [KairoWikiSearchResult]
+    private var resultBatches: [[KairoWikiSearchResult]]
     private let error: Error?
+    private(set) var receivedQueries: [String] = []
+    private(set) var receivedLimits: [Int] = []
     private(set) var receivedQuery: String?
     private(set) var receivedLimit: Int?
 
@@ -248,17 +263,30 @@ private final class StubWikiSearchService: KairoWikiSearchProviding, @unchecked 
         results: [KairoWikiSearchResult],
         error: Error? = nil
     ) {
-        self.results = results
+        self.resultBatches = [results]
+        self.error = error
+    }
+
+    init(
+        resultBatches: [[KairoWikiSearchResult]],
+        error: Error? = nil
+    ) {
+        self.resultBatches = resultBatches
         self.error = error
     }
 
     func search(query: String, limit: Int) async throws -> [KairoWikiSearchResult] {
         receivedQuery = query
         receivedLimit = limit
+        receivedQueries.append(query)
+        receivedLimits.append(limit)
         if let error {
             throw error
         }
-        return results
+        if resultBatches.isEmpty {
+            return []
+        }
+        return resultBatches.removeFirst()
     }
 }
 
