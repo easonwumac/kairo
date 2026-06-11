@@ -1547,6 +1547,60 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertFalse(response.message.contains(KairoL10n.string("chat.provider.localFallback.generic")))
     }
 
+    func testLocalModelRoutingAIProviderEscalatesDeepReasoningToCompanionWhenPreferLocal() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .preferLocal,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let companionProvider = FixedResponseAIProvider(message: "companion qwen answer")
+        let provider = LocalModelRoutingAIProvider(
+            cloudProvider: companionProvider,
+            localModelSettingsService: service,
+            localProvider: LocalFallbackProvider(installedModelID: "qwen-small"),
+            localRuntimeAvailable: true
+        )
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Analyze deeply and compare architecture tradeoffs for this plan."
+        ))
+
+        XCTAssertEqual(response.message, "companion qwen answer")
+        let completionCallCount = await companionProvider.completionCalls()
+        XCTAssertEqual(completionCallCount, 1)
+    }
+
+    func testCompanionCloudModelRoutingProviderUsesOpenAICompatibleSettings() async throws {
+        let chatURL = URL(string: "http://127.0.0.1:8000/v1/chat/completions")!
+        let httpClient = StaticHTTPClient(routes: [
+            chatURL: StaticHTTPResponse(body: """
+            {"choices":[{"message":{"role":"assistant","content":"mlx qwen answer"}}],"usage":{"prompt_tokens":12,"completion_tokens":4,"total_tokens":16}}
+            """)
+        ])
+        let fallbackProvider = RecordingAIProvider()
+        let provider = CompanionCloudModelRoutingAIProvider(
+            credentialStore: InMemoryCredentialStore(),
+            fallbackProvider: fallbackProvider,
+            httpClient: httpClient,
+            settingsLoader: {
+                OpenAICompatibleRuntimeSettings(
+                    endpoint: "http://127.0.0.1:8000/v1",
+                    apiKey: "test-key",
+                    model: "qwen3-27b-mlx-4bit"
+                )
+            }
+        )
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Use the companion model."
+        ))
+
+        XCTAssertEqual(response.message, "mlx qwen answer")
+        let fallbackCallCount = await fallbackProvider.completionCalls()
+        XCTAssertEqual(fallbackCallCount, 0)
+    }
+
     func testLocalModelRoutingAIProviderFailsClosedWhenLocalOnlyHasNoModel() async throws {
         let service = try await makeLocalModelSettingsService(
             preference: .localOnly,
@@ -3123,6 +3177,30 @@ private actor RecordingAIProvider: AIProvider {
         _ = request
         completionCallCount += 1
         return AICompletionResponse(message: "unexpected cloud call")
+    }
+
+    func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {
+        _ = request
+        return AIEmbeddingResponse(vector: [0])
+    }
+
+    func completionCalls() -> Int {
+        completionCallCount
+    }
+}
+
+private actor FixedResponseAIProvider: AIProvider {
+    private let message: String
+    private(set) var completionCallCount = 0
+
+    init(message: String) {
+        self.message = message
+    }
+
+    func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
+        _ = request
+        completionCallCount += 1
+        return AICompletionResponse(message: message)
     }
 
     func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {

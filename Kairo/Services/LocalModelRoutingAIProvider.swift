@@ -96,6 +96,12 @@ public struct LocalModelRoutingAIProvider: AIProvider {
         if requiresCurrentInfo(request) {
             return .webCurrentInfo
         }
+        if containsAny(text, [
+            "deep reasoning", "reason through", "think through", "analyze deeply", "tradeoff", "architecture",
+            "深入分析", "深度分析", "推理", "架構", "取捨", "比較方案"
+        ]) {
+            return .complexReasoning
+        }
         if estimatedTokenCount(for: request) > 4_096 {
             return .longContext
         }

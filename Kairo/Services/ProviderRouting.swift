@@ -95,6 +95,7 @@ public enum ProviderRouteReason: String, Codable, Equatable, Sendable {
     case userPreferredCloud
     case localIncapable
     case localUnavailable
+    case companionEscalation
     case safetyEscalation
     case contextTooLong
     case toolRequired
@@ -198,8 +199,12 @@ public struct ProviderRouter: AIProvider {
             return cloudOrUnavailable(context: context, reason: .localIncapable)
         }
 
-        if context.taskClass == .regulatedAdvice || context.taskClass == .complexReasoning {
+        if context.taskClass == .regulatedAdvice {
             return cloudOrUnavailable(context: context, reason: .safetyEscalation)
+        }
+
+        if context.taskClass == .complexReasoning {
+            return cloudOrUnavailable(context: context, reason: .companionEscalation)
         }
 
         if context.taskClass == .longContext || context.contextTokenEstimate > context.localContextWindow {

@@ -101,7 +101,7 @@ public struct KairoLiveLocalModelFactory: Sendable {
             runtime: runtimeBundle.replyRuntime
         )
         let aiProvider = LocalModelRoutingAIProvider(
-            cloudProvider: CloudModelRoutingAIProvider(credentialStore: credentialStore),
+            cloudProvider: CompanionCloudModelRoutingAIProvider(credentialStore: credentialStore),
             localModelSettingsService: settingsService,
             localProvider: LocalModelRuntimeAIProvider(
                 localModelSettingsService: settingsService,
