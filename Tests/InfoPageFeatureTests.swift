@@ -43,6 +43,42 @@ final class InfoPageFeatureTests: XCTestCase {
         XCTAssertEqual(results.first?.facts.first?.label, "destination")
     }
 
+    func testInfoPageSearchMatchesSmallTypos() async throws {
+        let page = InfoPage(
+            title: "Airport pickup plan",
+            category: .travel,
+            templateID: .travel,
+            summary: "Hong Kong arrival details"
+        )
+        let store = InMemoryInfoPageStore(seed: [page])
+
+        let results = try await store.search(query: "airprt", limit: 10)
+
+        XCTAssertEqual(results.map(\.id), [page.id])
+    }
+
+    func testInfoPageSearchRanksExactMatchesBeforeFuzzyMatches() async throws {
+        let fuzzy = InfoPage(
+            title: "Airprt pickup plan",
+            category: .travel,
+            templateID: .travel,
+            summary: "Hong Kong arrival details",
+            updatedAt: Date(timeIntervalSince1970: 2)
+        )
+        let exact = InfoPage(
+            title: "Airport transfer",
+            category: .travel,
+            templateID: .travel,
+            summary: "Airport handoff checklist",
+            updatedAt: Date(timeIntervalSince1970: 1)
+        )
+        let store = InMemoryInfoPageStore(seed: [fuzzy, exact])
+
+        let results = try await store.search(query: "airport", limit: 10)
+
+        XCTAssertEqual(results.map(\.id), [exact.id, fuzzy.id])
+    }
+
     func testInfoPageStoreSoftDeleteExcludesPageFromListAndExport() async throws {
         let deleted = InfoPage(title: "Deleted", category: .generalNote, templateID: .generalNote)
         let active = InfoPage(title: "Active", category: .project, templateID: .project)

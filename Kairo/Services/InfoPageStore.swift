@@ -212,6 +212,14 @@ public struct InfoPageSearchMatcher: Sendable {
                 score += 5
             }
         }
+
+        if score == 0 {
+            let words = Self.searchTokens(from: searchableText)
+            for token in tokens where words.contains(where: { Self.fuzzyMatches(token, candidate: $0) }) {
+                score += 4
+            }
+        }
+
         return score
     }
 
@@ -234,5 +242,58 @@ public struct InfoPageSearchMatcher: Sendable {
             .filter { token in
                 token.count >= 2 && !stopWords.contains(token)
             }
+    }
+
+    private static func fuzzyMatches(_ token: String, candidate: String) -> Bool {
+        guard token.count >= 3, candidate.count >= 3 else { return false }
+        if candidate.hasPrefix(token) || token.hasPrefix(candidate) {
+            return true
+        }
+        if isSubsequence(token, of: candidate) {
+            return true
+        }
+        return levenshteinDistance(token, candidate, maximum: 1) <= 1
+    }
+
+    private static func isSubsequence(_ needle: String, of haystack: String) -> Bool {
+        var iterator = haystack.makeIterator()
+        for character in needle {
+            var found = false
+            while let next = iterator.next() {
+                if next == character {
+                    found = true
+                    break
+                }
+            }
+            if !found { return false }
+        }
+        return true
+    }
+
+    private static func levenshteinDistance(_ lhs: String, _ rhs: String, maximum: Int) -> Int {
+        let left = Array(lhs)
+        let right = Array(rhs)
+        if abs(left.count - right.count) > maximum {
+            return maximum + 1
+        }
+        var previous = Array(0...right.count)
+        for (leftIndex, leftCharacter) in left.enumerated() {
+            var current = [leftIndex + 1] + Array(repeating: 0, count: right.count)
+            var rowMinimum = current[0]
+            for (rightIndex, rightCharacter) in right.enumerated() {
+                let cost = leftCharacter == rightCharacter ? 0 : 1
+                current[rightIndex + 1] = min(
+                    previous[rightIndex + 1] + 1,
+                    current[rightIndex] + 1,
+                    previous[rightIndex] + cost
+                )
+                rowMinimum = min(rowMinimum, current[rightIndex + 1])
+            }
+            if rowMinimum > maximum {
+                return maximum + 1
+            }
+            previous = current
+        }
+        return previous.last ?? maximum + 1
     }
 }
