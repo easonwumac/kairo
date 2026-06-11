@@ -1172,5 +1172,7 @@
 "wikiSearch.detail.extractedText" = "擷取文字";
 "wikiSearch.detail.content" = "內容";
 "wikiSearch.detail.empty" = "尚未保存詳細內容。";
+"wikiSearch.detail.linkedAssets" = "連結資產";
+"wikiSearch.detail.linkedInfoPages" = "連結頁面";
 "wikiSearch.related.title" = "相關項目";
 "wikiSearch.related.empty" = "目前沒有相關項目。";

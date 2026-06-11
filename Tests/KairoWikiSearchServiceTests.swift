@@ -224,9 +224,52 @@ final class KairoWikiSearchServiceTests: XCTestCase {
         let assetDetail = try await resolver.detail(for: result(id: asset.id, kind: .knowledgeAsset))
         let memoryDetail = try await resolver.detail(for: result(id: memory.id, kind: .memory))
 
-        XCTAssertEqual(pageDetail, .infoPage(page))
-        XCTAssertEqual(assetDetail, .knowledgeAsset(asset))
+        XCTAssertEqual(pageDetail, .infoPage(page, linkedAssets: []))
+        XCTAssertEqual(assetDetail, .knowledgeAsset(asset, linkedInfoPages: []))
         XCTAssertEqual(memoryDetail, .memory(memory))
+    }
+
+    func testWikiDetailResolverExpandsLinkedAssetsAndPages() async throws {
+        let assetID = UUID(uuidString: "00000000-0000-0000-0000-000000000115")!
+        let page = InfoPage(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000116")!,
+            title: "Lens warranty",
+            category: .warranty,
+            templateID: .warranty,
+            summary: "Warranty coverage",
+            assetIDs: [assetID],
+            updatedAt: Date(timeIntervalSince1970: 20)
+        )
+        let asset = KnowledgeAsset(
+            id: assetID,
+            title: "Lens receipt",
+            kind: .image,
+            source: .chat,
+            attachments: [],
+            generatedDescription: "Serial number and purchase date",
+            summary: "Original receipt",
+            linkedInfoPageIDs: [page.id],
+            updatedAt: Date(timeIntervalSince1970: 10)
+        )
+        let resolver = KairoWikiDetailResolver(
+            memoryStore: InMemoryMemoryStore(),
+            knowledgeAssetStore: InMemoryKnowledgeAssetStore(seed: [asset]),
+            infoPageStore: InMemoryInfoPageStore(seed: [page])
+        )
+
+        let pageDetail = try await resolver.detail(for: result(id: page.id, kind: .infoPage))
+        let assetDetail = try await resolver.detail(for: result(id: asset.id, kind: .knowledgeAsset))
+
+        guard case .infoPage(_, let linkedAssets) = pageDetail else {
+            return XCTFail("Expected info page detail")
+        }
+        guard case .knowledgeAsset(_, let linkedInfoPages) = assetDetail else {
+            return XCTFail("Expected asset detail")
+        }
+        XCTAssertEqual(linkedAssets.map(\.id), [asset.id])
+        XCTAssertEqual(linkedAssets.map(\.kind), [.knowledgeAsset])
+        XCTAssertEqual(linkedInfoPages.map(\.id), [page.id])
+        XCTAssertEqual(linkedInfoPages.map(\.kind), [.infoPage])
     }
 
     func testWikiDetailResolverSkipsDeletedItems() async throws {
@@ -279,7 +322,7 @@ final class KairoWikiSearchServiceTests: XCTestCase {
             source: .manual,
             attachments: [],
             summary: "Flight gate and seat"
-        )))
+        ), linkedInfoPages: []))
         let viewModel = KairoWikiSearchViewModel(searchService: service, detailResolver: resolver, limit: 5)
 
         await viewModel.search(query: "boarding")

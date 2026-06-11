@@ -1172,5 +1172,7 @@
 "wikiSearch.detail.extractedText" = "Extracted text";
 "wikiSearch.detail.content" = "Content";
 "wikiSearch.detail.empty" = "No details saved yet.";
+"wikiSearch.detail.linkedAssets" = "Linked assets";
+"wikiSearch.detail.linkedInfoPages" = "Linked pages";
 "wikiSearch.related.title" = "Related";
 "wikiSearch.related.empty" = "No related items yet.";

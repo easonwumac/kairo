@@ -322,10 +322,10 @@ public struct WikiSearchView: View {
 
             if let detail {
                 switch detail {
-                case .infoPage(let page):
-                    infoPageDetail(page)
-                case .knowledgeAsset(let asset):
-                    assetDetail(asset)
+                case .infoPage(let page, let linkedAssets):
+                    infoPageDetail(page, linkedAssets: linkedAssets)
+                case .knowledgeAsset(let asset, let linkedInfoPages):
+                    assetDetail(asset, linkedInfoPages: linkedInfoPages)
                 case .memory(let memory):
                     memoryDetail(memory)
                 }
@@ -385,7 +385,7 @@ public struct WikiSearchView: View {
         }
     }
 
-    private func infoPageDetail(_ page: InfoPage) -> some View {
+    private func infoPageDetail(_ page: InfoPage, linkedAssets: [KairoWikiSearchResult]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             detailSection(title: KairoL10n.string("wikiSearch.detail.summary"), systemImage: "text.alignleft") {
                 Text(page.summary.isEmpty ? KairoL10n.string("wikiSearch.detail.empty") : page.summary)
@@ -407,10 +407,14 @@ public struct WikiSearchView: View {
                     }
                 }
             }
+            linkedItemsSection(
+                title: KairoL10n.string("wikiSearch.detail.linkedAssets"),
+                items: linkedAssets
+            )
         }
     }
 
-    private func assetDetail(_ asset: KnowledgeAsset) -> some View {
+    private func assetDetail(_ asset: KnowledgeAsset, linkedInfoPages: [KairoWikiSearchResult]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             detailSection(title: KairoL10n.string("wikiSearch.detail.summary"), systemImage: "text.alignleft") {
                 Text(asset.summary.isEmpty ? KairoL10n.string("wikiSearch.detail.empty") : asset.summary)
@@ -426,6 +430,10 @@ public struct WikiSearchView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            linkedItemsSection(
+                title: KairoL10n.string("wikiSearch.detail.linkedInfoPages"),
+                items: linkedInfoPages
+            )
         }
     }
 
@@ -457,6 +465,17 @@ public struct WikiSearchView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
                 content()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func linkedItemsSection(title: String, items: [KairoWikiSearchResult]) -> some View {
+        if !items.isEmpty {
+            detailSection(title: title, systemImage: "link") {
+                ForEach(items) { item in
+                    resultCard(item)
+                }
             }
         }
     }
