@@ -11,6 +11,7 @@ public struct AICompletionRequest: Codable, Equatable, Sendable {
     public var conversationID: String?
     public var conversationHistory: [AIConversationTurn]
     public var memoryContext: [MemoryRecord]
+    public var wikiContext: [KairoWikiSearchResult]
     public var allowedCapabilities: [CapabilityKey]
     public var attachmentContext: [ChatAttachment]
     public var toolContext: String?
@@ -22,6 +23,7 @@ public struct AICompletionRequest: Codable, Equatable, Sendable {
         conversationID: String? = nil,
         conversationHistory: [AIConversationTurn] = [],
         memoryContext: [MemoryRecord] = [],
+        wikiContext: [KairoWikiSearchResult] = [],
         allowedCapabilities: [CapabilityKey] = [],
         attachmentContext: [ChatAttachment] = [],
         toolContext: String? = nil,
@@ -32,6 +34,7 @@ public struct AICompletionRequest: Codable, Equatable, Sendable {
         self.conversationID = conversationID
         self.conversationHistory = conversationHistory
         self.memoryContext = memoryContext
+        self.wikiContext = wikiContext
         self.allowedCapabilities = allowedCapabilities
         self.attachmentContext = attachmentContext
         self.toolContext = toolContext

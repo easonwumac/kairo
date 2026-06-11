@@ -2,6 +2,7 @@ import Foundation
 
 public struct AgentCoreDependencies: Sendable {
     public var memoryContextProvider: any AgentMemoryContextProviding
+    public var wikiContextProvider: any AgentWikiContextProviding
     public var memoryWriter: any AgentMemoryWriting
     public var aiProvider: any AIProvider
     public var skillCatalogProvider: AgentSkillCatalogProvider
@@ -13,6 +14,7 @@ public struct AgentCoreDependencies: Sendable {
 
     public init(
         memoryContextProvider: any AgentMemoryContextProviding,
+        wikiContextProvider: any AgentWikiContextProviding = EmptyAgentWikiContextProvider(),
         memoryWriter: any AgentMemoryWriting,
         aiProvider: any AIProvider,
         skillCatalogProvider: AgentSkillCatalogProvider,
@@ -23,6 +25,7 @@ public struct AgentCoreDependencies: Sendable {
         completionRequestBuilder: any AgentCompletionRequestBuilding
     ) {
         self.memoryContextProvider = memoryContextProvider
+        self.wikiContextProvider = wikiContextProvider
         self.memoryWriter = memoryWriter
         self.aiProvider = aiProvider
         self.skillCatalogProvider = skillCatalogProvider

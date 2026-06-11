@@ -165,6 +165,7 @@ public struct LocalModelRoutingAIProvider: AIProvider {
             conversationID: request.conversationID,
             conversationHistory: request.conversationHistory,
             memoryContext: request.memoryContext,
+            wikiContext: request.wikiContext,
             allowedCapabilities: request.allowedCapabilities,
             attachmentContext: request.attachmentContext,
             toolContext: request.toolContext,

@@ -96,4 +96,23 @@ final class KairoWikiSearchServiceTests: XCTestCase {
         XCTAssertLessThanOrEqual(result.snippet.count, 220)
         XCTAssertTrue(result.snippet.contains("important"))
     }
+
+    func testDefaultAgentWikiContextProviderSkipsPrivateChat() async throws {
+        let memory = MemoryRecord(
+            title: "Private lookup",
+            summary: "Do not inject",
+            content: "private context",
+            source: .manual
+        )
+        let searchService = KairoWikiSearchService(
+            memoryStore: InMemoryMemoryStore(seed: [memory]),
+            knowledgeAssetStore: InMemoryKnowledgeAssetStore(),
+            infoPageStore: InMemoryInfoPageStore()
+        )
+        let provider = DefaultAgentWikiContextProvider(wikiSearchService: searchService)
+
+        let results = try await provider.context(for: "private", privacyMode: .privateChat)
+
+        XCTAssertTrue(results.isEmpty)
+    }
 }

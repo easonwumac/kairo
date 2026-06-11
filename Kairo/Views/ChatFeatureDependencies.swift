@@ -179,14 +179,5 @@ public extension KairoEnvironment {
         return deps
     }
 
-    var sharedInfoPageStore: InfoPageStore {
-        injectedInfoPageStore ?? Self.fallbackInMemoryInfoPageStore
-    }
-
-    private static let fallbackInMemoryInfoPageStore: InfoPageStore = InMemoryInfoPageStore()
-
-    var infoPageStore: InfoPageStore {
-        sharedInfoPageStore
-    }
 }
 #endif

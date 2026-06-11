@@ -86,6 +86,58 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(response.memoryContextCount, 1)
     }
 
+    func testAgentCoreStandardChatIncludesWikiContext() async throws {
+        let wikiResult = KairoWikiSearchResult(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000401")!,
+            kind: .infoPage,
+            title: "Airport Pickup",
+            snippet: "Driver arrives at terminal 1.",
+            updatedAt: Date(timeIntervalSince1970: 10),
+            score: 120
+        )
+        let provider = CapturingAIProvider(response: AICompletionResponse(message: "Wiki response"))
+        let wikiContextProvider = StubAgentWikiContextProvider(results: [wikiResult])
+        let agent = AgentCore(
+            aiProvider: provider,
+            wikiContextProvider: wikiContextProvider
+        )
+
+        let response = try await agent.respond(to: "airport pickup")
+        let request = await provider.capturedRequest()
+        let capturedRequest = try XCTUnwrap(request)
+
+        XCTAssertEqual(wikiContextProvider.requestCount, 1)
+        XCTAssertEqual(wikiContextProvider.receivedPrivacyMode, .standard)
+        XCTAssertEqual(capturedRequest.wikiContext.map(\.id), [wikiResult.id])
+        XCTAssertEqual(response.memoryContextCount, 1)
+    }
+
+    func testAgentCorePrivateChatOmitsWikiContext() async throws {
+        let wikiResult = KairoWikiSearchResult(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000402")!,
+            kind: .knowledgeAsset,
+            title: "Private Asset",
+            snippet: "Should not be sent in private chat.",
+            updatedAt: Date(timeIntervalSince1970: 10),
+            score: 80
+        )
+        let provider = CapturingAIProvider(response: AICompletionResponse(message: "Private wiki response"))
+        let wikiContextProvider = StubAgentWikiContextProvider(results: [wikiResult])
+        let agent = AgentCore(
+            aiProvider: provider,
+            wikiContextProvider: wikiContextProvider
+        )
+
+        let response = try await agent.respond(to: "private lookup", privacyMode: .privateChat)
+        let request = await provider.capturedRequest()
+        let capturedRequest = try XCTUnwrap(request)
+
+        XCTAssertEqual(wikiContextProvider.requestCount, 1)
+        XCTAssertEqual(wikiContextProvider.receivedPrivacyMode, .privateChat)
+        XCTAssertTrue(capturedRequest.wikiContext.isEmpty)
+        XCTAssertEqual(response.memoryContextCount, 0)
+    }
+
     func testAgentCoreUsesInjectedToolContextProvider() async throws {
         let provider = CapturingAIProvider(response: AICompletionResponse(message: "Context response"))
         let toolContextProvider = StubAgentCapabilityPromptContextProvider()
@@ -336,11 +388,35 @@ final class KairoCoreTests: XCTestCase {
             message: "Build with injected capabilities",
             attachments: [],
             memoryContext: AgentMemoryContext(relevantMemories: [], deduplicationContext: []),
+            wikiContext: [],
             toolContext: nil,
             privacyMode: .standard
         )
 
         XCTAssertEqual(request.allowedCapabilities, [.calendar, .reminders])
+    }
+
+    func testPromptComposerIncludesWikiContext() {
+        let request = AICompletionRequest(
+            systemPrompt: "system",
+            userPrompt: "Where is pickup?",
+            wikiContext: [
+                KairoWikiSearchResult(
+                    id: UUID(uuidString: "00000000-0000-0000-0000-000000000403")!,
+                    kind: .infoPage,
+                    title: "Airport Pickup",
+                    snippet: "Driver arrives at terminal 1.",
+                    updatedAt: Date(timeIntervalSince1970: 10),
+                    score: 120
+                )
+            ]
+        )
+
+        let userText = AIRequestPromptComposer.currentUserText(from: request)
+
+        XCTAssertTrue(userText.contains("Relevant wiki:"))
+        XCTAssertTrue(userText.contains("[infoPage] Airport Pickup: Driver arrives at terminal 1."))
+        XCTAssertTrue(userText.contains("User:\nWhere is pickup?"))
     }
 
     func testAgentCoreUsesInjectedMemoryContextProvider() async throws {
@@ -2095,22 +2171,26 @@ private final class StubAgentResponseActionPlanner: AgentResponseActionPlanning,
 private final class StubAgentCompletionRequestBuilder: AgentCompletionRequestBuilding, @unchecked Sendable {
     private(set) var requestCount = 0
     private(set) var receivedMemoryIDs: [UUID] = []
+    private(set) var receivedWikiIDs: [UUID] = []
     private(set) var receivedPrivacyMode: ChatPrivacyMode?
 
     func buildCompletionRequest(
         message: String,
         attachments: [ChatAttachment],
         memoryContext: AgentMemoryContext,
+        wikiContext: [KairoWikiSearchResult],
         toolContext: String?,
         privacyMode: ChatPrivacyMode
     ) -> AICompletionRequest {
         requestCount += 1
         receivedMemoryIDs = memoryContext.relevantMemories.map { $0.id }
+        receivedWikiIDs = wikiContext.map { $0.id }
         receivedPrivacyMode = privacyMode
         return AICompletionRequest(
             systemPrompt: "stub",
             userPrompt: message,
             memoryContext: [],
+            wikiContext: wikiContext,
             allowedCapabilities: [.calendar],
             attachmentContext: attachments,
             toolContext: toolContext,
@@ -2139,6 +2219,27 @@ private final class StubAgentMemoryContextProvider: AgentMemoryContextProviding,
         requestCount += 1
         receivedPrivacyMode = privacyMode
         return suppliedContext
+    }
+}
+
+private final class StubAgentWikiContextProvider: AgentWikiContextProviding, @unchecked Sendable {
+    private let suppliedResults: [KairoWikiSearchResult]
+    private(set) var requestCount = 0
+    private(set) var receivedPrivacyMode: ChatPrivacyMode?
+
+    init(results: [KairoWikiSearchResult]) {
+        self.suppliedResults = results
+    }
+
+    func context(
+        for message: String,
+        privacyMode: ChatPrivacyMode
+    ) async throws -> [KairoWikiSearchResult] {
+        _ = message
+        requestCount += 1
+        receivedPrivacyMode = privacyMode
+        guard privacyMode != .privateChat else { return [] }
+        return suppliedResults
     }
 }
 

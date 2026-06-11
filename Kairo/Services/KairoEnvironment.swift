@@ -130,6 +130,16 @@ public struct KairoEnvironment: KairoBackendDependencies {
         self.urlRouter = urlRouter
     }
 
+    public var sharedInfoPageStore: InfoPageStore {
+        injectedInfoPageStore ?? Self.fallbackInMemoryInfoPageStore
+    }
+
+    public var infoPageStore: InfoPageStore {
+        sharedInfoPageStore
+    }
+
+    private static let fallbackInMemoryInfoPageStore: InfoPageStore = InMemoryInfoPageStore()
+
     public static func preview() -> KairoEnvironment {
         KairoPreviewEnvironmentComposer().makeEnvironment()
     }

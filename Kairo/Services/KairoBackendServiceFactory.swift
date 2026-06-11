@@ -3,6 +3,7 @@ import Foundation
 public protocol KairoBackendDependencies: Sendable {
     var memoryStore: MemoryStore { get }
     var knowledgeAssetStore: KnowledgeAssetStore { get }
+    var infoPageStore: InfoPageStore { get }
     var credentialStore: CredentialStore { get }
     var aiProvider: AIProvider { get }
     var chatHistoryStore: ChatHistoryStore { get }
@@ -102,6 +103,13 @@ public struct KairoChatBackendServiceFactory<Dependencies: KairoBackendDependenc
         )
         return AgentCoreDependencies(
             memoryContextProvider: DefaultAgentMemoryContextProvider(memoryStore: dependencies.memoryStore),
+            wikiContextProvider: DefaultAgentWikiContextProvider(
+                wikiSearchService: KairoWikiSearchService(
+                    memoryStore: dependencies.memoryStore,
+                    knowledgeAssetStore: dependencies.knowledgeAssetStore,
+                    infoPageStore: dependencies.infoPageStore
+                )
+            ),
             memoryWriter: DefaultAgentMemoryWriter(memoryStore: dependencies.memoryStore),
             aiProvider: dependencies.aiProvider,
             skillCatalogProvider: skillCatalogProvider,

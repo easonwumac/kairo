@@ -2,6 +2,7 @@ import Foundation
 
 public actor AgentCore {
     private let memoryContextProvider: any AgentMemoryContextProviding
+    private let wikiContextProvider: any AgentWikiContextProviding
     private let memoryWriter: any AgentMemoryWriting
     private let aiProvider: AIProvider
     private let skillCatalogProvider: AgentSkillCatalogProvider
@@ -13,6 +14,7 @@ public actor AgentCore {
 
     public init(dependencies: AgentCoreDependencies) {
         self.memoryContextProvider = dependencies.memoryContextProvider
+        self.wikiContextProvider = dependencies.wikiContextProvider
         self.memoryWriter = dependencies.memoryWriter
         self.aiProvider = dependencies.aiProvider
         self.skillCatalogProvider = dependencies.skillCatalogProvider
@@ -32,6 +34,7 @@ public actor AgentCore {
         toolCatalog: any BuiltInPhoneToolCatalogProviding = BuiltInPhoneToolCatalog(),
         appIntegrationSkillCatalog: any AppIntegrationSkillCatalogProviding = AppIntegrationSkillCatalog(),
         memoryContextProvider: (any AgentMemoryContextProviding)? = nil,
+        wikiContextProvider: (any AgentWikiContextProviding)? = nil,
         memoryWriter: (any AgentMemoryWriting)? = nil,
         actionGate: (any PhoneToolActionGating)? = nil,
         toolContextProvider: (any AgentCapabilityPromptContextProviding)? = nil,
@@ -52,6 +55,7 @@ public actor AgentCore {
         )
         self.init(dependencies: AgentCoreDependencies(
             memoryContextProvider: memoryContextProvider ?? DefaultAgentMemoryContextProvider(memoryStore: memoryStore),
+            wikiContextProvider: wikiContextProvider ?? EmptyAgentWikiContextProvider(),
             memoryWriter: memoryWriter ?? DefaultAgentMemoryWriter(memoryStore: memoryStore),
             aiProvider: aiProvider,
             skillCatalogProvider: skillCatalogProvider ?? .constant(skillCatalog),
@@ -98,7 +102,10 @@ public actor AgentCore {
         conversationHistory: [AIConversationTurn] = [],
         privacyMode: ChatPrivacyMode = .standard
     ) async throws -> AICompletionResponse {
-        let memoryContext = try await memoryContextProvider.context(for: message, privacyMode: privacyMode)
+        async let memoryContextTask = memoryContextProvider.context(for: message, privacyMode: privacyMode)
+        async let wikiContextTask = wikiContextProvider.context(for: message, privacyMode: privacyMode)
+        let memoryContext = try await memoryContextTask
+        let wikiContext = try await wikiContextTask
         let skillCatalog = try await skillCatalogProvider.catalog()
         let toolContext = toolContextProvider.buildToolContext(skillCatalog: skillCatalog)
         let toolRequest = toolPlanningRequestBuilder.buildToolPlanningRequest(
@@ -112,6 +119,7 @@ public actor AgentCore {
             message: message,
             attachments: attachments,
             memoryContext: memoryContext,
+            wikiContext: wikiContext,
             toolContext: toolContext,
             privacyMode: privacyMode
         )
@@ -131,7 +139,7 @@ public actor AgentCore {
             message: response.message,
             proposedActions: actionPlan.proposedActions,
             toolCandidates: actionPlan.toolCandidates,
-            memoryContextCount: memoryContext.relevantMemories.count,
+            memoryContextCount: memoryContext.relevantMemories.count + wikiContext.count,
             reasoningText: response.reasoningText,
             inferenceMetrics: response.inferenceMetrics,
             rawModelResponse: response.rawModelResponse,

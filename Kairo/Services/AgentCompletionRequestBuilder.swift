@@ -5,6 +5,7 @@ public protocol AgentCompletionRequestBuilding: Sendable {
         message: String,
         attachments: [ChatAttachment],
         memoryContext: AgentMemoryContext,
+        wikiContext: [KairoWikiSearchResult],
         toolContext: String?,
         privacyMode: ChatPrivacyMode
     ) -> AICompletionRequest
@@ -39,6 +40,7 @@ public struct DefaultAgentCompletionRequestBuilder: AgentCompletionRequestBuildi
         message: String,
         attachments: [ChatAttachment],
         memoryContext: AgentMemoryContext,
+        wikiContext: [KairoWikiSearchResult],
         toolContext: String?,
         privacyMode: ChatPrivacyMode
     ) -> AICompletionRequest {
@@ -46,6 +48,7 @@ public struct DefaultAgentCompletionRequestBuilder: AgentCompletionRequestBuildi
             systemPrompt: systemPrompt,
             userPrompt: message,
             memoryContext: memoryContext.relevantMemories,
+            wikiContext: wikiContext,
             allowedCapabilities: allowedCapabilities,
             attachmentContext: attachments,
             toolContext: toolContext,
