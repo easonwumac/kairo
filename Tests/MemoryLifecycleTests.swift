@@ -92,7 +92,7 @@ final class MemoryLifecycleTests: XCTestCase {
         XCTAssertEqual(results.map(\.id), [launch.id])
     }
 
-    func testKairoLiveStoreFactoryBuildsPersistentMemoryAndChatStores() async throws {
+    func testKairoLiveStoreFactoryBuildsPersistentWikiMemoryAndChatStores() async throws {
         let rootDirectory = temporaryDirectory(named: "KairoLiveStoreFactory")
         let paths = KairoPaths(
             appName: "KairoLiveStoreFactoryTests",
@@ -108,17 +108,30 @@ final class MemoryLifecycleTests: XCTestCase {
         let thread = ChatThread(messages: [
             ChatMessage(role: .user, text: "Persist this chat thread")
         ])
+        let page = InfoPage(
+            title: "Factory wiki page",
+            category: .project,
+            templateID: .project,
+            summary: "Live factory should preserve wiki pages.",
+            facts: [
+                InfoPageFact(label: "Ticket", value: "KAIRO-118")
+            ]
+        )
 
         try await firstComponents.memoryStore.save(memory)
         try await firstComponents.chatHistoryStore.saveThread(thread)
+        try await firstComponents.infoPageStore.save(page)
 
         let reloadedComponents = try await KairoLiveStoreFactory(paths: paths).makeComponents()
         let reloadedMemories = try await reloadedComponents.memoryStore.list(limit: 10)
         let reloadedThreads = try await reloadedComponents.chatHistoryStore.listThreads(limit: 10)
+        let reloadedPages = try await reloadedComponents.infoPageStore.search(query: "KAIRO-118", limit: 10)
 
         XCTAssertEqual(reloadedMemories.map(\.id), [memory.id])
         XCTAssertEqual(reloadedThreads.map(\.id), [thread.id])
         XCTAssertEqual(reloadedThreads.first?.messages.first?.text, "Persist this chat thread")
+        XCTAssertEqual(reloadedPages.map(\.id), [page.id])
+        XCTAssertEqual(reloadedComponents.chatAttachmentsDirectory.lastPathComponent, "ChatAttachments")
     }
 
     private func temporaryFileURL(named name: String) -> URL {

@@ -94,15 +94,6 @@ public struct KairoLiveEnvironmentComposer: Sendable {
         let capabilityToolPolicyStore = try FileBackedCapabilityToolPolicyStore(
             fileURL: paths.capabilityToolPolicyStoreURL
         )
-        let infoPageStore: InfoPageStore
-        do {
-            infoPageStore = try await JSONFileInfoPageStore(fileURL: paths.infoPageStoreURL)
-        } catch {
-            infoPageStore = InMemoryInfoPageStore()
-        }
-        let chatAttachmentsDirectory = paths.knowledgeAssetsDirectory
-            .appendingPathComponent("ChatAttachments", isDirectory: true)
-
         return KairoEnvironment(
             memoryStore: storeComponents.memoryStore,
             knowledgeAssetStore: storeComponents.knowledgeAssetStore,
@@ -137,8 +128,8 @@ public struct KairoLiveEnvironmentComposer: Sendable {
                 runtime: shortcutRuntime,
                 appIntegrationSkillCatalog: appIntegrationSkillCatalog
             ),
-            injectedInfoPageStore: infoPageStore,
-            chatAttachmentsDirectory: chatAttachmentsDirectory
+            injectedInfoPageStore: storeComponents.infoPageStore,
+            chatAttachmentsDirectory: storeComponents.chatAttachmentsDirectory
         )
     }
 }
