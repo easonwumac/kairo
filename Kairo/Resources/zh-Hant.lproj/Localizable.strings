@@ -1150,3 +1150,17 @@
 "infoPages.category.subscription" = "訂閱";
 "infoPages.category.recipeOrInstruction" = "食譜";
 "infoPages.category.generalNote" = "筆記";
+"root.section.wiki.title" = "Wiki 搜尋";
+"root.section.wiki.subtitle" = "搜尋頁面、資產、記憶";
+"root.section.wiki.shortTitle" = "Wiki";
+"wikiSearch.title" = "Wiki 搜尋";
+"wikiSearch.subtitle" = "搜尋 Kairo 已保存的頁面、資產和記憶。";
+"wikiSearch.search.placeholder" = "搜尋 Kairo";
+"wikiSearch.search.clear" = "清除搜尋";
+"wikiSearch.results.title" = "結果";
+"wikiSearch.empty.title" = "找不到項目";
+"wikiSearch.empty.subtitle" = "試試人物、地點、專案、訂單，或已保存內容中的片語。";
+"wikiSearch.result.infoPage" = "Info 頁面";
+"wikiSearch.result.knowledgeAsset" = "資產";
+"wikiSearch.result.memory" = "記憶";
+"wikiSearch.result.score" = "分數 %lld";

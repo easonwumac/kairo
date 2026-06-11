@@ -175,6 +175,8 @@ public struct RootView: View {
                 usesRootChromeNavigation: true
             )
                 .ignoresSafeArea(.container, edges: .top)
+        case .wiki:
+            WikiSearchView(searchService: environment.wikiSearchService)
         case .assets:
             KnowledgeAssetsView(
                 dependencies: environment.knowledgeAssetFeatureDependencies,
@@ -434,7 +436,7 @@ public struct RootView: View {
 
                     navigationGroup(
                         title: KairoL10n.string("root.menu.group.primary"),
-                        sections: [.assets, .pages, .categories]
+                        sections: [.wiki, .assets, .pages, .categories]
                     )
 
                     navigationGroup(
@@ -633,6 +635,7 @@ public struct RootView: View {
 
 private enum RootSection: String, CaseIterable, Identifiable {
     case chat
+    case wiki
     case assets
     case pages
     case categories
@@ -649,6 +652,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
         switch self {
         case .chat:
             return KairoL10n.string("root.section.chat.title")
+        case .wiki:
+            return KairoL10n.string("root.section.wiki.title")
         case .assets:
             return KairoL10n.string("root.section.assets.title")
         case .pages:
@@ -674,6 +679,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
         switch self {
         case .chat:
             return KairoL10n.string("root.section.chat.subtitle")
+        case .wiki:
+            return KairoL10n.string("root.section.wiki.subtitle")
         case .assets:
             return KairoL10n.string("root.section.assets.subtitle")
         case .pages:
@@ -699,6 +706,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
         switch self {
         case .chat:
             return KairoL10n.string("root.section.chat.shortTitle")
+        case .wiki:
+            return KairoL10n.string("root.section.wiki.shortTitle")
         case .assets:
             return KairoL10n.string("root.section.assets.shortTitle")
         case .pages:
@@ -733,6 +742,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
         switch self {
         case .chat:
             return "message.fill"
+        case .wiki:
+            return "sparkle.magnifyingglass"
         case .assets:
             return "archivebox.fill"
         case .pages:
@@ -756,7 +767,7 @@ private enum RootSection: String, CaseIterable, Identifiable {
 
     var tint: Color {
         switch self {
-        case .assets, .pages, .categories, .memory, .access:
+        case .wiki, .assets, .pages, .categories, .memory, .access:
             return KairoDesign.teal
         case .chat, .models, .performance:
             return KairoDesign.blue

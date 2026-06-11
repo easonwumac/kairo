@@ -115,4 +115,63 @@ final class KairoWikiSearchServiceTests: XCTestCase {
 
         XCTAssertTrue(results.isEmpty)
     }
+
+    @MainActor
+    func testWikiSearchViewModelPublishesSearchResults() async throws {
+        let result = KairoWikiSearchResult(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000501")!,
+            kind: .knowledgeAsset,
+            title: "Boarding pass",
+            snippet: "Flight gate and seat",
+            updatedAt: Date(timeIntervalSince1970: 10),
+            score: 90
+        )
+        let service = StubWikiSearchService(results: [result])
+        let viewModel = KairoWikiSearchViewModel(searchService: service, limit: 5)
+
+        await viewModel.search(query: "boarding")
+
+        XCTAssertEqual(service.receivedQuery, "boarding")
+        XCTAssertEqual(service.receivedLimit, 5)
+        XCTAssertEqual(viewModel.results, [result])
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertFalse(viewModel.isLoading)
+    }
+
+    @MainActor
+    func testWikiSearchViewModelClearsResultsOnFailure() async throws {
+        let error = NSError(domain: "WikiSearchTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Search failed"])
+        let service = StubWikiSearchService(results: [], error: error)
+        let viewModel = KairoWikiSearchViewModel(searchService: service)
+
+        await viewModel.search(query: "missing")
+
+        XCTAssertTrue(viewModel.results.isEmpty)
+        XCTAssertEqual(viewModel.errorMessage, "Search failed")
+        XCTAssertFalse(viewModel.isLoading)
+    }
+}
+
+private final class StubWikiSearchService: KairoWikiSearchProviding, @unchecked Sendable {
+    private let results: [KairoWikiSearchResult]
+    private let error: Error?
+    private(set) var receivedQuery: String?
+    private(set) var receivedLimit: Int?
+
+    init(
+        results: [KairoWikiSearchResult],
+        error: Error? = nil
+    ) {
+        self.results = results
+        self.error = error
+    }
+
+    func search(query: String, limit: Int) async throws -> [KairoWikiSearchResult] {
+        receivedQuery = query
+        receivedLimit = limit
+        if let error {
+            throw error
+        }
+        return results
+    }
 }

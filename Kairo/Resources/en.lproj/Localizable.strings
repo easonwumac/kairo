@@ -1150,3 +1150,17 @@
 "infoPages.category.subscription" = "Subscription";
 "infoPages.category.recipeOrInstruction" = "Recipe";
 "infoPages.category.generalNote" = "Note";
+"root.section.wiki.title" = "Wiki Search";
+"root.section.wiki.subtitle" = "Search pages, assets, and memories";
+"root.section.wiki.shortTitle" = "Wiki";
+"wikiSearch.title" = "Wiki Search";
+"wikiSearch.subtitle" = "Search everything Kairo has saved across pages, assets, and memories.";
+"wikiSearch.search.placeholder" = "Search Kairo";
+"wikiSearch.search.clear" = "Clear search";
+"wikiSearch.results.title" = "Results";
+"wikiSearch.empty.title" = "No matching items";
+"wikiSearch.empty.subtitle" = "Try a person, place, project, order, or phrase from a saved item.";
+"wikiSearch.result.infoPage" = "Info Page";
+"wikiSearch.result.knowledgeAsset" = "Asset";
+"wikiSearch.result.memory" = "Memory";
+"wikiSearch.result.score" = "Score %lld";
