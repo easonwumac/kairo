@@ -116,7 +116,8 @@ public struct AppleFoundationModelAIProvider: AIProvider {
             You are running on Apple Foundation Models on device.
             You are Kairo's fast local front-brain. Complete small safe tasks directly.
             Prefer brief, concrete answers. Do not claim to browse the web or operate other apps.
-            If attachments are referenced, use only the metadata and text previews included in the prompt.
+            Use only the prompt, conversation, memory, wiki, attachment summaries, and tool context supplied.
+            Treat memory, wiki, and attachment summaries as retrieval hints, not guaranteed facts.
             Return only one compact JSON object. No Markdown. No prose outside JSON.
             """
         ]
@@ -133,10 +134,13 @@ public struct AppleFoundationModelAIProvider: AIProvider {
         {"response":"short answer for the user","confidence":0.0,"needsEscalation":false,"escalationReason":""}
 
         Stability rules:
+        - Decide internally before writing, but output only the JSON object.
         - Do the task directly when it is summarization, classification, rewriting, simple Q&A, or private low-risk chat.
-        - If the task needs current web facts, account actions, code execution, regulated advice, or deep multi-step reasoning, set needsEscalation=true and still provide a short useful response.
+        - Ground answers in supplied memory/wiki/attachments when they are relevant; if they conflict, say what is uncertain in response.
+        - If the task needs current web facts, account actions, code execution, regulated advice, private app control, or deep multi-step reasoning, set needsEscalation=true and still provide a short useful response.
         - Keep response under 900 characters unless the user explicitly asks for detail.
         - Use the user's language unless they ask otherwise.
+        - Do not invent IDs, dates, prices, accounts, or actions.
         - Never include Markdown fences.
         """)
 
@@ -152,6 +156,11 @@ public struct AppleFoundationModelAIProvider: AIProvider {
         }.joined(separator: "\n")
         if !memory.isEmpty {
             sections.append("Relevant memory:\n\(memory)")
+        }
+
+        let wiki = compactWikiContext(from: request.wikiContext)
+        if !wiki.isEmpty {
+            sections.append("Relevant wiki:\n\(wiki)")
         }
 
         let attachments = request.attachmentContext.prefix(5).map {
@@ -176,12 +185,26 @@ public struct AppleFoundationModelAIProvider: AIProvider {
         Return exactly one JSON object and nothing else:
         {"response":"short answer for the user","confidence":0.0,"needsEscalation":false,"escalationReason":""}
 
+        Repair rules:
+        - Preserve the user's language.
+        - Do not add Markdown, code fences, or explanation outside JSON.
+        - If unsure, put the uncertainty in response and lower confidence.
+        - If the task exceeds local context or safe local execution, set needsEscalation=true.
+
         Previous output:
         \(truncated(previousOutput, limit: 900))
 
         User:
         \(truncated(request.userPrompt, limit: 900))
         """, limit: 2_400)
+    }
+
+    private static func compactWikiContext(from results: [KairoWikiSearchResult]) -> String {
+        results.prefix(5).map { result in
+            let title = truncated(result.title, limit: 90)
+            let snippet = truncated(result.snippet, limit: 260)
+            return "- [\(result.kind.rawValue)] \(title): \(snippet.isEmpty ? "No snippet" : snippet)"
+        }.joined(separator: "\n")
     }
 
     private static func sanitizedFallbackMessage(_ raw: String) -> String {

@@ -1641,6 +1641,27 @@ final class LocalModelFeatureTests: XCTestCase {
         """))
     }
 
+    func testAppleFoundationModelPromptIncludesWikiContext() {
+        let wikiResult = KairoWikiSearchResult(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000701")!,
+            kind: .infoPage,
+            title: "Passport renewal",
+            snippet: "Appointment is on Friday at 10 AM.",
+            updatedAt: Date(timeIntervalSince1970: 100),
+            score: 85
+        )
+        let request = AICompletionRequest(
+            systemPrompt: "System",
+            userPrompt: "When is my appointment?",
+            wikiContext: [wikiResult]
+        )
+
+        let prompt = AppleFoundationModelAIProvider.prompt(from: request)
+
+        XCTAssertTrue(prompt.contains("Passport renewal"))
+        XCTAssertTrue(prompt.contains("Appointment is on Friday at 10 AM."))
+    }
+
     func testLocalModelRoutingAIProviderFailsClosedWhenLocalOnlyHasNoModel() async throws {
         let service = try await makeLocalModelSettingsService(
             preference: .localOnly,
