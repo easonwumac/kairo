@@ -49,6 +49,25 @@ public final class KairoWikiSearchViewModel: ObservableObject {
         }
     }
 
+    public func open(_ route: KairoURLRoute) async -> String? {
+        switch route {
+        case .search(let query):
+            await search(query: query)
+            return query
+        case .infoPage(let id):
+            await select(routeResult(id: id, kind: .infoPage))
+            return nil
+        case .knowledgeAsset(let id):
+            await select(routeResult(id: id, kind: .knowledgeAsset))
+            return nil
+        case .memoryRecord(let id):
+            await select(routeResult(id: id, kind: .memory))
+            return nil
+        case .chatThread:
+            return nil
+        }
+    }
+
     public func select(_ result: KairoWikiSearchResult) async {
         selectedResult = result
         selectedDetail = nil
@@ -66,6 +85,7 @@ public final class KairoWikiSearchViewModel: ObservableObject {
             if let detailResolver {
                 if let detail = try await detailResolver.detail(for: result) {
                     selectedDetail = detail
+                    selectedResult = hydratedResult(from: detail, fallback: result)
                 } else {
                     errorMessage = KairoL10n.string("wikiSearch.detail.missing")
                 }
@@ -95,20 +115,66 @@ public final class KairoWikiSearchViewModel: ObservableObject {
             .prefix(relatedLimit)
             .map { $0 }
     }
+
+    private func routeResult(id: UUID, kind: KairoWikiSearchResultKind) -> KairoWikiSearchResult {
+        KairoWikiSearchResult(
+            id: id,
+            kind: kind,
+            title: KairoL10n.string("wikiSearch.detail.opening"),
+            snippet: "",
+            updatedAt: Date(),
+            score: 1
+        )
+    }
+
+    private func hydratedResult(from detail: KairoWikiDetail, fallback: KairoWikiSearchResult) -> KairoWikiSearchResult {
+        switch detail {
+        case .infoPage(let page, _):
+            return KairoWikiSearchResult(
+                id: page.id,
+                kind: .infoPage,
+                title: page.title,
+                snippet: page.summary,
+                updatedAt: page.updatedAt,
+                score: fallback.score
+            )
+        case .knowledgeAsset(let asset, _):
+            return KairoWikiSearchResult(
+                id: asset.id,
+                kind: .knowledgeAsset,
+                title: asset.title,
+                snippet: asset.summary.isEmpty ? asset.extractedText : asset.summary,
+                updatedAt: asset.updatedAt,
+                score: fallback.score
+            )
+        case .memory(let memory):
+            return KairoWikiSearchResult(
+                id: memory.id,
+                kind: .memory,
+                title: memory.title,
+                snippet: memory.summary.isEmpty ? memory.content : memory.summary,
+                updatedAt: memory.updatedAt,
+                score: fallback.score
+            )
+        }
+    }
 }
 
 public struct WikiSearchView: View {
     @StateObject private var viewModel: KairoWikiSearchViewModel
     @State private var searchQuery = ""
+    private let routeRequest: KairoURLRoute?
 
     public init(
         searchService: any KairoWikiSearchProviding,
-        detailResolver: (any KairoWikiDetailResolving)? = nil
+        detailResolver: (any KairoWikiDetailResolving)? = nil,
+        routeRequest: KairoURLRoute? = nil
     ) {
         _viewModel = StateObject(wrappedValue: KairoWikiSearchViewModel(
             searchService: searchService,
             detailResolver: detailResolver
         ))
+        self.routeRequest = routeRequest
     }
 
     public var body: some View {
@@ -141,6 +207,12 @@ public struct WikiSearchView: View {
             }
             .refreshable {
                 await viewModel.search(query: searchQuery)
+            }
+            .task(id: routeRequest) {
+                guard let routeRequest else { return }
+                if let query = await viewModel.open(routeRequest) {
+                    searchQuery = query
+                }
             }
         }
     }

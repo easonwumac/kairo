@@ -344,6 +344,51 @@ final class KairoWikiSearchServiceTests: XCTestCase {
     }
 
     @MainActor
+    func testWikiSearchViewModelOpensSearchRoute() async throws {
+        let result = KairoWikiSearchResult(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000503")!,
+            kind: .infoPage,
+            title: "Warranty page",
+            snippet: "Lens warranty",
+            updatedAt: Date(timeIntervalSince1970: 10),
+            score: 70
+        )
+        let service = StubWikiSearchService(results: [result])
+        let viewModel = KairoWikiSearchViewModel(searchService: service)
+
+        let query = await viewModel.open(.search(query: "lens warranty"))
+
+        XCTAssertEqual(query, "lens warranty")
+        XCTAssertEqual(service.receivedQuery, "lens warranty")
+        XCTAssertEqual(viewModel.results, [result])
+        XCTAssertNil(viewModel.selectedResult)
+    }
+
+    @MainActor
+    func testWikiSearchViewModelOpensItemRouteAndHydratesSelectedResult() async throws {
+        let pageID = UUID(uuidString: "00000000-0000-0000-0000-000000000504")!
+        let page = InfoPage(
+            id: pageID,
+            title: "Direct linked warranty",
+            category: .warranty,
+            templateID: .warranty,
+            summary: "Coverage and serial number"
+        )
+        let service = StubWikiSearchService(results: [])
+        let resolver = StubWikiDetailResolver(detail: .infoPage(page, linkedAssets: []))
+        let viewModel = KairoWikiSearchViewModel(searchService: service, detailResolver: resolver)
+
+        let query = await viewModel.open(.infoPage(id: pageID))
+
+        XCTAssertNil(query)
+        XCTAssertEqual(resolver.receivedResultID, pageID)
+        XCTAssertEqual(viewModel.selectedResult?.id, pageID)
+        XCTAssertEqual(viewModel.selectedResult?.kind, .infoPage)
+        XCTAssertEqual(viewModel.selectedResult?.title, "Direct linked warranty")
+        XCTAssertEqual(viewModel.selectedDetail, .infoPage(page, linkedAssets: []))
+    }
+
+    @MainActor
     func testWikiSearchViewModelClearsResultsOnFailure() async throws {
         let error = NSError(domain: "WikiSearchTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Search failed"])
         let service = StubWikiSearchService(results: [], error: error)

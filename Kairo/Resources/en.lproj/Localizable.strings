@@ -1166,6 +1166,7 @@
 "wikiSearch.result.score" = "Score %lld";
 "wikiSearch.detail.back" = "Results";
 "wikiSearch.detail.loading" = "Opening item";
+"wikiSearch.detail.opening" = "Opening item";
 "wikiSearch.detail.missing" = "This item is no longer available.";
 "wikiSearch.detail.summary" = "Summary";
 "wikiSearch.detail.facts" = "Facts";

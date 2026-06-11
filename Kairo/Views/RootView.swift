@@ -36,6 +36,7 @@ public struct RootView: View {
     @State private var isDrawerChatHistoryExpanded = false
     @State private var chromeContext = RootChromeContext.standard
     @State private var chromeBackRequestID = 0
+    @State private var wikiRouteRequest: KairoURLRoute?
 
     public init(
         environment: KairoEnvironment = .preview(),
@@ -119,6 +120,12 @@ public struct RootView: View {
         .onChange(of: selectedSection) { _, _ in
             chromeContext = .standard
         }
+        .onChange(of: urlRouter.pending) { _, _ in
+            consumePendingRoute()
+        }
+        .task {
+            consumePendingRoute()
+        }
     }
 
     private var appearancePreference: KairoAppearancePreference {
@@ -178,7 +185,8 @@ public struct RootView: View {
         case .wiki:
             WikiSearchView(
                 searchService: environment.wikiSearchService,
-                detailResolver: environment.wikiDetailResolver
+                detailResolver: environment.wikiDetailResolver,
+                routeRequest: wikiRouteRequest
             )
         case .assets:
             KnowledgeAssetsView(
@@ -225,6 +233,28 @@ public struct RootView: View {
                 rootChromeBackRequestID: $chromeBackRequestID,
                 usesRootChromeNavigation: true
             )
+        }
+    }
+
+    private func consumePendingRoute() {
+        guard let route = urlRouter.consume() else { return }
+        handle(route)
+    }
+
+    private func handle(_ route: KairoURLRoute) {
+        switch route {
+        case .search, .infoPage, .knowledgeAsset, .memoryRecord:
+            isOnboardingCompleted = true
+            selectedSection = .wiki
+            isMenuPresented = false
+            isPageActionsPresented = false
+            wikiRouteRequest = route
+        case .chatThread(let id):
+            isOnboardingCompleted = true
+            selectedSection = .chat
+            isMenuPresented = false
+            isPageActionsPresented = false
+            triggerChatChromeAction(.selectThread(id))
         }
     }
 
