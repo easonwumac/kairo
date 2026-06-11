@@ -73,9 +73,12 @@ struct KairoApp: App {
                         )
                         do {
                             let omlxCloudProvider = Self.makeOmlxCloudProvider(arguments: arguments)
+                            let useFoundationModelProvider = arguments.contains("--ui-testing-use-foundation-model")
                             let routePreference: ProviderRoutePreference? = omlxCloudProvider != nil
                                 ? .preferCloud
-                                : Self.uiTestingLocalModelRoutePreference(arguments: arguments)
+                                : useFoundationModelProvider
+                                    ? .localOnly
+                                    : Self.uiTestingLocalModelRoutePreference(arguments: arguments)
                             let uiTestingEnvironment = try await KairoEnvironment.uiTesting(
                                 resetPersistentState: arguments.contains("--reset-ui-testing-data"),
                                 seedInstalledLocalModel: arguments.contains("--ui-testing-installed-local-model"),
@@ -87,7 +90,8 @@ struct KairoApp: App {
                                 installedLocalModelFileURL: Self.uiTestingLocalModelFileURL(arguments: arguments),
                                 localModelReplyCheckRuntimeOverride: Self.uiTestingLocalModelReplyRuntime(arguments: arguments),
                                 localModelBenchmarkEngineOverride: Self.uiTestingLocalModelBenchmarkEngine(arguments: arguments),
-                                cloudProviderOverride: omlxCloudProvider
+                                cloudProviderOverride: omlxCloudProvider,
+                                useFoundationModelProvider: useFoundationModelProvider
                             )
                             environment = uiTestingEnvironment
                             environmentRevision += 1

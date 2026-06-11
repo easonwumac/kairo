@@ -145,7 +145,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
         installedLocalModelFileURL: URL? = nil,
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil,
-        cloudProviderOverride: (any AIProvider)? = nil
+        cloudProviderOverride: (any AIProvider)? = nil,
+        useFoundationModelProvider: Bool = false
     ) async throws -> KairoEnvironment {
         try await KairoUITestingEnvironmentComposer(
             resetPersistentState: resetPersistentState,
@@ -158,7 +159,8 @@ public struct KairoEnvironment: KairoBackendDependencies {
             installedLocalModelFileURL: installedLocalModelFileURL,
             localModelReplyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
             localModelBenchmarkEngineOverride: localModelBenchmarkEngineOverride,
-            cloudProviderOverride: cloudProviderOverride
+            cloudProviderOverride: cloudProviderOverride,
+            useFoundationModelProvider: useFoundationModelProvider
         ).makeEnvironment()
     }
 

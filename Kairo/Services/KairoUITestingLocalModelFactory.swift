@@ -46,6 +46,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
     public var replyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)?
     public var benchmarkEngineOverride: (any LocalModelBenchmarkEngine)?
     public var cloudProviderOverride: (any AIProvider)?
+    public var useFoundationModelProvider: Bool
 
     public init(
         rootDirectory: URL,
@@ -56,7 +57,8 @@ public struct KairoUITestingLocalModelFactory: Sendable {
         installedLocalModelFileURL: URL? = nil,
         replyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         benchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil,
-        cloudProviderOverride: (any AIProvider)? = nil
+        cloudProviderOverride: (any AIProvider)? = nil,
+        useFoundationModelProvider: Bool = false
     ) {
         self.rootDirectory = rootDirectory
         self.seedInstalledLocalModel = seedInstalledLocalModel
@@ -67,6 +69,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
         self.replyCheckRuntimeOverride = replyCheckRuntimeOverride
         self.benchmarkEngineOverride = benchmarkEngineOverride
         self.cloudProviderOverride = cloudProviderOverride
+        self.useFoundationModelProvider = useFoundationModelProvider
     }
 
     public func makeComponents() async throws -> KairoUITestingLocalModelComponents {
@@ -93,6 +96,9 @@ public struct KairoUITestingLocalModelFactory: Sendable {
         if selectInstalledLocalModel {
             try await settingsService.selectModel(id: LocalModelManifest.gemma4E2BQATQ4_0.id)
         }
+        if useFoundationModelProvider {
+            try await settingsService.selectModel(id: LocalModelManifest.appleFoundationModelsSystem.id)
+        }
         if let routePreference {
             try await settingsService.setPreference(routePreference)
         }
@@ -111,6 +117,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
         )
         let usesLocalModelRoute = seedInstalledLocalModel
             || selectInstalledLocalModel
+            || useFoundationModelProvider
             || routePreference == .localOnly
             || routePreference == .preferLocal
         let replyRuntime: any LocalModelReplyCheckRuntime = replyCheckRuntimeOverride
@@ -134,9 +141,11 @@ public struct KairoUITestingLocalModelFactory: Sendable {
                 localProvider: LocalModelRuntimeAIProvider(
                     localModelSettingsService: settingsService,
                     runtime: replyRuntime,
-                    performanceRecorder: benchmarkService
+                    performanceRecorder: benchmarkService,
+                    foundationModelProvider: useFoundationModelProvider ? AppleFoundationModelAIProvider() : nil
                 ),
                 localRuntimeAvailable: replyCheckRuntimeOverride != nil
+                    || (useFoundationModelProvider && AppleFoundationModelAIProvider.isRuntimeSupported)
             )
         } else {
             aiProvider = effectiveCloudProvider
@@ -151,6 +160,7 @@ public struct KairoUITestingLocalModelFactory: Sendable {
             replyCheckService: replyCheckService,
             aiProvider: aiProvider,
             chatRuntimeAvailable: replyCheckRuntimeOverride != nil
+                || (useFoundationModelProvider && AppleFoundationModelAIProvider.isRuntimeSupported)
         )
     }
 

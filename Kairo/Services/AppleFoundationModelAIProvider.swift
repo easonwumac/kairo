@@ -5,6 +5,8 @@ import FoundationModels
 #endif
 
 public struct AppleFoundationModelAIProvider: AIProvider {
+    private static let responseTimeoutSeconds: UInt64 = 45
+
     public init() {}
 
     public static var isRuntimeSupported: Bool {
@@ -49,7 +51,9 @@ public struct AppleFoundationModelAIProvider: AIProvider {
             model: model,
             instructions: Self.instructions(from: request)
         )
-        let response = try await session.respond(to: Self.prompt(from: request))
+        let response = try await Self.withResponseTimeout {
+            try await session.respond(to: Self.prompt(from: request))
+        }
         let message = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !message.isEmpty else {
             throw AIProviderError.localInferenceUnavailable(
@@ -66,6 +70,25 @@ public struct AppleFoundationModelAIProvider: AIProvider {
         )
     }
     #endif
+
+    private static func withResponseTimeout<T>(
+        _ operation: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
+            group.addTask {
+                try await operation()
+            }
+            group.addTask {
+                try await Task.sleep(for: .seconds(responseTimeoutSeconds))
+                throw AIProviderError.requestFailed("Foundation Models response timed out.")
+            }
+            guard let result = try await group.next() else {
+                throw AIProviderError.requestFailed("Foundation Models response did not complete.")
+            }
+            group.cancelAll()
+            return result
+        }
+    }
 
     private static func instructions(from request: AICompletionRequest) -> String {
         [

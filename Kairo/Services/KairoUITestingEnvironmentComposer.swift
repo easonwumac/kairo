@@ -13,6 +13,7 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
     public var localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)?
     public var localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)?
     public var cloudProviderOverride: (any AIProvider)?
+    public var useFoundationModelProvider: Bool
 
     public init(
         rootDirectory: URL = FileManager.default.temporaryDirectory
@@ -27,7 +28,8 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
         installedLocalModelFileURL: URL? = nil,
         localModelReplyCheckRuntimeOverride: (any LocalModelReplyCheckRuntime)? = nil,
         localModelBenchmarkEngineOverride: (any LocalModelBenchmarkEngine)? = nil,
-        cloudProviderOverride: (any AIProvider)? = nil
+        cloudProviderOverride: (any AIProvider)? = nil,
+        useFoundationModelProvider: Bool = false
     ) {
         self.rootDirectory = rootDirectory
         self.resetPersistentState = resetPersistentState
@@ -41,6 +43,7 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
         self.localModelReplyCheckRuntimeOverride = localModelReplyCheckRuntimeOverride
         self.localModelBenchmarkEngineOverride = localModelBenchmarkEngineOverride
         self.cloudProviderOverride = cloudProviderOverride
+        self.useFoundationModelProvider = useFoundationModelProvider
     }
 
     public func makeEnvironment() async throws -> KairoEnvironment {
@@ -61,7 +64,8 @@ public struct KairoUITestingEnvironmentComposer: Sendable {
             installedLocalModelFileURL: installedLocalModelFileURL,
             replyCheckRuntimeOverride: localModelReplyCheckRuntimeOverride,
             benchmarkEngineOverride: localModelBenchmarkEngineOverride,
-            cloudProviderOverride: cloudProviderOverride
+            cloudProviderOverride: cloudProviderOverride,
+            useFoundationModelProvider: useFoundationModelProvider
         ).makeComponents()
         let storeComponents = try await KairoUITestingStoreFactory(
             rootDirectory: rootDirectory,
