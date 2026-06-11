@@ -1601,6 +1601,46 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(fallbackCallCount, 0)
     }
 
+    func testAFMStableResponseParsesJSONEnvelopeAndIgnoresWrapperText() {
+        let parsed = AFMStableResponse.parse("""
+        Here is the answer:
+        {"response":"AFM short answer","confidence":0.82,"needsEscalation":true,"escalationReason":"deep reasoning"}
+        """)
+
+        XCTAssertEqual(parsed?.response, "AFM short answer")
+        XCTAssertEqual(parsed?.confidence, 0.82)
+        XCTAssertEqual(parsed?.needsEscalation, true)
+        XCTAssertEqual(parsed?.escalationReason, "deep reasoning")
+    }
+
+    func testAFMStableResponseRejectsEmptyResponseEnvelope() {
+        let parsed = AFMStableResponse.parse("""
+        {"response":"   ","confidence":0.2,"needsEscalation":false,"escalationReason":""}
+        """)
+
+        XCTAssertNil(parsed)
+    }
+
+    func testAppleFoundationModelPromptCompactsLargeContext() {
+        let longText = String(repeating: "long context ", count: 2_000)
+        let request = AICompletionRequest(
+            systemPrompt: "System",
+            userPrompt: longText,
+            conversationHistory: [
+                AIConversationTurn(role: .user, text: longText),
+                AIConversationTurn(role: .assistant, text: longText)
+            ],
+            toolContext: longText
+        )
+
+        let prompt = AppleFoundationModelAIProvider.prompt(from: request)
+
+        XCTAssertLessThanOrEqual(prompt.count, 5_500)
+        XCTAssertNotNil(AFMStableResponse.parse("""
+        {"response":"ok","confidence":1.0,"needsEscalation":false,"escalationReason":""}
+        """))
+    }
+
     func testLocalModelRoutingAIProviderFailsClosedWhenLocalOnlyHasNoModel() async throws {
         let service = try await makeLocalModelSettingsService(
             preference: .localOnly,
