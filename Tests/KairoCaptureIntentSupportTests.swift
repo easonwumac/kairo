@@ -117,6 +117,36 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
         XCTAssertEqual(captures.first?.text, "週五前整理 Kairo AFM demo")
     }
 
+    func testPrepareInfoPageTextQueuesCaptureAndForcesInfoPageReview() async throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        let routeKey = "kairo_intent_pending_route_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+        let routeStore = KairoIntentRouteStore(defaults: defaults, key: routeKey)
+
+        let output = try await KairoCaptureIntentSupport.prepareInfoPageText(
+            "Plain device setup details without generic note keywords.",
+            store: captureStore,
+            routeStore: routeStore
+        )
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(KairoCaptureAndTriageOutput.self, from: Data(output.encodedJSONString().utf8))
+
+        XCTAssertTrue(decoded.queued)
+        XCTAssertEqual(decoded.capture.captureKind, .text)
+        XCTAssertEqual(decoded.triage?.triage, .createInfoPage)
+        XCTAssertEqual(decoded.actionKinds, [])
+        XCTAssertEqual(decoded.recommendedRoute, .captureReview)
+        XCTAssertEqual(decoded.recommendedDeepLink, KairoCaptureTriageRoute.captureReview.deepLinkString)
+        XCTAssertEqual(routeStore.consume(), .captureReview)
+        let captures = captureStore.consume()
+        XCTAssertEqual(captures.map(\.sourceName), ["InfoPage Capture"])
+        XCTAssertEqual(captures.first?.text, "Plain device setup details without generic note keywords.")
+    }
+
     func testCaptureAndTriageURLRejectsUnsupportedSchemeWithoutQueueingOrTriage() async throws {
         let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))

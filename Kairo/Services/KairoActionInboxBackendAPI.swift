@@ -92,6 +92,9 @@ public struct KairoActionInboxBackendService: KairoActionInboxAPI {
 
     private func shouldSuggestInfoPage(for item: ShareIngestionItem, text: String) -> Bool {
         let normalized = parser.normalize(text)
+        if item.attachments.contains(where: { $0.displayName.localizedCaseInsensitiveContains("InfoPage") }) {
+            return true
+        }
         if item.attachments.contains(where: { $0.kind == .url || $0.kind == .image || $0.kind == .pdf }) {
             return true
         }

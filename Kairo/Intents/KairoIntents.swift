@@ -365,6 +365,26 @@ public struct CaptureAndTriageTextInKairoIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct PrepareInfoPageInKairoIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Prepare InfoPage in Kairo"
+    public static var description = IntentDescription("Queue text for Kairo's InfoPage review flow and return structured triage for Shortcut branching.")
+    public static var openAppWhenRun = true
+
+    @Parameter(title: "Text")
+    public var text: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let output = try await KairoCaptureIntentSupport.prepareInfoPageText(text)
+        return .result(
+            value: try output.encodedJSONString(),
+            dialog: IntentDialog(stringLiteral: output.displayText)
+        )
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct CaptureAndTriageURLInKairoIntent: AppIntent {
     public static var title: LocalizedStringResource = "Capture and Triage URL in Kairo"
     public static var description = IntentDescription("Queue a URL in Kairo and return Action Inbox suggestions for downstream Shortcut branching.")
@@ -675,6 +695,15 @@ public struct KairoAppShortcutsProvider: AppShortcutsProvider {
             systemImageName: "sparkles.rectangle.stack"
         )
         AppShortcut(
+            intent: PrepareInfoPageInKairoIntent(),
+            phrases: [
+                "Prepare InfoPage in \(.applicationName)",
+                "Make an InfoPage with \(.applicationName)"
+            ],
+            shortTitle: "Prepare InfoPage",
+            systemImageName: "doc.badge.gearshape"
+        )
+        AppShortcut(
             intent: OpenKairoSectionIntent(),
             phrases: [
                 "Open \(.applicationName)",
@@ -727,15 +756,6 @@ public struct KairoAppShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Clear Captures",
             systemImageName: "trash"
-        )
-        AppShortcut(
-            intent: CaptureTextInKairoIntent(),
-            phrases: [
-                "Capture text in \(.applicationName)",
-                "Send text to \(.applicationName)"
-            ],
-            shortTitle: "Capture Text",
-            systemImageName: "text.badge.plus"
         )
         AppShortcut(
             intent: CaptureAndTriageURLInKairoIntent(),
@@ -1347,6 +1367,15 @@ enum KairoCaptureIntentSupport {
         routeStore: KairoIntentRouteStore = KairoIntentRouteStore()
     ) async throws -> KairoCaptureAndTriageOutput {
         let capture = store.saveText(text, sourceName: "Shortcut Capture")
+        return try await captureAndTriageOutput(from: capture, fallbackText: text, routeStore: routeStore)
+    }
+
+    static func prepareInfoPageText(
+        _ text: String,
+        store: KairoIntentCaptureStore = KairoIntentCaptureStore(),
+        routeStore: KairoIntentRouteStore = KairoIntentRouteStore()
+    ) async throws -> KairoCaptureAndTriageOutput {
+        let capture = store.saveText(text, sourceName: "InfoPage Capture")
         return try await captureAndTriageOutput(from: capture, fallbackText: text, routeStore: routeStore)
     }
 

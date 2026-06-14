@@ -26,6 +26,18 @@ final class KairoShortcutNodeTests: XCTestCase {
                 "PrepareMessageHandoffIntent",
                 "PreparePhoneCallHandoffIntent",
                 "PrepareWebSearchHandoffIntent",
+                "TriageKairoCaptureIntent",
+                "CaptureAndTriageTextInKairoIntent",
+                "PrepareInfoPageInKairoIntent",
+                "CaptureAndTriageURLInKairoIntent",
+                "ReviewKairoCapturesIntent",
+                "CaptureTextInKairoIntent",
+                "CaptureURLInKairoIntent",
+                "GetKairoCaptureInboxStatusIntent",
+                "InspectKairoCaptureIntent",
+                "DiscardKairoCaptureIntent",
+                "TriageKairoCaptureInboxIntent",
+                "ClearKairoCaptureInboxIntent",
                 "RunKairoShortcutNodeIntent",
                 "RunKairoRecipeIntent",
                 "SuggestKairoRecipeIntent",
@@ -51,6 +63,18 @@ final class KairoShortcutNodeTests: XCTestCase {
         _ = PrepareMessageHandoffIntent()
         _ = PreparePhoneCallHandoffIntent()
         _ = PrepareWebSearchHandoffIntent()
+        _ = TriageKairoCaptureIntent()
+        _ = CaptureAndTriageTextInKairoIntent()
+        _ = PrepareInfoPageInKairoIntent()
+        _ = CaptureAndTriageURLInKairoIntent()
+        _ = ReviewKairoCapturesIntent()
+        _ = CaptureTextInKairoIntent()
+        _ = CaptureURLInKairoIntent()
+        _ = GetKairoCaptureInboxStatusIntent()
+        _ = InspectKairoCaptureIntent()
+        _ = DiscardKairoCaptureIntent()
+        _ = TriageKairoCaptureInboxIntent()
+        _ = ClearKairoCaptureInboxIntent()
         _ = RunKairoShortcutNodeIntent()
         _ = RunKairoRecipeIntent()
         _ = SuggestKairoRecipeIntent()
