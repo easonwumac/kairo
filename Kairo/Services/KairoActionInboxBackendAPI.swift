@@ -26,12 +26,14 @@ public struct KairoActionInboxBackendService: KairoActionInboxAPI {
         let shares = try await shareIngestionQueue.pendingItems(limit: limit)
         return shares.map { item in
             let text = Self.combinedText(from: item.attachments)
+            let suggestions = suggestions(for: text)
             return ActionInboxItem(
                 source: .shareExtension,
                 sourceItemIDs: [item.id],
                 attachments: item.attachments,
                 summary: summary(for: item, text: text),
-                suggestions: suggestions(for: text),
+                triage: triage(for: item, text: text, suggestions: suggestions),
+                suggestions: suggestions,
                 receivedAt: item.receivedAt
             )
         }
@@ -65,6 +67,50 @@ public struct KairoActionInboxBackendService: KairoActionInboxAPI {
         suggestions.append(contentsOf: memorySuggestions(from: trimmed))
         suggestions.append(contentsOf: reminderSuggestions(from: trimmed))
         return suggestions
+    }
+
+    private func triage(
+        for item: ShareIngestionItem,
+        text: String,
+        suggestions: [ActionInboxSuggestion]
+    ) -> ActionInboxTriage {
+        let suggestionKinds = Set(suggestions.map(\.kind))
+        if suggestionKinds.contains(.reminderDraft) {
+            return .createReminder
+        }
+        if suggestionKinds.contains(.memorySave) {
+            return .saveMemory
+        }
+        if suggestionKinds.contains(.mapsHandoff) || suggestionKinds.contains(.webSearchHandoff) {
+            return .openHandoff
+        }
+        if shouldSuggestInfoPage(for: item, text: text) {
+            return .createInfoPage
+        }
+        return .captureOnly
+    }
+
+    private func shouldSuggestInfoPage(for item: ShareIngestionItem, text: String) -> Bool {
+        let normalized = parser.normalize(text)
+        if item.attachments.contains(where: { $0.kind == .url || $0.kind == .image || $0.kind == .pdf }) {
+            return true
+        }
+        return containsAny(normalized, [
+            "article",
+            "receipt",
+            "booking",
+            "reservation",
+            "invoice",
+            "research",
+            "note",
+            "文章",
+            "收據",
+            "發票",
+            "訂位",
+            "預約",
+            "研究",
+            "筆記"
+        ])
     }
 
     private func handoffSuggestions(from text: String) -> [ActionInboxSuggestion] {

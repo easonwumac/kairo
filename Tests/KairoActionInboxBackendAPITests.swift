@@ -2,6 +2,28 @@ import XCTest
 @testable import KairoCore
 
 final class KairoActionInboxBackendAPITests: XCTestCase {
+    func testActionInboxItemDecodesLegacyPayloadWithoutTriage() throws {
+        let itemID = UUID()
+        let sourceID = UUID()
+        let json = """
+        {
+          "id": "\(itemID.uuidString)",
+          "source": "shareExtension",
+          "sourceItemIDs": ["\(sourceID.uuidString)"],
+          "attachments": [],
+          "summary": { "title": "Legacy item", "bullets": [] },
+          "suggestions": [],
+          "receivedAt": 10
+        }
+        """
+
+        let item = try JSONDecoder().decode(ActionInboxItem.self, from: Data(json.utf8))
+
+        XCTAssertEqual(item.id, itemID)
+        XCTAssertEqual(item.sourceItemIDs, [sourceID])
+        XCTAssertEqual(item.triage, .captureOnly)
+    }
+
     func testBriefingSnapshotSummarizesPendingActionInboxWork() async throws {
         let builder = ShareAttachmentBuilder()
         let items = [
@@ -63,6 +85,7 @@ final class KairoActionInboxBackendAPITests: XCTestCase {
         XCTAssertEqual(inboxItem.attachments.map(\.kind), [.text])
         XCTAssertEqual(inboxItem.summary.bullets.count, 1)
         let reminderSuggestions = inboxItem.suggestions.filter { $0.kind == .reminderDraft }
+        XCTAssertEqual(inboxItem.triage, .createReminder)
         XCTAssertEqual(reminderSuggestions.count, 3)
         XCTAssertTrue(reminderSuggestions.allSatisfy(\.requiresConfirmation))
         XCTAssertTrue(reminderSuggestions.allSatisfy { $0.action?.kind == .createReminderDraft })
@@ -120,6 +143,7 @@ final class KairoActionInboxBackendAPITests: XCTestCase {
         let inboxItem = try XCTUnwrap(inboxItems.first)
 
         let searchSuggestion = try XCTUnwrap(inboxItem.suggestions.first { $0.kind == .webSearchHandoff })
+        XCTAssertEqual(inboxItem.triage, .openHandoff)
         XCTAssertTrue(searchSuggestion.requiresConfirmation)
         XCTAssertEqual(searchSuggestion.action?.kind, .openWebSearchHandoff)
         guard case let .webSearch(draft) = searchSuggestion.action?.payload else {
@@ -168,11 +192,53 @@ final class KairoActionInboxBackendAPITests: XCTestCase {
         let inboxItem = try XCTUnwrap(inboxItems.first)
 
         let memorySuggestion = try XCTUnwrap(inboxItem.suggestions.first { $0.kind == .memorySave })
+        XCTAssertEqual(inboxItem.triage, .saveMemory)
         XCTAssertTrue(memorySuggestion.requiresConfirmation)
         XCTAssertEqual(memorySuggestion.action?.kind, .saveMemory)
         guard case let .text(content) = memorySuggestion.action?.payload else {
             return XCTFail("Expected memory text payload")
         }
         XCTAssertTrue(content.contains("AFM"))
+    }
+
+    func testShareURLIsTriagedForInfoPageWithoutConsumingQueue() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.url(URL(string: "https://example.com/research/afm-pipeline")!)
+            ],
+            sourceApplication: "ShareSheet"
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let api = KairoActionInboxBackendService(shareIngestionQueue: queue)
+
+        let inboxItems = try await api.pendingItems(limit: 10)
+        let inboxItem = try XCTUnwrap(inboxItems.first)
+
+        XCTAssertEqual(inboxItem.triage, .createInfoPage)
+        XCTAssertTrue(inboxItem.suggestions.contains { $0.kind == .summary })
+        let stillPending = try await queue.pendingItems(limit: 10)
+        XCTAssertEqual(stillPending.map(\.id), [item.id])
+    }
+
+    func testPlainResearchNoteIsTriagedForInfoPageWhenNoActionDraftIsNeeded() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("研究筆記：AFM prompt pipeline 要先分類再抽取事實。", displayName: "AFM note")
+            ],
+            sourceApplication: "ShareSheet"
+        )
+        let api = KairoActionInboxBackendService(
+            shareIngestionQueue: InMemoryShareIngestionQueue(seed: [item])
+        )
+
+        let inboxItems = try await api.pendingItems(limit: 10)
+        let inboxItem = try XCTUnwrap(inboxItems.first)
+
+        XCTAssertEqual(inboxItem.triage, .createInfoPage)
+        XCTAssertFalse(inboxItem.suggestions.contains { $0.kind == .reminderDraft })
+        XCTAssertFalse(inboxItem.suggestions.contains { $0.kind == .memorySave })
+        XCTAssertFalse(inboxItem.suggestions.contains { $0.kind == .webSearchHandoff })
     }
 }
