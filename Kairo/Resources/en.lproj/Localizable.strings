@@ -412,10 +412,12 @@
 "chat.share.import.notice.one" = "Imported 1 shared item. Send it to Chat to summarize or extract tasks.";
 "chat.share.import.notice.many" = "Imported %lld shared items. Send them to Chat to summarize or extract tasks.";
 "chat.share.review.reminderReady" = "Reminder draft ready";
+"chat.share.review.actionReady" = "Action ready";
 "chat.share.review.calendarReady" = "Calendar draft ready";
 "chat.share.review.handoffReady" = "System handoff ready";
 "chat.share.review.handoffDetail" = "%@: confirming only opens the app. Kairo will not send or complete the action automatically.";
 "chat.action.reviewReminder" = "Review reminder";
+"chat.action.reviewAction" = "Review action";
 "chat.action.reviewCalendar" = "Review calendar";
 "chat.action.reviewHandoff" = "Review and open";
 "chat.action.preview.title" = "Review before confirming";

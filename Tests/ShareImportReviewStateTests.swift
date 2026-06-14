@@ -40,6 +40,46 @@ final class ShareImportReviewStateTests: XCTestCase {
     }
 
     @MainActor
+    func testImportedShareSuggestedActionCanBeReviewedAndConfirmedWithoutChatSend() async throws {
+        let builder = ShareAttachmentBuilder()
+        let sharedItem = ShareIngestionItem(
+            attachments: [builder.text("記住：AFM 適合短上下文分類。", displayName: "Memory")],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [sharedItem])
+        let executor = ShareImportReviewMockExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: queue,
+            chatAPI: KairoChatBackendService(
+                agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+            ),
+            actionExecutor: executor
+        )
+
+        await viewModel.importPendingShares()
+
+        XCTAssertEqual(viewModel.shareImportReviewAction?.kind, .saveMemory)
+        XCTAssertFalse(viewModel.pendingAttachments.isEmpty)
+        viewModel.reviewImportedShareAction()
+        XCTAssertEqual(viewModel.pendingAction?.kind, .saveMemory)
+        XCTAssertNil(viewModel.shareImportReviewAction)
+
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertNil(viewModel.shareImportNotice)
+        XCTAssertTrue(viewModel.pendingAttachments.isEmpty)
+        let pendingItems = try await queue.pendingItems(limit: 10)
+        let executedKinds = await executor.executedKinds()
+        let confirmations = await executor.confirmations()
+        XCTAssertEqual(pendingItems, [])
+        XCTAssertEqual(executedKinds, [.saveMemory])
+        XCTAssertEqual(confirmations, [true])
+    }
+
+    @MainActor
     private func makeShareImportViewModel() -> ChatViewModel {
         let builder = ShareAttachmentBuilder()
         let sharedItem = ShareIngestionItem(
@@ -54,6 +94,25 @@ final class ShareImportReviewStateTests: XCTestCase {
                 agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
             )
         )
+    }
+}
+
+private actor ShareImportReviewMockExecutor: ActionExecutor {
+    private var actions: [AgentAction] = []
+    private var confirmedValues: [Bool] = []
+
+    func execute(_ action: AgentAction, confirmed: Bool) async throws -> ActionExecutionResult {
+        actions.append(action)
+        confirmedValues.append(confirmed)
+        return ActionExecutionResult(completed: true, message: "ok")
+    }
+
+    func executedKinds() -> [AgentActionKind] {
+        actions.map(\.kind)
+    }
+
+    func confirmations() -> [Bool] {
+        confirmedValues
     }
 }
 #endif

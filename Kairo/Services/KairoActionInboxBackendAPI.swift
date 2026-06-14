@@ -140,6 +140,9 @@ public struct KairoActionInboxBackendService: KairoActionInboxAPI {
 
     private func reminderSuggestions(from text: String) -> [ActionInboxSuggestion] {
         let dueDate = dueDate(from: text)
+        guard shouldSuggestReminder(for: text, dueDate: dueDate) else {
+            return []
+        }
         let titles = taskTitles(from: text)
         return titles.map { title in
             let action = AgentAction(
@@ -160,6 +163,23 @@ public struct KairoActionInboxBackendService: KairoActionInboxAPI {
                 requiresConfirmation: true
             )
         }
+    }
+
+    private func shouldSuggestReminder(for text: String, dueDate: Date?) -> Bool {
+        let normalized = parser.normalize(text)
+        if parser.isReminderWriteRequest(normalized) || dueDate != nil {
+            return true
+        }
+        return containsAny(normalized, [
+            "todo",
+            "task",
+            "action item",
+            "follow up",
+            "待辦",
+            "提醒",
+            "任務",
+            "行動項目"
+        ])
     }
 
     private func taskTitles(from text: String) -> [String] {

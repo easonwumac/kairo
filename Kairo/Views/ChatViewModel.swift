@@ -280,7 +280,7 @@ public final class ChatViewModel: ObservableObject {
             }
             shareImportNotice = Self.shareImportNotice(importedCount: imported.importedItemIDs.count)
             shareImportPreview = Self.shareImportPreview(for: imported.attachments)
-            shareImportReviewAction = nil
+            shareImportReviewAction = imported.suggestedActions.first
             errorMessage = nil
         } catch {
             errorMessage = KairoL10n.string("chat.error.importShare", error.localizedDescription)
@@ -679,6 +679,12 @@ public final class ChatViewModel: ObservableObject {
             let result = try await actionAPI.confirm(action)
             actionResultMessage = Self.actionResultMessage(for: result, action: action, source: actionSource)
             actionResultSucceeded = result.completed
+            if actionSource == .importedShare, result.completed {
+                let importedItemIDs = importedShareItemIDs
+                let importedAttachments = pendingAttachments
+                try await shareImportAPI.clearImportedShares(ids: importedItemIDs, attachments: importedAttachments)
+                clearShareImportState()
+            }
             errorMessage = nil
         } catch {
             actionResultMessage = KairoL10n.string("chat.action.error.failed", error.localizedDescription)

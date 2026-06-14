@@ -412,10 +412,12 @@
 "chat.share.import.notice.one" = "已匯入 1 個分享項目，可送進 Chat 摘要或抽任務。";
 "chat.share.import.notice.many" = "已匯入 %lld 個分享項目，可送進 Chat 摘要或抽任務。";
 "chat.share.review.reminderReady" = "已抽出提醒事項草稿";
+"chat.share.review.actionReady" = "已準備動作";
 "chat.share.review.calendarReady" = "已準備行程草稿";
 "chat.share.review.handoffReady" = "已準備開啟系統 App";
 "chat.share.review.handoffDetail" = "%@：確認後只會開啟 App，不會自動送出或完成操作";
 "chat.action.reviewReminder" = "檢查提醒事項";
+"chat.action.reviewAction" = "檢查動作";
 "chat.action.reviewCalendar" = "檢查行程";
 "chat.action.reviewHandoff" = "檢查後開啟";
 "chat.action.preview.title" = "確認前先檢查";

@@ -52,7 +52,7 @@ struct ShareActionReviewBanner: View {
     var body: some View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
-                Label(KairoL10n.string("chat.share.review.reminderReady"), systemImage: "checklist.checked")
+                Label(title, systemImage: iconName)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(KairoDesign.ink)
                 Text(action.title)
@@ -62,7 +62,7 @@ struct ShareActionReviewBanner: View {
             }
             Spacer(minLength: 8)
             Button(action: review) {
-                Text(KairoL10n.string("chat.action.reviewReminder"))
+                Text(buttonTitle)
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
@@ -79,6 +79,29 @@ struct ShareActionReviewBanner: View {
         )
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.share-import.review-banner")
+    }
+
+    private var title: String {
+        action.kind == .createReminderDraft
+            ? KairoL10n.string("chat.share.review.reminderReady")
+            : KairoL10n.string("chat.share.review.actionReady")
+    }
+
+    private var buttonTitle: String {
+        action.kind == .createReminderDraft
+            ? KairoL10n.string("chat.action.reviewReminder")
+            : KairoL10n.string("chat.action.reviewAction")
+    }
+
+    private var iconName: String {
+        switch action.kind {
+        case .saveMemory:
+            return "tray.and.arrow.down.fill"
+        case .openMapDirections, .openWebSearchHandoff, .openMessageHandoff, .openPhoneCallHandoff:
+            return "arrow.up.forward.app"
+        default:
+            return "checklist.checked"
+        }
     }
 }
 

@@ -94,6 +94,30 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let remaining = try await queue.pendingItems(limit: 10)
         XCTAssertEqual(remaining.map(\.id), [item.id])
     }
+
+    func testShareImportBackendAPIIncludesActionInboxSuggestedActions() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("搜尋網路 AFM iOS 27 local inference", displayName: "Research")
+            ],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let api = KairoShareImportBackendService(shareIngestionQueue: queue)
+
+        let imported = try await api.importPendingShares(limit: 10)
+
+        XCTAssertEqual(imported.suggestedActions.map(\.kind), [.openWebSearchHandoff])
+        guard case let .webSearch(draft) = imported.suggestedActions.first?.payload else {
+            return XCTFail("Expected web search payload")
+        }
+        XCTAssertTrue(draft.query.contains("AFM"))
+        let remaining = try await queue.pendingItems(limit: 10)
+        XCTAssertEqual(remaining.map(\.id), [item.id])
+    }
+
     func testShareImportBackendAPIPurgesImportedShareContentFromDiskAfterClear() async throws {
         let fileURL = temporaryFileURL(named: "share-ingestion-queue.json")
         let queue = try await JSONFileShareIngestionQueue(fileURL: fileURL)
