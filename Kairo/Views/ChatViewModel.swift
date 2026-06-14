@@ -524,6 +524,11 @@ public final class ChatViewModel: ObservableObject {
         return summary.infoPageCount > 0 && summary.reminderDraftCount == 0 && summary.memoryDraftCount == 0 && summary.handoffCount == 0
     }
 
+    private var shouldContinueImportedShareThroughInfoPageReview: Bool {
+        guard let summary = captureReviewSummary else { return false }
+        return summary.infoPageCount > 0 && !pendingAttachments.isEmpty
+    }
+
     public func addAttachment(_ attachment: ChatAttachment) {
         pendingAttachments.append(attachment)
     }
@@ -909,6 +914,11 @@ public final class ChatViewModel: ObservableObject {
                 if presentNextImportedShareReviewIfAvailable() {
                     errorMessage = nil
                     return
+                } else if shouldContinueImportedShareThroughInfoPageReview {
+                    composerText = Self.infoPagePrompt(for: pendingAttachments)
+                    await sendImportedShareToChat()
+                    errorMessage = nil
+                    return
                 } else {
                     let importedItemIDs = importedShareItemIDs
                     let importedAttachments = pendingAttachments
@@ -1254,6 +1264,14 @@ public final class ChatViewModel: ObservableObject {
         let infoPagePromptFormat = KairoL10n.string("chat.share.prompt.prepareInfoPage", "")
         let infoPagePromptPrefix = infoPagePromptFormat.trimmingCharacters(in: .whitespacesAndNewlines)
         return !infoPagePromptPrefix.isEmpty && prompt.hasPrefix(infoPagePromptPrefix)
+    }
+
+    private static func infoPagePrompt(for attachments: [ChatAttachment]) -> String {
+        let context = attachments
+            .map(\.promptSummary)
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return KairoL10n.string("chat.share.prompt.prepareInfoPage", String(context.prefix(4_000)))
     }
 
     private static func userFacingChatErrorMessage(for error: Error) -> String {

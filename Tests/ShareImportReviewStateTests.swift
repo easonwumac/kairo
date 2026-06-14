@@ -175,6 +175,72 @@ final class ShareImportReviewStateTests: XCTestCase {
     }
 
     @MainActor
+    func testCaptureBriefingContinuesMixedInfoPageCaptureAfterActionConfirmation() async throws {
+        let builder = ShareAttachmentBuilder()
+        let executor = ShareImportReviewMockExecutor()
+        let queue = InMemoryShareIngestionQueue(seed: [
+            ShareIngestionItem(
+                attachments: [builder.text("TODO: Send AFM test notes", displayName: "Task")],
+                sourceApplication: "ShareSheet",
+                receivedAt: Date(timeIntervalSince1970: 10)
+            ),
+            ShareIngestionItem(
+                attachments: [builder.text("研究筆記：AFM prompt pipeline 先分類，再抽取事實，最後產生 JSON。", displayName: "AFM note")],
+                sourceApplication: "ShareSheet",
+                receivedAt: Date(timeIntervalSince1970: 20)
+            )
+        ])
+        let infoPageStore = InMemoryInfoPageStore()
+        let draft = InfoPageDraft(
+            createInfoPage: true,
+            title: "AFM Prompt Pipeline",
+            templateID: .generalNote,
+            category: .generalNote,
+            summary: "AFM prompt pipelines are more stable when model work is staged.",
+            facts: [
+                InfoPageDraftFact(label: "topic", value: "AFM prompt pipeline")
+            ],
+            confidence: 0.9,
+            keywords: ["afm", "prompt"]
+        )
+        let chatAPI = ShareReviewFixedInfoPageChatAPI(draft: draft)
+        let viewModel = ChatViewModel(dependencies: ChatFeatureDependencies(
+            historyStore: InMemoryChatHistoryStore(),
+            shareImportAPI: KairoShareImportBackendService(
+                shareIngestionQueue: queue,
+                urlMetadataProvider: EmptyURLMetadataProvider(),
+                urlReadableContentProvider: EmptyURLReadableContentProvider()
+            ),
+            actionInboxAPI: KairoActionInboxBackendService(shareIngestionQueue: queue),
+            chatAPI: chatAPI,
+            actionAPI: KairoActionBackendService(actionExecutor: executor),
+            infoPageStore: infoPageStore
+        ))
+
+        await viewModel.reviewCaptureBriefing()
+        XCTAssertEqual(viewModel.pendingAction?.kind, .createReminderDraft)
+        XCTAssertEqual(viewModel.captureReviewSummary?.infoPageCount, 1)
+
+        await viewModel.confirmPendingAction()
+
+        let pages = try await infoPageStore.list(limit: 10)
+        let remaining = try await queue.pendingItems(limit: 10)
+        let executedKinds = await executor.executedKinds()
+        let prompts = await chatAPI.receivedMessages()
+        XCTAssertEqual(executedKinds, [.createReminderDraft])
+        XCTAssertEqual(pages.map(\.title), ["AFM Prompt Pipeline"])
+        XCTAssertTrue(remaining.isEmpty)
+        XCTAssertEqual(prompts.count, 1)
+        XCTAssertTrue(prompts.first?.contains("InfoPage") == true)
+        XCTAssertTrue(prompts.first?.contains("AFM prompt pipeline") == true)
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertNil(viewModel.shareImportNotice)
+        XCTAssertNil(viewModel.captureReviewSummary)
+        XCTAssertEqual(viewModel.captureReviewItems, [])
+        XCTAssertEqual(viewModel.briefingSnapshot, .empty)
+    }
+
+    @MainActor
     func testCaptureBriefingSummaryTracksMixedPendingCaptureSuggestions() async throws {
         let builder = ShareAttachmentBuilder()
         let executor = ShareImportReviewMockExecutor()
@@ -344,9 +410,14 @@ private actor ShareImportReviewMockExecutor: ActionExecutor {
 
 private actor ShareReviewFixedInfoPageChatAPI: KairoChatAPI {
     private let draft: InfoPageDraft
+    private var messages: [String] = []
 
     init(draft: InfoPageDraft) {
         self.draft = draft
+    }
+
+    func receivedMessages() -> [String] {
+        messages
     }
 
     func respond(
@@ -375,6 +446,7 @@ private actor ShareReviewFixedInfoPageChatAPI: KairoChatAPI {
         _ = conversationID
         _ = conversationHistory
         _ = privacyMode
+        messages.append(message)
         return AICompletionResponse(message: "Created page.", infoPageDraft: draft)
     }
 }
