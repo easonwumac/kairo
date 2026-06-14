@@ -10,20 +10,28 @@ public struct AssetUnderstandingRequest: Sendable {
     public var now: Date
     public var minimumConfidence: Double
     public var maximumAttempts: Int
+    public var executionMode: AssetUnderstandingExecutionMode
 
     public init(
         assets: [KnowledgeAsset],
         folders: [KnowledgeAssetFolder] = [],
         now: Date = Date(),
         minimumConfidence: Double = 0.72,
-        maximumAttempts: Int = 3
+        maximumAttempts: Int = 3,
+        executionMode: AssetUnderstandingExecutionMode = .singlePrompt
     ) {
         self.assets = assets
         self.folders = folders
         self.now = now
         self.minimumConfidence = minimumConfidence
         self.maximumAttempts = max(1, maximumAttempts)
+        self.executionMode = executionMode
     }
+}
+
+public enum AssetUnderstandingExecutionMode: String, Codable, Equatable, Sendable {
+    case singlePrompt
+    case staged
 }
 
 public struct AssetUnderstandingResult: Equatable, Sendable {
@@ -281,6 +289,85 @@ public enum InfoPageDraftValidator {
 }
 
 public enum AssetUnderstandingPromptBuilder {
+    public static func classifyPrompt(for request: AssetUnderstandingRequest) -> String {
+        """
+        Stage classifyAsset for Kairo asset understanding.
+        Return one compact JSON object only:
+        {"bestTemplateID":"generalNote","bestCategory":"generalNote","confidence":0.0,"candidateCategories":[{"folderName":"optional exact folder","templateID":"generalNote","category":"generalNote","confidence":0.0,"reason":"source-backed reason"}],"missingInfo":["useful missing fields"]}
+
+        Rules:
+        - Use only supplied assets and enabled folders.
+        - If evidence is weak or ambiguous, prefer generalNote and include candidateCategories.
+        - Do not generate final InfoPage JSON in this stage.
+
+        Templates:
+        \(templateSchemaLines())
+
+        Enabled folders/categories:
+        \(request.folders.map(\.name).joined(separator: ", "))
+
+        Assets:
+        \(assetLines(request.assets))
+        """
+    }
+
+    public static func extractFactsPrompt(for request: AssetUnderstandingRequest, classification: String) -> String {
+        """
+        Stage extractFacts for Kairo asset understanding.
+        Return one compact JSON object only:
+        {"assetDescription":"plain description","ocrSummary":"source text summary","keywords":["term"],"facts":[{"label":"key","value":"source-backed value","sourceAssetID":"uuid"}],"timeline":[{"title":"event","note":"source-backed note","sourceAssetID":"uuid"}],"reminderDrafts":[{"title":"draft title","dueDateText":"optional natural date","needsUserConfirmation":true}],"missingInfo":["unknown but useful fields"]}
+
+        Classification result:
+        \(classification)
+
+        Rules:
+        - Copy only facts supported by supplied OCR, labels, URL page text, file metadata, or user text.
+        - Every reminderDraft must set needsUserConfirmation=true.
+        - Do not generate final InfoPage JSON in this stage.
+
+        Assets:
+        \(assetLines(request.assets))
+        """
+    }
+
+    public static func composePrompt(
+        for request: AssetUnderstandingRequest,
+        classification: String,
+        extractedFacts: String
+    ) -> String {
+        """
+        Stage composeInfoPageJSON for Kairo asset understanding.
+        Return the final fixed schema JSON object only. No Markdown. No HTML. No comments.
+
+        Classification result:
+        \(classification)
+
+        Extracted facts result:
+        \(extractedFacts)
+
+        Final schema:
+        \(schemaLine())
+
+        Required rules:
+        - category must match templateID category.
+        - facts must include required keys for the chosen template when source-backed.
+        - Use sourceAssetIDs only from supplied assets.
+        - Every reminderDraft must set needsUserConfirmation=true.
+        - Use folderName only if it exactly matches an enabled folder.
+        - If multiple categories remain plausible, include candidateCategories and keep createInfoPage true only when review is safe.
+        - Minimum confidence for automatic InfoPage creation: \(request.minimumConfidence).
+
+        Templates:
+        \(templateSchemaLines())
+
+        Enabled folders/categories:
+        \(request.folders.map(\.name).joined(separator: ", "))
+
+        Assets:
+        \(assetLines(request.assets))
+        """
+    }
+
     public static func initialPrompt(for request: AssetUnderstandingRequest) -> String {
         """
         You are Kairo's staged asset-understanding pipeline for imported iPhone assets.
@@ -379,11 +466,16 @@ public struct AssetUnderstandingPipeline: Sendable {
         var attempts = 0
         for attempt in 1...request.maximumAttempts {
             attempts = attempt
-            let prompt = attempt == 1
-                ? Self.initialPrompt(for: request)
-                : Self.repairPrompt(for: request, issues: issues)
             do {
-                let raw = try await model.complete(prompt: prompt)
+                let raw: String
+                if attempt == 1, request.executionMode == .staged {
+                    raw = try await runStagedUnderstanding(for: request)
+                } else {
+                    let prompt = attempt == 1
+                        ? Self.initialPrompt(for: request)
+                        : Self.repairPrompt(for: request, issues: issues)
+                    raw = try await model.complete(prompt: prompt)
+                }
                 guard let draft = Self.decodeDraft(from: raw) else {
                     issues = [.invalidJSON]
                     continue
@@ -412,6 +504,25 @@ public struct AssetUnderstandingPipeline: Sendable {
             status: .needsReview,
             attempts: attempts,
             validationIssues: issues
+        )
+    }
+
+    private func runStagedUnderstanding(for request: AssetUnderstandingRequest) async throws -> String {
+        let classification = try await model.complete(
+            prompt: AssetUnderstandingPromptBuilder.classifyPrompt(for: request)
+        )
+        let extractedFacts = try await model.complete(
+            prompt: AssetUnderstandingPromptBuilder.extractFactsPrompt(
+                for: request,
+                classification: classification
+            )
+        )
+        return try await model.complete(
+            prompt: AssetUnderstandingPromptBuilder.composePrompt(
+                for: request,
+                classification: classification,
+                extractedFacts: extractedFacts
+            )
         )
     }
 

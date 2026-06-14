@@ -255,6 +255,64 @@ final class InfoPageFeatureTests: XCTestCase {
         XCTAssertTrue(prompt.contains("Research"))
     }
 
+    func testAssetUnderstandingPipelineCanRunThreeStageModelCallsBeforeValidation() async throws {
+        let asset = KnowledgeAsset(
+            title: "afm-url.txt",
+            kind: .url,
+            source: .shareExtension,
+            attachments: [],
+            extractedText: "pageTitle: AFM prompt stability\npageText: Small models perform better with staged schema prompts.",
+            summary: "AFM prompt notes",
+            tags: ["afm", "prompt"]
+        )
+        let classificationJSON = """
+        {"bestTemplateID":"generalNote","bestCategory":"generalNote","confidence":0.84,"candidateCategories":[],"missingInfo":[]}
+        """
+        let factsJSON = """
+        {"assetDescription":"URL notes about AFM prompt stability.","ocrSummary":"Small models perform better with staged schema prompts.","keywords":["afm","prompt","schema"],"facts":[{"label":"topic","value":"AFM prompt stability","sourceAssetID":"\(asset.id.uuidString)"}],"timeline":[],"reminderDrafts":[],"missingInfo":[]}
+        """
+        let finalJSON = """
+        {
+          "createInfoPage": true,
+          "title": "AFM Prompt Stability",
+          "templateID": "generalNote",
+          "category": "generalNote",
+          "assetDescription": "URL notes about AFM prompt stability.",
+          "ocrSummary": "Small models perform better with staged schema prompts.",
+          "keywords": ["afm", "prompt", "schema"],
+          "summary": "AFM prompt stability improves when asset understanding is split into staged schema tasks.",
+          "facts": [
+            {"label": "topic", "value": "AFM prompt stability", "sourceAssetID": "\(asset.id.uuidString)"}
+          ],
+          "timeline": [],
+          "reminderDrafts": [],
+          "folderName": null,
+          "confidence": 0.84,
+          "missingInfo": [],
+          "sourceAssetIDs": ["\(asset.id.uuidString)"]
+        }
+        """
+        let model = StubAssetUnderstandingModel(replies: [classificationJSON, factsJSON, finalJSON])
+        let pipeline = AssetUnderstandingPipeline(model: model)
+
+        let result = await pipeline.understand(AssetUnderstandingRequest(
+            assets: [asset],
+            maximumAttempts: 1,
+            executionMode: .staged
+        ))
+        let prompts = await model.prompts
+
+        XCTAssertEqual(result.status, .validated)
+        XCTAssertTrue(result.shouldAutoCreateInfoPage)
+        XCTAssertEqual(result.attempts, 1)
+        XCTAssertEqual(prompts.count, 3)
+        XCTAssertTrue(prompts[0].contains("Stage classifyAsset"))
+        XCTAssertTrue(prompts[1].contains("Stage extractFacts"))
+        XCTAssertTrue(prompts[1].contains(classificationJSON))
+        XCTAssertTrue(prompts[2].contains("Stage composeInfoPageJSON"))
+        XCTAssertTrue(prompts[2].contains(factsJSON))
+    }
+
     func testAssetUnderstandingRepairPromptPreservesStagedPipelineAndValidationErrors() {
         let asset = KnowledgeAsset(
             title: "broken.txt",
