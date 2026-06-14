@@ -107,7 +107,34 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
                     promptSecondsRemaining: 0
                 ),
                 libraryClassification: result.libraryClassification,
-                rawModelResponse: result.rawModelResponse
+                rawModelResponse: result.rawModelResponse,
+                promptPipelineTrace: PromptPipelineTrace(
+                    providerID: "local-llama-runtime",
+                    status: .validated,
+                    stages: [
+                        PromptPipelineStageTrace(
+                            name: .buildPrompt,
+                            status: .passed,
+                            inputCharacters: request.userPrompt.count,
+                            detail: "model=\(model.id)"
+                        ),
+                        PromptPipelineStageTrace(
+                            name: .requestModel,
+                            status: .passed,
+                            attempt: 1,
+                            inputCharacters: result.result.promptTokens,
+                            outputCharacters: result.result.generatedTokens,
+                            detail: "tok/s=\(String(format: "%.1f", result.result.generationTokensPerSecond ?? 0))"
+                        ),
+                        PromptPipelineStageTrace(
+                            name: .parseStructuredOutput,
+                            status: .passed,
+                            attempt: 1,
+                            outputCharacters: result.rawModelResponse?.count ?? visibleMessage.count,
+                            detail: result.libraryClassification == nil ? "chat" : "library classification"
+                        )
+                    ]
+                )
             )
         } catch let error as LocalModelReplyCheckError {
             throw AIProviderError.localInferenceUnavailable(Self.userMessage(for: error))

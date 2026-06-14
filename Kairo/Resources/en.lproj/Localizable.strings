@@ -669,6 +669,10 @@
 "chat.message.reasoning" = "Reasoning";
 "chat.message.memoryContext.one" = "Used 1 memory item";
 "chat.message.memoryContext.many" = "Used %lld memory items";
+"chat.message.pipeline.validated" = "Prompt OK · %lldx";
+"chat.message.pipeline.repaired" = "Prompt repaired · %lldx";
+"chat.message.pipeline.review" = "Review prompt · %lldx";
+"chat.message.pipeline.failed" = "Prompt failed · %lldx";
 "chat.memory.proposal.title" = "Save Memory";
 "chat.memory.proposal.rationale" = "Kairo found a preference or fact that may help future chat replies. It will only be saved if you confirm.";
 "chat.message.accessibility" = "%@ message";

@@ -49,6 +49,7 @@ public struct AppleFoundationModelAIProvider: AIProvider {
         }
 
         var lastRawResponse = ""
+        var traceStages: [PromptPipelineStageTrace] = []
         for attempt in 1...2 {
             let session = LanguageModelSession(
                 model: model,
@@ -57,20 +58,53 @@ public struct AppleFoundationModelAIProvider: AIProvider {
             let prompt = attempt == 1
                 ? Self.prompt(from: request)
                 : Self.repairPrompt(from: request, previousOutput: lastRawResponse)
+            traceStages.append(PromptPipelineStageTrace(
+                name: attempt == 1 ? .buildPrompt : .repairPrompt,
+                status: attempt == 1 ? .passed : .repaired,
+                attempt: attempt,
+                inputCharacters: prompt.count,
+                detail: "foundation-models"
+            ))
             let response = try await Self.withResponseTimeout {
                 try await session.respond(to: prompt)
             }
             lastRawResponse = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            traceStages.append(PromptPipelineStageTrace(
+                name: .requestModel,
+                status: .passed,
+                attempt: attempt,
+                inputCharacters: prompt.count,
+                outputCharacters: lastRawResponse.count
+            ))
             if let stableResponse = AFMStableResponse.parse(lastRawResponse) {
+                traceStages.append(PromptPipelineStageTrace(
+                    name: .parseStructuredOutput,
+                    status: .passed,
+                    attempt: attempt,
+                    outputCharacters: stableResponse.rawJSON.count,
+                    detail: "confidence=\(stableResponse.confidence)"
+                ))
                 return AICompletionResponse(
                     message: stableResponse.response,
                     proposedActions: [],
                     toolCandidates: [],
                     memoryContextCount: request.memoryContext.count,
                     inferenceMetrics: AIInferenceMetrics(stage: .complete),
-                    rawModelResponse: stableResponse.rawJSON
+                    rawModelResponse: stableResponse.rawJSON,
+                    promptPipelineTrace: PromptPipelineTrace(
+                        providerID: "apple-foundation-models",
+                        status: .validated,
+                        stages: traceStages
+                    )
                 )
             }
+            traceStages.append(PromptPipelineStageTrace(
+                name: .parseStructuredOutput,
+                status: .failed,
+                attempt: attempt,
+                outputCharacters: lastRawResponse.count,
+                detail: "invalid compact JSON"
+            ))
         }
 
         let message = Self.sanitizedFallbackMessage(lastRawResponse)
@@ -85,7 +119,13 @@ public struct AppleFoundationModelAIProvider: AIProvider {
             toolCandidates: [],
             memoryContextCount: request.memoryContext.count,
             inferenceMetrics: AIInferenceMetrics(stage: .complete),
-            rawModelResponse: lastRawResponse
+            rawModelResponse: lastRawResponse,
+            promptPipelineTrace: PromptPipelineTrace(
+                providerID: "apple-foundation-models",
+                status: .needsReview,
+                stages: traceStages,
+                validationIssues: ["invalid compact JSON"]
+            )
         )
     }
     #endif

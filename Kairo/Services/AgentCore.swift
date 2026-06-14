@@ -143,7 +143,8 @@ public actor AgentCore {
             reasoningText: response.reasoningText,
             inferenceMetrics: response.inferenceMetrics,
             rawModelResponse: response.rawModelResponse,
-            infoPageDraft: response.infoPageDraft
+            infoPageDraft: response.infoPageDraft,
+            promptPipelineTrace: response.promptPipelineTrace
         )
     }
 

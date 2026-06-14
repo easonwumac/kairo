@@ -67,8 +67,17 @@ public struct OpenAICompatibleProvider: AIProvider {
 
         var lastRawText = ""
         var messages = buildMessages(from: request)
+        var traceStages: [PromptPipelineStageTrace] = [
+            PromptPipelineStageTrace(
+                name: .buildPrompt,
+                status: .passed,
+                inputCharacters: request.userPrompt.count,
+                detail: "messages=\(messages.count), images=\(request.attachmentContext.filter { $0.kind == .image }.count)"
+            )
+        ]
 
         for attempt in 0..<5 {
+            let traceAttempt = attempt + 1
             let payload = OAICompatRequest(
                 model: model,
                 messages: messages,
@@ -86,10 +95,25 @@ public struct OpenAICompatibleProvider: AIProvider {
                 url: chatURL
             )
             lastRawText = rawText
+            traceStages.append(PromptPipelineStageTrace(
+                name: .requestModel,
+                status: .passed,
+                attempt: traceAttempt,
+                inputCharacters: payload.messages.map(\.text.count).reduce(0, +),
+                outputCharacters: rawText.count,
+                detail: "http=\(statusCode), \(String(format: "%.0f", elapsed))ms"
+            ))
             kairoOmlxLog("[OMLX] response status=\(statusCode) elapsed=\(String(format: "%.0f", elapsed))ms tokens=\(decoded.usage?.totalTokens ?? 0) messageLen=\(rawText.count)")
             kairoOmlxLog("[OMLX] message=\(String(rawText.prefix(200)))")
 
             let (displayMessage, rawJSON, infoPageDraft) = Self.parseStructuredResponse(rawText)
+            traceStages.append(PromptPipelineStageTrace(
+                name: .parseStructuredOutput,
+                status: infoPageDraft != nil || !hasImages ? .passed : .failed,
+                attempt: traceAttempt,
+                outputCharacters: rawJSON?.count ?? rawText.count,
+                detail: infoPageDraft == nil && hasImages ? "missing InfoPage JSON" : "message=\(displayMessage.count)"
+            ))
             let metrics = AIInferenceMetrics(
                 stage: .complete,
                 promptTokens: decoded.usage?.promptTokens ?? decoded.usage?.totalTokens,
@@ -97,12 +121,19 @@ public struct OpenAICompatibleProvider: AIProvider {
             )
 
             if infoPageDraft != nil || !hasImages {
+                let trace = PromptPipelineTrace(
+                    providerID: "openai-compatible",
+                    status: infoPageDraft != nil ? .validated : .needsReview,
+                    stages: traceStages,
+                    validationIssues: infoPageDraft == nil && hasImages ? ["missing InfoPage JSON"] : []
+                )
                 return AICompletionResponse(
                     message: displayMessage,
                     proposedActions: [],
                     inferenceMetrics: metrics,
                     rawModelResponse: rawJSON,
-                    infoPageDraft: infoPageDraft
+                    infoPageDraft: infoPageDraft,
+                    promptPipelineTrace: trace
                 )
             }
 
@@ -115,15 +146,29 @@ public struct OpenAICompatibleProvider: AIProvider {
             Your last output was:
             \(String(rawText.prefix(300)))
             """
+            traceStages.append(PromptPipelineStageTrace(
+                name: .repairPrompt,
+                status: .repaired,
+                attempt: traceAttempt,
+                inputCharacters: repairPrompt.count,
+                detail: "retry structured JSON"
+            ))
             messages.append(OAICompatMessage(role: "user", text: repairPrompt))
         }
 
         let (displayMessage, rawJSON, infoPageDraft) = Self.parseStructuredResponse(lastRawText)
+        let finalIssue = infoPageDraft == nil && hasImages ? ["missing InfoPage JSON after repair"] : []
         return AICompletionResponse(
             message: displayMessage,
             proposedActions: [],
             rawModelResponse: rawJSON,
-            infoPageDraft: infoPageDraft
+            infoPageDraft: infoPageDraft,
+            promptPipelineTrace: PromptPipelineTrace(
+                providerID: "openai-compatible",
+                status: infoPageDraft == nil && hasImages ? .failed : .needsReview,
+                stages: traceStages,
+                validationIssues: finalIssue
+            )
         )
     }
 
@@ -364,7 +409,7 @@ public struct OpenAICompatibleProvider: AIProvider {
 
         let message = draft.assetDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
             ?? draft.summary.trimmingCharacters(in: .whitespacesAndNewlines)
-        return (message ?? "", pretty, draft)
+        return (message, pretty, draft)
     }
 
     private static func sanitizeDraftJSON(in dict: [String: Any]) -> [String: Any] {
@@ -438,7 +483,7 @@ public struct OpenAICompatibleProvider: AIProvider {
             }
             result["timeline"] = timeline
         }
-        if var sa = result["sourceAssetIDs"] as? [Any] {
+        if let sa = result["sourceAssetIDs"] as? [Any] {
             result["sourceAssetIDs"] = sa.compactMap { item -> UUID? in
                 if let uuidStr = item as? String, let uuid = UUID(uuidString: uuidStr) {
                     return uuid

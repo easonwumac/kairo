@@ -67,6 +67,7 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
     public var libraryClassification: LibraryClassificationResponse?
     public var rawModelResponse: String?
     public var infoPageDraft: InfoPageDraft?
+    public var promptPipelineTrace: PromptPipelineTrace?
 
     public init(
         message: String,
@@ -77,7 +78,8 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
         inferenceMetrics: AIInferenceMetrics? = nil,
         libraryClassification: LibraryClassificationResponse? = nil,
         rawModelResponse: String? = nil,
-        infoPageDraft: InfoPageDraft? = nil
+        infoPageDraft: InfoPageDraft? = nil,
+        promptPipelineTrace: PromptPipelineTrace? = nil
     ) {
         self.message = message
         self.proposedActions = proposedActions
@@ -88,6 +90,83 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
         self.libraryClassification = libraryClassification
         self.rawModelResponse = rawModelResponse
         self.infoPageDraft = infoPageDraft
+        self.promptPipelineTrace = promptPipelineTrace
+    }
+}
+
+public struct PromptPipelineTrace: Codable, Equatable, Sendable {
+    public enum Status: String, Codable, Equatable, Sendable {
+        case validated
+        case needsRepair
+        case needsReview
+        case failed
+    }
+
+    public var providerID: String
+    public var status: Status
+    public var stages: [PromptPipelineStageTrace]
+    public var validationIssues: [String]
+
+    public init(
+        providerID: String,
+        status: Status,
+        stages: [PromptPipelineStageTrace] = [],
+        validationIssues: [String] = []
+    ) {
+        self.providerID = providerID
+        self.status = status
+        self.stages = stages
+        self.validationIssues = validationIssues
+    }
+
+    public var attemptCount: Int {
+        let attempts = stages.compactMap(\.attempt)
+        return attempts.max() ?? (stages.isEmpty ? 0 : 1)
+    }
+
+    public var totalOutputCharacters: Int {
+        stages.compactMap(\.outputCharacters).reduce(0, +)
+    }
+}
+
+public struct PromptPipelineStageTrace: Codable, Equatable, Sendable {
+    public enum Name: String, Codable, Equatable, Sendable {
+        case buildPrompt
+        case requestModel
+        case parseStructuredOutput
+        case validateDraft
+        case repairPrompt
+        case finalize
+    }
+
+    public enum Status: String, Codable, Equatable, Sendable {
+        case pending
+        case passed
+        case repaired
+        case failed
+    }
+
+    public var name: Name
+    public var status: Status
+    public var attempt: Int?
+    public var inputCharacters: Int?
+    public var outputCharacters: Int?
+    public var detail: String?
+
+    public init(
+        name: Name,
+        status: Status,
+        attempt: Int? = nil,
+        inputCharacters: Int? = nil,
+        outputCharacters: Int? = nil,
+        detail: String? = nil
+    ) {
+        self.name = name
+        self.status = status
+        self.attempt = attempt
+        self.inputCharacters = inputCharacters
+        self.outputCharacters = outputCharacters
+        self.detail = detail
     }
 }
 

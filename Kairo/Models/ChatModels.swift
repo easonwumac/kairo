@@ -104,6 +104,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
     public var memoryContextCount: Int
     public var reasoningText: String?
     public var rawModelResponse: String?
+    public var promptPipelineTrace: PromptPipelineTrace?
 
     public init(
         id: UUID = UUID(),
@@ -116,7 +117,8 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         status: ChatMessageStatus = .sent,
         memoryContextCount: Int = 0,
         reasoningText: String? = nil,
-        rawModelResponse: String? = nil
+        rawModelResponse: String? = nil,
+        promptPipelineTrace: PromptPipelineTrace? = nil
     ) {
         self.id = id
         self.role = role
@@ -129,6 +131,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.memoryContextCount = memoryContextCount
         self.reasoningText = reasoningText
         self.rawModelResponse = rawModelResponse
+        self.promptPipelineTrace = promptPipelineTrace
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -143,6 +146,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         case memoryContextCount
         case reasoningText
         case rawModelResponse
+        case promptPipelineTrace
     }
 
     public init(from decoder: Decoder) throws {
@@ -158,6 +162,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.memoryContextCount = try container.decodeIfPresent(Int.self, forKey: .memoryContextCount) ?? 0
         self.reasoningText = try container.decodeIfPresent(String.self, forKey: .reasoningText)
         self.rawModelResponse = try container.decodeIfPresent(String.self, forKey: .rawModelResponse)
+        self.promptPipelineTrace = try container.decodeIfPresent(PromptPipelineTrace.self, forKey: .promptPipelineTrace)
     }
 }
 

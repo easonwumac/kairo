@@ -669,6 +669,10 @@
 "chat.message.reasoning" = "思考過程";
 "chat.message.memoryContext.one" = "使用了 1 筆 Memory";
 "chat.message.memoryContext.many" = "使用了 %lld 筆 Memory";
+"chat.message.pipeline.validated" = "Prompt OK · %lld 次";
+"chat.message.pipeline.repaired" = "Prompt 修復 · %lld 次";
+"chat.message.pipeline.review" = "需檢查 · %lld 次";
+"chat.message.pipeline.failed" = "Prompt 失敗 · %lld 次";
 "chat.memory.proposal.title" = "儲存 Memory";
 "chat.memory.proposal.rationale" = "Kairo 找到可能有助於後續對話的偏好或事實；只有在你確認後才會儲存。";
 "chat.message.accessibility" = "%@ 訊息";

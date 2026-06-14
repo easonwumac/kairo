@@ -164,6 +164,31 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(toolContextProvider.receivedSkillIDs, ["injected-tool-context-skill"])
     }
 
+    func testAgentCorePreservesPromptPipelineTraceFromProvider() async throws {
+        let trace = PromptPipelineTrace(
+            providerID: "test-provider",
+            status: .validated,
+            stages: [
+                PromptPipelineStageTrace(
+                    name: .parseStructuredOutput,
+                    status: .passed,
+                    attempt: 2,
+                    outputCharacters: 128
+                )
+            ]
+        )
+        let provider = CapturingAIProvider(response: AICompletionResponse(
+            message: "Trace response",
+            promptPipelineTrace: trace
+        ))
+        let agent = AgentCore(aiProvider: provider)
+
+        let response = try await agent.respond(to: "trace this")
+
+        XCTAssertEqual(response.promptPipelineTrace, trace)
+        XCTAssertEqual(response.promptPipelineTrace?.attemptCount, 2)
+    }
+
     func testAgentCoreUsesInjectedToolInvocationPlanner() async throws {
         let provider = CapturingAIProvider(response: AICompletionResponse(message: "Planner response"))
         let toolInvocationPlanner = StubAgentToolInvocationPlanner()
@@ -745,6 +770,34 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(message.text, "Old assistant message")
         XCTAssertTrue(message.toolCandidates.isEmpty)
         XCTAssertEqual(message.memoryContextCount, 0)
+        XCTAssertNil(message.promptPipelineTrace)
+    }
+
+    func testChatMessagePersistsPromptPipelineTrace() throws {
+        let trace = PromptPipelineTrace(
+            providerID: "test-provider",
+            status: .needsReview,
+            stages: [
+                PromptPipelineStageTrace(
+                    name: .repairPrompt,
+                    status: .repaired,
+                    attempt: 2,
+                    inputCharacters: 64
+                )
+            ],
+            validationIssues: ["invalid JSON"]
+        )
+        let message = ChatMessage(
+            role: .assistant,
+            text: "Needs review",
+            promptPipelineTrace: trace
+        )
+
+        let data = try JSONEncoder().encode(message)
+        let decoded = try JSONDecoder().decode(ChatMessage.self, from: data)
+
+        XCTAssertEqual(decoded.promptPipelineTrace, trace)
+        XCTAssertEqual(decoded.promptPipelineTrace?.validationIssues, ["invalid JSON"])
     }
 
     func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {

@@ -71,6 +71,22 @@ struct ChatBubble: View {
                     .accessibilityIdentifier("chat.message.reasoning.\(message.id.uuidString)")
                 }
 
+                if !isUser, let trace = message.promptPipelineTrace {
+                    HStack(spacing: 6) {
+                        Image(systemName: traceIconName(for: trace.status))
+                            .font(.caption2.weight(.bold))
+                        Text(traceStatusText(for: trace))
+                            .font(.caption2.weight(.semibold))
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(traceTint(for: trace.status))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 5)
+                    .frame(maxWidth: bubbleMaxWidth, alignment: .leading)
+                    .background(traceTint(for: trace.status).opacity(0.10), in: Capsule())
+                    .accessibilityIdentifier("chat.message.pipeline.\(message.id.uuidString)")
+                }
+
                 HStack(spacing: 6) {
                     if message.status == .failed {
                         Image(systemName: "exclamationmark.circle.fill")
@@ -125,6 +141,44 @@ struct ChatBubble: View {
             return KairoL10n.string("chat.message.memoryContext.one")
         }
         return KairoL10n.string("chat.message.memoryContext.many", Int64(message.memoryContextCount))
+    }
+
+    private func traceStatusText(for trace: PromptPipelineTrace) -> String {
+        let attempts = max(trace.attemptCount, 1)
+        switch trace.status {
+        case .validated:
+            return KairoL10n.string("chat.message.pipeline.validated", Int64(attempts))
+        case .needsRepair:
+            return KairoL10n.string("chat.message.pipeline.repaired", Int64(attempts))
+        case .needsReview:
+            return KairoL10n.string("chat.message.pipeline.review", Int64(attempts))
+        case .failed:
+            return KairoL10n.string("chat.message.pipeline.failed", Int64(attempts))
+        }
+    }
+
+    private func traceTint(for status: PromptPipelineTrace.Status) -> Color {
+        switch status {
+        case .validated:
+            return KairoDesign.teal
+        case .needsRepair, .needsReview:
+            return KairoDesign.amber
+        case .failed:
+            return .orange
+        }
+    }
+
+    private func traceIconName(for status: PromptPipelineTrace.Status) -> String {
+        switch status {
+        case .validated:
+            return "checkmark.seal.fill"
+        case .needsRepair:
+            return "arrow.triangle.2.circlepath"
+        case .needsReview:
+            return "eye.fill"
+        case .failed:
+            return "exclamationmark.triangle.fill"
+        }
     }
 
     private func messageActionButton(
