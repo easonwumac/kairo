@@ -58,7 +58,7 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
 
         return KairoShareImportResult(
             attachments: attachments,
-            suggestedPrompt: await suggestedPrompt(for: items),
+            suggestedPrompt: await suggestedPrompt(for: items, actionInboxItems: actionInboxItems),
             importedItemIDs: items.map(\.id),
             actionInboxItems: actionInboxItems,
             suggestedActions: suggestedActions(from: actionInboxItems)
@@ -84,7 +84,10 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
             .compactMap(\.action)
     }
 
-    private func suggestedPrompt(for items: [ShareIngestionItem]) async -> String? {
+    private func suggestedPrompt(
+        for items: [ShareIngestionItem],
+        actionInboxItems: [ActionInboxItem]
+    ) async -> String? {
         let attachments = items.flatMap(\.attachments)
         for attachment in attachments {
             guard let taskTitle = Self.taskTitle(from: attachment.textPreview) else { continue }
@@ -93,7 +96,19 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
         if let urlPrompt = await urlReadingPrompt(for: attachments) {
             return urlPrompt
         }
+        if actionInboxItems.contains(where: { $0.triage == .createInfoPage }) {
+            return infoPagePrompt(for: attachments)
+        }
         return items.first?.suggestedPrompt
+    }
+
+    private func infoPagePrompt(for attachments: [ChatAttachment]) -> String {
+        let context = attachments
+            .map(\.promptSummary)
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let boundedContext = String(context.prefix(4_000))
+        return KairoL10n.string("chat.share.prompt.prepareInfoPage", boundedContext)
     }
 
     private func urlReadingPrompt(for attachments: [ChatAttachment]) async -> String? {

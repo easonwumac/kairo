@@ -230,6 +230,30 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         XCTAssertEqual(imported.suggestedPrompt?.contains("pageText: AFM works better"), true)
     }
 
+    func testShareImportBackendAPIBuildsInfoPagePromptForResearchNoteWithoutActionDraft() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("研究筆記：AFM prompt pipeline 先分類，再抽取事實，最後產生 JSON。", displayName: "AFM note")
+            ],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let api = KairoShareImportBackendService(
+            shareIngestionQueue: InMemoryShareIngestionQueue(seed: [item]),
+            urlMetadataProvider: EmptyURLMetadataProvider(),
+            urlReadableContentProvider: EmptyURLReadableContentProvider()
+        )
+
+        let imported = try await api.importPendingShares(limit: 10)
+
+        XCTAssertEqual(imported.actionInboxItems.map(\.triage), [.createInfoPage])
+        XCTAssertTrue(imported.suggestedActions.isEmpty)
+        XCTAssertEqual(imported.suggestedPrompt?.contains("InfoPage"), true)
+        XCTAssertEqual(imported.suggestedPrompt?.contains("AFM prompt pipeline"), true)
+        XCTAssertNotEqual(imported.suggestedPrompt, item.suggestedPrompt)
+    }
+
     func testShareImportBackendAPIPrioritizesExplicitTasksOverURLReadingPrompt() async throws {
         let builder = ShareAttachmentBuilder()
         let item = ShareIngestionItem(

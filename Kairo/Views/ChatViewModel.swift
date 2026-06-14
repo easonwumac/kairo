@@ -1011,7 +1011,12 @@ public final class ChatViewModel: ObservableObject {
         }
         let urlPromptFormat = KairoL10n.string("chat.share.prompt.readURLs", "")
         let urlPromptPrefix = urlPromptFormat.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !urlPromptPrefix.isEmpty && prompt.hasPrefix(urlPromptPrefix)
+        if !urlPromptPrefix.isEmpty && prompt.hasPrefix(urlPromptPrefix) {
+            return true
+        }
+        let infoPagePromptFormat = KairoL10n.string("chat.share.prompt.prepareInfoPage", "")
+        let infoPagePromptPrefix = infoPagePromptFormat.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !infoPagePromptPrefix.isEmpty && prompt.hasPrefix(infoPagePromptPrefix)
     }
 
     private static func userFacingChatErrorMessage(for error: Error) -> String {

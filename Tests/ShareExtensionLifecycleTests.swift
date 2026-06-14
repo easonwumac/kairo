@@ -73,6 +73,35 @@ final class ShareExtensionLifecycleTests: XCTestCase {
     }
 
     @MainActor
+    func testChatImportPendingResearchNoteUsesInfoPagePromptAsSharePrimaryAction() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("研究筆記：AFM prompt pipeline 先分類，再抽取事實。", displayName: "AFM note")
+            ],
+            sourceApplication: "ShareSheet"
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: queue,
+            shareImportAPI: KairoShareImportBackendService(
+                shareIngestionQueue: queue,
+                urlMetadataProvider: EmptyURLMetadataProvider(),
+                urlReadableContentProvider: EmptyURLReadableContentProvider()
+            ),
+            chatAPI: makeShareImportChatAPI()
+        )
+
+        await viewModel.importPendingShares()
+
+        XCTAssertEqual(viewModel.pendingAttachments.map(\.kind), [.text])
+        XCTAssertEqual(viewModel.composerText.contains("InfoPage"), true)
+        XCTAssertEqual(viewModel.composerText.contains("AFM prompt pipeline"), true)
+        XCTAssertEqual(viewModel.shareImportPrimaryActionTitle, KairoL10n.string("chat.share.action.summarize"))
+    }
+
+    @MainActor
     func testSharedMeetingTextSentToChatProducesCalendarReview() async throws {
         let builder = ShareAttachmentBuilder()
         let item = ShareIngestionItem(
