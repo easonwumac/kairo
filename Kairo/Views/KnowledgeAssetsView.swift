@@ -88,7 +88,18 @@ public struct KnowledgeAssetsView: View {
         )
     }
 
+    @ViewBuilder
     private var assetLibrary: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 14) {
+                assetLibraryStack
+            }
+        } else {
+            assetLibraryStack
+        }
+    }
+
+    private var assetLibraryStack: some View {
         VStack(alignment: .leading, spacing: 14) {
             searchCard
 
@@ -145,11 +156,7 @@ public struct KnowledgeAssetsView: View {
                         .font(.caption.weight(.bold))
                         .foregroundStyle(activeFilterCount > 0 ? KairoDesign.blue : KairoDesign.ink)
                         .frame(width: 28, height: 28)
-                        .background(KairoDesign.softSurface.opacity(0.72), in: Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(KairoDesign.line, lineWidth: 1)
-                        }
+                        .knowledgeAssetGlassCircle(tint: KairoDesign.blue, isInteractive: true)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(KairoL10n.string("knowledgeAssets.filter.open"))
@@ -157,11 +164,7 @@ public struct KnowledgeAssetsView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(KairoDesign.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 19, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 19, style: .continuous)
-                    .stroke(KairoDesign.line, lineWidth: 1)
-            }
+            .knowledgeAssetGlassSurface(cornerRadius: 19, tint: KairoDesign.teal, isInteractive: true)
 
             if isFilterPresented {
                 filterControls
@@ -220,7 +223,7 @@ public struct KnowledgeAssetsView: View {
                     .font(.caption.weight(.medium))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
-                    .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .knowledgeAssetGlassSurface(cornerRadius: 12, tint: KairoDesign.teal, isInteractive: true)
                     .accessibilityIdentifier("knowledgeAssets.folder.new.text")
 
                 Button {
@@ -295,11 +298,7 @@ public struct KnowledgeAssetsView: View {
                     .padding(.top, 4)
             }
             .padding(14)
-            .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(KairoDesign.line, lineWidth: 1)
-            }
+            .knowledgeAssetGlassSurface(cornerRadius: 18, tint: tint(for: asset.kind), isInteractive: true)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -627,6 +626,21 @@ public struct KnowledgeAssetsView: View {
         }
     }
 
+    private func tint(for kind: KnowledgeAssetKind) -> Color {
+        switch kind {
+        case .screenshot, .image:
+            return KairoDesign.teal
+        case .pdf:
+            return KairoDesign.red
+        case .url:
+            return KairoDesign.blue
+        case .text, .note:
+            return KairoDesign.green
+        case .file:
+            return KairoDesign.muted
+        }
+    }
+
     private func dataTree(_ asset: KnowledgeAsset) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             treeRow(icon: "folder.fill", text: "node-\(asset.id.uuidString.prefix(8))")
@@ -900,18 +914,85 @@ private extension DateFormatter {
 }
 
 private extension View {
+    @ViewBuilder
+    func knowledgeAssetGlassSurface(cornerRadius: CGFloat, tint: Color, isInteractive: Bool = false) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.12))
+                            .interactive(),
+                        in: .rect(cornerRadius: cornerRadius)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            } else {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.08)),
+                        in: .rect(cornerRadius: cornerRadius)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(KairoDesign.line, lineWidth: 1)
+                }
+        }
+    }
+
+    @ViewBuilder
+    func knowledgeAssetGlassCircle(tint: Color, isInteractive: Bool = false) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.12))
+                            .interactive(),
+                        in: .circle
+                    )
+                    .overlay {
+                        Circle()
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            } else {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.08)),
+                        in: .circle
+                    )
+                    .overlay {
+                        Circle()
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            }
+        } else {
+            self
+                .background(KairoDesign.softSurface.opacity(0.72), in: Circle())
+                .overlay {
+                    Circle()
+                        .stroke(KairoDesign.line, lineWidth: 1)
+                }
+        }
+    }
+
     func assetGlassCircleControl() -> some View {
         self
             .foregroundStyle(KairoDesign.ink)
             .frame(width: 36, height: 36)
-            .background {
-                Circle()
-                    .fill(KairoDesign.elevatedSurface.opacity(0.72))
-            }
-            .overlay {
-                Circle()
-                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
-            }
+            .knowledgeAssetGlassCircle(tint: KairoDesign.teal, isInteractive: true)
             .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
     }
 }
