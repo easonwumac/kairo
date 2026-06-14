@@ -929,6 +929,25 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(viewModel.pendingAttachments.isEmpty)
     }
 
+    @MainActor
+    func testPipelineDiagnosticPromptIncludesStructuredOutputContract() {
+        let prompt = ChatViewModel.pipelineDiagnosticPrompt(for: ChatPromptPipelineHealthSummary(
+            providerID: "afm",
+            traceCount: 3,
+            validatedCount: 1,
+            repairCount: 1,
+            failedCount: 1,
+            latestStatus: .failed
+        ))
+
+        XCTAssertTrue(prompt.contains("afm"))
+        XCTAssertTrue(prompt.contains("3"))
+        XCTAssertTrue(prompt.contains("verdict"))
+        XCTAssertTrue(prompt.contains("likelyFailure"))
+        XCTAssertTrue(prompt.contains("promptFix"))
+        XCTAssertTrue(prompt.contains("confidence"))
+    }
+
     func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {
         let registry = IntegrationRegistry()
 
