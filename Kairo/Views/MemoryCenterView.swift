@@ -32,27 +32,11 @@ public struct MemoryCenterView: View {
             GeometryReader { proxy in
                 ScrollViewReader { scrollProxy in
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 18) {
-                            memorySearchSection
-                                .id(Self.searchSectionScrollID)
-
-                            memoryAddSection
-
-                            if let errorMessage {
-                                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(KairoDesign.red)
-                                    .accessibilityIdentifier("memory.error")
-                            }
-
-                            memoryLibraryHeader
-
-                            memoryRecordsSection
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 18)
-                        .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeNavigationStackContentTopPadding)
-                        .padding(.bottom, 32)
+                        memoryContent
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 18)
+                            .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeNavigationStackContentTopPadding)
+                            .padding(.bottom, 32)
                     }
                     .background(KairoDesign.background.ignoresSafeArea())
                     .scrollIndicators(.hidden)
@@ -69,34 +53,57 @@ public struct MemoryCenterView: View {
         }
     }
 
+    @ViewBuilder
+    private var memoryContent: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 14) {
+                memoryStack
+            }
+        } else {
+            memoryStack
+        }
+    }
+
+    private var memoryStack: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            memorySearchSection
+                .id(Self.searchSectionScrollID)
+
+            memoryRadarSection
+
+            memoryAddSection
+
+            if let errorMessage {
+                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(KairoDesign.red)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .memoryGlassSurface(tint: KairoDesign.red, cornerRadius: 14)
+                    .accessibilityIdentifier("memory.error")
+            }
+
+            memoryLibraryHeader
+
+            memoryRecordsSection
+        }
+    }
+
     private var memoryRecordsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             if memories.isEmpty {
                 if !trimmedSearchQuery.isEmpty {
-                    KairoGroupedSurface {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(KairoL10n.string("memory.search.empty.title"))
-                                .font(.subheadline.weight(.semibold))
-                                .accessibilityIdentifier("memory.empty")
-                            Text(KairoL10n.string("memory.search.empty.subtitle"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 10)
-                    }
+                    emptyMemoryCard(
+                        title: KairoL10n.string("memory.search.empty.title"),
+                        subtitle: KairoL10n.string("memory.search.empty.subtitle"),
+                        tint: KairoDesign.amber
+                    )
                 } else {
-                    KairoGroupedSurface {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(KairoL10n.string("memory.empty.title"))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(KairoDesign.ink)
-                                .accessibilityIdentifier("memory.empty")
-                            Text(KairoL10n.string("memory.empty.subtitle"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 10)
-                    }
+                    emptyMemoryCard(
+                        title: KairoL10n.string("memory.empty.title"),
+                        subtitle: KairoL10n.string("memory.empty.subtitle"),
+                        tint: KairoDesign.teal
+                    )
                 }
             } else {
                 ForEach(memories) { memory in
@@ -142,13 +149,25 @@ public struct MemoryCenterView: View {
             memoryRecordDetailsDisclosure(memory)
         }
         .padding(14)
-        .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(KairoDesign.line, lineWidth: 1)
-        }
+        .memoryGlassSurface(tint: KairoDesign.teal, cornerRadius: 16)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("memory.record")
+    }
+
+    private func emptyMemoryCard(title: String, subtitle: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+                .accessibilityIdentifier("memory.empty")
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .memoryGlassSurface(tint: tint, cornerRadius: 18)
     }
 
     private func memoryRecordDetailsDisclosure(_ memory: MemoryRecord) -> some View {
@@ -163,7 +182,7 @@ public struct MemoryCenterView: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(KairoDesign.teal)
                         .frame(width: 26, height: 26)
-                        .background(KairoDesign.teal.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .memoryGlassSurface(tint: KairoDesign.teal, cornerRadius: 8)
 
                     Text(KairoL10n.string("memory.record.details"))
                         .font(.caption.weight(.semibold))
@@ -179,6 +198,9 @@ public struct MemoryCenterView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .memoryGlassSurface(tint: KairoDesign.teal, cornerRadius: 12, isInteractive: true)
             .accessibilityLabel(isExpanded ? KairoL10n.string("memory.record.details.hide") : KairoL10n.string("memory.record.details.show"))
             .accessibilityIdentifier("memory.record.details.toggle")
 
@@ -208,11 +230,7 @@ public struct MemoryCenterView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .background(KairoDesign.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(KairoDesign.red.opacity(0.18), lineWidth: 1)
-                    }
+                    .memoryGlassSurface(tint: KairoDesign.red, cornerRadius: 10, isInteractive: true)
                     .foregroundStyle(KairoDesign.red)
                     .accessibilityLabel(KairoL10n.string("memory.delete.accessibility"))
                     .accessibilityIdentifier("memory.record.delete")
@@ -246,11 +264,11 @@ public struct MemoryCenterView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(KairoDesign.teal)
                             .frame(width: 34, height: 34)
-                            .background(KairoDesign.teal.opacity(0.10), in: Circle())
+                            .memoryGlassSurface(tint: KairoDesign.teal, cornerRadius: 17)
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .background(KairoDesign.softSurface.opacity(0.55), in: Capsule())
+                    .memoryGlassSurface(tint: KairoDesign.teal, cornerRadius: 18, isInteractive: true)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -288,6 +306,52 @@ public struct MemoryCenterView: View {
             }
         }
         .accessibilityIdentifier("memory.library.header")
+    }
+
+    private var memoryRadarSection: some View {
+        HStack(spacing: 10) {
+            memoryRadarTile(
+                title: KairoL10n.string("memory.radar.saved"),
+                value: "\(memories.count)",
+                systemImage: "brain.head.profile",
+                tint: KairoDesign.teal
+            )
+
+            memoryRadarTile(
+                title: KairoL10n.string("memory.radar.scope"),
+                value: trimmedSearchQuery.isEmpty ? KairoL10n.string("memory.radar.scope.all") : KairoL10n.string("memory.radar.scope.filtered"),
+                systemImage: trimmedSearchQuery.isEmpty ? "tray.full.fill" : "line.3.horizontal.decrease.circle.fill",
+                tint: trimmedSearchQuery.isEmpty ? KairoDesign.blue : KairoDesign.amber
+            )
+        }
+        .accessibilityIdentifier("memory.radar")
+    }
+
+    private func memoryRadarTile(title: String, value: String, systemImage: String, tint: Color) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .memoryGlassSurface(tint: tint, cornerRadius: 10)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Text(value)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+        .memoryGlassSurface(tint: tint, cornerRadius: 18)
     }
 
     private var memorySearchSection: some View {
@@ -335,7 +399,7 @@ public struct MemoryCenterView: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(KairoDesign.blue)
                             .frame(width: 28, height: 28)
-                            .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .memoryGlassSurface(tint: KairoDesign.blue, cornerRadius: 8)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(KairoL10n.string("memory.add.section"))
@@ -349,7 +413,7 @@ public struct MemoryCenterView: View {
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(KairoDesign.blue)
                             .frame(width: 34, height: 34)
-                            .background(KairoDesign.blue.opacity(0.10), in: Circle())
+                            .memoryGlassSurface(tint: KairoDesign.blue, cornerRadius: 17)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
@@ -367,7 +431,7 @@ public struct MemoryCenterView: View {
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 8)
-                        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .memoryGlassSurface(tint: KairoDesign.blue, cornerRadius: 10, fallbackOpacity: 0.36, strokeOpacity: 0.42)
                         .accessibilityIdentifier("memory.add.text")
 
                     Text(KairoL10n.string("memory.add.detail"))
@@ -544,6 +608,42 @@ public struct MemoryCenterView: View {
         encoder.dateEncodingStrategy = .iso8601
         let data = try encoder.encode(export)
         return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func memoryGlassSurface(
+        tint: Color,
+        cornerRadius: CGFloat,
+        isInteractive: Bool = false,
+        fallbackOpacity: Double = 0.68,
+        strokeOpacity: Double = 0.55
+    ) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.11)).interactive(), in: .rect(cornerRadius: cornerRadius))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(strokeOpacity), lineWidth: 1)
+                    }
+            } else {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.08)), in: .rect(cornerRadius: cornerRadius))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(strokeOpacity), lineWidth: 1)
+                    }
+            }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface.opacity(fallbackOpacity), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(KairoDesign.line.opacity(strokeOpacity), lineWidth: 1)
+                }
+        }
     }
 }
 #endif

@@ -116,6 +116,10 @@
 "memory.status.count.one" = "%lld 筆記憶";
 "memory.status.count.many" = "%lld 筆記憶";
 "memory.status.userApproved" = "使用者核准";
+"memory.radar.saved" = "已儲存";
+"memory.radar.scope" = "範圍";
+"memory.radar.scope.all" = "全部";
+"memory.radar.scope.filtered" = "篩選";
 "memory.details.title" = "匯出與儲存";
 "memory.details.subtitle" = "只有需要匯出或檢查已儲存脈絡時再打開。";
 "memory.details.show" = "顯示匯出與儲存";

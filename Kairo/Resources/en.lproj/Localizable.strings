@@ -116,6 +116,10 @@
 "memory.status.count.one" = "%lld memory";
 "memory.status.count.many" = "%lld memories";
 "memory.status.userApproved" = "User approved";
+"memory.radar.saved" = "Saved";
+"memory.radar.scope" = "Scope";
+"memory.radar.scope.all" = "All";
+"memory.radar.scope.filtered" = "Filtered";
 "memory.details.title" = "Export and storage";
 "memory.details.subtitle" = "Open only when you need to export or check saved context.";
 "memory.details.show" = "Show export and storage";
