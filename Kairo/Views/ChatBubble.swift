@@ -430,6 +430,8 @@ private struct PromptPipelineStageRow: View {
             return KairoL10n.string("chat.pipeline.stage.validateDraft")
         case .repairPrompt:
             return KairoL10n.string("chat.pipeline.stage.repairPrompt")
+        case .routeEscalation:
+            return KairoL10n.string("chat.pipeline.stage.routeEscalation")
         case .finalize:
             return KairoL10n.string("chat.pipeline.stage.finalize")
         }

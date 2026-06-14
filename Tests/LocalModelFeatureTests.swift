@@ -1661,6 +1661,10 @@ final class LocalModelFeatureTests: XCTestCase {
         let companionCallCount = await companionProvider.completionCalls()
         XCTAssertEqual(localCallCount, 1)
         XCTAssertEqual(companionCallCount, 1)
+        XCTAssertEqual(response.promptPipelineTrace?.providerID, "local-escalation-router")
+        XCTAssertEqual(response.promptPipelineTrace?.status, .needsRepair)
+        XCTAssertTrue(response.promptPipelineTrace?.stages.contains { $0.name == .routeEscalation && $0.status == .repaired } == true)
+        XCTAssertTrue(response.promptPipelineTrace?.validationIssues.contains("AFM requested companion: deep reasoning") == true)
     }
 
     func testLocalModelRoutingAIProviderKeepsAFMEscalationLocalInLocalOnlyMode() async throws {

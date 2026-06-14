@@ -67,9 +67,14 @@ public struct LocalModelRoutingAIProvider: AIProvider {
         }
         if decision.route == .local {
             let localResponse = try await router.complete(routedRequest, context: context)
-            if Self.shouldEscalateLocalResponse(localResponse, context: context) {
+            if let escalationReason = Self.localEscalationReason(localResponse, context: context) {
                 kairoRouterLog("[ROUTER] local_response_escalation reason=companionEscalation")
-                return try await cloudProvider.complete(routedRequest)
+                let cloudResponse = try await cloudProvider.complete(routedRequest)
+                return Self.response(
+                    cloudResponse,
+                    annotatedWithLocalEscalationFrom: localResponse,
+                    reason: escalationReason
+                )
             }
             return localResponse
         }
@@ -157,18 +162,61 @@ public struct LocalModelRoutingAIProvider: AIProvider {
         needles.contains { text.contains($0.lowercased()) }
     }
 
-    private static func shouldEscalateLocalResponse(
+    private static func localEscalationReason(
         _ response: AICompletionResponse,
         context: ProviderRoutingContext
-    ) -> Bool {
+    ) -> String? {
         guard context.networkAvailable,
               !context.offlineModeEnabled,
               !context.privacyModeEnabled,
               context.preference != .localOnly,
               let raw = response.rawModelResponse,
               let stableResponse = AFMStableResponse.parse(raw)
-        else { return false }
-        return stableResponse.needsEscalation
+        else { return nil }
+        guard stableResponse.needsEscalation else { return nil }
+        let reason = stableResponse.escalationReason.trimmingCharacters(in: .whitespacesAndNewlines)
+        return reason.isEmpty ? "local model requested companion" : reason
+    }
+
+    private static func response(
+        _ response: AICompletionResponse,
+        annotatedWithLocalEscalationFrom localResponse: AICompletionResponse,
+        reason: String
+    ) -> AICompletionResponse {
+        var annotated = response
+        var stages = localResponse.promptPipelineTrace?.stages ?? [
+            PromptPipelineStageTrace(
+                name: .requestModel,
+                status: .passed,
+                outputCharacters: localResponse.rawModelResponse?.count ?? localResponse.message.count,
+                detail: "local response"
+            )
+        ]
+        stages.append(PromptPipelineStageTrace(
+            name: .routeEscalation,
+            status: .repaired,
+            detail: "AFM requested companion: \(reason)"
+        ))
+        if let companionTrace = response.promptPipelineTrace {
+            stages.append(contentsOf: companionTrace.stages)
+        } else {
+            stages.append(PromptPipelineStageTrace(
+                name: .requestModel,
+                status: .passed,
+                outputCharacters: response.rawModelResponse?.count ?? response.message.count,
+                detail: "companion response"
+            ))
+        }
+        let issues = (localResponse.promptPipelineTrace?.validationIssues ?? [])
+            + ["AFM requested companion: \(reason)"]
+            + (response.promptPipelineTrace?.validationIssues ?? [])
+        annotated.promptPipelineTrace = PromptPipelineTrace(
+            providerID: "local-escalation-router",
+            status: .needsRepair,
+            stages: stages,
+            validationIssues: issues
+        )
+        return annotated
     }
 
     private static func request(

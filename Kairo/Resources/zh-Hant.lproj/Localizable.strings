@@ -693,6 +693,7 @@
 "chat.pipeline.stage.parseStructuredOutput" = "解析輸出";
 "chat.pipeline.stage.validateDraft" = "驗證草稿";
 "chat.pipeline.stage.repairPrompt" = "修復 prompt";
+"chat.pipeline.stage.routeEscalation" = "升級路由";
 "chat.pipeline.stage.finalize" = "完成";
 "chat.pipeline.stage.status.pending" = "等待";
 "chat.pipeline.stage.status.passed" = "通過";

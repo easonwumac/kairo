@@ -188,6 +188,7 @@ public struct PromptPipelineStageTrace: Codable, Equatable, Sendable {
         case parseStructuredOutput
         case validateDraft
         case repairPrompt
+        case routeEscalation
         case finalize
     }
 

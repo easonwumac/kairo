@@ -693,6 +693,7 @@
 "chat.pipeline.stage.parseStructuredOutput" = "Parse output";
 "chat.pipeline.stage.validateDraft" = "Validate draft";
 "chat.pipeline.stage.repairPrompt" = "Repair prompt";
+"chat.pipeline.stage.routeEscalation" = "Route escalation";
 "chat.pipeline.stage.finalize" = "Finalize";
 "chat.pipeline.stage.status.pending" = "Pending";
 "chat.pipeline.stage.status.passed" = "Passed";
