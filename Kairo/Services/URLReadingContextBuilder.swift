@@ -4,17 +4,23 @@ public struct URLReadingContext: Equatable, Sendable {
     public var url: URL
     public var siteName: String
     public var titleCandidate: String?
+    public var metadataTitle: String?
+    public var metadataResolvedURL: URL?
     public var topics: [String]
 
     public init(
         url: URL,
         siteName: String,
         titleCandidate: String? = nil,
+        metadataTitle: String? = nil,
+        metadataResolvedURL: URL? = nil,
         topics: [String] = []
     ) {
         self.url = url
         self.siteName = siteName
         self.titleCandidate = titleCandidate
+        self.metadataTitle = metadataTitle
+        self.metadataResolvedURL = metadataResolvedURL
         self.topics = topics
     }
 
@@ -23,6 +29,12 @@ public struct URLReadingContext: Equatable, Sendable {
             "URL: \(url.absoluteString)",
             "site: \(siteName)"
         ]
+        if let metadataTitle, !metadataTitle.isEmpty {
+            parts.append("metadataTitle: \(metadataTitle)")
+        }
+        if let metadataResolvedURL, metadataResolvedURL != url {
+            parts.append("resolvedURL: \(metadataResolvedURL.absoluteString)")
+        }
         if let titleCandidate, !titleCandidate.isEmpty {
             parts.append("titleCandidate: \(titleCandidate)")
         }
@@ -50,20 +62,28 @@ public struct URLReadingContextBuilder: Sendable {
 
     public init() {}
 
-    public func contexts(from urls: [URL], limit: Int = 4) -> [URLReadingContext] {
+    public func contexts(
+        from urls: [URL],
+        metadata: [URL: URLReadingMetadata] = [:],
+        limit: Int = 4
+    ) -> [URLReadingContext] {
         urls
             .prefix(limit)
-            .map(context)
+            .map { context(from: $0, metadata: metadata[$0]) }
     }
 
-    public func promptBlock(from urls: [URL], limit: Int = 4) -> String {
-        contexts(from: urls, limit: limit)
+    public func promptBlock(
+        from urls: [URL],
+        metadata: [URL: URLReadingMetadata] = [:],
+        limit: Int = 4
+    ) -> String {
+        contexts(from: urls, metadata: metadata, limit: limit)
             .map(\.promptLine)
             .joined(separator: "\n---\n")
     }
 
-    public func context(from url: URL) -> URLReadingContext {
-        let siteName = normalizedHost(for: url)
+    public func context(from url: URL, metadata: URLReadingMetadata? = nil) -> URLReadingContext {
+        let siteName = normalized(metadata?.siteName) ?? normalizedHost(for: url)
         let pathTokens = tokens(fromPath: url.path)
         let queryTokens = tokens(fromQuery: url)
         let allTopics = deduplicated(pathTokens + queryTokens)
@@ -71,6 +91,8 @@ public struct URLReadingContextBuilder: Sendable {
             url: url,
             siteName: siteName,
             titleCandidate: titleCandidate(from: pathTokens),
+            metadataTitle: normalized(metadata?.title),
+            metadataResolvedURL: metadata?.resolvedURL,
             topics: Array(allTopics.prefix(8))
         )
     }
@@ -80,6 +102,11 @@ public struct URLReadingContextBuilder: Sendable {
         return host
             .lowercased()
             .replacingOccurrences(of: #"^www\."#, with: "", options: .regularExpression)
+    }
+
+    private func normalized(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private func tokens(fromPath path: String) -> [String] {

@@ -30,9 +30,15 @@ public protocol KairoShareImportAPI: Sendable {
 
 public struct KairoShareImportBackendService: KairoShareImportAPI {
     private let shareIngestionQueue: any ShareIngestionQueue
+    private let urlMetadataProvider: any URLMetadataProviding
 
-    public init(shareIngestionQueue: any ShareIngestionQueue, sharedFilesDirectory: URL? = nil) {
+    public init(
+        shareIngestionQueue: any ShareIngestionQueue,
+        sharedFilesDirectory: URL? = nil,
+        urlMetadataProvider: any URLMetadataProviding = URLMetadataProviderFactory.live()
+    ) {
         self.shareIngestionQueue = shareIngestionQueue
+        self.urlMetadataProvider = urlMetadataProvider
         _ = sharedFilesDirectory
     }
 
@@ -45,7 +51,7 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
 
         return KairoShareImportResult(
             attachments: attachments,
-            suggestedPrompt: Self.suggestedPrompt(for: items),
+            suggestedPrompt: await suggestedPrompt(for: items),
             importedItemIDs: items.map(\.id),
             suggestedActions: try await suggestedActions(limit: limit)
         )
@@ -67,26 +73,36 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
             .compactMap(\.action)
     }
 
-    private static func suggestedPrompt(for items: [ShareIngestionItem]) -> String? {
+    private func suggestedPrompt(for items: [ShareIngestionItem]) async -> String? {
         let attachments = items.flatMap(\.attachments)
         for attachment in attachments {
-            guard let taskTitle = taskTitle(from: attachment.textPreview) else { continue }
+            guard let taskTitle = Self.taskTitle(from: attachment.textPreview) else { continue }
             return KairoL10n.string("chat.share.prompt.extractReminder", taskTitle)
         }
-        if let urlPrompt = urlReadingPrompt(for: attachments) {
+        if let urlPrompt = await urlReadingPrompt(for: attachments) {
             return urlPrompt
         }
         return items.first?.suggestedPrompt
     }
 
-    private static func urlReadingPrompt(for attachments: [ChatAttachment]) -> String? {
+    private func urlReadingPrompt(for attachments: [ChatAttachment]) async -> String? {
         let urls = attachments.compactMap { attachment -> URL? in
             guard attachment.kind == .url else { return nil }
             return attachment.fileURL ?? attachment.textPreview.flatMap(URL.init(string:))
         }
         guard !urls.isEmpty else { return nil }
-        let context = URLReadingContextBuilder().promptBlock(from: urls)
+        let metadata = await metadataByURL(for: Array(urls.prefix(4)))
+        let context = URLReadingContextBuilder().promptBlock(from: urls, metadata: metadata)
         return KairoL10n.string("chat.share.prompt.readURLs", context)
+    }
+
+    private func metadataByURL(for urls: [URL]) async -> [URL: URLReadingMetadata] {
+        var metadataByURL: [URL: URLReadingMetadata] = [:]
+        for url in urls {
+            guard let metadata = await urlMetadataProvider.metadata(for: url) else { continue }
+            metadataByURL[url] = metadata
+        }
+        return metadataByURL
     }
 
     private static func taskTitle(from text: String?) -> String? {

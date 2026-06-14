@@ -39,6 +39,10 @@ final class ShareExtensionLifecycleTests: XCTestCase {
         let viewModel = ChatViewModel(
             historyStore: InMemoryChatHistoryStore(),
             shareIngestionQueue: queue,
+            shareImportAPI: KairoShareImportBackendService(
+                shareIngestionQueue: queue,
+                urlMetadataProvider: EmptyURLMetadataProvider()
+            ),
             chatAPI: makeShareImportChatAPI()
         )
 

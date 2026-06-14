@@ -72,7 +72,10 @@ final class KairoShareImportBackendAPITests: XCTestCase {
             receivedAt: Date(timeIntervalSince1970: 20)
         )
         let queue = InMemoryShareIngestionQueue(seed: [firstItem, secondItem])
-        let api = KairoShareImportBackendService(shareIngestionQueue: queue)
+        let api = KairoShareImportBackendService(
+            shareIngestionQueue: queue,
+            urlMetadataProvider: EmptyURLMetadataProvider()
+        )
         let imported = try await api.importPendingShares(limit: 10)
         XCTAssertEqual(imported.importedItemIDs, [firstItem.id, secondItem.id])
         XCTAssertEqual(imported.attachments.map(\.kind), [.text, .url, .pdf])
@@ -99,7 +102,10 @@ final class KairoShareImportBackendAPITests: XCTestCase {
             receivedAt: Date(timeIntervalSince1970: 10)
         )
         let queue = InMemoryShareIngestionQueue(seed: [item])
-        let api = KairoShareImportBackendService(shareIngestionQueue: queue)
+        let api = KairoShareImportBackendService(
+            shareIngestionQueue: queue,
+            urlMetadataProvider: EmptyURLMetadataProvider()
+        )
         let imported = try await api.importPendingShares(limit: 10)
         XCTAssertNotNil(imported.suggestedPrompt)
         XCTAssertEqual(imported.attachments.first?.textPreview?.contains("TODO: Send prototype link"), true)
@@ -118,7 +124,10 @@ final class KairoShareImportBackendAPITests: XCTestCase {
             receivedAt: Date(timeIntervalSince1970: 10)
         )
         let queue = InMemoryShareIngestionQueue(seed: [item])
-        let api = KairoShareImportBackendService(shareIngestionQueue: queue)
+        let api = KairoShareImportBackendService(
+            shareIngestionQueue: queue,
+            urlMetadataProvider: EmptyURLMetadataProvider()
+        )
 
         let imported = try await api.importPendingShares(limit: 10)
 
@@ -129,6 +138,35 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         XCTAssertNotEqual(imported.suggestedPrompt, item.suggestedPrompt)
         let remaining = try await queue.pendingItems(limit: 10)
         XCTAssertEqual(remaining.map(\.id), [item.id])
+    }
+
+    func testShareImportBackendAPIAddsFetchedURLMetadataToReadingPrompt() async throws {
+        let builder = ShareAttachmentBuilder()
+        let url = URL(string: "https://example.com/article")!
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.url(url)
+            ],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let api = KairoShareImportBackendService(
+            shareIngestionQueue: queue,
+            urlMetadataProvider: FakeURLMetadataProvider(metadataByURL: [
+                url: URLReadingMetadata(
+                    title: "AFM Local Inference Notes",
+                    siteName: "Example Research",
+                    resolvedURL: URL(string: "https://example.com/article?resolved=true")
+                )
+            ])
+        )
+
+        let imported = try await api.importPendingShares(limit: 10)
+
+        XCTAssertEqual(imported.suggestedPrompt?.contains("metadataTitle: AFM Local Inference Notes"), true)
+        XCTAssertEqual(imported.suggestedPrompt?.contains("site: Example Research"), true)
+        XCTAssertEqual(imported.suggestedPrompt?.contains("resolvedURL: https://example.com/article?resolved=true"), true)
     }
 
     func testShareImportBackendAPIPrioritizesExplicitTasksOverURLReadingPrompt() async throws {
@@ -142,7 +180,10 @@ final class KairoShareImportBackendAPITests: XCTestCase {
             receivedAt: Date(timeIntervalSince1970: 10)
         )
         let queue = InMemoryShareIngestionQueue(seed: [item])
-        let api = KairoShareImportBackendService(shareIngestionQueue: queue)
+        let api = KairoShareImportBackendService(
+            shareIngestionQueue: queue,
+            urlMetadataProvider: EmptyURLMetadataProvider()
+        )
 
         let imported = try await api.importPendingShares(limit: 10)
 
@@ -160,7 +201,10 @@ final class KairoShareImportBackendAPITests: XCTestCase {
             receivedAt: Date(timeIntervalSince1970: 10)
         )
         let queue = InMemoryShareIngestionQueue(seed: [item])
-        let api = KairoShareImportBackendService(shareIngestionQueue: queue)
+        let api = KairoShareImportBackendService(
+            shareIngestionQueue: queue,
+            urlMetadataProvider: EmptyURLMetadataProvider()
+        )
 
         let imported = try await api.importPendingShares(limit: 10)
 
@@ -188,7 +232,10 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         var rawText = try String(contentsOf: fileURL, encoding: .utf8)
         XCTAssertTrue(rawText.contains(item.id.uuidString))
         XCTAssertTrue(rawText.contains("Private shared text should not remain"))
-        let api = KairoShareImportBackendService(shareIngestionQueue: queue)
+        let api = KairoShareImportBackendService(
+            shareIngestionQueue: queue,
+            urlMetadataProvider: EmptyURLMetadataProvider()
+        )
         let imported = try await api.importPendingShares(limit: 10)
         XCTAssertEqual(imported.importedItemIDs, [item.id])
         rawText = try String(contentsOf: fileURL, encoding: .utf8)
@@ -241,5 +288,13 @@ final class KairoShareImportBackendAPITests: XCTestCase {
     private func temporaryDirectory() -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("KairoShareImportBackendAPITests-\(UUID().uuidString)", isDirectory: true)
+    }
+}
+
+private struct FakeURLMetadataProvider: URLMetadataProviding {
+    var metadataByURL: [URL: URLReadingMetadata]
+
+    func metadata(for url: URL) async -> URLReadingMetadata? {
+        metadataByURL[url]
     }
 }
