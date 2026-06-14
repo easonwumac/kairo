@@ -1634,6 +1634,64 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertEqual(completionCallCount, 1)
     }
 
+    func testLocalModelRoutingAIProviderEscalatesAFMRequestedCompanionWork() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .preferLocal,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let localProvider = FixedResponseAIProvider(response: AICompletionResponse(
+            message: "Local draft needs companion.",
+            rawModelResponse: #"{"response":"Local draft needs companion.","confidence":0.42,"needsEscalation":true,"escalationReason":"deep reasoning"}"#
+        ))
+        let companionProvider = FixedResponseAIProvider(message: "companion completed")
+        let provider = LocalModelRoutingAIProvider(
+            cloudProvider: companionProvider,
+            localModelSettingsService: service,
+            localProvider: localProvider,
+            localRuntimeAvailable: true
+        )
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Draft a private reply for this message."
+        ))
+
+        XCTAssertEqual(response.message, "companion completed")
+        let localCallCount = await localProvider.completionCalls()
+        let companionCallCount = await companionProvider.completionCalls()
+        XCTAssertEqual(localCallCount, 1)
+        XCTAssertEqual(companionCallCount, 1)
+    }
+
+    func testLocalModelRoutingAIProviderKeepsAFMEscalationLocalInLocalOnlyMode() async throws {
+        let service = try await makeLocalModelSettingsService(
+            preference: .localOnly,
+            installedAndSelectedModelID: "qwen-small"
+        )
+        let localProvider = FixedResponseAIProvider(response: AICompletionResponse(
+            message: "Local only response.",
+            rawModelResponse: #"{"response":"Local only response.","confidence":0.42,"needsEscalation":true,"escalationReason":"deep reasoning"}"#
+        ))
+        let companionProvider = RecordingAIProvider()
+        let provider = LocalModelRoutingAIProvider(
+            cloudProvider: companionProvider,
+            localModelSettingsService: service,
+            localProvider: localProvider,
+            localRuntimeAvailable: true
+        )
+
+        let response = try await provider.complete(AICompletionRequest(
+            systemPrompt: "Test",
+            userPrompt: "Draft a private reply for this message."
+        ))
+
+        XCTAssertEqual(response.message, "Local only response.")
+        let localCallCount = await localProvider.completionCalls()
+        let companionCallCount = await companionProvider.completionCalls()
+        XCTAssertEqual(localCallCount, 1)
+        XCTAssertEqual(companionCallCount, 0)
+    }
+
     func testCompanionCloudModelRoutingProviderUsesOpenAICompatibleSettings() async throws {
         let chatURL = URL(string: "http://127.0.0.1:8000/v1/chat/completions")!
         let httpClient = StaticHTTPClient(routes: [
@@ -3349,17 +3407,21 @@ private actor RecordingAIProvider: AIProvider {
 }
 
 private actor FixedResponseAIProvider: AIProvider {
-    private let message: String
+    private let response: AICompletionResponse
     private(set) var completionCallCount = 0
 
     init(message: String) {
-        self.message = message
+        self.response = AICompletionResponse(message: message)
+    }
+
+    init(response: AICompletionResponse) {
+        self.response = response
     }
 
     func complete(_ request: AICompletionRequest) async throws -> AICompletionResponse {
         _ = request
         completionCallCount += 1
-        return AICompletionResponse(message: message)
+        return response
     }
 
     func embed(_ request: AIEmbeddingRequest) async throws -> AIEmbeddingResponse {

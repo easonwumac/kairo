@@ -65,6 +65,14 @@ public struct LocalModelRoutingAIProvider: AIProvider {
         if decision.route == .unavailable {
             throw AIProviderError.localInferenceUnavailable(Self.unavailableMessage(status: status, decision: decision))
         }
+        if decision.route == .local {
+            let localResponse = try await router.complete(routedRequest, context: context)
+            if Self.shouldEscalateLocalResponse(localResponse, context: context) {
+                kairoRouterLog("[ROUTER] local_response_escalation reason=companionEscalation")
+                return try await cloudProvider.complete(routedRequest)
+            }
+            return localResponse
+        }
         return try await router.complete(routedRequest, context: context)
     }
 
@@ -147,6 +155,20 @@ public struct LocalModelRoutingAIProvider: AIProvider {
 
     private static func containsAny(_ text: String, _ needles: [String]) -> Bool {
         needles.contains { text.contains($0.lowercased()) }
+    }
+
+    private static func shouldEscalateLocalResponse(
+        _ response: AICompletionResponse,
+        context: ProviderRoutingContext
+    ) -> Bool {
+        guard context.networkAvailable,
+              !context.offlineModeEnabled,
+              !context.privacyModeEnabled,
+              context.preference != .localOnly,
+              let raw = response.rawModelResponse,
+              let stableResponse = AFMStableResponse.parse(raw)
+        else { return false }
+        return stableResponse.needsEscalation
     }
 
     private static func request(
