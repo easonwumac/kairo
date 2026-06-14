@@ -9,6 +9,24 @@ struct ChatProviderRouteBar: View {
     @State private var isPalettePresented = false
 
     var body: some View {
+        routeContent
+            .animation(.spring(response: 0.24, dampingFraction: 0.88), value: isPalettePresented)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("chat.provider-route")
+    }
+
+    @ViewBuilder
+    private var routeContent: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 7) {
+                routeStack
+            }
+        } else {
+            routeStack
+        }
+    }
+
+    private var routeStack: some View {
         VStack(spacing: 7) {
             Button {
                 guard !status.options.isEmpty else {
@@ -32,9 +50,6 @@ struct ChatProviderRouteBar: View {
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
         }
-        .animation(.spring(response: 0.24, dampingFraction: 0.88), value: isPalettePresented)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("chat.provider-route")
     }
 
     private var routeBarLabel: some View {
@@ -56,11 +71,7 @@ struct ChatProviderRouteBar: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 11)
         .frame(height: 34)
-        .background(KairoDesign.elevatedSurface.opacity(0.72), in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-        }
+        .providerRouteGlassCapsule(isInteractive: true)
         .overlay(alignment: .topLeading) {
             if status.warning != nil {
                 Color.clear
@@ -103,12 +114,7 @@ struct ChatProviderRouteBar: View {
             }
         }
         .padding(8)
-        .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-        }
-        .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 14, x: 0, y: 9)
+        .providerRouteGlassPanel(cornerRadius: 18)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.provider-route.palette")
     }
@@ -125,7 +131,7 @@ struct ChatProviderRouteBar: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(isSelected ? KairoDesign.blue : (isEnabled ? KairoDesign.ink : KairoDesign.muted))
                 .frame(width: 24, height: 24)
-                .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
+                .providerRouteGlassIcon(tint: isSelected ? KairoDesign.blue : KairoDesign.muted)
 
             Text(title)
                 .font(.caption.weight(.semibold))
@@ -137,7 +143,7 @@ struct ChatProviderRouteBar: View {
                 .foregroundStyle(isEnabled ? KairoDesign.blue : KairoDesign.muted)
                 .padding(.horizontal, 5)
                 .padding(.vertical, 2)
-                .background(KairoDesign.softSurface.opacity(0.65), in: Capsule())
+                .providerRouteGlassTag(tint: isEnabled ? KairoDesign.blue : KairoDesign.muted)
 
             Spacer(minLength: 0)
 
@@ -150,7 +156,11 @@ struct ChatProviderRouteBar: View {
         .padding(.horizontal, 9)
         .padding(.vertical, 6)
         .opacity(isEnabled ? 1 : 0.66)
-        .background(KairoDesign.softSurface.opacity(isSelected ? 0.70 : 0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .providerRouteGlassRow(
+            tint: isSelected ? KairoDesign.blue : KairoDesign.muted,
+            fallbackOpacity: isSelected ? 0.70 : 0.55,
+            isInteractive: isEnabled
+        )
     }
 
     private func routePill(label: String, value: String, systemImage: String, tint: Color) -> some View {
@@ -165,6 +175,101 @@ struct ChatProviderRouteBar: View {
                 .lineLimit(1)
         }
         .foregroundStyle(tint)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func providerRouteGlassCapsule(isInteractive: Bool = false) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(.regular.tint(KairoDesign.elevatedSurface.opacity(0.12)).interactive(), in: .capsule)
+                    .overlay {
+                        Capsule().stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    }
+                    .shadow(color: KairoDesign.shadow.opacity(0.30), radius: 10, x: 0, y: 6)
+            } else {
+                self
+                    .glassEffect(.regular.tint(KairoDesign.elevatedSurface.opacity(0.10)), in: .capsule)
+                    .overlay {
+                        Capsule().stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    }
+            }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface.opacity(0.72), in: Capsule())
+                .overlay {
+                    Capsule().stroke(Color.white.opacity(0.10), lineWidth: 1)
+                }
+        }
+    }
+
+    @ViewBuilder
+    func providerRouteGlassPanel(cornerRadius: CGFloat) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(KairoDesign.elevatedSurface.opacity(0.12)), in: .rect(cornerRadius: cornerRadius))
+                .overlay {
+                    shape.stroke(Color.white.opacity(0.08), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(0.34), radius: 14, x: 0, y: 9)
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface.opacity(0.72), in: shape)
+                .overlay {
+                    shape.stroke(Color.white.opacity(0.10), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 14, x: 0, y: 9)
+        }
+    }
+
+    @ViewBuilder
+    func providerRouteGlassRow(tint: Color, fallbackOpacity: Double, isInteractive: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.10)).interactive(), in: .rect(cornerRadius: 12))
+                    .overlay {
+                        shape.stroke(Color.white.opacity(0.06), lineWidth: 1)
+                    }
+            } else {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.08)), in: .rect(cornerRadius: 12))
+                    .overlay {
+                        shape.stroke(Color.white.opacity(0.05), lineWidth: 1)
+                    }
+            }
+        } else {
+            self
+                .background(KairoDesign.softSurface.opacity(fallbackOpacity), in: shape)
+        }
+    }
+
+    @ViewBuilder
+    func providerRouteGlassIcon(tint: Color) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(0.10)), in: .circle)
+        } else {
+            self
+                .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
+        }
+    }
+
+    @ViewBuilder
+    func providerRouteGlassTag(tint: Color) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(0.10)), in: .capsule)
+        } else {
+            self
+                .background(KairoDesign.softSurface.opacity(0.65), in: Capsule())
+        }
     }
 }
 #endif
