@@ -3,16 +3,36 @@ import SwiftUI
 
 struct KairoBriefingStrip: View {
     let snapshot: KairoBriefingSnapshot
+    let openCaptures: () -> Void
+    let reviewCaptures: () -> Void
 
-    init(snapshot: KairoBriefingSnapshot = .empty) {
+    init(
+        snapshot: KairoBriefingSnapshot = .empty,
+        openCaptures: @escaping () -> Void = {},
+        reviewCaptures: @escaping () -> Void = {}
+    ) {
         self.snapshot = snapshot
+        self.openCaptures = openCaptures
+        self.reviewCaptures = reviewCaptures
     }
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                KairoStatusPill(title: sharedTitle, systemImage: "square.and.arrow.down", tint: KairoDesign.blue)
-                KairoStatusPill(title: reviewTitle, systemImage: "checklist.checked", tint: KairoDesign.amber)
+                briefingButton(
+                    title: sharedTitle,
+                    systemImage: "square.and.arrow.down",
+                    tint: KairoDesign.blue,
+                    isEnabled: snapshot.pendingCaptureCount > 0,
+                    action: openCaptures
+                )
+                briefingButton(
+                    title: reviewTitle,
+                    systemImage: "checklist.checked",
+                    tint: KairoDesign.amber,
+                    isEnabled: snapshot.confirmationCount > 0,
+                    action: reviewCaptures
+                )
                 if snapshot.reminderDraftCount > 0 {
                     KairoStatusPill(title: reminderTitle, systemImage: "checklist", tint: KairoDesign.teal)
                 }
@@ -33,6 +53,25 @@ struct KairoBriefingStrip: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.briefing-strip")
+    }
+
+    @ViewBuilder
+    private func briefingButton(
+        title: String,
+        systemImage: String,
+        tint: Color,
+        isEnabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        if isEnabled {
+            Button(action: action) {
+                KairoStatusPill(title: title, systemImage: systemImage, tint: tint)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("chat.briefing.\(systemImage).button")
+        } else {
+            KairoStatusPill(title: title, systemImage: systemImage, tint: tint)
+        }
     }
 
     private var sharedTitle: String {

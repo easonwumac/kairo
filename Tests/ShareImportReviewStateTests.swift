@@ -84,6 +84,36 @@ final class ShareImportReviewStateTests: XCTestCase {
     }
 
     @MainActor
+    func testCaptureBriefingReviewImportsShareAndOpensPreview() async throws {
+        let builder = ShareAttachmentBuilder()
+        let sharedItem = ShareIngestionItem(
+            attachments: [builder.text("TODO: Send AFM test notes", displayName: "Task")],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(seed: [sharedItem]),
+            chatAPI: KairoChatBackendService(
+                agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+            )
+        )
+
+        await viewModel.refreshBriefingSnapshot()
+        XCTAssertEqual(viewModel.briefingSnapshot.pendingCaptureCount, 1)
+        XCTAssertEqual(viewModel.briefingSnapshot.confirmationCount, 1)
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertNil(viewModel.shareImportReviewAction)
+
+        await viewModel.reviewCaptureBriefing()
+
+        XCTAssertEqual(viewModel.pendingAction?.kind, .createReminderDraft)
+        XCTAssertNil(viewModel.shareImportReviewAction)
+        XCTAssertFalse(viewModel.pendingAttachments.isEmpty)
+        XCTAssertNotNil(viewModel.shareImportNotice)
+    }
+
+    @MainActor
     private func makeShareImportViewModel() -> ChatViewModel {
         let builder = ShareAttachmentBuilder()
         let sharedItem = ShareIngestionItem(

@@ -304,6 +304,17 @@ public final class ChatViewModel: ObservableObject {
         }
     }
 
+    public func openCaptureBriefing() async {
+        await importPendingShares()
+    }
+
+    public func reviewCaptureBriefing() async {
+        if shareImportReviewAction == nil {
+            await importPendingShares()
+        }
+        reviewImportedShareAction()
+    }
+
     public func sendImportedShareToChat() async {
         guard canSendImportedShareToChat else { return }
         let importedItemIDs = importedShareItemIDs
