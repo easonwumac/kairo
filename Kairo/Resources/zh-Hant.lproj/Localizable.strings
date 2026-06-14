@@ -409,6 +409,7 @@
 "chat.share.prompt.summarizeNamed" = "摘要這些分享內容：%@";
 "chat.share.prompt.extractReminderPrefix" = "建立提醒事項：";
 "chat.share.prompt.extractReminder" = "建立提醒事項：%@";
+"chat.share.prompt.readURLs" = "閱讀這些網址，準備 Kairo InfoPage 草稿，包含短摘要、有來源根據的 facts、關鍵字，以及需要使用者確認的後續動作：\n%@";
 "chat.share.import.notice.one" = "已匯入 1 個分享項目，可送進 Chat 摘要或抽任務。";
 "chat.share.import.notice.many" = "已匯入 %lld 個分享項目，可送進 Chat 摘要或抽任務。";
 "chat.share.review.reminderReady" = "已抽出提醒事項草稿";

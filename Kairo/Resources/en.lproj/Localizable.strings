@@ -409,6 +409,7 @@
 "chat.share.prompt.summarizeNamed" = "Summarize this shared content: %@";
 "chat.share.prompt.extractReminderPrefix" = "Create reminder:";
 "chat.share.prompt.extractReminder" = "Create reminder: %@";
+"chat.share.prompt.readURLs" = "Read these URLs and prepare a Kairo InfoPage draft with a short summary, source-backed facts, keywords, and any user-confirmed follow-up actions:\n%@";
 "chat.share.import.notice.one" = "Imported 1 shared item. Send it to Chat to summarize or extract tasks.";
 "chat.share.import.notice.many" = "Imported %lld shared items. Send them to Chat to summarize or extract tasks.";
 "chat.share.review.reminderReady" = "Reminder draft ready";

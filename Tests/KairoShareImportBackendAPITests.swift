@@ -95,6 +95,47 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         XCTAssertEqual(remaining.map(\.id), [item.id])
     }
 
+    func testShareImportBackendAPIBuildsURLReadingPromptForSharedURLs() async throws {
+        let builder = ShareAttachmentBuilder()
+        let url = URL(string: "https://example.com/article")!
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.url(url)
+            ],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let api = KairoShareImportBackendService(shareIngestionQueue: queue)
+
+        let imported = try await api.importPendingShares(limit: 10)
+
+        XCTAssertEqual(imported.attachments.map(\.kind), [.url])
+        XCTAssertEqual(imported.suggestedPrompt?.contains(url.absoluteString), true)
+        XCTAssertNotEqual(imported.suggestedPrompt, item.suggestedPrompt)
+        let remaining = try await queue.pendingItems(limit: 10)
+        XCTAssertEqual(remaining.map(\.id), [item.id])
+    }
+
+    func testShareImportBackendAPIPrioritizesExplicitTasksOverURLReadingPrompt() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("TODO: Send prototype link", displayName: "Task"),
+                builder.url(URL(string: "https://example.com/article")!)
+            ],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let api = KairoShareImportBackendService(shareIngestionQueue: queue)
+
+        let imported = try await api.importPendingShares(limit: 10)
+
+        XCTAssertEqual(imported.suggestedPrompt?.contains("Send prototype link"), true)
+        XCTAssertEqual(imported.suggestedPrompt?.contains("https://example.com/article"), false)
+    }
+
     func testShareImportBackendAPIIncludesActionInboxSuggestedActions() async throws {
         let builder = ShareAttachmentBuilder()
         let item = ShareIngestionItem(

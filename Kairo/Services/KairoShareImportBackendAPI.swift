@@ -73,7 +73,23 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
             guard let taskTitle = taskTitle(from: attachment.textPreview) else { continue }
             return KairoL10n.string("chat.share.prompt.extractReminder", taskTitle)
         }
+        if let urlPrompt = urlReadingPrompt(for: attachments) {
+            return urlPrompt
+        }
         return items.first?.suggestedPrompt
+    }
+
+    private static func urlReadingPrompt(for attachments: [ChatAttachment]) -> String? {
+        let urls = attachments.compactMap { attachment -> URL? in
+            guard attachment.kind == .url else { return nil }
+            return attachment.fileURL ?? attachment.textPreview.flatMap(URL.init(string:))
+        }
+        guard !urls.isEmpty else { return nil }
+        let list = urls
+            .prefix(4)
+            .map(\.absoluteString)
+            .joined(separator: "\n")
+        return KairoL10n.string("chat.share.prompt.readURLs", list)
     }
 
     private static func taskTitle(from text: String?) -> String? {

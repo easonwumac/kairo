@@ -1006,7 +1006,12 @@ public final class ChatViewModel: ObservableObject {
         }
         let localizedNamedFormat = KairoL10n.string("chat.share.prompt.summarizeNamed", "")
         let localizedPrefix = localizedNamedFormat.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !localizedPrefix.isEmpty && prompt.hasPrefix(localizedPrefix)
+        if !localizedPrefix.isEmpty && prompt.hasPrefix(localizedPrefix) {
+            return true
+        }
+        let urlPromptFormat = KairoL10n.string("chat.share.prompt.readURLs", "")
+        let urlPromptPrefix = urlPromptFormat.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !urlPromptPrefix.isEmpty && prompt.hasPrefix(urlPromptPrefix)
     }
 
     private static func userFacingChatErrorMessage(for error: Error) -> String {

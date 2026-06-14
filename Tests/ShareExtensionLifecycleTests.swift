@@ -44,10 +44,9 @@ final class ShareExtensionLifecycleTests: XCTestCase {
 
         await viewModel.importPendingShares()
 
-        let expectedPrompt = KairoL10n.string("chat.share.prompt.summarizeNamed", "Article, example.com, photo.png, brief.pdf")
         XCTAssertEqual(viewModel.pendingAttachments.map(\.kind), [.text, .url, .image, .pdf])
         XCTAssertEqual(viewModel.pendingAttachments.map(\.source), Array(repeating: .shareExtension, count: 4))
-        XCTAssertEqual(viewModel.composerText, expectedPrompt)
+        XCTAssertEqual(viewModel.composerText.contains("https://example.com/story"), true)
         XCTAssertEqual(viewModel.shareImportPrimaryActionTitle, KairoL10n.string("chat.share.action.summarize"))
         XCTAssertEqual(
             viewModel.shareImportPreview,
@@ -59,7 +58,7 @@ final class ShareExtensionLifecycleTests: XCTestCase {
         await viewModel.sendImportedShareToChat()
 
         let userMessage = try XCTUnwrap(viewModel.currentThread.messages.first { $0.role == .user })
-        XCTAssertEqual(userMessage.text, expectedPrompt)
+        XCTAssertEqual(userMessage.text.contains("https://example.com/story"), true)
         XCTAssertEqual(userMessage.attachments.map(\.kind), [.text, .url, .image, .pdf])
         XCTAssertNil(viewModel.shareImportNotice)
         XCTAssertNil(viewModel.shareImportPreview)
