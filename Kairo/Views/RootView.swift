@@ -264,6 +264,16 @@ public struct RootView: View {
             isMenuPresented = false
             isPageActionsPresented = false
             triggerChatChromeAction(.selectThread(id))
+        case .captureReview:
+            isOnboardingCompleted = true
+            selectedSection = .chat
+            isMenuPresented = false
+            isPageActionsPresented = false
+            wikiRouteRequest = nil
+            Task { @MainActor in
+                await Task.yield()
+                triggerChatChromeAction(.reviewCaptures)
+            }
         }
     }
 

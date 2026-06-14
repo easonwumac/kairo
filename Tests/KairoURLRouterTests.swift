@@ -45,6 +45,18 @@ final class KairoURLRouterTests: XCTestCase {
         XCTAssertEqual(router.parse(url!), route)
     }
 
+    func testParsesCaptureReviewDeepLink() {
+        let url = URL(string: "kairo://capture/review")!
+        XCTAssertEqual(router.parse(url), .captureReview)
+    }
+
+    func testCaptureReviewDeepLinkIsRoundTrip() {
+        let route: KairoURLRoute = .captureReview
+        let url = route.deepLink
+        XCTAssertNotNil(url)
+        XCTAssertEqual(router.parse(url!), route)
+    }
+
     func testIntentRouteStoreConsumesSectionRouteOnce() {
         let suiteName = "KairoURLRouterTests-\(UUID().uuidString)"
         let defaults = try! XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -54,6 +66,18 @@ final class KairoURLRouterTests: XCTestCase {
         store.save(.section(.models))
 
         XCTAssertEqual(store.consume(router: router), .section(.models))
+        XCTAssertNil(store.consume(router: router))
+    }
+
+    func testIntentRouteStoreConsumesCaptureReviewRouteOnce() {
+        let suiteName = "KairoURLRouterTests-\(UUID().uuidString)"
+        let defaults = try! XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = KairoIntentRouteStore(defaults: defaults)
+
+        store.save(.captureReview)
+
+        XCTAssertEqual(store.consume(router: router), .captureReview)
         XCTAssertNil(store.consume(router: router))
     }
 

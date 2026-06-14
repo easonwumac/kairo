@@ -137,6 +137,8 @@ public struct ChatView: View {
             isComposerFocused = true
         case .fork:
             Task { await viewModel.forkCurrentThread() }
+        case .reviewCaptures:
+            Task { await viewModel.reviewCaptureBriefing() }
         }
     }
 
@@ -1197,6 +1199,7 @@ public enum ChatChromeActionKind: Equatable {
     case delete
     case compact
     case fork
+    case reviewCaptures
 }
 
 #endif

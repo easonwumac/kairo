@@ -12,6 +12,18 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
         XCTAssertEqual(KairoOpenSectionAppEnum.permissions.routeSection, .access)
     }
 
+    func testCaptureReviewRouteStoreConsumesIntentHandoffRoute() async throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let key = "kairo_intent_pending_route_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        KairoIntentRouteStore(defaults: defaults, key: key).save(.captureReview)
+
+        let route = KairoIntentRouteStore(defaults: defaults, key: key).consume()
+        XCTAssertEqual(route, .captureReview)
+    }
+
     func testTriageCaptureReturnsMemoryActionForRememberedText() async throws {
         let output = try await KairoCaptureIntentSupport.triage(
             text: "記住：AFM 適合短上下文分類。",

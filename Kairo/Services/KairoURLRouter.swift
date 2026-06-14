@@ -25,6 +25,7 @@ public enum KairoURLRoute: Equatable, Sendable {
     case search(query: String)
     case chatThread(id: UUID)
     case section(KairoURLSection)
+    case captureReview
 
     public var deepLink: URL? {
         switch self {
@@ -41,6 +42,8 @@ public enum KairoURLRoute: Equatable, Sendable {
             return URL(string: "\(KairoURLScheme.kairo.rawValue)://chat/\(id.uuidString)")
         case .section(let section):
             return URL(string: "\(KairoURLScheme.kairo.rawValue)://open/\(section.rawValue)")
+        case .captureReview:
+            return URL(string: "\(KairoURLScheme.kairo.rawValue)://capture/review")
         }
     }
 }
@@ -86,6 +89,9 @@ public struct KairoURLRouter: Sendable {
         let queryItem = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
             .first(where: { $0.name == "q" })?.value
         guard let id = firstSegment, let uuid = UUID(uuidString: id) else {
+            if host == "capture", firstSegment == "review" {
+                return .captureReview
+            }
             if host == "open",
                let sectionRawValue = firstSegment,
                let section = KairoURLSection(rawValue: sectionRawValue) {

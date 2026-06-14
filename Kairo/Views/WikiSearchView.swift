@@ -63,7 +63,7 @@ public final class KairoWikiSearchViewModel: ObservableObject {
         case .memoryRecord(let id):
             await select(routeResult(id: id, kind: .memory))
             return nil
-        case .chatThread, .section:
+        case .chatThread, .section, .captureReview:
             return nil
         }
     }
