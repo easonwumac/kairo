@@ -514,4 +514,26 @@ private extension View {
         }
     }
 }
+
+extension View {
+    @ViewBuilder
+    func kairoGlassField(tint: Color = KairoDesign.blue, cornerRadius: CGFloat = 10) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(
+                    .regular
+                        .tint(tint.opacity(0.08))
+                        .interactive(),
+                    in: .rect(cornerRadius: cornerRadius)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(KairoDesign.line.opacity(0.50), lineWidth: 1)
+                }
+        } else {
+            self
+                .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        }
+    }
+}
 #endif

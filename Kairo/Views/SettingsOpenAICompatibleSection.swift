@@ -96,7 +96,7 @@ struct SettingsOpenAICompatibleSection: View {
                 .autocorrectionDisabled()
                 .padding(.horizontal, 10)
                 .padding(.vertical, 9)
-                .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .kairoGlassField(tint: KairoDesign.blue)
 
             fieldLabel(KairoL10n.string("settings.omlx.endpoint"))
             TextField(KairoL10n.string("settings.omlx.endpointPlaceholder"), text: $endpoint)
@@ -108,7 +108,7 @@ struct SettingsOpenAICompatibleSection: View {
                 #endif
                 .padding(.horizontal, 10)
                 .padding(.vertical, 9)
-                .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .kairoGlassField(tint: KairoDesign.blue)
 
             fieldLabel(KairoL10n.string("settings.omlx.keyLabel"))
             SecureField(KairoL10n.string("settings.omlx.apiKeyPlaceholder"), text: $apiKey)
@@ -117,7 +117,7 @@ struct SettingsOpenAICompatibleSection: View {
                 .autocorrectionDisabled()
                 .padding(.horizontal, 10)
                 .padding(.vertical, 9)
-                .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .kairoGlassField(tint: KairoDesign.blue)
 
             modelSection
 
@@ -177,7 +177,7 @@ struct SettingsOpenAICompatibleSection: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 9)
-            .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .kairoGlassField(tint: KairoDesign.teal)
 
             if let fetchError {
                 Text(fetchError)

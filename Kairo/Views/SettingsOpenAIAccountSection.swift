@@ -72,7 +72,7 @@ struct SettingsOpenAIAccountSection: View {
                 .autocorrectionDisabled()
                 .padding(.horizontal, 10)
                 .padding(.vertical, 9)
-                .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .kairoGlassField(tint: KairoDesign.blue)
                 .accessibilityIdentifier("settings.openai.api-key-field")
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 8)], spacing: 8) {
