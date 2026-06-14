@@ -388,6 +388,82 @@ public struct CaptureAndTriageURLInKairoIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct KairoPendingCaptureEntity: AppEntity {
+    public static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Kairo Capture")
+    public static var defaultQuery = KairoPendingCaptureQuery()
+
+    public var id: UUID
+    public var kind: KairoIntentCaptureKind
+    public var textPreview: String
+    public var url: String?
+
+    public var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(title: "\(kind.rawValue.capitalized): \(textPreview)")
+    }
+
+    public init(id: UUID, kind: KairoIntentCaptureKind, textPreview: String, url: String?) {
+        self.id = id
+        self.kind = kind
+        self.textPreview = textPreview
+        self.url = url
+    }
+
+    public init(capture: KairoIntentCapture) {
+        self.init(
+            id: capture.id,
+            kind: capture.kind,
+            textPreview: KairoCaptureIntentSupport.compactPreview(capture.text, limit: 120),
+            url: capture.url?.absoluteString
+        )
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct KairoPendingCaptureQuery: EntityQuery {
+    private let store: KairoIntentCaptureStore
+
+    public init() {
+        self.store = KairoIntentCaptureStore()
+    }
+
+    init(store: KairoIntentCaptureStore) {
+        self.store = store
+    }
+
+    public func entities(for identifiers: [KairoPendingCaptureEntity.ID]) async throws -> [KairoPendingCaptureEntity] {
+        let requestedIDs = Set(identifiers)
+        return store.pending()
+            .filter { requestedIDs.contains($0.id) }
+            .map(KairoPendingCaptureEntity.init(capture:))
+    }
+
+    public func suggestedEntities() async throws -> [KairoPendingCaptureEntity] {
+        store.pending()
+            .suffix(10)
+            .map(KairoPendingCaptureEntity.init(capture:))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct InspectKairoCaptureIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Inspect Kairo Capture"
+    public static var description = IntentDescription("Return details for a selected pending Kairo capture without consuming the inbox.")
+
+    @Parameter(title: "Capture")
+    public var capture: KairoPendingCaptureEntity
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let output = KairoCaptureIntentSupport.inspectPendingCapture(id: capture.id)
+        return .result(
+            value: try output.encodedJSONString(),
+            dialog: IntentDialog(stringLiteral: output.displayText)
+        )
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public enum KairoOpenSectionAppEnum: String, AppEnum {
     case chat
     case library
@@ -580,6 +656,15 @@ public struct KairoAppShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Capture Status",
             systemImageName: "tray.full"
+        )
+        AppShortcut(
+            intent: InspectKairoCaptureIntent(),
+            phrases: [
+                "Inspect a capture in \(.applicationName)",
+                "Read a \(.applicationName) capture"
+            ],
+            shortTitle: "Inspect Capture",
+            systemImageName: "doc.text.magnifyingglass"
         )
         AppShortcut(
             intent: ClearKairoCaptureInboxIntent(),
@@ -990,6 +1075,54 @@ public struct KairoCaptureInboxClearOutput: Codable, Equatable, Sendable {
     }
 }
 
+public struct KairoPendingCaptureInspectOutput: Codable, Equatable, Sendable {
+    public var schemaVersion: Int
+    public var displayText: String
+    public var found: Bool
+    public var captureID: UUID?
+    public var captureKind: KairoIntentCaptureKind?
+    public var sourceName: String?
+    public var textPreview: String?
+    public var text: String?
+    public var url: String?
+    public var recommendedRoute: KairoCaptureTriageRoute
+    public var recommendedDeepLink: String?
+
+    public init(
+        schemaVersion: Int = 1,
+        displayText: String,
+        found: Bool,
+        captureID: UUID?,
+        captureKind: KairoIntentCaptureKind?,
+        sourceName: String?,
+        textPreview: String?,
+        text: String?,
+        url: String?,
+        recommendedRoute: KairoCaptureTriageRoute,
+        recommendedDeepLink: String?
+    ) {
+        self.schemaVersion = schemaVersion
+        self.displayText = displayText
+        self.found = found
+        self.captureID = captureID
+        self.captureKind = captureKind
+        self.sourceName = sourceName
+        self.textPreview = textPreview
+        self.text = text
+        self.url = url
+        self.recommendedRoute = recommendedRoute
+        self.recommendedDeepLink = recommendedDeepLink
+    }
+
+    public func encodedJSONString() throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(self)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
+
 public enum KairoCaptureTriageRoute: String, Codable, CaseIterable, Sendable {
     case captureReview
     case chat
@@ -1111,6 +1244,41 @@ enum KairoCaptureIntentSupport {
         )
     }
 
+    static func inspectPendingCapture(
+        id: UUID,
+        store: KairoIntentCaptureStore = KairoIntentCaptureStore()
+    ) -> KairoPendingCaptureInspectOutput {
+        guard let capture = store.pending().first(where: { $0.id == id }) else {
+            let route: KairoCaptureTriageRoute = .chat
+            return KairoPendingCaptureInspectOutput(
+                displayText: "Capture was not found.",
+                found: false,
+                captureID: nil,
+                captureKind: nil,
+                sourceName: nil,
+                textPreview: nil,
+                text: nil,
+                url: nil,
+                recommendedRoute: route,
+                recommendedDeepLink: route.deepLinkString
+            )
+        }
+
+        let route: KairoCaptureTriageRoute = .captureReview
+        return KairoPendingCaptureInspectOutput(
+            displayText: "Capture ready.",
+            found: true,
+            captureID: capture.id,
+            captureKind: capture.kind,
+            sourceName: capture.sourceName,
+            textPreview: compactPreview(capture.text, limit: 220),
+            text: capture.text,
+            url: capture.url?.absoluteString,
+            recommendedRoute: route,
+            recommendedDeepLink: route.deepLinkString
+        )
+    }
+
     static func triage(text: String, sourceName: String = "Triage Kairo Capture") async throws -> KairoCaptureTriageOutput {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let builder = ShareAttachmentBuilder()
@@ -1215,7 +1383,7 @@ enum KairoCaptureIntentSupport {
         )
     }
 
-    private static func compactPreview(_ text: String, limit: Int) -> String {
+    static func compactPreview(_ text: String, limit: Int) -> String {
         let preview = text
             .components(separatedBy: .whitespacesAndNewlines)
             .filter { !$0.isEmpty }

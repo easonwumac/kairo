@@ -231,6 +231,65 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
         XCTAssertEqual(captureStore.pending(), [])
     }
 
+    func testPendingCaptureEntityQueryReturnsSuggestedAndRequestedCaptures() async throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+        let first = try XCTUnwrap(captureStore.saveText("First AFM note", sourceName: "Shortcut"))
+        let second = try XCTUnwrap(captureStore.saveURL(
+            URL(string: "https://example.com/afm")!,
+            note: "Read later",
+            sourceName: "Shortcut URL"
+        ))
+        let query = KairoPendingCaptureQuery(store: captureStore)
+
+        let suggested = try await query.suggestedEntities()
+        let requested = try await query.entities(for: [second.id])
+
+        XCTAssertEqual(suggested.map(\.id), [first.id, second.id])
+        XCTAssertEqual(suggested.map(\.kind), [.text, .url])
+        XCTAssertEqual(requested.map(\.id), [second.id])
+        XCTAssertEqual(requested.first?.url, "https://example.com/afm")
+        XCTAssertEqual(captureStore.pending().map(\.id), [first.id, second.id])
+    }
+
+    func testInspectPendingCaptureReturnsDetailsWithoutConsuming() throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+        let capture = try XCTUnwrap(captureStore.saveText("Inspect AFM capture", sourceName: "Shortcut"))
+
+        let output = KairoCaptureIntentSupport.inspectPendingCapture(id: capture.id, store: captureStore)
+        let decoded = try JSONDecoder().decode(KairoPendingCaptureInspectOutput.self, from: Data(output.encodedJSONString().utf8))
+
+        XCTAssertTrue(decoded.found)
+        XCTAssertEqual(decoded.captureID, capture.id)
+        XCTAssertEqual(decoded.captureKind, .text)
+        XCTAssertEqual(decoded.sourceName, "Shortcut")
+        XCTAssertEqual(decoded.text, "Inspect AFM capture")
+        XCTAssertEqual(decoded.recommendedRoute, .captureReview)
+        XCTAssertEqual(captureStore.pending().map(\.id), [capture.id])
+    }
+
+    func testInspectPendingCaptureReportsMissingCaptureWithoutConsuming() throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+
+        let output = KairoCaptureIntentSupport.inspectPendingCapture(id: UUID(), store: captureStore)
+
+        XCTAssertFalse(output.found)
+        XCTAssertNil(output.captureID)
+        XCTAssertEqual(output.recommendedRoute, .chat)
+        XCTAssertEqual(captureStore.pending(), [])
+    }
+
     func testTriageCaptureReturnsMemoryActionForRememberedText() async throws {
         let output = try await KairoCaptureIntentSupport.triage(
             text: "記住：AFM 適合短上下文分類。",

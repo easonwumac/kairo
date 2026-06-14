@@ -30,7 +30,7 @@ public enum KairoIntentCaptureKind: String, Codable, Equatable, Sendable {
     case url
 }
 
-public struct KairoIntentCaptureStore {
+public struct KairoIntentCaptureStore: @unchecked Sendable {
     private let defaults: UserDefaults
     private let key: String
     private let encoder: JSONEncoder
