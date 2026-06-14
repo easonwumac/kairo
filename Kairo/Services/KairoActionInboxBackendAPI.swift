@@ -61,8 +61,81 @@ public struct KairoActionInboxBackendService: KairoActionInboxAPI {
             )
         ]
 
+        suggestions.append(contentsOf: handoffSuggestions(from: trimmed))
+        suggestions.append(contentsOf: memorySuggestions(from: trimmed))
         suggestions.append(contentsOf: reminderSuggestions(from: trimmed))
         return suggestions
+    }
+
+    private func handoffSuggestions(from text: String) -> [ActionInboxSuggestion] {
+        let normalized = parser.normalize(text)
+        var suggestions: [ActionInboxSuggestion] = []
+
+        if parser.isMapDirectionsRequest(normalized) {
+            let action = AgentAction(
+                kind: .openMapDirections,
+                title: KairoL10n.string("chat.action.displayName.openMaps"),
+                rationale: KairoL10n.string("chat.action.rationale.maps"),
+                payload: .mapDirections(parser.mapDirectionsDraft(from: text, normalizedText: normalized)),
+                riskTier: .tier1Draft
+            )
+            suggestions.append(ActionInboxSuggestion(
+                kind: .mapsHandoff,
+                title: action.title,
+                action: action,
+                requiresConfirmation: true
+            ))
+        }
+
+        if !parser.isMapDirectionsRequest(normalized),
+           parser.isWebSearchHandoffRequest(normalized) {
+            let action = AgentAction(
+                kind: .openWebSearchHandoff,
+                title: KairoL10n.string("chat.action.displayName.openWebSearch"),
+                rationale: KairoL10n.string("chat.action.rationale.web"),
+                payload: .webSearch(parser.webSearchDraft(from: text)),
+                riskTier: .tier1Draft
+            )
+            suggestions.append(ActionInboxSuggestion(
+                kind: .webSearchHandoff,
+                title: action.title,
+                action: action,
+                requiresConfirmation: true
+            ))
+        }
+
+        return suggestions
+    }
+
+    private func memorySuggestions(from text: String) -> [ActionInboxSuggestion] {
+        let normalized = parser.normalize(text)
+        guard containsAny(normalized, [
+            "remember this",
+            "save this",
+            "save to memory",
+            "keep this",
+            "記住",
+            "保存",
+            "存起來",
+            "存到記憶",
+            "加入記憶"
+        ]) else {
+            return []
+        }
+
+        let action = AgentAction(
+            kind: .saveMemory,
+            title: KairoL10n.string("chat.action.displayName.saveMemory"),
+            rationale: KairoL10n.string("chat.action.rationale.memory"),
+            payload: .text(text),
+            riskTier: .tier2LowRiskWrite
+        )
+        return [ActionInboxSuggestion(
+            kind: .memorySave,
+            title: action.title,
+            action: action,
+            requiresConfirmation: true
+        )]
     }
 
     private func reminderSuggestions(from text: String) -> [ActionInboxSuggestion] {
@@ -113,6 +186,10 @@ public struct KairoActionInboxBackendService: KairoActionInboxAPI {
             }
         }
         return Array(titles.prefix(6))
+    }
+
+    private func containsAny(_ text: String, _ needles: [String]) -> Bool {
+        needles.contains { text.contains(parser.normalize($0)) }
     }
 
     private func expandedTestTaskTitles(from fragment: String) -> [String]? {

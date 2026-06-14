@@ -576,6 +576,7 @@
 "chat.action.description.externalAPI" = "Runs actions through official APIs authorized by the user with OAuth.";
 "chat.action.description.unsupported" = "Clearly marks actions blocked by iOS sandbox, public APIs, or current permissions without claiming they can run.";
 "chat.action.rationale.notification" = "User asked Kairo to prepare a local notification through the public UserNotifications API.";
+"chat.action.rationale.memory" = "User asked Kairo to save the shared content after confirmation.";
 "chat.action.rationale.email" = "User asked Kairo to prepare a visible email draft handoff without sending mail automatically.";
 "chat.action.rationale.maps" = "User asked Kairo to open a visible Apple Maps directions handoff.";
 "chat.action.rationale.googleMaps" = "User asked Kairo to open a visible Google Maps directions handoff. Kairo opens only a user-visible URL after confirmation and does not start navigation silently.";

@@ -576,6 +576,7 @@
 "chat.action.description.externalAPI" = "透過使用者 OAuth 授權的官方 API 執行動作。";
 "chat.action.description.unsupported" = "清楚標示被 iOS sandbox、公開 API 或目前權限擋下的操作，不宣稱可執行。";
 "chat.action.rationale.notification" = "使用者要求 Kairo 透過公開 UserNotifications API 準備本機通知。";
+"chat.action.rationale.memory" = "使用者要求 Kairo 在確認後儲存分享內容。";
 "chat.action.rationale.email" = "使用者要求 Kairo 準備可見的 email 草稿 handoff，不會自動寄信。";
 "chat.action.rationale.maps" = "使用者要求 Kairo 開啟可見的 Apple Maps 路線 handoff。";
 "chat.action.rationale.googleMaps" = "使用者要求 Kairo 開啟可見的 Google Maps 路線 handoff。Kairo 只會在確認後開啟使用者可見 URL，不會靜默開始導航。";

@@ -70,4 +70,75 @@ final class KairoActionInboxBackendAPITests: XCTestCase {
         XCTAssertEqual(inboxItems.map(\.sourceItemIDs), [[item.id]])
         XCTAssertEqual(inboxItems.first?.suggestions.contains { $0.kind == .reminderDraft }, true)
     }
+
+    func testShareMessageProducesVisibleHandoffDrafts() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("搜尋網路 AFM iOS 27 local inference performance", displayName: "Research")
+            ],
+            sourceApplication: "ShareSheet"
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let api = KairoActionInboxBackendService(shareIngestionQueue: queue)
+
+        let inboxItems = try await api.pendingItems(limit: 10)
+        let inboxItem = try XCTUnwrap(inboxItems.first)
+
+        let searchSuggestion = try XCTUnwrap(inboxItem.suggestions.first { $0.kind == .webSearchHandoff })
+        XCTAssertTrue(searchSuggestion.requiresConfirmation)
+        XCTAssertEqual(searchSuggestion.action?.kind, .openWebSearchHandoff)
+        guard case let .webSearch(draft) = searchSuggestion.action?.payload else {
+            return XCTFail("Expected web search payload")
+        }
+        XCTAssertTrue(draft.query.contains("AFM"))
+        XCTAssertTrue(draft.searchURL.contains("duckduckgo.com"))
+    }
+
+    func testShareMessageProducesMapsHandoffDraft() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("走路去 台北 101", displayName: "Route")
+            ],
+            sourceApplication: "ShareSheet"
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let api = KairoActionInboxBackendService(shareIngestionQueue: queue)
+
+        let inboxItems = try await api.pendingItems(limit: 10)
+        let inboxItem = try XCTUnwrap(inboxItems.first)
+
+        let mapsSuggestion = try XCTUnwrap(inboxItem.suggestions.first { $0.kind == .mapsHandoff })
+        XCTAssertTrue(mapsSuggestion.requiresConfirmation)
+        XCTAssertEqual(mapsSuggestion.action?.kind, .openMapDirections)
+        guard case let .mapDirections(draft) = mapsSuggestion.action?.payload else {
+            return XCTFail("Expected maps payload")
+        }
+        XCTAssertEqual(draft.destinationQuery, "台北 101")
+        XCTAssertEqual(draft.mode, .walking)
+    }
+
+    func testShareMessageProducesMemorySaveDraft() async throws {
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.text("記住：AFM 適合處理短上下文的分類和 JSON 修復。", displayName: "Memory")
+            ],
+            sourceApplication: "ShareSheet"
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let api = KairoActionInboxBackendService(shareIngestionQueue: queue)
+
+        let inboxItems = try await api.pendingItems(limit: 10)
+        let inboxItem = try XCTUnwrap(inboxItems.first)
+
+        let memorySuggestion = try XCTUnwrap(inboxItem.suggestions.first { $0.kind == .memorySave })
+        XCTAssertTrue(memorySuggestion.requiresConfirmation)
+        XCTAssertEqual(memorySuggestion.action?.kind, .saveMemory)
+        guard case let .text(content) = memorySuggestion.action?.payload else {
+            return XCTFail("Expected memory text payload")
+        }
+        XCTAssertTrue(content.contains("AFM"))
+    }
 }
