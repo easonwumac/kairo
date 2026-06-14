@@ -107,7 +107,18 @@ public struct InfoPageListView: View {
 
     // MARK: - List
 
+    @ViewBuilder
     private var listContent: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 14) {
+                listStack
+            }
+        } else {
+            listStack
+        }
+    }
+
+    private var listStack: some View {
         VStack(alignment: .leading, spacing: 14) {
             searchCard
 
@@ -170,10 +181,7 @@ public struct InfoPageListView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(KairoDesign.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 19, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 19, style: .continuous).stroke(KairoDesign.line, lineWidth: 1)
-            }
+            .infoPageGlassSurface(cornerRadius: 19, tint: KairoDesign.blue, isInteractive: true)
 
             if isFilterPresented && !presentCategories.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -214,10 +222,7 @@ public struct InfoPageListView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(isSelected ? tint.opacity(0.15) : KairoDesign.softSurface.opacity(0.55), in: Capsule())
-            .overlay {
-                Capsule().stroke(isSelected ? tint : KairoDesign.line, lineWidth: 1)
-            }
+            .infoPageGlassCapsule(tint: tint, isSelected: isSelected)
             .foregroundStyle(isSelected ? tint : KairoDesign.ink)
         }
         .buttonStyle(.plain)
@@ -482,10 +487,7 @@ private struct InfoPageCard: View {
                 .padding(.top, 4)
         }
         .padding(14)
-        .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(KairoDesign.line, lineWidth: 1)
-        }
+        .infoPageGlassSurface(cornerRadius: 18, tint: page.category.tint, isInteractive: true)
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("infoPages.card")
@@ -543,6 +545,68 @@ private struct InfoPageLinkedAssetThumbnail: View {
         #else
         return nil
         #endif
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func infoPageGlassSurface(cornerRadius: CGFloat, tint: Color, isInteractive: Bool = false) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.12))
+                            .interactive(),
+                        in: .rect(cornerRadius: cornerRadius)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            } else {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.08)),
+                        in: .rect(cornerRadius: cornerRadius)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(KairoDesign.line, lineWidth: 1)
+                }
+        }
+    }
+
+    @ViewBuilder
+    func infoPageGlassCapsule(tint: Color, isSelected: Bool) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(
+                    .regular
+                        .tint(tint.opacity(isSelected ? 0.18 : 0.08))
+                        .interactive(),
+                    in: .capsule
+                )
+                .overlay {
+                    Capsule()
+                        .stroke(isSelected ? tint.opacity(0.72) : KairoDesign.line.opacity(0.55), lineWidth: 1)
+                }
+        } else {
+            self
+                .background(isSelected ? tint.opacity(0.15) : KairoDesign.softSurface.opacity(0.55), in: Capsule())
+                .overlay {
+                    Capsule().stroke(isSelected ? tint : KairoDesign.line, lineWidth: 1)
+                }
+        }
     }
 }
 
