@@ -1168,6 +1168,9 @@
 "wikiSearch.search.placeholder" = "搜尋 Kairo";
 "wikiSearch.search.clear" = "清除搜尋";
 "wikiSearch.results.title" = "結果";
+"wikiSearch.radar.pages" = "頁面";
+"wikiSearch.radar.assets" = "資產";
+"wikiSearch.radar.memories" = "記憶";
 "wikiSearch.empty.title" = "找不到項目";
 "wikiSearch.empty.subtitle" = "試試人物、地點、專案、訂單，或已保存內容中的片語。";
 "wikiSearch.result.infoPage" = "Info 頁面";

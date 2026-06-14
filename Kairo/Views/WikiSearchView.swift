@@ -210,6 +210,18 @@ public struct WikiSearchView: View {
         }
     }
 
+    private var resultInfoPageCount: Int {
+        viewModel.results.filter { $0.kind == .infoPage }.count
+    }
+
+    private var resultAssetCount: Int {
+        viewModel.results.filter { $0.kind == .knowledgeAsset }.count
+    }
+
+    private var resultMemoryCount: Int {
+        viewModel.results.filter { $0.kind == .memory }.count
+    }
+
     @ViewBuilder
     private var searchOverviewContent: some View {
         if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
@@ -225,12 +237,63 @@ public struct WikiSearchView: View {
     private var searchOverviewStack: some View {
         header
         searchCard
+        searchRadarSection
 
         if let errorMessage = viewModel.errorMessage {
             statusBanner(errorMessage)
         }
 
         resultsSection
+    }
+
+    private var searchRadarSection: some View {
+        HStack(spacing: 10) {
+            searchRadarTile(
+                title: KairoL10n.string("wikiSearch.radar.pages"),
+                value: "\(resultInfoPageCount)",
+                systemImage: "doc.richtext.fill",
+                tint: KairoDesign.blue
+            )
+            searchRadarTile(
+                title: KairoL10n.string("wikiSearch.radar.assets"),
+                value: "\(resultAssetCount)",
+                systemImage: "archivebox.fill",
+                tint: KairoDesign.teal
+            )
+            searchRadarTile(
+                title: KairoL10n.string("wikiSearch.radar.memories"),
+                value: "\(resultMemoryCount)",
+                systemImage: "brain.head.profile",
+                tint: KairoDesign.amber
+            )
+        }
+        .accessibilityIdentifier("wikiSearch.radar")
+    }
+
+    private func searchRadarTile(title: String, value: String, systemImage: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(tint)
+                .frame(width: 26, height: 26)
+                .wikiSearchGlassSurface(cornerRadius: 9, tint: tint)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 86, alignment: .leading)
+        .wikiSearchGlassSurface(cornerRadius: 18, tint: tint)
     }
 
     private var header: some View {
@@ -299,19 +362,20 @@ public struct WikiSearchView: View {
     }
 
     private var emptyState: some View {
-        KairoGroupedSurface {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(KairoL10n.string("wikiSearch.empty.title"))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                    .accessibilityIdentifier("wikiSearch.empty")
-                Text(KairoL10n.string("wikiSearch.empty.subtitle"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.vertical, 8)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(KairoL10n.string("wikiSearch.empty.title"))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+                .accessibilityIdentifier("wikiSearch.empty")
+            Text(KairoL10n.string("wikiSearch.empty.subtitle"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .wikiSearchGlassSurface(cornerRadius: 18, tint: KairoDesign.blue)
     }
 
     private func resultCard(_ result: KairoWikiSearchResult) -> some View {
@@ -326,7 +390,7 @@ public struct WikiSearchView: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(tint(for: result.kind))
                         .frame(width: 30, height: 30)
-                        .background(tint(for: result.kind).opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .wikiSearchGlassSurface(cornerRadius: 9, tint: tint(for: result.kind))
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(result.title)
@@ -384,16 +448,17 @@ public struct WikiSearchView: View {
             resultHeader(result)
 
             if viewModel.isLoadingDetail {
-                KairoGroupedSurface {
-                    HStack(spacing: 10) {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text(KairoL10n.string("wikiSearch.detail.loading"))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 8)
+                HStack(spacing: 10) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(KairoL10n.string("wikiSearch.detail.loading"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .wikiSearchGlassSurface(cornerRadius: 16, tint: tint(for: result.kind))
             }
 
             if let errorMessage = viewModel.errorMessage {
@@ -429,12 +494,13 @@ public struct WikiSearchView: View {
             }
 
             if viewModel.relatedResults.isEmpty, !viewModel.isLoadingRelated {
-                KairoGroupedSurface {
-                    Text(KairoL10n.string("wikiSearch.related.empty"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, 8)
-                }
+                Text(KairoL10n.string("wikiSearch.related.empty"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .wikiSearchGlassSurface(cornerRadius: 16, tint: KairoDesign.muted)
             } else {
                 ForEach(viewModel.relatedResults) { result in
                     resultCard(result)
@@ -445,24 +511,26 @@ public struct WikiSearchView: View {
     }
 
     private func resultHeader(_ result: KairoWikiSearchResult) -> some View {
-        KairoGroupedSurface {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    KairoStatusPill(title: label(for: result.kind), systemImage: icon(for: result.kind), tint: tint(for: result.kind))
-                    KairoStatusPill(title: KairoL10n.string("wikiSearch.result.score", Int64(result.score)), systemImage: "sparkle.magnifyingglass", tint: KairoDesign.blue)
-                }
-                Text(result.title)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(KairoDesign.ink)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                KairoStatusPill(title: label(for: result.kind), systemImage: icon(for: result.kind), tint: tint(for: result.kind))
+                KairoStatusPill(title: KairoL10n.string("wikiSearch.result.score", Int64(result.score)), systemImage: "sparkle.magnifyingglass", tint: KairoDesign.blue)
+            }
+            Text(result.title)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(KairoDesign.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            if !result.snippet.isEmpty {
+                Text(result.snippet)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                if !result.snippet.isEmpty {
-                    Text(result.snippet)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
             }
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .wikiSearchGlassSurface(cornerRadius: 18, tint: tint(for: result.kind))
     }
 
     private func infoPageDetail(_ page: InfoPage, linkedAssets: [KairoWikiSearchResult]) -> some View {
@@ -539,14 +607,16 @@ public struct WikiSearchView: View {
         systemImage: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        KairoGroupedSurface {
-            VStack(alignment: .leading, spacing: 10) {
-                Label(title, systemImage: systemImage)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                content()
-            }
+        VStack(alignment: .leading, spacing: 10) {
+            Label(title, systemImage: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+            content()
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .wikiSearchGlassSurface(cornerRadius: 18, tint: KairoDesign.blue)
     }
 
     @ViewBuilder
@@ -564,6 +634,10 @@ public struct WikiSearchView: View {
         Label(message, systemImage: "exclamationmark.triangle.fill")
             .font(.caption)
             .foregroundStyle(KairoDesign.red)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .wikiSearchGlassSurface(cornerRadius: 16, tint: KairoDesign.red)
             .accessibilityIdentifier("wikiSearch.error")
     }
 

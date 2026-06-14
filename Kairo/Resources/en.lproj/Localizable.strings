@@ -1168,6 +1168,9 @@
 "wikiSearch.search.placeholder" = "Search Kairo";
 "wikiSearch.search.clear" = "Clear search";
 "wikiSearch.results.title" = "Results";
+"wikiSearch.radar.pages" = "Pages";
+"wikiSearch.radar.assets" = "Assets";
+"wikiSearch.radar.memories" = "Memory";
 "wikiSearch.empty.title" = "No matching items";
 "wikiSearch.empty.subtitle" = "Try a person, place, project, order, or phrase from a saved item.";
 "wikiSearch.result.infoPage" = "Info Page";
