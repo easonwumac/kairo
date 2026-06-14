@@ -64,6 +64,9 @@
 "knowledgeAssets.search.count.one" = "%lld match for \"%@\"";
 "knowledgeAssets.search.count.many" = "%lld matches for \"%@\"";
 "knowledgeAssets.export" = "Export";
+"knowledgeAssets.radar.assets" = "Assets";
+"knowledgeAssets.radar.actions" = "Actions";
+"knowledgeAssets.radar.attachments" = "Files";
 "knowledgeAssets.empty.title" = "No saved assets yet";
 "knowledgeAssets.empty.subtitle" = "Share screenshots, URLs, text, or files to Kairo, then import them here.";
 "knowledgeAssets.search.empty.title" = "No matching assets";

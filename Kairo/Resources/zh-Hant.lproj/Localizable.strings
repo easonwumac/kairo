@@ -64,6 +64,9 @@
 "knowledgeAssets.search.count.one" = "找到 %lld 筆「%@」符合項目";
 "knowledgeAssets.search.count.many" = "找到 %lld 筆「%@」符合項目";
 "knowledgeAssets.export" = "匯出";
+"knowledgeAssets.radar.assets" = "資產";
+"knowledgeAssets.radar.actions" = "動作";
+"knowledgeAssets.radar.attachments" = "檔案";
 "knowledgeAssets.empty.title" = "還沒有已儲存資產";
 "knowledgeAssets.empty.subtitle" = "把截圖、URL、文字或檔案分享到 Kairo 後，可在這裡匯入。";
 "knowledgeAssets.search.empty.title" = "沒有符合的資產";

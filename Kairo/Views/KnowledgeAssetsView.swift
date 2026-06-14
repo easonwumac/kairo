@@ -102,6 +102,7 @@ public struct KnowledgeAssetsView: View {
     private var assetLibraryStack: some View {
         VStack(alignment: .leading, spacing: 14) {
             searchCard
+            assetRadarSection
 
             if let statusMessage {
                 statusCard(statusMessage, systemImage: "checkmark.circle.fill", tint: KairoDesign.green)
@@ -113,7 +114,7 @@ public struct KnowledgeAssetsView: View {
                     .accessibilityIdentifier("knowledgeAssets.error")
             }
 
-            if assets.isEmpty, !trimmedSearchQuery.isEmpty || activeFilterCount > 0 {
+            if assets.isEmpty {
                 emptyState
             } else {
                 ForEach(groupedAssets) { group in
@@ -254,19 +255,20 @@ public struct KnowledgeAssetsView: View {
     }
 
     private var emptyState: some View {
-        KairoGroupedSurface {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(trimmedSearchQuery.isEmpty ? KairoL10n.string("knowledgeAssets.empty.title") : KairoL10n.string("knowledgeAssets.search.empty.title"))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                    .accessibilityIdentifier("knowledgeAssets.empty")
-                Text(trimmedSearchQuery.isEmpty ? KairoL10n.string("knowledgeAssets.empty.subtitle") : KairoL10n.string("knowledgeAssets.search.empty.subtitle"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.vertical, 10)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(trimmedSearchQuery.isEmpty ? KairoL10n.string("knowledgeAssets.empty.title") : KairoL10n.string("knowledgeAssets.search.empty.title"))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+                .accessibilityIdentifier("knowledgeAssets.empty")
+            Text(trimmedSearchQuery.isEmpty ? KairoL10n.string("knowledgeAssets.empty.subtitle") : KairoL10n.string("knowledgeAssets.search.empty.subtitle"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .knowledgeAssetGlassSurface(cornerRadius: 18, tint: KairoDesign.amber)
     }
 
     private func assetCard(_ asset: KnowledgeAsset) -> some View {
@@ -452,14 +454,16 @@ public struct KnowledgeAssetsView: View {
         systemImage: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        KairoGroupedSurface {
-            VStack(alignment: .leading, spacing: 10) {
-                Label(title, systemImage: systemImage)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                content()
-            }
+        VStack(alignment: .leading, spacing: 10) {
+            Label(title, systemImage: systemImage)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+            content()
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .knowledgeAssetGlassSurface(cornerRadius: 18, tint: KairoDesign.blue)
     }
 
     private func assetPills(_ asset: KnowledgeAsset) -> some View {
@@ -473,12 +477,67 @@ public struct KnowledgeAssetsView: View {
     }
 
     private func statusCard(_ message: String, systemImage: String, tint: Color) -> some View {
-        KairoGroupedSurface {
-            Label(message, systemImage: systemImage)
-                .font(.caption)
-                .foregroundStyle(tint)
-                .fixedSize(horizontal: false, vertical: true)
+        Label(message, systemImage: systemImage)
+            .font(.caption)
+            .foregroundStyle(tint)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .knowledgeAssetGlassSurface(cornerRadius: 16, tint: tint)
+    }
+
+    private var assetRadarSection: some View {
+        HStack(spacing: 10) {
+            assetRadarTile(
+                title: KairoL10n.string("knowledgeAssets.radar.assets"),
+                value: "\(assets.count)",
+                systemImage: "tray.full.fill",
+                tint: KairoDesign.teal
+            )
+
+            assetRadarTile(
+                title: KairoL10n.string("knowledgeAssets.radar.actions"),
+                value: "\(proposedActionCount)",
+                systemImage: "wand.and.sparkles",
+                tint: proposedActionCount > 0 ? KairoDesign.amber : KairoDesign.blue
+            )
+
+            assetRadarTile(
+                title: KairoL10n.string("knowledgeAssets.radar.attachments"),
+                value: "\(attachmentCount)",
+                systemImage: "paperclip",
+                tint: KairoDesign.green
+            )
         }
+        .accessibilityIdentifier("knowledgeAssets.radar")
+    }
+
+    private func assetRadarTile(title: String, value: String, systemImage: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(tint)
+                .frame(width: 26, height: 26)
+                .knowledgeAssetGlassCircle(tint: tint)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 86, alignment: .leading)
+        .knowledgeAssetGlassSurface(cornerRadius: 18, tint: tint)
     }
 
     private var trimmedSearchQuery: String {
@@ -491,6 +550,14 @@ public struct KnowledgeAssetsView: View {
         if selectedFolderName != nil { count += 1 }
         if selectedDateFilter != .all { count += 1 }
         return count
+    }
+
+    private var proposedActionCount: Int {
+        assets.reduce(0) { $0 + $1.proposedActions.count }
+    }
+
+    private var attachmentCount: Int {
+        assets.reduce(0) { $0 + $1.attachments.count }
     }
 
     private var reloadToken: String {
