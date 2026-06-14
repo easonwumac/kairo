@@ -184,14 +184,7 @@ public struct WikiSearchView: View {
                     if let selectedResult = viewModel.selectedResult {
                         detailContent(for: selectedResult, detail: viewModel.selectedDetail)
                     } else {
-                        header
-                        searchCard
-
-                        if let errorMessage = viewModel.errorMessage {
-                            statusBanner(errorMessage)
-                        }
-
-                        resultsSection
+                        searchOverviewContent
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -215,6 +208,29 @@ public struct WikiSearchView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private var searchOverviewContent: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 18) {
+                searchOverviewStack
+            }
+        } else {
+            searchOverviewStack
+        }
+    }
+
+    @ViewBuilder
+    private var searchOverviewStack: some View {
+        header
+        searchCard
+
+        if let errorMessage = viewModel.errorMessage {
+            statusBanner(errorMessage)
+        }
+
+        resultsSection
     }
 
     private var header: some View {
@@ -256,11 +272,7 @@ public struct WikiSearchView: View {
         }
         .padding(.horizontal, 14)
         .frame(minHeight: 48)
-        .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(KairoDesign.line, lineWidth: 1)
-        }
+        .wikiSearchGlassSurface(cornerRadius: 16, tint: KairoDesign.blue, isInteractive: true)
     }
 
     private var resultsSection: some View {
@@ -353,11 +365,7 @@ public struct WikiSearchView: View {
         }
         .buttonStyle(.plain)
         .padding(14)
-        .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(KairoDesign.line, lineWidth: 1)
-        }
+        .wikiSearchGlassSurface(cornerRadius: 16, tint: tint(for: result.kind), isInteractive: true)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("wikiSearch.result.\(result.kind.rawValue)")
     }
@@ -589,6 +597,45 @@ public struct WikiSearchView: View {
             return KairoDesign.teal
         case .memory:
             return KairoDesign.amber
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func wikiSearchGlassSurface(cornerRadius: CGFloat, tint: Color, isInteractive: Bool = false) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.12))
+                            .interactive(),
+                        in: .rect(cornerRadius: cornerRadius)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            } else {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.08)),
+                        in: .rect(cornerRadius: cornerRadius)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(KairoDesign.line, lineWidth: 1)
+                }
         }
     }
 }
