@@ -574,6 +574,11 @@ public final class ChatViewModel: ObservableObject {
                 conversationHistory: localConversationHistory(),
                 privacyMode: privacyMode
             )
+            let promptPipelineTrace = response.promptPipelineTrace ?? Self.fallbackPromptPipelineTrace(
+                for: response,
+                userText: text,
+                attachments: persistedAttachments.attachments
+            )
             let assistantMessage = ChatMessage(
                 role: .assistant,
                 text: response.message,
@@ -582,7 +587,7 @@ public final class ChatViewModel: ObservableObject {
                 memoryContextCount: response.memoryContextCount,
                 reasoningText: response.reasoningText,
                 rawModelResponse: response.rawModelResponse,
-                promptPipelineTrace: response.promptPipelineTrace,
+                promptPipelineTrace: promptPipelineTrace,
                 pipelineDiagnosticResult: response.pipelineDiagnosticResult
             )
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
@@ -592,7 +597,7 @@ public final class ChatViewModel: ObservableObject {
             }
 
             if let draft = response.infoPageDraft, draft.createInfoPage {
-                await saveInfoPageDraft(draft, after: assistantMessage.id)
+                await saveInfoPageDraft(draft, after: assistantMessage.id, providerID: promptPipelineTrace?.providerID)
             }
             await persistCurrentThread()
             calendarReviewAction = firstCalendarActionFromLatestAssistantMessage()
@@ -612,7 +617,7 @@ public final class ChatViewModel: ObservableObject {
         lastTurnAssetIDs = []
     }
 
-    private func saveInfoPageDraft(_ draft: InfoPageDraft, after messageID: UUID) async {
+    private func saveInfoPageDraft(_ draft: InfoPageDraft, after messageID: UUID, providerID: String?) async {
         guard let store = infoPageStore else { return }
         var page = draft.makeInfoPage()
         if page.assetIDs.isEmpty {
@@ -630,7 +635,18 @@ public final class ChatViewModel: ObservableObject {
             }
             let infoMessage = ChatMessage(
                 role: .system,
-                text: savedText
+                text: savedText,
+                promptPipelineTrace: PromptPipelineTrace(
+                    providerID: providerID ?? "kairo-response-pipeline",
+                    status: .validated,
+                    stages: [
+                        PromptPipelineStageTrace(
+                            name: .finalize,
+                            status: .passed,
+                            detail: "InfoPage saved: \(page.category.rawValue)"
+                        )
+                    ]
+                )
             )
             currentThread.append(infoMessage, now: infoMessage.createdAt)
             await persistCurrentThread()
@@ -1415,6 +1431,78 @@ public final class ChatViewModel: ObservableObject {
             Int64(summary.validatedCount),
             Int64(summary.repairCount),
             Int64(summary.failedCount)
+        )
+    }
+
+    private static func fallbackPromptPipelineTrace(
+        for response: AICompletionResponse,
+        userText: String,
+        attachments: [ChatAttachment]
+    ) -> PromptPipelineTrace? {
+        let hasStructuredOutput = response.infoPageDraft != nil
+            || response.libraryClassification != nil
+            || response.rawModelResponse != nil
+            || response.pipelineDiagnosticResult != nil
+            || !response.proposedActions.isEmpty
+            || !response.toolCandidates.isEmpty
+        guard hasStructuredOutput else { return nil }
+
+        var stages: [PromptPipelineStageTrace] = [
+            PromptPipelineStageTrace(
+                name: .buildPrompt,
+                status: .passed,
+                inputCharacters: userText.count + attachments.reduce(0) { $0 + $1.promptSummary.count },
+                detail: attachments.isEmpty ? "text" : "text + attachments"
+            ),
+            PromptPipelineStageTrace(
+                name: .requestModel,
+                status: .passed,
+                attempt: 1,
+                outputCharacters: response.rawModelResponse?.count ?? response.message.count
+            )
+        ]
+        let structuredDetail: String
+        if response.infoPageDraft != nil {
+            structuredDetail = "InfoPage draft"
+        } else if response.libraryClassification != nil {
+            structuredDetail = "library classification"
+        } else if response.pipelineDiagnosticResult != nil {
+            structuredDetail = "pipeline diagnostic"
+        } else if !response.proposedActions.isEmpty {
+            structuredDetail = "action preview"
+        } else if !response.toolCandidates.isEmpty {
+            structuredDetail = "tool candidates"
+        } else {
+            structuredDetail = "raw response"
+        }
+        stages.append(PromptPipelineStageTrace(
+            name: .parseStructuredOutput,
+            status: .passed,
+            attempt: 1,
+            outputCharacters: response.rawModelResponse?.count ?? response.message.count,
+            detail: structuredDetail
+        ))
+
+        var validationIssues: [String] = []
+        if let draft = response.infoPageDraft, draft.createInfoPage {
+            if draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                validationIssues.append("missing InfoPage title")
+            }
+            if draft.summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                validationIssues.append("missing InfoPage summary")
+            }
+            stages.append(PromptPipelineStageTrace(
+                name: .validateDraft,
+                status: validationIssues.isEmpty ? .passed : .failed,
+                detail: "InfoPage fields"
+            ))
+        }
+
+        return PromptPipelineTrace(
+            providerID: "kairo-response-pipeline",
+            status: validationIssues.isEmpty ? .validated : .needsReview,
+            stages: stages,
+            validationIssues: validationIssues
         )
     }
 
