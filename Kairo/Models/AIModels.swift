@@ -68,6 +68,7 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
     public var rawModelResponse: String?
     public var infoPageDraft: InfoPageDraft?
     public var promptPipelineTrace: PromptPipelineTrace?
+    public var pipelineDiagnosticResult: PipelineDiagnosticResult?
 
     public init(
         message: String,
@@ -79,7 +80,8 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
         libraryClassification: LibraryClassificationResponse? = nil,
         rawModelResponse: String? = nil,
         infoPageDraft: InfoPageDraft? = nil,
-        promptPipelineTrace: PromptPipelineTrace? = nil
+        promptPipelineTrace: PromptPipelineTrace? = nil,
+        pipelineDiagnosticResult: PipelineDiagnosticResult? = nil
     ) {
         self.message = message
         self.proposedActions = proposedActions
@@ -91,6 +93,48 @@ public struct AICompletionResponse: Codable, Equatable, Sendable {
         self.rawModelResponse = rawModelResponse
         self.infoPageDraft = infoPageDraft
         self.promptPipelineTrace = promptPipelineTrace
+        self.pipelineDiagnosticResult = pipelineDiagnosticResult ?? rawModelResponse.flatMap(PipelineDiagnosticResult.parse)
+    }
+}
+
+public struct PipelineDiagnosticResult: Codable, Equatable, Sendable {
+    public enum Verdict: String, Codable, Equatable, Sendable {
+        case pass
+        case watch
+        case fail
+    }
+
+    public var verdict: Verdict
+    public var likelyFailure: String
+    public var promptFix: String
+    public var confidence: Double
+
+    public init(
+        verdict: Verdict,
+        likelyFailure: String,
+        promptFix: String,
+        confidence: Double
+    ) {
+        self.verdict = verdict
+        self.likelyFailure = likelyFailure
+        self.promptFix = promptFix
+        self.confidence = confidence
+    }
+
+    public static func parse(_ raw: String) -> PipelineDiagnosticResult? {
+        guard let json = extractJSONObject(from: raw),
+              let data = json.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode(PipelineDiagnosticResult.self, from: data)
+        else { return nil }
+        return decoded
+    }
+
+    private static func extractJSONObject(from raw: String) -> String? {
+        guard let start = raw.firstIndex(of: "{"),
+              let end = raw.lastIndex(of: "}"),
+              start <= end
+        else { return nil }
+        return String(raw[start...end])
     }
 }
 

@@ -72,6 +72,11 @@ struct ChatBubble: View {
                     .accessibilityIdentifier("chat.message.reasoning.\(message.id.uuidString)")
                 }
 
+                if !isUser, let diagnostic = message.pipelineDiagnosticResult {
+                    PipelineDiagnosticResultCard(result: diagnostic, maxWidth: bubbleMaxWidth)
+                        .accessibilityIdentifier("chat.message.pipeline-diagnostic.\(message.id.uuidString)")
+                }
+
                 if !isUser, let trace = message.promptPipelineTrace {
                     Button {
                         isPipelineDetailPresented = true
@@ -310,6 +315,68 @@ private struct PromptPipelineTraceDetailView: View {
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
             .background(KairoDesign.softSurface.opacity(0.72), in: Capsule())
+    }
+}
+
+private struct PipelineDiagnosticResultCard: View {
+    let result: PipelineDiagnosticResult
+    let maxWidth: CGFloat
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 7) {
+                Image(systemName: iconName)
+                    .font(.caption.weight(.bold))
+                Text(KairoL10n.string("chat.pipeline.diagnostic.result", result.verdict.rawValue, confidenceText))
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(tint)
+
+            if !result.likelyFailure.isEmpty {
+                Text(result.likelyFailure)
+                    .font(.caption2)
+                    .foregroundStyle(KairoDesign.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if !result.promptFix.isEmpty {
+                Label(result.promptFix, systemImage: "wrench.and.screwdriver.fill")
+                    .font(.caption2)
+                    .foregroundStyle(KairoDesign.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: maxWidth, alignment: .leading)
+        .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var confidenceText: String {
+        "\(Int((result.confidence * 100).rounded()))%"
+    }
+
+    private var tint: Color {
+        switch result.verdict {
+        case .pass:
+            return KairoDesign.teal
+        case .watch:
+            return KairoDesign.amber
+        case .fail:
+            return .orange
+        }
+    }
+
+    private var iconName: String {
+        switch result.verdict {
+        case .pass:
+            return "checkmark.seal.fill"
+        case .watch:
+            return "eye.fill"
+        case .fail:
+            return "exclamationmark.triangle.fill"
+        }
     }
 }
 

@@ -800,6 +800,45 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(decoded.promptPipelineTrace?.validationIssues, ["invalid JSON"])
     }
 
+    func testPipelineDiagnosticResultParsesModelJSON() throws {
+        let raw = """
+        {"verdict":"watch","likelyFailure":"extra prose","promptFix":"return JSON only","confidence":0.82}
+        """
+
+        let result = try XCTUnwrap(PipelineDiagnosticResult.parse(raw))
+
+        XCTAssertEqual(result.verdict, .watch)
+        XCTAssertEqual(result.likelyFailure, "extra prose")
+        XCTAssertEqual(result.promptFix, "return JSON only")
+        XCTAssertEqual(result.confidence, 0.82)
+    }
+
+    func testAICompletionResponseParsesPipelineDiagnosticResultFromRawModelResponse() throws {
+        let response = AICompletionResponse(
+            message: "diagnostic",
+            rawModelResponse: #"{"verdict":"fail","likelyFailure":"missing schema","promptFix":"repeat schema","confidence":0.4}"#
+        )
+
+        let result = try XCTUnwrap(response.pipelineDiagnosticResult)
+
+        XCTAssertEqual(result.verdict, .fail)
+        XCTAssertEqual(result.promptFix, "repeat schema")
+    }
+
+    func testChatMessageBackfillsPipelineDiagnosticResultFromRawModelResponse() throws {
+        let message = ChatMessage(
+            role: .assistant,
+            text: "diagnostic",
+            rawModelResponse: #"{"verdict":"pass","likelyFailure":"","promptFix":"none","confidence":0.91}"#
+        )
+
+        let data = try JSONEncoder().encode(message)
+        let decoded = try JSONDecoder().decode(ChatMessage.self, from: data)
+
+        XCTAssertEqual(decoded.pipelineDiagnosticResult?.verdict, .pass)
+        XCTAssertEqual(decoded.pipelineDiagnosticResult?.confidence, 0.91)
+    }
+
     func testPromptPipelineTraceSummarizesStageHealth() {
         let trace = PromptPipelineTrace(
             providerID: "test-provider",

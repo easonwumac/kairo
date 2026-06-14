@@ -144,7 +144,8 @@ public actor AgentCore {
             inferenceMetrics: response.inferenceMetrics,
             rawModelResponse: response.rawModelResponse,
             infoPageDraft: response.infoPageDraft,
-            promptPipelineTrace: response.promptPipelineTrace
+            promptPipelineTrace: response.promptPipelineTrace,
+            pipelineDiagnosticResult: response.pipelineDiagnosticResult
         )
     }
 

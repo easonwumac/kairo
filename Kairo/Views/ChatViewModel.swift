@@ -225,7 +225,8 @@ public final class ChatViewModel: ObservableObject {
                     memoryContextCount: message.memoryContextCount,
                     reasoningText: message.reasoningText,
                     rawModelResponse: message.rawModelResponse,
-                    promptPipelineTrace: message.promptPipelineTrace
+                    promptPipelineTrace: message.promptPipelineTrace,
+                    pipelineDiagnosticResult: message.pipelineDiagnosticResult
                 )
             }
         )
@@ -350,7 +351,8 @@ public final class ChatViewModel: ObservableObject {
                 memoryContextCount: response.memoryContextCount,
                 reasoningText: response.reasoningText,
                 rawModelResponse: response.rawModelResponse,
-                promptPipelineTrace: response.promptPipelineTrace
+                promptPipelineTrace: response.promptPipelineTrace,
+                pipelineDiagnosticResult: response.pipelineDiagnosticResult
             )
             currentThread.append(assistantMessage, now: assistantMessage.createdAt)
             latestInferenceMetrics = response.inferenceMetrics

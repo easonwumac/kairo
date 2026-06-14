@@ -105,6 +105,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
     public var reasoningText: String?
     public var rawModelResponse: String?
     public var promptPipelineTrace: PromptPipelineTrace?
+    public var pipelineDiagnosticResult: PipelineDiagnosticResult?
 
     public init(
         id: UUID = UUID(),
@@ -118,7 +119,8 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         memoryContextCount: Int = 0,
         reasoningText: String? = nil,
         rawModelResponse: String? = nil,
-        promptPipelineTrace: PromptPipelineTrace? = nil
+        promptPipelineTrace: PromptPipelineTrace? = nil,
+        pipelineDiagnosticResult: PipelineDiagnosticResult? = nil
     ) {
         self.id = id
         self.role = role
@@ -132,6 +134,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.reasoningText = reasoningText
         self.rawModelResponse = rawModelResponse
         self.promptPipelineTrace = promptPipelineTrace
+        self.pipelineDiagnosticResult = pipelineDiagnosticResult ?? rawModelResponse.flatMap(PipelineDiagnosticResult.parse)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -147,6 +150,7 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         case reasoningText
         case rawModelResponse
         case promptPipelineTrace
+        case pipelineDiagnosticResult
     }
 
     public init(from decoder: Decoder) throws {
@@ -163,6 +167,8 @@ public struct ChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.reasoningText = try container.decodeIfPresent(String.self, forKey: .reasoningText)
         self.rawModelResponse = try container.decodeIfPresent(String.self, forKey: .rawModelResponse)
         self.promptPipelineTrace = try container.decodeIfPresent(PromptPipelineTrace.self, forKey: .promptPipelineTrace)
+        self.pipelineDiagnosticResult = try container.decodeIfPresent(PipelineDiagnosticResult.self, forKey: .pipelineDiagnosticResult)
+            ?? rawModelResponse.flatMap(PipelineDiagnosticResult.parse)
     }
 }
 
