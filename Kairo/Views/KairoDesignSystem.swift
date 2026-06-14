@@ -355,6 +355,37 @@ struct KairoGlassButtonStyle: ButtonStyle {
     var isCompact = false
 
     func makeBody(configuration: Configuration) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            liquidGlassBody(configuration: configuration)
+        } else {
+            fallbackBody(configuration: configuration)
+        }
+    }
+
+    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
+    private func liquidGlassBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(isCompact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
+            .foregroundStyle(isProminent ? KairoDesign.ink : tint)
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, minHeight: isCompact ? 32 : 38)
+            .padding(.horizontal, isCompact ? 10 : 12)
+            .glassEffect(
+                .regular
+                    .tint((isProminent ? tint : KairoDesign.groupedSurface).opacity(isProminent ? 0.22 : 0.10))
+                    .interactive(isEnabled),
+                in: .capsule
+            )
+            .overlay {
+                Capsule()
+                    .stroke(KairoDesign.line.opacity(isProminent ? 0.72 : 0.48), lineWidth: 1)
+            }
+            .shadow(color: KairoDesign.shadow.opacity(isProminent ? 0.26 : 0.14), radius: isProminent ? 12 : 7, x: 0, y: isProminent ? 7 : 3)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .opacity(isEnabled ? 1 : 0.42)
+    }
+
+    private func fallbackBody(configuration: Configuration) -> some View {
         configuration.label
             .font(isCompact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
             .foregroundStyle(isProminent ? KairoDesign.ink : tint)

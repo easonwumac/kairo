@@ -258,7 +258,18 @@ public struct RootView: View {
         }
     }
 
+    @ViewBuilder
     private func rootHeader(topInset: CGFloat) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 18) {
+                rootHeaderContent(topInset: topInset)
+            }
+        } else {
+            rootHeaderContent(topInset: topInset)
+        }
+    }
+
+    private func rootHeaderContent(topInset: CGFloat) -> some View {
         HStack(spacing: 8) {
             Button {
                 switch chromeContext.leadingAction {
@@ -813,32 +824,56 @@ private enum RootSection: String, CaseIterable, Identifiable {
 }
 
 private extension View {
+    @ViewBuilder
     func glassCircleControl() -> some View {
-        self
-            .foregroundStyle(KairoDesign.ink)
-            .frame(width: 36, height: 36)
-            .background {
-                Circle()
-                    .fill(KairoDesign.elevatedSurface.opacity(0.72))
-            }
-            .overlay {
-                Circle()
-                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
-            }
-            .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .foregroundStyle(KairoDesign.ink)
+                .frame(width: 36, height: 36)
+                .glassEffect(.regular.tint(KairoDesign.elevatedSurface.opacity(0.12)).interactive(), in: .circle)
+                .overlay {
+                    Circle()
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(0.34), radius: 10, x: 0, y: 6)
+        } else {
+            self
+                .foregroundStyle(KairoDesign.ink)
+                .frame(width: 36, height: 36)
+                .background {
+                    Circle()
+                        .fill(KairoDesign.elevatedSurface.opacity(0.72))
+                }
+                .overlay {
+                    Circle()
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
+        }
     }
 
+    @ViewBuilder
     func glassCapsuleControl() -> some View {
-        self
-            .background {
-                Capsule()
-                    .fill(KairoDesign.elevatedSurface.opacity(0.72))
-            }
-            .overlay {
-                Capsule()
-                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
-            }
-            .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(KairoDesign.elevatedSurface.opacity(0.12)), in: .capsule)
+                .overlay {
+                    Capsule()
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(0.34), radius: 10, x: 0, y: 6)
+        } else {
+            self
+                .background {
+                    Capsule()
+                        .fill(KairoDesign.elevatedSurface.opacity(0.72))
+                }
+                .overlay {
+                    Capsule()
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
+        }
     }
 }
 #endif
