@@ -345,6 +345,49 @@ public struct TriageKairoCaptureIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct CaptureAndTriageTextInKairoIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Capture and Triage Text in Kairo"
+    public static var description = IntentDescription("Queue text in Kairo and return Action Inbox suggestions for downstream Shortcut branching.")
+    public static var openAppWhenRun = true
+
+    @Parameter(title: "Text")
+    public var text: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let output = try await KairoCaptureIntentSupport.captureAndTriageText(text)
+        return .result(
+            value: try output.encodedJSONString(),
+            dialog: IntentDialog(stringLiteral: output.displayText)
+        )
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct CaptureAndTriageURLInKairoIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Capture and Triage URL in Kairo"
+    public static var description = IntentDescription("Queue a URL in Kairo and return Action Inbox suggestions for downstream Shortcut branching.")
+    public static var openAppWhenRun = true
+
+    @Parameter(title: "URL")
+    public var url: URL
+
+    @Parameter(title: "Note")
+    public var note: String?
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let output = try await KairoCaptureIntentSupport.captureAndTriageURL(url, note: note)
+        return .result(
+            value: try output.encodedJSONString(),
+            dialog: IntentDialog(stringLiteral: output.displayText)
+        )
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public enum KairoOpenSectionAppEnum: String, AppEnum {
     case chat
     case library
@@ -468,6 +511,15 @@ public struct KairoAppShortcutsProvider: AppShortcutsProvider {
             systemImageName: "tray.and.arrow.down"
         )
         AppShortcut(
+            intent: CaptureAndTriageTextInKairoIntent(),
+            phrases: [
+                "Capture and triage text in \(.applicationName)",
+                "Send text to \(.applicationName) inbox"
+            ],
+            shortTitle: "Capture + Triage",
+            systemImageName: "sparkles.rectangle.stack"
+        )
+        AppShortcut(
             intent: OpenKairoSectionIntent(),
             phrases: [
                 "Open \(.applicationName)",
@@ -501,6 +553,15 @@ public struct KairoAppShortcutsProvider: AppShortcutsProvider {
                 "Send URL to \(.applicationName)"
             ],
             shortTitle: "Capture URL",
+            systemImageName: "link.badge.plus"
+        )
+        AppShortcut(
+            intent: CaptureAndTriageURLInKairoIntent(),
+            phrases: [
+                "Capture and triage URL in \(.applicationName)",
+                "Send URL to \(.applicationName) inbox"
+            ],
+            shortTitle: "URL + Triage",
             systemImageName: "link.badge.plus"
         )
     }
@@ -738,6 +799,48 @@ public struct KairoCaptureIntentOutput: Codable, Equatable, Sendable {
     }
 }
 
+public struct KairoCaptureAndTriageOutput: Codable, Equatable, Sendable {
+    public var schemaVersion: Int
+    public var displayText: String
+    public var capture: KairoCaptureIntentOutput
+    public var triage: KairoCaptureTriageOutput?
+    public var queued: Bool
+    public var captureID: UUID?
+    public var recommendedRoute: KairoCaptureTriageRoute
+    public var recommendedDeepLink: String?
+    public var actionKinds: [AgentActionKind]
+
+    public init(
+        schemaVersion: Int = 1,
+        displayText: String,
+        capture: KairoCaptureIntentOutput,
+        triage: KairoCaptureTriageOutput?,
+        queued: Bool,
+        captureID: UUID?,
+        recommendedRoute: KairoCaptureTriageRoute,
+        recommendedDeepLink: String?,
+        actionKinds: [AgentActionKind]
+    ) {
+        self.schemaVersion = schemaVersion
+        self.displayText = displayText
+        self.capture = capture
+        self.triage = triage
+        self.queued = queued
+        self.captureID = captureID
+        self.recommendedRoute = recommendedRoute
+        self.recommendedDeepLink = recommendedDeepLink
+        self.actionKinds = actionKinds
+    }
+
+    public func encodedJSONString() throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(self)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
+
 public enum KairoCaptureTriageRoute: String, Codable, CaseIterable, Sendable {
     case captureReview
     case chat
@@ -776,6 +879,29 @@ enum KairoCaptureIntentSupport {
         return captureOutput(from: capture, fallbackText: note ?? url.absoluteString, routeStore: routeStore)
     }
 
+    static func captureAndTriageText(
+        _ text: String,
+        store: KairoIntentCaptureStore = KairoIntentCaptureStore(),
+        routeStore: KairoIntentRouteStore = KairoIntentRouteStore()
+    ) async throws -> KairoCaptureAndTriageOutput {
+        let capture = store.saveText(text, sourceName: "Shortcut Capture")
+        return try await captureAndTriageOutput(from: capture, fallbackText: text, routeStore: routeStore)
+    }
+
+    static func captureAndTriageURL(
+        _ url: URL,
+        note: String? = nil,
+        store: KairoIntentCaptureStore = KairoIntentCaptureStore(),
+        routeStore: KairoIntentRouteStore = KairoIntentRouteStore()
+    ) async throws -> KairoCaptureAndTriageOutput {
+        let capture = store.saveURL(url, note: note, sourceName: "Shortcut URL")
+        return try await captureAndTriageOutput(
+            from: capture,
+            fallbackText: note ?? url.absoluteString,
+            routeStore: routeStore
+        )
+    }
+
     static func triage(text: String, sourceName: String = "Triage Kairo Capture") async throws -> KairoCaptureTriageOutput {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let builder = ShareAttachmentBuilder()
@@ -808,6 +934,42 @@ enum KairoCaptureIntentSupport {
             suggestionKinds: suggestions.map(\.kind),
             actionKinds: actionKinds,
             proposedActions: actions
+        )
+    }
+
+    private static func captureAndTriageOutput(
+        from capture: KairoIntentCapture?,
+        fallbackText: String,
+        routeStore: KairoIntentRouteStore
+    ) async throws -> KairoCaptureAndTriageOutput {
+        let captureOutput = Self.captureOutput(from: capture, fallbackText: fallbackText, routeStore: routeStore)
+        guard let capture else {
+            return KairoCaptureAndTriageOutput(
+                displayText: captureOutput.displayText,
+                capture: captureOutput,
+                triage: nil,
+                queued: false,
+                captureID: nil,
+                recommendedRoute: captureOutput.recommendedRoute,
+                recommendedDeepLink: captureOutput.recommendedDeepLink,
+                actionKinds: []
+            )
+        }
+
+        let triageOutput = try await Self.triage(text: capture.text, sourceName: capture.sourceName)
+        routeStore.save(triageOutput.recommendedRoute.route)
+        let actionSummary = triageOutput.actionKinds.isEmpty
+            ? triageOutput.triage.rawValue
+            : triageOutput.actionKinds.map(\.rawValue).joined(separator: ", ")
+        return KairoCaptureAndTriageOutput(
+            displayText: "Capture queued and triaged: \(actionSummary)",
+            capture: captureOutput,
+            triage: triageOutput,
+            queued: true,
+            captureID: capture.id,
+            recommendedRoute: triageOutput.recommendedRoute,
+            recommendedDeepLink: triageOutput.recommendedDeepLink,
+            actionKinds: triageOutput.actionKinds
         )
     }
 

@@ -86,6 +86,60 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
         XCTAssertEqual(captures.first?.url?.absoluteString, "https://example.com/afm")
     }
 
+    func testCaptureAndTriageTextQueuesCaptureAndReturnsActionOutput() async throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        let routeKey = "kairo_intent_pending_route_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+        let routeStore = KairoIntentRouteStore(defaults: defaults, key: routeKey)
+
+        let output = try await KairoCaptureIntentSupport.captureAndTriageText(
+            "週五前整理 Kairo AFM demo",
+            store: captureStore,
+            routeStore: routeStore
+        )
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(KairoCaptureAndTriageOutput.self, from: Data(output.encodedJSONString().utf8))
+
+        XCTAssertTrue(decoded.queued)
+        XCTAssertEqual(decoded.capture.queued, true)
+        XCTAssertEqual(decoded.captureID, decoded.capture.captureID)
+        XCTAssertEqual(decoded.triage?.triage, .createReminder)
+        XCTAssertEqual(decoded.actionKinds, [.createReminderDraft])
+        XCTAssertEqual(decoded.recommendedRoute, .captureReview)
+        XCTAssertEqual(decoded.recommendedDeepLink, KairoCaptureTriageRoute.captureReview.deepLinkString)
+        XCTAssertEqual(routeStore.consume(), .captureReview)
+        let captures = captureStore.consume()
+        XCTAssertEqual(captures.map(\.id), [try XCTUnwrap(decoded.captureID)])
+        XCTAssertEqual(captures.first?.text, "週五前整理 Kairo AFM demo")
+    }
+
+    func testCaptureAndTriageURLRejectsUnsupportedSchemeWithoutQueueingOrTriage() async throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        let routeKey = "kairo_intent_pending_route_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+        let routeStore = KairoIntentRouteStore(defaults: defaults, key: routeKey)
+
+        let output = try await KairoCaptureIntentSupport.captureAndTriageURL(
+            URL(string: "file:///tmp/private.txt")!,
+            store: captureStore,
+            routeStore: routeStore
+        )
+
+        XCTAssertFalse(output.queued)
+        XCTAssertNil(output.captureID)
+        XCTAssertNil(output.triage)
+        XCTAssertEqual(output.actionKinds, [])
+        XCTAssertNil(routeStore.consume())
+        XCTAssertEqual(captureStore.consume(), [])
+    }
+
     func testTriageCaptureReturnsMemoryActionForRememberedText() async throws {
         let output = try await KairoCaptureIntentSupport.triage(
             text: "記住：AFM 適合短上下文分類。",
