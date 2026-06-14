@@ -62,6 +62,7 @@ public final class ChatViewModel: ObservableObject {
     private let chatAttachmentRootDirectory: URL?
     private var pendingActionSource: PendingActionSource?
     private var importedShareItemIDs: [UUID] = []
+    private var importedShareReviewQueue: [AgentAction] = []
     private var inferenceProgressTask: Task<Void, Never>?
     private var lastTurnAssetIDs: [UUID] = []
 
@@ -287,7 +288,8 @@ public final class ChatViewModel: ObservableObject {
             }
             shareImportNotice = Self.shareImportNotice(importedCount: imported.importedItemIDs.count)
             shareImportPreview = Self.shareImportPreview(for: imported.attachments)
-            shareImportReviewAction = imported.suggestedActions.first
+            importedShareReviewQueue = imported.suggestedActions
+            shareImportReviewAction = importedShareReviewQueue.first
             await refreshBriefingSnapshot()
             errorMessage = nil
         } catch {
@@ -600,8 +602,7 @@ public final class ChatViewModel: ObservableObject {
 
     public func reviewImportedShareAction() {
         guard let action = shareImportReviewAction else { return }
-        previewAction(action)
-        pendingActionSource = .importedShare
+        presentImportedShareReview(action)
     }
 
     public func reviewCalendarAction() {
@@ -688,7 +689,8 @@ public final class ChatViewModel: ObservableObject {
         if let action = pendingAction {
             switch pendingActionSource {
             case .importedShare:
-                shareImportReviewAction = action
+                _ = presentNextImportedShareReviewIfAvailable()
+                return
             case .calendarReview:
                 calendarReviewAction = action
             case .handoffReview:
@@ -709,11 +711,16 @@ public final class ChatViewModel: ObservableObject {
             actionResultMessage = Self.actionResultMessage(for: result, action: action, source: actionSource)
             actionResultSucceeded = result.completed
             if actionSource == .importedShare, result.completed {
-                let importedItemIDs = importedShareItemIDs
-                let importedAttachments = pendingAttachments
-                try await shareImportAPI.clearImportedShares(ids: importedItemIDs, attachments: importedAttachments)
-                clearShareImportState()
-                await refreshBriefingSnapshot()
+                if presentNextImportedShareReviewIfAvailable() {
+                    errorMessage = nil
+                    return
+                } else {
+                    let importedItemIDs = importedShareItemIDs
+                    let importedAttachments = pendingAttachments
+                    try await shareImportAPI.clearImportedShares(ids: importedItemIDs, attachments: importedAttachments)
+                    clearShareImportState()
+                    await refreshBriefingSnapshot()
+                }
             }
             errorMessage = nil
         } catch {
@@ -725,10 +732,29 @@ public final class ChatViewModel: ObservableObject {
         pendingActionSource = nil
     }
 
+    private func presentImportedShareReview(_ action: AgentAction) {
+        importedShareReviewQueue.removeAll { $0.id == action.id }
+        previewAction(action)
+        pendingActionSource = .importedShare
+        shareImportReviewAction = importedShareReviewQueue.first
+    }
+
+    private func presentNextImportedShareReviewIfAvailable() -> Bool {
+        pendingAction = nil
+        pendingActionSource = nil
+        guard let nextAction = importedShareReviewQueue.first else {
+            shareImportReviewAction = nil
+            return false
+        }
+        presentImportedShareReview(nextAction)
+        return true
+    }
+
     private func clearTransientActionState() {
         pendingAction = nil
         pendingActionSource = nil
         shareImportReviewAction = nil
+        importedShareReviewQueue = []
         calendarReviewAction = nil
         handoffReviewAction = nil
         actionResultMessage = nil
@@ -753,6 +779,7 @@ public final class ChatViewModel: ObservableObject {
     private func clearShareImportState() {
         pendingAttachments = []
         importedShareItemIDs = []
+        importedShareReviewQueue = []
         shareImportNotice = nil
         shareImportPreview = nil
     }

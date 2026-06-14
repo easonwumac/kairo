@@ -114,6 +114,77 @@ final class ShareImportReviewStateTests: XCTestCase {
     }
 
     @MainActor
+    func testCaptureBriefingReviewAdvancesThroughQueuedActionsBeforeClearingShare() async throws {
+        let builder = ShareAttachmentBuilder()
+        let sharedItem = ShareIngestionItem(
+            attachments: [builder.text("週五前整理 Kairo demo，補 Google Maps 和 Todoist 測試。", displayName: "Tasks")],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [sharedItem])
+        let executor = ShareImportReviewMockExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: queue,
+            chatAPI: KairoChatBackendService(
+                agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+            ),
+            actionExecutor: executor
+        )
+
+        await viewModel.reviewCaptureBriefing()
+        XCTAssertEqual(viewModel.pendingAction?.kind, .createReminderDraft)
+
+        await viewModel.confirmPendingAction()
+        XCTAssertEqual(viewModel.pendingAction?.kind, .createReminderDraft)
+        let pendingAfterFirstConfirmation = try await queue.pendingItems(limit: 10)
+        XCTAssertFalse(pendingAfterFirstConfirmation.isEmpty)
+
+        await viewModel.confirmPendingAction()
+        XCTAssertEqual(viewModel.pendingAction?.kind, .createReminderDraft)
+        let pendingAfterSecondConfirmation = try await queue.pendingItems(limit: 10)
+        XCTAssertFalse(pendingAfterSecondConfirmation.isEmpty)
+
+        await viewModel.confirmPendingAction()
+
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertNil(viewModel.shareImportNotice)
+        let pendingAfterFinalConfirmation = try await queue.pendingItems(limit: 10)
+        XCTAssertEqual(pendingAfterFinalConfirmation, [])
+        let executedKinds = await executor.executedKinds()
+        XCTAssertEqual(executedKinds, [.createReminderDraft, .createReminderDraft, .createReminderDraft])
+    }
+
+    @MainActor
+    func testCaptureBriefingCancelSkipsCurrentQueuedActionWithoutExecuting() async throws {
+        let builder = ShareAttachmentBuilder()
+        let sharedItem = ShareIngestionItem(
+            attachments: [builder.text("週五前整理 Kairo demo，補 Google Maps 和 Todoist 測試。", displayName: "Tasks")],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let executor = ShareImportReviewMockExecutor()
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: InMemoryShareIngestionQueue(seed: [sharedItem]),
+            chatAPI: KairoChatBackendService(
+                agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+            ),
+            actionExecutor: executor
+        )
+
+        await viewModel.reviewCaptureBriefing()
+        let firstActionID = viewModel.pendingAction?.id
+
+        viewModel.cancelPendingAction()
+
+        XCTAssertEqual(viewModel.pendingAction?.kind, .createReminderDraft)
+        XCTAssertNotEqual(viewModel.pendingAction?.id, firstActionID)
+        let executedKinds = await executor.executedKinds()
+        XCTAssertTrue(executedKinds.isEmpty)
+    }
+
+    @MainActor
     private func makeShareImportViewModel() -> ChatViewModel {
         let builder = ShareAttachmentBuilder()
         let sharedItem = ShareIngestionItem(
