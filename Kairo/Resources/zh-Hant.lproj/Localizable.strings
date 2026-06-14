@@ -1243,3 +1243,4 @@
 "chat.captureReview.item.saved" = "保存";
 "chat.captureReview.item.noAction" = "無動作";
 "chat.captureReview.item.actions" = "%lld 個動作";
+"chat.captureReview.item.active" = "目前";

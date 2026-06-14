@@ -1243,3 +1243,4 @@
 "chat.captureReview.item.saved" = "Saved";
 "chat.captureReview.item.noAction" = "No action";
 "chat.captureReview.item.actions" = "%lld actions";
+"chat.captureReview.item.active" = "Now";

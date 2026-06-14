@@ -123,6 +123,7 @@ final class ShareImportReviewStateTests: XCTestCase {
     @MainActor
     func testCaptureBriefingSummaryTracksMixedPendingCaptureSuggestions() async throws {
         let builder = ShareAttachmentBuilder()
+        let executor = ShareImportReviewMockExecutor()
         let queue = InMemoryShareIngestionQueue(seed: [
             ShareIngestionItem(
                 attachments: [builder.text("週五前整理 Kairo demo", displayName: "Task")],
@@ -145,7 +146,8 @@ final class ShareImportReviewStateTests: XCTestCase {
             shareIngestionQueue: queue,
             chatAPI: KairoChatBackendService(
                 agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
-            )
+            ),
+            actionExecutor: executor
         )
 
         await viewModel.importPendingShares()
@@ -161,7 +163,19 @@ final class ShareImportReviewStateTests: XCTestCase {
         XCTAssertEqual(viewModel.captureReviewItems.map(\.actionCount), [1, 1, 0])
         XCTAssertTrue(viewModel.captureReviewItems.allSatisfy { !$0.title.isEmpty })
         XCTAssertTrue(viewModel.captureReviewItems.allSatisfy { !$0.detail.isEmpty })
+        XCTAssertEqual(viewModel.captureReviewItems.map(\.isActive), [false, false, false])
         XCTAssertEqual(viewModel.shareImportReviewAction?.kind, .createReminderDraft)
+
+        viewModel.reviewImportedShareAction()
+        XCTAssertEqual(viewModel.pendingAction?.kind, .createReminderDraft)
+        XCTAssertEqual(viewModel.captureReviewItems.map(\.isActive), [true, false, false])
+
+        await viewModel.confirmPendingAction()
+        XCTAssertEqual(viewModel.pendingAction?.kind, .saveMemory)
+        XCTAssertEqual(viewModel.captureReviewItems.map(\.isActive), [false, true, false])
+
+        await viewModel.confirmPendingAction()
+        XCTAssertEqual(viewModel.captureReviewItems, [])
     }
 
     @MainActor

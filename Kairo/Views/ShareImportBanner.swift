@@ -119,10 +119,23 @@ private struct CaptureReviewItemRow: View {
 
             Spacer(minLength: 6)
 
-            Text(item.actionText)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
+            VStack(alignment: .trailing, spacing: 3) {
+                if item.isActive {
+                    Text(KairoL10n.string("chat.captureReview.item.active"))
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                Text(item.actionText)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
         }
+        .padding(7)
+        .background(item.isActive ? Color.accentColor.opacity(0.08) : Color.clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(item.isActive ? Color.accentColor.opacity(0.26) : Color.clear, lineWidth: 1)
+        )
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.capture-review.item")
     }

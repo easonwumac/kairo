@@ -71,19 +71,22 @@ public struct CaptureReviewItem: Identifiable, Equatable, Sendable {
     public var title: String
     public var detail: String
     public var actionCount: Int
+    public var isActive: Bool
 
     public init(
         id: UUID,
         triage: ActionInboxTriage,
         title: String,
         detail: String,
-        actionCount: Int
+        actionCount: Int,
+        isActive: Bool = false
     ) {
         self.id = id
         self.triage = triage
         self.title = title
         self.detail = detail
         self.actionCount = actionCount
+        self.isActive = isActive
     }
 
     public var triageText: String {
@@ -235,6 +238,7 @@ public final class ChatViewModel: ObservableObject {
     private var pendingActionSource: PendingActionSource?
     private var importedShareItemIDs: [UUID] = []
     private var importedShareReviewQueue: [AgentAction] = []
+    private var captureReviewPresentedActionCount = 0
     private var inferenceProgressTask: Task<Void, Never>?
     private var lastTurnAssetIDs: [UUID] = []
 
@@ -465,6 +469,7 @@ public final class ChatViewModel: ObservableObject {
             shareImportReviewAction = importedShareReviewQueue.first
             captureReviewSummary = reviewState?.summary.hasWork == true ? reviewState?.summary : nil
             captureReviewItems = reviewState?.items ?? []
+            captureReviewPresentedActionCount = 0
             await refreshBriefingSnapshot()
             errorMessage = nil
         } catch {
@@ -507,6 +512,7 @@ public final class ChatViewModel: ObservableObject {
         shareImportReviewAction = firstReminderActionFromLatestAssistantMessage()
         captureReviewSummary = nil
         captureReviewItems = []
+        captureReviewPresentedActionCount = 0
     }
 
     public func addAttachment(_ attachment: ChatAttachment) {
@@ -529,6 +535,7 @@ public final class ChatViewModel: ObservableObject {
         shareImportPreview = nil
         captureReviewSummary = nil
         captureReviewItems = []
+        captureReviewPresentedActionCount = 0
         self.replyTarget = nil
         await send(composedMessageText(text: text, replyTarget: replyTarget, hasAttachments: !attachments.isEmpty), attachments: attachments)
     }
@@ -913,6 +920,8 @@ public final class ChatViewModel: ObservableObject {
 
     private func presentImportedShareReview(_ action: AgentAction) {
         importedShareReviewQueue.removeAll { $0.id == action.id }
+        markActiveCaptureReviewItem(forActionOrdinal: captureReviewPresentedActionCount)
+        captureReviewPresentedActionCount += 1
         previewAction(action)
         pendingActionSource = .importedShare
         shareImportReviewAction = importedShareReviewQueue.first
@@ -923,6 +932,7 @@ public final class ChatViewModel: ObservableObject {
         pendingActionSource = nil
         guard let nextAction = importedShareReviewQueue.first else {
             shareImportReviewAction = nil
+            markActiveCaptureReviewItem(forActionOrdinal: nil)
             return false
         }
         presentImportedShareReview(nextAction)
@@ -963,6 +973,7 @@ public final class ChatViewModel: ObservableObject {
         shareImportPreview = nil
         captureReviewSummary = nil
         captureReviewItems = []
+        captureReviewPresentedActionCount = 0
     }
 
     private func loadCaptureReviewState() async -> (summary: CaptureReviewSummary, items: [CaptureReviewItem])? {
@@ -971,6 +982,34 @@ public final class ChatViewModel: ObservableObject {
         }
         let builder = CaptureReviewSummaryBuilder()
         return (builder.summary(from: items), builder.reviewItems(from: items))
+    }
+
+    private func markActiveCaptureReviewItem(forActionOrdinal actionOrdinal: Int?) {
+        guard let actionOrdinal else {
+            captureReviewItems = captureReviewItems.map { item in
+                var updated = item
+                updated.isActive = false
+                return updated
+            }
+            return
+        }
+
+        var runningActionCount = 0
+        var activeID: UUID?
+        for item in captureReviewItems {
+            let nextActionCount = runningActionCount + item.actionCount
+            if actionOrdinal >= runningActionCount && actionOrdinal < nextActionCount {
+                activeID = item.id
+                break
+            }
+            runningActionCount = nextActionCount
+        }
+
+        captureReviewItems = captureReviewItems.map { item in
+            var updated = item
+            updated.isActive = item.id == activeID
+            return updated
+        }
     }
 
     private func localConversationHistory() -> [AIConversationTurn] {
