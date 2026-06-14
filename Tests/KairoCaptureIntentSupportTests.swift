@@ -3,6 +3,15 @@ import XCTest
 
 #if canImport(AppIntents)
 final class KairoCaptureIntentSupportTests: XCTestCase {
+    func testOpenSectionIntentEnumMapsToRouterSections() {
+        XCTAssertEqual(KairoOpenSectionAppEnum.chat.routeSection, .chat)
+        XCTAssertEqual(KairoOpenSectionAppEnum.library.routeSection, .assets)
+        XCTAssertEqual(KairoOpenSectionAppEnum.infoPages.routeSection, .pages)
+        XCTAssertEqual(KairoOpenSectionAppEnum.memory.routeSection, .memory)
+        XCTAssertEqual(KairoOpenSectionAppEnum.models.routeSection, .models)
+        XCTAssertEqual(KairoOpenSectionAppEnum.permissions.routeSection, .access)
+    }
+
     func testTriageCaptureReturnsMemoryActionForRememberedText() async throws {
         let output = try await KairoCaptureIntentSupport.triage(
             text: "記住：AFM 適合短上下文分類。",

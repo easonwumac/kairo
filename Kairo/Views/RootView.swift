@@ -124,6 +124,9 @@ public struct RootView: View {
             consumePendingRoute()
         }
         .task {
+            if let route = KairoIntentRouteStore().consume(router: environment.urlRouter) {
+                urlRouter.navigate(to: route)
+            }
             consumePendingRoute()
         }
     }
@@ -243,6 +246,12 @@ public struct RootView: View {
 
     private func handle(_ route: KairoURLRoute) {
         switch route {
+        case .section(let section):
+            isOnboardingCompleted = true
+            selectedSection = RootSection(section)
+            isMenuPresented = false
+            isPageActionsPresented = false
+            wikiRouteRequest = nil
         case .search, .infoPage, .knowledgeAsset, .memoryRecord:
             isOnboardingCompleted = true
             selectedSection = .wiki
@@ -840,6 +849,35 @@ private enum RootSection: String, CaseIterable, Identifiable {
             return KairoDesign.amber
         case .settings:
             return KairoDesign.muted
+        }
+    }
+}
+
+private extension RootSection {
+    init(_ section: KairoURLSection) {
+        switch section {
+        case .chat:
+            self = .chat
+        case .wiki:
+            self = .wiki
+        case .assets:
+            self = .assets
+        case .pages:
+            self = .pages
+        case .categories:
+            self = .categories
+        case .memory:
+            self = .memory
+        case .shortcuts:
+            self = .shortcuts
+        case .access:
+            self = .access
+        case .models:
+            self = .models
+        case .performance:
+            self = .performance
+        case .settings:
+            self = .settings
         }
     }
 }

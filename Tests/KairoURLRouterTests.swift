@@ -33,6 +33,30 @@ final class KairoURLRouterTests: XCTestCase {
         XCTAssertEqual(router.parse(url), .search(query: "hong kong"))
     }
 
+    func testParsesSectionDeepLink() {
+        let url = URL(string: "kairo://open/assets")!
+        XCTAssertEqual(router.parse(url), .section(.assets))
+    }
+
+    func testSectionDeepLinkIsRoundTrip() {
+        let route: KairoURLRoute = .section(.memory)
+        let url = route.deepLink
+        XCTAssertNotNil(url)
+        XCTAssertEqual(router.parse(url!), route)
+    }
+
+    func testIntentRouteStoreConsumesSectionRouteOnce() {
+        let suiteName = "KairoURLRouterTests-\(UUID().uuidString)"
+        let defaults = try! XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = KairoIntentRouteStore(defaults: defaults)
+
+        store.save(.section(.models))
+
+        XCTAssertEqual(store.consume(router: router), .section(.models))
+        XCTAssertNil(store.consume(router: router))
+    }
+
     func testRejectsUnknownScheme() {
         let url = URL(string: "https://info-page/\(UUID().uuidString)")!
         XCTAssertNil(router.parse(url))

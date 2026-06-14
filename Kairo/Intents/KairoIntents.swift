@@ -345,6 +345,60 @@ public struct TriageKairoCaptureIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public enum KairoOpenSectionAppEnum: String, AppEnum {
+    case chat
+    case library
+    case infoPages
+    case memory
+    case models
+    case permissions
+
+    public static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Kairo Section")
+    public static var caseDisplayRepresentations: [KairoOpenSectionAppEnum: DisplayRepresentation] = [
+        .chat: "Chat",
+        .library: "Library",
+        .infoPages: "InfoPages",
+        .memory: "Memory",
+        .models: "Models",
+        .permissions: "Permissions"
+    ]
+
+    public var routeSection: KairoURLSection {
+        switch self {
+        case .chat:
+            return .chat
+        case .library:
+            return .assets
+        case .infoPages:
+            return .pages
+        case .memory:
+            return .memory
+        case .models:
+            return .models
+        case .permissions:
+            return .access
+        }
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct OpenKairoSectionIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Open Kairo"
+    public static var description = IntentDescription("Open Kairo to a focused workspace such as Chat, Library, InfoPages, Memory, Models, or Permissions.")
+    public static var openAppWhenRun = true
+
+    @Parameter(title: "Section")
+    public var section: KairoOpenSectionAppEnum
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog {
+        KairoIntentRouteStore().save(.section(section.routeSection))
+        return .result(dialog: IntentDialog(stringLiteral: "Opening Kairo \(section.rawValue)."))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct KairoAppShortcutsProvider: AppShortcutsProvider {
     public static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -355,6 +409,15 @@ public struct KairoAppShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Triage Capture",
             systemImageName: "tray.and.arrow.down"
+        )
+        AppShortcut(
+            intent: OpenKairoSectionIntent(),
+            phrases: [
+                "Open \(.applicationName)",
+                "Open \(.applicationName) workspace"
+            ],
+            shortTitle: "Open Kairo",
+            systemImageName: "arrow.up.right.square"
         )
     }
 }
