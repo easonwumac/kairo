@@ -67,17 +67,11 @@ public struct PermissionHubView: View {
     public var body: some View {
         GeometryReader { proxy in
             ScrollView {
-                Group {
-                    if let activePage {
-                        pageView(for: activePage)
-                    } else {
-                        hubHome
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
-                .padding(.bottom, 32)
+                permissionHubContent
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
+                    .padding(.bottom, 32)
             }
             .background(KairoDesign.background.ignoresSafeArea())
             .scrollIndicators(.hidden)
@@ -89,6 +83,26 @@ public struct PermissionHubView: View {
             .onChange(of: rootChromeBackRequestID) { _, _ in
                 popPage()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var permissionHubContent: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 16) {
+                permissionHubPageContent
+            }
+        } else {
+            permissionHubPageContent
+        }
+    }
+
+    @ViewBuilder
+    private var permissionHubPageContent: some View {
+        if let activePage {
+            pageView(for: activePage)
+        } else {
+            hubHome
         }
     }
 
@@ -134,75 +148,75 @@ public struct PermissionHubView: View {
     }
 
     private var accessOverviewCard: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 14) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(KairoL10n.string("access.overview.title"))
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(KairoDesign.ink)
-                }
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(KairoL10n.string("access.overview.title"))
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(KairoDesign.ink)
+            }
 
-                KairoStatusPill(
-                    title: KairoL10n.string("access.status.ready", Int64(readyCapabilityCount)),
-                    systemImage: "checkmark.circle.fill",
-                    tint: KairoDesign.green
+            KairoStatusPill(
+                title: KairoL10n.string("access.status.ready", Int64(readyCapabilityCount)),
+                systemImage: "checkmark.circle.fill",
+                tint: KairoDesign.green
+            )
+
+            Button {
+                withAnimation(.snappy(duration: 0.2)) {
+                    isAccessStatusExpanded.toggle()
+                }
+            } label: {
+                disclosureHeader(
+                    title: KairoL10n.string("access.status.details.title"),
+                    isExpanded: isAccessStatusExpanded
                 )
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("access.status.details.toggle")
 
-                Button {
-                    withAnimation(.snappy(duration: 0.2)) {
-                        isAccessStatusExpanded.toggle()
-                    }
-                } label: {
-                    disclosureHeader(
-                        title: KairoL10n.string("access.status.details.title"),
-                        isExpanded: isAccessStatusExpanded
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("access.status.details.toggle")
-
-                if isAccessStatusExpanded {
-                    HStack(spacing: 8) {
-                        KairoStatusPill(
-                            title: KairoL10n.string("access.status.reviewFirst"),
-                            systemImage: "checkmark.shield.fill",
-                            tint: KairoDesign.blue
-                        )
-                        KairoStatusPill(
-                            title: KairoL10n.string("access.status.needsSetup", Int64(needsSetupCapabilityCount)),
-                            systemImage: "wrench.and.screwdriver.fill",
-                            tint: KairoDesign.amber
-                        )
-                    }
+            if isAccessStatusExpanded {
+                HStack(spacing: 8) {
                     KairoStatusPill(
-                        title: KairoL10n.string("access.status.unavailable", Int64(unavailableCapabilityCount)),
-                        systemImage: "nosign",
-                        tint: KairoDesign.red
+                        title: KairoL10n.string("access.status.reviewFirst"),
+                        systemImage: "checkmark.shield.fill",
+                        tint: KairoDesign.blue
                     )
-                    .accessibilityIdentifier("access.status.unavailable")
+                    KairoStatusPill(
+                        title: KairoL10n.string("access.status.needsSetup", Int64(needsSetupCapabilityCount)),
+                        systemImage: "wrench.and.screwdriver.fill",
+                        tint: KairoDesign.amber
+                    )
                 }
+                KairoStatusPill(
+                    title: KairoL10n.string("access.status.unavailable", Int64(unavailableCapabilityCount)),
+                    systemImage: "nosign",
+                    tint: KairoDesign.red
+                )
+                .accessibilityIdentifier("access.status.unavailable")
             }
         }
+        .padding(16)
+        .permissionHubGlassSurface(tint: KairoDesign.green)
         .accessibilityIdentifier("access.overview.card")
     }
 
     private var primaryToolsPage: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 12) {
-                accessSectionTitle(
-                    title: KairoL10n.string("access.capabilities.section")
-                )
-                .accessibilityIdentifier("access.capabilities.section")
+        VStack(alignment: .leading, spacing: 12) {
+            accessSectionTitle(
+                title: KairoL10n.string("access.capabilities.section")
+            )
+            .accessibilityIdentifier("access.capabilities.section")
 
-                ForEach(primaryCapabilities) { capability in
-                    capabilityRow(capability, forceExpanded: true)
-                    if capability.key != primaryCapabilities.last?.key {
-                        Divider()
-                    }
+            ForEach(primaryCapabilities) { capability in
+                capabilityRow(capability, forceExpanded: true)
+                if capability.key != primaryCapabilities.last?.key {
+                    Divider()
                 }
             }
         }
+        .padding(16)
+        .permissionHubGlassSurface(tint: KairoDesign.blue)
         .transition(.asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
             removal: .move(edge: .leading).combined(with: .opacity)
@@ -210,11 +224,11 @@ public struct PermissionHubView: View {
     }
 
     private var managedToolsPage: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 12) {
-                skillManagerContent
-            }
+        VStack(alignment: .leading, spacing: 12) {
+            skillManagerContent
         }
+        .padding(16)
+        .permissionHubGlassSurface(tint: KairoDesign.teal)
         .transition(.asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
             removal: .move(edge: .leading).combined(with: .opacity)
@@ -350,31 +364,31 @@ public struct PermissionHubView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            KairoFocusCard {
-                HStack(alignment: .center, spacing: 12) {
-                    Image(systemName: systemImage)
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 34, height: 34)
+                    .permissionHubGlassIcon(tint: tint)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(tint)
-                        .frame(width: 34, height: 34)
-                        .background(tint.opacity(0.12), in: Circle())
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(title)
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(KairoDesign.ink)
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 8)
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.bold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(subtitle)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
             }
+            .padding(16)
+            .permissionHubGlassSurface(tint: tint, isInteractive: true)
         }
         .buttonStyle(.plain)
     }
@@ -412,7 +426,7 @@ public struct PermissionHubView: View {
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(capabilityTint(for: capability))
                 .frame(width: 30, height: 30)
-                .background(capabilityTint(for: capability).opacity(0.10), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .permissionHubGlassIcon(tint: capabilityTint(for: capability), cornerRadius: 9)
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .top, spacing: 8) {
@@ -714,14 +728,14 @@ public struct PermissionHubView: View {
             TextField(KairoL10n.string("access.skills.localCreate.namePlaceholder"), text: $localSkillName)
                 .textFieldStyle(.plain)
                 .padding(10)
-                .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .permissionHubGlassField(cornerRadius: 12)
                 .accessibilityIdentifier("access.skills.local-create.name")
 
             TextField(KairoL10n.string("access.skills.localCreate.summaryPlaceholder"), text: $localSkillSummary, axis: .vertical)
                 .lineLimit(2...4)
                 .textFieldStyle(.plain)
                 .padding(10)
-                .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .permissionHubGlassField(cornerRadius: 12)
                 .accessibilityIdentifier("access.skills.local-create.summary")
 
             Picker(KairoL10n.string("access.skills.localCreate.capability"), selection: $localSkillCapability) {
@@ -767,7 +781,7 @@ public struct PermissionHubView: View {
                 .font(.caption)
                 .scrollContentBackground(.hidden)
                 .padding(8)
-                .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .permissionHubGlassField(cornerRadius: 12)
                 .accessibilityIdentifier("access.skills.manifest-import.text")
 
             Button {
@@ -793,11 +807,7 @@ public struct PermissionHubView: View {
                 .foregroundStyle(KairoDesign.ink)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        .stroke(KairoDesign.line.opacity(0.8), lineWidth: 1)
-                }
+                .permissionHubGlassField(cornerRadius: 15, tint: KairoDesign.blue)
                 .accessibilityIdentifier("access.skills.search")
 
             Text(skillSearchSummary)
@@ -953,17 +963,12 @@ public struct PermissionHubView: View {
     private func skillManagerRow(_ skill: AgentSkill) -> some View {
         HStack(alignment: .center, spacing: 13) {
             ZStack {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .fill(KairoDesign.softSurface.opacity(0.64))
                 Image(systemName: skill.installationStatus == .installed ? "checkmark" : "plus")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(skillStatusTint(for: skill))
             }
             .frame(width: 42, height: 42)
-            .overlay {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .stroke(skillStatusTint(for: skill).opacity(0.22), lineWidth: 1)
-            }
+            .permissionHubGlassIcon(tint: skillStatusTint(for: skill), cornerRadius: 15)
 
             VStack(alignment: .leading, spacing: 7) {
                 Text(skill.displayName)
@@ -977,7 +982,7 @@ public struct PermissionHubView: View {
                     .foregroundStyle(skillStatusTint(for: skill))
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
-                    .background(skillStatusTint(for: skill).opacity(0.12), in: Capsule())
+                    .permissionHubGlassTag(tint: skillStatusTint(for: skill))
 
                 Text(skill.summary)
                     .font(.caption2)
@@ -995,12 +1000,7 @@ public struct PermissionHubView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(KairoDesign.elevatedSurface.opacity(0.66), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(KairoDesign.line, lineWidth: 1)
-        }
-        .shadow(color: KairoDesign.shadow.opacity(0.34), radius: 16, x: 0, y: 10)
+        .permissionHubGlassSurface(tint: skillStatusTint(for: skill), cornerRadius: 20, shadowRadius: 16, shadowY: 10)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("access.skill.\(skill.id)")
     }
@@ -1373,6 +1373,96 @@ public struct PermissionHubView: View {
             .accessibilityIdentifier("access.homekit.demo.\(recipe.id).confirm")
         }
         .padding(.vertical, 4)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func permissionHubGlassSurface(
+        tint: Color,
+        cornerRadius: CGFloat = 22,
+        isInteractive: Bool = false,
+        fallbackOpacity: Double = 0.66,
+        shadowRadius: CGFloat = 18,
+        shadowY: CGFloat = 11
+    ) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.12)).interactive(), in: .rect(cornerRadius: cornerRadius))
+                    .overlay {
+                        shape.stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    }
+                    .shadow(color: KairoDesign.shadow.opacity(0.28), radius: shadowRadius, x: 0, y: shadowY)
+            } else {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.09)), in: .rect(cornerRadius: cornerRadius))
+                    .overlay {
+                        shape.stroke(KairoDesign.line.opacity(0.66), lineWidth: 1)
+                    }
+                    .shadow(color: KairoDesign.shadow.opacity(0.24), radius: shadowRadius, x: 0, y: shadowY)
+            }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface.opacity(fallbackOpacity), in: shape)
+                .overlay {
+                    shape.stroke(KairoDesign.line.opacity(0.74), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(0.34), radius: shadowRadius, x: 0, y: shadowY)
+        }
+    }
+
+    @ViewBuilder
+    func permissionHubGlassField(cornerRadius: CGFloat, tint: Color = KairoDesign.muted) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(0.08)).interactive(), in: .rect(cornerRadius: cornerRadius))
+                .overlay {
+                    shape.stroke(KairoDesign.line.opacity(0.58), lineWidth: 1)
+                }
+        } else {
+            self
+                .background(KairoDesign.softSurface.opacity(0.55), in: shape)
+                .overlay {
+                    shape.stroke(KairoDesign.line.opacity(0.8), lineWidth: 1)
+                }
+        }
+    }
+
+    @ViewBuilder
+    func permissionHubGlassIcon(tint: Color, cornerRadius: CGFloat? = nil) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if let cornerRadius {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.10)), in: .rect(cornerRadius: cornerRadius))
+            } else {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.12)), in: .circle)
+            }
+        } else {
+            if let cornerRadius {
+                self
+                    .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            } else {
+                self
+                    .background(tint.opacity(0.12), in: Circle())
+            }
+        }
+    }
+
+    @ViewBuilder
+    func permissionHubGlassTag(tint: Color) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(0.10)), in: .capsule)
+        } else {
+            self
+                .background(tint.opacity(0.12), in: Capsule())
+        }
     }
 }
 
