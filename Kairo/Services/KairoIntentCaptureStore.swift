@@ -80,6 +80,10 @@ public struct KairoIntentCaptureStore {
         return captures
     }
 
+    public func clear() -> [KairoIntentCapture] {
+        consume()
+    }
+
     public func pending() -> [KairoIntentCapture] {
         load()
     }

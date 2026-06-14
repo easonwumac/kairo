@@ -515,6 +515,25 @@ public struct GetKairoCaptureInboxStatusIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct ClearKairoCaptureInboxIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Clear Kairo Capture Inbox"
+    public static var description = IntentDescription("Discard pending Kairo captures only when explicitly confirmed by the Shortcut.")
+
+    @Parameter(title: "Confirm Clear")
+    public var confirmClear: Bool
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let output = KairoCaptureIntentSupport.clearCaptureInbox(confirmClear: confirmClear)
+        return .result(
+            value: try output.encodedJSONString(),
+            dialog: IntentDialog(stringLiteral: output.displayText)
+        )
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct KairoAppShortcutsProvider: AppShortcutsProvider {
     public static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -561,6 +580,15 @@ public struct KairoAppShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Capture Status",
             systemImageName: "tray.full"
+        )
+        AppShortcut(
+            intent: ClearKairoCaptureInboxIntent(),
+            phrases: [
+                "Clear \(.applicationName) capture inbox",
+                "Discard \(.applicationName) captures"
+            ],
+            shortTitle: "Clear Captures",
+            systemImageName: "trash"
         )
         AppShortcut(
             intent: CaptureTextInKairoIntent(),
@@ -917,6 +945,51 @@ public struct KairoCaptureInboxStatusOutput: Codable, Equatable, Sendable {
     }
 }
 
+public struct KairoCaptureInboxClearOutput: Codable, Equatable, Sendable {
+    public var schemaVersion: Int
+    public var displayText: String
+    public var confirmed: Bool
+    public var cleared: Bool
+    public var clearedCount: Int
+    public var remainingCount: Int
+    public var clearedCaptureIDs: [UUID]
+    public var clearedTextPreviews: [String]
+    public var recommendedRoute: KairoCaptureTriageRoute
+    public var recommendedDeepLink: String?
+
+    public init(
+        schemaVersion: Int = 1,
+        displayText: String,
+        confirmed: Bool,
+        cleared: Bool,
+        clearedCount: Int,
+        remainingCount: Int,
+        clearedCaptureIDs: [UUID],
+        clearedTextPreviews: [String],
+        recommendedRoute: KairoCaptureTriageRoute,
+        recommendedDeepLink: String?
+    ) {
+        self.schemaVersion = schemaVersion
+        self.displayText = displayText
+        self.confirmed = confirmed
+        self.cleared = cleared
+        self.clearedCount = clearedCount
+        self.remainingCount = remainingCount
+        self.clearedCaptureIDs = clearedCaptureIDs
+        self.clearedTextPreviews = clearedTextPreviews
+        self.recommendedRoute = recommendedRoute
+        self.recommendedDeepLink = recommendedDeepLink
+    }
+
+    public func encodedJSONString() throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(self)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
+
 public enum KairoCaptureTriageRoute: String, Codable, CaseIterable, Sendable {
     case captureReview
     case chat
@@ -999,6 +1072,40 @@ enum KairoCaptureIntentSupport {
             latestURL: latest?.url?.absoluteString,
             captureIDs: captures.map(\.id),
             textPreviews: previews,
+            recommendedRoute: route,
+            recommendedDeepLink: route.deepLinkString
+        )
+    }
+
+    static func clearCaptureInbox(
+        confirmClear: Bool,
+        store: KairoIntentCaptureStore = KairoIntentCaptureStore()
+    ) -> KairoCaptureInboxClearOutput {
+        let pending = store.pending()
+        guard confirmClear else {
+            return KairoCaptureInboxClearOutput(
+                displayText: "Capture inbox was not cleared.",
+                confirmed: false,
+                cleared: false,
+                clearedCount: 0,
+                remainingCount: pending.count,
+                clearedCaptureIDs: [],
+                clearedTextPreviews: [],
+                recommendedRoute: pending.isEmpty ? .chat : .captureReview,
+                recommendedDeepLink: (pending.isEmpty ? KairoCaptureTriageRoute.chat : .captureReview).deepLinkString
+            )
+        }
+
+        let cleared = store.clear()
+        let route: KairoCaptureTriageRoute = .chat
+        return KairoCaptureInboxClearOutput(
+            displayText: "\(cleared.count) Kairo capture\(cleared.count == 1 ? "" : "s") cleared.",
+            confirmed: true,
+            cleared: !cleared.isEmpty,
+            clearedCount: cleared.count,
+            remainingCount: store.pending().count,
+            clearedCaptureIDs: cleared.map(\.id),
+            clearedTextPreviews: cleared.suffix(5).map { compactPreview($0.text, limit: 160) },
             recommendedRoute: route,
             recommendedDeepLink: route.deepLinkString
         )
