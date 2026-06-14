@@ -16,21 +16,7 @@ struct LocalModelPerformanceView: View {
     var body: some View {
         GeometryReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    modelScopePicker
-                    overviewCard
-
-                    if let statusMessage {
-                        Text(statusMessage)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(KairoDesign.muted)
-                            .accessibilityIdentifier("performance.local.status")
-                    }
-
-                    if benchmarkService == nil {
-                        emptyState(KairoL10n.string("performance.local.unavailable"))
-                    }
-                }
+                performanceContent
                 .padding(.horizontal, 16)
                 .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
                 .padding(.bottom, 32)
@@ -44,46 +30,75 @@ struct LocalModelPerformanceView: View {
         .accessibilityIdentifier("performance.local.screen")
     }
 
-    private var overviewCard: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(overviewTitle)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
+    @ViewBuilder
+    private var performanceContent: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 14) {
+                performanceStack
+            }
+        } else {
+            performanceStack
+        }
+    }
 
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    metricTile(KairoL10n.string("performance.local.prefillTokens"), "\(displayedSnapshot.prefillTokenCount)")
-                    metricTile(KairoL10n.string("performance.local.cachedTokens"), "\(displayedSnapshot.cachedTokenCount)")
-                    metricTile(KairoL10n.string("performance.local.cacheEfficiency"), formattedCacheEfficiency)
-                    metricTile(KairoL10n.string("performance.local.pp"), formattedRate(displayedSnapshot.averagePromptTokensPerSecond))
-                    metricTile(KairoL10n.string("performance.local.tk"), formattedRate(displayedSnapshot.averageGenerationTokensPerSecond))
-                    metricTile(KairoL10n.string("performance.local.cacheStorage"), formattedStorage(displayedSnapshot.cacheUsedBytes, capacity: displayedSnapshot.cacheCapacityBytes))
-                    metricTile(KairoL10n.string("performance.local.firstToken"), formattedLatency(displayedSnapshot.averageFirstTokenLatencyMS))
-                    metricTile(KairoL10n.string("performance.local.peakMemory"), formattedMemory(displayedSnapshot.peakMemoryMB))
-                }
+    private var performanceStack: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            modelScopePicker
+            overviewCard
 
-                HStack(spacing: 8) {
-                    compactMetric(
-                        KairoL10n.string("performance.local.cacheState"),
-                        displayedSnapshot.isCacheEnabled
-                            ? KairoL10n.string("performance.local.cacheEnabled")
-                            : KairoL10n.string("performance.local.cacheDisabled")
-                    )
-                    Spacer(minLength: 8)
-                    Button {
-                        Task {
-                            await clearCache()
-                        }
-                    } label: {
-                        Label(KairoL10n.string("performance.local.clearCache"), systemImage: "trash")
-                            .font(.caption.weight(.semibold))
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(displayedSnapshot.cacheUsedBytes == 0)
-                    .accessibilityIdentifier("performance.local.clearCache")
-                }
+            if let statusMessage {
+                Text(statusMessage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.muted)
+                    .accessibilityIdentifier("performance.local.status")
+            }
+
+            if benchmarkService == nil {
+                emptyState(KairoL10n.string("performance.local.unavailable"))
             }
         }
+    }
+
+    private var overviewCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(overviewTitle)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                metricTile(KairoL10n.string("performance.local.prefillTokens"), "\(displayedSnapshot.prefillTokenCount)")
+                metricTile(KairoL10n.string("performance.local.cachedTokens"), "\(displayedSnapshot.cachedTokenCount)")
+                metricTile(KairoL10n.string("performance.local.cacheEfficiency"), formattedCacheEfficiency)
+                metricTile(KairoL10n.string("performance.local.pp"), formattedRate(displayedSnapshot.averagePromptTokensPerSecond))
+                metricTile(KairoL10n.string("performance.local.tk"), formattedRate(displayedSnapshot.averageGenerationTokensPerSecond))
+                metricTile(KairoL10n.string("performance.local.cacheStorage"), formattedStorage(displayedSnapshot.cacheUsedBytes, capacity: displayedSnapshot.cacheCapacityBytes))
+                metricTile(KairoL10n.string("performance.local.firstToken"), formattedLatency(displayedSnapshot.averageFirstTokenLatencyMS))
+                metricTile(KairoL10n.string("performance.local.peakMemory"), formattedMemory(displayedSnapshot.peakMemoryMB))
+            }
+
+            HStack(spacing: 8) {
+                compactMetric(
+                    KairoL10n.string("performance.local.cacheState"),
+                    displayedSnapshot.isCacheEnabled
+                        ? KairoL10n.string("performance.local.cacheEnabled")
+                        : KairoL10n.string("performance.local.cacheDisabled")
+                )
+                Spacer(minLength: 8)
+                Button {
+                    Task {
+                        await clearCache()
+                    }
+                } label: {
+                    Label(KairoL10n.string("performance.local.clearCache"), systemImage: "trash")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.red, isCompact: true))
+                .disabled(displayedSnapshot.cacheUsedBytes == 0)
+                .accessibilityIdentifier("performance.local.clearCache")
+            }
+        }
+        .padding(16)
+        .localPerformanceGlassSurface(tint: KairoDesign.blue)
         .accessibilityIdentifier("performance.local.overview")
     }
 
@@ -114,11 +129,7 @@ struct LocalModelPerformanceView: View {
                     }
                     .padding(.horizontal, 11)
                     .frame(height: 34)
-                    .background(KairoDesign.elevatedSurface.opacity(0.72), in: Capsule())
-                    .overlay {
-                        Capsule()
-                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                    }
+                    .localPerformanceGlassCapsule(isInteractive: true)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("performance.local.scope")
@@ -143,12 +154,7 @@ struct LocalModelPerformanceView: View {
                         }
                     }
                     .padding(8)
-                    .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                    }
-                    .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 14, x: 0, y: 9)
+                    .localPerformanceGlassSurface(tint: KairoDesign.blue, cornerRadius: 18, shadowRadius: 14, shadowY: 9)
                     .transition(.opacity.combined(with: .move(edge: .top)))
                     .accessibilityIdentifier("performance.local.scope.palette")
                 }
@@ -181,7 +187,7 @@ struct LocalModelPerformanceView: View {
             }
             .padding(.horizontal, 9)
             .padding(.vertical, 7)
-            .background(KairoDesign.softSurface.opacity(isSelected ? 0.70 : 0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .localPerformanceGlassRow(tint: isSelected ? KairoDesign.blue : KairoDesign.muted, fallbackOpacity: isSelected ? 0.70 : 0.55)
         }
         .buttonStyle(.plain)
     }
@@ -228,7 +234,7 @@ struct LocalModelPerformanceView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
-        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .localPerformanceGlassSurface(tint: KairoDesign.teal, cornerRadius: 12, fallbackOpacity: 0.52, shadowRadius: 0, shadowY: 0)
     }
 
     private func compactMetric(_ title: String, _ value: String) -> some View {
@@ -238,21 +244,21 @@ struct LocalModelPerformanceView: View {
             .lineLimit(1)
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
-            .background(KairoDesign.groupedSurface, in: Capsule())
+            .localPerformanceGlassCapsule()
     }
 
     private func emptyState(_ text: String) -> some View {
-        KairoFocusCard {
-            HStack(spacing: 10) {
-                Image(systemName: "speedometer")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.blue)
-                Text(text)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        HStack(spacing: 10) {
+            Image(systemName: "speedometer")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(KairoDesign.blue)
+            Text(text)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .localPerformanceGlassSurface(tint: KairoDesign.blue)
     }
 
     private func formattedRate(_ value: Double?) -> String {
@@ -308,6 +314,73 @@ struct LocalModelPerformanceView: View {
             return "\(Int(value))"
         }
         return String(format: "%.1f", value)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func localPerformanceGlassSurface(
+        tint: Color,
+        cornerRadius: CGFloat = 20,
+        fallbackOpacity: Double = 0.66,
+        shadowRadius: CGFloat = 18,
+        shadowY: CGFloat = 11
+    ) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(0.09)), in: .rect(cornerRadius: cornerRadius))
+                .overlay {
+                    shape.stroke(KairoDesign.line.opacity(0.58), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(shadowRadius > 0 ? 0.24 : 0), radius: shadowRadius, x: 0, y: shadowY)
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface.opacity(fallbackOpacity), in: shape)
+                .overlay {
+                    shape.stroke(KairoDesign.line.opacity(0.74), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(shadowRadius > 0 ? 0.34 : 0), radius: shadowRadius, x: 0, y: shadowY)
+        }
+    }
+
+    @ViewBuilder
+    func localPerformanceGlassRow(tint: Color, fallbackOpacity: Double) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(0.10)).interactive(), in: .rect(cornerRadius: 12))
+                .overlay {
+                    shape.stroke(Color.white.opacity(0.06), lineWidth: 1)
+                }
+        } else {
+            self
+                .background(KairoDesign.softSurface.opacity(fallbackOpacity), in: shape)
+        }
+    }
+
+    @ViewBuilder
+    func localPerformanceGlassCapsule(isInteractive: Bool = false) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(.regular.tint(KairoDesign.blue.opacity(0.10)).interactive(), in: .capsule)
+                    .overlay {
+                        Capsule().stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    }
+            } else {
+                self
+                    .glassEffect(.regular.tint(KairoDesign.muted.opacity(0.08)), in: .capsule)
+            }
+        } else {
+            self
+                .background(KairoDesign.groupedSurface, in: Capsule())
+                .overlay {
+                    Capsule().stroke(Color.white.opacity(0.10), lineWidth: 1)
+                }
+        }
     }
 }
 #endif
