@@ -15,6 +15,31 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         XCTAssertFalse(context.topics.contains("newsletter"))
     }
 
+    func testHTMLReadableContentExtractorBuildsBoundedArticleContext() {
+        let html = """
+        <html>
+        <head>
+        <title>AFM Prompt Pipeline</title>
+        <meta name="description" content="How Kairo prepares stable URL context.">
+        <style>.hidden { display: none; }</style>
+        <script>secretToken()</script>
+        </head>
+        <body>
+        <h1>AFM Prompt Pipeline</h1>
+        <p>URL imports become much more reliable when the page title, description, and article text are extracted before local inference.</p>
+        <p>Short source-backed snippets reduce hallucination and keep AFM focused on the current asset.</p>
+        </body>
+        </html>
+        """
+
+        let content = HTMLReadableContentExtractor(maximumSnippetCharacters: 180).extract(from: html)
+
+        XCTAssertEqual(content?.title, "AFM Prompt Pipeline")
+        XCTAssertEqual(content?.description, "How Kairo prepares stable URL context.")
+        XCTAssertEqual(content?.textSnippet?.contains("URL imports become much more reliable"), true)
+        XCTAssertEqual(content?.textSnippet?.contains("secretToken"), false)
+    }
+
     func testKairoUITestingShareImportFactorySeedsPendingTextItemWhenRequested() async throws {
         let queue = KairoUITestingShareImportFactory(seedSharedTaskText: true).makeQueue()
 
@@ -74,7 +99,8 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let queue = InMemoryShareIngestionQueue(seed: [firstItem, secondItem])
         let api = KairoShareImportBackendService(
             shareIngestionQueue: queue,
-            urlMetadataProvider: EmptyURLMetadataProvider()
+            urlMetadataProvider: EmptyURLMetadataProvider(),
+            urlReadableContentProvider: EmptyURLReadableContentProvider()
         )
         let imported = try await api.importPendingShares(limit: 10)
         XCTAssertEqual(imported.importedItemIDs, [firstItem.id, secondItem.id])
@@ -104,7 +130,8 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let queue = InMemoryShareIngestionQueue(seed: [item])
         let api = KairoShareImportBackendService(
             shareIngestionQueue: queue,
-            urlMetadataProvider: EmptyURLMetadataProvider()
+            urlMetadataProvider: EmptyURLMetadataProvider(),
+            urlReadableContentProvider: EmptyURLReadableContentProvider()
         )
         let imported = try await api.importPendingShares(limit: 10)
         XCTAssertNotNil(imported.suggestedPrompt)
@@ -126,7 +153,8 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let queue = InMemoryShareIngestionQueue(seed: [item])
         let api = KairoShareImportBackendService(
             shareIngestionQueue: queue,
-            urlMetadataProvider: EmptyURLMetadataProvider()
+            urlMetadataProvider: EmptyURLMetadataProvider(),
+            urlReadableContentProvider: EmptyURLReadableContentProvider()
         )
 
         let imported = try await api.importPendingShares(limit: 10)
@@ -159,7 +187,8 @@ final class KairoShareImportBackendAPITests: XCTestCase {
                     siteName: "Example Research",
                     resolvedURL: URL(string: "https://example.com/article?resolved=true")
                 )
-            ])
+            ]),
+            urlReadableContentProvider: EmptyURLReadableContentProvider()
         )
 
         let imported = try await api.importPendingShares(limit: 10)
@@ -167,6 +196,36 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         XCTAssertEqual(imported.suggestedPrompt?.contains("metadataTitle: AFM Local Inference Notes"), true)
         XCTAssertEqual(imported.suggestedPrompt?.contains("site: Example Research"), true)
         XCTAssertEqual(imported.suggestedPrompt?.contains("resolvedURL: https://example.com/article?resolved=true"), true)
+    }
+
+    func testShareImportBackendAPIAddsReadableURLContentToReadingPrompt() async throws {
+        let builder = ShareAttachmentBuilder()
+        let url = URL(string: "https://example.com/article")!
+        let item = ShareIngestionItem(
+            attachments: [
+                builder.url(url)
+            ],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [item])
+        let api = KairoShareImportBackendService(
+            shareIngestionQueue: queue,
+            urlMetadataProvider: EmptyURLMetadataProvider(),
+            urlReadableContentProvider: FakeURLReadableContentProvider(contentByURL: [
+                url: URLReadableContent(
+                    title: "Readability Title",
+                    description: "This page explains AFM prompt stability.",
+                    textSnippet: "AFM works better when URL context is transformed into concise source-backed facts before inference."
+                )
+            ])
+        )
+
+        let imported = try await api.importPendingShares(limit: 10)
+
+        XCTAssertEqual(imported.suggestedPrompt?.contains("pageTitle: Readability Title"), true)
+        XCTAssertEqual(imported.suggestedPrompt?.contains("pageDescription: This page explains AFM prompt stability."), true)
+        XCTAssertEqual(imported.suggestedPrompt?.contains("pageText: AFM works better"), true)
     }
 
     func testShareImportBackendAPIPrioritizesExplicitTasksOverURLReadingPrompt() async throws {
@@ -182,7 +241,8 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let queue = InMemoryShareIngestionQueue(seed: [item])
         let api = KairoShareImportBackendService(
             shareIngestionQueue: queue,
-            urlMetadataProvider: EmptyURLMetadataProvider()
+            urlMetadataProvider: EmptyURLMetadataProvider(),
+            urlReadableContentProvider: EmptyURLReadableContentProvider()
         )
 
         let imported = try await api.importPendingShares(limit: 10)
@@ -203,7 +263,8 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let queue = InMemoryShareIngestionQueue(seed: [item])
         let api = KairoShareImportBackendService(
             shareIngestionQueue: queue,
-            urlMetadataProvider: EmptyURLMetadataProvider()
+            urlMetadataProvider: EmptyURLMetadataProvider(),
+            urlReadableContentProvider: EmptyURLReadableContentProvider()
         )
 
         let imported = try await api.importPendingShares(limit: 10)
@@ -234,7 +295,8 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         XCTAssertTrue(rawText.contains("Private shared text should not remain"))
         let api = KairoShareImportBackendService(
             shareIngestionQueue: queue,
-            urlMetadataProvider: EmptyURLMetadataProvider()
+            urlMetadataProvider: EmptyURLMetadataProvider(),
+            urlReadableContentProvider: EmptyURLReadableContentProvider()
         )
         let imported = try await api.importPendingShares(limit: 10)
         XCTAssertEqual(imported.importedItemIDs, [item.id])
@@ -296,5 +358,13 @@ private struct FakeURLMetadataProvider: URLMetadataProviding {
 
     func metadata(for url: URL) async -> URLReadingMetadata? {
         metadataByURL[url]
+    }
+}
+
+private struct FakeURLReadableContentProvider: URLReadableContentProviding {
+    var contentByURL: [URL: URLReadableContent]
+
+    func readableContent(for url: URL) async -> URLReadableContent? {
+        contentByURL[url]
     }
 }

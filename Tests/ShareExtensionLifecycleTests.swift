@@ -41,7 +41,8 @@ final class ShareExtensionLifecycleTests: XCTestCase {
             shareIngestionQueue: queue,
             shareImportAPI: KairoShareImportBackendService(
                 shareIngestionQueue: queue,
-                urlMetadataProvider: EmptyURLMetadataProvider()
+                urlMetadataProvider: EmptyURLMetadataProvider(),
+                urlReadableContentProvider: EmptyURLReadableContentProvider()
             ),
             chatAPI: makeShareImportChatAPI()
         )

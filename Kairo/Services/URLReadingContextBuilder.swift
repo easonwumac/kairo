@@ -6,6 +6,9 @@ public struct URLReadingContext: Equatable, Sendable {
     public var titleCandidate: String?
     public var metadataTitle: String?
     public var metadataResolvedURL: URL?
+    public var readableTitle: String?
+    public var readableDescription: String?
+    public var readableTextSnippet: String?
     public var topics: [String]
 
     public init(
@@ -14,6 +17,9 @@ public struct URLReadingContext: Equatable, Sendable {
         titleCandidate: String? = nil,
         metadataTitle: String? = nil,
         metadataResolvedURL: URL? = nil,
+        readableTitle: String? = nil,
+        readableDescription: String? = nil,
+        readableTextSnippet: String? = nil,
         topics: [String] = []
     ) {
         self.url = url
@@ -21,6 +27,9 @@ public struct URLReadingContext: Equatable, Sendable {
         self.titleCandidate = titleCandidate
         self.metadataTitle = metadataTitle
         self.metadataResolvedURL = metadataResolvedURL
+        self.readableTitle = readableTitle
+        self.readableDescription = readableDescription
+        self.readableTextSnippet = readableTextSnippet
         self.topics = topics
     }
 
@@ -34,6 +43,15 @@ public struct URLReadingContext: Equatable, Sendable {
         }
         if let metadataResolvedURL, metadataResolvedURL != url {
             parts.append("resolvedURL: \(metadataResolvedURL.absoluteString)")
+        }
+        if let readableTitle, !readableTitle.isEmpty, readableTitle != metadataTitle {
+            parts.append("pageTitle: \(readableTitle)")
+        }
+        if let readableDescription, !readableDescription.isEmpty {
+            parts.append("pageDescription: \(readableDescription)")
+        }
+        if let readableTextSnippet, !readableTextSnippet.isEmpty {
+            parts.append("pageText: \(readableTextSnippet)")
         }
         if let titleCandidate, !titleCandidate.isEmpty {
             parts.append("titleCandidate: \(titleCandidate)")
@@ -65,24 +83,30 @@ public struct URLReadingContextBuilder: Sendable {
     public func contexts(
         from urls: [URL],
         metadata: [URL: URLReadingMetadata] = [:],
+        readableContent: [URL: URLReadableContent] = [:],
         limit: Int = 4
     ) -> [URLReadingContext] {
         urls
             .prefix(limit)
-            .map { context(from: $0, metadata: metadata[$0]) }
+            .map { context(from: $0, metadata: metadata[$0], readableContent: readableContent[$0]) }
     }
 
     public func promptBlock(
         from urls: [URL],
         metadata: [URL: URLReadingMetadata] = [:],
+        readableContent: [URL: URLReadableContent] = [:],
         limit: Int = 4
     ) -> String {
-        contexts(from: urls, metadata: metadata, limit: limit)
+        contexts(from: urls, metadata: metadata, readableContent: readableContent, limit: limit)
             .map(\.promptLine)
             .joined(separator: "\n---\n")
     }
 
-    public func context(from url: URL, metadata: URLReadingMetadata? = nil) -> URLReadingContext {
+    public func context(
+        from url: URL,
+        metadata: URLReadingMetadata? = nil,
+        readableContent: URLReadableContent? = nil
+    ) -> URLReadingContext {
         let siteName = normalized(metadata?.siteName) ?? normalizedHost(for: url)
         let pathTokens = tokens(fromPath: url.path)
         let queryTokens = tokens(fromQuery: url)
@@ -93,6 +117,9 @@ public struct URLReadingContextBuilder: Sendable {
             titleCandidate: titleCandidate(from: pathTokens),
             metadataTitle: normalized(metadata?.title),
             metadataResolvedURL: metadata?.resolvedURL,
+            readableTitle: normalized(readableContent?.title),
+            readableDescription: normalized(readableContent?.description),
+            readableTextSnippet: normalized(readableContent?.textSnippet),
             topics: Array(allTopics.prefix(8))
         )
     }

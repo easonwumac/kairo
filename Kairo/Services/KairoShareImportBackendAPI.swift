@@ -31,14 +31,17 @@ public protocol KairoShareImportAPI: Sendable {
 public struct KairoShareImportBackendService: KairoShareImportAPI {
     private let shareIngestionQueue: any ShareIngestionQueue
     private let urlMetadataProvider: any URLMetadataProviding
+    private let urlReadableContentProvider: any URLReadableContentProviding
 
     public init(
         shareIngestionQueue: any ShareIngestionQueue,
         sharedFilesDirectory: URL? = nil,
-        urlMetadataProvider: any URLMetadataProviding = URLMetadataProviderFactory.live()
+        urlMetadataProvider: any URLMetadataProviding = URLMetadataProviderFactory.live(),
+        urlReadableContentProvider: any URLReadableContentProviding = URLReadableContentProviderFactory.live()
     ) {
         self.shareIngestionQueue = shareIngestionQueue
         self.urlMetadataProvider = urlMetadataProvider
+        self.urlReadableContentProvider = urlReadableContentProvider
         _ = sharedFilesDirectory
     }
 
@@ -91,8 +94,14 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
             return attachment.fileURL ?? attachment.textPreview.flatMap(URL.init(string:))
         }
         guard !urls.isEmpty else { return nil }
-        let metadata = await metadataByURL(for: Array(urls.prefix(4)))
-        let context = URLReadingContextBuilder().promptBlock(from: urls, metadata: metadata)
+        let limitedURLs = Array(urls.prefix(4))
+        let metadata = await metadataByURL(for: limitedURLs)
+        let readableContent = await readableContentByURL(for: limitedURLs)
+        let context = URLReadingContextBuilder().promptBlock(
+            from: urls,
+            metadata: metadata,
+            readableContent: readableContent
+        )
         return KairoL10n.string("chat.share.prompt.readURLs", context)
     }
 
@@ -103,6 +112,15 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
             metadataByURL[url] = metadata
         }
         return metadataByURL
+    }
+
+    private func readableContentByURL(for urls: [URL]) async -> [URL: URLReadableContent] {
+        var contentByURL: [URL: URLReadableContent] = [:]
+        for url in urls {
+            guard let content = await urlReadableContentProvider.readableContent(for: url) else { continue }
+            contentByURL[url] = content
+        }
+        return contentByURL
     }
 
     private static func taskTitle(from text: String?) -> String? {
