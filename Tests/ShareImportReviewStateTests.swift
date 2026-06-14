@@ -37,6 +37,7 @@ final class ShareImportReviewStateTests: XCTestCase {
         XCTAssertNil(viewModel.shareImportPreview)
         XCTAssertNil(viewModel.shareImportReviewAction)
         XCTAssertNil(viewModel.captureReviewSummary)
+        XCTAssertEqual(viewModel.captureReviewItems, [])
         XCTAssertFalse(viewModel.canSendImportedShareToChat)
     }
 
@@ -113,6 +114,8 @@ final class ShareImportReviewStateTests: XCTestCase {
         XCTAssertEqual(viewModel.captureReviewSummary?.captureCount, 1)
         XCTAssertEqual(viewModel.captureReviewSummary?.reviewCount, 1)
         XCTAssertEqual(viewModel.captureReviewSummary?.reminderDraftCount, 1)
+        XCTAssertEqual(viewModel.captureReviewItems.map(\.triage), [.createReminder])
+        XCTAssertEqual(viewModel.captureReviewItems.map(\.actionCount), [1])
         XCTAssertFalse(viewModel.pendingAttachments.isEmpty)
         XCTAssertNotNil(viewModel.shareImportNotice)
     }
@@ -154,6 +157,10 @@ final class ShareImportReviewStateTests: XCTestCase {
         XCTAssertEqual(summary.memoryDraftCount, 1)
         XCTAssertEqual(summary.infoPageCount, 1)
         XCTAssertEqual(summary.captureOnlyCount, 0)
+        XCTAssertEqual(viewModel.captureReviewItems.map(\.triage), [.createReminder, .saveMemory, .createInfoPage])
+        XCTAssertEqual(viewModel.captureReviewItems.map(\.actionCount), [1, 1, 0])
+        XCTAssertTrue(viewModel.captureReviewItems.allSatisfy { !$0.title.isEmpty })
+        XCTAssertTrue(viewModel.captureReviewItems.allSatisfy { !$0.detail.isEmpty })
         XCTAssertEqual(viewModel.shareImportReviewAction?.kind, .createReminderDraft)
     }
 
@@ -194,6 +201,7 @@ final class ShareImportReviewStateTests: XCTestCase {
         XCTAssertNil(viewModel.pendingAction)
         XCTAssertNil(viewModel.shareImportNotice)
         XCTAssertNil(viewModel.captureReviewSummary)
+        XCTAssertEqual(viewModel.captureReviewItems, [])
         let pendingAfterFinalConfirmation = try await queue.pendingItems(limit: 10)
         XCTAssertEqual(pendingAfterFinalConfirmation, [])
         let executedKinds = await executor.executedKinds()

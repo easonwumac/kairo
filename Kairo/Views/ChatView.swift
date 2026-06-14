@@ -264,7 +264,10 @@ public struct ChatView: View {
             }
 
             if let captureReviewSummary = viewModel.captureReviewSummary {
-                CaptureReviewSummaryBanner(summary: captureReviewSummary)
+                CaptureReviewSummaryBanner(
+                    summary: captureReviewSummary,
+                    items: viewModel.captureReviewItems
+                )
                     .padding(.horizontal)
                     .padding(.top, 8)
             }

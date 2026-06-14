@@ -65,6 +65,50 @@ public struct CaptureReviewSummary: Equatable, Sendable {
     }
 }
 
+public struct CaptureReviewItem: Identifiable, Equatable, Sendable {
+    public var id: UUID
+    public var triage: ActionInboxTriage
+    public var title: String
+    public var detail: String
+    public var actionCount: Int
+
+    public init(
+        id: UUID,
+        triage: ActionInboxTriage,
+        title: String,
+        detail: String,
+        actionCount: Int
+    ) {
+        self.id = id
+        self.triage = triage
+        self.title = title
+        self.detail = detail
+        self.actionCount = actionCount
+    }
+
+    public var triageText: String {
+        switch triage {
+        case .createReminder:
+            return KairoL10n.string("chat.captureReview.item.reminder")
+        case .saveMemory:
+            return KairoL10n.string("chat.captureReview.item.memory")
+        case .openHandoff:
+            return KairoL10n.string("chat.captureReview.item.handoff")
+        case .createInfoPage:
+            return KairoL10n.string("chat.captureReview.item.page")
+        case .captureOnly:
+            return KairoL10n.string("chat.captureReview.item.saved")
+        }
+    }
+
+    public var actionText: String {
+        guard actionCount > 0 else {
+            return KairoL10n.string("chat.captureReview.item.noAction")
+        }
+        return KairoL10n.string("chat.captureReview.item.actions", Int64(actionCount))
+    }
+}
+
 public struct CaptureReviewSummaryBuilder: Sendable {
     public init() {}
 
@@ -99,6 +143,37 @@ public struct CaptureReviewSummaryBuilder: Sendable {
         }
         return summary
     }
+
+    public func reviewItems(from items: [ActionInboxItem]) -> [CaptureReviewItem] {
+        items.map { item in
+            CaptureReviewItem(
+                id: item.sourceItemIDs.first ?? item.id,
+                triage: item.triage,
+                title: item.summary.title,
+                detail: Self.detail(for: item),
+                actionCount: item.suggestions.compactMap(\.action).count
+            )
+        }
+    }
+
+    private static func detail(for item: ActionInboxItem) -> String {
+        if let bullet = item.summary.bullets.first?.trimmingCharacters(in: .whitespacesAndNewlines), !bullet.isEmpty {
+            return String(singleLine(bullet).prefix(140))
+        }
+        let previews = item.attachments.compactMap { attachment -> String? in
+            if let textPreview = attachment.textPreview?.trimmingCharacters(in: .whitespacesAndNewlines), !textPreview.isEmpty {
+                return singleLine(textPreview)
+            }
+            return attachment.displayName
+        }
+        return String(previews.joined(separator: " • ").prefix(140))
+    }
+
+    private static func singleLine(_ text: String) -> String {
+        text.components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
 }
 
 @MainActor
@@ -121,6 +196,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var providerRouteStatus: ChatProviderRouteStatus
     @Published public private(set) var briefingSnapshot: KairoBriefingSnapshot = .empty
     @Published public private(set) var captureReviewSummary: CaptureReviewSummary?
+    @Published public private(set) var captureReviewItems: [CaptureReviewItem] = []
     @Published public private(set) var latestInferenceMetrics: AIInferenceMetrics?
     @Published public private(set) var privacyMode: ChatPrivacyMode = .standard
     public var canEditProviderRoute: Bool { localModelSettingsService != nil }
@@ -375,7 +451,7 @@ public final class ChatViewModel: ObservableObject {
         guard !canSendImportedShareToChat else { return }
         do {
             await refreshBriefingSnapshot()
-            let reviewSummary = await loadCaptureReviewSummary()
+            let reviewState = await loadCaptureReviewState()
             let imported = try await shareImportAPI.importPendingShares(limit: 10)
             guard !imported.isEmpty else { return }
             pendingAttachments.append(contentsOf: imported.attachments)
@@ -387,7 +463,8 @@ public final class ChatViewModel: ObservableObject {
             shareImportPreview = Self.shareImportPreview(for: imported.attachments)
             importedShareReviewQueue = imported.suggestedActions
             shareImportReviewAction = importedShareReviewQueue.first
-            captureReviewSummary = reviewSummary?.hasWork == true ? reviewSummary : nil
+            captureReviewSummary = reviewState?.summary.hasWork == true ? reviewState?.summary : nil
+            captureReviewItems = reviewState?.items ?? []
             await refreshBriefingSnapshot()
             errorMessage = nil
         } catch {
@@ -429,6 +506,7 @@ public final class ChatViewModel: ObservableObject {
         }
         shareImportReviewAction = firstReminderActionFromLatestAssistantMessage()
         captureReviewSummary = nil
+        captureReviewItems = []
     }
 
     public func addAttachment(_ attachment: ChatAttachment) {
@@ -450,6 +528,7 @@ public final class ChatViewModel: ObservableObject {
         shareImportNotice = nil
         shareImportPreview = nil
         captureReviewSummary = nil
+        captureReviewItems = []
         self.replyTarget = nil
         await send(composedMessageText(text: text, replyTarget: replyTarget, hasAttachments: !attachments.isEmpty), attachments: attachments)
     }
@@ -883,13 +962,15 @@ public final class ChatViewModel: ObservableObject {
         shareImportNotice = nil
         shareImportPreview = nil
         captureReviewSummary = nil
+        captureReviewItems = []
     }
 
-    private func loadCaptureReviewSummary() async -> CaptureReviewSummary? {
+    private func loadCaptureReviewState() async -> (summary: CaptureReviewSummary, items: [CaptureReviewItem])? {
         guard let items = try? await actionInboxAPI.pendingItems(limit: 20), !items.isEmpty else {
             return nil
         }
-        return CaptureReviewSummaryBuilder().summary(from: items)
+        let builder = CaptureReviewSummaryBuilder()
+        return (builder.summary(from: items), builder.reviewItems(from: items))
     }
 
     private func localConversationHistory() -> [AIConversationTurn] {

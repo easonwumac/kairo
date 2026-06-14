@@ -1236,3 +1236,10 @@
 "chat.captureReview.summary.handoffs" = "%lld handoffs";
 "chat.captureReview.summary.pages" = "%lld pages";
 "chat.captureReview.summary.captureOnly" = "%lld saved only";
+"chat.captureReview.item.reminder" = "Reminder";
+"chat.captureReview.item.memory" = "Memory";
+"chat.captureReview.item.handoff" = "Open";
+"chat.captureReview.item.page" = "Page";
+"chat.captureReview.item.saved" = "Saved";
+"chat.captureReview.item.noAction" = "No action";
+"chat.captureReview.item.actions" = "%lld actions";

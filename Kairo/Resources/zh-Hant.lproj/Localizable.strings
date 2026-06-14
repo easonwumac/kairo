@@ -1236,3 +1236,10 @@
 "chat.captureReview.summary.handoffs" = "%lld 個開啟動作";
 "chat.captureReview.summary.pages" = "%lld 個頁面";
 "chat.captureReview.summary.captureOnly" = "%lld 筆已保存";
+"chat.captureReview.item.reminder" = "提醒";
+"chat.captureReview.item.memory" = "記憶";
+"chat.captureReview.item.handoff" = "開啟";
+"chat.captureReview.item.page" = "頁面";
+"chat.captureReview.item.saved" = "保存";
+"chat.captureReview.item.noAction" = "無動作";
+"chat.captureReview.item.actions" = "%lld 個動作";

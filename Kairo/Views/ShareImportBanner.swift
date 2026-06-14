@@ -47,27 +47,39 @@ struct ShareImportBanner: View {
 
 struct CaptureReviewSummaryBanner: View {
     let summary: CaptureReviewSummary
+    let items: [CaptureReviewItem]
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "sparkles.rectangle.stack")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(KairoDesign.teal)
-                .frame(width: 24, height: 24)
-                .background(KairoDesign.teal.opacity(0.14), in: Circle())
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: "sparkles.rectangle.stack")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(KairoDesign.teal)
+                    .frame(width: 24, height: 24)
+                    .background(KairoDesign.teal.opacity(0.14), in: Circle())
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(summary.primaryText)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                Text(summary.detailText)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .accessibilityIdentifier("chat.capture-review.detail")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(summary.primaryText)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(summary.detailText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .accessibilityIdentifier("chat.capture-review.detail")
+                }
+
+                Spacer(minLength: 8)
             }
 
-            Spacer(minLength: 8)
+            if !items.isEmpty {
+                VStack(spacing: 7) {
+                    ForEach(items.prefix(4)) { item in
+                        CaptureReviewItemRow(item: item)
+                    }
+                }
+                .accessibilityIdentifier("chat.capture-review.items")
+            }
         }
         .padding(12)
         .background(KairoDesign.teal.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -77,6 +89,42 @@ struct CaptureReviewSummaryBanner: View {
         )
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.capture-review.summary")
+    }
+}
+
+private struct CaptureReviewItemRow: View {
+    let item: CaptureReviewItem
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(item.triageText)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(KairoDesign.teal)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(KairoDesign.teal.opacity(0.12), in: Capsule())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+                if !item.detail.isEmpty {
+                    Text(item.detail)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 6)
+
+            Text(item.actionText)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.capture-review.item")
     }
 }
 
