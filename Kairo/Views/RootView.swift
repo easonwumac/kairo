@@ -476,17 +476,7 @@ public struct RootView: View {
                         .accessibilityElement(children: .ignore)
                         .accessibilityIdentifier("root.menu.sheet")
 
-                    chatDrawerSection
-
-                    navigationGroup(
-                        title: KairoL10n.string("root.menu.group.primary"),
-                        sections: [.wiki, .assets, .pages, .categories]
-                    )
-
-                    navigationGroup(
-                        title: KairoL10n.string("root.menu.group.system"),
-                        sections: [.models, .performance, .access, .settings]
-                    )
+                    drawerNavigationContent
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, max(safeAreaInsets.top, 0) + 8)
@@ -504,13 +494,40 @@ public struct RootView: View {
         }
     }
 
+    @ViewBuilder
+    private var drawerNavigationContent: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 16) {
+                drawerNavigationStack
+            }
+        } else {
+            drawerNavigationStack
+        }
+    }
+
+    private var drawerNavigationStack: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            chatDrawerSection
+
+            navigationGroup(
+                title: KairoL10n.string("root.menu.group.primary"),
+                sections: [.wiki, .assets, .pages, .categories]
+            )
+
+            navigationGroup(
+                title: KairoL10n.string("root.menu.group.system"),
+                sections: [.models, .performance, .access, .settings]
+            )
+        }
+    }
+
     private var chatDrawerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(KairoL10n.string("root.menu.chat.section"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            KairoGroupedSurface {
+            VStack(spacing: 0) {
                 Button {
                     triggerChatChromeAction(.newThread)
                     closeDrawer()
@@ -566,6 +583,8 @@ public struct RootView: View {
                     .accessibilityIdentifier("root.drawer.chat.show-more")
                 }
             }
+            .padding(.vertical, 4)
+            .rootNavigationGlassSurface(tint: KairoDesign.blue, isInteractive: true)
         }
     }
 
@@ -664,7 +683,7 @@ public struct RootView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            KairoGroupedSurface {
+            VStack(spacing: 0) {
                 ForEach(sections) { section in
                     navigationRow(section)
                     if section != sections.last {
@@ -673,6 +692,8 @@ public struct RootView: View {
                     }
                 }
             }
+            .padding(.vertical, 4)
+            .rootNavigationGlassSurface(tint: sections.first?.tint ?? KairoDesign.muted, isInteractive: true)
         }
     }
 }
@@ -871,6 +892,38 @@ private extension View {
                 .overlay {
                     Capsule()
                         .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
+        }
+    }
+
+    @ViewBuilder
+    func rootNavigationGlassSurface(tint: Color, isInteractive: Bool = false) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.10)).interactive(), in: .rect(cornerRadius: 18))
+                    .overlay {
+                        shape.stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    }
+                    .shadow(color: KairoDesign.shadow.opacity(0.28), radius: 12, x: 0, y: 7)
+            } else {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.08)), in: .rect(cornerRadius: 18))
+                    .overlay {
+                        shape.stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    }
+                    .shadow(color: KairoDesign.shadow.opacity(0.24), radius: 10, x: 0, y: 6)
+            }
+        } else {
+            self
+                .background {
+                    shape.fill(KairoDesign.elevatedSurface.opacity(0.72))
+                }
+                .overlay {
+                    shape.stroke(Color.white.opacity(0.10), lineWidth: 1)
                 }
                 .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 12, x: 0, y: 7)
         }
