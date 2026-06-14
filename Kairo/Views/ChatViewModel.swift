@@ -494,7 +494,11 @@ public final class ChatViewModel: ObservableObject {
         if shareImportReviewAction == nil {
             await importPendingShares()
         }
-        reviewImportedShareAction()
+        if shareImportReviewAction != nil {
+            reviewImportedShareAction()
+        } else if shouldSendImportedShareForInfoPageReview {
+            await sendImportedShareToChat()
+        }
     }
 
     public func sendImportedShareToChat() async {
@@ -513,6 +517,11 @@ public final class ChatViewModel: ObservableObject {
         captureReviewSummary = nil
         captureReviewItems = []
         captureReviewPresentedActionCount = 0
+    }
+
+    private var shouldSendImportedShareForInfoPageReview: Bool {
+        guard let summary = captureReviewSummary else { return false }
+        return summary.infoPageCount > 0 && summary.reminderDraftCount == 0 && summary.memoryDraftCount == 0 && summary.handoffCount == 0
     }
 
     public func addAttachment(_ attachment: ChatAttachment) {

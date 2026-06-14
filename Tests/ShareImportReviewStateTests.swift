@@ -121,6 +121,60 @@ final class ShareImportReviewStateTests: XCTestCase {
     }
 
     @MainActor
+    func testCaptureBriefingReviewSendsInfoPageOnlyCaptureToChatAndClearsShare() async throws {
+        let builder = ShareAttachmentBuilder()
+        let sharedItem = ShareIngestionItem(
+            attachments: [
+                builder.text("研究筆記：AFM prompt pipeline 先分類，再抽取事實，最後產生 JSON。", displayName: "AFM note")
+            ],
+            sourceApplication: "ShareSheet",
+            receivedAt: Date(timeIntervalSince1970: 10)
+        )
+        let queue = InMemoryShareIngestionQueue(seed: [sharedItem])
+        let infoPageStore = InMemoryInfoPageStore()
+        let draft = InfoPageDraft(
+            createInfoPage: true,
+            title: "AFM Prompt Pipeline",
+            templateID: .generalNote,
+            category: .generalNote,
+            summary: "AFM prompt pipelines are more stable when classification, fact extraction, and JSON composition are staged.",
+            facts: [
+                InfoPageDraftFact(label: "topic", value: "AFM prompt pipeline")
+            ],
+            confidence: 0.9,
+            keywords: ["afm", "prompt", "pipeline"]
+        )
+        let viewModel = ChatViewModel(dependencies: ChatFeatureDependencies(
+            historyStore: InMemoryChatHistoryStore(),
+            shareImportAPI: KairoShareImportBackendService(
+                shareIngestionQueue: queue,
+                urlMetadataProvider: EmptyURLMetadataProvider(),
+                urlReadableContentProvider: EmptyURLReadableContentProvider()
+            ),
+            actionInboxAPI: KairoActionInboxBackendService(shareIngestionQueue: queue),
+            chatAPI: ShareReviewFixedInfoPageChatAPI(draft: draft),
+            actionAPI: ShareReviewNoopActionAPI(),
+            infoPageStore: infoPageStore
+        ))
+
+        await viewModel.refreshBriefingSnapshot()
+        XCTAssertEqual(viewModel.briefingSnapshot.pendingCaptureCount, 1)
+
+        await viewModel.reviewCaptureBriefing()
+
+        let pages = try await infoPageStore.list(limit: 10)
+        let remaining = try await queue.pendingItems(limit: 10)
+        XCTAssertEqual(pages.map(\.title), ["AFM Prompt Pipeline"])
+        XCTAssertTrue(remaining.isEmpty)
+        XCTAssertNil(viewModel.shareImportNotice)
+        XCTAssertNil(viewModel.captureReviewSummary)
+        XCTAssertEqual(viewModel.captureReviewItems, [])
+        XCTAssertNil(viewModel.shareImportReviewAction)
+        XCTAssertNil(viewModel.pendingAction)
+        XCTAssertEqual(viewModel.briefingSnapshot, .empty)
+    }
+
+    @MainActor
     func testCaptureBriefingSummaryTracksMixedPendingCaptureSuggestions() async throws {
         let builder = ShareAttachmentBuilder()
         let executor = ShareImportReviewMockExecutor()
@@ -285,6 +339,57 @@ private actor ShareImportReviewMockExecutor: ActionExecutor {
 
     func confirmations() -> [Bool] {
         confirmedValues
+    }
+}
+
+private actor ShareReviewFixedInfoPageChatAPI: KairoChatAPI {
+    private let draft: InfoPageDraft
+
+    init(draft: InfoPageDraft) {
+        self.draft = draft
+    }
+
+    func respond(
+        to message: String,
+        attachments: [ChatAttachment],
+        privacyMode: ChatPrivacyMode
+    ) async throws -> AICompletionResponse {
+        try await respond(
+            to: message,
+            attachments: attachments,
+            conversationID: nil,
+            conversationHistory: [],
+            privacyMode: privacyMode
+        )
+    }
+
+    func respond(
+        to message: String,
+        attachments: [ChatAttachment],
+        conversationID: String?,
+        conversationHistory: [AIConversationTurn],
+        privacyMode: ChatPrivacyMode
+    ) async throws -> AICompletionResponse {
+        _ = message
+        _ = attachments
+        _ = conversationID
+        _ = conversationHistory
+        _ = privacyMode
+        return AICompletionResponse(message: "Created page.", infoPageDraft: draft)
+    }
+}
+
+private struct ShareReviewNoopActionAPI: KairoActionAPI {
+    func preview(_ action: AgentAction) async -> KairoActionPreview {
+        KairoActionPreview(
+            action: action,
+            decision: SafetyPolicyDecision(allowed: true, requiresConfirmation: false, reason: "test")
+        )
+    }
+
+    func confirm(_ action: AgentAction) async throws -> ActionExecutionResult {
+        _ = action
+        return ActionExecutionResult(completed: true, message: "")
     }
 }
 #endif
