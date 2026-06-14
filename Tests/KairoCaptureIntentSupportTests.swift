@@ -32,6 +32,8 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
 
         XCTAssertEqual(output.suggestionKinds.contains(.memorySave), true)
         XCTAssertEqual(output.triage, .saveMemory)
+        XCTAssertEqual(output.recommendedRoute, .captureReview)
+        XCTAssertEqual(output.recommendedDeepLink, KairoCaptureTriageRoute.captureReview.deepLinkString)
         XCTAssertEqual(output.actionKinds, [.saveMemory])
         XCTAssertEqual(output.proposedActions.first?.kind, .saveMemory)
         guard case let .text(content) = output.proposedActions.first?.payload else {
@@ -48,6 +50,7 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
 
         XCTAssertEqual(output.actionKinds, [.openWebSearchHandoff])
         XCTAssertEqual(output.triage, .openHandoff)
+        XCTAssertEqual(output.recommendedRoute, .captureReview)
         XCTAssertFalse(output.suggestionKinds.contains(.reminderDraft))
         guard case let .webSearch(draft) = output.proposedActions.first?.payload else {
             return XCTFail("Expected web search payload")
@@ -68,6 +71,8 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
 
         XCTAssertEqual(decoded.actionKinds, [.createReminderDraft])
         XCTAssertEqual(decoded.triage, .createReminder)
+        XCTAssertEqual(decoded.recommendedRoute, .captureReview)
+        XCTAssertEqual(decoded.recommendedDeepLink, KairoCaptureTriageRoute.captureReview.deepLinkString)
         XCTAssertEqual(decoded.proposedActions.first?.kind, .createReminderDraft)
         XCTAssertEqual(decoded.schemaVersion, 1)
     }
@@ -79,8 +84,22 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
         )
 
         XCTAssertEqual(output.triage, .createInfoPage)
+        XCTAssertEqual(output.recommendedRoute, .captureReview)
+        XCTAssertEqual(output.recommendedDeepLink, KairoCaptureTriageRoute.captureReview.deepLinkString)
         XCTAssertTrue(output.actionKinds.isEmpty)
         XCTAssertTrue(output.proposedActions.isEmpty)
+    }
+
+    func testTriageCaptureReturnsChatRouteForCaptureOnlyText() async throws {
+        let output = try await KairoCaptureIntentSupport.triage(
+            text: "Blue sky over the park.",
+            sourceName: "Capture"
+        )
+
+        XCTAssertEqual(output.triage, .captureOnly)
+        XCTAssertEqual(output.recommendedRoute, .chat)
+        XCTAssertEqual(output.recommendedDeepLink, KairoCaptureTriageRoute.chat.deepLinkString)
+        XCTAssertEqual(output.actionKinds, [])
     }
 }
 #endif

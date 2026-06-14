@@ -651,6 +651,8 @@ public struct KairoCaptureTriageOutput: Codable, Equatable, Sendable {
     public var schemaVersion: Int
     public var displayText: String
     public var triage: ActionInboxTriage
+    public var recommendedRoute: KairoCaptureTriageRoute
+    public var recommendedDeepLink: String?
     public var summaryTitle: String
     public var summaryBullets: [String]
     public var suggestionKinds: [ActionInboxSuggestionKind]
@@ -661,6 +663,8 @@ public struct KairoCaptureTriageOutput: Codable, Equatable, Sendable {
         schemaVersion: Int = 1,
         displayText: String,
         triage: ActionInboxTriage,
+        recommendedRoute: KairoCaptureTriageRoute,
+        recommendedDeepLink: String? = nil,
         summaryTitle: String,
         summaryBullets: [String],
         suggestionKinds: [ActionInboxSuggestionKind],
@@ -670,6 +674,8 @@ public struct KairoCaptureTriageOutput: Codable, Equatable, Sendable {
         self.schemaVersion = schemaVersion
         self.displayText = displayText
         self.triage = triage
+        self.recommendedRoute = recommendedRoute
+        self.recommendedDeepLink = recommendedDeepLink
         self.summaryTitle = summaryTitle
         self.summaryBullets = summaryBullets
         self.suggestionKinds = suggestionKinds
@@ -683,6 +689,24 @@ public struct KairoCaptureTriageOutput: Codable, Equatable, Sendable {
         encoder.dateEncodingStrategy = .iso8601
         let data = try encoder.encode(self)
         return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
+
+public enum KairoCaptureTriageRoute: String, Codable, CaseIterable, Sendable {
+    case captureReview
+    case chat
+
+    public var route: KairoURLRoute {
+        switch self {
+        case .captureReview:
+            return .captureReview
+        case .chat:
+            return .section(.chat)
+        }
+    }
+
+    public var deepLinkString: String? {
+        route.deepLink?.absoluteString
     }
 }
 
@@ -703,6 +727,7 @@ enum KairoCaptureIntentSupport {
         let actions = suggestions.compactMap(\.action)
         let summary = inboxItem?.summary ?? ActionInboxSummary(title: sourceName)
         let triage = inboxItem?.triage ?? .captureOnly
+        let recommendedRoute = Self.recommendedRoute(for: triage)
         let actionKinds = actions.map(\.kind)
         let actionSummary = actionKinds.isEmpty
             ? triage.rawValue
@@ -711,12 +736,23 @@ enum KairoCaptureIntentSupport {
         return KairoCaptureTriageOutput(
             displayText: "Capture triaged: \(actionSummary)",
             triage: triage,
+            recommendedRoute: recommendedRoute,
+            recommendedDeepLink: recommendedRoute.deepLinkString,
             summaryTitle: summary.title,
             summaryBullets: summary.bullets,
             suggestionKinds: suggestions.map(\.kind),
             actionKinds: actionKinds,
             proposedActions: actions
         )
+    }
+
+    private static func recommendedRoute(for triage: ActionInboxTriage) -> KairoCaptureTriageRoute {
+        switch triage {
+        case .captureOnly:
+            return .chat
+        case .createInfoPage, .createReminder, .saveMemory, .openHandoff:
+            return .captureReview
+        }
     }
 }
 
