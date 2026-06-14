@@ -45,6 +45,41 @@ struct ShareImportBanner: View {
     }
 }
 
+struct CaptureReviewSummaryBanner: View {
+    let summary: CaptureReviewSummary
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkles.rectangle.stack")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(KairoDesign.teal)
+                .frame(width: 24, height: 24)
+                .background(KairoDesign.teal.opacity(0.14), in: Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(summary.primaryText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                Text(summary.detailText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityIdentifier("chat.capture-review.detail")
+            }
+
+            Spacer(minLength: 8)
+        }
+        .padding(12)
+        .background(KairoDesign.teal.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(KairoDesign.teal.opacity(0.22), lineWidth: 1)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.capture-review.summary")
+    }
+}
+
 struct ShareActionReviewBanner: View {
     let action: AgentAction
     let review: () -> Void

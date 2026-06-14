@@ -1229,3 +1229,10 @@
 "wikiSearch.detail.linkedInfoPages" = "Linked pages";
 "wikiSearch.related.title" = "Related";
 "wikiSearch.related.empty" = "No related items yet.";
+"chat.captureReview.summary.review" = "%lld of %lld captures need review";
+"chat.captureReview.summary.captured" = "%lld captures imported";
+"chat.captureReview.summary.reminders" = "%lld reminders";
+"chat.captureReview.summary.memories" = "%lld memories";
+"chat.captureReview.summary.handoffs" = "%lld handoffs";
+"chat.captureReview.summary.pages" = "%lld pages";
+"chat.captureReview.summary.captureOnly" = "%lld saved only";

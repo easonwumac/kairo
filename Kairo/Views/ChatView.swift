@@ -263,6 +263,12 @@ public struct ChatView: View {
                 .padding(.top, 8)
             }
 
+            if let captureReviewSummary = viewModel.captureReviewSummary {
+                CaptureReviewSummaryBanner(summary: captureReviewSummary)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+            }
+
             if let shareImportReviewAction = viewModel.shareImportReviewAction {
                 ShareActionReviewBanner(action: shareImportReviewAction) {
                     viewModel.reviewImportedShareAction()

@@ -36,6 +36,7 @@ final class ShareImportReviewStateTests: XCTestCase {
         XCTAssertNil(viewModel.shareImportNotice)
         XCTAssertNil(viewModel.shareImportPreview)
         XCTAssertNil(viewModel.shareImportReviewAction)
+        XCTAssertNil(viewModel.captureReviewSummary)
         XCTAssertFalse(viewModel.canSendImportedShareToChat)
     }
 
@@ -109,8 +110,51 @@ final class ShareImportReviewStateTests: XCTestCase {
 
         XCTAssertEqual(viewModel.pendingAction?.kind, .createReminderDraft)
         XCTAssertNil(viewModel.shareImportReviewAction)
+        XCTAssertEqual(viewModel.captureReviewSummary?.captureCount, 1)
+        XCTAssertEqual(viewModel.captureReviewSummary?.reviewCount, 1)
+        XCTAssertEqual(viewModel.captureReviewSummary?.reminderDraftCount, 1)
         XCTAssertFalse(viewModel.pendingAttachments.isEmpty)
         XCTAssertNotNil(viewModel.shareImportNotice)
+    }
+
+    @MainActor
+    func testCaptureBriefingSummaryTracksMixedPendingCaptureSuggestions() async throws {
+        let builder = ShareAttachmentBuilder()
+        let queue = InMemoryShareIngestionQueue(seed: [
+            ShareIngestionItem(
+                attachments: [builder.text("週五前整理 Kairo demo", displayName: "Task")],
+                sourceApplication: "ShareSheet",
+                receivedAt: Date(timeIntervalSince1970: 10)
+            ),
+            ShareIngestionItem(
+                attachments: [builder.text("記住：AFM 適合短上下文分類。", displayName: "Memory")],
+                sourceApplication: "ShareSheet",
+                receivedAt: Date(timeIntervalSince1970: 20)
+            ),
+            ShareIngestionItem(
+                attachments: [builder.url(URL(string: "https://example.com/research/afm-pipeline")!)],
+                sourceApplication: "ShareSheet",
+                receivedAt: Date(timeIntervalSince1970: 30)
+            )
+        ])
+        let viewModel = ChatViewModel(
+            historyStore: InMemoryChatHistoryStore(),
+            shareIngestionQueue: queue,
+            chatAPI: KairoChatBackendService(
+                agent: AgentCore(memoryStore: InMemoryMemoryStore(), aiProvider: MockAIProvider())
+            )
+        )
+
+        await viewModel.importPendingShares()
+
+        let summary = try XCTUnwrap(viewModel.captureReviewSummary)
+        XCTAssertEqual(summary.captureCount, 3)
+        XCTAssertEqual(summary.reviewCount, 3)
+        XCTAssertEqual(summary.reminderDraftCount, 1)
+        XCTAssertEqual(summary.memoryDraftCount, 1)
+        XCTAssertEqual(summary.infoPageCount, 1)
+        XCTAssertEqual(summary.captureOnlyCount, 0)
+        XCTAssertEqual(viewModel.shareImportReviewAction?.kind, .createReminderDraft)
     }
 
     @MainActor
@@ -149,6 +193,7 @@ final class ShareImportReviewStateTests: XCTestCase {
 
         XCTAssertNil(viewModel.pendingAction)
         XCTAssertNil(viewModel.shareImportNotice)
+        XCTAssertNil(viewModel.captureReviewSummary)
         let pendingAfterFinalConfirmation = try await queue.pendingItems(limit: 10)
         XCTAssertEqual(pendingAfterFinalConfirmation, [])
         let executedKinds = await executor.executedKinds()

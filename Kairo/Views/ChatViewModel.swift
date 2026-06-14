@@ -6,6 +6,101 @@ extension Notification.Name {
     static let infoPageSaved = Notification.Name("KairoInfoPageSaved")
 }
 
+public struct CaptureReviewSummary: Equatable, Sendable {
+    public var captureCount: Int
+    public var reviewCount: Int
+    public var reminderDraftCount: Int
+    public var memoryDraftCount: Int
+    public var handoffCount: Int
+    public var infoPageCount: Int
+    public var captureOnlyCount: Int
+
+    public init(
+        captureCount: Int = 0,
+        reviewCount: Int = 0,
+        reminderDraftCount: Int = 0,
+        memoryDraftCount: Int = 0,
+        handoffCount: Int = 0,
+        infoPageCount: Int = 0,
+        captureOnlyCount: Int = 0
+    ) {
+        self.captureCount = captureCount
+        self.reviewCount = reviewCount
+        self.reminderDraftCount = reminderDraftCount
+        self.memoryDraftCount = memoryDraftCount
+        self.handoffCount = handoffCount
+        self.infoPageCount = infoPageCount
+        self.captureOnlyCount = captureOnlyCount
+    }
+
+    public var hasWork: Bool {
+        captureCount > 0
+    }
+
+    public var primaryText: String {
+        if reviewCount > 0 {
+            return KairoL10n.string("chat.captureReview.summary.review", Int64(reviewCount), Int64(captureCount))
+        }
+        return KairoL10n.string("chat.captureReview.summary.captured", Int64(captureCount))
+    }
+
+    public var detailText: String {
+        var parts: [String] = []
+        if reminderDraftCount > 0 {
+            parts.append(KairoL10n.string("chat.captureReview.summary.reminders", Int64(reminderDraftCount)))
+        }
+        if memoryDraftCount > 0 {
+            parts.append(KairoL10n.string("chat.captureReview.summary.memories", Int64(memoryDraftCount)))
+        }
+        if handoffCount > 0 {
+            parts.append(KairoL10n.string("chat.captureReview.summary.handoffs", Int64(handoffCount)))
+        }
+        if infoPageCount > 0 {
+            parts.append(KairoL10n.string("chat.captureReview.summary.pages", Int64(infoPageCount)))
+        }
+        if parts.isEmpty {
+            parts.append(KairoL10n.string("chat.captureReview.summary.captureOnly", Int64(captureOnlyCount)))
+        }
+        return parts.joined(separator: " • ")
+    }
+}
+
+public struct CaptureReviewSummaryBuilder: Sendable {
+    public init() {}
+
+    public func summary(from items: [ActionInboxItem]) -> CaptureReviewSummary {
+        var summary = CaptureReviewSummary(captureCount: items.count)
+        for item in items {
+            switch item.triage {
+            case .createInfoPage:
+                summary.infoPageCount += 1
+            case .captureOnly:
+                summary.captureOnlyCount += 1
+            case .createReminder, .saveMemory, .openHandoff:
+                break
+            }
+
+            if item.triage != .captureOnly {
+                summary.reviewCount += 1
+            }
+
+            for suggestion in item.suggestions {
+                switch suggestion.kind {
+                case .reminderDraft:
+                    summary.reminderDraftCount += 1
+                case .memorySave:
+                    summary.memoryDraftCount += 1
+                case .mapsHandoff, .webSearchHandoff, .phoneHandoff:
+                    summary.handoffCount += 1
+                case .summary, .calendarDraft, .emailDraft, .messageDraft, .setupRequired, .unsupported:
+                    break
+                }
+            }
+        }
+        return summary
+    }
+}
+
 @MainActor
 public final class ChatViewModel: ObservableObject {
     @Published public private(set) var threads: [ChatThread] = []
@@ -25,6 +120,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var replyTarget: ChatMessage?
     @Published public private(set) var providerRouteStatus: ChatProviderRouteStatus
     @Published public private(set) var briefingSnapshot: KairoBriefingSnapshot = .empty
+    @Published public private(set) var captureReviewSummary: CaptureReviewSummary?
     @Published public private(set) var latestInferenceMetrics: AIInferenceMetrics?
     @Published public private(set) var privacyMode: ChatPrivacyMode = .standard
     public var canEditProviderRoute: Bool { localModelSettingsService != nil }
@@ -279,6 +375,7 @@ public final class ChatViewModel: ObservableObject {
         guard !canSendImportedShareToChat else { return }
         do {
             await refreshBriefingSnapshot()
+            let reviewSummary = await loadCaptureReviewSummary()
             let imported = try await shareImportAPI.importPendingShares(limit: 10)
             guard !imported.isEmpty else { return }
             pendingAttachments.append(contentsOf: imported.attachments)
@@ -290,6 +387,7 @@ public final class ChatViewModel: ObservableObject {
             shareImportPreview = Self.shareImportPreview(for: imported.attachments)
             importedShareReviewQueue = imported.suggestedActions
             shareImportReviewAction = importedShareReviewQueue.first
+            captureReviewSummary = reviewSummary?.hasWork == true ? reviewSummary : nil
             await refreshBriefingSnapshot()
             errorMessage = nil
         } catch {
@@ -330,6 +428,7 @@ public final class ChatViewModel: ObservableObject {
             errorMessage = KairoL10n.string("chat.error.importShare", error.localizedDescription)
         }
         shareImportReviewAction = firstReminderActionFromLatestAssistantMessage()
+        captureReviewSummary = nil
     }
 
     public func addAttachment(_ attachment: ChatAttachment) {
@@ -350,6 +449,7 @@ public final class ChatViewModel: ObservableObject {
         pendingAttachments = []
         shareImportNotice = nil
         shareImportPreview = nil
+        captureReviewSummary = nil
         self.replyTarget = nil
         await send(composedMessageText(text: text, replyTarget: replyTarget, hasAttachments: !attachments.isEmpty), attachments: attachments)
     }
@@ -782,6 +882,14 @@ public final class ChatViewModel: ObservableObject {
         importedShareReviewQueue = []
         shareImportNotice = nil
         shareImportPreview = nil
+        captureReviewSummary = nil
+    }
+
+    private func loadCaptureReviewSummary() async -> CaptureReviewSummary? {
+        guard let items = try? await actionInboxAPI.pendingItems(limit: 20), !items.isEmpty else {
+            return nil
+        }
+        return CaptureReviewSummaryBuilder().summary(from: items)
     }
 
     private func localConversationHistory() -> [AIConversationTurn] {

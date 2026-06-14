@@ -1229,3 +1229,10 @@
 "wikiSearch.detail.linkedInfoPages" = "連結頁面";
 "wikiSearch.related.title" = "相關項目";
 "wikiSearch.related.empty" = "目前沒有相關項目。";
+"chat.captureReview.summary.review" = "%lld / %lld 筆需要確認";
+"chat.captureReview.summary.captured" = "已匯入 %lld 筆";
+"chat.captureReview.summary.reminders" = "%lld 個提醒";
+"chat.captureReview.summary.memories" = "%lld 個記憶";
+"chat.captureReview.summary.handoffs" = "%lld 個開啟動作";
+"chat.captureReview.summary.pages" = "%lld 個頁面";
+"chat.captureReview.summary.captureOnly" = "%lld 筆已保存";
