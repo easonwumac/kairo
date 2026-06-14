@@ -179,6 +179,12 @@ public struct PromptPipelineStageTrace: Codable, Equatable, Sendable {
 }
 
 public struct ChatPromptPipelineHealthSummary: Equatable, Sendable {
+    public enum Level: String, Equatable, Sendable {
+        case stable
+        case watch
+        case needsTuning
+    }
+
     public var providerID: String
     public var traceCount: Int
     public var validatedCount: Int
@@ -205,6 +211,20 @@ public struct ChatPromptPipelineHealthSummary: Equatable, Sendable {
     public var validationRate: Double {
         guard traceCount > 0 else { return 0 }
         return Double(validatedCount) / Double(traceCount)
+    }
+
+    public var level: Level {
+        if failedCount > 0 || latestStatus == .failed {
+            return .needsTuning
+        }
+        if repairCount > 0 || latestStatus == .needsRepair || latestStatus == .needsReview || validationRate < 0.75 {
+            return .watch
+        }
+        return .stable
+    }
+
+    public var shouldOfferModelTuning: Bool {
+        level != .stable
     }
 }
 

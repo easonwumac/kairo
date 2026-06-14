@@ -871,6 +871,42 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(summary?.failedCount, 1)
         XCTAssertEqual(summary?.latestStatus, .needsReview)
         XCTAssertEqual(summary?.validationRate, 0.75)
+        XCTAssertEqual(summary?.level, .needsTuning)
+        XCTAssertEqual(summary?.shouldOfferModelTuning, true)
+    }
+
+    func testPromptPipelineHealthSummaryLevelsTuneOnlyUnstablePipelines() {
+        let stable = ChatPromptPipelineHealthSummary(
+            providerID: "afm",
+            traceCount: 4,
+            validatedCount: 4,
+            repairCount: 0,
+            failedCount: 0,
+            latestStatus: .validated
+        )
+        let repaired = ChatPromptPipelineHealthSummary(
+            providerID: "afm",
+            traceCount: 4,
+            validatedCount: 3,
+            repairCount: 1,
+            failedCount: 0,
+            latestStatus: .validated
+        )
+        let failed = ChatPromptPipelineHealthSummary(
+            providerID: "afm",
+            traceCount: 4,
+            validatedCount: 3,
+            repairCount: 0,
+            failedCount: 1,
+            latestStatus: .failed
+        )
+
+        XCTAssertEqual(stable.level, .stable)
+        XCTAssertFalse(stable.shouldOfferModelTuning)
+        XCTAssertEqual(repaired.level, .watch)
+        XCTAssertTrue(repaired.shouldOfferModelTuning)
+        XCTAssertEqual(failed.level, .needsTuning)
+        XCTAssertTrue(failed.shouldOfferModelTuning)
     }
 
     func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {

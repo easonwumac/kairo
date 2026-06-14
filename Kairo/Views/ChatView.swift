@@ -146,7 +146,11 @@ public struct ChatView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         if let summary = viewModel.promptPipelineHealthSummary {
-                            ChatPromptPipelineHealthCard(summary: summary)
+                            ChatPromptPipelineHealthCard(
+                                summary: summary,
+                                canTuneModel: viewModel.canEditProviderRoute,
+                                openModelSettings: openModelSettings
+                            )
                                 .padding(.horizontal, 14)
                                 .id("pipeline-health")
                         }
@@ -653,40 +657,59 @@ public struct ChatView: View {
 
 private struct ChatPromptPipelineHealthCard: View {
     let summary: ChatPromptPipelineHealthSummary
+    let canTuneModel: Bool
+    let openModelSettings: () -> Void
 
     var body: some View {
-        HStack(alignment: .center, spacing: 11) {
-            Image(systemName: iconName)
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(tint)
-                .frame(width: 30, height: 30)
-                .background(tint.opacity(0.12), in: Circle())
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .center, spacing: 11) {
+                Image(systemName: iconName)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(tint)
+                    .frame(width: 30, height: 30)
+                    .background(tint.opacity(0.12), in: Circle())
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 7) {
-                    Text(KairoL10n.string("chat.pipeline.health.title"))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(KairoDesign.ink)
-                    Text(summary.providerID)
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(tint)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(tint.opacity(0.10), in: Capsule())
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 7) {
+                        Text(KairoL10n.string("chat.pipeline.health.title"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(KairoDesign.ink)
+                        Text(summary.providerID)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(tint)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(tint.opacity(0.10), in: Capsule())
+                    }
+
+                    Text(detailText)
+                        .font(.caption2)
+                        .foregroundStyle(KairoDesign.muted)
+                        .lineLimit(2)
                 }
 
-                Text(detailText)
-                    .font(.caption2)
-                    .foregroundStyle(KairoDesign.muted)
-                    .lineLimit(2)
+                Spacer(minLength: 8)
+
+                Text(validationPercent)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(tint)
+                    .monospacedDigit()
             }
 
-            Spacer(minLength: 8)
-
-            Text(validationPercent)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(tint)
-                .monospacedDigit()
+            if summary.shouldOfferModelTuning, canTuneModel {
+                Button {
+                    openModelSettings()
+                } label: {
+                    Label(KairoL10n.string("chat.pipeline.health.tune"), systemImage: "slider.horizontal.3")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(tint)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(tint.opacity(0.10), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("chat.pipeline.health.tune")
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
