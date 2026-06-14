@@ -642,9 +642,13 @@
 "chat.composer.placeholder" = "請 Kairo 執行動作";
 "chat.composer.send" = "送出";
 "chat.composer.inputShell" = "Chat 輸入框";
-"chat.briefing.shared" = "2 個分享";
-"chat.briefing.reviews" = "3 個待確認";
-"chat.briefing.memoryReady" = "記憶可用";
+"chat.briefing.shared.none" = "無擷取";
+"chat.briefing.shared.count" = "%lld 個擷取";
+"chat.briefing.reviews.none" = "無待確認";
+"chat.briefing.reviews.count" = "%lld 個待確認";
+"chat.briefing.reminders.count" = "%lld 個提醒";
+"chat.briefing.handoffs.count" = "%lld 個交接";
+"chat.briefing.memory.count" = "%lld 個記憶";
 "chat.briefing.noSilentWrites" = "不會靜默寫入";
 "chat.attachment.remove" = "移除附件";
 "chat.private.title" = "私密聊天";

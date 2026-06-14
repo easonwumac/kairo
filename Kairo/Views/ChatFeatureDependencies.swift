@@ -4,6 +4,7 @@ import Foundation
 public struct ChatFeatureDependencies {
     public var historyStore: any ChatHistoryStore
     public var shareImportAPI: any KairoShareImportAPI
+    public var actionInboxAPI: any KairoActionInboxAPI
     public var chatAPI: any KairoChatAPI
     public var actionAPI: any KairoActionAPI
     public var infoPageStore: InfoPageStore?
@@ -18,6 +19,7 @@ public struct ChatFeatureDependencies {
     public init(
         historyStore: any ChatHistoryStore,
         shareImportAPI: any KairoShareImportAPI,
+        actionInboxAPI: any KairoActionInboxAPI,
         chatAPI: any KairoChatAPI,
         actionAPI: any KairoActionAPI,
         infoPageStore: InfoPageStore? = nil,
@@ -31,6 +33,7 @@ public struct ChatFeatureDependencies {
     ) {
         self.historyStore = historyStore
         self.shareImportAPI = shareImportAPI
+        self.actionInboxAPI = actionInboxAPI
         self.chatAPI = chatAPI
         self.actionAPI = actionAPI
         self.infoPageStore = infoPageStore
@@ -50,6 +53,7 @@ public protocol ChatFeatureDependencyComposing: Sendable {
         shareIngestionQueue: any ShareIngestionQueue,
         chatAPI: (any KairoChatAPI)?,
         shareImportAPI: (any KairoShareImportAPI)?,
+        actionInboxAPI: (any KairoActionInboxAPI)?,
         actionAPI: (any KairoActionAPI)?,
         actionExecutor: (any ActionExecutor)?,
         localModelSettingsService: LocalModelSettingsService?,
@@ -67,6 +71,7 @@ public struct DefaultChatFeatureDependencyComposer: ChatFeatureDependencyComposi
         shareIngestionQueue: any ShareIngestionQueue,
         chatAPI: (any KairoChatAPI)?,
         shareImportAPI: (any KairoShareImportAPI)?,
+        actionInboxAPI: (any KairoActionInboxAPI)?,
         actionAPI: (any KairoActionAPI)?,
         actionExecutor: (any ActionExecutor)?,
         localModelSettingsService: LocalModelSettingsService?,
@@ -77,6 +82,7 @@ public struct DefaultChatFeatureDependencyComposer: ChatFeatureDependencyComposi
         ChatFeatureDependencies(
             historyStore: historyStore,
             shareImportAPI: shareImportAPI ?? KairoShareImportBackendService(shareIngestionQueue: shareIngestionQueue),
+            actionInboxAPI: actionInboxAPI ?? KairoActionInboxBackendService(shareIngestionQueue: shareIngestionQueue),
             chatAPI: chatAPI ?? UnavailableChatAPI(),
             actionAPI: actionAPI ?? KairoActionBackendService(
                 actionExecutor: actionExecutor ?? SandboxActionExecutor(memoryStore: InMemoryMemoryStore())
@@ -102,6 +108,7 @@ public struct ChatFeatureDependencyFactory: Sendable {
         credentialStore: any CredentialStore,
         chatAPI: (any KairoChatAPI)?,
         shareImportAPI: (any KairoShareImportAPI)?,
+        actionInboxAPI: (any KairoActionInboxAPI)? = nil,
         actionAPI: (any KairoActionAPI)?,
         actionExecutor: any ActionExecutor,
         localModelSettingsService: LocalModelSettingsService?,
@@ -115,6 +122,7 @@ public struct ChatFeatureDependencyFactory: Sendable {
             shareIngestionQueue: shareIngestionQueue,
             chatAPI: chatAPI,
             shareImportAPI: shareImportAPI,
+            actionInboxAPI: actionInboxAPI,
             actionAPI: actionAPI,
             actionExecutor: actionExecutor,
             localModelSettingsService: localModelSettingsService,
@@ -167,6 +175,7 @@ public extension KairoEnvironment {
             credentialStore: credentialStore,
             chatAPI: backendAPI.chat,
             shareImportAPI: backendAPI.shareImports,
+            actionInboxAPI: backendAPI.actionInbox,
             actionAPI: backendAPI.actions,
             actionExecutor: actionExecutor,
             localModelSettingsService: localModelSettingsService,

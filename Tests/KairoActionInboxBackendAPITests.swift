@@ -2,6 +2,40 @@ import XCTest
 @testable import KairoCore
 
 final class KairoActionInboxBackendAPITests: XCTestCase {
+    func testBriefingSnapshotSummarizesPendingActionInboxWork() async throws {
+        let builder = ShareAttachmentBuilder()
+        let items = [
+            ShareIngestionItem(
+                attachments: [builder.text("TODO: Review launch deck", displayName: "Task")],
+                sourceApplication: "ShareSheet",
+                receivedAt: Date(timeIntervalSince1970: 10)
+            ),
+            ShareIngestionItem(
+                attachments: [builder.text("記住：AFM 適合短上下文分類。", displayName: "Memory")],
+                sourceApplication: "ShareSheet",
+                receivedAt: Date(timeIntervalSince1970: 20)
+            ),
+            ShareIngestionItem(
+                attachments: [builder.text("搜尋網路 iOS 27 AFM AppIntents", displayName: "Research")],
+                sourceApplication: "ShareSheet",
+                receivedAt: Date(timeIntervalSince1970: 30)
+            )
+        ]
+        let api = KairoActionInboxBackendService(
+            shareIngestionQueue: InMemoryShareIngestionQueue(seed: items)
+        )
+
+        let inboxItems = try await api.pendingItems(limit: 10)
+        let snapshot = KairoBriefingSnapshotBuilder().snapshot(from: inboxItems)
+
+        XCTAssertEqual(snapshot.pendingCaptureCount, 3)
+        XCTAssertEqual(snapshot.reminderDraftCount, 1)
+        XCTAssertEqual(snapshot.memoryDraftCount, 1)
+        XCTAssertEqual(snapshot.handoffCount, 1)
+        XCTAssertEqual(snapshot.confirmationCount, 3)
+        XCTAssertTrue(snapshot.hasPendingWork)
+    }
+
     func testShareMessageProducesTaskReminderDraftsWithoutImportingQueue() async throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!

@@ -142,6 +142,8 @@ public struct ChatView: View {
 
     private var chatSurface: some View {
         VStack(spacing: 0) {
+            KairoBriefingStrip(snapshot: viewModel.briefingSnapshot)
+
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
@@ -300,7 +302,7 @@ public struct ChatView: View {
     }
 
     private var chatMessagesTopPadding: CGFloat {
-        viewModel.currentThread.messages.count <= 1 ? 132 : 58
+        viewModel.currentThread.messages.count <= 1 ? 96 : 22
     }
 
     private var chatTopMistOverlay: some View {

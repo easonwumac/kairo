@@ -60,6 +60,9 @@ final class ShareImportReviewStateTests: XCTestCase {
 
         await viewModel.importPendingShares()
 
+        XCTAssertEqual(viewModel.briefingSnapshot.pendingCaptureCount, 1)
+        XCTAssertEqual(viewModel.briefingSnapshot.memoryDraftCount, 1)
+        XCTAssertEqual(viewModel.briefingSnapshot.confirmationCount, 1)
         XCTAssertEqual(viewModel.shareImportReviewAction?.kind, .saveMemory)
         XCTAssertFalse(viewModel.pendingAttachments.isEmpty)
         viewModel.reviewImportedShareAction()
@@ -71,6 +74,7 @@ final class ShareImportReviewStateTests: XCTestCase {
         XCTAssertNil(viewModel.pendingAction)
         XCTAssertNil(viewModel.shareImportNotice)
         XCTAssertTrue(viewModel.pendingAttachments.isEmpty)
+        XCTAssertEqual(viewModel.briefingSnapshot, .empty)
         let pendingItems = try await queue.pendingItems(limit: 10)
         let executedKinds = await executor.executedKinds()
         let confirmations = await executor.confirmations()

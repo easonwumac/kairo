@@ -80,6 +80,7 @@ private struct StubChatFeatureDependencyComposer: ChatFeatureDependencyComposing
         shareIngestionQueue: any ShareIngestionQueue,
         chatAPI: (any KairoChatAPI)?,
         shareImportAPI: (any KairoShareImportAPI)?,
+        actionInboxAPI: (any KairoActionInboxAPI)?,
         actionAPI: (any KairoActionAPI)?,
         actionExecutor: (any ActionExecutor)?,
         localModelSettingsService: LocalModelSettingsService?,
@@ -90,6 +91,7 @@ private struct StubChatFeatureDependencyComposer: ChatFeatureDependencyComposing
         ChatFeatureDependencies(
             historyStore: historyStore,
             shareImportAPI: EmptyShareImportAPI(),
+            actionInboxAPI: EmptyActionInboxAPI(),
             chatAPI: StubChatAPI(),
             actionAPI: NoopActionAPI(),
             localModelSettingsService: localModelSettingsService,
@@ -108,6 +110,7 @@ private final class RecordingChatFeatureDependencyComposer: ChatFeatureDependenc
         shareIngestionQueue: any ShareIngestionQueue,
         chatAPI: (any KairoChatAPI)?,
         shareImportAPI: (any KairoShareImportAPI)?,
+        actionInboxAPI: (any KairoActionInboxAPI)?,
         actionAPI: (any KairoActionAPI)?,
         actionExecutor: (any ActionExecutor)?,
         localModelSettingsService: LocalModelSettingsService?,
@@ -119,6 +122,7 @@ private final class RecordingChatFeatureDependencyComposer: ChatFeatureDependenc
         return ChatFeatureDependencies(
             historyStore: historyStore,
             shareImportAPI: EmptyShareImportAPI(),
+            actionInboxAPI: EmptyActionInboxAPI(),
             chatAPI: StubChatAPI(),
             actionAPI: NoopActionAPI(),
             localModelSettingsService: localModelSettingsService,
@@ -163,6 +167,12 @@ private struct EmptyShareImportAPI: KairoShareImportAPI {
     }
 
     func clearImportedShares(ids: [UUID], attachments: [ChatAttachment]) async throws {}
+}
+
+private struct EmptyActionInboxAPI: KairoActionInboxAPI {
+    func pendingItems(limit: Int) async throws -> [ActionInboxItem] {
+        []
+    }
 }
 
 private struct NoopActionAPI: KairoActionAPI {

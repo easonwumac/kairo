@@ -642,9 +642,13 @@
 "chat.composer.placeholder" = "Ask Kairo to act";
 "chat.composer.send" = "Send";
 "chat.composer.inputShell" = "Chat composer input shell";
-"chat.briefing.shared" = "2 shared";
-"chat.briefing.reviews" = "3 reviews";
-"chat.briefing.memoryReady" = "Memory ready";
+"chat.briefing.shared.none" = "No captures";
+"chat.briefing.shared.count" = "%lld captures";
+"chat.briefing.reviews.none" = "No reviews";
+"chat.briefing.reviews.count" = "%lld reviews";
+"chat.briefing.reminders.count" = "%lld reminders";
+"chat.briefing.handoffs.count" = "%lld handoffs";
+"chat.briefing.memory.count" = "%lld memories";
 "chat.briefing.noSilentWrites" = "No silent writes";
 "chat.attachment.remove" = "Remove attachment";
 "chat.private.title" = "Private chat";

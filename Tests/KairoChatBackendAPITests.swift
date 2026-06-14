@@ -183,6 +183,7 @@ final class KairoChatBackendAPITests: XCTestCase {
         let viewModel = ChatViewModel(dependencies: ChatFeatureDependencies(
             historyStore: InMemoryChatHistoryStore(),
             shareImportAPI: KairoShareImportBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
+            actionInboxAPI: KairoActionInboxBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
             chatAPI: FixedInfoPageDraftChatAPI(draft: draft),
             actionAPI: NoopKairoActionAPI(),
             infoPageStore: infoPageStore,

@@ -24,6 +24,7 @@ public final class ChatViewModel: ObservableObject {
     @Published public private(set) var actionResultSucceeded: Bool?
     @Published public private(set) var replyTarget: ChatMessage?
     @Published public private(set) var providerRouteStatus: ChatProviderRouteStatus
+    @Published public private(set) var briefingSnapshot: KairoBriefingSnapshot = .empty
     @Published public private(set) var latestInferenceMetrics: AIInferenceMetrics?
     @Published public private(set) var privacyMode: ChatPrivacyMode = .standard
     public var canEditProviderRoute: Bool { localModelSettingsService != nil }
@@ -49,6 +50,7 @@ public final class ChatViewModel: ObservableObject {
 
     private let historyStore: ChatHistoryStore
     private let shareImportAPI: any KairoShareImportAPI
+    private let actionInboxAPI: any KairoActionInboxAPI
     private let chatAPI: any KairoChatAPI
     private let actionAPI: any KairoActionAPI
     private let infoPageStore: InfoPageStore?
@@ -68,6 +70,7 @@ public final class ChatViewModel: ObservableObject {
     ) {
         self.historyStore = dependencies.historyStore
         self.shareImportAPI = dependencies.shareImportAPI
+        self.actionInboxAPI = dependencies.actionInboxAPI
         self.chatAPI = dependencies.chatAPI
         self.actionAPI = dependencies.actionAPI
         self.infoPageStore = dependencies.infoPageStore
@@ -91,6 +94,7 @@ public final class ChatViewModel: ObservableObject {
         shareImportAPI: (any KairoShareImportAPI)? = nil,
         chatAPI: (any KairoChatAPI)? = nil,
         actionAPI: (any KairoActionAPI)? = nil,
+        actionInboxAPI: (any KairoActionInboxAPI)? = nil,
         actionExecutor: (any ActionExecutor)? = nil,
         dependencyComposer: any ChatFeatureDependencyComposing = DefaultChatFeatureDependencyComposer(),
         localModelSettingsService: LocalModelSettingsService? = nil,
@@ -104,6 +108,7 @@ public final class ChatViewModel: ObservableObject {
                 shareIngestionQueue: shareIngestionQueue,
                 chatAPI: chatAPI,
                 shareImportAPI: shareImportAPI,
+                actionInboxAPI: actionInboxAPI,
                 actionAPI: actionAPI,
                 actionExecutor: actionExecutor,
                 localModelSettingsService: localModelSettingsService,
@@ -129,6 +134,7 @@ public final class ChatViewModel: ObservableObject {
             }
             errorMessage = nil
             await refreshProviderRouteStatus()
+            await refreshBriefingSnapshot()
         } catch {
             errorMessage = KairoL10n.string("chat.error.loadHistory", error.localizedDescription)
         }
@@ -271,6 +277,7 @@ public final class ChatViewModel: ObservableObject {
     public func importPendingShares() async {
         guard !canSendImportedShareToChat else { return }
         do {
+            await refreshBriefingSnapshot()
             let imported = try await shareImportAPI.importPendingShares(limit: 10)
             guard !imported.isEmpty else { return }
             pendingAttachments.append(contentsOf: imported.attachments)
@@ -281,9 +288,19 @@ public final class ChatViewModel: ObservableObject {
             shareImportNotice = Self.shareImportNotice(importedCount: imported.importedItemIDs.count)
             shareImportPreview = Self.shareImportPreview(for: imported.attachments)
             shareImportReviewAction = imported.suggestedActions.first
+            await refreshBriefingSnapshot()
             errorMessage = nil
         } catch {
             errorMessage = KairoL10n.string("chat.error.importShare", error.localizedDescription)
+        }
+    }
+
+    public func refreshBriefingSnapshot() async {
+        do {
+            let items = try await actionInboxAPI.pendingItems(limit: 20)
+            briefingSnapshot = KairoBriefingSnapshotBuilder().snapshot(from: items)
+        } catch {
+            briefingSnapshot = .empty
         }
     }
 
@@ -295,6 +312,7 @@ public final class ChatViewModel: ObservableObject {
         do {
             try await shareImportAPI.clearImportedShares(ids: importedItemIDs, attachments: importedAttachments)
             importedShareItemIDs = []
+            await refreshBriefingSnapshot()
         } catch {
             errorMessage = KairoL10n.string("chat.error.importShare", error.localizedDescription)
         }
@@ -684,6 +702,7 @@ public final class ChatViewModel: ObservableObject {
                 let importedAttachments = pendingAttachments
                 try await shareImportAPI.clearImportedShares(ids: importedItemIDs, attachments: importedAttachments)
                 clearShareImportState()
+                await refreshBriefingSnapshot()
             }
             errorMessage = nil
         } catch {

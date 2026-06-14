@@ -114,6 +114,7 @@ final class ChatViewModelCompactionIntegrationTests: XCTestCase {
             dependencies: ChatFeatureDependencies(
                 historyStore: InMemoryChatHistoryStore(),
                 shareImportAPI: KairoShareImportBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
+                actionInboxAPI: KairoActionInboxBackendService(shareIngestionQueue: InMemoryShareIngestionQueue()),
                 chatAPI: chatAPI,
                 actionAPI: KairoActionBackendService(
                     actionExecutor: SandboxActionExecutor(memoryStore: InMemoryMemoryStore())
