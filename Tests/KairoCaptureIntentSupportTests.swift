@@ -140,6 +140,52 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
         XCTAssertEqual(captureStore.consume(), [])
     }
 
+    func testCaptureInboxStatusReportsPendingCapturesWithoutConsuming() throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+
+        let first = try XCTUnwrap(captureStore.saveText("First AFM note", sourceName: "Shortcut"))
+        let second = try XCTUnwrap(captureStore.saveURL(
+            URL(string: "https://example.com/afm")!,
+            note: "Read later",
+            sourceName: "Shortcut URL"
+        ))
+
+        let output = KairoCaptureIntentSupport.captureInboxStatus(store: captureStore)
+        let decoded = try JSONDecoder().decode(KairoCaptureInboxStatusOutput.self, from: Data(output.encodedJSONString().utf8))
+
+        XCTAssertTrue(decoded.hasPendingCaptures)
+        XCTAssertEqual(decoded.pendingCount, 2)
+        XCTAssertEqual(decoded.latestCaptureID, second.id)
+        XCTAssertEqual(decoded.latestCaptureKind, .url)
+        XCTAssertEqual(decoded.latestURL, "https://example.com/afm")
+        XCTAssertEqual(decoded.captureIDs, [first.id, second.id])
+        XCTAssertEqual(decoded.recommendedRoute, .captureReview)
+        XCTAssertEqual(decoded.recommendedDeepLink, KairoCaptureTriageRoute.captureReview.deepLinkString)
+        XCTAssertEqual(captureStore.pending().map(\.id), [first.id, second.id])
+    }
+
+    func testCaptureInboxStatusReportsEmptyInboxWithoutReviewRoute() throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+
+        let output = KairoCaptureIntentSupport.captureInboxStatus(store: captureStore)
+
+        XCTAssertFalse(output.hasPendingCaptures)
+        XCTAssertEqual(output.pendingCount, 0)
+        XCTAssertNil(output.latestCaptureID)
+        XCTAssertEqual(output.captureIDs, [])
+        XCTAssertEqual(output.textPreviews, [])
+        XCTAssertEqual(output.recommendedRoute, .chat)
+        XCTAssertEqual(output.recommendedDeepLink, KairoCaptureTriageRoute.chat.deepLinkString)
+    }
+
     func testTriageCaptureReturnsMemoryActionForRememberedText() async throws {
         let output = try await KairoCaptureIntentSupport.triage(
             text: "記住：AFM 適合短上下文分類。",

@@ -499,6 +499,22 @@ public struct CaptureURLInKairoIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct GetKairoCaptureInboxStatusIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Get Kairo Capture Inbox Status"
+    public static var description = IntentDescription("Return pending Kairo captures without consuming them, so Shortcuts can branch before opening review.")
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let output = KairoCaptureIntentSupport.captureInboxStatus()
+        return .result(
+            value: try output.encodedJSONString(),
+            dialog: IntentDialog(stringLiteral: output.displayText)
+        )
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct KairoAppShortcutsProvider: AppShortcutsProvider {
     public static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -536,6 +552,15 @@ public struct KairoAppShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Review Captures",
             systemImageName: "checklist.checked"
+        )
+        AppShortcut(
+            intent: GetKairoCaptureInboxStatusIntent(),
+            phrases: [
+                "Check \(.applicationName) capture inbox",
+                "Get \(.applicationName) capture status"
+            ],
+            shortTitle: "Capture Status",
+            systemImageName: "tray.full"
         )
         AppShortcut(
             intent: CaptureTextInKairoIntent(),
@@ -841,6 +866,57 @@ public struct KairoCaptureAndTriageOutput: Codable, Equatable, Sendable {
     }
 }
 
+public struct KairoCaptureInboxStatusOutput: Codable, Equatable, Sendable {
+    public var schemaVersion: Int
+    public var displayText: String
+    public var hasPendingCaptures: Bool
+    public var pendingCount: Int
+    public var latestCaptureID: UUID?
+    public var latestCaptureKind: KairoIntentCaptureKind?
+    public var latestTextPreview: String?
+    public var latestURL: String?
+    public var captureIDs: [UUID]
+    public var textPreviews: [String]
+    public var recommendedRoute: KairoCaptureTriageRoute
+    public var recommendedDeepLink: String?
+
+    public init(
+        schemaVersion: Int = 1,
+        displayText: String,
+        hasPendingCaptures: Bool,
+        pendingCount: Int,
+        latestCaptureID: UUID?,
+        latestCaptureKind: KairoIntentCaptureKind?,
+        latestTextPreview: String?,
+        latestURL: String?,
+        captureIDs: [UUID],
+        textPreviews: [String],
+        recommendedRoute: KairoCaptureTriageRoute,
+        recommendedDeepLink: String?
+    ) {
+        self.schemaVersion = schemaVersion
+        self.displayText = displayText
+        self.hasPendingCaptures = hasPendingCaptures
+        self.pendingCount = pendingCount
+        self.latestCaptureID = latestCaptureID
+        self.latestCaptureKind = latestCaptureKind
+        self.latestTextPreview = latestTextPreview
+        self.latestURL = latestURL
+        self.captureIDs = captureIDs
+        self.textPreviews = textPreviews
+        self.recommendedRoute = recommendedRoute
+        self.recommendedDeepLink = recommendedDeepLink
+    }
+
+    public func encodedJSONString() throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(self)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
+
 public enum KairoCaptureTriageRoute: String, Codable, CaseIterable, Sendable {
     case captureReview
     case chat
@@ -899,6 +975,32 @@ enum KairoCaptureIntentSupport {
             from: capture,
             fallbackText: note ?? url.absoluteString,
             routeStore: routeStore
+        )
+    }
+
+    static func captureInboxStatus(
+        store: KairoIntentCaptureStore = KairoIntentCaptureStore()
+    ) -> KairoCaptureInboxStatusOutput {
+        let captures = store.pending()
+        let latest = captures.last
+        let route: KairoCaptureTriageRoute = captures.isEmpty ? .chat : .captureReview
+        let previews = captures.suffix(5).map { compactPreview($0.text, limit: 160) }
+        let displayText = captures.isEmpty
+            ? "No pending Kairo captures."
+            : "\(captures.count) pending Kairo capture\(captures.count == 1 ? "" : "s")."
+
+        return KairoCaptureInboxStatusOutput(
+            displayText: displayText,
+            hasPendingCaptures: !captures.isEmpty,
+            pendingCount: captures.count,
+            latestCaptureID: latest?.id,
+            latestCaptureKind: latest?.kind,
+            latestTextPreview: latest.map { compactPreview($0.text, limit: 220) },
+            latestURL: latest?.url?.absoluteString,
+            captureIDs: captures.map(\.id),
+            textPreviews: previews,
+            recommendedRoute: route,
+            recommendedDeepLink: route.deepLinkString
         )
     }
 
@@ -991,11 +1093,6 @@ enum KairoCaptureIntentSupport {
         if capture != nil {
             routeStore.save(recommendedRoute.route)
         }
-        let preview = (capture?.text ?? fallbackText)
-            .components(separatedBy: .whitespacesAndNewlines)
-            .filter { !$0.isEmpty }
-            .joined(separator: " ")
-        let boundedPreview = String(preview.prefix(220))
         let displayText = capture == nil
             ? "Capture was not queued."
             : "Opening Kairo capture review."
@@ -1006,9 +1103,17 @@ enum KairoCaptureIntentSupport {
             captureKind: capture?.kind,
             recommendedRoute: recommendedRoute,
             recommendedDeepLink: recommendedRoute.deepLinkString,
-            textPreview: boundedPreview,
+            textPreview: compactPreview(capture?.text ?? fallbackText, limit: 220),
             url: capture?.url?.absoluteString
         )
+    }
+
+    private static func compactPreview(_ text: String, limit: Int) -> String {
+        let preview = text
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+        return String(preview.prefix(limit))
     }
 }
 

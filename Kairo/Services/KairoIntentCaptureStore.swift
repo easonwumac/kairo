@@ -80,6 +80,10 @@ public struct KairoIntentCaptureStore {
         return captures
     }
 
+    public func pending() -> [KairoIntentCapture] {
+        load()
+    }
+
     private func load() -> [KairoIntentCapture] {
         guard let data = defaults.data(forKey: key),
               let captures = try? decoder.decode([KairoIntentCapture].self, from: data) else {
