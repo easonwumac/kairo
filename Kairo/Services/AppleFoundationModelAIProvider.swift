@@ -183,6 +183,7 @@ public struct AppleFoundationModelAIProvider: AIProvider {
         - Do not invent IDs, dates, prices, accounts, or actions.
         - Never include Markdown fences.
         """)
+        sections.append(Self.taskProfile(from: request))
 
         let history = request.conversationHistory.suffix(6).map { turn in
             "\(turn.role.rawValue): \(truncated(turn.text, limit: 500))"
@@ -230,6 +231,9 @@ public struct AppleFoundationModelAIProvider: AIProvider {
         - Do not add Markdown, code fences, or explanation outside JSON.
         - If unsure, put the uncertainty in response and lower confidence.
         - If the task exceeds local context or safe local execution, set needsEscalation=true.
+        - \(repairHint(for: previousOutput))
+
+        \(Self.taskProfile(from: request))
 
         Previous output:
         \(truncated(previousOutput, limit: 900))
@@ -237,6 +241,60 @@ public struct AppleFoundationModelAIProvider: AIProvider {
         User:
         \(truncated(request.userPrompt, limit: 900))
         """, limit: 2_400)
+    }
+
+    private static func taskProfile(from request: AICompletionRequest) -> String {
+        let combined = [
+            request.userPrompt,
+            request.attachmentContext.map(\.promptSummary).joined(separator: " ")
+        ]
+        .joined(separator: " ")
+        .lowercased()
+        let profile: String
+        if containsAny(combined, ["summarize", "summary", "tl;dr", "摘要", "整理"]) {
+            profile = "summarization"
+        } else if containsAny(combined, ["rewrite", "polish", "translate", "改寫", "翻譯", "潤飾"]) {
+            profile = "rewrite"
+        } else if containsAny(combined, ["classify", "category", "tag", "分類", "標籤"]) {
+            profile = "classification"
+        } else if containsAny(combined, ["todo", "remind", "schedule", "book", "send", "delete", "buy", "提醒", "預約", "寄出", "刪除", "購買"]) {
+            profile = "action-risk"
+        } else if request.userPrompt.contains("?") || containsAny(combined, ["what", "when", "where", "who", "why", "how", "什麼", "何時", "哪裡", "誰", "為什麼", "如何"]) {
+            profile = "simple-qa"
+        } else {
+            profile = "chat"
+        }
+
+        let actionGuidance = profile == "action-risk"
+            ? "Do not claim completion. Offer a draft or next step and set needsEscalation=true for real-world execution."
+            : "Complete locally when the supplied context is enough."
+        return """
+        Task profile:
+        - type: \(profile)
+        - response shape: direct answer in the JSON response field
+        - routing: \(actionGuidance)
+        """
+    }
+
+    private static func repairHint(for previousOutput: String) -> String {
+        let trimmed = previousOutput.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.contains("```") {
+            return "Remove Markdown fences and return only the JSON object."
+        }
+        if !trimmed.contains("{") || !trimmed.contains("}") {
+            return "The previous output had no JSON object; wrap the answer in the required schema."
+        }
+        if !trimmed.contains("\"response\"") {
+            return "The JSON object is missing response; add response as a non-empty string."
+        }
+        if !trimmed.contains("\"confidence\"") {
+            return "The JSON object is missing confidence; add a numeric confidence from 0.0 to 1.0."
+        }
+        return "Fix schema mismatches while preserving the useful answer."
+    }
+
+    private static func containsAny(_ text: String, _ needles: [String]) -> Bool {
+        needles.contains { text.contains($0) }
     }
 
     private static func compactWikiContext(from results: [KairoWikiSearchResult]) -> String {

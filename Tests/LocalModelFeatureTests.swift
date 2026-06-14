@@ -1726,6 +1726,40 @@ final class LocalModelFeatureTests: XCTestCase {
         XCTAssertTrue(prompt.contains("Appointment is on Friday at 10 AM."))
     }
 
+    func testAppleFoundationModelPromptAddsActionRiskTaskProfile() {
+        let request = AICompletionRequest(
+            systemPrompt: "System",
+            userPrompt: "Remind me to send the AFM notes tomorrow."
+        )
+
+        let prompt = AppleFoundationModelAIProvider.prompt(from: request)
+
+        XCTAssertTrue(prompt.contains("Task profile:"))
+        XCTAssertTrue(prompt.contains("type: action-risk"))
+        XCTAssertTrue(prompt.contains("Do not claim completion"))
+        XCTAssertTrue(prompt.contains("needsEscalation=true"))
+    }
+
+    func testAppleFoundationModelRepairPromptAddsSpecificSchemaHint() {
+        let request = AICompletionRequest(
+            systemPrompt: "System",
+            userPrompt: "Summarize this AFM note."
+        )
+
+        let prompt = AppleFoundationModelAIProvider.repairPrompt(
+            from: request,
+            previousOutput: """
+            ```json
+            {"answer":"AFM needs staged prompts."}
+            ```
+            """
+        )
+
+        XCTAssertTrue(prompt.contains("Remove Markdown fences"))
+        XCTAssertTrue(prompt.contains("Task profile:"))
+        XCTAssertTrue(prompt.contains("type: summarization"))
+    }
+
     func testLocalModelRoutingAIProviderFailsClosedWhenLocalOnlyHasNoModel() async throws {
         let service = try await makeLocalModelSettingsService(
             preference: .localOnly,
