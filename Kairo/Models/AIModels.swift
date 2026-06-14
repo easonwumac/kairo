@@ -235,6 +235,8 @@ public struct ChatPromptPipelineHealthSummary: Equatable, Sendable {
     public var repairCount: Int
     public var failedCount: Int
     public var latestStatus: PromptPipelineTrace.Status
+    public var unstableStageName: PromptPipelineStageTrace.Name?
+    public var latestValidationIssue: String?
 
     public init(
         providerID: String,
@@ -242,7 +244,9 @@ public struct ChatPromptPipelineHealthSummary: Equatable, Sendable {
         validatedCount: Int,
         repairCount: Int,
         failedCount: Int,
-        latestStatus: PromptPipelineTrace.Status
+        latestStatus: PromptPipelineTrace.Status,
+        unstableStageName: PromptPipelineStageTrace.Name? = nil,
+        latestValidationIssue: String? = nil
     ) {
         self.providerID = providerID
         self.traceCount = traceCount
@@ -250,6 +254,8 @@ public struct ChatPromptPipelineHealthSummary: Equatable, Sendable {
         self.repairCount = repairCount
         self.failedCount = failedCount
         self.latestStatus = latestStatus
+        self.unstableStageName = unstableStageName
+        self.latestValidationIssue = latestValidationIssue
     }
 
     public var validationRate: Double {

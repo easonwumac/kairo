@@ -896,7 +896,8 @@ final class KairoCoreTests: XCTestCase {
                         PromptPipelineStageTrace(name: .requestModel, status: .passed, attempt: 1),
                         PromptPipelineStageTrace(name: .repairPrompt, status: index == 6 ? .repaired : .passed, attempt: 2),
                         PromptPipelineStageTrace(name: .parseStructuredOutput, status: index == 7 ? .failed : .passed, attempt: 2)
-                    ]
+                    ],
+                    validationIssues: index == 7 ? ["invalid compact JSON"] : []
                 )
             )
         }
@@ -909,6 +910,8 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(summary?.repairCount, 1)
         XCTAssertEqual(summary?.failedCount, 1)
         XCTAssertEqual(summary?.latestStatus, .needsReview)
+        XCTAssertEqual(summary?.unstableStageName, .parseStructuredOutput)
+        XCTAssertEqual(summary?.latestValidationIssue, "invalid compact JSON")
         XCTAssertEqual(summary?.validationRate, 0.75)
         XCTAssertEqual(summary?.level, .needsTuning)
         XCTAssertEqual(summary?.shouldOfferModelTuning, true)
@@ -976,11 +979,15 @@ final class KairoCoreTests: XCTestCase {
             validatedCount: 1,
             repairCount: 1,
             failedCount: 1,
-            latestStatus: .failed
+            latestStatus: .failed,
+            unstableStageName: .parseStructuredOutput,
+            latestValidationIssue: "invalid compact JSON"
         ))
 
         XCTAssertTrue(prompt.contains("afm"))
         XCTAssertTrue(prompt.contains("3"))
+        XCTAssertTrue(prompt.contains("parseStructuredOutput"))
+        XCTAssertTrue(prompt.contains("invalid compact JSON"))
         XCTAssertTrue(prompt.contains("verdict"))
         XCTAssertTrue(prompt.contains("likelyFailure"))
         XCTAssertTrue(prompt.contains("promptFix"))

@@ -706,7 +706,7 @@
 "chat.pipeline.health.detail" = "%lld recent · %lld repairs · %lld failed stages";
 "chat.pipeline.health.draft" = "Draft test";
 "chat.pipeline.health.tune" = "Tune model";
-"chat.pipeline.diagnostic.prompt" = "Run a focused pipeline diagnostic for %@. Recent trace window: %lld replies, %lld validated, %lld repair stages, %lld failed stages. Return exactly one JSON object and no prose: {\"verdict\":\"pass|watch|fail\",\"likelyFailure\":\"short cause\",\"promptFix\":\"one instruction to tighten\",\"confidence\":0.0}. Keep every string under 120 characters.";
+"chat.pipeline.diagnostic.prompt" = "Run a focused pipeline diagnostic for %@. Recent trace window: %lld replies, %lld validated, %lld repair stages, %lld failed stages. Unstable stage: %@. Latest issue: %@. Return exactly one JSON object and no prose: {\"verdict\":\"pass|watch|fail\",\"likelyFailure\":\"short cause\",\"promptFix\":\"one instruction to tighten\",\"confidence\":0.0}. Keep every string under 120 characters.";
 "chat.pipeline.diagnostic.result" = "Diagnostic %@ · %@";
 "chat.memory.proposal.title" = "Save Memory";
 "chat.memory.proposal.rationale" = "Kairo found a preference or fact that may help future chat replies. It will only be saved if you confirm.";

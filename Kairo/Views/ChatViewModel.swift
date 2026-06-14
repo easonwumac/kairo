@@ -1412,6 +1412,15 @@ public final class ChatViewModel: ObservableObject {
                 return lhs.value > rhs.value
             }
             .first?.key ?? latest.providerID
+        let unstableStageName = traces
+            .reversed()
+            .flatMap(\.stages)
+            .first { $0.status == .failed || $0.status == .repaired }?
+            .name
+        let latestValidationIssue = traces
+            .reversed()
+            .flatMap(\.validationIssues)
+            .first
 
         return ChatPromptPipelineHealthSummary(
             providerID: providerID,
@@ -1419,7 +1428,9 @@ public final class ChatViewModel: ObservableObject {
             validatedCount: traces.filter { $0.status == .validated }.count,
             repairCount: traces.reduce(0) { $0 + $1.repairedStageCount },
             failedCount: traces.reduce(0) { $0 + $1.failedStageCount },
-            latestStatus: latest.status
+            latestStatus: latest.status,
+            unstableStageName: unstableStageName,
+            latestValidationIssue: latestValidationIssue
         )
     }
 
@@ -1430,7 +1441,9 @@ public final class ChatViewModel: ObservableObject {
             Int64(summary.traceCount),
             Int64(summary.validatedCount),
             Int64(summary.repairCount),
-            Int64(summary.failedCount)
+            Int64(summary.failedCount),
+            summary.unstableStageName?.rawValue ?? "none",
+            summary.latestValidationIssue ?? "none"
         )
     }
 
