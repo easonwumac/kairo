@@ -17,7 +17,7 @@ struct OnboardingView: View {
             onboardingBackground
 
             VStack(spacing: 0) {
-                stepContent
+                onboardingStepContent
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 footer
@@ -29,6 +29,17 @@ struct OnboardingView: View {
         .preferredColorScheme(KairoAppearancePreference.current.colorScheme)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.screen")
+    }
+
+    @ViewBuilder
+    private var onboardingStepContent: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 16) {
+                stepContent
+            }
+        } else {
+            stepContent
+        }
     }
 
     private var onboardingBackground: some View {
@@ -74,13 +85,8 @@ struct OnboardingView: View {
 
             ZStack {
                 RoundedRectangle(cornerRadius: 42, style: .continuous)
-                    .fill(KairoDesign.elevatedSurface.opacity(0.64))
                     .frame(height: 252)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 42, style: .continuous)
-                            .stroke(KairoDesign.line.opacity(0.72), lineWidth: 1)
-                    }
-                    .shadow(color: KairoDesign.shadow.opacity(0.24), radius: 30, x: 0, y: 20)
+                    .onboardingGlassSurface(cornerRadius: 42, tint: KairoDesign.teal, shadowRadius: 30, shadowY: 20)
 
                 assetConstellation
             }
@@ -127,11 +133,7 @@ struct OnboardingView: View {
                 .font(.system(size: 56, weight: .semibold))
                 .foregroundStyle(KairoDesign.teal)
                 .frame(width: 112, height: 112)
-                .background(KairoDesign.elevatedSurface.opacity(0.82), in: Circle())
-                .overlay {
-                    Circle()
-                        .stroke(KairoDesign.line.opacity(0.8), lineWidth: 1)
-                }
+                .onboardingGlassCircle(tint: KairoDesign.teal, opacity: 0.16)
 
             onboardingOrbitIcon("calendar.badge.clock", x: -105, y: -78, tint: KairoDesign.amber)
             onboardingOrbitIcon("folder.fill", x: 116, y: -64, tint: KairoDesign.blue)
@@ -145,11 +147,7 @@ struct OnboardingView: View {
             .font(.headline.weight(.bold))
             .foregroundStyle(tint)
             .frame(width: 48, height: 48)
-            .background(KairoDesign.elevatedSurface.opacity(0.72), in: Circle())
-            .overlay {
-                Circle()
-                    .stroke(KairoDesign.line.opacity(0.72), lineWidth: 1)
-            }
+            .onboardingGlassCircle(tint: tint, opacity: 0.12)
             .offset(x: x, y: y)
     }
 
@@ -159,7 +157,7 @@ struct OnboardingView: View {
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(KairoDesign.teal)
                 .frame(width: 34, height: 34)
-                .background(KairoDesign.elevatedSurface.opacity(0.62), in: Circle())
+                .onboardingGlassCircle(tint: KairoDesign.teal, opacity: 0.10)
             Text(KairoL10n.string(titleKey))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(KairoDesign.ink)
@@ -200,11 +198,13 @@ struct OnboardingView: View {
             .foregroundStyle(isSelected ? KairoDesign.blue : KairoDesign.ink)
             .padding(.horizontal, 12)
             .padding(.vertical, 12)
-            .background(KairoDesign.elevatedSurface.opacity(isSelected ? 0.80 : 0.46), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 17, style: .continuous)
-                    .stroke(isSelected ? KairoDesign.blue.opacity(0.32) : KairoDesign.line, lineWidth: 1)
-            }
+            .onboardingGlassSurface(
+                cornerRadius: 17,
+                tint: isSelected ? KairoDesign.blue : KairoDesign.muted,
+                isInteractive: true,
+                fallbackOpacity: isSelected ? 0.80 : 0.46,
+                strokeOpacity: isSelected ? 0.32 : 0.72
+            )
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("onboarding.category.\(category.id)")
@@ -246,7 +246,7 @@ struct OnboardingView: View {
                     .foregroundStyle(KairoDesign.amber)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(14)
-                    .background(KairoDesign.elevatedSurface.opacity(0.62), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .onboardingGlassSurface(cornerRadius: 18, tint: KairoDesign.amber, fallbackOpacity: 0.62)
                     .accessibilityIdentifier("onboarding.model.required-notice")
             }
 
@@ -260,7 +260,7 @@ struct OnboardingView: View {
                 .font(.title3.weight(.bold))
                 .foregroundStyle(KairoDesign.teal)
                 .frame(width: 44, height: 44)
-                .background(KairoDesign.elevatedSurface.opacity(0.66), in: Circle())
+                .onboardingGlassCircle(tint: KairoDesign.teal, opacity: 0.12)
             VStack(alignment: .leading, spacing: 4) {
                 Text(KairoL10n.string(titleKey))
                     .font(.headline.weight(.semibold))
@@ -273,11 +273,7 @@ struct OnboardingView: View {
             Spacer(minLength: 0)
         }
         .padding(14)
-        .background(KairoDesign.elevatedSurface.opacity(0.52), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(KairoDesign.line.opacity(0.74), lineWidth: 1)
-        }
+        .onboardingGlassSurface(cornerRadius: 22, tint: KairoDesign.teal, fallbackOpacity: 0.52)
     }
 
     private func stepHeader(titleKey: String, subtitleKey: String) -> some View {
@@ -426,6 +422,65 @@ private enum OnboardingStep: Int, CaseIterable {
             return .intro
         case .model:
             return .categories
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func onboardingGlassSurface(
+        cornerRadius: CGFloat,
+        tint: Color,
+        isInteractive: Bool = false,
+        fallbackOpacity: Double = 0.64,
+        strokeOpacity: Double = 0.72,
+        shadowRadius: CGFloat = 0,
+        shadowY: CGFloat = 0
+    ) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.12)).interactive(), in: .rect(cornerRadius: cornerRadius))
+                    .overlay {
+                        shape.stroke(tint.opacity(strokeOpacity), lineWidth: 1)
+                    }
+                    .shadow(color: KairoDesign.shadow.opacity(shadowRadius > 0 ? 0.24 : 0), radius: shadowRadius, x: 0, y: shadowY)
+            } else {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.10)), in: .rect(cornerRadius: cornerRadius))
+                    .overlay {
+                        shape.stroke(KairoDesign.line.opacity(strokeOpacity), lineWidth: 1)
+                    }
+                    .shadow(color: KairoDesign.shadow.opacity(shadowRadius > 0 ? 0.24 : 0), radius: shadowRadius, x: 0, y: shadowY)
+            }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface.opacity(fallbackOpacity), in: shape)
+                .overlay {
+                    shape.stroke(KairoDesign.line.opacity(strokeOpacity), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(shadowRadius > 0 ? 0.24 : 0), radius: shadowRadius, x: 0, y: shadowY)
+        }
+    }
+
+    @ViewBuilder
+    func onboardingGlassCircle(tint: Color, opacity: Double) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(opacity)), in: .circle)
+                .overlay {
+                    Circle()
+                        .stroke(KairoDesign.line.opacity(0.72), lineWidth: 1)
+                }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface.opacity(0.72), in: Circle())
+                .overlay {
+                    Circle()
+                        .stroke(KairoDesign.line.opacity(0.72), lineWidth: 1)
+                }
         }
     }
 }
