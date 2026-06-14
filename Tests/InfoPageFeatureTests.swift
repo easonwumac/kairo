@@ -313,6 +313,70 @@ final class InfoPageFeatureTests: XCTestCase {
         XCTAssertTrue(prompts[2].contains(factsJSON))
     }
 
+    func testAssetUnderstandingPipelineNormalizesNoisySmallModelDraftsBeforeValidation() async throws {
+        let asset = KnowledgeAsset(
+            title: "receipt-note.txt",
+            kind: .text,
+            source: .shareExtension,
+            attachments: [],
+            extractedText: "Receipt note for Kairo test materials.",
+            summary: "Kairo receipt note"
+        )
+        let hallucinatedSourceID = UUID()
+        let noisyJSON = """
+        {
+          "createInfoPage": true,
+          "title": "  Kairo Receipt Note  ",
+          "templateID": "generalNote",
+          "category": "generalNote",
+          "assetDescription": "  Receipt note for Kairo test materials.  ",
+          "ocrSummary": "  Receipt note for Kairo test materials.  ",
+          "keywords": [" receipt ", "Receipt", "", "kairo", "materials", "materials", "prompt", "pipeline", "afm", "local", "extra"],
+          "candidateCategories": [
+            {"folderName": " Unknown ", "templateID": "generalNote", "category": "generalNote", "confidence": 1.7, "reason": "Could be a general note."},
+            {"folderName": "Receipts", "templateID": "generalNote", "category": "generalNote", "confidence": -0.3, "reason": "Could be a receipt note."},
+            {"folderName": "Receipts", "templateID": "generalNote", "category": "generalNote", "confidence": 0.5, "reason": "Duplicate candidate."}
+          ],
+          "summary": "  Receipt note should become an InfoPage.  ",
+          "facts": [
+            {"label": "topic", "value": "Receipt note", "sourceAssetID": "\(hallucinatedSourceID.uuidString)"},
+            {"label": "note", "value": "Kairo test materials"},
+            {"label": "   ", "value": "discard me"}
+          ],
+          "timeline": [
+            {"title": " Receipt captured ", "note": " Shared into Kairo ", "sourceAssetID": "\(hallucinatedSourceID.uuidString)"}
+          ],
+          "reminderDrafts": [],
+          "folderName": null,
+          "confidence": 1.4,
+          "missingInfo": ["", "total", "Total", "merchant"],
+          "sourceAssetIDs": ["\(hallucinatedSourceID.uuidString)"]
+        }
+        """
+        let model = StubAssetUnderstandingModel(replies: [noisyJSON])
+        let pipeline = AssetUnderstandingPipeline(model: model)
+
+        let result = await pipeline.understand(AssetUnderstandingRequest(
+            assets: [asset],
+            folders: [KnowledgeAssetFolder(name: "Receipts")],
+            minimumConfidence: 0.72,
+            maximumAttempts: 1
+        ))
+
+        XCTAssertEqual(result.status, .validated)
+        XCTAssertEqual(result.draft.title, "Kairo Receipt Note")
+        XCTAssertEqual(result.draft.confidence, 1)
+        XCTAssertEqual(result.draft.sourceAssetIDs, [asset.id])
+        XCTAssertEqual(result.draft.facts.map(\.label), ["topic", "note"])
+        XCTAssertNil(result.draft.facts[0].sourceAssetID)
+        XCTAssertEqual(result.draft.facts[1].sourceAssetID, asset.id)
+        XCTAssertNil(result.draft.timeline[0].sourceAssetID)
+        XCTAssertEqual(result.draft.keywords ?? [], ["receipt", "kairo", "materials", "prompt", "pipeline", "afm", "local", "extra"])
+        XCTAssertEqual(result.draft.missingInfo, ["total", "merchant"])
+        XCTAssertEqual(result.draft.candidateCategories?.map(\.folderName), [nil, "Receipts"])
+        XCTAssertEqual(result.draft.candidateCategories?.map(\.confidence), [1, 0])
+    }
+
     func testAssetUnderstandingRepairPromptPreservesStagedPipelineAndValidationErrors() {
         let asset = KnowledgeAsset(
             title: "broken.txt",

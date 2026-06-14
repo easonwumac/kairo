@@ -552,10 +552,120 @@ public struct AssetUnderstandingPipeline: Sendable {
 
     private static func normalizedDraft(_ draft: InfoPageDraft, request: AssetUnderstandingRequest) -> InfoPageDraft {
         var normalized = draft
+        let sourceAssetIDs = Set(request.assets.map(\.id))
+        let fallbackSourceAssetID = sourceAssetIDs.count == 1 ? request.assets.first?.id : nil
+
+        normalized.title = truncate(normalized.title.trimmingCharacters(in: .whitespacesAndNewlines), limit: 96)
+        normalized.summary = truncate(normalized.summary.trimmingCharacters(in: .whitespacesAndNewlines), limit: 360)
+        normalized.assetDescription = normalized.assetDescription.map {
+            truncate($0.trimmingCharacters(in: .whitespacesAndNewlines), limit: 360)
+        }
+        normalized.ocrSummary = normalized.ocrSummary.map {
+            truncate($0.trimmingCharacters(in: .whitespacesAndNewlines), limit: 360)
+        }
+        normalized.confidence = min(max(normalized.confidence, 0), 1)
+
+        normalized.sourceAssetIDs = uniqueSourceAssetIDs(normalized.sourceAssetIDs, allowed: sourceAssetIDs)
         if normalized.sourceAssetIDs.isEmpty {
             normalized.sourceAssetIDs = request.assets.map(\.id)
         }
+        normalized.facts = normalized.facts.compactMap {
+            normalizedFact($0, allowedSourceAssetIDs: sourceAssetIDs, fallbackSourceAssetID: fallbackSourceAssetID)
+        }
+        normalized.timeline = normalized.timeline.compactMap {
+            normalizedTimelineItem($0, allowedSourceAssetIDs: sourceAssetIDs, fallbackSourceAssetID: fallbackSourceAssetID)
+        }
+        normalized.keywords = normalizedStringList(normalized.keywords, limit: 8, maxLength: 40)
+        normalized.missingInfo = normalizedStringList(normalized.missingInfo, limit: 8, maxLength: 96) ?? []
+        normalized.candidateCategories = normalizedCandidates(normalized.candidateCategories, folders: request.folders)
         return normalized
+    }
+
+    private static func normalizedFact(
+        _ fact: InfoPageDraftFact,
+        allowedSourceAssetIDs: Set<UUID>,
+        fallbackSourceAssetID: UUID?
+    ) -> InfoPageDraftFact? {
+        let label = truncate(fact.label.trimmingCharacters(in: .whitespacesAndNewlines), limit: 48)
+        let value = truncate(fact.value.trimmingCharacters(in: .whitespacesAndNewlines), limit: 220)
+        guard !label.isEmpty, !value.isEmpty else { return nil }
+        let sourceAssetID: UUID?
+        if let id = fact.sourceAssetID {
+            sourceAssetID = allowedSourceAssetIDs.contains(id) ? id : nil
+        } else {
+            sourceAssetID = fallbackSourceAssetID
+        }
+        return InfoPageDraftFact(label: label, value: value, sourceAssetID: sourceAssetID)
+    }
+
+    private static func normalizedTimelineItem(
+        _ item: InfoPageDraftTimelineItem,
+        allowedSourceAssetIDs: Set<UUID>,
+        fallbackSourceAssetID: UUID?
+    ) -> InfoPageDraftTimelineItem? {
+        let title = truncate(item.title.trimmingCharacters(in: .whitespacesAndNewlines), limit: 96)
+        guard !title.isEmpty else { return nil }
+        let note = item.note.map { truncate($0.trimmingCharacters(in: .whitespacesAndNewlines), limit: 220) }
+        let sourceAssetID: UUID?
+        if let id = item.sourceAssetID {
+            sourceAssetID = allowedSourceAssetIDs.contains(id) ? id : nil
+        } else {
+            sourceAssetID = fallbackSourceAssetID
+        }
+        return InfoPageDraftTimelineItem(title: title, note: note?.isEmpty == true ? nil : note, sourceAssetID: sourceAssetID)
+    }
+
+    private static func uniqueSourceAssetIDs(_ ids: [UUID], allowed: Set<UUID>) -> [UUID] {
+        var seen: Set<UUID> = []
+        return ids.compactMap { id in
+            guard allowed.contains(id), seen.insert(id).inserted else { return nil }
+            return id
+        }
+    }
+
+    private static func normalizedStringList(_ values: [String]?, limit: Int, maxLength: Int) -> [String]? {
+        guard let values else { return nil }
+        var seen: Set<String> = []
+        var result: [String] = []
+        for value in values {
+            let normalized = truncate(value.trimmingCharacters(in: .whitespacesAndNewlines), limit: maxLength)
+            let key = normalized.lowercased()
+            guard !normalized.isEmpty, seen.insert(key).inserted else { continue }
+            result.append(normalized)
+            if result.count == limit { break }
+        }
+        return result
+    }
+
+    private static func normalizedCandidates(
+        _ candidates: [InfoPageDraftCategoryCandidate]?,
+        folders: [KnowledgeAssetFolder]
+    ) -> [InfoPageDraftCategoryCandidate]? {
+        guard let candidates else { return nil }
+        let folderNames = Set(folders.map(\.name))
+        var seen: Set<String> = []
+        var result: [InfoPageDraftCategoryCandidate] = []
+        for candidate in candidates {
+            let folderName = candidate.folderName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let acceptedFolderName = folderName.flatMap { folderNames.contains($0) ? $0 : nil }
+            let reason = truncate(candidate.reason.trimmingCharacters(in: .whitespacesAndNewlines), limit: 140)
+            let key = "\(acceptedFolderName ?? "")|\(candidate.templateID.rawValue)|\(candidate.category.rawValue)"
+            guard !reason.isEmpty, seen.insert(key).inserted else { continue }
+            result.append(InfoPageDraftCategoryCandidate(
+                folderName: acceptedFolderName,
+                templateID: candidate.templateID,
+                category: candidate.category,
+                confidence: min(max(candidate.confidence, 0), 1),
+                reason: reason
+            ))
+            if result.count == 4 { break }
+        }
+        return result.isEmpty ? nil : result
+    }
+
+    private static func truncate(_ text: String, limit: Int) -> String {
+        guard text.count > limit else { return text }
+        return String(text.prefix(limit))
     }
 
     private static func fallbackDraft(
