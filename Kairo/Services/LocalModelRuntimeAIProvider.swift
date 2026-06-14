@@ -124,7 +124,7 @@ public struct LocalModelRuntimeAIProvider: AIProvider {
                             attempt: 1,
                             inputCharacters: result.result.promptTokens,
                             outputCharacters: result.result.generatedTokens,
-                            detail: "tok/s=\(String(format: "%.1f", result.result.generationTokensPerSecond ?? 0))"
+                            detail: "tok/s=\(String(format: "%.1f", result.result.generationTokensPerSecond))"
                         ),
                         PromptPipelineStageTrace(
                             name: .parseStructuredOutput,

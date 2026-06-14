@@ -127,6 +127,14 @@ public struct PromptPipelineTrace: Codable, Equatable, Sendable {
     public var totalOutputCharacters: Int {
         stages.compactMap(\.outputCharacters).reduce(0, +)
     }
+
+    public var repairedStageCount: Int {
+        stages.filter { $0.status == .repaired }.count
+    }
+
+    public var failedStageCount: Int {
+        stages.filter { $0.status == .failed }.count
+    }
 }
 
 public struct PromptPipelineStageTrace: Codable, Equatable, Sendable {

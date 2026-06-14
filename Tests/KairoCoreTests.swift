@@ -800,6 +800,39 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(decoded.promptPipelineTrace?.validationIssues, ["invalid JSON"])
     }
 
+    func testPromptPipelineTraceSummarizesStageHealth() {
+        let trace = PromptPipelineTrace(
+            providerID: "test-provider",
+            status: .needsReview,
+            stages: [
+                PromptPipelineStageTrace(
+                    name: .buildPrompt,
+                    status: .passed,
+                    attempt: 1,
+                    inputCharacters: 40
+                ),
+                PromptPipelineStageTrace(
+                    name: .parseStructuredOutput,
+                    status: .failed,
+                    attempt: 1,
+                    outputCharacters: 18
+                ),
+                PromptPipelineStageTrace(
+                    name: .repairPrompt,
+                    status: .repaired,
+                    attempt: 2,
+                    inputCharacters: 72,
+                    outputCharacters: 24
+                )
+            ]
+        )
+
+        XCTAssertEqual(trace.attemptCount, 2)
+        XCTAssertEqual(trace.repairedStageCount, 1)
+        XCTAssertEqual(trace.failedStageCount, 1)
+        XCTAssertEqual(trace.totalOutputCharacters, 42)
+    }
+
     func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {
         let registry = IntegrationRegistry()
 

@@ -12,6 +12,7 @@ struct ChatBubble: View {
     let onReply: (ChatMessage) -> Void
     let onShowRawJSON: (String) -> Void
     @State private var isReasoningExpanded = false
+    @State private var isPipelineDetailPresented = false
 
     private var isUser: Bool { message.role == .user }
     private var bubbleMaxWidth: CGFloat { isUser ? 306 : 334 }
@@ -72,18 +73,27 @@ struct ChatBubble: View {
                 }
 
                 if !isUser, let trace = message.promptPipelineTrace {
-                    HStack(spacing: 6) {
-                        Image(systemName: traceIconName(for: trace.status))
-                            .font(.caption2.weight(.bold))
-                        Text(traceStatusText(for: trace))
-                            .font(.caption2.weight(.semibold))
-                            .lineLimit(1)
+                    Button {
+                        isPipelineDetailPresented = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: traceIconName(for: trace.status))
+                                .font(.caption2.weight(.bold))
+                            Text(traceStatusText(for: trace))
+                                .font(.caption2.weight(.semibold))
+                                .lineLimit(1)
+                            Image(systemName: "chevron.right")
+                                .font(.caption2.weight(.bold))
+                                .opacity(0.62)
+                        }
+                        .foregroundStyle(traceTint(for: trace.status))
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .frame(maxWidth: bubbleMaxWidth, alignment: .leading)
+                        .background(traceTint(for: trace.status).opacity(0.10), in: Capsule())
                     }
-                    .foregroundStyle(traceTint(for: trace.status))
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 5)
-                    .frame(maxWidth: bubbleMaxWidth, alignment: .leading)
-                    .background(traceTint(for: trace.status).opacity(0.10), in: Capsule())
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(traceStatusText(for: trace))
                     .accessibilityIdentifier("chat.message.pipeline.\(message.id.uuidString)")
                 }
 
@@ -128,6 +138,13 @@ struct ChatBubble: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(message.text)
         .accessibilityIdentifier(isUser ? "chat.message.user" : "chat.message.assistant")
+        .sheet(isPresented: $isPipelineDetailPresented) {
+            if let trace = message.promptPipelineTrace {
+                PromptPipelineTraceDetailView(trace: trace)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
+        }
     }
 
     private var bubbleColor: Color {
@@ -198,6 +215,221 @@ struct ChatBubble: View {
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityIdentifier(identifier)
+    }
+}
+
+private struct PromptPipelineTraceDetailView: View {
+    let trace: PromptPipelineTrace
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                headerCard
+                stagesCard
+                if !trace.validationIssues.isEmpty {
+                    issuesCard
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 18)
+            .padding(.bottom, 28)
+        }
+        .background(KairoDesign.background.ignoresSafeArea())
+        .accessibilityIdentifier("chat.pipeline.detail")
+    }
+
+    private var headerCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: iconName(for: trace.status))
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(pipelineTint(for: trace.status))
+                    .frame(width: 34, height: 34)
+                    .background(pipelineTint(for: trace.status).opacity(0.12), in: Circle())
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(KairoL10n.string("chat.pipeline.detail.title"))
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(trace.providerID)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(KairoDesign.muted)
+                }
+
+                Spacer(minLength: 8)
+            }
+
+            HStack(spacing: 8) {
+                metricPill(KairoL10n.string("chat.pipeline.detail.attempts", Int64(max(trace.attemptCount, 1))))
+                metricPill(KairoL10n.string("chat.pipeline.detail.repairs", Int64(trace.repairedStageCount)))
+                metricPill(KairoL10n.string("chat.pipeline.detail.failures", Int64(trace.failedStageCount)))
+            }
+        }
+        .padding(14)
+        .kairoGlassCard(tint: pipelineTint(for: trace.status), cornerRadius: 18)
+    }
+
+    private var stagesCard: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            Text(KairoL10n.string("chat.pipeline.detail.stages"))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+
+            ForEach(Array(trace.stages.enumerated()), id: \.offset) { index, stage in
+                PromptPipelineStageRow(index: index + 1, stage: stage)
+                if index < trace.stages.count - 1 {
+                    Divider().opacity(0.45)
+                }
+            }
+        }
+        .padding(14)
+        .kairoGlassCard(tint: KairoDesign.blue, cornerRadius: 18)
+    }
+
+    private var issuesCard: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text(KairoL10n.string("chat.pipeline.detail.issues"))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+
+            ForEach(Array(trace.validationIssues.enumerated()), id: \.offset) { _, issue in
+                Label(issue, systemImage: "exclamationmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(KairoDesign.amber)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .kairoGlassCard(tint: KairoDesign.amber, cornerRadius: 18)
+    }
+
+    private func metricPill(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(KairoDesign.ink)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(KairoDesign.softSurface.opacity(0.72), in: Capsule())
+    }
+}
+
+private struct PromptPipelineStageRow: View {
+    let index: Int
+    let stage: PromptPipelineStageTrace
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("\(index)")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(pipelineTint(for: stage.status))
+                .frame(width: 22, height: 22)
+                .background(pipelineTint(for: stage.status).opacity(0.12), in: Circle())
+
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(stageTitle)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(stageStatusText)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(pipelineTint(for: stage.status))
+                }
+
+                Text(stageMetadata)
+                    .font(.caption2)
+                    .foregroundStyle(KairoDesign.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let detail = stage.detail, !detail.isEmpty {
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(KairoDesign.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .accessibilityIdentifier("chat.pipeline.stage.\(index)")
+    }
+
+    private var stageTitle: String {
+        switch stage.name {
+        case .buildPrompt:
+            return KairoL10n.string("chat.pipeline.stage.buildPrompt")
+        case .requestModel:
+            return KairoL10n.string("chat.pipeline.stage.requestModel")
+        case .parseStructuredOutput:
+            return KairoL10n.string("chat.pipeline.stage.parseStructuredOutput")
+        case .validateDraft:
+            return KairoL10n.string("chat.pipeline.stage.validateDraft")
+        case .repairPrompt:
+            return KairoL10n.string("chat.pipeline.stage.repairPrompt")
+        case .finalize:
+            return KairoL10n.string("chat.pipeline.stage.finalize")
+        }
+    }
+
+    private var stageStatusText: String {
+        switch stage.status {
+        case .pending:
+            return KairoL10n.string("chat.pipeline.stage.status.pending")
+        case .passed:
+            return KairoL10n.string("chat.pipeline.stage.status.passed")
+        case .repaired:
+            return KairoL10n.string("chat.pipeline.stage.status.repaired")
+        case .failed:
+            return KairoL10n.string("chat.pipeline.stage.status.failed")
+        }
+    }
+
+    private var stageMetadata: String {
+        var parts: [String] = []
+        if let attempt = stage.attempt {
+            parts.append(KairoL10n.string("chat.pipeline.stage.attempt", Int64(attempt)))
+        }
+        if let inputCharacters = stage.inputCharacters {
+            parts.append(KairoL10n.string("chat.pipeline.stage.input", Int64(inputCharacters)))
+        }
+        if let outputCharacters = stage.outputCharacters {
+            parts.append(KairoL10n.string("chat.pipeline.stage.output", Int64(outputCharacters)))
+        }
+        return parts.isEmpty ? KairoL10n.string("chat.pipeline.stage.noMetrics") : parts.joined(separator: " · ")
+    }
+}
+
+private func pipelineTint(for status: PromptPipelineTrace.Status) -> Color {
+    switch status {
+    case .validated:
+        return KairoDesign.teal
+    case .needsRepair, .needsReview:
+        return KairoDesign.amber
+    case .failed:
+        return .orange
+    }
+}
+
+private func iconName(for status: PromptPipelineTrace.Status) -> String {
+    switch status {
+    case .validated:
+        return "checkmark.seal.fill"
+    case .needsRepair:
+        return "arrow.triangle.2.circlepath"
+    case .needsReview:
+        return "eye.fill"
+    case .failed:
+        return "exclamationmark.triangle.fill"
+    }
+}
+
+private func pipelineTint(for status: PromptPipelineStageTrace.Status) -> Color {
+    switch status {
+    case .pending:
+        return KairoDesign.muted
+    case .passed:
+        return KairoDesign.teal
+    case .repaired:
+        return KairoDesign.amber
+    case .failed:
+        return .orange
     }
 }
 
