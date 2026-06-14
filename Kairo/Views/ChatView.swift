@@ -320,117 +320,104 @@ public struct ChatView: View {
     }
 
     private var composer: some View {
-        VStack(spacing: 8) {
-            if let replyTarget = viewModel.replyTarget {
-                HStack(spacing: 8) {
-                    Image(systemName: "arrowshape.turn.up.left.fill")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(KairoDesign.teal)
-                        .frame(width: 24, height: 24)
-                        .background(KairoDesign.softSurface.opacity(0.62), in: Circle())
-                    Text(ChatViewModel.replyReferenceText(for: replyTarget))
-                        .font(.caption)
-                        .foregroundStyle(KairoDesign.ink)
-                        .lineLimit(2)
-                    Spacer()
-                    Button {
-                        viewModel.cancelReplyTarget()
-                    } label: {
-                        Image(systemName: "xmark")
+        chatComposerGlassContainer {
+            VStack(spacing: 8) {
+                if let replyTarget = viewModel.replyTarget {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrowshape.turn.up.left.fill")
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(KairoDesign.muted)
+                            .foregroundStyle(KairoDesign.teal)
                             .frame(width: 24, height: 24)
-                            .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
+                            .chatComposerGlassCircle(tint: KairoDesign.teal, isInteractive: false)
+                        Text(ChatViewModel.replyReferenceText(for: replyTarget))
+                            .font(.caption)
+                            .foregroundStyle(KairoDesign.ink)
+                            .lineLimit(2)
+                        Spacer()
+                        Button {
+                            viewModel.cancelReplyTarget()
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(KairoDesign.muted)
+                                .frame(width: 24, height: 24)
+                                .chatComposerGlassCircle(tint: KairoDesign.muted, isInteractive: true)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(KairoL10n.string("chat.reply.cancel"))
+                        .accessibilityIdentifier("chat.reply-preview.cancel")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(KairoL10n.string("chat.reply.cancel"))
-                    .accessibilityIdentifier("chat.reply-preview.cancel")
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .chatComposerGlassSurface(cornerRadius: 16, tint: KairoDesign.teal, isInteractive: false)
+                    .overlay(alignment: .topLeading) {
+                        Color.clear
+                            .frame(width: 1, height: 1)
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(KairoL10n.string("chat.reply.preview"))
+                            .accessibilityIdentifier("chat.reply-preview")
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(KairoL10n.string("chat.replyingTo", ChatViewModel.replyReferenceText(for: replyTarget)))
+                    .accessibilityIdentifier("chat.reply-preview")
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(KairoDesign.elevatedSurface.opacity(0.84), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(KairoDesign.line, lineWidth: 1)
-                )
+
+                composerStatusRow
+
+                if showToolPalette {
+                    toolPalette
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+
+                HStack(alignment: .center, spacing: 7) {
+                    toolMenu
+
+                    TextField(KairoL10n.string("chat.composer.placeholder"), text: $viewModel.composerText, axis: .vertical)
+                        .lineLimit(1...5)
+                        .disabled(viewModel.isLoading)
+                        .focused($isComposerFocused)
+                        .foregroundStyle(KairoDesign.ink)
+                        .tint(KairoDesign.blue)
+                        .font(.callout)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .frame(minHeight: 34, alignment: .center)
+                        .accessibilityIdentifier("chat.composer.text")
+                        .onSubmit {
+                            isComposerFocused = false
+                            Task { await viewModel.sendComposerMessage() }
+                        }
+
+                    Button {
+                        isComposerFocused = false
+                        showToolPalette = false
+                        Task { await viewModel.sendComposerMessage() }
+                    } label: {
+                        Image(systemName: viewModel.isLoading ? "hourglass" : "arrow.up")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(sendButtonForeground)
+                            .frame(width: 30, height: 30)
+                            .chatComposerGlassCircle(tint: isSendDisabled ? KairoDesign.muted : KairoDesign.blue, isInteractive: !isSendDisabled)
+                    }
+                    .disabled(isSendDisabled)
+                    .accessibilityLabel(KairoL10n.string("chat.composer.send"))
+                    .accessibilityIdentifier("chat.composer.send")
+                }
+                .padding(.leading, 5)
+                .padding(.trailing, 5)
+                .padding(.vertical, 3)
+                .chatComposerGlassSurface(cornerRadius: 17, tint: KairoDesign.blue, isInteractive: true)
                 .overlay(alignment: .topLeading) {
                     Color.clear
                         .frame(width: 1, height: 1)
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(KairoL10n.string("chat.reply.preview"))
-                        .accessibilityIdentifier("chat.reply-preview")
+                        .accessibilityLabel(KairoL10n.string("chat.composer.inputShell"))
+                        .accessibilityIdentifier("chat.composer.input-shell")
                 }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(KairoL10n.string("chat.replyingTo", ChatViewModel.replyReferenceText(for: replyTarget)))
-                .accessibilityIdentifier("chat.reply-preview")
+                .shadow(color: KairoDesign.shadow.opacity(0.8), radius: 12, x: 0, y: 7)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("chat.composer.input-shell")
             }
-
-            composerStatusRow
-
-            if showToolPalette {
-                toolPalette
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-            }
-
-            HStack(alignment: .center, spacing: 7) {
-                toolMenu
-
-                TextField(KairoL10n.string("chat.composer.placeholder"), text: $viewModel.composerText, axis: .vertical)
-                    .lineLimit(1...5)
-                    .disabled(viewModel.isLoading)
-                    .focused($isComposerFocused)
-                    .foregroundStyle(KairoDesign.ink)
-                    .tint(KairoDesign.blue)
-                    .font(.callout)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .frame(minHeight: 34, alignment: .center)
-                    .accessibilityIdentifier("chat.composer.text")
-                    .onSubmit {
-                        isComposerFocused = false
-                        Task { await viewModel.sendComposerMessage() }
-                    }
-
-                Button {
-                    isComposerFocused = false
-                    showToolPalette = false
-                    Task { await viewModel.sendComposerMessage() }
-                } label: {
-                    Image(systemName: viewModel.isLoading ? "hourglass" : "arrow.up")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(sendButtonForeground)
-                        .frame(width: 30, height: 30)
-                        .background {
-                            Circle()
-                                .fill(KairoDesign.elevatedSurface.opacity(isSendDisabled ? 0.72 : 0.88))
-                        }
-                        .overlay {
-                            Circle()
-                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                        }
-                }
-                .disabled(isSendDisabled)
-                .accessibilityLabel(KairoL10n.string("chat.composer.send"))
-                .accessibilityIdentifier("chat.composer.send")
-            }
-            .padding(.leading, 5)
-            .padding(.trailing, 5)
-            .padding(.vertical, 3)
-            .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 17, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
-            )
-            .overlay(alignment: .topLeading) {
-                Color.clear
-                    .frame(width: 1, height: 1)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(KairoL10n.string("chat.composer.inputShell"))
-                    .accessibilityIdentifier("chat.composer.input-shell")
-            }
-            .shadow(color: KairoDesign.shadow.opacity(0.8), radius: 12, x: 0, y: 7)
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("chat.composer.input-shell")
         }
         .padding(.horizontal, 16)
         .padding(.top, 4)
@@ -473,14 +460,7 @@ public struct ChatView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(KairoDesign.ink)
                 .frame(width: 30, height: 30)
-                .background {
-                    Circle()
-                        .fill(KairoDesign.elevatedSurface.opacity(showToolPalette ? 0.88 : 0.72))
-                }
-                .overlay {
-                    Circle()
-                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                }
+                .chatComposerGlassCircle(tint: showToolPalette ? KairoDesign.teal : KairoDesign.blue, isInteractive: true)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(KairoL10n.string("chat.tools.open"))
@@ -492,11 +472,7 @@ public struct ChatView: View {
             capturePalette
         }
         .padding(8)
-        .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-        }
+        .chatComposerGlassSurface(cornerRadius: 18, tint: KairoDesign.teal, isInteractive: false)
         .shadow(color: KairoDesign.shadow.opacity(0.75), radius: 16, x: 0, y: 10)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.tools.palette")
@@ -560,7 +536,7 @@ public struct ChatView: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 10)
             .padding(.vertical, 9)
-            .background(KairoDesign.softSurface.opacity(0.58), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .chatComposerGlassSurface(cornerRadius: 13, tint: KairoDesign.teal, isInteractive: true)
     }
 
     private func handleCameraCaptureRequest() {
@@ -943,6 +919,93 @@ private struct FlowLayout: Layout {
             rows.append(Row(items: currentRow, maxY: currentY + size.height, y: currentY))
         }
         return rows
+    }
+}
+
+@ViewBuilder
+private func chatComposerGlassContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+    if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+        GlassEffectContainer(spacing: 8) {
+            content()
+        }
+    } else {
+        content()
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func chatComposerGlassSurface(cornerRadius: CGFloat, tint: Color, isInteractive: Bool) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.12))
+                            .interactive(),
+                        in: .rect(cornerRadius: cornerRadius)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            } else {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.08)),
+                        in: .rect(cornerRadius: cornerRadius)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                }
+        }
+    }
+
+    @ViewBuilder
+    func chatComposerGlassCircle(tint: Color, isInteractive: Bool) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.12))
+                            .interactive(),
+                        in: .circle
+                    )
+                    .overlay {
+                        Circle()
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            } else {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.08)),
+                        in: .circle
+                    )
+                    .overlay {
+                        Circle()
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            }
+        } else {
+            self
+                .background(KairoDesign.softSurface.opacity(0.62), in: Circle())
+                .overlay {
+                    Circle()
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                }
+        }
     }
 }
 
