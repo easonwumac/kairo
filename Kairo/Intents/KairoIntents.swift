@@ -650,6 +650,7 @@ public struct RunKairoDailyBriefingIntent: AppIntent {
 public struct KairoCaptureTriageOutput: Codable, Equatable, Sendable {
     public var schemaVersion: Int
     public var displayText: String
+    public var triage: ActionInboxTriage
     public var summaryTitle: String
     public var summaryBullets: [String]
     public var suggestionKinds: [ActionInboxSuggestionKind]
@@ -659,6 +660,7 @@ public struct KairoCaptureTriageOutput: Codable, Equatable, Sendable {
     public init(
         schemaVersion: Int = 1,
         displayText: String,
+        triage: ActionInboxTriage,
         summaryTitle: String,
         summaryBullets: [String],
         suggestionKinds: [ActionInboxSuggestionKind],
@@ -667,6 +669,7 @@ public struct KairoCaptureTriageOutput: Codable, Equatable, Sendable {
     ) {
         self.schemaVersion = schemaVersion
         self.displayText = displayText
+        self.triage = triage
         self.summaryTitle = summaryTitle
         self.summaryBullets = summaryBullets
         self.suggestionKinds = suggestionKinds
@@ -699,13 +702,15 @@ enum KairoCaptureIntentSupport {
         let suggestions = inboxItem?.suggestions ?? []
         let actions = suggestions.compactMap(\.action)
         let summary = inboxItem?.summary ?? ActionInboxSummary(title: sourceName)
+        let triage = inboxItem?.triage ?? .captureOnly
         let actionKinds = actions.map(\.kind)
         let actionSummary = actionKinds.isEmpty
-            ? "No action draft"
+            ? triage.rawValue
             : actionKinds.map(\.rawValue).joined(separator: ", ")
 
         return KairoCaptureTriageOutput(
             displayText: "Capture triaged: \(actionSummary)",
+            triage: triage,
             summaryTitle: summary.title,
             summaryBullets: summary.bullets,
             suggestionKinds: suggestions.map(\.kind),

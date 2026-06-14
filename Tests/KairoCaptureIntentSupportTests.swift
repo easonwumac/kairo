@@ -31,6 +31,7 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
         )
 
         XCTAssertEqual(output.suggestionKinds.contains(.memorySave), true)
+        XCTAssertEqual(output.triage, .saveMemory)
         XCTAssertEqual(output.actionKinds, [.saveMemory])
         XCTAssertEqual(output.proposedActions.first?.kind, .saveMemory)
         guard case let .text(content) = output.proposedActions.first?.payload else {
@@ -46,6 +47,7 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
         )
 
         XCTAssertEqual(output.actionKinds, [.openWebSearchHandoff])
+        XCTAssertEqual(output.triage, .openHandoff)
         XCTAssertFalse(output.suggestionKinds.contains(.reminderDraft))
         guard case let .webSearch(draft) = output.proposedActions.first?.payload else {
             return XCTFail("Expected web search payload")
@@ -65,8 +67,20 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
         let decoded = try decoder.decode(KairoCaptureTriageOutput.self, from: Data(encoded.utf8))
 
         XCTAssertEqual(decoded.actionKinds, [.createReminderDraft])
+        XCTAssertEqual(decoded.triage, .createReminder)
         XCTAssertEqual(decoded.proposedActions.first?.kind, .createReminderDraft)
         XCTAssertEqual(decoded.schemaVersion, 1)
+    }
+
+    func testTriageCaptureReturnsInfoPageTriageForResearchNoteWithoutActionDraft() async throws {
+        let output = try await KairoCaptureIntentSupport.triage(
+            text: "研究筆記：AFM prompt pipeline 先分類，再抽取事實，最後產生 JSON。",
+            sourceName: "Capture"
+        )
+
+        XCTAssertEqual(output.triage, .createInfoPage)
+        XCTAssertTrue(output.actionKinds.isEmpty)
+        XCTAssertTrue(output.proposedActions.isEmpty)
     }
 }
 #endif

@@ -160,6 +160,8 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let imported = try await api.importPendingShares(limit: 10)
 
         XCTAssertEqual(imported.attachments.map(\.kind), [.url])
+        XCTAssertEqual(imported.actionInboxItems.map(\.triage), [.createInfoPage])
+        XCTAssertEqual(imported.actionInboxItems.first?.sourceItemIDs, [item.id])
         XCTAssertEqual(imported.suggestedPrompt?.contains(url.absoluteString), true)
         XCTAssertEqual(imported.suggestedPrompt?.contains("site: example.com"), true)
         XCTAssertEqual(imported.suggestedPrompt?.contains("titleCandidate: Article"), true)
@@ -270,6 +272,7 @@ final class KairoShareImportBackendAPITests: XCTestCase {
         let imported = try await api.importPendingShares(limit: 10)
 
         XCTAssertEqual(imported.suggestedActions.map(\.kind), [.openWebSearchHandoff])
+        XCTAssertEqual(imported.actionInboxItems.map(\.triage), [.openHandoff])
         guard case let .webSearch(draft) = imported.suggestedActions.first?.payload else {
             return XCTFail("Expected web search payload")
         }

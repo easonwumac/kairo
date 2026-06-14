@@ -4,22 +4,25 @@ public struct KairoShareImportResult: Equatable, Sendable {
     public var attachments: [ChatAttachment]
     public var suggestedPrompt: String?
     public var importedItemIDs: [UUID]
+    public var actionInboxItems: [ActionInboxItem]
     public var suggestedActions: [AgentAction]
 
     public init(
         attachments: [ChatAttachment],
         suggestedPrompt: String?,
         importedItemIDs: [UUID],
+        actionInboxItems: [ActionInboxItem] = [],
         suggestedActions: [AgentAction] = []
     ) {
         self.attachments = attachments
         self.suggestedPrompt = suggestedPrompt
         self.importedItemIDs = importedItemIDs
+        self.actionInboxItems = actionInboxItems
         self.suggestedActions = suggestedActions
     }
 
     public var isEmpty: Bool {
-        attachments.isEmpty && importedItemIDs.isEmpty && suggestedActions.isEmpty
+        attachments.isEmpty && importedItemIDs.isEmpty && actionInboxItems.isEmpty && suggestedActions.isEmpty
     }
 }
 
@@ -51,12 +54,14 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
             return KairoShareImportResult(attachments: [], suggestedPrompt: nil, importedItemIDs: [])
         }
         let attachments = items.flatMap(\.attachments)
+        let actionInboxItems = try await actionInboxItems(limit: limit)
 
         return KairoShareImportResult(
             attachments: attachments,
             suggestedPrompt: await suggestedPrompt(for: items),
             importedItemIDs: items.map(\.id),
-            suggestedActions: try await suggestedActions(limit: limit)
+            actionInboxItems: actionInboxItems,
+            suggestedActions: suggestedActions(from: actionInboxItems)
         )
     }
 
@@ -68,9 +73,12 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
         }
     }
 
-    private func suggestedActions(limit: Int) async throws -> [AgentAction] {
+    private func actionInboxItems(limit: Int) async throws -> [ActionInboxItem] {
         let inbox = KairoActionInboxBackendService(shareIngestionQueue: shareIngestionQueue)
-        let items = try await inbox.pendingItems(limit: limit)
+        return try await inbox.pendingItems(limit: limit)
+    }
+
+    private func suggestedActions(from items: [ActionInboxItem]) -> [AgentAction] {
         return items
             .flatMap(\.suggestions)
             .compactMap(\.action)
