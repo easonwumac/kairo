@@ -24,19 +24,7 @@ public struct ActionPreviewView: View {
 
     public var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Capsule()
-                    .fill(Color.secondary.opacity(0.35))
-                    .frame(width: 42, height: 5)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityHidden(true)
-
-                outcomeHeroCard
-                actionButtons
-
-                payloadDetailsCard
-                reviewChecklistCard
-            }
+            previewContent
             .padding(.horizontal, 18)
             .padding(.top, 12)
             .padding(.bottom, 24)
@@ -47,39 +35,69 @@ public struct ActionPreviewView: View {
         .accessibilityIdentifier("chat.action-preview")
     }
 
-    private var outcomeHeroCard: some View {
-        KairoFocusCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: action.kind == .unsupportedSandboxAction ? "exclamationmark.triangle.fill" : primaryActionIcon)
-                        .font(.title2)
-                        .foregroundStyle(action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal)
-                        .frame(width: 44, height: 44)
-                        .background((action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(KairoL10n.string("chat.action.preview.outcomeLabel"))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Text(primaryActionSummary)
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(KairoDesign.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("chat.action.outcome")
-                        Text(outcomeDetail)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-
-                HStack(spacing: 8) {
-                    KairoStatusPill(title: destinationLabel, systemImage: "arrow.up.right.square.fill", tint: KairoDesign.violet)
-                    KairoStatusPill(title: riskLabel, systemImage: "gauge.medium", tint: riskColor)
-                }
-                .fixedSize(horizontal: false, vertical: true)
+    @ViewBuilder
+    private var previewContent: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 18) {
+                previewStack
             }
+        } else {
+            previewStack
         }
+    }
+
+    private var previewStack: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Capsule()
+                .fill(Color.secondary.opacity(0.35))
+                .frame(width: 42, height: 5)
+                .frame(maxWidth: .infinity)
+                .accessibilityHidden(true)
+
+            outcomeHeroCard
+            actionButtons
+
+            payloadDetailsCard
+            reviewChecklistCard
+        }
+    }
+
+    private var outcomeHeroCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: action.kind == .unsupportedSandboxAction ? "exclamationmark.triangle.fill" : primaryActionIcon)
+                    .font(.title2)
+                    .foregroundStyle(action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal)
+                    .frame(width: 44, height: 44)
+                    .background((action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(KairoL10n.string("chat.action.preview.outcomeLabel"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(primaryActionSummary)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("chat.action.outcome")
+                    Text(outcomeDetail)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            HStack(spacing: 8) {
+                KairoStatusPill(title: destinationLabel, systemImage: "arrow.up.right.square.fill", tint: KairoDesign.violet)
+                KairoStatusPill(title: riskLabel, systemImage: "gauge.medium", tint: riskColor)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .actionPreviewGlassSurface(
+            cornerRadius: 20,
+            tint: action.kind == .unsupportedSandboxAction ? KairoDesign.red : KairoDesign.teal
+        )
     }
 
     private var actionButtons: some View {
@@ -104,82 +122,82 @@ public struct ActionPreviewView: View {
     }
 
     private var payloadDetailsCard: some View {
-        KairoGroupedSurface {
-            VStack(alignment: .leading, spacing: 10) {
-                Button {
-                    withAnimation(.snappy(duration: 0.2)) {
-                        showPayloadDetails.toggle()
-                    }
-                } label: {
-                    HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: "doc.text.magnifyingglass")
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(.snappy(duration: 0.2)) {
+                    showPayloadDetails.toggle()
+                }
+            } label: {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.blue)
+                        .frame(width: 28, height: 28)
+                        .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(KairoL10n.string("chat.action.preview.field.payload"))
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(KairoDesign.blue)
-                            .frame(width: 28, height: 28)
-                            .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(KairoL10n.string("chat.action.preview.field.payload"))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(KairoDesign.ink)
-                        }
-
-                        Spacer(minLength: 8)
-
-                        Image(systemName: showPayloadDetails ? "chevron.up" : "chevron.down")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(KairoDesign.ink)
                     }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("chat.action.payload.toggle")
-                .accessibilityLabel(showPayloadDetails ? KairoL10n.string("chat.action.preview.payload.hide") : KairoL10n.string("chat.action.preview.payload.show"))
 
-                if showPayloadDetails {
-                    Divider()
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(KairoL10n.string("chat.action.preview.payloadDetail"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        actionPayloadPreview
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("chat.action.payload.details")
+                    Spacer(minLength: 8)
+
+                    Image(systemName: showPayloadDetails ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
                 }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("chat.action.payload.toggle")
+            .accessibilityLabel(showPayloadDetails ? KairoL10n.string("chat.action.preview.payload.hide") : KairoL10n.string("chat.action.preview.payload.show"))
+
+            if showPayloadDetails {
+                Divider()
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(KairoL10n.string("chat.action.preview.payloadDetail"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    actionPayloadPreview
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("chat.action.payload.details")
             }
         }
+        .padding(14)
+        .actionPreviewGlassSurface(cornerRadius: 18, tint: KairoDesign.blue, isInteractive: true)
     }
 
     private var reviewChecklistCard: some View {
-        KairoGroupedSurface {
-            VStack(alignment: .leading, spacing: 12) {
-                checklistRow(
-                    title: KairoL10n.string("chat.action.preview.field.confirmation"),
-                    value: confirmationLabel,
-                    systemImage: "hand.tap.fill",
-                    tint: riskColor
-                )
+        VStack(alignment: .leading, spacing: 12) {
+            checklistRow(
+                title: KairoL10n.string("chat.action.preview.field.confirmation"),
+                value: confirmationLabel,
+                systemImage: "hand.tap.fill",
+                tint: riskColor
+            )
 
-                if let descriptor {
-                    checklistRow(
-                        title: KairoL10n.string("chat.action.preview.field.capability"),
-                        value: descriptor.displayName,
-                        systemImage: "wrench.and.screwdriver.fill",
-                        tint: KairoDesign.blue
-                    )
-                }
-
+            if let descriptor {
                 checklistRow(
-                    title: KairoL10n.string("chat.action.preview.field.why"),
-                    value: action.rationale,
-                    systemImage: "text.bubble.fill",
-                    tint: KairoDesign.teal
+                    title: KairoL10n.string("chat.action.preview.field.capability"),
+                    value: descriptor.displayName,
+                    systemImage: "wrench.and.screwdriver.fill",
+                    tint: KairoDesign.blue
                 )
             }
-            .accessibilityIdentifier("chat.action.safety")
+
+            checklistRow(
+                title: KairoL10n.string("chat.action.preview.field.why"),
+                value: action.rationale,
+                systemImage: "text.bubble.fill",
+                tint: KairoDesign.teal
+            )
         }
+        .padding(14)
+        .actionPreviewGlassSurface(cornerRadius: 18, tint: riskColor)
+        .accessibilityIdentifier("chat.action.safety")
     }
 
     private var primaryActionSummary: String {
@@ -360,7 +378,10 @@ public struct ActionPreviewView: View {
     private var actionPayloadPreview: some View {
         switch action.payload {
         case .text(let text):
-            Text(text).font(.callout).padding(10).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10))
+            Text(text)
+                .font(.callout)
+                .padding(10)
+                .actionPreviewGlassSurface(cornerRadius: 10, tint: KairoDesign.blue)
         case .reminder(let draft):
             VStack(alignment: .leading, spacing: 4) {
                 Text(draft.title).font(.headline)
@@ -458,6 +479,29 @@ public struct ActionPreviewView: View {
             }
         case .empty:
             EmptyView()
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func actionPreviewGlassSurface(cornerRadius: CGFloat, tint: Color, isInteractive: Bool = false) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.12)).interactive(), in: .rect(cornerRadius: cornerRadius))
+                    .overlay(shape.stroke(KairoDesign.line.opacity(0.55), lineWidth: 1))
+            } else {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.08)), in: .rect(cornerRadius: cornerRadius))
+                    .overlay(shape.stroke(KairoDesign.line.opacity(0.45), lineWidth: 1))
+            }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface.opacity(0.76), in: shape)
+                .overlay(shape.stroke(KairoDesign.line.opacity(0.7), lineWidth: 1))
         }
     }
 }
