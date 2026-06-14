@@ -695,7 +695,9 @@
 "chat.pipeline.stage.noMetrics" = "無指標";
 "chat.pipeline.health.title" = "Pipeline health";
 "chat.pipeline.health.detail" = "最近 %lld 筆 · %lld 次修復 · %lld 個失敗階段";
+"chat.pipeline.health.draft" = "產生測試";
 "chat.pipeline.health.tune" = "調整模型";
+"chat.pipeline.diagnostic.prompt" = "針對 %@ 執行一次 pipeline 診斷。最近 trace：%lld 則回覆，%lld 則通過，%lld 個修復階段，%lld 個失敗階段。測試模型是否能輸出精簡、有效、符合 schema 的答案，且不要多餘文字。若失敗，指出哪條指令需要收緊。";
 "chat.memory.proposal.title" = "儲存 Memory";
 "chat.memory.proposal.rationale" = "Kairo 找到可能有助於後續對話的偏好或事實；只有在你確認後才會儲存。";
 "chat.message.accessibility" = "%@ 訊息";

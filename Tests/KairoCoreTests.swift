@@ -909,6 +909,26 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertTrue(failed.shouldOfferModelTuning)
     }
 
+    @MainActor
+    func testPreparePipelineDiagnosticPromptDraftsComposerAndClearsReplyTarget() {
+        let viewModel = ChatViewModel()
+        let reply = ChatMessage(role: .assistant, text: "Previous answer")
+        viewModel.replyToMessage(reply)
+
+        viewModel.preparePipelineDiagnosticPrompt(from: ChatPromptPipelineHealthSummary(
+            providerID: "afm",
+            traceCount: 3,
+            validatedCount: 1,
+            repairCount: 1,
+            failedCount: 1,
+            latestStatus: .failed
+        ))
+
+        XCTAssertFalse(viewModel.composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        XCTAssertNil(viewModel.replyTarget)
+        XCTAssertTrue(viewModel.pendingAttachments.isEmpty)
+    }
+
     func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {
         let registry = IntegrationRegistry()
 

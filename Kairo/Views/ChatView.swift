@@ -149,6 +149,10 @@ public struct ChatView: View {
                             ChatPromptPipelineHealthCard(
                                 summary: summary,
                                 canTuneModel: viewModel.canEditProviderRoute,
+                                draftDiagnosticPrompt: {
+                                    viewModel.preparePipelineDiagnosticPrompt(from: summary)
+                                    isComposerFocused = true
+                                },
                                 openModelSettings: openModelSettings
                             )
                                 .padding(.horizontal, 14)
@@ -658,6 +662,7 @@ public struct ChatView: View {
 private struct ChatPromptPipelineHealthCard: View {
     let summary: ChatPromptPipelineHealthSummary
     let canTuneModel: Bool
+    let draftDiagnosticPrompt: () -> Void
     let openModelSettings: () -> Void
 
     var body: some View {
@@ -696,19 +701,36 @@ private struct ChatPromptPipelineHealthCard: View {
                     .monospacedDigit()
             }
 
-            if summary.shouldOfferModelTuning, canTuneModel {
-                Button {
-                    openModelSettings()
-                } label: {
-                    Label(KairoL10n.string("chat.pipeline.health.tune"), systemImage: "slider.horizontal.3")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(tint)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(tint.opacity(0.10), in: Capsule())
+            if summary.shouldOfferModelTuning {
+                HStack(spacing: 8) {
+                    Button {
+                        draftDiagnosticPrompt()
+                    } label: {
+                        Label(KairoL10n.string("chat.pipeline.health.draft"), systemImage: "wand.and.sparkles")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(tint)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(tint.opacity(0.10), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("chat.pipeline.health.draft")
+
+                    if canTuneModel {
+                        Button {
+                            openModelSettings()
+                        } label: {
+                            Label(KairoL10n.string("chat.pipeline.health.tune"), systemImage: "slider.horizontal.3")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(tint)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(tint.opacity(0.10), in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("chat.pipeline.health.tune")
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("chat.pipeline.health.tune")
             }
         }
         .padding(.horizontal, 12)

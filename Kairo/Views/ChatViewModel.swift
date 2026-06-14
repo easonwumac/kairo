@@ -260,6 +260,13 @@ public final class ChatViewModel: ObservableObject {
         clearTransientActionState()
     }
 
+    public func preparePipelineDiagnosticPrompt(from summary: ChatPromptPipelineHealthSummary) {
+        composerText = Self.pipelineDiagnosticPrompt(for: summary)
+        pendingAttachments = []
+        replyTarget = nil
+        clearTransientActionState()
+    }
+
     public func importPendingShares() async {
         guard !canSendImportedShareToChat else { return }
         do {
@@ -1067,6 +1074,17 @@ public final class ChatViewModel: ObservableObject {
             repairCount: traces.reduce(0) { $0 + $1.repairedStageCount },
             failedCount: traces.reduce(0) { $0 + $1.failedStageCount },
             latestStatus: latest.status
+        )
+    }
+
+    public static func pipelineDiagnosticPrompt(for summary: ChatPromptPipelineHealthSummary) -> String {
+        KairoL10n.string(
+            "chat.pipeline.diagnostic.prompt",
+            summary.providerID,
+            Int64(summary.traceCount),
+            Int64(summary.validatedCount),
+            Int64(summary.repairCount),
+            Int64(summary.failedCount)
         )
     }
 
