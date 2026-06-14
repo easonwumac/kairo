@@ -328,6 +328,38 @@ public struct PrepareWebSearchHandoffIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct TriageKairoCaptureIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Triage Kairo Capture"
+    public static var description = IntentDescription("Classify captured text into Kairo Action Inbox suggestions without writing data or opening other apps.")
+
+    @Parameter(title: "Text")
+    public var text: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let output = try await KairoCaptureIntentSupport.triage(text: text)
+        let encodedOutput = try output.encodedJSONString()
+        return .result(value: encodedOutput, dialog: IntentDialog(stringLiteral: output.displayText))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
+public struct KairoAppShortcutsProvider: AppShortcutsProvider {
+    public static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: TriageKairoCaptureIntent(),
+            phrases: [
+                "Triage capture with \(.applicationName)",
+                "Review captured text in \(.applicationName)"
+            ],
+            shortTitle: "Triage Capture",
+            systemImageName: "tray.and.arrow.down"
+        )
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct RunKairoShortcutNodeIntent: AppIntent {
     public static var title: LocalizedStringResource = "Run Kairo Shortcut Node"
     public static var description = IntentDescription("Run a Kairo Shortcut node from a node kind and ShortcutNodeInput JSON, returning structured JSON output.")
@@ -469,6 +501,74 @@ public struct RunKairoDailyBriefingIntent: AppIntent {
         }
 
         return .result(value: value, dialog: IntentDialog(stringLiteral: result.summary))
+    }
+}
+
+public struct KairoCaptureTriageOutput: Codable, Equatable, Sendable {
+    public var schemaVersion: Int
+    public var displayText: String
+    public var summaryTitle: String
+    public var summaryBullets: [String]
+    public var suggestionKinds: [ActionInboxSuggestionKind]
+    public var actionKinds: [AgentActionKind]
+    public var proposedActions: [AgentAction]
+
+    public init(
+        schemaVersion: Int = 1,
+        displayText: String,
+        summaryTitle: String,
+        summaryBullets: [String],
+        suggestionKinds: [ActionInboxSuggestionKind],
+        actionKinds: [AgentActionKind],
+        proposedActions: [AgentAction]
+    ) {
+        self.schemaVersion = schemaVersion
+        self.displayText = displayText
+        self.summaryTitle = summaryTitle
+        self.summaryBullets = summaryBullets
+        self.suggestionKinds = suggestionKinds
+        self.actionKinds = actionKinds
+        self.proposedActions = proposedActions
+    }
+
+    public func encodedJSONString() throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(self)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
+
+enum KairoCaptureIntentSupport {
+    static func triage(text: String, sourceName: String = "Triage Kairo Capture") async throws -> KairoCaptureTriageOutput {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let builder = ShareAttachmentBuilder()
+        let item = ShareIngestionItem(
+            attachments: [builder.text(trimmed, displayName: sourceName)],
+            sourceApplication: "AppIntent",
+            receivedAt: Date()
+        )
+        let inbox = KairoActionInboxBackendService(
+            shareIngestionQueue: InMemoryShareIngestionQueue(seed: [item])
+        )
+        let inboxItem = try await inbox.pendingItems(limit: 1).first
+        let suggestions = inboxItem?.suggestions ?? []
+        let actions = suggestions.compactMap(\.action)
+        let summary = inboxItem?.summary ?? ActionInboxSummary(title: sourceName)
+        let actionKinds = actions.map(\.kind)
+        let actionSummary = actionKinds.isEmpty
+            ? "No action draft"
+            : actionKinds.map(\.rawValue).joined(separator: ", ")
+
+        return KairoCaptureTriageOutput(
+            displayText: "Capture triaged: \(actionSummary)",
+            summaryTitle: summary.title,
+            summaryBullets: summary.bullets,
+            suggestionKinds: suggestions.map(\.kind),
+            actionKinds: actionKinds,
+            proposedActions: actions
+        )
     }
 }
 
