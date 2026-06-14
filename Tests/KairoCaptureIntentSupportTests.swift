@@ -186,6 +186,80 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
         XCTAssertEqual(output.recommendedDeepLink, KairoCaptureTriageRoute.chat.deepLinkString)
     }
 
+    func testTriagePendingCapturesReturnsBatchSuggestionsWithoutConsumingInbox() async throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+        let reminder = try XCTUnwrap(captureStore.saveText("週五前整理 Kairo AFM demo", sourceName: "Shortcut"))
+        let memory = try XCTUnwrap(captureStore.saveText("記住：AFM 適合短上下文分類。", sourceName: "Shortcut"))
+        let url = try XCTUnwrap(captureStore.saveURL(
+            URL(string: "https://example.com/research/afm-pipeline")!,
+            note: nil,
+            sourceName: "Shortcut URL"
+        ))
+
+        let output = try await KairoCaptureIntentSupport.triagePendingCaptures(store: captureStore)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(KairoCaptureInboxTriageOutput.self, from: Data(output.encodedJSONString().utf8))
+
+        XCTAssertEqual(decoded.pendingCount, 3)
+        XCTAssertEqual(decoded.triagedCount, 3)
+        XCTAssertEqual(decoded.needsReviewCount, 3)
+        XCTAssertEqual(decoded.captureOnlyCount, 0)
+        XCTAssertEqual(decoded.recommendedRoute, .captureReview)
+        XCTAssertEqual(decoded.recommendedDeepLink, KairoCaptureTriageRoute.captureReview.deepLinkString)
+        XCTAssertEqual(decoded.items.map(\.captureID), [reminder.id, memory.id, url.id])
+        XCTAssertEqual(decoded.items.map(\.triage), [.createReminder, .saveMemory, .createInfoPage])
+        XCTAssertEqual(decoded.items[0].actionKinds, [.createReminderDraft])
+        XCTAssertEqual(decoded.items[1].actionKinds, [.saveMemory])
+        XCTAssertEqual(decoded.items[2].captureKind, .url)
+        XCTAssertEqual(decoded.items[2].url, "https://example.com/research/afm-pipeline")
+        XCTAssertTrue(decoded.actionKinds.contains(.createReminderDraft))
+        XCTAssertTrue(decoded.actionKinds.contains(.saveMemory))
+        XCTAssertEqual(captureStore.pending().map(\.id), [reminder.id, memory.id, url.id])
+    }
+
+    func testTriagePendingCapturesHonorsLimitAndRoutesPlainCapturesToChat() async throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+        let first = try XCTUnwrap(captureStore.saveText("Blue sky over the park.", sourceName: "Shortcut"))
+        let second = try XCTUnwrap(captureStore.saveText("週五前整理 Kairo demo", sourceName: "Shortcut"))
+
+        let output = try await KairoCaptureIntentSupport.triagePendingCaptures(limit: 1, store: captureStore)
+
+        XCTAssertEqual(output.pendingCount, 2)
+        XCTAssertEqual(output.triagedCount, 1)
+        XCTAssertEqual(output.needsReviewCount, 0)
+        XCTAssertEqual(output.captureOnlyCount, 1)
+        XCTAssertEqual(output.recommendedRoute, .chat)
+        XCTAssertEqual(output.items.map(\.captureID), [first.id])
+        XCTAssertEqual(output.items.first?.triage, .captureOnly)
+        XCTAssertEqual(captureStore.pending().map(\.id), [first.id, second.id])
+    }
+
+    func testTriagePendingCapturesReportsEmptyInbox() async throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+
+        let output = try await KairoCaptureIntentSupport.triagePendingCaptures(store: captureStore)
+
+        XCTAssertEqual(output.pendingCount, 0)
+        XCTAssertEqual(output.triagedCount, 0)
+        XCTAssertEqual(output.needsReviewCount, 0)
+        XCTAssertEqual(output.items, [])
+        XCTAssertEqual(output.recommendedRoute, .chat)
+        XCTAssertEqual(output.recommendedDeepLink, KairoCaptureTriageRoute.chat.deepLinkString)
+    }
+
     func testClearCaptureInboxRequiresExplicitConfirmation() throws {
         let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))

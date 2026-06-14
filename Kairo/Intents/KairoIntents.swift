@@ -616,6 +616,25 @@ public struct GetKairoCaptureInboxStatusIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct TriageKairoCaptureInboxIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Triage Kairo Capture Inbox"
+    public static var description = IntentDescription("Return structured triage suggestions for pending Kairo captures without consuming the inbox.")
+
+    @Parameter(title: "Limit")
+    public var limit: Int?
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let output = try await KairoCaptureIntentSupport.triagePendingCaptures(limit: limit)
+        return .result(
+            value: try output.encodedJSONString(),
+            dialog: IntentDialog(stringLiteral: output.displayText)
+        )
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct ClearKairoCaptureInboxIntent: AppIntent {
     public static var title: LocalizedStringResource = "Clear Kairo Capture Inbox"
     public static var description = IntentDescription("Discard pending Kairo captures only when explicitly confirmed by the Shortcut.")
@@ -1055,6 +1074,94 @@ public struct KairoCaptureInboxStatusOutput: Codable, Equatable, Sendable {
     }
 }
 
+public struct KairoCaptureInboxTriageItemOutput: Codable, Equatable, Sendable {
+    public var captureID: UUID
+    public var captureKind: KairoIntentCaptureKind
+    public var textPreview: String
+    public var url: String?
+    public var triage: ActionInboxTriage
+    public var summaryTitle: String
+    public var summaryBullets: [String]
+    public var suggestionKinds: [ActionInboxSuggestionKind]
+    public var actionKinds: [AgentActionKind]
+    public var proposedActions: [AgentAction]
+    public var recommendedRoute: KairoCaptureTriageRoute
+    public var recommendedDeepLink: String?
+
+    public init(
+        captureID: UUID,
+        captureKind: KairoIntentCaptureKind,
+        textPreview: String,
+        url: String?,
+        triage: ActionInboxTriage,
+        summaryTitle: String,
+        summaryBullets: [String],
+        suggestionKinds: [ActionInboxSuggestionKind],
+        actionKinds: [AgentActionKind],
+        proposedActions: [AgentAction],
+        recommendedRoute: KairoCaptureTriageRoute,
+        recommendedDeepLink: String?
+    ) {
+        self.captureID = captureID
+        self.captureKind = captureKind
+        self.textPreview = textPreview
+        self.url = url
+        self.triage = triage
+        self.summaryTitle = summaryTitle
+        self.summaryBullets = summaryBullets
+        self.suggestionKinds = suggestionKinds
+        self.actionKinds = actionKinds
+        self.proposedActions = proposedActions
+        self.recommendedRoute = recommendedRoute
+        self.recommendedDeepLink = recommendedDeepLink
+    }
+}
+
+public struct KairoCaptureInboxTriageOutput: Codable, Equatable, Sendable {
+    public var schemaVersion: Int
+    public var displayText: String
+    public var pendingCount: Int
+    public var triagedCount: Int
+    public var needsReviewCount: Int
+    public var captureOnlyCount: Int
+    public var actionKinds: [AgentActionKind]
+    public var items: [KairoCaptureInboxTriageItemOutput]
+    public var recommendedRoute: KairoCaptureTriageRoute
+    public var recommendedDeepLink: String?
+
+    public init(
+        schemaVersion: Int = 1,
+        displayText: String,
+        pendingCount: Int,
+        triagedCount: Int,
+        needsReviewCount: Int,
+        captureOnlyCount: Int,
+        actionKinds: [AgentActionKind],
+        items: [KairoCaptureInboxTriageItemOutput],
+        recommendedRoute: KairoCaptureTriageRoute,
+        recommendedDeepLink: String?
+    ) {
+        self.schemaVersion = schemaVersion
+        self.displayText = displayText
+        self.pendingCount = pendingCount
+        self.triagedCount = triagedCount
+        self.needsReviewCount = needsReviewCount
+        self.captureOnlyCount = captureOnlyCount
+        self.actionKinds = actionKinds
+        self.items = items
+        self.recommendedRoute = recommendedRoute
+        self.recommendedDeepLink = recommendedDeepLink
+    }
+
+    public func encodedJSONString() throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(self)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
+
 public struct KairoCaptureInboxClearOutput: Codable, Equatable, Sendable {
     public var schemaVersion: Int
     public var displayText: String
@@ -1278,6 +1385,78 @@ enum KairoCaptureIntentSupport {
             latestURL: latest?.url?.absoluteString,
             captureIDs: captures.map(\.id),
             textPreviews: previews,
+            recommendedRoute: route,
+            recommendedDeepLink: route.deepLinkString
+        )
+    }
+
+    static func triagePendingCaptures(
+        limit: Int? = nil,
+        store: KairoIntentCaptureStore = KairoIntentCaptureStore()
+    ) async throws -> KairoCaptureInboxTriageOutput {
+        let pending = store.pending()
+        let boundedLimit = min(max(limit ?? 10, 1), 20)
+        let captures = Array(pending.prefix(boundedLimit))
+        guard !captures.isEmpty else {
+            let route: KairoCaptureTriageRoute = .chat
+            return KairoCaptureInboxTriageOutput(
+                displayText: "No pending Kairo captures to triage.",
+                pendingCount: pending.count,
+                triagedCount: 0,
+                needsReviewCount: 0,
+                captureOnlyCount: 0,
+                actionKinds: [],
+                items: [],
+                recommendedRoute: route,
+                recommendedDeepLink: route.deepLinkString
+            )
+        }
+
+        let queue = InMemoryShareIngestionQueue()
+        try await KairoIntentCaptureIngestor().enqueue(captures, into: queue)
+        let inbox = KairoActionInboxBackendService(shareIngestionQueue: queue)
+        let inboxItems = try await inbox.pendingItems(limit: captures.count)
+        let inboxItemByCaptureID = Dictionary(
+            uniqueKeysWithValues: inboxItems.compactMap { item -> (UUID, ActionInboxItem)? in
+                guard let captureID = item.sourceItemIDs.first else { return nil }
+                return (captureID, item)
+            }
+        )
+        let items = captures.compactMap { capture -> KairoCaptureInboxTriageItemOutput? in
+            guard let item = inboxItemByCaptureID[capture.id] else { return nil }
+            let actions = item.suggestions.compactMap(\.action)
+            let route = Self.recommendedRoute(for: item.triage)
+            return KairoCaptureInboxTriageItemOutput(
+                captureID: capture.id,
+                captureKind: capture.kind,
+                textPreview: compactPreview(capture.text, limit: 220),
+                url: capture.url?.absoluteString,
+                triage: item.triage,
+                summaryTitle: item.summary.title,
+                summaryBullets: item.summary.bullets,
+                suggestionKinds: item.suggestions.map(\.kind),
+                actionKinds: actions.map(\.kind),
+                proposedActions: actions,
+                recommendedRoute: route,
+                recommendedDeepLink: route.deepLinkString
+            )
+        }
+        let needsReviewCount = items.filter { $0.recommendedRoute == .captureReview }.count
+        let captureOnlyCount = items.filter { $0.triage == .captureOnly }.count
+        let route: KairoCaptureTriageRoute = needsReviewCount > 0 ? .captureReview : .chat
+        let actionKinds = Array(items.flatMap(\.actionKinds).prefix(20))
+        let displayText = needsReviewCount == 0
+            ? "\(items.count) Kairo capture\(items.count == 1 ? "" : "s") triaged."
+            : "\(items.count) Kairo capture\(items.count == 1 ? "" : "s") triaged, \(needsReviewCount) need review."
+
+        return KairoCaptureInboxTriageOutput(
+            displayText: displayText,
+            pendingCount: pending.count,
+            triagedCount: items.count,
+            needsReviewCount: needsReviewCount,
+            captureOnlyCount: captureOnlyCount,
+            actionKinds: actionKinds,
+            items: items,
             recommendedRoute: route,
             recommendedDeepLink: route.deepLinkString
         )

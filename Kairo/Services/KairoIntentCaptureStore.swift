@@ -118,7 +118,7 @@ public struct KairoIntentCaptureIngestor: Sendable {
     }
 
     public func enqueue(_ captures: [KairoIntentCapture], into queue: any ShareIngestionQueue) async throws {
-        for capture in captures {
+        for (index, capture) in captures.enumerated() {
             let attachment: ChatAttachment
             switch capture.kind {
             case .text:
@@ -131,9 +131,10 @@ public struct KairoIntentCaptureIngestor: Sendable {
                 }
             }
             let item = ShareIngestionItem(
+                id: capture.id,
                 attachments: [attachment],
                 sourceApplication: "AppIntent",
-                receivedAt: capture.createdAt
+                receivedAt: capture.createdAt.addingTimeInterval(Double(index) / 1_000)
             )
             try await queue.enqueue(item)
         }
