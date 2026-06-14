@@ -3,6 +3,18 @@ import Foundation
 @testable import KairoCore
 
 final class KairoShareImportBackendAPITests: XCTestCase {
+    func testURLReadingContextBuilderExtractsSiteTitleAndTopicsWithoutTrackingNoise() {
+        let url = URL(string: "https://www.example.com/research/afm-local-inference-speed.html?utm_source=newsletter&topic=iOS-27")!
+        let context = URLReadingContextBuilder().context(from: url)
+
+        XCTAssertEqual(context.siteName, "example.com")
+        XCTAssertEqual(context.titleCandidate, "Research Afm Local Inference Speed")
+        XCTAssertTrue(context.topics.contains("afm"))
+        XCTAssertTrue(context.topics.contains("inference"))
+        XCTAssertTrue(context.topics.contains("ios"))
+        XCTAssertFalse(context.topics.contains("newsletter"))
+    }
+
     func testKairoUITestingShareImportFactorySeedsPendingTextItemWhenRequested() async throws {
         let queue = KairoUITestingShareImportFactory(seedSharedTaskText: true).makeQueue()
 
@@ -112,6 +124,8 @@ final class KairoShareImportBackendAPITests: XCTestCase {
 
         XCTAssertEqual(imported.attachments.map(\.kind), [.url])
         XCTAssertEqual(imported.suggestedPrompt?.contains(url.absoluteString), true)
+        XCTAssertEqual(imported.suggestedPrompt?.contains("site: example.com"), true)
+        XCTAssertEqual(imported.suggestedPrompt?.contains("titleCandidate: Article"), true)
         XCTAssertNotEqual(imported.suggestedPrompt, item.suggestedPrompt)
         let remaining = try await queue.pendingItems(limit: 10)
         XCTAssertEqual(remaining.map(\.id), [item.id])

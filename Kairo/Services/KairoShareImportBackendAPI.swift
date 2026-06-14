@@ -85,11 +85,8 @@ public struct KairoShareImportBackendService: KairoShareImportAPI {
             return attachment.fileURL ?? attachment.textPreview.flatMap(URL.init(string:))
         }
         guard !urls.isEmpty else { return nil }
-        let list = urls
-            .prefix(4)
-            .map(\.absoluteString)
-            .joined(separator: "\n")
-        return KairoL10n.string("chat.share.prompt.readURLs", list)
+        let context = URLReadingContextBuilder().promptBlock(from: urls)
+        return KairoL10n.string("chat.share.prompt.readURLs", context)
     }
 
     private static func taskTitle(from text: String?) -> String? {
