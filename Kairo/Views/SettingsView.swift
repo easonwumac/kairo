@@ -204,29 +204,44 @@ public struct SettingsView: View {
         NavigationStack {
             GeometryReader { proxy in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        appearanceSettingsSection
-                        iCloudBackupSettingsSection
-                        localModelCacheSettingsSection
-                        privacySettingsSection
-
-                        if let connectorStatusMessage {
-                            KairoGroupedSurface {
-                                Label(connectorStatusMessage, systemImage: "info.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .accessibilityIdentifier("settings.status.message")
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeNavigationStackContentTopPadding)
-                    .padding(.bottom, 32)
+                    settingsFormStack
+                        .padding(.horizontal, 16)
+                        .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeNavigationStackContentTopPadding)
+                        .padding(.bottom, 32)
                 }
                 .kairoHiddenNavigationChrome()
                 .background(KairoDesign.background.ignoresSafeArea())
                 .accessibilityIdentifier("settings.form")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var settingsFormStack: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 18) {
+                settingsFormSections
+            }
+        } else {
+            settingsFormSections
+        }
+    }
+
+    private var settingsFormSections: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            appearanceSettingsSection
+            iCloudBackupSettingsSection
+            localModelCacheSettingsSection
+            privacySettingsSection
+
+            if let connectorStatusMessage {
+                KairoGroupedSurface {
+                    Label(connectorStatusMessage, systemImage: "info.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityIdentifier("settings.status.message")
             }
         }
     }

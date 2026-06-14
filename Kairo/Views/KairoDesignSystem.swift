@@ -486,10 +486,31 @@ struct KairoGroupedSurface<Content: View>: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(KairoDesign.line, lineWidth: 1)
+        .kairoGroupedGlassSurface()
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func kairoGroupedGlassSurface() -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(
+                    .regular
+                        .tint(KairoDesign.groupedSurface.opacity(0.10)),
+                    in: .rect(cornerRadius: 18)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                }
+        } else {
+            self
+                .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(KairoDesign.line, lineWidth: 1)
+                }
         }
     }
 }
