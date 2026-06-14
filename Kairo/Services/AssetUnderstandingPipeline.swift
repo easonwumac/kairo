@@ -280,6 +280,93 @@ public enum InfoPageDraftValidator {
     }
 }
 
+public enum AssetUnderstandingPromptBuilder {
+    public static func initialPrompt(for request: AssetUnderstandingRequest) -> String {
+        """
+        You are Kairo's staged asset-understanding pipeline for imported iPhone assets.
+        Use only the provided OCR, labels, file metadata, URL page text, and user text.
+        Output one JSON object only. No Markdown. No HTML. No comments.
+        The App renders fixed HTML templates from this JSON; never generate template source.
+        Every reminderDraft must set needsUserConfirmation=true.
+        Use a folderName only if it exactly matches one provided folder.
+        Minimum confidence for automatic InfoPage creation: \(request.minimumConfidence).
+
+        Pipeline stages:
+        1. classifyAsset: choose the best template/category or list 2-4 candidateCategories when ambiguous.
+        2. extractFacts: copy only source-backed facts, timeline items, keywords, missingInfo, and reminder drafts from the supplied assets.
+        3. composeInfoPageJSON: emit the final fixed schema JSON object after classification and extraction.
+
+        Stability rules:
+        - Prefer generalNote with createInfoPage=false when evidence is weak.
+        - Never invent facts, dates, folders, or sourceAssetIDs.
+        - Keep values concise so small local models can stay inside schema.
+        - If a URL pageText exists, summarize it as source text, not as verified browsing beyond the provided snippet.
+        - If multiple enabled folders/categories are plausible, include candidateCategories and do not force a single automatic save.
+
+        Schema:
+        \(schemaLine())
+
+        Templates:
+        \(templateSchemaLines())
+
+        Enabled folders/categories:
+        \(request.folders.map(\.name).joined(separator: ", "))
+
+        Assets:
+        \(assetLines(request.assets))
+        """
+    }
+
+    public static func repairPrompt(
+        for request: AssetUnderstandingRequest,
+        issues: [InfoPageDraftValidationIssue]
+    ) -> String {
+        """
+        Repair the previous Kairo Library JSON. Return one valid JSON object only.
+        Do not reinterpret beyond provided assets.
+        Re-run only the failing staged pipeline work and preserve valid source-backed fields.
+
+        Validation errors:
+        \(issues.map(\.description).joined(separator: "\n"))
+
+        \(initialPrompt(for: request))
+        """
+    }
+
+    private static func schemaLine() -> String {
+        """
+        {"createInfoPage":true,"title":"short title","templateID":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","category":"same category required by template","assetDescription":"plain description of image or document","ocrSummary":"OCR/user text summary or empty string","keywords":["searchable","terms"],"candidateCategories":[{"folderName":"optional exact folder name","templateID":"travel","category":"travel","confidence":0.0,"reason":"why it fits"}],"summary":"one sentence","facts":[{"label":"required or optional key","value":"source-backed value","sourceAssetID":"uuid"}],"timeline":[{"title":"event","note":"source-backed note","sourceAssetID":"uuid"}],"reminderDrafts":[{"title":"draft title","dueDateText":"optional natural date","needsUserConfirmation":true}],"folderName":"optional exact folder name","confidence":0.0,"missingInfo":["unknown but useful fields"],"sourceAssetIDs":["uuid"]}
+        """
+    }
+
+    private static func templateSchemaLines() -> String {
+        InfoPageTemplateCatalog.all.map { definition in
+            """
+            \(definition.id.rawValue): category=\(definition.category.rawValue), required=\(definition.requiredFactKeys.joined(separator: ",")), optional=\(definition.optionalFactKeys.joined(separator: ","))
+            """
+        }.joined(separator: "\n")
+    }
+
+    private static func assetLines(_ assets: [KnowledgeAsset]) -> String {
+        assets.map { asset in
+            """
+            id=\(asset.id.uuidString)
+            title=\(asset.title)
+            kind=\(asset.kind.rawValue)
+            text=\(truncate([asset.extractedText, asset.generatedDescription ?? "", asset.summary].joined(separator: "\n"), limit: 900))
+            tags=\(asset.tags.joined(separator: ","))
+            attachments=\(asset.attachments.map(\.displayName).joined(separator: ","))
+            """
+        }.joined(separator: "\n---\n")
+    }
+
+    private static func truncate(_ text: String, limit: Int) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > limit else { return trimmed }
+        return String(trimmed.prefix(limit))
+    }
+}
+
 public struct AssetUnderstandingPipeline: Sendable {
     private let model: any AssetUnderstandingModel
 
@@ -329,44 +416,11 @@ public struct AssetUnderstandingPipeline: Sendable {
     }
 
     public static func initialPrompt(for request: AssetUnderstandingRequest) -> String {
-        """
-        You are classifying imported iPhone assets for Kairo Library.
-        Use only the provided OCR, labels, file metadata, and user text.
-        Output one JSON object only. No Markdown. No HTML. No comments.
-        The App renders fixed HTML templates from this JSON; never generate template source.
-        Every reminderDraft must set needsUserConfirmation=true.
-        Use a folderName only if it exactly matches one provided folder.
-        Minimum confidence for automatic InfoPage creation: \(request.minimumConfidence).
-
-        Workflow:
-        1. Describe the asset from OCR, labels, file metadata, and user text.
-        2. Choose 1 best category when confidence is clear.
-        3. If multiple enabled folders/categories are plausible, include 2-4 candidateCategories and do not force a single automatic save.
-        4. Extract searchable keywords.
-        5. Fill the fixed template JSON fields. Do not generate HTML.
-
-        Schema:
-        {"createInfoPage":true,"title":"short title","templateID":"travel|order|warranty|project|event|medical|finance|identityDocument|homeDevice|subscription|recipeOrInstruction|generalNote","category":"same category required by template","assetDescription":"plain description of image or document","ocrSummary":"OCR/user text summary or empty string","keywords":["searchable","terms"],"candidateCategories":[{"folderName":"optional exact folder name","templateID":"travel","category":"travel","confidence":0.0,"reason":"why it fits"}],"summary":"one sentence","facts":[{"label":"required or optional key","value":"source-backed value","sourceAssetID":"uuid"}],"timeline":[{"title":"event","note":"source-backed note","sourceAssetID":"uuid"}],"reminderDrafts":[{"title":"draft title","dueDateText":"optional natural date","needsUserConfirmation":true}],"folderName":"optional exact folder name","confidence":0.0,"missingInfo":["unknown but useful fields"],"sourceAssetIDs":["uuid"]}
-
-        Templates:
-        \(templateSchemaLines())
-
-        Enabled folders/categories:
-        \(request.folders.map(\.name).joined(separator: ", "))
-
-        Assets:
-        \(assetLines(request.assets))
-        """
+        AssetUnderstandingPromptBuilder.initialPrompt(for: request)
     }
 
     public static func repairPrompt(for request: AssetUnderstandingRequest, issues: [InfoPageDraftValidationIssue]) -> String {
-        """
-        Repair the previous Kairo Library JSON. Return one valid JSON object only.
-        Do not reinterpret beyond provided assets. Fix these validation errors:
-        \(issues.map(\.description).joined(separator: "\n"))
-
-        \(initialPrompt(for: request))
-        """
+        AssetUnderstandingPromptBuilder.repairPrompt(for: request, issues: issues)
     }
 
     private static func decodeDraft(from raw: String) -> InfoPageDraft? {
@@ -418,30 +472,4 @@ public struct AssetUnderstandingPipeline: Sendable {
         )
     }
 
-    private static func templateSchemaLines() -> String {
-        InfoPageTemplateCatalog.all.map { definition in
-            """
-            \(definition.id.rawValue): category=\(definition.category.rawValue), required=\(definition.requiredFactKeys.joined(separator: ",")), optional=\(definition.optionalFactKeys.joined(separator: ","))
-            """
-        }.joined(separator: "\n")
-    }
-
-    private static func assetLines(_ assets: [KnowledgeAsset]) -> String {
-        assets.map { asset in
-            """
-            id=\(asset.id.uuidString)
-            title=\(asset.title)
-            kind=\(asset.kind.rawValue)
-            text=\(truncate([asset.extractedText, asset.generatedDescription ?? "", asset.summary].joined(separator: "\n"), limit: 900))
-            tags=\(asset.tags.joined(separator: ","))
-            attachments=\(asset.attachments.map(\.displayName).joined(separator: ","))
-            """
-        }.joined(separator: "\n---\n")
-    }
-
-    private static func truncate(_ text: String, limit: Int) -> String {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count > limit else { return trimmed }
-        return String(trimmed.prefix(limit))
-    }
 }

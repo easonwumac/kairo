@@ -228,6 +228,55 @@ final class InfoPageFeatureTests: XCTestCase {
         XCTAssertTrue(page.actionDrafts.allSatisfy(\.requiresConfirmation))
     }
 
+    func testAssetUnderstandingPromptBuilderUsesStagedSchemaPipelineForSmallModels() {
+        let asset = KnowledgeAsset(
+            title: "afm-url.txt",
+            kind: .url,
+            source: .shareExtension,
+            attachments: [],
+            extractedText: "pageTitle: AFM prompt stability\npageText: Small models perform better with staged schema prompts.",
+            summary: "AFM prompt notes"
+        )
+
+        let prompt = AssetUnderstandingPromptBuilder.initialPrompt(for: AssetUnderstandingRequest(
+            assets: [asset],
+            folders: [KnowledgeAssetFolder(name: "Research")],
+            minimumConfidence: 0.72,
+            maximumAttempts: 2
+        ))
+
+        XCTAssertTrue(prompt.contains("classifyAsset"))
+        XCTAssertTrue(prompt.contains("extractFacts"))
+        XCTAssertTrue(prompt.contains("composeInfoPageJSON"))
+        XCTAssertTrue(prompt.contains("Output one JSON object only"))
+        XCTAssertTrue(prompt.contains("needsUserConfirmation=true"))
+        XCTAssertTrue(prompt.contains("pageText exists"))
+        XCTAssertTrue(prompt.contains(asset.id.uuidString))
+        XCTAssertTrue(prompt.contains("Research"))
+    }
+
+    func testAssetUnderstandingRepairPromptPreservesStagedPipelineAndValidationErrors() {
+        let asset = KnowledgeAsset(
+            title: "broken.txt",
+            kind: .text,
+            source: .chat,
+            attachments: [],
+            extractedText: "Remember to confirm the receipt.",
+            summary: "Receipt note"
+        )
+
+        let prompt = AssetUnderstandingPromptBuilder.repairPrompt(
+            for: AssetUnderstandingRequest(assets: [asset], maximumAttempts: 2),
+            issues: [.invalidJSON, .reminderWithoutConfirmation("Confirm receipt")]
+        )
+
+        XCTAssertTrue(prompt.contains("Re-run only the failing staged pipeline work"))
+        XCTAssertTrue(prompt.contains("Output must be one valid JSON object."))
+        XCTAssertTrue(prompt.contains("reminderDraft Confirm receipt must set needsUserConfirmation=true."))
+        XCTAssertTrue(prompt.contains("classifyAsset"))
+        XCTAssertTrue(prompt.contains("composeInfoPageJSON"))
+    }
+
     func testAssetUnderstandingPipelineRequiresUserChoiceForMultipleCategoryCandidates() async throws {
         let asset = KnowledgeAsset(
             title: "flower-photo.jpg",
