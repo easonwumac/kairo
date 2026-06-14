@@ -15,15 +15,7 @@ public struct KnowledgeCategoriesView: View {
     public var body: some View {
         GeometryReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    headerCard
-
-                    if let errorMessage {
-                        errorCard(errorMessage)
-                    }
-
-                    categoryGrid
-                }
+                categoriesContent
                 .padding(.horizontal, 16)
                 .padding(.top, max(proxy.safeAreaInsets.top, 0) + KairoDesign.rootChromeContentTopPadding)
                 .padding(.bottom, 32)
@@ -36,13 +28,36 @@ public struct KnowledgeCategoriesView: View {
         }
     }
 
+    @ViewBuilder
+    private var categoriesContent: some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            GlassEffectContainer(spacing: 14) {
+                categoriesStack
+            }
+        } else {
+            categoriesStack
+        }
+    }
+
+    private var categoriesStack: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            headerCard
+
+            if let errorMessage {
+                errorCard(errorMessage)
+            }
+
+            categoryGrid
+        }
+    }
+
     private var headerCard: some View {
         HStack(alignment: .center, spacing: 10) {
             Image(systemName: "folder.fill")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(KairoDesign.blue)
                 .frame(width: 30, height: 30)
-                .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .categoryGlassIcon(tint: KairoDesign.blue)
 
             Text(KairoL10n.string("categories.title"))
                 .font(.title3.weight(.semibold))
@@ -54,11 +69,11 @@ public struct KnowledgeCategoriesView: View {
     }
 
     private func errorCard(_ message: String) -> some View {
-        KairoGroupedSurface {
-            Label(message, systemImage: "exclamationmark.triangle.fill")
-                .font(.caption)
-                .foregroundStyle(KairoDesign.red)
-        }
+        Label(message, systemImage: "exclamationmark.triangle.fill")
+            .font(.caption)
+            .foregroundStyle(KairoDesign.red)
+            .padding(14)
+            .categoryGlassSurface(tint: KairoDesign.red, cornerRadius: 18)
         .accessibilityIdentifier("categories.error")
     }
 
@@ -97,11 +112,13 @@ public struct KnowledgeCategoriesView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
-            .background(KairoDesign.elevatedSurface.opacity(isEnabled ? 0.72 : 0.42), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(isEnabled ? KairoDesign.teal.opacity(0.28) : KairoDesign.line, lineWidth: 1)
-            }
+            .categoryGlassSurface(
+                tint: isEnabled ? KairoDesign.teal : KairoDesign.muted,
+                cornerRadius: 16,
+                isInteractive: !isUpdating,
+                fallbackOpacity: isEnabled ? 0.72 : 0.42,
+                strokeOpacity: isEnabled ? 0.28 : 0.74
+            )
         }
         .buttonStyle(.plain)
         .disabled(isUpdating)
@@ -149,6 +166,52 @@ public struct KnowledgeCategoriesView: View {
         name.lowercased()
             .replacingOccurrences(of: " ", with: "-")
             .replacingOccurrences(of: "/", with: "-")
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func categoryGlassSurface(
+        tint: Color,
+        cornerRadius: CGFloat,
+        isInteractive: Bool = false,
+        fallbackOpacity: Double = 0.66,
+        strokeOpacity: Double = 0.74
+    ) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.11)).interactive(), in: .rect(cornerRadius: cornerRadius))
+                    .overlay {
+                        shape.stroke(tint.opacity(strokeOpacity), lineWidth: 1)
+                    }
+            } else {
+                self
+                    .glassEffect(.regular.tint(tint.opacity(0.08)), in: .rect(cornerRadius: cornerRadius))
+                    .overlay {
+                        shape.stroke(KairoDesign.line.opacity(strokeOpacity), lineWidth: 1)
+                    }
+            }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface.opacity(fallbackOpacity), in: shape)
+                .overlay {
+                    shape.stroke(KairoDesign.line.opacity(strokeOpacity), lineWidth: 1)
+                }
+        }
+    }
+
+    @ViewBuilder
+    func categoryGlassIcon(tint: Color) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(0.10)), in: .rect(cornerRadius: 9))
+        } else {
+            self
+                .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
     }
 }
 #endif
