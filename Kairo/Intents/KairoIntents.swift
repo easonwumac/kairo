@@ -413,6 +413,24 @@ public struct ReviewKairoCapturesIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct CaptureTextInKairoIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Capture Text in Kairo"
+    public static var description = IntentDescription("Send text into Kairo's Capture Inbox and open review for user-confirmed actions.")
+    public static var openAppWhenRun = true
+
+    @Parameter(title: "Text")
+    public var text: String
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog {
+        KairoIntentCaptureStore().saveText(text, sourceName: "Shortcut Capture")
+        KairoIntentRouteStore().save(.captureReview)
+        return .result(dialog: IntentDialog(stringLiteral: "Opening Kairo capture review."))
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public struct KairoAppShortcutsProvider: AppShortcutsProvider {
     public static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -441,6 +459,15 @@ public struct KairoAppShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Review Captures",
             systemImageName: "checklist.checked"
+        )
+        AppShortcut(
+            intent: CaptureTextInKairoIntent(),
+            phrases: [
+                "Capture text in \(.applicationName)",
+                "Send text to \(.applicationName)"
+            ],
+            shortTitle: "Capture Text",
+            systemImageName: "text.badge.plus"
         )
     }
 }

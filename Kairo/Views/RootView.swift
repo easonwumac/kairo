@@ -271,9 +271,20 @@ public struct RootView: View {
             isPageActionsPresented = false
             wikiRouteRequest = nil
             Task { @MainActor in
+                await enqueueIntentCapturesForReview()
                 await Task.yield()
                 triggerChatChromeAction(.reviewCaptures)
             }
+        }
+    }
+
+    private func enqueueIntentCapturesForReview() async {
+        let captures = KairoIntentCaptureStore().consume()
+        guard !captures.isEmpty else { return }
+        do {
+            try await KairoIntentCaptureIngestor().enqueue(captures, into: environment.shareIngestionQueue)
+        } catch {
+            // Best effort: the route still opens Chat so existing pending captures can be reviewed.
         }
     }
 
