@@ -48,24 +48,30 @@ public struct KairoIntentCaptureStore {
         decoder.dateDecodingStrategy = .iso8601
     }
 
-    public func saveText(_ text: String, sourceName: String = "Shortcut Capture") {
+    @discardableResult
+    public func saveText(_ text: String, sourceName: String = "Shortcut Capture") -> KairoIntentCapture? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else { return nil }
         var captures = load()
-        captures.append(KairoIntentCapture(text: trimmed, sourceName: sourceName))
+        let capture = KairoIntentCapture(text: trimmed, sourceName: sourceName)
+        captures.append(capture)
         persist(captures)
+        return capture
     }
 
-    public func saveURL(_ url: URL, note: String? = nil, sourceName: String = "Shortcut URL") {
+    @discardableResult
+    public func saveURL(_ url: URL, note: String? = nil, sourceName: String = "Shortcut URL") -> KairoIntentCapture? {
         guard let scheme = url.scheme?.lowercased(),
               ["http", "https"].contains(scheme) else {
-            return
+            return nil
         }
         let trimmedNote = note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let text = trimmedNote.isEmpty ? url.absoluteString : "\(trimmedNote)\n\(url.absoluteString)"
         var captures = load()
-        captures.append(KairoIntentCapture(kind: .url, text: text, url: url, sourceName: sourceName))
+        let capture = KairoIntentCapture(kind: .url, text: text, url: url, sourceName: sourceName)
+        captures.append(capture)
         persist(captures)
+        return capture
     }
 
     public func consume() -> [KairoIntentCapture] {
