@@ -1130,6 +1130,9 @@
 "infoPages.search.placeholder" = "Search pages";
 "infoPages.search.empty" = "No matching pages";
 "infoPages.filter.all" = "All";
+"infoPages.radar.pages" = "Pages";
+"infoPages.radar.assets" = "Assets";
+"infoPages.radar.reminders" = "Reminders";
 "infoPages.empty.title" = "No Info Pages yet";
 "infoPages.empty.subtitle" = "Pages are created when Chat understands captured assets. Drop in a screenshot or share something into Kairo to start.";
 "infoPages.detail.assets" = "Linked assets";

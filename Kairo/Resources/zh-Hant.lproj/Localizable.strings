@@ -1130,6 +1130,9 @@
 "infoPages.search.placeholder" = "搜尋頁面";
 "infoPages.search.empty" = "找不到符合的頁面";
 "infoPages.filter.all" = "全部";
+"infoPages.radar.pages" = "頁面";
+"infoPages.radar.assets" = "資產";
+"infoPages.radar.reminders" = "提醒";
 "infoPages.empty.title" = "還沒有 Info 頁面";
 "infoPages.empty.subtitle" = "把截圖或分享內容丟給 Kairo，Chat 理解之後會自動整理成頁面顯示在這裡。";
 "infoPages.detail.assets" = "相關資產";

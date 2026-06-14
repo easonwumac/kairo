@@ -100,6 +100,14 @@ public struct InfoPageListView: View {
         }
     }
 
+    private var filteredAssetLinkCount: Int {
+        filteredPages.reduce(0) { $0 + $1.assetIDs.count }
+    }
+
+    private var filteredReminderCount: Int {
+        filteredPages.reduce(0) { $0 + $1.reminderLinks.count }
+    }
+
     private var presentCategories: [InfoPageCategory] {
         let used = Set(pages.map(\.category))
         return InfoPageCategory.allCases.filter { used.contains($0) }
@@ -121,6 +129,7 @@ public struct InfoPageListView: View {
     private var listStack: some View {
         VStack(alignment: .leading, spacing: 14) {
             searchCard
+            pageRadarSection
 
             if let errorMessage {
                 statusBanner(errorMessage, systemImage: "exclamationmark.triangle.fill", tint: KairoDesign.red)
@@ -170,10 +179,7 @@ public struct InfoPageListView: View {
                             .font(.caption.weight(.bold))
                             .foregroundStyle(selectedCategory == nil ? KairoDesign.ink : KairoDesign.blue)
                             .frame(width: 28, height: 28)
-                            .background(KairoDesign.softSurface.opacity(0.72), in: Circle())
-                            .overlay {
-                                Circle().stroke(KairoDesign.line, lineWidth: 1)
-                            }
+                            .infoPageGlassSurface(cornerRadius: 14, tint: KairoDesign.blue, isInteractive: true)
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("infoPages.filter.toggle")
@@ -229,33 +235,90 @@ public struct InfoPageListView: View {
     }
 
     private var emptyState: some View {
-        KairoGroupedSurface {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(KairoL10n.string("infoPages.empty.title"))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                Text(KairoL10n.string("infoPages.empty.subtitle"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+        VStack(alignment: .leading, spacing: 6) {
+            Text(KairoL10n.string("infoPages.empty.title"))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+            Text(KairoL10n.string("infoPages.empty.subtitle"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .infoPageGlassSurface(cornerRadius: 18, tint: KairoDesign.blue)
     }
 
     private var emptyResults: some View {
-        KairoGroupedSurface {
-            Label(KairoL10n.string("infoPages.search.empty"), systemImage: "magnifyingglass")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
+        Label(KairoL10n.string("infoPages.search.empty"), systemImage: "magnifyingglass")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .infoPageGlassSurface(cornerRadius: 18, tint: KairoDesign.amber)
     }
 
     private func statusBanner(_ message: String, systemImage: String, tint: Color) -> some View {
-        KairoGroupedSurface {
-            Label(message, systemImage: systemImage)
-                .font(.caption)
-                .foregroundStyle(tint)
+        Label(message, systemImage: systemImage)
+            .font(.caption)
+            .foregroundStyle(tint)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .infoPageGlassSurface(cornerRadius: 16, tint: tint)
+    }
+
+    private var pageRadarSection: some View {
+        HStack(spacing: 10) {
+            pageRadarTile(
+                title: KairoL10n.string("infoPages.radar.pages"),
+                value: "\(filteredPages.count)",
+                systemImage: "doc.text.image.fill",
+                tint: KairoDesign.blue
+            )
+            pageRadarTile(
+                title: KairoL10n.string("infoPages.radar.assets"),
+                value: "\(filteredAssetLinkCount)",
+                systemImage: "photo.stack",
+                tint: KairoDesign.teal
+            )
+            pageRadarTile(
+                title: KairoL10n.string("infoPages.radar.reminders"),
+                value: "\(filteredReminderCount)",
+                systemImage: "bell.badge.fill",
+                tint: filteredReminderCount > 0 ? KairoDesign.amber : KairoDesign.green
+            )
         }
+        .accessibilityIdentifier("infoPages.radar")
+    }
+
+    private func pageRadarTile(title: String, value: String, systemImage: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(tint)
+                .frame(width: 26, height: 26)
+                .infoPageGlassSurface(cornerRadius: 9, tint: tint)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 86, alignment: .leading)
+        .infoPageGlassSurface(cornerRadius: 18, tint: tint)
     }
 
     // MARK: - Detail
@@ -272,11 +335,13 @@ public struct InfoPageListView: View {
                     RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(KairoDesign.line, lineWidth: 1)
                 }
             #else
-            KairoGroupedSurface {
-                Text(page.summary.isEmpty ? page.title : page.summary)
-                    .font(.subheadline)
-                    .foregroundStyle(KairoDesign.ink)
-            }
+            Text(page.summary.isEmpty ? page.title : page.summary)
+                .font(.subheadline)
+                .foregroundStyle(KairoDesign.ink)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .infoPageGlassSurface(cornerRadius: 18, tint: page.category.tint)
             #endif
 
             linkedAssetsSection(for: page)
@@ -337,53 +402,57 @@ public struct InfoPageListView: View {
     @ViewBuilder
     private func linkedAssetsSection(for page: InfoPage) -> some View {
         if let assets = linkedAssetsByPageID[page.id], !assets.isEmpty {
-            KairoGroupedSurface {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Text(KairoL10n.string("infoPages.detail.assets"))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text("\(assets.count)")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(KairoDesign.muted)
-                    }
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(assets) { asset in
-                                InfoPageLinkedAssetThumbnail(asset: asset, size: 86)
-                            }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text(KairoL10n.string("infoPages.detail.assets"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(assets.count)")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(KairoDesign.muted)
+                }
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(assets) { asset in
+                            InfoPageLinkedAssetThumbnail(asset: asset, size: 86)
                         }
                     }
                 }
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .infoPageGlassSurface(cornerRadius: 18, tint: page.category.tint)
         }
     }
 
     private func remindersSection(for page: InfoPage) -> some View {
-        KairoGroupedSurface {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(KairoL10n.string("infoPages.detail.reminders"))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                ForEach(page.reminderLinks) { link in
-                    HStack(spacing: 8) {
-                        Image(systemName: "bell.fill")
+        VStack(alignment: .leading, spacing: 8) {
+            Text(KairoL10n.string("infoPages.detail.reminders"))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            ForEach(page.reminderLinks) { link in
+                HStack(spacing: 8) {
+                    Image(systemName: "bell.fill")
+                        .font(.caption)
+                        .foregroundStyle(page.category.tint)
+                    Text(link.title)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(KairoDesign.ink)
+                    Spacer()
+                    if let due = link.dueDate {
+                        Text(due, style: .date)
                             .font(.caption)
-                            .foregroundStyle(page.category.tint)
-                        Text(link.title)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(KairoDesign.ink)
-                        Spacer()
-                        if let due = link.dueDate {
-                            Text(due, style: .date)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .infoPageGlassSurface(cornerRadius: 18, tint: page.category.tint)
     }
 
     private func loadLinkedAssets(for page: InfoPage) {
