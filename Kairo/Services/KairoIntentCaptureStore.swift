@@ -2,21 +2,32 @@ import Foundation
 
 public struct KairoIntentCapture: Codable, Equatable, Sendable {
     public var id: UUID
+    public var kind: KairoIntentCaptureKind
     public var text: String
+    public var url: URL?
     public var sourceName: String
     public var createdAt: Date
 
     public init(
         id: UUID = UUID(),
+        kind: KairoIntentCaptureKind = .text,
         text: String,
+        url: URL? = nil,
         sourceName: String = "Shortcut Capture",
         createdAt: Date = Date()
     ) {
         self.id = id
+        self.kind = kind
         self.text = text
+        self.url = url
         self.sourceName = sourceName
         self.createdAt = createdAt
     }
+}
+
+public enum KairoIntentCaptureKind: String, Codable, Equatable, Sendable {
+    case text
+    case url
 }
 
 public struct KairoIntentCaptureStore {
@@ -42,6 +53,18 @@ public struct KairoIntentCaptureStore {
         guard !trimmed.isEmpty else { return }
         var captures = load()
         captures.append(KairoIntentCapture(text: trimmed, sourceName: sourceName))
+        persist(captures)
+    }
+
+    public func saveURL(_ url: URL, note: String? = nil, sourceName: String = "Shortcut URL") {
+        guard let scheme = url.scheme?.lowercased(),
+              ["http", "https"].contains(scheme) else {
+            return
+        }
+        let trimmedNote = note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let text = trimmedNote.isEmpty ? url.absoluteString : "\(trimmedNote)\n\(url.absoluteString)"
+        var captures = load()
+        captures.append(KairoIntentCapture(kind: .url, text: text, url: url, sourceName: sourceName))
         persist(captures)
     }
 
@@ -74,8 +97,19 @@ public struct KairoIntentCaptureIngestor: Sendable {
 
     public func enqueue(_ captures: [KairoIntentCapture], into queue: any ShareIngestionQueue) async throws {
         for capture in captures {
+            let attachment: ChatAttachment
+            switch capture.kind {
+            case .text:
+                attachment = attachmentBuilder.text(capture.text, displayName: capture.sourceName)
+            case .url:
+                if let url = capture.url {
+                    attachment = attachmentBuilder.url(url)
+                } else {
+                    attachment = attachmentBuilder.text(capture.text, displayName: capture.sourceName)
+                }
+            }
             let item = ShareIngestionItem(
-                attachments: [attachmentBuilder.text(capture.text, displayName: capture.sourceName)],
+                attachments: [attachment],
                 sourceApplication: "AppIntent",
                 receivedAt: capture.createdAt
             )
