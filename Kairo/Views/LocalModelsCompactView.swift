@@ -1036,11 +1036,7 @@ struct LocalModelsCompactView: View {
             .foregroundStyle(KairoDesign.ink)
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(KairoDesign.blue.opacity(0.16), lineWidth: 1)
-            }
+            .kairoGlassField(tint: KairoDesign.blue, cornerRadius: 12)
             .accessibilityIdentifier("settings.models.local.custom.input")
 
             Button {
@@ -1335,11 +1331,7 @@ struct LocalModelsCompactView: View {
             }
         }
         .padding(10)
-        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(KairoDesign.line, lineWidth: 1)
-        }
+        .kairoGlassCard(tint: KairoDesign.blue, cornerRadius: 12)
         .accessibilityIdentifier("settings.models.\(row.modelID).parameters")
     }
 
@@ -1532,11 +1524,7 @@ struct LocalModelsCompactView: View {
             }
         }
         .padding(10)
-        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(KairoDesign.line, lineWidth: 1)
-        }
+        .kairoGlassCard(tint: KairoDesign.teal, cornerRadius: 10)
     }
 
     private func runtimePills(for row: LocalModelSettingsRow) -> some View {
@@ -1665,11 +1653,7 @@ struct LocalModelsCompactView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(12)
-        .background(KairoDesign.elevatedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(KairoDesign.line, lineWidth: 1)
-        }
+        .kairoGlassCard(tint: KairoDesign.blue, cornerRadius: 14, isInteractive: true)
     }
 
     private func downloadProgressView(_ progress: LocalModelDownloadProgressState, row: LocalModelSettingsRow) -> some View {
@@ -1700,11 +1684,7 @@ struct LocalModelsCompactView: View {
             }
         }
         .padding(10)
-        .background(KairoDesign.groupedSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(KairoDesign.amber.opacity(0.18), lineWidth: 1)
-        }
+        .kairoGlassCard(tint: KairoDesign.amber, cornerRadius: 10, strokeOpacity: 0.58)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(progress.displayText)
         .accessibilityIdentifier("settings.models.\(progress.modelID).download-progress")
