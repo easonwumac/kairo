@@ -47,6 +47,21 @@ final class KairoIntentCaptureStoreTests: XCTestCase {
         XCTAssertEqual(store.pending(), [])
     }
 
+    func testCaptureStoreRemoveDeletesOneQueuedCaptureByID() {
+        let suiteName = "KairoIntentCaptureStoreTests-\(UUID().uuidString)"
+        let defaults = try! XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = KairoIntentCaptureStore(defaults: defaults)
+        let first = store.saveText("First AFM note", sourceName: "Shortcut")
+        let second = store.saveText("Second AFM note", sourceName: "Shortcut")
+
+        let removed = store.remove(id: first!.id)
+
+        XCTAssertEqual(removed?.id, first?.id)
+        XCTAssertEqual(store.pending().map(\.id), [second!.id])
+        XCTAssertNil(store.remove(id: first!.id))
+    }
+
     func testCaptureStoreSavesHTTPURLAndRejectsUnsupportedURLSchemes() {
         let suiteName = "KairoIntentCaptureStoreTests-\(UUID().uuidString)"
         let defaults = try! XCTUnwrap(UserDefaults(suiteName: suiteName))

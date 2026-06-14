@@ -290,6 +290,78 @@ final class KairoCaptureIntentSupportTests: XCTestCase {
         XCTAssertEqual(captureStore.pending(), [])
     }
 
+    func testDiscardPendingCaptureRequiresExplicitConfirmation() throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+        let capture = try XCTUnwrap(captureStore.saveText("Discard AFM capture", sourceName: "Shortcut"))
+
+        let output = KairoCaptureIntentSupport.discardPendingCapture(
+            id: capture.id,
+            confirmDiscard: false,
+            store: captureStore
+        )
+
+        XCTAssertFalse(output.confirmed)
+        XCTAssertFalse(output.discarded)
+        XCTAssertTrue(output.found)
+        XCTAssertEqual(output.remainingCount, 1)
+        XCTAssertEqual(output.recommendedRoute, .captureReview)
+        XCTAssertEqual(captureStore.pending().map(\.id), [capture.id])
+    }
+
+    func testDiscardPendingCaptureRemovesOnlySelectedCaptureWhenConfirmed() throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+        let first = try XCTUnwrap(captureStore.saveText("First AFM capture", sourceName: "Shortcut"))
+        let second = try XCTUnwrap(captureStore.saveURL(
+            URL(string: "https://example.com/afm")!,
+            note: "Read later",
+            sourceName: "Shortcut URL"
+        ))
+
+        let output = KairoCaptureIntentSupport.discardPendingCapture(
+            id: first.id,
+            confirmDiscard: true,
+            store: captureStore
+        )
+        let decoded = try JSONDecoder().decode(KairoPendingCaptureDiscardOutput.self, from: Data(output.encodedJSONString().utf8))
+
+        XCTAssertTrue(decoded.confirmed)
+        XCTAssertTrue(decoded.discarded)
+        XCTAssertTrue(decoded.found)
+        XCTAssertEqual(decoded.discardedCaptureID, first.id)
+        XCTAssertEqual(decoded.discardedCaptureKind, .text)
+        XCTAssertEqual(decoded.remainingCount, 1)
+        XCTAssertEqual(decoded.recommendedRoute, .captureReview)
+        XCTAssertEqual(captureStore.pending().map(\.id), [second.id])
+    }
+
+    func testDiscardPendingCaptureReportsMissingCaptureWhenConfirmed() throws {
+        let suiteName = "KairoCaptureIntentSupportTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let captureKey = "kairo_intent_pending_captures_test"
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let captureStore = KairoIntentCaptureStore(defaults: defaults, key: captureKey)
+
+        let output = KairoCaptureIntentSupport.discardPendingCapture(
+            id: UUID(),
+            confirmDiscard: true,
+            store: captureStore
+        )
+
+        XCTAssertTrue(output.confirmed)
+        XCTAssertFalse(output.discarded)
+        XCTAssertFalse(output.found)
+        XCTAssertEqual(output.remainingCount, 0)
+        XCTAssertEqual(output.recommendedRoute, .chat)
+    }
+
     func testTriageCaptureReturnsMemoryActionForRememberedText() async throws {
         let output = try await KairoCaptureIntentSupport.triage(
             text: "記住：AFM 適合短上下文分類。",

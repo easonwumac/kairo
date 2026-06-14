@@ -84,6 +84,14 @@ public struct KairoIntentCaptureStore: @unchecked Sendable {
         consume()
     }
 
+    public func remove(id: UUID) -> KairoIntentCapture? {
+        var captures = load()
+        guard let index = captures.firstIndex(where: { $0.id == id }) else { return nil }
+        let removed = captures.remove(at: index)
+        persist(captures)
+        return removed
+    }
+
     public func pending() -> [KairoIntentCapture] {
         load()
     }

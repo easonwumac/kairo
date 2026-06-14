@@ -464,6 +464,31 @@ public struct InspectKairoCaptureIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
+public struct DiscardKairoCaptureIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Discard Kairo Capture"
+    public static var description = IntentDescription("Discard one selected pending Kairo capture only when explicitly confirmed by the Shortcut.")
+
+    @Parameter(title: "Capture")
+    public var capture: KairoPendingCaptureEntity
+
+    @Parameter(title: "Confirm Discard")
+    public var confirmDiscard: Bool
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        let output = KairoCaptureIntentSupport.discardPendingCapture(
+            id: capture.id,
+            confirmDiscard: confirmDiscard
+        )
+        return .result(
+            value: try output.encodedJSONString(),
+            dialog: IntentDialog(stringLiteral: output.displayText)
+        )
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, *)
 public enum KairoOpenSectionAppEnum: String, AppEnum {
     case chat
     case library
@@ -667,6 +692,15 @@ public struct KairoAppShortcutsProvider: AppShortcutsProvider {
             systemImageName: "doc.text.magnifyingglass"
         )
         AppShortcut(
+            intent: DiscardKairoCaptureIntent(),
+            phrases: [
+                "Discard a capture in \(.applicationName)",
+                "Remove a \(.applicationName) capture"
+            ],
+            shortTitle: "Discard Capture",
+            systemImageName: "trash.slash"
+        )
+        AppShortcut(
             intent: ClearKairoCaptureInboxIntent(),
             phrases: [
                 "Clear \(.applicationName) capture inbox",
@@ -683,15 +717,6 @@ public struct KairoAppShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Capture Text",
             systemImageName: "text.badge.plus"
-        )
-        AppShortcut(
-            intent: CaptureURLInKairoIntent(),
-            phrases: [
-                "Capture URL in \(.applicationName)",
-                "Send URL to \(.applicationName)"
-            ],
-            shortTitle: "Capture URL",
-            systemImageName: "link.badge.plus"
         )
         AppShortcut(
             intent: CaptureAndTriageURLInKairoIntent(),
@@ -1123,6 +1148,54 @@ public struct KairoPendingCaptureInspectOutput: Codable, Equatable, Sendable {
     }
 }
 
+public struct KairoPendingCaptureDiscardOutput: Codable, Equatable, Sendable {
+    public var schemaVersion: Int
+    public var displayText: String
+    public var confirmed: Bool
+    public var discarded: Bool
+    public var found: Bool
+    public var discardedCaptureID: UUID?
+    public var discardedCaptureKind: KairoIntentCaptureKind?
+    public var discardedTextPreview: String?
+    public var remainingCount: Int
+    public var recommendedRoute: KairoCaptureTriageRoute
+    public var recommendedDeepLink: String?
+
+    public init(
+        schemaVersion: Int = 1,
+        displayText: String,
+        confirmed: Bool,
+        discarded: Bool,
+        found: Bool,
+        discardedCaptureID: UUID?,
+        discardedCaptureKind: KairoIntentCaptureKind?,
+        discardedTextPreview: String?,
+        remainingCount: Int,
+        recommendedRoute: KairoCaptureTriageRoute,
+        recommendedDeepLink: String?
+    ) {
+        self.schemaVersion = schemaVersion
+        self.displayText = displayText
+        self.confirmed = confirmed
+        self.discarded = discarded
+        self.found = found
+        self.discardedCaptureID = discardedCaptureID
+        self.discardedCaptureKind = discardedCaptureKind
+        self.discardedTextPreview = discardedTextPreview
+        self.remainingCount = remainingCount
+        self.recommendedRoute = recommendedRoute
+        self.recommendedDeepLink = recommendedDeepLink
+    }
+
+    public func encodedJSONString() throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(self)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}
+
 public enum KairoCaptureTriageRoute: String, Codable, CaseIterable, Sendable {
     case captureReview
     case chat
@@ -1274,6 +1347,61 @@ enum KairoCaptureIntentSupport {
             textPreview: compactPreview(capture.text, limit: 220),
             text: capture.text,
             url: capture.url?.absoluteString,
+            recommendedRoute: route,
+            recommendedDeepLink: route.deepLinkString
+        )
+    }
+
+    static func discardPendingCapture(
+        id: UUID,
+        confirmDiscard: Bool,
+        store: KairoIntentCaptureStore = KairoIntentCaptureStore()
+    ) -> KairoPendingCaptureDiscardOutput {
+        let pending = store.pending()
+        let target = pending.first(where: { $0.id == id })
+        guard confirmDiscard else {
+            let route: KairoCaptureTriageRoute = pending.isEmpty ? .chat : .captureReview
+            return KairoPendingCaptureDiscardOutput(
+                displayText: "Capture was not discarded.",
+                confirmed: false,
+                discarded: false,
+                found: target != nil,
+                discardedCaptureID: nil,
+                discardedCaptureKind: nil,
+                discardedTextPreview: nil,
+                remainingCount: pending.count,
+                recommendedRoute: route,
+                recommendedDeepLink: route.deepLinkString
+            )
+        }
+
+        guard let discarded = store.remove(id: id) else {
+            let route: KairoCaptureTriageRoute = store.pending().isEmpty ? .chat : .captureReview
+            return KairoPendingCaptureDiscardOutput(
+                displayText: "Capture was not found.",
+                confirmed: true,
+                discarded: false,
+                found: false,
+                discardedCaptureID: nil,
+                discardedCaptureKind: nil,
+                discardedTextPreview: nil,
+                remainingCount: store.pending().count,
+                recommendedRoute: route,
+                recommendedDeepLink: route.deepLinkString
+            )
+        }
+
+        let remainingCount = store.pending().count
+        let route: KairoCaptureTriageRoute = remainingCount == 0 ? .chat : .captureReview
+        return KairoPendingCaptureDiscardOutput(
+            displayText: "Capture discarded.",
+            confirmed: true,
+            discarded: true,
+            found: true,
+            discardedCaptureID: discarded.id,
+            discardedCaptureKind: discarded.kind,
+            discardedTextPreview: compactPreview(discarded.text, limit: 220),
+            remainingCount: remainingCount,
             recommendedRoute: route,
             recommendedDeepLink: route.deepLinkString
         )
