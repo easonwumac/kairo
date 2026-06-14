@@ -17,58 +17,56 @@ struct ProposedActionsStrip: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(actions) { action in
-                if let descriptor = descriptorProvider.descriptor(for: action.kind) {
-                    let riskSummary = actionRiskSummary(for: action)
-                    Button {
-                        onSelect(action)
-                    } label: {
-                        HStack(alignment: .center, spacing: 10) {
-                            Image(systemName: descriptor.supportStatus == .unsupportedBySandbox ? "exclamationmark.triangle" : "checkmark.circle")
-                                .font(.subheadline.weight(.semibold))
-                                .symbolRenderingMode(.hierarchical)
-                                .foregroundStyle(actionRiskColor(for: action))
-                                .frame(width: 28, height: 28)
-                                .background(actionRiskColor(for: action).opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(descriptor.displayName)
+        chatActionGlassContainer {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(actions) { action in
+                    if let descriptor = descriptorProvider.descriptor(for: action.kind) {
+                        let riskSummary = actionRiskSummary(for: action)
+                        Button {
+                            onSelect(action)
+                        } label: {
+                            HStack(alignment: .center, spacing: 10) {
+                                Image(systemName: descriptor.supportStatus == .unsupportedBySandbox ? "exclamationmark.triangle" : "checkmark.circle")
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(KairoDesign.ink)
-                                    .lineLimit(2)
-
-                                Text(riskSummary)
-                                    .font(.caption.weight(.semibold))
+                                    .symbolRenderingMode(.hierarchical)
                                     .foregroundStyle(actionRiskColor(for: action))
+                                    .frame(width: 28, height: 28)
+                                    .background(actionRiskColor(for: action).opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(descriptor.displayName)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(KairoDesign.ink)
+                                        .lineLimit(2)
+
+                                    Text(riskSummary)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(actionRiskColor(for: action))
+                                        .lineLimit(1)
+                                        .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue).risk")
+                                }
+
+                                Spacer(minLength: 8)
+
+                                Text(KairoL10n.string("chat.action.card.review"))
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(KairoDesign.ink)
                                     .lineLimit(1)
-                                    .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue).risk")
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .chatActionGlassCapsule(tint: actionRiskColor(for: action), isInteractive: false)
                             }
-
-                            Spacer(minLength: 8)
-
-                            Text(KairoL10n.string("chat.action.card.review"))
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(KairoDesign.ink)
-                                .lineLimit(1)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(KairoDesign.softSurface.opacity(0.62), in: Capsule())
+                            .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 11)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .chatActionGlassSurface(cornerRadius: 14, tint: actionRiskColor(for: action), isInteractive: true)
                         }
+                        .buttonStyle(.plain)
+                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .accessibilityLabel(KairoL10n.string("chat.action.accessibility.preview", descriptor.displayName, descriptor.supportStatus.displayName, riskSummary))
                         .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 11)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(KairoDesign.elevatedSurface.opacity(0.76), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(KairoDesign.line, lineWidth: 1)
-                        }
                     }
-                    .buttonStyle(.plain)
-                    .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .accessibilityLabel(KairoL10n.string("chat.action.accessibility.preview", descriptor.displayName, descriptor.supportStatus.displayName, riskSummary))
-                    .accessibilityIdentifier("chat.proposed-action.\(action.kind.rawValue)")
                 }
             }
         }
@@ -113,9 +111,11 @@ struct ToolCandidatesStrip: View {
     let candidates: [AgentToolInvocationCandidate]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(candidates) { candidate in
-                toolCandidateCard(candidate)
+        chatActionGlassContainer {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(candidates) { candidate in
+                    toolCandidateCard(candidate)
+                }
             }
         }
         .accessibilityIdentifier("chat.tool-candidates")
@@ -163,7 +163,7 @@ struct ToolCandidatesStrip: View {
                     .lineLimit(1)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(KairoDesign.softSurface.opacity(0.62), in: Capsule())
+                    .chatActionGlassCapsule(tint: toolRiskColor(for: candidate), isInteractive: false)
             }
             .accessibilityIdentifier("chat.tool-candidate.\(candidateID)")
 
@@ -177,11 +177,7 @@ struct ToolCandidatesStrip: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(KairoDesign.elevatedSurface.opacity(0.76), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(KairoDesign.line, lineWidth: 1)
-        }
+        .chatActionGlassSurface(cornerRadius: 14, tint: toolRiskColor(for: candidate), isInteractive: false)
         .accessibilityLabel(KairoL10n.string("chat.option.accessibility.suggested", candidate.title, optionDetail(for: candidate), candidate.handoffSummary, riskSummary))
         .accessibilityIdentifier("chat.tool-candidate.\(candidateID)")
     }
@@ -251,6 +247,81 @@ struct ToolCandidatesStrip: View {
             return "cpu"
         case .custom:
             return "wrench.and.screwdriver"
+        }
+    }
+}
+
+@ViewBuilder
+private func chatActionGlassContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+    if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+        GlassEffectContainer(spacing: 8) {
+            content()
+        }
+    } else {
+        content()
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func chatActionGlassSurface(cornerRadius: CGFloat, tint: Color, isInteractive: Bool) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.12))
+                            .interactive(),
+                        in: .rect(cornerRadius: cornerRadius)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            } else {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.08)),
+                        in: .rect(cornerRadius: cornerRadius)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(KairoDesign.line.opacity(0.55), lineWidth: 1)
+                    }
+            }
+        } else {
+            self
+                .background(KairoDesign.elevatedSurface.opacity(0.76), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(KairoDesign.line, lineWidth: 1)
+                }
+        }
+    }
+
+    @ViewBuilder
+    func chatActionGlassCapsule(tint: Color, isInteractive: Bool) -> some View {
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            if isInteractive {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.12))
+                            .interactive(),
+                        in: .capsule
+                    )
+            } else {
+                self
+                    .glassEffect(
+                        .regular
+                            .tint(tint.opacity(0.08)),
+                        in: .capsule
+                    )
+            }
+        } else {
+            self
+                .background(KairoDesign.softSurface.opacity(0.62), in: Capsule())
         }
     }
 }
