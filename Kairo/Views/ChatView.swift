@@ -145,6 +145,12 @@ public struct ChatView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
+                        if let summary = viewModel.promptPipelineHealthSummary {
+                            ChatPromptPipelineHealthCard(summary: summary)
+                                .padding(.horizontal, 14)
+                                .id("pipeline-health")
+                        }
+
                         ForEach(viewModel.currentThread.messages) { message in
                             VStack(alignment: .leading, spacing: 8) {
                                 ChatBubble(
@@ -642,6 +648,88 @@ public struct ChatView: View {
         #else
         _ = text
         #endif
+    }
+}
+
+private struct ChatPromptPipelineHealthCard: View {
+    let summary: ChatPromptPipelineHealthSummary
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 11) {
+            Image(systemName: iconName)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .background(tint.opacity(0.12), in: Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 7) {
+                    Text(KairoL10n.string("chat.pipeline.health.title"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(summary.providerID)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(tint)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(tint.opacity(0.10), in: Capsule())
+                }
+
+                Text(detailText)
+                    .font(.caption2)
+                    .foregroundStyle(KairoDesign.muted)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 8)
+
+            Text(validationPercent)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(tint)
+                .monospacedDigit()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .kairoGlassCard(tint: tint, cornerRadius: 18)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("chat.pipeline.health")
+    }
+
+    private var detailText: String {
+        KairoL10n.string(
+            "chat.pipeline.health.detail",
+            Int64(summary.traceCount),
+            Int64(summary.repairCount),
+            Int64(summary.failedCount)
+        )
+    }
+
+    private var validationPercent: String {
+        "\(Int((summary.validationRate * 100).rounded()))%"
+    }
+
+    private var tint: Color {
+        switch summary.latestStatus {
+        case .validated:
+            return KairoDesign.teal
+        case .needsRepair, .needsReview:
+            return KairoDesign.amber
+        case .failed:
+            return .orange
+        }
+    }
+
+    private var iconName: String {
+        switch summary.latestStatus {
+        case .validated:
+            return "waveform.path.ecg"
+        case .needsRepair:
+            return "arrow.triangle.2.circlepath"
+        case .needsReview:
+            return "eye.fill"
+        case .failed:
+            return "exclamationmark.triangle.fill"
+        }
     }
 }
 

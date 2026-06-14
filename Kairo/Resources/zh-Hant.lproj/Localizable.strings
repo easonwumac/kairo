@@ -693,6 +693,8 @@
 "chat.pipeline.stage.input" = "輸入 %lld 字";
 "chat.pipeline.stage.output" = "輸出 %lld 字";
 "chat.pipeline.stage.noMetrics" = "無指標";
+"chat.pipeline.health.title" = "Pipeline health";
+"chat.pipeline.health.detail" = "最近 %lld 筆 · %lld 次修復 · %lld 個失敗階段";
 "chat.memory.proposal.title" = "儲存 Memory";
 "chat.memory.proposal.rationale" = "Kairo 找到可能有助於後續對話的偏好或事實；只有在你確認後才會儲存。";
 "chat.message.accessibility" = "%@ 訊息";

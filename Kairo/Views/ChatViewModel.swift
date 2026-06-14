@@ -43,6 +43,9 @@ public final class ChatViewModel: ObservableObject {
     public var inferenceStatusText: String {
         Self.inferenceStatusText(isLoading: isLoading, metrics: latestInferenceMetrics)
     }
+    public var promptPipelineHealthSummary: ChatPromptPipelineHealthSummary? {
+        Self.promptPipelineHealthSummary(for: currentThread.messages)
+    }
 
     private let historyStore: ChatHistoryStore
     private let shareImportAPI: any KairoShareImportAPI
@@ -1040,6 +1043,31 @@ public final class ChatViewModel: ObservableObject {
         guard let value, value.isFinite, value > 0 else { return "--" }
         let seconds = max(1, Int(ceil(value)))
         return KairoL10n.string("chat.inference.eta", "\(seconds)")
+    }
+
+    public static func promptPipelineHealthSummary(for messages: [ChatMessage]) -> ChatPromptPipelineHealthSummary? {
+        let traces = messages
+            .compactMap(\.promptPipelineTrace)
+            .suffix(8)
+        guard let latest = traces.last else { return nil }
+
+        let providerCounts = Dictionary(grouping: traces, by: \.providerID)
+            .mapValues(\.count)
+        let providerID = providerCounts
+            .sorted { lhs, rhs in
+                if lhs.value == rhs.value { return lhs.key < rhs.key }
+                return lhs.value > rhs.value
+            }
+            .first?.key ?? latest.providerID
+
+        return ChatPromptPipelineHealthSummary(
+            providerID: providerID,
+            traceCount: traces.count,
+            validatedCount: traces.filter { $0.status == .validated }.count,
+            repairCount: traces.reduce(0) { $0 + $1.repairedStageCount },
+            failedCount: traces.reduce(0) { $0 + $1.failedStageCount },
+            latestStatus: latest.status
+        )
     }
 
     public static let welcomeMessage = ChatMessage(

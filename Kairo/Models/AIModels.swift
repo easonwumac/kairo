@@ -178,6 +178,36 @@ public struct PromptPipelineStageTrace: Codable, Equatable, Sendable {
     }
 }
 
+public struct ChatPromptPipelineHealthSummary: Equatable, Sendable {
+    public var providerID: String
+    public var traceCount: Int
+    public var validatedCount: Int
+    public var repairCount: Int
+    public var failedCount: Int
+    public var latestStatus: PromptPipelineTrace.Status
+
+    public init(
+        providerID: String,
+        traceCount: Int,
+        validatedCount: Int,
+        repairCount: Int,
+        failedCount: Int,
+        latestStatus: PromptPipelineTrace.Status
+    ) {
+        self.providerID = providerID
+        self.traceCount = traceCount
+        self.validatedCount = validatedCount
+        self.repairCount = repairCount
+        self.failedCount = failedCount
+        self.latestStatus = latestStatus
+    }
+
+    public var validationRate: Double {
+        guard traceCount > 0 else { return 0 }
+        return Double(validatedCount) / Double(traceCount)
+    }
+}
+
 public struct LibraryClassificationResponse: Codable, Equatable, Sendable {
     public var assetDescription: String?
     public var ocrSummary: String?

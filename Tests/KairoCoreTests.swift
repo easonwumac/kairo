@@ -833,6 +833,46 @@ final class KairoCoreTests: XCTestCase {
         XCTAssertEqual(trace.totalOutputCharacters, 42)
     }
 
+    @MainActor
+    func testChatPromptPipelineHealthSummaryUsesRecentTraceWindow() {
+        let oldTraceMessage = ChatMessage(
+            role: .assistant,
+            text: "old",
+            promptPipelineTrace: PromptPipelineTrace(
+                providerID: "old-provider",
+                status: .failed,
+                stages: [
+                    PromptPipelineStageTrace(name: .parseStructuredOutput, status: .failed, attempt: 1)
+                ]
+            )
+        )
+        let recentMessages = (0..<8).map { index in
+            ChatMessage(
+                role: .assistant,
+                text: "recent \(index)",
+                promptPipelineTrace: PromptPipelineTrace(
+                    providerID: index < 5 ? "afm" : "omlx",
+                    status: index < 6 ? .validated : .needsReview,
+                    stages: [
+                        PromptPipelineStageTrace(name: .requestModel, status: .passed, attempt: 1),
+                        PromptPipelineStageTrace(name: .repairPrompt, status: index == 6 ? .repaired : .passed, attempt: 2),
+                        PromptPipelineStageTrace(name: .parseStructuredOutput, status: index == 7 ? .failed : .passed, attempt: 2)
+                    ]
+                )
+            )
+        }
+
+        let summary = ChatViewModel.promptPipelineHealthSummary(for: [oldTraceMessage] + recentMessages)
+
+        XCTAssertEqual(summary?.providerID, "afm")
+        XCTAssertEqual(summary?.traceCount, 8)
+        XCTAssertEqual(summary?.validatedCount, 6)
+        XCTAssertEqual(summary?.repairCount, 1)
+        XCTAssertEqual(summary?.failedCount, 1)
+        XCTAssertEqual(summary?.latestStatus, .needsReview)
+        XCTAssertEqual(summary?.validationRate, 0.75)
+    }
+
     func testIntegrationRegistryListsOAuthAndUserVisibleHandoffs() throws {
         let registry = IntegrationRegistry()
 
