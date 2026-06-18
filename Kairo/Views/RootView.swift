@@ -628,7 +628,7 @@ public struct RootView: View {
 
             navigationGroup(
                 title: KairoL10n.string("root.menu.group.primary"),
-                sections: [.assets, .pages, .wiki]
+                sections: [.assets, .pages]
             )
 
             navigationGroup(
@@ -899,7 +899,7 @@ private enum RootSection: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    static let advancedNavigationSections: [RootSection] = [.categories, .memory]
+    static let advancedNavigationSections: [RootSection] = [.wiki, .categories, .memory]
 
     var title: String {
         switch self {
