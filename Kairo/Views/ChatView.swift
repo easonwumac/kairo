@@ -14,6 +14,7 @@ public struct ChatView: View {
     private let actionDescriptorProvider: any AgentActionDescriptorProviding
     private let chromeActionRequest: ChatChromeActionRequest?
     private let openModelSettings: () -> Void
+    private let chatContentMaxWidth: CGFloat = 920
     @Binding var rootChromeBackRequestID: Int
     let usesRootChromeNavigation: Bool
     @State private var showToolPalette = false
@@ -205,70 +206,72 @@ public struct ChatView: View {
 
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 12) {
-                        if let summary = viewModel.promptPipelineHealthSummary {
-                            ChatPromptPipelineHealthCard(
-                                summary: summary,
-                                canTuneModel: viewModel.canEditProviderRoute,
-                                draftDiagnosticPrompt: {
-                                    viewModel.preparePipelineDiagnosticPrompt(from: summary)
-                                    isComposerFocused = true
-                                },
-                                openModelSettings: openModelSettings
-                            )
-                                .padding(.horizontal, 14)
-                                .id("pipeline-health")
-                        }
-
-                        ForEach(viewModel.currentThread.messages) { message in
-                            VStack(alignment: .leading, spacing: 8) {
-                                ChatBubble(
-                                    message: message,
-                                    onCopy: copyToPasteboard,
-                                    onReply: { viewModel.replyToMessage($0) },
-                                    onShowRawJSON: { rawJSON in
-                                        rawJSONPanelText = rawJSON
-                                        withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
-                                            showRawJSONPage = true
-                                        }
-                                    }
+                    chatContentColumn {
+                        LazyVStack(spacing: 12) {
+                            if let summary = viewModel.promptPipelineHealthSummary {
+                                ChatPromptPipelineHealthCard(
+                                    summary: summary,
+                                    canTuneModel: viewModel.canEditProviderRoute,
+                                    draftDiagnosticPrompt: {
+                                        viewModel.preparePipelineDiagnosticPrompt(from: summary)
+                                        isComposerFocused = true
+                                    },
+                                    openModelSettings: openModelSettings
                                 )
-                                if !message.attachments.isEmpty {
-                                    AttachmentStrip(attachments: message.attachments)
-                                        .padding(.horizontal)
-                                }
-                                if !message.proposedActions.isEmpty {
-                                    ProposedActionsStrip(
-                                        actions: message.proposedActions,
-                                        descriptorProvider: actionDescriptorProvider
-                                    ) { action in
-                                        viewModel.previewAction(action)
-                                    }
-                                        .padding(.horizontal)
-                                }
-                                if !message.toolCandidates.isEmpty {
-                                    ToolCandidatesStrip(candidates: message.toolCandidates)
-                                        .padding(.horizontal)
-                                }
+                                    .padding(.horizontal, 14)
+                                    .id("pipeline-health")
                             }
-                            .id(message.id)
-                        }
 
-                        if viewModel.isLoading {
-                            HStack {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text(viewModel.inferenceStatusText)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
+                            ForEach(viewModel.currentThread.messages) { message in
+                                VStack(alignment: .leading, spacing: 8) {
+                                    ChatBubble(
+                                        message: message,
+                                        onCopy: copyToPasteboard,
+                                        onReply: { viewModel.replyToMessage($0) },
+                                        onShowRawJSON: { rawJSON in
+                                            rawJSONPanelText = rawJSON
+                                            withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+                                                showRawJSONPage = true
+                                            }
+                                        }
+                                    )
+                                    if !message.attachments.isEmpty {
+                                        AttachmentStrip(attachments: message.attachments)
+                                            .padding(.horizontal)
+                                    }
+                                    if !message.proposedActions.isEmpty {
+                                        ProposedActionsStrip(
+                                            actions: message.proposedActions,
+                                            descriptorProvider: actionDescriptorProvider
+                                        ) { action in
+                                            viewModel.previewAction(action)
+                                        }
+                                            .padding(.horizontal)
+                                    }
+                                    if !message.toolCandidates.isEmpty {
+                                        ToolCandidatesStrip(candidates: message.toolCandidates)
+                                            .padding(.horizontal)
+                                    }
+                                }
+                                .id(message.id)
                             }
-                            .padding(.horizontal)
-                            .id("loading")
+
+                            if viewModel.isLoading {
+                                HStack {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text(viewModel.inferenceStatusText)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                }
+                                .padding(.horizontal)
+                                .id("loading")
+                            }
                         }
+                        .padding(.top, chatMessagesTopPadding)
+                        .padding(.bottom, 16)
                     }
-                    .padding(.top, chatMessagesTopPadding)
-                    .padding(.bottom, 16)
                 }
                 .background(Color.clear)
                 .onChange(of: viewModel.currentThread.messages.count) { _, _ in
@@ -359,6 +362,13 @@ public struct ChatView: View {
         .overlay(alignment: .top) {
             chatTopMistOverlay
         }
+    }
+
+    @ViewBuilder
+    private func chatContentColumn<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .frame(maxWidth: chatContentMaxWidth)
+            .frame(maxWidth: .infinity)
     }
 
     private var rawJSONChromeContext: RootChromeContext {
@@ -503,6 +513,8 @@ public struct ChatView: View {
                 .accessibilityIdentifier("chat.composer.input-shell")
             }
         }
+        .frame(maxWidth: chatContentMaxWidth)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
         .padding(.top, 4)
         .padding(.bottom, 2)

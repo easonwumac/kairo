@@ -140,6 +140,7 @@ struct ChatBubble: View {
             if !isUser { Spacer(minLength: oppositeSideSpacerWidth) }
         }
         .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(message.text)
         .accessibilityIdentifier(isUser ? "chat.message.user" : "chat.message.assistant")
