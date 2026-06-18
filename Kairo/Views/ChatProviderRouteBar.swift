@@ -61,7 +61,7 @@ struct ChatProviderRouteBar: View {
                 isPalettePresented = false
                 openModelSettings()
             } label: {
-                Image(systemName: "cpu")
+                Image(systemName: "slider.horizontal.3")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(KairoDesign.teal)
                     .frame(width: 34, height: 34)
@@ -84,7 +84,7 @@ struct ChatProviderRouteBar: View {
             .accessibilityIdentifier("chat.provider-route.title")
             Spacer(minLength: 4)
 
-            Image(systemName: "slider.horizontal.3")
+            Image(systemName: isPalettePresented ? "chevron.up" : "chevron.down")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(KairoDesign.muted)
                 .accessibilityIdentifier("chat.provider-route.preference")
