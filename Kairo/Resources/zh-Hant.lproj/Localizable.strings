@@ -932,6 +932,7 @@
 "settings.privacy.auditLog" = "安全記錄";
 "settings.privacy.summary" = "管理本機隱私資料。";
 "settings.privacy.clearAuditLog" = "清除安全記錄";
+"settings.privacy.deleteDataOptions" = "刪除資料";
 "settings.privacy.deleteAllChatHistory" = "刪除所有對話紀錄";
 "settings.privacy.deleteAllData" = "刪除所有資料";
 "settings.backup.iCloudBackup" = "啟用 iCloud 備份";

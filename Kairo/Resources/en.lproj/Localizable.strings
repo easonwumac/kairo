@@ -932,6 +932,7 @@
 "settings.privacy.auditLog" = "Safety log";
 "settings.privacy.summary" = "Manage local privacy data.";
 "settings.privacy.clearAuditLog" = "Clear safety log";
+"settings.privacy.deleteDataOptions" = "Delete data";
 "settings.privacy.deleteAllChatHistory" = "Delete all chat history";
 "settings.privacy.deleteAllData" = "Delete all data";
 "settings.backup.iCloudBackup" = "Enable iCloud backup";
