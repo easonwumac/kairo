@@ -5,6 +5,7 @@ struct LocalModelsCompactView: View {
     @State private var pageStack: [ModelSettingsPage] = []
     @State private var defaultModelNotice: String?
     @State private var customHuggingFaceModelInput = ""
+    @State private var isCustomLocalModelExpanded = false
     @State private var omlxEndpoint = ""
     @State private var omlxAPIKey = ""
     @State private var omlxModel = ""
@@ -98,8 +99,13 @@ struct LocalModelsCompactView: View {
     }
 
     private func pushPage(_ page: ModelSettingsPage) {
-        if case .localDetail = page {
+        switch page {
+        case .addLocal:
+            isCustomLocalModelExpanded = false
+        case .localDetail:
             isLocalModelAdvancedExpanded = false
+        case .addCloud, .cloudDetail, .defaultModel, .responseLanguage, .omlxModelPicker:
+            break
         }
         pageStack.append(page)
     }
@@ -1006,8 +1012,6 @@ struct LocalModelsCompactView: View {
 
     @ViewBuilder
     private var localAddList: some View {
-        customHuggingFaceModelForm
-
         if addableLocalModelRows.isEmpty {
             Text(KairoL10n.string("settings.models.local.add.empty"))
                 .font(compactModelMetadataFont)
@@ -1031,6 +1035,43 @@ struct LocalModelsCompactView: View {
                 .accessibilityIdentifier("settings.models.local.add.\(row.modelID)")
             }
         }
+
+        customHuggingFaceModelSection
+    }
+
+    private var customHuggingFaceModelSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(.snappy(duration: 0.2)) {
+                    isCustomLocalModelExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Label(
+                        KairoL10n.string("settings.models.local.custom.section"),
+                        systemImage: "link.badge.plus"
+                    )
+                    .font(compactButtonLabelFont)
+                    .foregroundStyle(KairoDesign.ink)
+
+                    Spacer(minLength: 8)
+
+                    Image(systemName: isCustomLocalModelExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.models.local.custom.toggle")
+
+            if isCustomLocalModelExpanded {
+                customHuggingFaceModelForm
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(10)
+        .kairoGlassCard(tint: KairoDesign.teal, cornerRadius: 12)
     }
 
     private var customHuggingFaceModelForm: some View {

@@ -200,11 +200,14 @@ extension KairoAppSmokeUITests {
         let addLocal = findButton("settings.models.local.add", direction: .down, maxSwipes: 2)
         XCTAssertTrue(addLocal.waitForExistence(timeout: 5))
         tapElement(addLocal)
-        XCTAssertTrue(anyElement("settings.models.local.custom.input").waitForExistence(timeout: 5))
-        XCTAssertTrue(anyElement("settings.models.local.custom.add").exists)
         for localModel in localModelsToVerify {
             XCTAssertTrue(findButton("settings.models.local.add.\(localModel.0)", direction: .down, maxSwipes: 4).exists, localModel.1)
         }
+        let customModelToggle = findButton("settings.models.local.custom.toggle", direction: .down, maxSwipes: 2)
+        XCTAssertTrue(customModelToggle.waitForExistence(timeout: 5))
+        tapElement(customModelToggle)
+        XCTAssertTrue(anyElement("settings.models.local.custom.input").waitForExistence(timeout: 5))
+        XCTAssertTrue(anyElement("settings.models.local.custom.add").exists)
     }
 
     func openAdvancedModelDiagnosticsIfNeeded() {

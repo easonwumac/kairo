@@ -1078,6 +1078,7 @@
 "settings.models.local.add.title" = "Add local model";
 "settings.models.local.add.detail" = "Choose a model to start downloading.";
 "settings.models.local.add.empty" = "No downloadable local models are available.";
+"settings.models.local.custom.section" = "Custom Hugging Face model";
 "settings.models.local.custom.placeholder" = "Hugging Face repo, e.g. Qwen/Qwen3.5-2B-GGUF";
 "settings.models.local.custom.add" = "Parse and download";
 "settings.models.local.detail.title" = "Local model";

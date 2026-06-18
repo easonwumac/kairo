@@ -1078,6 +1078,7 @@
 "settings.models.local.add.title" = "新增本地模型";
 "settings.models.local.add.detail" = "選擇後開始下載。";
 "settings.models.local.add.empty" = "目前沒有可下載的本地模型。";
+"settings.models.local.custom.section" = "自訂 Hugging Face 模型";
 "settings.models.local.custom.placeholder" = "Hugging Face repo，例如 Qwen/Qwen3.5-2B-GGUF";
 "settings.models.local.custom.add" = "解析並下載";
 "settings.models.local.detail.title" = "本地模型";
