@@ -13,22 +13,27 @@ struct ChatHistorySidebarView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Button(action: startNewThread) {
-                    Label(KairoL10n.string("chat.new"), systemImage: "square.and.pencil")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
-                .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
-                .accessibilityIdentifier("chat.new")
-
-                if let openModelSettings {
-                    Button(action: openModelSettings) {
-                        Label(KairoL10n.string("settings.models.section"), systemImage: "cpu")
+                HStack(spacing: 8) {
+                    Button(action: startNewThread) {
+                        Label(KairoL10n.string("chat.new"), systemImage: "square.and.pencil")
                             .font(.subheadline.weight(.semibold))
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
-                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal))
-                    .accessibilityIdentifier("chat.history.models")
+                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
+                    .accessibilityIdentifier("chat.new")
+
+                    if let openModelSettings {
+                        Button(action: openModelSettings) {
+                            Image(systemName: "cpu")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KairoDesign.teal)
+                                .frame(width: 38, height: 38)
+                                .chatHistorySidebarIconButton(tint: KairoDesign.teal)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(KairoL10n.string("settings.models.section"))
+                        .accessibilityIdentifier("chat.history.models")
+                    }
                 }
 
                 if threads.isEmpty {
@@ -107,6 +112,29 @@ private struct ChatHistoryRow: View {
 
     private var rowBackground: Color {
         isSelected ? KairoDesign.blue.opacity(0.11) : KairoDesign.elevatedSurface
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func chatHistorySidebarIconButton(tint: Color) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 19, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(0.10)).interactive(), in: .rect(cornerRadius: 19))
+                .overlay {
+                    shape.stroke(KairoDesign.line.opacity(0.48), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(0.14), radius: 7, x: 0, y: 3)
+        } else {
+            self
+                .background(KairoDesign.groupedSurface.opacity(0.72), in: shape)
+                .overlay {
+                    shape.stroke(KairoDesign.line.opacity(0.8), lineWidth: 1)
+                }
+                .shadow(color: KairoDesign.shadow.opacity(0.24), radius: 8, x: 0, y: 4)
+        }
     }
 }
 #endif
