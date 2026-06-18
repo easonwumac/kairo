@@ -9,6 +9,7 @@ struct ChatHistorySidebarView: View {
     let startNewThread: () -> Void
     var topPadding: CGFloat = 0
     var openModelSettings: (() -> Void)?
+    @State private var searchText = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -20,6 +21,10 @@ struct ChatHistorySidebarView: View {
             sessionHeader
                 .padding(.horizontal, 14)
                 .padding(.bottom, 8)
+
+            sessionSearchField
+                .padding(.horizontal, 14)
+                .padding(.bottom, 10)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
@@ -58,6 +63,42 @@ struct ChatHistorySidebarView: View {
         }
     }
 
+    private var sessionSearchField: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "magnifyingglass")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(KairoDesign.muted)
+
+            TextField(KairoL10n.string("chat.history.search.placeholder"), text: $searchText)
+                .textFieldStyle(.plain)
+                .font(.caption)
+                .foregroundStyle(KairoDesign.ink)
+                .accessibilityIdentifier("chat.history.search.text")
+
+            if !trimmedSearchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(KairoDesign.muted)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(KairoL10n.string("chat.history.search.clear"))
+                .accessibilityIdentifier("chat.history.search.clear")
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(KairoDesign.softSurface.opacity(0.62), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .stroke(KairoDesign.line.opacity(0.72), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.history.search")
+    }
+
     private var sessionHeader: some View {
         HStack(spacing: 8) {
             Text(KairoL10n.string("chat.history.title"))
@@ -67,7 +108,7 @@ struct ChatHistorySidebarView: View {
 
             Spacer(minLength: 8)
 
-            Text("\(threads.count)")
+            Text("\(visibleThreads.count)")
                 .font(.caption2.weight(.bold))
                 .monospacedDigit()
                 .foregroundStyle(KairoDesign.blue)
@@ -93,8 +134,20 @@ struct ChatHistorySidebarView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+        } else if visibleThreads.isEmpty {
+            KairoFocusCard {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(KairoL10n.string("chat.history.search.empty.title"), systemImage: "magnifyingglass")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(KairoL10n.string("chat.history.search.empty.description"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         } else {
-            ForEach(threads) { thread in
+            ForEach(visibleThreads) { thread in
                 ChatHistoryRow(
                     thread: thread,
                     isSelected: thread.id == selectedThreadID,
@@ -102,6 +155,19 @@ struct ChatHistorySidebarView: View {
                     delete: { deleteThread(thread) }
                 )
             }
+        }
+    }
+
+    private var trimmedSearchText: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var visibleThreads: [ChatThread] {
+        let query = trimmedSearchText
+        guard !query.isEmpty else { return threads }
+        return threads.filter { thread in
+            thread.title.localizedCaseInsensitiveContains(query)
+                || thread.lastMessagePreview.localizedCaseInsensitiveContains(query)
         }
     }
 }

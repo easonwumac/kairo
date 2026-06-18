@@ -615,6 +615,10 @@
 "chat.history.title" = "History";
 "chat.history.empty.title" = "No History Yet";
 "chat.history.empty.description" = "Send a message to create your first saved chat.";
+"chat.history.search.placeholder" = "Search chats";
+"chat.history.search.clear" = "Clear search";
+"chat.history.search.empty.title" = "No matching chats";
+"chat.history.search.empty.description" = "Try another title or message preview.";
 "chat.welcome.default" = "I’m Kairo. Tell me what you want to get done on your phone; I’ll show tools, drafts, and confirmation cards in chat before changing anything.";
 "chat.welcome.preview" = "I’m Kairo. I remember only what you choose to give me, and I stay within iOS sandbox and public API capabilities.";
 "chat.new" = "New";

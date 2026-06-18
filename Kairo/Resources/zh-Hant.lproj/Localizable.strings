@@ -615,6 +615,10 @@
 "chat.history.title" = "聊天紀錄";
 "chat.history.empty.title" = "還沒有聊天紀錄";
 "chat.history.empty.description" = "送出訊息後會建立第一個已儲存的聊天。";
+"chat.history.search.placeholder" = "搜尋聊天";
+"chat.history.search.clear" = "清除搜尋";
+"chat.history.search.empty.title" = "找不到符合的聊天";
+"chat.history.search.empty.description" = "試試其他標題或訊息預覽。";
 "chat.welcome.default" = "我是 Kairo。直接說你想在手機上完成什麼；我會在聊天裡提出可用工具、草稿與確認卡片，不會靜默改動任何東西。";
 "chat.welcome.preview" = "我是 Kairo。我只會記住你選擇交給我的內容，並只操作 iOS sandbox 與公開 API 允許的能力。";
 "chat.new" = "新聊天";
