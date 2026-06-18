@@ -13,6 +13,7 @@
 "root.menu.group.primary" = "Library";
 "root.menu.group.agent" = "Support";
 "root.menu.group.system" = "Setup";
+"root.menu.group.advanced" = "Advanced";
 "root.menu.chat.section" = "Chat";
 "root.menu.chat.showMore" = "Show more chats";
 "root.menu.chat.showLess" = "Show fewer chats";

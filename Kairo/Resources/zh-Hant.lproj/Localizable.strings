@@ -13,6 +13,7 @@
 "root.menu.group.primary" = "資產";
 "root.menu.group.agent" = "支援";
 "root.menu.group.system" = "設定";
+"root.menu.group.advanced" = "進階";
 "root.menu.chat.section" = "Chat";
 "root.menu.chat.showMore" = "顯示更多對話";
 "root.menu.chat.showLess" = "收合對話";

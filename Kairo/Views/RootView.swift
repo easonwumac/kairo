@@ -34,6 +34,7 @@ public struct RootView: View {
     @State private var chatChromeActionRequest: ChatChromeActionRequest?
     @State private var drawerChatThreads: [ChatThread] = []
     @State private var isDrawerChatHistoryExpanded = false
+    @State private var isAdvancedNavigationExpanded = false
     @State private var chromeContext = RootChromeContext.standard
     @State private var chromeBackRequestID = 0
     @State private var wikiRouteRequest: KairoURLRoute?
@@ -50,6 +51,7 @@ public struct RootView: View {
         _urlRouter = State(initialValue: urlRouter ?? KairoURLRouterViewModel(router: environment.urlRouter))
         let section = initialSection.flatMap(RootSection.init(rawValue:)) ?? .chat
         _selectedSection = State(initialValue: section)
+        _isAdvancedNavigationExpanded = State(initialValue: section.isAdvancedNavigationSection)
     }
 
     public var body: some View {
@@ -117,8 +119,11 @@ public struct RootView: View {
                 try? await openURLHandler.handle(url)
             }
         }
-        .onChange(of: selectedSection) { _, _ in
+        .onChange(of: selectedSection) { _, newSection in
             chromeContext = .standard
+            if newSection.isAdvancedNavigationSection {
+                isAdvancedNavigationExpanded = true
+            }
         }
         .onChange(of: urlRouter.pending) { _, _ in
             consumePendingRoute()
@@ -541,13 +546,15 @@ public struct RootView: View {
 
             navigationGroup(
                 title: KairoL10n.string("root.menu.group.primary"),
-                sections: [.wiki, .assets, .pages, .categories]
+                sections: [.assets, .pages, .wiki]
             )
 
             navigationGroup(
                 title: KairoL10n.string("root.menu.group.system"),
-                sections: [.models, .performance, .access, .settings]
+                sections: [.models, .access, .settings]
             )
+
+            advancedNavigationSection
         }
     }
 
@@ -622,13 +629,17 @@ public struct RootView: View {
         Button {
             selectedSection = section
             isPageActionsPresented = false
+            if section.isAdvancedNavigationSection {
+                isAdvancedNavigationExpanded = true
+            }
             closeDrawer()
         } label: {
             drawerRowContent(
                 title: section.title,
                 subtitle: section.subtitle,
                 systemImage: section.systemImage,
-                tint: section.tint
+                tint: section.tint,
+                isSelected: selectedSection == section
             )
         }
         .buttonStyle(.plain)
@@ -639,7 +650,8 @@ public struct RootView: View {
         title: String,
         subtitle: String?,
         systemImage: String,
-        tint: Color
+        tint: Color,
+        isSelected: Bool = false
     ) -> some View {
         HStack(spacing: 13) {
             Image(systemName: systemImage)
@@ -662,9 +674,22 @@ public struct RootView: View {
             }
 
             Spacer(minLength: 8)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(tint)
+                    .accessibilityHidden(true)
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 10)
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .fill(tint.opacity(0.12))
+            }
+        }
         .contentShape(Rectangle())
     }
 
@@ -726,6 +751,55 @@ public struct RootView: View {
             .rootNavigationGlassSurface(tint: sections.first?.tint ?? KairoDesign.muted, isInteractive: true)
         }
     }
+
+    private var advancedNavigationSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
+                    isAdvancedNavigationExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Text(KairoL10n.string("root.menu.group.advanced"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Image(systemName: isAdvancedNavigationExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 2)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("root.drawer.advanced.toggle")
+
+            if isAdvancedNavigationExpanded {
+                VStack(spacing: 0) {
+                    ForEach(RootSection.advancedNavigationSections) { section in
+                        navigationRow(section)
+                        if section != RootSection.advancedNavigationSections.last {
+                            Divider()
+                                .padding(.leading, 46)
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+                .rootNavigationGlassSurface(tint: KairoDesign.muted, isInteractive: true)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            } else {
+                Text(RootSection.advancedNavigationSections.map(\.shortTitle).joined(separator: " · "))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .rootNavigationGlassSurface(tint: KairoDesign.muted, isInteractive: true)
+                    .accessibilityIdentifier("root.drawer.advanced.summary")
+            }
+        }
+    }
 }
 
 private enum RootSection: String, CaseIterable, Identifiable {
@@ -742,6 +816,8 @@ private enum RootSection: String, CaseIterable, Identifiable {
     case settings
 
     var id: String { rawValue }
+
+    static let advancedNavigationSections: [RootSection] = [.categories, .memory, .performance]
 
     var title: String {
         switch self {
@@ -875,6 +951,10 @@ private enum RootSection: String, CaseIterable, Identifiable {
 }
 
 private extension RootSection {
+    var isAdvancedNavigationSection: Bool {
+        Self.advancedNavigationSections.contains(self)
+    }
+
     init(_ section: KairoURLSection) {
         switch section {
         case .chat:
