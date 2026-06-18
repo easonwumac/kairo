@@ -567,17 +567,17 @@ public struct ChatView: View {
         Button {
             isComposerFocused = false
             withAnimation(.spring(response: 0.24, dampingFraction: 0.88)) {
-                showToolPalette = true
+                showToolPalette.toggle()
             }
         } label: {
-            Image(systemName: "plus")
+            Image(systemName: showToolPalette ? "xmark" : "plus")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(KairoDesign.ink)
                 .frame(width: 30, height: 30)
                 .chatComposerGlassCircle(tint: showToolPalette ? KairoDesign.teal : KairoDesign.blue, isInteractive: true)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(KairoL10n.string("chat.tools.open"))
+        .accessibilityLabel(KairoL10n.string(showToolPalette ? "chat.tools.close" : "chat.tools.open"))
         .accessibilityIdentifier("chat.tools.menu")
     }
 

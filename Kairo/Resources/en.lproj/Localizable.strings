@@ -667,6 +667,7 @@
 "chat.mode.privateOff" = "Turn off Private";
 "chat.mode.accessibilityStatus" = "%@ mode. Route: %@. %@";
 "chat.tools.open" = "Open Chat tools";
+"chat.tools.close" = "Close Chat tools";
 "chat.tools.phoneTools" = "Phone tools";
 "chat.tools.phoneTools.prompt" = "Help me complete this with phone tools:";
 "chat.tools.reminderCalendar" = "Reminder or calendar";

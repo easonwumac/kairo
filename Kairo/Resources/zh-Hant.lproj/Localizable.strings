@@ -667,6 +667,7 @@
 "chat.mode.privateOff" = "關閉私密";
 "chat.mode.accessibilityStatus" = "%@模式。路由：%@。%@";
 "chat.tools.open" = "開啟 Chat 工具";
+"chat.tools.close" = "關閉 Chat 工具";
 "chat.tools.phoneTools" = "手機工具";
 "chat.tools.phoneTools.prompt" = "幫我用手機功能完成：";
 "chat.tools.reminderCalendar" = "提醒或行程";
