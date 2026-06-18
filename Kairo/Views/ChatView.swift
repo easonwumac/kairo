@@ -283,77 +283,93 @@ public struct ChatView: View {
             }
 
             if let errorMessage = viewModel.errorMessage {
-                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-                    .padding(.top, 8)
+                chatContentColumn {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                }
             }
 
             if let actionResultMessage = viewModel.actionResultMessage {
-                Label(actionResultMessage, systemImage: viewModel.actionResultSucceeded == false ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(viewModel.actionResultSucceeded == false ? .orange : .green)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    .accessibilityIdentifier("chat.action-result")
+                chatContentColumn {
+                    Label(actionResultMessage, systemImage: viewModel.actionResultSucceeded == false ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(viewModel.actionResultSucceeded == false ? .orange : .green)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                        .accessibilityIdentifier("chat.action-result")
+                }
             }
 
             if let shareImportNotice = viewModel.shareImportNotice {
-                ShareImportBanner(
-                    notice: shareImportNotice,
-                    preview: viewModel.shareImportPreview,
-                    canSend: viewModel.canSendImportedShareToChat,
-                    actionTitle: viewModel.shareImportPrimaryActionTitle,
-                    send: {
-                        Task { await viewModel.sendImportedShareToChat() }
-                    }
-                )
-                .padding(.horizontal)
-                .padding(.top, 8)
+                chatContentColumn {
+                    ShareImportBanner(
+                        notice: shareImportNotice,
+                        preview: viewModel.shareImportPreview,
+                        canSend: viewModel.canSendImportedShareToChat,
+                        actionTitle: viewModel.shareImportPrimaryActionTitle,
+                        send: {
+                            Task { await viewModel.sendImportedShareToChat() }
+                        }
+                    )
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                }
             }
 
             if let captureReviewSummary = viewModel.captureReviewSummary {
-                CaptureReviewSummaryBanner(
-                    summary: captureReviewSummary,
-                    items: viewModel.captureReviewItems
-                )
+                chatContentColumn {
+                    CaptureReviewSummaryBanner(
+                        summary: captureReviewSummary,
+                        items: viewModel.captureReviewItems
+                    )
                     .padding(.horizontal)
                     .padding(.top, 8)
+                }
             }
 
             if let shareImportReviewAction = viewModel.shareImportReviewAction {
-                ShareActionReviewBanner(action: shareImportReviewAction) {
-                    viewModel.reviewImportedShareAction()
+                chatContentColumn {
+                    ShareActionReviewBanner(action: shareImportReviewAction) {
+                        viewModel.reviewImportedShareAction()
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 8)
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
             }
 
             if let calendarReviewAction = viewModel.calendarReviewAction {
-                CalendarActionReviewBanner(action: calendarReviewAction) {
-                    viewModel.reviewCalendarAction()
+                chatContentColumn {
+                    CalendarActionReviewBanner(action: calendarReviewAction) {
+                        viewModel.reviewCalendarAction()
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 8)
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
             }
 
             if let handoffReviewAction = viewModel.handoffReviewAction {
-                HandoffActionReviewBanner(
-                    action: handoffReviewAction,
-                    descriptorProvider: actionDescriptorProvider
-                ) {
-                    viewModel.reviewHandoffAction()
+                chatContentColumn {
+                    HandoffActionReviewBanner(
+                        action: handoffReviewAction,
+                        descriptorProvider: actionDescriptorProvider
+                    ) {
+                        viewModel.reviewHandoffAction()
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 8)
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
             }
 
             if !viewModel.pendingAttachments.isEmpty {
-                AttachmentTray(attachments: viewModel.pendingAttachments) { id in
-                    viewModel.removeAttachment(id: id)
+                chatContentColumn {
+                    AttachmentTray(attachments: viewModel.pendingAttachments) { id in
+                        viewModel.removeAttachment(id: id)
+                    }
                 }
             }
 
