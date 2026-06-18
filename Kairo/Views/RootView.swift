@@ -417,6 +417,22 @@ public struct RootView: View {
     private var pageActionsPalette: some View {
         VStack(spacing: 7) {
             pageActionRow(
+                title: KairoL10n.string("settings.models.section"),
+                systemImage: "cpu",
+                tint: KairoDesign.teal
+            ) {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                    selectedSection = .models
+                    isMenuPresented = false
+                    isPageActionsPresented = false
+                }
+            }
+            .accessibilityIdentifier("root.page-actions.models")
+
+            Divider()
+                .padding(.horizontal, 8)
+
+            pageActionRow(
                 title: KairoL10n.string("chat.thread.action.privateNew"),
                 systemImage: "lock",
                 tint: KairoDesign.ink
