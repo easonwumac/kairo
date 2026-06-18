@@ -441,6 +441,25 @@ public struct RootView: View {
             }
 
             pageActionRow(
+                title: KairoL10n.string("chat.thread.action.fork"),
+                systemImage: "arrow.triangle.branch",
+                tint: KairoDesign.teal
+            ) {
+                triggerChatChromeAction(.fork)
+            }
+
+            pageActionRow(
+                title: KairoL10n.string("chat.thread.action.compact"),
+                systemImage: "rectangle.compress.vertical",
+                tint: KairoDesign.blue
+            ) {
+                triggerChatChromeAction(.compact)
+            }
+
+            Divider()
+                .padding(.horizontal, 8)
+
+            pageActionRow(
                 title: KairoL10n.string("chat.thread.action.clear"),
                 systemImage: "trash",
                 tint: KairoDesign.red
@@ -454,22 +473,6 @@ public struct RootView: View {
                 tint: KairoDesign.red
             ) {
                 triggerChatChromeAction(.delete)
-            }
-
-            pageActionRow(
-                title: KairoL10n.string("chat.thread.action.compact"),
-                systemImage: "rectangle.compress.vertical",
-                tint: KairoDesign.blue
-            ) {
-                triggerChatChromeAction(.compact)
-            }
-
-            pageActionRow(
-                title: KairoL10n.string("chat.thread.action.fork"),
-                systemImage: "arrow.triangle.branch",
-                tint: KairoDesign.teal
-            ) {
-                triggerChatChromeAction(.fork)
             }
         }
         .padding(8)
