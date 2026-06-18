@@ -13,6 +13,7 @@ struct LocalModelsCompactView: View {
     @State private var omlxStatusMessage: String?
     @State private var hasOmlxConfigured = false
     @State private var omlxFetchedModels: [String] = []
+    @State private var isLocalModelAdvancedExpanded = false
 
     var topPadding: CGFloat = 16
     @Binding var apiKey: String
@@ -97,6 +98,9 @@ struct LocalModelsCompactView: View {
     }
 
     private func pushPage(_ page: ModelSettingsPage) {
+        if case .localDetail = page {
+            isLocalModelAdvancedExpanded = false
+        }
         pageStack.append(page)
     }
 
@@ -189,6 +193,10 @@ struct LocalModelsCompactView: View {
                 }
 
                 responseLanguageInline
+
+                Divider()
+
+                routePreferenceInline
 
                 Divider()
 
@@ -1237,6 +1245,65 @@ struct LocalModelsCompactView: View {
 
                     Divider()
 
+                    localModelPrimaryAction(for: row)
+
+                    localModelAdvancedSection(for: row)
+                }
+            }
+            .accessibilityIdentifier("settings.models.\(row.modelID).detail")
+        }
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
+    }
+
+    @ViewBuilder
+    private func localModelPrimaryAction(for row: LocalModelSettingsRow) -> some View {
+        if localModelDownloadProgress?.modelID == row.modelID {
+            EmptyView()
+        } else if queuedLocalModelIDs.contains(row.modelID) {
+            Label(KairoL10n.string("settings.models.status.queued"), systemImage: "clock")
+                .font(compactButtonLabelFont)
+                .foregroundStyle(KairoDesign.blue)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .background(KairoDesign.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
+                .accessibilityIdentifier("settings.models.\(row.modelID).queued")
+        } else {
+            compactLocalModelAction(for: row)
+        }
+    }
+
+    private func localModelAdvancedSection(for row: LocalModelSettingsRow) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(.snappy(duration: 0.2)) {
+                    isLocalModelAdvancedExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Label(
+                        KairoL10n.string("settings.models.advanced.section"),
+                        systemImage: "slider.horizontal.3"
+                    )
+                    .font(compactButtonLabelFont)
+                    .foregroundStyle(KairoDesign.ink)
+
+                    Spacer(minLength: 8)
+
+                    Image(systemName: isLocalModelAdvancedExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.models.\(row.modelID).advanced.toggle")
+
+            if isLocalModelAdvancedExpanded {
+                VStack(alignment: .leading, spacing: 12) {
                     runtimePills(for: row)
 
                     Text(row.manifestTransparencyText)
@@ -1256,13 +1323,12 @@ struct LocalModelsCompactView: View {
 
                     localModelDetailActions(for: row)
                 }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            .accessibilityIdentifier("settings.models.\(row.modelID).detail")
         }
-        .transition(.asymmetric(
-            insertion: .move(edge: .trailing).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
-        ))
+        .padding(10)
+        .kairoGlassCard(tint: KairoDesign.teal, cornerRadius: 12)
+        .accessibilityIdentifier("settings.models.\(row.modelID).advanced")
     }
 
     private func localModelParameterControls(for row: LocalModelSettingsRow) -> some View {
