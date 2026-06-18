@@ -46,7 +46,9 @@ public struct ChatView: View {
     public var body: some View {
         #if os(iOS)
         ZStack {
-            chatSurface
+            GeometryReader { proxy in
+                chatLayout(width: proxy.size.width)
+            }
                 .task {
                     await viewModel.load()
                     await viewModel.importPendingShares()
@@ -100,7 +102,8 @@ public struct ChatView: View {
                 },
                 startNewThread: {
                     viewModel.startNewThread()
-                }
+                },
+                openModelSettings: openModelSettings
             )
                 .navigationTitle(KairoL10n.string("chat.history.title"))
         } detail: {
@@ -115,6 +118,45 @@ public struct ChatView: View {
             handleChromeAction(request)
         }
         #endif
+    }
+
+    @ViewBuilder
+    private func chatLayout(width: CGFloat) -> some View {
+        if width >= 760 {
+            wideChatLayout
+        } else {
+            chatSurface
+        }
+    }
+
+    private var wideChatLayout: some View {
+        HStack(spacing: 0) {
+            ChatHistorySidebarView(
+                threads: viewModel.threads,
+                selectedThreadID: viewModel.currentThread.id,
+                selectThread: { thread in
+                    viewModel.selectThread(thread)
+                },
+                deleteThread: { thread in
+                    Task { await viewModel.deleteThread(thread) }
+                },
+                startNewThread: {
+                    viewModel.startNewThread()
+                    isComposerFocused = true
+                },
+                topPadding: KairoDesign.rootChromeContentTopPadding,
+                openModelSettings: openModelSettings
+            )
+            .frame(width: 292)
+
+            Divider()
+
+            chatSurface
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background(KairoDesign.background.ignoresSafeArea())
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.wide-layout")
     }
 
     private func handleChromeAction(_ request: ChatChromeActionRequest?) {
@@ -144,15 +186,18 @@ public struct ChatView: View {
 
     private var chatSurface: some View {
         VStack(spacing: 0) {
-            KairoBriefingStrip(
-                snapshot: viewModel.briefingSnapshot,
-                openCaptures: {
-                    Task { await viewModel.openCaptureBriefing() }
-                },
-                reviewCaptures: {
-                    Task { await viewModel.reviewCaptureBriefing() }
-                }
-            )
+            if viewModel.briefingSnapshot.hasPendingWork {
+                KairoBriefingStrip(
+                    snapshot: viewModel.briefingSnapshot,
+                    openCaptures: {
+                        Task { await viewModel.openCaptureBriefing() }
+                    },
+                    reviewCaptures: {
+                        Task { await viewModel.reviewCaptureBriefing() }
+                    }
+                )
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
 
             ScrollViewReader { proxy in
                 ScrollView {

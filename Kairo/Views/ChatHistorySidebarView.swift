@@ -7,6 +7,8 @@ struct ChatHistorySidebarView: View {
     let selectThread: (ChatThread) -> Void
     let deleteThread: (ChatThread) -> Void
     let startNewThread: () -> Void
+    var topPadding: CGFloat = 0
+    var openModelSettings: (() -> Void)?
 
     var body: some View {
         ScrollView {
@@ -18,6 +20,16 @@ struct ChatHistorySidebarView: View {
                 }
                 .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
                 .accessibilityIdentifier("chat.new")
+
+                if let openModelSettings {
+                    Button(action: openModelSettings) {
+                        Label(KairoL10n.string("settings.models.section"), systemImage: "cpu")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.teal))
+                    .accessibilityIdentifier("chat.history.models")
+                }
 
                 if threads.isEmpty {
                     KairoFocusCard {
@@ -43,6 +55,7 @@ struct ChatHistorySidebarView: View {
                 }
             }
             .padding(14)
+            .padding(.top, topPadding)
         }
         .scrollIndicators(.hidden)
         .background(KairoDesign.background)

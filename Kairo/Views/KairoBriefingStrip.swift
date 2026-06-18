@@ -19,20 +19,22 @@ struct KairoBriefingStrip: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                briefingButton(
-                    title: sharedTitle,
-                    systemImage: "square.and.arrow.down",
-                    tint: KairoDesign.blue,
-                    isEnabled: snapshot.pendingCaptureCount > 0,
-                    action: openCaptures
-                )
-                briefingButton(
-                    title: reviewTitle,
-                    systemImage: "checklist.checked",
-                    tint: KairoDesign.amber,
-                    isEnabled: snapshot.confirmationCount > 0,
-                    action: reviewCaptures
-                )
+                if snapshot.pendingCaptureCount > 0 {
+                    briefingButton(
+                        title: sharedTitle,
+                        systemImage: "square.and.arrow.down",
+                        tint: KairoDesign.blue,
+                        action: openCaptures
+                    )
+                }
+                if snapshot.confirmationCount > 0 {
+                    briefingButton(
+                        title: reviewTitle,
+                        systemImage: "checklist.checked",
+                        tint: KairoDesign.amber,
+                        action: reviewCaptures
+                    )
+                }
                 if snapshot.reminderDraftCount > 0 {
                     KairoStatusPill(title: reminderTitle, systemImage: "checklist", tint: KairoDesign.teal)
                 }
@@ -42,7 +44,6 @@ struct KairoBriefingStrip: View {
                 if snapshot.memoryDraftCount > 0 {
                     KairoStatusPill(title: memoryTitle, systemImage: "books.vertical", tint: KairoDesign.teal)
                 }
-                KairoStatusPill(title: KairoL10n.string("chat.briefing.noSilentWrites"), systemImage: "hand.raised", tint: KairoDesign.amber)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
@@ -60,30 +61,21 @@ struct KairoBriefingStrip: View {
         title: String,
         systemImage: String,
         tint: Color,
-        isEnabled: Bool,
         action: @escaping () -> Void
     ) -> some View {
-        if isEnabled {
-            Button(action: action) {
-                KairoStatusPill(title: title, systemImage: systemImage, tint: tint)
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("chat.briefing.\(systemImage).button")
-        } else {
+        Button(action: action) {
             KairoStatusPill(title: title, systemImage: systemImage, tint: tint)
         }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("chat.briefing.\(systemImage).button")
     }
 
     private var sharedTitle: String {
-        snapshot.pendingCaptureCount == 0
-            ? KairoL10n.string("chat.briefing.shared.none")
-            : KairoL10n.string("chat.briefing.shared.count", Int64(snapshot.pendingCaptureCount))
+        KairoL10n.string("chat.briefing.shared.count", Int64(snapshot.pendingCaptureCount))
     }
 
     private var reviewTitle: String {
-        snapshot.confirmationCount == 0
-            ? KairoL10n.string("chat.briefing.reviews.none")
-            : KairoL10n.string("chat.briefing.reviews.count", Int64(snapshot.confirmationCount))
+        KairoL10n.string("chat.briefing.reviews.count", Int64(snapshot.confirmationCount))
     }
 
     private var reminderTitle: String {
