@@ -624,6 +624,7 @@
 "chat.new" = "New";
 "chat.delete" = "Delete";
 "chat.thread.action.clear" = "Clear chat";
+"chat.thread.action.deleteOptions" = "Delete options";
 "chat.thread.action.privateNew" = "New private chat";
 "chat.thread.action.delete" = "Delete chat";
 "chat.thread.action.compact" = "Compact chat";

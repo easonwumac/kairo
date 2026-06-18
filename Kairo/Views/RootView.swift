@@ -31,6 +31,7 @@ public struct RootView: View {
     @State private var selectedSection: RootSection = .chat
     @State private var isMenuPresented = false
     @State private var isPageActionsPresented = false
+    @State private var isChatDestructiveActionsExpanded = false
     @State private var chatChromeActionRequest: ChatChromeActionRequest?
     @State private var drawerChatThreads: [ChatThread] = []
     @State private var isDrawerChatHistoryExpanded = false
@@ -347,6 +348,9 @@ public struct RootView: View {
                     withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
                         isMenuPresented = false
                         isPageActionsPresented.toggle()
+                        if !isPageActionsPresented {
+                            isChatDestructiveActionsExpanded = false
+                        }
                     }
                 } label: {
                     Label(KairoL10n.string("root.moreActions"), systemImage: "ellipsis")
@@ -402,6 +406,7 @@ public struct RootView: View {
                 .onTapGesture {
                     withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
                         isPageActionsPresented = false
+                        isChatDestructiveActionsExpanded = false
                     }
                 }
 
@@ -425,6 +430,7 @@ public struct RootView: View {
                     selectedSection = .models
                     isMenuPresented = false
                     isPageActionsPresented = false
+                    isChatDestructiveActionsExpanded = false
                 }
             }
             .accessibilityIdentifier("root.page-actions.models")
@@ -459,20 +465,39 @@ public struct RootView: View {
             Divider()
                 .padding(.horizontal, 8)
 
-            pageActionRow(
-                title: KairoL10n.string("chat.thread.action.clear"),
-                systemImage: "trash",
-                tint: KairoDesign.red
-            ) {
-                triggerChatChromeAction(.clear)
+            Button {
+                withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
+                    isChatDestructiveActionsExpanded.toggle()
+                }
+            } label: {
+                pageActionDisclosureRowContent(
+                    title: KairoL10n.string("chat.thread.action.deleteOptions"),
+                    systemImage: "trash",
+                    tint: KairoDesign.red,
+                    isExpanded: isChatDestructiveActionsExpanded
+                )
             }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("root.page-actions.delete-options")
 
-            pageActionRow(
-                title: KairoL10n.string("chat.thread.action.delete"),
-                systemImage: "trash.slash",
-                tint: KairoDesign.red
-            ) {
-                triggerChatChromeAction(.delete)
+            if isChatDestructiveActionsExpanded {
+                pageActionRow(
+                    title: KairoL10n.string("chat.thread.action.clear"),
+                    systemImage: "trash",
+                    tint: KairoDesign.red
+                ) {
+                    triggerChatChromeAction(.clear)
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+
+                pageActionRow(
+                    title: KairoL10n.string("chat.thread.action.delete"),
+                    systemImage: "trash.slash",
+                    tint: KairoDesign.red
+                ) {
+                    triggerChatChromeAction(.delete)
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding(8)
@@ -491,6 +516,7 @@ public struct RootView: View {
         selectedSection = .chat
         chatChromeActionRequest = ChatChromeActionRequest(kind: action)
         isPageActionsPresented = false
+        isChatDestructiveActionsExpanded = false
     }
 
     private func pageActionRow(
@@ -500,25 +526,62 @@ public struct RootView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: systemImage)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(tint)
-                    .frame(width: 30, height: 30)
-                    .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
-
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(KairoDesign.ink)
-                    .lineLimit(1)
-
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            pageActionRowContent(title: title, systemImage: systemImage, tint: tint)
         }
         .buttonStyle(.plain)
+    }
+
+    private func pageActionRowContent(
+        title: String,
+        systemImage: String,
+        tint: Color
+    ) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+                .lineLimit(1)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+    }
+
+    private func pageActionDisclosureRowContent(
+        title: String,
+        systemImage: String,
+        tint: Color,
+        isExpanded: Bool
+    ) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .background(KairoDesign.softSurface.opacity(0.55), in: Circle())
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.ink)
+                .lineLimit(1)
+
+            Spacer(minLength: 0)
+
+            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(KairoDesign.softSurface.opacity(0.55), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
     }
 
     private func navigationMenu(safeAreaInsets: EdgeInsets) -> some View {
