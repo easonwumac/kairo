@@ -17,6 +17,10 @@ struct ChatHistorySidebarView: View {
                 .padding(.top, topPadding + 14)
                 .padding(.bottom, 10)
 
+            sessionHeader
+                .padding(.horizontal, 14)
+                .padding(.bottom, 8)
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     sessionList
@@ -52,6 +56,27 @@ struct ChatHistorySidebarView: View {
                 .accessibilityIdentifier("chat.history.models")
             }
         }
+    }
+
+    private var sessionHeader: some View {
+        HStack(spacing: 8) {
+            Text(KairoL10n.string("chat.history.title"))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(KairoDesign.muted)
+                .lineLimit(1)
+
+            Spacer(minLength: 8)
+
+            Text("\(threads.count)")
+                .font(.caption2.weight(.bold))
+                .monospacedDigit()
+                .foregroundStyle(KairoDesign.blue)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(KairoDesign.softSurface.opacity(0.58), in: Capsule())
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("chat.history.header")
     }
 
     @ViewBuilder
