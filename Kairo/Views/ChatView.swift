@@ -123,13 +123,13 @@ public struct ChatView: View {
     @ViewBuilder
     private func chatLayout(width: CGFloat) -> some View {
         if width >= 760 {
-            wideChatLayout
+            wideChatLayout(width: width)
         } else {
             chatSurface
         }
     }
 
-    private var wideChatLayout: some View {
+    private func wideChatLayout(width: CGFloat) -> some View {
         HStack(spacing: 0) {
             ChatHistorySidebarView(
                 threads: viewModel.threads,
@@ -147,7 +147,7 @@ public struct ChatView: View {
                 topPadding: KairoDesign.rootChromeContentTopPadding,
                 openModelSettings: openModelSettings
             )
-            .frame(width: 292)
+            .frame(width: chatHistorySidebarWidth(for: width))
 
             Divider()
 
@@ -157,6 +157,10 @@ public struct ChatView: View {
         .background(KairoDesign.background.ignoresSafeArea())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.wide-layout")
+    }
+
+    private func chatHistorySidebarWidth(for width: CGFloat) -> CGFloat {
+        min(304, max(236, width * 0.28))
     }
 
     private func handleChromeAction(_ request: ChatChromeActionRequest?) {
