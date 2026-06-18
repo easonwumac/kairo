@@ -11,59 +11,73 @@ struct ChatHistorySidebarView: View {
     var openModelSettings: (() -> Void)?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
-                    Button(action: startNewThread) {
-                        Label(KairoL10n.string("chat.new"), systemImage: "square.and.pencil")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    }
-                    .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
-                    .accessibilityIdentifier("chat.new")
+        VStack(alignment: .leading, spacing: 0) {
+            sidebarToolbar
+                .padding(.horizontal, 14)
+                .padding(.top, topPadding + 14)
+                .padding(.bottom, 10)
 
-                    if let openModelSettings {
-                        Button(action: openModelSettings) {
-                            Image(systemName: "cpu")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(KairoDesign.teal)
-                                .frame(width: 38, height: 38)
-                                .chatHistorySidebarIconButton(tint: KairoDesign.teal)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(KairoL10n.string("settings.models.section"))
-                        .accessibilityIdentifier("chat.history.models")
-                    }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    sessionList
                 }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 14)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .background(KairoDesign.background)
+    }
 
-                if threads.isEmpty {
-                    KairoFocusCard {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label(KairoL10n.string("chat.history.empty.title"), systemImage: "clock.arrow.circlepath")
-                                .font(.headline.weight(.semibold))
-                                .foregroundStyle(KairoDesign.ink)
-                            Text(KairoL10n.string("chat.history.empty.description"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                } else {
-                    ForEach(threads) { thread in
-                        ChatHistoryRow(
-                            thread: thread,
-                            isSelected: thread.id == selectedThreadID,
-                            select: { selectThread(thread) },
-                            delete: { deleteThread(thread) }
-                        )
-                    }
+    private var sidebarToolbar: some View {
+        HStack(spacing: 8) {
+            Button(action: startNewThread) {
+                Label(KairoL10n.string("chat.new"), systemImage: "square.and.pencil")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .buttonStyle(KairoGlassButtonStyle(tint: KairoDesign.blue, isProminent: true))
+            .accessibilityIdentifier("chat.new")
+
+            if let openModelSettings {
+                Button(action: openModelSettings) {
+                    Image(systemName: "cpu")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.teal)
+                        .frame(width: 38, height: 38)
+                        .chatHistorySidebarIconButton(tint: KairoDesign.teal)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(KairoL10n.string("settings.models.section"))
+                .accessibilityIdentifier("chat.history.models")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var sessionList: some View {
+        if threads.isEmpty {
+            KairoFocusCard {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(KairoL10n.string("chat.history.empty.title"), systemImage: "clock.arrow.circlepath")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(KairoDesign.ink)
+                    Text(KairoL10n.string("chat.history.empty.description"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .padding(14)
-            .padding(.top, topPadding)
+        } else {
+            ForEach(threads) { thread in
+                ChatHistoryRow(
+                    thread: thread,
+                    isSelected: thread.id == selectedThreadID,
+                    select: { selectThread(thread) },
+                    delete: { deleteThread(thread) }
+                )
+            }
         }
-        .scrollIndicators(.hidden)
-        .background(KairoDesign.background)
     }
 }
 
