@@ -192,15 +192,17 @@ public struct ChatView: View {
     private var chatSurface: some View {
         VStack(spacing: 0) {
             if viewModel.briefingSnapshot.hasPendingWork {
-                KairoBriefingStrip(
-                    snapshot: viewModel.briefingSnapshot,
-                    openCaptures: {
-                        Task { await viewModel.openCaptureBriefing() }
-                    },
-                    reviewCaptures: {
-                        Task { await viewModel.reviewCaptureBriefing() }
-                    }
-                )
+                chatContentColumn {
+                    KairoBriefingStrip(
+                        snapshot: viewModel.briefingSnapshot,
+                        openCaptures: {
+                            Task { await viewModel.openCaptureBriefing() }
+                        },
+                        reviewCaptures: {
+                            Task { await viewModel.reviewCaptureBriefing() }
+                        }
+                    )
+                }
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
