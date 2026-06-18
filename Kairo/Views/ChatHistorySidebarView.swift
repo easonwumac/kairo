@@ -130,29 +130,17 @@ struct ChatHistorySidebarView: View {
     @ViewBuilder
     private var sessionList: some View {
         if threads.isEmpty {
-            KairoFocusCard {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(KairoL10n.string("chat.history.empty.title"), systemImage: "clock.arrow.circlepath")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(KairoDesign.ink)
-                    Text(KairoL10n.string("chat.history.empty.description"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
+            compactSessionNotice(
+                title: KairoL10n.string("chat.history.empty.title"),
+                detail: KairoL10n.string("chat.history.empty.description"),
+                systemImage: "clock.arrow.circlepath"
+            )
         } else if visibleThreads.isEmpty {
-            KairoFocusCard {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(KairoL10n.string("chat.history.search.empty.title"), systemImage: "magnifyingglass")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(KairoDesign.ink)
-                    Text(KairoL10n.string("chat.history.search.empty.description"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
+            compactSessionNotice(
+                title: KairoL10n.string("chat.history.search.empty.title"),
+                detail: KairoL10n.string("chat.history.search.empty.description"),
+                systemImage: "magnifyingglass"
+            )
         } else {
             ForEach(visibleThreads) { thread in
                 ChatHistoryRow(
@@ -163,6 +151,37 @@ struct ChatHistorySidebarView: View {
                 )
             }
         }
+    }
+
+    private func compactSessionNotice(title: String, detail: String, systemImage: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(KairoDesign.muted)
+                .frame(width: 20, height: 20)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(KairoDesign.softSurface.opacity(0.46), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .stroke(KairoDesign.line.opacity(0.65), lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("chat.history.notice")
     }
 
     private var trimmedSearchText: String {
