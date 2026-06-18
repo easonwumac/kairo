@@ -165,12 +165,19 @@ struct LocalModelsCompactView: View {
                     }
                 } label: {
                     HStack(spacing: 8) {
-                        Label(
-                            KairoL10n.string("settings.models.advanced.section"),
-                            systemImage: "slider.horizontal.3"
-                        )
-                        .font(compactButtonLabelFont)
-                        .foregroundStyle(KairoDesign.ink)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Label(
+                                KairoL10n.string("settings.models.storage.section"),
+                                systemImage: "externaldrive.fill"
+                            )
+                            .font(compactButtonLabelFont)
+                            .foregroundStyle(KairoDesign.ink)
+
+                            Text(KairoL10n.string("settings.models.storage.summary"))
+                                .font(compactModelMetadataFont)
+                                .foregroundStyle(KairoDesign.muted)
+                                .lineLimit(1)
+                        }
 
                         Spacer(minLength: 8)
 
@@ -181,7 +188,7 @@ struct LocalModelsCompactView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(KairoL10n.string(isModelStorageExpanded ? "settings.models.advanced.hide" : "settings.models.advanced.show"))
+                .accessibilityLabel(KairoL10n.string(isModelStorageExpanded ? "settings.models.storage.hide" : "settings.models.storage.show"))
                 .accessibilityIdentifier("settings.models.storage.toggle")
 
                 if isModelStorageExpanded {
@@ -1398,12 +1405,19 @@ struct LocalModelsCompactView: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    Label(
-                        KairoL10n.string("settings.models.advanced.section"),
-                        systemImage: "slider.horizontal.3"
-                    )
-                    .font(compactButtonLabelFont)
-                    .foregroundStyle(KairoDesign.ink)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Label(
+                            KairoL10n.string("settings.models.local.advanced.section"),
+                            systemImage: "slider.horizontal.3"
+                        )
+                        .font(compactButtonLabelFont)
+                        .foregroundStyle(KairoDesign.ink)
+
+                        Text(KairoL10n.string("settings.models.local.advanced.summary"))
+                            .font(compactModelMetadataFont)
+                            .foregroundStyle(KairoDesign.muted)
+                            .lineLimit(1)
+                    }
 
                     Spacer(minLength: 8)
 
@@ -1414,6 +1428,7 @@ struct LocalModelsCompactView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(KairoL10n.string(isLocalModelAdvancedExpanded ? "settings.models.local.advanced.hide" : "settings.models.local.advanced.show"))
             .accessibilityIdentifier("settings.models.\(row.modelID).advanced.toggle")
 
             if isLocalModelAdvancedExpanded {
