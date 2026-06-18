@@ -124,25 +124,6 @@ struct ChatProviderRouteBar: View {
                     .accessibilityIdentifier("chat.provider-route.option.\(option.id)")
                 }
 
-                if !status.options.isEmpty {
-                    Divider()
-                        .padding(.horizontal, 4)
-                }
-
-                Button {
-                    isPalettePresented = false
-                    openModelSettings()
-                } label: {
-                    routePaletteRow(
-                        title: KairoL10n.string("settings.models.section"),
-                        sourceTitle: KairoL10n.string("chat.provider.model.label"),
-                        systemImage: "cpu",
-                        isSelected: false,
-                        isEnabled: true
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("chat.provider-route.manage-models")
             } else {
                 routePaletteRow(
                     title: KairoL10n.string("chat.provider.route.settingsUnavailable"),
