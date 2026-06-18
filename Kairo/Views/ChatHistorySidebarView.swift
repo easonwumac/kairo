@@ -22,9 +22,11 @@ struct ChatHistorySidebarView: View {
                 .padding(.horizontal, 14)
                 .padding(.bottom, 8)
 
-            sessionSearchField
-                .padding(.horizontal, 14)
-                .padding(.bottom, 10)
+            if !threads.isEmpty {
+                sessionSearchField
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 10)
+            }
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
@@ -36,6 +38,11 @@ struct ChatHistorySidebarView: View {
             .scrollIndicators(.hidden)
         }
         .background(KairoDesign.background)
+        .onChange(of: threads.isEmpty) { _, isEmpty in
+            if isEmpty {
+                searchText = ""
+            }
+        }
     }
 
     private var sidebarToolbar: some View {
