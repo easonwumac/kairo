@@ -9,7 +9,7 @@
 "root.menu.subtitle" = "Start in Chat. Use setup pages only when Kairo needs a capability.";
 "root.menu.accessibility" = "Kairo navigation menu";
 "root.moreActions" = "Chat actions";
-"root.pageActions.chat.tools" = "Chat tools";
+"root.pageActions.chat.tools" = "Chat actions";
 "root.menu.group.primary" = "Knowledge";
 "root.menu.group.agent" = "Support";
 "root.menu.group.system" = "Setup";
@@ -667,10 +667,10 @@
 "chat.mode.privateOn" = "Turn on Private";
 "chat.mode.privateOff" = "Turn off Private";
 "chat.mode.accessibilityStatus" = "%@ mode. Route: %@. %@";
-"chat.tools.open" = "Open Chat tools";
-"chat.tools.close" = "Close Chat tools";
-"chat.tools.phoneTools" = "Phone tools";
-"chat.tools.phoneTools.prompt" = "Help me complete this with phone tools:";
+"chat.tools.open" = "Open Chat actions";
+"chat.tools.close" = "Close Chat actions";
+"chat.tools.phoneTools" = "Phone actions";
+"chat.tools.phoneTools.prompt" = "Help me complete this with phone actions:";
 "chat.tools.reminderCalendar" = "Reminder or calendar";
 "chat.tools.reminderCalendar.prompt" = "Help me create a reminder or calendar event:";
 "chat.tools.messageEmailDraft" = "Message or email draft";

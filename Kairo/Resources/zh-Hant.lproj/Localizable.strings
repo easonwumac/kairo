@@ -9,7 +9,7 @@
 "root.menu.subtitle" = "先從 Chat 開始；只有需要能力設定時才進入其他頁面。";
 "root.menu.accessibility" = "Kairo 導覽選單";
 "root.moreActions" = "Chat 操作";
-"root.pageActions.chat.tools" = "Chat 工具";
+"root.pageActions.chat.tools" = "Chat 動作";
 "root.menu.group.primary" = "知識";
 "root.menu.group.agent" = "支援";
 "root.menu.group.system" = "設定";
@@ -667,10 +667,10 @@
 "chat.mode.privateOn" = "開啟私密";
 "chat.mode.privateOff" = "關閉私密";
 "chat.mode.accessibilityStatus" = "%@模式。路由：%@。%@";
-"chat.tools.open" = "開啟 Chat 工具";
-"chat.tools.close" = "關閉 Chat 工具";
-"chat.tools.phoneTools" = "手機工具";
-"chat.tools.phoneTools.prompt" = "幫我用手機功能完成：";
+"chat.tools.open" = "開啟 Chat 動作";
+"chat.tools.close" = "關閉 Chat 動作";
+"chat.tools.phoneTools" = "手機動作";
+"chat.tools.phoneTools.prompt" = "幫我用手機動作完成：";
 "chat.tools.reminderCalendar" = "提醒或行程";
 "chat.tools.reminderCalendar.prompt" = "幫我建立提醒或行程：";
 "chat.tools.messageEmailDraft" = "訊息或 email 草稿";

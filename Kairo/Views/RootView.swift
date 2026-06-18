@@ -899,7 +899,7 @@ private enum RootSection: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    static let advancedNavigationSections: [RootSection] = [.categories, .memory, .performance]
+    static let advancedNavigationSections: [RootSection] = [.categories, .memory]
 
     var title: String {
         switch self {
