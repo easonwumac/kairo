@@ -28,6 +28,17 @@ struct ChatProviderRouteBar: View {
 
     private var routeStack: some View {
         VStack(spacing: 7) {
+            routeHeader
+
+            if isPalettePresented {
+                routePalette
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+        }
+    }
+
+    private var routeHeader: some View {
+        HStack(spacing: 7) {
             Button {
                 guard !status.options.isEmpty else {
                     isPalettePresented = false
@@ -44,11 +55,21 @@ struct ChatProviderRouteBar: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel(KairoL10n.string("chat.provider.route.accessibilityStatus", status.title, status.detail))
             .accessibilityIdentifier("chat.provider-route")
+            .frame(maxWidth: .infinity)
 
-            if isPalettePresented {
-                routePalette
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            Button {
+                isPalettePresented = false
+                openModelSettings()
+            } label: {
+                Image(systemName: "cpu")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KairoDesign.teal)
+                    .frame(width: 34, height: 34)
+                    .providerRouteGlassIcon(tint: KairoDesign.teal)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(KairoL10n.string("settings.models.section"))
+            .accessibilityIdentifier("chat.provider-route.settings")
         }
     }
 

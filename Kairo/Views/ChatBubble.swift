@@ -15,8 +15,8 @@ struct ChatBubble: View {
     @State private var isPipelineDetailPresented = false
 
     private var isUser: Bool { message.role == .user }
-    private var bubbleMaxWidth: CGFloat { isUser ? 306 : 334 }
-    private var oppositeSideSpacerWidth: CGFloat { isUser ? 42 : 34 }
+    private var bubbleMaxWidth: CGFloat { isUser ? 520 : 720 }
+    private var oppositeSideSpacerWidth: CGFloat { isUser ? 72 : 0 }
     private var bubbleAlignment: Alignment { isUser ? .trailing : .leading }
 
     var body: some View {
