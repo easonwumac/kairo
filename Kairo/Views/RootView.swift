@@ -841,19 +841,10 @@ public struct RootView: View {
                     isAdvancedNavigationExpanded.toggle()
                 }
             } label: {
-                HStack(spacing: 8) {
-                    Text(KairoL10n.string("root.menu.group.advanced"))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Image(systemName: isAdvancedNavigationExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 2)
-                .contentShape(Rectangle())
+                advancedNavigationDisclosureLabel
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(KairoL10n.string(isAdvancedNavigationExpanded ? "root.menu.more.hide" : "root.menu.more.show"))
             .accessibilityIdentifier("root.drawer.advanced.toggle")
 
             if isAdvancedNavigationExpanded {
@@ -869,18 +860,41 @@ public struct RootView: View {
                 .padding(.vertical, 4)
                 .rootNavigationGlassSurface(tint: KairoDesign.muted, isInteractive: true)
                 .transition(.opacity.combined(with: .move(edge: .top)))
-            } else {
+            }
+        }
+    }
+
+    private var advancedNavigationDisclosureLabel: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "ellipsis.circle.fill")
+                .font(.subheadline.weight(.semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(KairoDesign.muted)
+                .frame(width: 30, height: 30)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(KairoL10n.string("root.menu.group.advanced"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(KairoDesign.ink)
+                    .lineLimit(1)
+
                 Text(RootSection.advancedNavigationSections.map(\.shortTitle).joined(separator: " · "))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .rootNavigationGlassSurface(tint: KairoDesign.muted, isInteractive: true)
-                    .accessibilityIdentifier("root.drawer.advanced.summary")
             }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: isAdvancedNavigationExpanded ? "chevron.up" : "chevron.down")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .rootNavigationGlassSurface(tint: KairoDesign.muted, isInteractive: true)
+        .contentShape(Rectangle())
     }
 }
 

@@ -10,7 +10,7 @@ extension KairoAppSmokeUITests {
         openDrawer()
         XCTAssertTrue(findButton("root.drawer.chat.new", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findButton("root.drawer.assets", direction: .both, maxSwipes: 1).exists)
-        XCTAssertTrue(findButton("root.drawer.categories", direction: .both, maxSwipes: 1).exists)
+        XCTAssertTrue(findButton("root.drawer.advanced.toggle", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findButton("root.drawer.models", direction: .both, maxSwipes: 1).exists)
         XCTAssertTrue(findButton("root.drawer.settings", direction: .both, maxSwipes: 1).exists)
         closeDrawerIfOpen()
@@ -349,9 +349,26 @@ extension KairoAppSmokeUITests {
     func selectDrawerSection(identifier: String, label: String) {
         dismissKeyboardIfPresent()
         openDrawer()
+        revealSecondaryDrawerSectionIfNeeded(identifier)
         let button = drawerButton(identifier: identifier, label: label)
         XCTAssertTrue(button.waitForExistence(timeout: 5))
         button.tap()
+    }
+
+    func revealSecondaryDrawerSectionIfNeeded(_ identifier: String) {
+        let secondarySections: Set<String> = [
+            "root.drawer.wiki",
+            "root.drawer.categories",
+            "root.drawer.memory"
+        ]
+        guard secondarySections.contains(identifier), !app.buttons[identifier].exists else {
+            return
+        }
+
+        let more = app.buttons["root.drawer.advanced.toggle"]
+        if more.waitForExistence(timeout: 2) {
+            more.tap()
+        }
     }
 
     func openDrawer() {

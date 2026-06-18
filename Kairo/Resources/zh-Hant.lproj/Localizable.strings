@@ -13,7 +13,9 @@
 "root.menu.group.primary" = "知識";
 "root.menu.group.agent" = "支援";
 "root.menu.group.system" = "設定";
-"root.menu.group.advanced" = "進階";
+"root.menu.group.advanced" = "更多";
+"root.menu.more.show" = "顯示更多頁面";
+"root.menu.more.hide" = "隱藏更多頁面";
 "root.menu.chat.section" = "Chat";
 "root.menu.chat.showMore" = "顯示更多對話";
 "root.menu.chat.showLess" = "收合對話";

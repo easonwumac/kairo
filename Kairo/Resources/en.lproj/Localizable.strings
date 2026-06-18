@@ -13,7 +13,9 @@
 "root.menu.group.primary" = "Knowledge";
 "root.menu.group.agent" = "Support";
 "root.menu.group.system" = "Setup";
-"root.menu.group.advanced" = "Advanced";
+"root.menu.group.advanced" = "More";
+"root.menu.more.show" = "Show more sections";
+"root.menu.more.hide" = "Hide more sections";
 "root.menu.chat.section" = "Chat";
 "root.menu.chat.showMore" = "Show more chats";
 "root.menu.chat.showLess" = "Show fewer chats";
