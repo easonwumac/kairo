@@ -15,6 +15,7 @@ struct LocalModelsCompactView: View {
     @State private var hasOmlxConfigured = false
     @State private var omlxFetchedModels: [String] = []
     @State private var isLocalModelAdvancedExpanded = false
+    @State private var isModelStorageExpanded = false
 
     var topPadding: CGFloat = 16
     @Binding var apiKey: String
@@ -43,6 +44,7 @@ struct LocalModelsCompactView: View {
     let setLocalModelPreference: (ProviderRoutePreference) -> Void
     let setResponseLanguage: (ChatResponseLanguagePreference) -> Void
     let setLocalModelRuntimeParameters: (LocalModelRuntimeParameters, LocalModelSettingsRow) -> Void
+    let setLocalModelCacheEnabled: (Bool) -> Void
     let refreshLocalModelCatalog: () -> Void
     let addCustomHuggingFaceLocalModel: (String) -> Void
     let downloadLocalModel: (LocalModelSettingsRow) -> Void
@@ -149,7 +151,78 @@ struct LocalModelsCompactView: View {
             cloudModelsSection
 
             modelStarterSection
+
+            modelTestingStorageSection
         }
+    }
+
+    private var modelTestingStorageSection: some View {
+        KairoFocusCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        isModelStorageExpanded.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Label(
+                            KairoL10n.string("settings.models.advanced.section"),
+                            systemImage: "slider.horizontal.3"
+                        )
+                        .font(compactButtonLabelFont)
+                        .foregroundStyle(KairoDesign.ink)
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: isModelStorageExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(KairoL10n.string(isModelStorageExpanded ? "settings.models.advanced.hide" : "settings.models.advanced.show"))
+                .accessibilityIdentifier("settings.models.storage.toggle")
+
+                if isModelStorageExpanded {
+                    Divider()
+                    localModelCacheRow
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+        }
+        .accessibilityIdentifier("settings.models.storage.section")
+    }
+
+    private var localModelCacheRow: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "externaldrive.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(KairoDesign.teal)
+                .frame(width: 30, height: 30)
+                .background(KairoDesign.teal.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(KairoL10n.string("settings.models.cache.enabled"))
+                    .font(compactModelNameFont)
+                    .foregroundStyle(KairoDesign.ink)
+                Text(KairoL10n.string(
+                    "settings.models.cache.capacity",
+                    formattedLocalModelCacheCapacity(localModelStatus.cacheSettings.capacityBytes)
+                ))
+                    .font(compactModelMetadataFont)
+                    .foregroundStyle(KairoDesign.muted)
+            }
+
+            Spacer(minLength: 8)
+
+            compactToggle(isOn: localModelStatus.cacheSettings.isEnabled) {
+                setLocalModelCacheEnabled(!localModelStatus.cacheSettings.isEnabled)
+            }
+            .accessibilityLabel(KairoL10n.string("settings.models.cache.enabled"))
+            .accessibilityIdentifier("settings.models.cache.toggle")
+        }
+        .accessibilityElement(children: .contain)
     }
 
     private var modelStarterSection: some View {
@@ -1652,6 +1725,40 @@ struct LocalModelsCompactView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(row.runtimeFitText)
         .accessibilityIdentifier("settings.models.\(row.modelID).runtime-fit")
+    }
+
+    private func formattedLocalModelCacheCapacity(_ bytes: Int64) -> String {
+        let gb = Double(bytes) / 1_073_741_824
+        if gb.rounded() == gb {
+            return "\(Int(gb)) GB"
+        }
+        return String(format: "%.1f GB", gb)
+    }
+
+    private func compactToggle(isOn: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            ZStack(alignment: isOn ? .trailing : .leading) {
+                Capsule()
+                    .fill(KairoDesign.onColor(isOn: isOn))
+                    .overlay {
+                        Capsule()
+                            .stroke(KairoDesign.line.opacity(isOn ? 0.45 : 0.85), lineWidth: 1)
+                    }
+                    .shadow(color: KairoDesign.shadow.opacity(isOn ? 0.22 : 0.10), radius: 10, y: 6)
+
+                Circle()
+                    .fill(KairoDesign.ink.opacity(isOn ? 0.92 : 0.72))
+                    .frame(width: 18, height: 18)
+                    .overlay {
+                        Circle()
+                            .stroke(.white.opacity(0.18), lineWidth: 1)
+                    }
+                    .padding(4)
+            }
+            .frame(width: 48, height: 26)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
     }
 
     private var compactButtonGridColumns: [GridItem] {
