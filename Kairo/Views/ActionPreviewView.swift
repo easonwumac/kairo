@@ -57,8 +57,7 @@ public struct ActionPreviewView: View {
             outcomeHeroCard
             actionButtons
 
-            payloadDetailsCard
-            reviewChecklistCard
+            actionDetailsCard
         }
     }
 
@@ -121,7 +120,7 @@ public struct ActionPreviewView: View {
         }
     }
 
-    private var payloadDetailsCard: some View {
+    private var actionDetailsCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Button {
                 withAnimation(.snappy(duration: 0.2)) {
@@ -136,9 +135,13 @@ public struct ActionPreviewView: View {
                         .background(KairoDesign.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(KairoL10n.string("chat.action.preview.field.payload"))
+                        Text(KairoL10n.string("chat.action.preview.details.title"))
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(KairoDesign.ink)
+                        Text(KairoL10n.string("chat.action.preview.details.summary", confirmationLabel, destinationLabel))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
 
                     Spacer(minLength: 8)
@@ -151,11 +154,39 @@ public struct ActionPreviewView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("chat.action.payload.toggle")
-            .accessibilityLabel(showPayloadDetails ? KairoL10n.string("chat.action.preview.payload.hide") : KairoL10n.string("chat.action.preview.payload.show"))
+            .accessibilityLabel(showPayloadDetails ? KairoL10n.string("chat.action.preview.details.hide") : KairoL10n.string("chat.action.preview.details.show"))
 
             if showPayloadDetails {
                 Divider()
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        checklistRow(
+                            title: KairoL10n.string("chat.action.preview.field.confirmation"),
+                            value: confirmationLabel,
+                            systemImage: "hand.tap.fill",
+                            tint: riskColor
+                        )
+
+                        if let descriptor {
+                            checklistRow(
+                                title: KairoL10n.string("chat.action.preview.field.capability"),
+                                value: descriptor.displayName,
+                                systemImage: "wrench.and.screwdriver.fill",
+                                tint: KairoDesign.blue
+                            )
+                        }
+
+                        checklistRow(
+                            title: KairoL10n.string("chat.action.preview.field.why"),
+                            value: action.rationale,
+                            systemImage: "text.bubble.fill",
+                            tint: KairoDesign.teal
+                        )
+                    }
+                    .accessibilityIdentifier("chat.action.safety")
+
+                    Divider()
+
                     Text(KairoL10n.string("chat.action.preview.payloadDetail"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -168,36 +199,6 @@ public struct ActionPreviewView: View {
         }
         .padding(14)
         .actionPreviewGlassSurface(cornerRadius: 18, tint: KairoDesign.blue, isInteractive: true)
-    }
-
-    private var reviewChecklistCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            checklistRow(
-                title: KairoL10n.string("chat.action.preview.field.confirmation"),
-                value: confirmationLabel,
-                systemImage: "hand.tap.fill",
-                tint: riskColor
-            )
-
-            if let descriptor {
-                checklistRow(
-                    title: KairoL10n.string("chat.action.preview.field.capability"),
-                    value: descriptor.displayName,
-                    systemImage: "wrench.and.screwdriver.fill",
-                    tint: KairoDesign.blue
-                )
-            }
-
-            checklistRow(
-                title: KairoL10n.string("chat.action.preview.field.why"),
-                value: action.rationale,
-                systemImage: "text.bubble.fill",
-                tint: KairoDesign.teal
-            )
-        }
-        .padding(14)
-        .actionPreviewGlassSurface(cornerRadius: 18, tint: riskColor)
-        .accessibilityIdentifier("chat.action.safety")
     }
 
     private var primaryActionSummary: String {
