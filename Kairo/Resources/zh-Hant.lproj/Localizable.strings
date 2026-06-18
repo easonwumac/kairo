@@ -685,11 +685,11 @@
 "chat.message.reasoning" = "思考過程";
 "chat.message.memoryContext.one" = "使用了 1 筆 Memory";
 "chat.message.memoryContext.many" = "使用了 %lld 筆 Memory";
-"chat.message.pipeline.validated" = "Prompt OK · %lld 次";
-"chat.message.pipeline.repaired" = "Prompt 修復 · %lld 次";
-"chat.message.pipeline.review" = "需檢查 · %lld 次";
-"chat.message.pipeline.failed" = "Prompt 失敗 · %lld 次";
-"chat.pipeline.detail.title" = "Prompt pipeline";
+"chat.message.pipeline.validated" = "回覆已檢查 · %lld 次";
+"chat.message.pipeline.repaired" = "回覆已修復 · %lld 次";
+"chat.message.pipeline.review" = "檢查回覆 · %lld 次";
+"chat.message.pipeline.failed" = "回覆失敗 · %lld 次";
+"chat.pipeline.detail.title" = "回覆細節";
 "chat.pipeline.detail.attempts" = "%lld 次";
 "chat.pipeline.detail.repairs" = "%lld 次修復";
 "chat.pipeline.detail.failures" = "%lld 次失敗";

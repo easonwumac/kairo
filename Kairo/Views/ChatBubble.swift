@@ -77,7 +77,7 @@ struct ChatBubble: View {
                         .accessibilityIdentifier("chat.message.pipeline-diagnostic.\(message.id.uuidString)")
                 }
 
-                if !isUser, let trace = message.promptPipelineTrace {
+                if !isUser, let trace = message.promptPipelineTrace, shouldShowTraceChip(for: trace) {
                     Button {
                         isPipelineDetailPresented = true
                     } label: {
@@ -178,6 +178,10 @@ struct ChatBubble: View {
         case .failed:
             return KairoL10n.string("chat.message.pipeline.failed", Int64(attempts))
         }
+    }
+
+    private func shouldShowTraceChip(for trace: PromptPipelineTrace) -> Bool {
+        trace.status != .validated || !trace.validationIssues.isEmpty
     }
 
     private func traceTint(for status: PromptPipelineTrace.Status) -> Color {

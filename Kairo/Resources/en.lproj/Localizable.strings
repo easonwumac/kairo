@@ -685,11 +685,11 @@
 "chat.message.reasoning" = "Reasoning";
 "chat.message.memoryContext.one" = "Used 1 memory item";
 "chat.message.memoryContext.many" = "Used %lld memory items";
-"chat.message.pipeline.validated" = "Prompt OK · %lldx";
-"chat.message.pipeline.repaired" = "Prompt repaired · %lldx";
-"chat.message.pipeline.review" = "Review prompt · %lldx";
-"chat.message.pipeline.failed" = "Prompt failed · %lldx";
-"chat.pipeline.detail.title" = "Prompt pipeline";
+"chat.message.pipeline.validated" = "Reply checked · %lldx";
+"chat.message.pipeline.repaired" = "Reply repaired · %lldx";
+"chat.message.pipeline.review" = "Review reply · %lldx";
+"chat.message.pipeline.failed" = "Reply failed · %lldx";
+"chat.pipeline.detail.title" = "Response details";
 "chat.pipeline.detail.attempts" = "%lld attempts";
 "chat.pipeline.detail.repairs" = "%lld repairs";
 "chat.pipeline.detail.failures" = "%lld failures";
